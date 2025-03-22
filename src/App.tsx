@@ -11,6 +11,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Sectors from "./pages/Sectors";
+import Regions from "./pages/Regions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Sectors />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/regions" 
+        element={
+          <ProtectedRoute>
+            <Regions />
           </ProtectedRoute>
         } 
       />
