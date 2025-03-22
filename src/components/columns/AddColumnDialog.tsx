@@ -346,7 +346,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                     <FormLabel>{t("parentColumn")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      value={field.value || ""}
+                      value={field.value || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -354,7 +354,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">{t("noParent")}</SelectItem>
+                        <SelectItem value="none">{t("noParent")}</SelectItem>
                         {columns
                           .filter(col => col.id !== editColumn?.id) // Filter out the current column in edit mode
                           .map((column) => (
@@ -571,7 +571,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                       <FormLabel>{t("format")}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        value={field.value || ""}
+                        value={field.value || "none"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -579,7 +579,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">{t("noFormat")}</SelectItem>
+                          <SelectItem value="none">{t("noFormat")}</SelectItem>
                           <SelectItem value="email">{t("email")}</SelectItem>
                           <SelectItem value="phone">{t("phone")}</SelectItem>
                           <SelectItem value="url">{t("url")}</SelectItem>
