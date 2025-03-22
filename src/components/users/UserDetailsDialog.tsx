@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +20,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
   onOpenChange,
   user,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   const formatDate = (date: Date | undefined) => {
     if (!date) return t('notAvailable');

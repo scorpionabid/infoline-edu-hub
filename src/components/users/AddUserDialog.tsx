@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { UserFormData } from '@/types/user';
 import { useAuth, Role } from '@/context/AuthContext';
 import UserForm from './UserForm';
@@ -17,7 +17,7 @@ interface AddUserDialogProps {
 }
 
 const AddUserDialog: React.FC<AddUserDialogProps> = ({ open, onOpenChange }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
   
@@ -31,9 +31,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ open, onOpenChange }) => 
     notificationSettings: {
       email: true,
       system: true
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
+    }
   };
   
   const [formData, setFormData] = React.useState<UserFormData>(initialFormData);

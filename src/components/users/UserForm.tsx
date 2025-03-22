@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserFormData } from '@/types/user';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,7 +29,7 @@ const UserForm: React.FC<UserFormProps> = ({
   isEdit = false,
   passwordRequired = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const isSuperAdmin = useRole('superadmin');
   
   // Determine available roles based on current user role

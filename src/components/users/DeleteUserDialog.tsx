@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 
 interface DeleteUserDialogProps {
@@ -26,7 +26,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   user,
   onDelete,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const [loading, setLoading] = React.useState(false);
 
   const handleDelete = () => {

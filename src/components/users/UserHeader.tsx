@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { UserPlus } from 'lucide-react';
 import { H1 } from '@/components/ui/typography';
 import AddUserDialog from './AddUserDialog';
 
 const UserHeader = () => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const [showAddDialog, setShowAddDialog] = React.useState(false);
 
   return (

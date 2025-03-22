@@ -18,7 +18,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { User, UserFilter } from '@/types/user';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/card';
 import { useRole, Role } from '@/context/AuthContext';
 import { FilterX, Search, MoreHorizontal, Edit, Trash2, UserCog } from 'lucide-react';
@@ -45,7 +45,7 @@ interface UserListProps {
 }
 
 const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionId }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const isSuperAdmin = useRole('superadmin');
   
   const [users, setUsers] = useState<User[]>(mockUsers);

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { User, UserFormData } from '@/types/user';
 import { useAuth } from '@/context/AuthContext';
 import UserForm from './UserForm';
@@ -20,7 +20,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   user, 
   onSave 
 }) => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
   
@@ -37,9 +37,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     passwordResetDate: user.passwordResetDate,
     twoFactorEnabled: user.twoFactorEnabled,
     language: user.language,
-    notificationSettings: user.notificationSettings,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
+    notificationSettings: user.notificationSettings
   };
   
   const [formData, setFormData] = React.useState<UserFormData>(initialFormData);
