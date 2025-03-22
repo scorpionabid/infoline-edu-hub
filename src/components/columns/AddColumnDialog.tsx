@@ -179,11 +179,22 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
     try {
-      // Add options to the form values for select, checkbox, and radio types
+      // Ensure all required fields from Column type are present and properly typed
       const columnData: Omit<Column, "id"> = {
-        ...values,
-        options: ["select", "checkbox", "radio"].includes(values.type) ? options : undefined,
+        name: values.name, // Ensure name is always provided and non-optional
+        categoryId: values.categoryId,
+        type: values.type,
+        isRequired: values.isRequired,
+        validationRules: values.validationRules,
+        defaultValue: values.defaultValue || undefined,
+        placeholder: values.placeholder || undefined,
+        helpText: values.helpText || undefined,
         deadline: values.deadline ? values.deadline.toISOString() : undefined,
+        order: values.order,
+        parentColumnId: values.parentColumnId || undefined,
+        status: values.status,
+        // Add options only if the field type supports them
+        options: ["select", "checkbox", "radio"].includes(values.type) ? options : undefined,
       };
 
       if (await onAddColumn(columnData)) {
