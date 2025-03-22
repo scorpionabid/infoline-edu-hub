@@ -10,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
 const Users = () => {
   const { t } = useLanguage();
   const isSuperOrRegionAdmin = useRole(['superadmin', 'regionadmin']);
+  const isSuperAdmin = useRole('superadmin');
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -24,10 +25,15 @@ const Users = () => {
     return null;
   }
 
+  // SuperAdmin bütün entity növlərinə çıxışı var, RegionAdmin yalnız sektor və məktəblərə
+  const entityTypes = isSuperAdmin 
+    ? ['region', 'sector', 'school'] 
+    : ['sector', 'school'];
+
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6 space-y-6">
-        <UserHeader entityTypes={['region', 'sector', 'school']} />
+        <UserHeader entityTypes={entityTypes} />
         <UserList currentUserRole={user?.role} currentUserRegionId={user?.regionId} />
       </div>
     </SidebarLayout>

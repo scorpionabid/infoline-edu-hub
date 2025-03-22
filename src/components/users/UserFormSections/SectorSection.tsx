@@ -27,8 +27,11 @@ const SectorSection: React.FC<SectorSectionProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  if (hideSection || !(((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
-       (data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
+  const shouldShow = !hideSection && 
+    (((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
+    (data.role === 'sectoradmin' || data.role === 'schooladmin'));
+
+  if (!shouldShow) {
     return null;
   }
 

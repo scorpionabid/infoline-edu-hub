@@ -22,7 +22,9 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  if (hideSection || !(data.role === 'schooladmin' && data.sectorId)) {
+  const shouldShow = !hideSection && (data.role === 'schooladmin' && data.sectorId);
+
+  if (!shouldShow) {
     return null;
   }
 
