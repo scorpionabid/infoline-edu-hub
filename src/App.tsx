@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Sectors from "./pages/Sectors";
 import Regions from "./pages/Regions";
+import Schools from "./pages/Schools";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -99,6 +100,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Regions />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/schools" 
+        element={
+          <ProtectedRoute>
+            <Schools />
           </ProtectedRoute>
         } 
       />
