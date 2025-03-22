@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Sectors from "./pages/Sectors";
 import Regions from "./pages/Regions";
 import Schools from "./pages/Schools";
+import Categories from "./pages/Categories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -109,6 +110,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Schools />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/categories" 
+        element={
+          <ProtectedRoute>
+            <Categories />
           </ProtectedRoute>
         } 
       />
