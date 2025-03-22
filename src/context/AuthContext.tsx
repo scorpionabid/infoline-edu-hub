@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { toast } from 'sonner';
 
@@ -16,6 +15,11 @@ export interface User {
   schoolId?: string;
   avatar?: string;
   lastLogin?: Date;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
 }
 
 // Auth state interface

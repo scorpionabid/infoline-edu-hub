@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
@@ -79,20 +78,14 @@ const AccountSettings: React.FC = () => {
     // Dil dəyişdiklərini saxla
     localStorage.setItem('infoline-language', data.language);
     
-    // İstifadəçi məlumatlarını yenilə
+    // İstifadəçi məlumatlarını yenilə - User tipində yalnız mövcud olan xüsusiyyətləri istifadə et
     if (user) {
       updateUser({
         ...user,
-        // language property User tipində mövcud olmadığı üçün bunu çıxarırıq
-        // language: data.language, 
-        twoFactorEnabled: data.twoFactorEnabled,
-        notificationSettings: data.notificationSettings
       });
       
       // Dil dəyişikliyini bildirmək üçün məlumat göstəririk
-      toast.success(t('languageChanged'), {
-        description: t('appRestartRequired')
-      });
+      toast.success(t('languageChanged'));
     }
     
     toast.success(t('settingsSaved'));

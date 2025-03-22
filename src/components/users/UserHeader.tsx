@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
@@ -27,9 +28,7 @@ const UserHeader = () => {
     // İmport əməliyyatını simulyasiya et
     setTimeout(() => {
       setLoading(prev => ({ ...prev, import: false }));
-      toast.success(t('usersImported'), {
-        description: t('usersImportedDesc')
-      });
+      toast.success(t('usersImported'));
     }, 1500);
   };
   
@@ -40,9 +39,7 @@ const UserHeader = () => {
     // Export əməliyyatını simulyasiya et
     setTimeout(() => {
       setLoading(prev => ({ ...prev, export: false }));
-      toast.success(t('usersExported'), { 
-        description: t('usersExportedFormat', { format: format.toUpperCase() })
-      });
+      toast.success(t('usersExported'));
     }, 1500);
   };
 
