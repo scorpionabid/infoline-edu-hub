@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import LanguageSection from '@/components/users/UserFormSections/LanguageSection';
-import NotificationSection from '@/components/users/UserFormSections/NotificationSection';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useForm } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
 
@@ -25,19 +26,6 @@ const AccountSettings: React.FC = () => {
       },
       twoFactorEnabled: false,
     }
-  });
-  
-  const [formData, setFormData] = React.useState<UserFormData>({
-    name: user?.name || '',
-    email: user?.email || '',
-    role: user?.role || 'schooladmin',
-    status: 'active',
-    language: localStorage.getItem('infoline-language') || 'az',
-    notificationSettings: {
-      email: true,
-      system: true,
-    },
-    twoFactorEnabled: false,
   });
   
   const [currentPassword, setCurrentPassword] = React.useState('');
@@ -59,16 +47,10 @@ const AccountSettings: React.FC = () => {
     setConfirmPassword('');
   };
   
-  const onFormChange = (fieldName: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
-  };
-  
   const saveSettings = () => {
+    const data = form.getValues();
     // In a real app, you would call an API to save these settings
-    localStorage.setItem('infoline-language', formData.language as string);
+    localStorage.setItem('infoline-language', data.language as string);
     toast.success(t('settingsSaved'));
   };
   
@@ -126,19 +108,99 @@ const AccountSettings: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            <LanguageSection 
-              form={form} 
-              data={formData} 
-              onFormChange={onFormChange} 
-            />
-            
-            <NotificationSection 
-              form={form} 
-              data={formData} 
-              onFormChange={onFormChange}
-            />
-          </div>
+          <Form {...form}>
+            <form className="space-y-6">
+              {/* Language Section */}
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('language')}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value as string}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectLanguage')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="az">{t('azerbaijani')}</SelectItem>
+                        <SelectItem value="en">{t('english')}</SelectItem>
+                        <SelectItem value="ru">{t('russian')}</SelectItem>
+                        <SelectItem value="tr">{t('turkish')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Notification Settings */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">{t('additionalSettings')}</h3>
+
+                <FormField
+                  control={form.control}
+                  name="twoFactorEnabled"
+                  render={({ field }) => (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <FormLabel>{t('twoFactorAuth')}</FormLabel>
+                        <p className="text-sm text-muted-foreground">{t('twoFactorAuthDesc')}</p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </div>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notificationSettings.email"
+                  render={({ field }) => (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <FormLabel>{t('emailNotifications')}</FormLabel>
+                        <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </div>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notificationSettings.system"
+                  render={({ field }) => (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <FormLabel>{t('systemNotifications')}</FormLabel>
+                        <p className="text-sm text-muted-foreground">{t('systemNotificationsDesc')}</p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </div>
+                  )}
+                />
+              </div>
+            </form>
+          </Form>
         </CardContent>
         <CardFooter className="flex justify-end">
           <Button onClick={saveSettings}>
