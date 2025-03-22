@@ -34,10 +34,10 @@ const PreferencesForm: React.FC = () => {
     defaultValues: {
       language: localStorage.getItem('infoline-language') || 'az',
       notificationSettings: {
-        email: true,
-        system: true,
+        email: user?.notificationSettings?.email || true,
+        system: user?.notificationSettings?.system || true,
       },
-      twoFactorEnabled: false,
+      twoFactorEnabled: user?.twoFactorEnabled || false,
     }
   });
   
@@ -51,7 +51,10 @@ const PreferencesForm: React.FC = () => {
       updateUser({
         ...user,
         twoFactorEnabled: data.twoFactorEnabled,
-        notificationSettings: data.notificationSettings
+        notificationSettings: {
+          email: data.notificationSettings.email,
+          system: data.notificationSettings.system
+        }
       });
       
       // Dil dəyişikliyini bildirmək üçün məlumat göstəririk
