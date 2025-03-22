@@ -16,6 +16,7 @@ import Schools from "./pages/Schools";
 import Categories from "./pages/Categories";
 import Columns from "./pages/Columns";
 import Users from "./pages/Users";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -139,6 +140,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Users />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/reports" 
+        element={
+          <ProtectedRoute>
+            <Reports />
           </ProtectedRoute>
         } 
       />
