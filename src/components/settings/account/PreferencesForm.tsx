@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import { Save } from 'lucide-react';
 
 // Hesab parametrləri forması üçün schema
 const settingsFormSchema = z.object({
@@ -34,10 +35,10 @@ const PreferencesForm: React.FC = () => {
     defaultValues: {
       language: localStorage.getItem('infoline-language') || 'az',
       notificationSettings: {
-        email: user?.notificationSettings?.email || true,
-        system: user?.notificationSettings?.system || true,
+        email: user?.notificationSettings?.email ?? true,
+        system: user?.notificationSettings?.system ?? true,
       },
-      twoFactorEnabled: user?.twoFactorEnabled || false,
+      twoFactorEnabled: user?.twoFactorEnabled ?? false,
     }
   });
   
@@ -169,7 +170,9 @@ const PreferencesForm: React.FC = () => {
               <Button 
                 type="submit"
                 disabled={settingsForm.formState.isSubmitting}
+                className="flex items-center gap-2"
               >
+                <Save className="h-4 w-4" />
                 {settingsForm.formState.isSubmitting ? t('saving') : t('saveSettings')}
               </Button>
             </CardFooter>

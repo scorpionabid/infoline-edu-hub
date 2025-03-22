@@ -10,7 +10,7 @@ const Settings: React.FC = () => {
   
   return (
     <SidebarLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 container max-w-5xl mx-auto py-4">
         <SettingsHeader />
         <SettingsTabs />
       </div>

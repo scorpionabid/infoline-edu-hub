@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Lock, Save } from 'lucide-react';
 
 // Şifrə dəyişdirmə forması üçün schema
 const passwordFormSchema = z.object({
@@ -47,7 +48,10 @@ const PasswordChangeForm: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('changePassword')}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Lock className="h-5 w-5" />
+          {t('changePassword')}
+        </CardTitle>
         <CardDescription>
           {t('changePasswordDescription')}
         </CardDescription>
@@ -64,6 +68,7 @@ const PasswordChangeForm: React.FC = () => {
                   <FormControl>
                     <Input 
                       type="password"
+                      placeholder="••••••••"
                       {...field}
                     />
                   </FormControl>
@@ -81,6 +86,7 @@ const PasswordChangeForm: React.FC = () => {
                   <FormControl>
                     <Input 
                       type="password"
+                      placeholder="••••••••"
                       {...field}
                     />
                   </FormControl>
@@ -98,6 +104,7 @@ const PasswordChangeForm: React.FC = () => {
                   <FormControl>
                     <Input 
                       type="password"
+                      placeholder="••••••••"
                       {...field}
                     />
                   </FormControl>
@@ -109,7 +116,9 @@ const PasswordChangeForm: React.FC = () => {
             <Button 
               type="submit"
               disabled={passwordForm.formState.isSubmitting}
+              className="flex items-center gap-2"
             >
+              <Save className="h-4 w-4" />
               {passwordForm.formState.isSubmitting ? t('updating') : t('updatePassword')}
             </Button>
           </form>
