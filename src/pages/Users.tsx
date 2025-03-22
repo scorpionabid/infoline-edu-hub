@@ -26,7 +26,7 @@ const Users = () => {
   }
 
   // SuperAdmin bütün entity növlərinə çıxışı var, RegionAdmin yalnız sektor və məktəblərə
-  const entityTypes = isSuperAdmin 
+  const entityTypes: Array<'region' | 'sector' | 'school'> = isSuperAdmin 
     ? ['region', 'sector', 'school'] 
     : ['sector', 'school'];
 
