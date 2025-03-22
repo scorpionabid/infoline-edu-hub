@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
+import { toast } from 'sonner';
 
 interface DeleteUserDialogProps {
   open: boolean;
@@ -32,11 +33,23 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   const handleDelete = () => {
     setLoading(true);
     
-    // Simulate API call
+    // API çağırışını simulyasiya et
     setTimeout(() => {
-      onDelete(user.id);
-      setLoading(false);
-      onOpenChange(false);
+      try {
+        // Gerçək tətbiqdə, burada istifadəçinin silinməsi üçün API çağırışı olacaq
+        onDelete(user.id);
+        setLoading(false);
+        onOpenChange(false);
+        
+        toast.success(t('userDeleted'), {
+          description: t('userDeletedDesc')
+        });
+      } catch (error) {
+        setLoading(false);
+        toast.error(t('deleteError'), {
+          description: t('deleteErrorDesc')
+        });
+      }
     }, 1000);
   };
 
@@ -47,7 +60,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
             {t('deleteUserConfirmation')} <strong>{user.name}</strong>?
-            {t('deleteUserWarning')}
+            <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

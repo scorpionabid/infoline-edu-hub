@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Download, Printer, Share2 } from 'lucide-react';
 import { Report } from '@/types/report';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ReportChart from './ReportChart';
+import { toast } from 'sonner';
 
 interface ReportPreviewDialogProps {
   report: Report;
@@ -20,6 +21,51 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   onClose,
 }) => {
   const { t } = useLanguage();
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({
+    print: false,
+    share: false,
+    download: false
+  });
+  
+  // Print hesabatı
+  const handlePrint = () => {
+    setLoading(prev => ({ ...prev, print: true }));
+    
+    // Print prosesini simulyasiya et
+    setTimeout(() => {
+      setLoading(prev => ({ ...prev, print: false }));
+      toast.success(t('printInitiated'), {
+        description: t('printInitiatedDesc')
+      });
+      // Real tətbiqdə window.print() əlavə edilə bilər
+    }, 1000);
+  };
+  
+  // Hesabatı paylaş
+  const handleShare = () => {
+    setLoading(prev => ({ ...prev, share: true }));
+    
+    // Paylaşma prosesini simulyasiya et
+    setTimeout(() => {
+      setLoading(prev => ({ ...prev, share: false }));
+      toast.success(t('reportShared'), {
+        description: t('reportSharedDesc')
+      });
+    }, 1000);
+  };
+  
+  // Hesabatı yüklə
+  const handleDownload = () => {
+    setLoading(prev => ({ ...prev, download: true }));
+    
+    // Yükləmə prosesini simulyasiya et
+    setTimeout(() => {
+      setLoading(prev => ({ ...prev, download: false }));
+      toast.success(t('reportDownloaded'), {
+        description: t('reportDownloadedDesc')
+      });
+    }, 1500);
+  };
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -98,17 +144,28 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             {t('close')}
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={handlePrint}
+            disabled={loading.print}
+          >
             <Printer className="h-4 w-4 mr-2" />
-            {t('print')}
+            {loading.print ? t('printing') : t('print')}
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={handleShare}
+            disabled={loading.share}
+          >
             <Share2 className="h-4 w-4 mr-2" />
-            {t('share')}
+            {loading.share ? t('sharing') : t('share')}
           </Button>
-          <Button>
+          <Button
+            onClick={handleDownload}
+            disabled={loading.download}
+          >
             <Download className="h-4 w-4 mr-2" />
-            {t('download')}
+            {loading.download ? t('downloading') : t('download')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -12,12 +12,49 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useForm } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+// Şifrə dəyişdirmə forması üçün schema
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(1, 'required'),
+  newPassword: z.string().min(6, 'passwordTooShort'),
+  confirmPassword: z.string().min(1, 'required'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'passwordMismatch',
+  path: ['confirmPassword'],
+});
+
+// Hesab parametrləri forması üçün schema
+const settingsFormSchema = z.object({
+  language: z.string(),
+  twoFactorEnabled: z.boolean().default(false),
+  notificationSettings: z.object({
+    email: z.boolean().default(true),
+    system: z.boolean().default(true),
+  }),
+});
+
+type PasswordFormData = z.infer<typeof passwordFormSchema>;
+type SettingsFormData = z.infer<typeof settingsFormSchema>;
 
 const AccountSettings: React.FC = () => {
   const { t } = useLanguage();
   const { user, updateUser } = useAuth();
   
-  const form = useForm<UserFormData>({
+  // Şifrə dəyişdirmə forması
+  const passwordForm = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    }
+  });
+  
+  // Hesab parametrləri forması
+  const settingsForm = useForm<SettingsFormData>({
+    resolver: zodResolver(settingsFormSchema),
     defaultValues: {
       language: localStorage.getItem('infoline-language') || 'az',
       notificationSettings: {
@@ -28,29 +65,30 @@ const AccountSettings: React.FC = () => {
     }
   });
   
-  const [currentPassword, setCurrentPassword] = React.useState('');
-  const [newPassword, setNewPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  
-  const handlePasswordChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newPassword !== confirmPassword) {
-      toast.error(t('passwordMismatch'));
-      return;
-    }
-    
-    // In a real app, you would call an API to change the password
-    toast.success(t('passwordChanged'));
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+  // Şifrə dəyişdirmə funksiyası
+  const handlePasswordChange = (data: PasswordFormData) => {
+    // Simulyasiya et - real tətbiqdə burada API olacaq
+    setTimeout(() => {
+      toast.success(t('passwordChanged'));
+      passwordForm.reset();
+    }, 1000);
   };
   
-  const saveSettings = () => {
-    const data = form.getValues();
-    // In a real app, you would call an API to save these settings
-    localStorage.setItem('infoline-language', data.language as string);
+  // Hesab parametrlərini saxla
+  const saveSettings = (data: SettingsFormData) => {
+    // Dil dəyişdiklərini saxla
+    localStorage.setItem('infoline-language', data.language);
+    
+    // İstifadəçi məlumatlarını yenilə
+    if (user) {
+      updateUser({
+        ...user,
+        language: data.language,
+        twoFactorEnabled: data.twoFactorEnabled,
+        notificationSettings: data.notificationSettings
+      });
+    }
+    
     toast.success(t('settingsSaved'));
   };
   
@@ -64,39 +102,67 @@ const AccountSettings: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handlePasswordChange} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">{t('currentPassword')}</Label>
-              <Input 
-                id="current-password" 
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('currentPassword')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="new-password">{t('newPassword')}</Label>
-              <Input 
-                id="new-password" 
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+              
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('newPassword')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">{t('confirmPassword')}</Label>
-              <Input 
-                id="confirm-password" 
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+              
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('confirmPassword')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <Button type="submit">{t('updatePassword')}</Button>
-          </form>
+              
+              <Button 
+                type="submit"
+                disabled={passwordForm.formState.isSubmitting}
+              >
+                {passwordForm.formState.isSubmitting ? t('updating') : t('updatePassword')}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
       
@@ -108,18 +174,18 @@ const AccountSettings: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form className="space-y-6">
-              {/* Language Section */}
+          <Form {...settingsForm}>
+            <form className="space-y-6" onSubmit={settingsForm.handleSubmit(saveSettings)}>
+              {/* Dil Seçimi */}
               <FormField
-                control={form.control}
+                control={settingsForm.control}
                 name="language"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('language')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      value={field.value as string}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -138,12 +204,12 @@ const AccountSettings: React.FC = () => {
                 )}
               />
               
-              {/* Notification Settings */}
+              {/* Əlavə parametrlər */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">{t('additionalSettings')}</h3>
 
                 <FormField
-                  control={form.control}
+                  control={settingsForm.control}
                   name="twoFactorEnabled"
                   render={({ field }) => (
                     <div className="flex items-center justify-between">
@@ -153,7 +219,7 @@ const AccountSettings: React.FC = () => {
                       </div>
                       <FormControl>
                         <Switch
-                          checked={field.value || false}
+                          checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
@@ -162,7 +228,7 @@ const AccountSettings: React.FC = () => {
                 />
 
                 <FormField
-                  control={form.control}
+                  control={settingsForm.control}
                   name="notificationSettings.email"
                   render={({ field }) => (
                     <div className="flex items-center justify-between">
@@ -172,7 +238,7 @@ const AccountSettings: React.FC = () => {
                       </div>
                       <FormControl>
                         <Switch
-                          checked={field.value || false}
+                          checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
@@ -181,7 +247,7 @@ const AccountSettings: React.FC = () => {
                 />
 
                 <FormField
-                  control={form.control}
+                  control={settingsForm.control}
                   name="notificationSettings.system"
                   render={({ field }) => (
                     <div className="flex items-center justify-between">
@@ -191,7 +257,7 @@ const AccountSettings: React.FC = () => {
                       </div>
                       <FormControl>
                         <Switch
-                          checked={field.value || false}
+                          checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
@@ -199,14 +265,18 @@ const AccountSettings: React.FC = () => {
                   )}
                 />
               </div>
+              
+              <CardFooter className="px-0 pt-4">
+                <Button 
+                  type="submit"
+                  disabled={settingsForm.formState.isSubmitting}
+                >
+                  {settingsForm.formState.isSubmitting ? t('saving') : t('saveSettings')}
+                </Button>
+              </CardFooter>
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button onClick={saveSettings}>
-            {t('saveSettings')}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
