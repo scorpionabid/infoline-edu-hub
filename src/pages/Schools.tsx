@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -820,3 +821,474 @@ const Schools = () => {
             </div>
             
             {/* Səhifələndirmə */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(currentPage > 1 ? currentPage - 1 : 1)}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Əlavə et dialoqu */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Yeni məktəb əlavə et</DialogTitle>
+            <DialogDescription>
+              Məktəb məlumatlarını əlavə edin. Məktəb admini yaratmaq istəyirsinizsə, ikinci tabda admin məlumatlarını da doldurun.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="school" value={currentTab} onValueChange={setCurrentTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="school">Məktəb məlumatları</TabsTrigger>
+              <TabsTrigger value="admin">Admin məlumatları</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="school" className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Məktəb adı<span className="text-red-500">*</span></Label>
+                  <Input id="name" name="name" value={formData.name} onChange={handleFormChange} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="principalName">Direktoru</Label>
+                  <Input id="principalName" name="principalName" value={formData.principalName} onChange={handleFormChange} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="regionId">Region<span className="text-red-500">*</span></Label>
+                  <select 
+                    id="regionId" 
+                    name="regionId" 
+                    value={formData.regionId} 
+                    onChange={handleFormChange}
+                    className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                  >
+                    <option value="">Region seçin</option>
+                    {mockRegions.map(region => (
+                      <option key={region.id} value={region.id}>{region.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="sectorId">Sektor<span className="text-red-500">*</span></Label>
+                  <select 
+                    id="sectorId" 
+                    name="sectorId" 
+                    value={formData.sectorId}
+                    onChange={handleFormChange}
+                    className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                    disabled={!formData.regionId}
+                  >
+                    <option value="">Sektor seçin</option>
+                    {formData.regionId && filteredSectors
+                      .filter(sector => sector.regionId === formData.regionId)
+                      .map(sector => (
+                        <option key={sector.id} value={sector.id}>{sector.name}</option>
+                      ))
+                    }
+                  </select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="type">Məktəb növü</Label>
+                  <select 
+                    id="type" 
+                    name="type" 
+                    value={formData.type} 
+                    onChange={handleFormChange}
+                    className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                  >
+                    <option value="full_secondary">Tam orta</option>
+                    <option value="general_secondary">Ümumi orta</option>
+                    <option value="primary">İbtidai</option>
+                    <option value="lyceum">Lisey</option>
+                    <option value="gymnasium">Gimnaziya</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="language">Tədris dili</Label>
+                  <select 
+                    id="language" 
+                    name="language" 
+                    value={formData.language} 
+                    onChange={handleFormChange}
+                    className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                  >
+                    <option value="az">Azərbaycan</option>
+                    <option value="ru">Rus</option>
+                    <option value="en">İngilis</option>
+                    <option value="tr">Türk</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="studentCount">Şagird sayı</Label>
+                  <Input id="studentCount" name="studentCount" type="number" value={formData.studentCount} onChange={handleFormChange} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="teacherCount">Müəllim sayı</Label>
+                  <Input id="teacherCount" name="teacherCount" type="number" value={formData.teacherCount} onChange={handleFormChange} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone">Telefon</Label>
+                  <Input id="phone" name="phone" value={formData.phone} onChange={handleFormChange} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="email">E-poçt</Label>
+                  <Input id="email" name="email" value={formData.email} onChange={handleFormChange} />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <Label htmlFor="address">Ünvan</Label>
+                  <Input id="address" name="address" value={formData.address} onChange={handleFormChange} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <select 
+                    id="status" 
+                    name="status" 
+                    value={formData.status} 
+                    onChange={handleFormChange}
+                    className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                  >
+                    <option value="active">Aktiv</option>
+                    <option value="inactive">Deaktiv</option>
+                  </select>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="admin" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="adminFullName">Admin adı soyadı</Label>
+                    <Input 
+                      id="adminFullName" 
+                      name="adminFullName" 
+                      value={formData.adminFullName} 
+                      onChange={handleFormChange}
+                      placeholder="Adı Soyadı"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="adminEmail">Admin e-poçt</Label>
+                    <Input 
+                      id="adminEmail" 
+                      name="adminEmail" 
+                      value={formData.adminEmail} 
+                      onChange={handleFormChange}
+                      placeholder="admin@nümunə.az"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="adminPassword">Şifrə</Label>
+                    <Input 
+                      id="adminPassword" 
+                      name="adminPassword" 
+                      type="password" 
+                      value={formData.adminPassword} 
+                      onChange={handleFormChange}
+                      placeholder="Güclü şifrə daxil edin"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="adminStatus">Admin statusu</Label>
+                    <select 
+                      id="adminStatus" 
+                      name="adminStatus" 
+                      value={formData.adminStatus} 
+                      onChange={handleFormChange}
+                      className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="active">Aktiv</option>
+                      <option value="inactive">Deaktiv</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  <AlertCircle className="h-4 w-4 inline-block mr-1" />
+                  Admin məlumatları doldurulduqda, bu istifadəçi məktəb admini olaraq avtomatik yaradılacaq.
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>İmtina</Button>
+            <Button onClick={handleAddSubmit}>Məktəb əlavə et</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Redaktə et dialoqu */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Məktəbi redaktə et</DialogTitle>
+            <DialogDescription>
+              Məktəb məlumatlarını yeniləyin. 
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-name">Məktəb adı<span className="text-red-500">*</span></Label>
+                <Input id="edit-name" name="name" value={formData.name} onChange={handleFormChange} />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-principalName">Direktoru</Label>
+                <Input id="edit-principalName" name="principalName" value={formData.principalName} onChange={handleFormChange} />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-regionId">Region<span className="text-red-500">*</span></Label>
+                <select 
+                  id="edit-regionId" 
+                  name="regionId" 
+                  value={formData.regionId} 
+                  onChange={handleFormChange}
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="">Region seçin</option>
+                  {mockRegions.map(region => (
+                    <option key={region.id} value={region.id}>{region.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-sectorId">Sektor<span className="text-red-500">*</span></Label>
+                <select 
+                  id="edit-sectorId" 
+                  name="sectorId" 
+                  value={formData.sectorId}
+                  onChange={handleFormChange}
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                  disabled={!formData.regionId}
+                >
+                  <option value="">Sektor seçin</option>
+                  {formData.regionId && filteredSectors
+                    .filter(sector => sector.regionId === formData.regionId)
+                    .map(sector => (
+                      <option key={sector.id} value={sector.id}>{sector.name}</option>
+                    ))
+                  }
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-type">Məktəb növü</Label>
+                <select 
+                  id="edit-type" 
+                  name="type" 
+                  value={formData.type} 
+                  onChange={handleFormChange}
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="full_secondary">Tam orta</option>
+                  <option value="general_secondary">Ümumi orta</option>
+                  <option value="primary">İbtidai</option>
+                  <option value="lyceum">Lisey</option>
+                  <option value="gymnasium">Gimnaziya</option>
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-language">Tədris dili</Label>
+                <select 
+                  id="edit-language" 
+                  name="language" 
+                  value={formData.language} 
+                  onChange={handleFormChange}
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="az">Azərbaycan</option>
+                  <option value="ru">Rus</option>
+                  <option value="en">İngilis</option>
+                  <option value="tr">Türk</option>
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-studentCount">Şagird sayı</Label>
+                <Input id="edit-studentCount" name="studentCount" type="number" value={formData.studentCount} onChange={handleFormChange} />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-teacherCount">Müəllim sayı</Label>
+                <Input id="edit-teacherCount" name="teacherCount" type="number" value={formData.teacherCount} onChange={handleFormChange} />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-phone">Telefon</Label>
+                <Input id="edit-phone" name="phone" value={formData.phone} onChange={handleFormChange} />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-email">E-poçt</Label>
+                <Input id="edit-email" name="email" value={formData.email} onChange={handleFormChange} />
+              </div>
+              
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-address">Ünvan</Label>
+                <Input id="edit-address" name="address" value={formData.address} onChange={handleFormChange} />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-status">Status</Label>
+                <select 
+                  id="edit-status" 
+                  name="status" 
+                  value={formData.status} 
+                  onChange={handleFormChange}
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="active">Aktiv</option>
+                  <option value="inactive">Deaktiv</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>İmtina</Button>
+            <Button onClick={handleEditSubmit}>Məlumatları yadda saxla</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Silmə dialoqu */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Məktəbi sil</DialogTitle>
+            <DialogDescription>
+              Bu məktəbi silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSchool && (
+            <div className="py-4">
+              <p className="text-center text-lg font-medium">{selectedSchool.name}</p>
+              <p className="text-center text-sm text-muted-foreground">{selectedSchool.address}</p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>İmtina</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>Sil</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Admin məlumatları dialoqu */}
+      <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Məktəb admin məlumatları</DialogTitle>
+            <DialogDescription>
+              Məktəb admininin məlumatlarını görüntüləyin və idarə edin.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAdmin && (
+            <div className="py-4 space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-14 w-14">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {selectedAdmin.adminEmail ? selectedAdmin.adminEmail.charAt(0).toUpperCase() : "A"}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div>
+                  <p className="text-lg font-medium">{selectedAdmin.name}</p>
+                  <div className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    {selectedAdmin.adminEmail}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="admin-email">Admin e-poçt</Label>
+                  <Input 
+                    id="admin-email"
+                    value={selectedAdmin.adminEmail}
+                    disabled
+                  />
+                </div>
+                
+                <div>
+                  <Label>Status</Label>
+                  <div className="mt-1">
+                    {renderStatusBadge(selectedAdmin.status)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="pt-2">
+                <Button variant="outline" className="w-full" onClick={handleResetPassword}>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Parolu sıfırla
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAdminDialogOpen(false)}>Bağla</Button>
+            <Button onClick={handleAdminUpdate}>Yadda saxla</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SidebarLayout>
+  );
+};
+
+export default Schools;
