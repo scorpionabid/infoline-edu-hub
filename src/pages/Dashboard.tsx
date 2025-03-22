@@ -9,6 +9,7 @@ import RegionAdminDashboard from '@/components/dashboard/RegionAdminDashboard';
 import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
 import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 // Genişləndirilmiş mock məlumatlar
 const mockData = {
@@ -20,18 +21,18 @@ const mockData = {
     completionRate: 78,
     pendingApprovals: 23,
     notifications: [
-      { id: 1, type: 'newCategory', title: 'New Category Created', message: 'Student information category has been created', time: '10 min ago' },
-      { id: 2, type: 'formApproved', title: 'Form Approved', message: 'School 45 form has been approved', time: '2 hours ago' },
-      { id: 3, type: 'systemUpdate', title: 'System Update', message: 'System will be updated on June 15, 2023', time: '1 day ago' },
+      { id: 1, type: 'newCategory', title: 'Yeni Kateqoriya', message: 'Şagird məlumatları kateqoriyası yaradılıb', time: '10 dəq əvvəl' },
+      { id: 2, type: 'formApproved', title: 'Form Təsdiqləndi', message: '45 saylı məktəbin formu təsdiqləndi', time: '2 saat əvvəl' },
+      { id: 3, type: 'systemUpdate', title: 'Sistem Yeniləməsi', message: 'Sistem 15 iyun 2023-cü il tarixində yenilənəcək', time: '1 gün əvvəl' },
     ],
     activityData: [
-      { name: 'Jan', value: 65 },
-      { name: 'Feb', value: 78 },
+      { name: 'Yan', value: 65 },
+      { name: 'Fev', value: 78 },
       { name: 'Mar', value: 67 },
       { name: 'Apr', value: 89 },
       { name: 'May', value: 92 },
-      { name: 'Jun', value: 87 },
-      { name: 'Jul', value: 94 },
+      { name: 'İyun', value: 87 },
+      { name: 'İyul', value: 94 },
     ]
   },
   regionadmin: {
@@ -44,17 +45,17 @@ const mockData = {
     approvedSchools: 82,
     rejectedSchools: 10,
     notifications: [
-      { id: 1, type: 'dueDateReminder', title: 'Due Date Reminder', message: 'School facilities data due in 3 days', time: '30 min ago' },
-      { id: 2, type: 'formRejected', title: 'Form Rejected', message: 'School 23 form requires corrections', time: '5 hours ago' },
+      { id: 1, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Məktəb inventarları məlumatları 3 gün ərzində təqdim edilməlidir', time: '30 dəq əvvəl' },
+      { id: 2, type: 'formRejected', title: 'Form Rədd Edildi', message: '23 saylı məktəbin formu düzəlişlər tələb edir', time: '5 saat əvvəl' },
     ],
     activityData: [
-      { name: 'Jan', value: 45 },
-      { name: 'Feb', value: 58 },
+      { name: 'Yan', value: 45 },
+      { name: 'Fev', value: 58 },
       { name: 'Mar', value: 47 },
       { name: 'Apr', value: 79 },
       { name: 'May', value: 82 },
-      { name: 'Jun', value: 77 },
-      { name: 'Jul', value: 84 },
+      { name: 'İyun', value: 77 },
+      { name: 'İyul', value: 84 },
     ]
   },
   sectoradmin: {
@@ -65,17 +66,17 @@ const mockData = {
     approvedSchools: 14,
     rejectedSchools: 2,
     notifications: [
-      { id: 1, type: 'formApproved', title: 'Form Approved', message: 'School 12 form has been approved', time: '1 hour ago' },
-      { id: 2, type: 'dueDateReminder', title: 'Due Date Reminder', message: 'Teacher qualifications data due tomorrow', time: '3 hours ago' },
+      { id: 1, type: 'formApproved', title: 'Form Təsdiqləndi', message: '12 saylı məktəbin formu təsdiqləndi', time: '1 saat əvvəl' },
+      { id: 2, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Müəllim kvalifikasiya məlumatları sabah təqdim edilməlidir', time: '3 saat əvvəl' },
     ],
     activityData: [
-      { name: 'Jan', value: 35 },
-      { name: 'Feb', value: 48 },
+      { name: 'Yan', value: 35 },
+      { name: 'Fev', value: 48 },
       { name: 'Mar', value: 37 },
       { name: 'Apr', value: 69 },
       { name: 'May', value: 72 },
-      { name: 'Jun', value: 67 },
-      { name: 'Jul', value: 74 },
+      { name: 'İyun', value: 67 },
+      { name: 'İyul', value: 74 },
     ]
   },
   schooladmin: {
@@ -88,8 +89,8 @@ const mockData = {
     },
     completionRate: 85,
     notifications: [
-      { id: 1, type: 'formRejected', title: 'Form Rejected', message: 'Infrastructure form requires corrections', time: '45 min ago' },
-      { id: 2, type: 'dueDateReminder', title: 'Due Date Reminder', message: 'Student attendance data due in 2 days', time: '4 hours ago' },
+      { id: 1, type: 'formRejected', title: 'Form Rədd Edildi', message: 'İnfrastruktur formu düzəlişlər tələb edir', time: '45 dəq əvvəl' },
+      { id: 2, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Şagird davamiyyət məlumatları 2 gün ərzində təqdim edilməlidir', time: '4 saat əvvəl' },
     ]
   }
 };
@@ -115,8 +116,9 @@ const Dashboard = () => {
   const renderDashboardContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">{t('loadingDashboard')}</p>
         </div>
       );
     }
@@ -139,7 +141,7 @@ const Dashboard = () => {
   
   return (
     <SidebarLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 container mx-auto px-4 py-4">
         <DashboardHeader />
         {renderDashboardContent()}
       </div>
