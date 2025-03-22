@@ -161,14 +161,14 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
         
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select
-            value={filter.role || ''}
-            onValueChange={(value) => setFilter({ ...filter, role: value ? value as Role : undefined })}
+            value={filter.role || "all"}
+            onValueChange={(value) => setFilter({ ...filter, role: value !== "all" ? value as Role : undefined })}
           >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder={t('selectRole')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allRoles')}</SelectItem>
+              <SelectItem value="all">{t('allRoles')}</SelectItem>
               <SelectItem value="superadmin">{t('superadmin')}</SelectItem>
               <SelectItem value="regionadmin">{t('regionadmin')}</SelectItem>
               <SelectItem value="sectoradmin">{t('sectoradmin')}</SelectItem>
@@ -177,14 +177,14 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           </Select>
           
           <Select
-            value={filter.status || ''}
-            onValueChange={(value) => setFilter({ ...filter, status: value ? value as 'active' | 'inactive' | 'blocked' : undefined })}
+            value={filter.status || "all"}
+            onValueChange={(value) => setFilter({ ...filter, status: value !== "all" ? value as 'active' | 'inactive' | 'blocked' : undefined })}
           >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder={t('selectStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allStatuses')}</SelectItem>
+              <SelectItem value="all">{t('allStatuses')}</SelectItem>
               <SelectItem value="active">{t('active')}</SelectItem>
               <SelectItem value="inactive">{t('inactive')}</SelectItem>
               <SelectItem value="blocked">{t('blocked')}</SelectItem>
