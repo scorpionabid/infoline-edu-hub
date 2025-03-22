@@ -83,9 +83,15 @@ const AccountSettings: React.FC = () => {
     if (user) {
       updateUser({
         ...user,
-        language: data.language,
+        // language property User tipində mövcud olmadığı üçün bunu çıxarırıq
+        // language: data.language, 
         twoFactorEnabled: data.twoFactorEnabled,
         notificationSettings: data.notificationSettings
+      });
+      
+      // Dil dəyişikliyini bildirmək üçün məlumat göstəririk
+      toast.success(t('languageChanged'), {
+        description: t('appRestartRequired')
       });
     }
     

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
@@ -41,7 +40,7 @@ const UserHeader = () => {
     // Export əməliyyatını simulyasiya et
     setTimeout(() => {
       setLoading(prev => ({ ...prev, export: false }));
-      toast.success(t('usersExported'), {
+      toast.success(t('usersExported'), { 
         description: t('usersExportedFormat', { format: format.toUpperCase() })
       });
     }, 1500);
