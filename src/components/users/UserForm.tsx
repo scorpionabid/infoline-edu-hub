@@ -2,14 +2,19 @@
 import React from 'react';
 import { UserFormData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { Role, useRole } from '@/context/AuthContext';
-import { Switch } from '@/components/ui/switch';
+
+// Import form sections
+import BasicInfoSection from './UserFormSections/BasicInfoSection';
+import RegionSection from './UserFormSections/RegionSection';
+import SectorSection from './UserFormSections/SectorSection';
+import SchoolSection from './UserFormSections/SchoolSection';
+import LanguageSection from './UserFormSections/LanguageSection';
+import NotificationSection from './UserFormSections/NotificationSection';
 
 interface UserFormProps {
   data: UserFormData;
@@ -156,349 +161,53 @@ const UserForm: React.FC<UserFormProps> = ({
   return (
     <Form {...form}>
       <div className="py-4 space-y-6">
+        <BasicInfoSection 
+          form={form}
+          data={data}
+          onFormChange={onFormChange}
+          availableRoles={availableRoles}
+          isEdit={isEdit}
+          passwordRequired={passwordRequired}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('name')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={data.name}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      onFormChange('name', e.target.value);
-                    }}
-                    placeholder={t('enterName')}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <RegionSection 
+            form={form}
+            data={data}
+            onFormChange={onFormChange}
+            isSuperAdmin={isSuperAdmin}
+            currentUserRole={currentUserRole}
+            regions={regions}
           />
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('email')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={data.email}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      onFormChange('email', e.target.value);
-                    }}
-                    placeholder={t('enterEmail')}
-                    type="email"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <SectorSection 
+            form={form}
+            data={data}
+            onFormChange={onFormChange}
+            isSuperAdmin={isSuperAdmin}
+            currentUserRole={currentUserRole}
+            filteredSectors={filteredSectors}
           />
 
-          {(!isEdit || passwordRequired) && (
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('password')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={data.password || ''}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        onFormChange('password', e.target.value);
-                      }}
-                      placeholder={t('enterPassword')}
-                      type="password"
-                    />
-                  </FormControl>
-                  {passwordRequired && (
-                    <FormDescription>{t('passwordRequirements')}</FormDescription>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('status')}</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    onFormChange('status', value);
-                  }}
-                  value={data.status}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectStatus')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="active">{t('active')}</SelectItem>
-                    <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                    <SelectItem value="blocked">{t('blocked')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
+          <SchoolSection 
+            form={form}
+            data={data}
+            onFormChange={onFormChange}
+            filteredSchools={filteredSchools}
           />
 
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('role')}</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    onFormChange('role', value as Role);
-                  }}
-                  value={data.role}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectRole')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {availableRoles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {t(role)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-
-          {/* Region field (for superadmin only) */}
-          {isSuperAdmin && (data.role === 'regionadmin' || data.role === 'sectoradmin' || data.role === 'schooladmin') && (
-            <FormField
-              control={form.control}
-              name="regionId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('region')}</FormLabel>
-                  <Select
-                    value={data.regionId || "none"}
-                    onValueChange={(value) => {
-                      field.onChange(value === "none" ? undefined : value);
-                      onFormChange('regionId', value === "none" ? undefined : value);
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectRegion')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">{t('selectRegion')}</SelectItem>
-                      {regions.map((region) => (
-                        <SelectItem key={region.id} value={region.id}>
-                          {region.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Sector field (for superadmin and regionadmin) */}
-          {((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
-           (data.role === 'sectoradmin' || data.role === 'schooladmin') && (
-            <FormField
-              control={form.control}
-              name="sectorId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('sector')}</FormLabel>
-                  <Select
-                    value={data.sectorId || "none"}
-                    onValueChange={(value) => {
-                      field.onChange(value === "none" ? undefined : value);
-                      onFormChange('sectorId', value === "none" ? undefined : value);
-                    }}
-                    disabled={filteredSectors.length === 0}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectSector')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">{t('selectSector')}</SelectItem>
-                      {filteredSectors.map((sector) => (
-                        <SelectItem key={sector.id} value={sector.id}>
-                          {sector.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* School field (for superadmin, regionadmin, and sectoradmin) */}
-          {data.role === 'schooladmin' && data.sectorId && (
-            <FormField
-              control={form.control}
-              name="schoolId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('school')}</FormLabel>
-                  <Select
-                    value={data.schoolId || "none"}
-                    onValueChange={(value) => {
-                      field.onChange(value === "none" ? undefined : value);
-                      onFormChange('schoolId', value === "none" ? undefined : value);
-                    }}
-                    disabled={filteredSchools.length === 0}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectSchool')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">{t('selectSchool')}</SelectItem>
-                      {filteredSchools.map((school) => (
-                        <SelectItem key={school.id} value={school.id}>
-                          {school.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          )}
-
-          <FormField
-            control={form.control}
-            name="language"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('language')}</FormLabel>
-                <Select
-                  value={data.language || "none"}
-                  onValueChange={(value) => {
-                    field.onChange(value === "none" ? undefined : value);
-                    onFormChange('language', value === "none" ? undefined : value);
-                  }}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectLanguage')} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="none">{t('selectLanguage')}</SelectItem>
-                    <SelectItem value="az">{t('azerbaijani')}</SelectItem>
-                    <SelectItem value="en">{t('english')}</SelectItem>
-                    <SelectItem value="ru">{t('russian')}</SelectItem>
-                    <SelectItem value="tr">{t('turkish')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
+          <LanguageSection 
+            form={form}
+            data={data}
+            onFormChange={onFormChange}
           />
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">{t('additionalSettings')}</h3>
-
-          <FormField
-            control={form.control}
-            name="twoFactorEnabled"
-            render={({ field }) => (
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('twoFactorAuth')}</FormLabel>
-                  <FormDescription>{t('twoFactorAuthDesc')}</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value || false}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked);
-                      onFormChange('twoFactorEnabled', checked);
-                    }}
-                  />
-                </FormControl>
-              </div>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="notificationSettings.email"
-            render={({ field }) => (
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('emailNotifications')}</FormLabel>
-                  <FormDescription>{t('emailNotificationsDesc')}</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value || false}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked);
-                      onFormChange('notificationSettings', {
-                        ...data.notificationSettings,
-                        email: checked,
-                      });
-                    }}
-                  />
-                </FormControl>
-              </div>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="notificationSettings.system"
-            render={({ field }) => (
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <FormLabel>{t('systemNotifications')}</FormLabel>
-                  <FormDescription>{t('systemNotificationsDesc')}</FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value || false}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked);
-                      onFormChange('notificationSettings', {
-                        ...data.notificationSettings,
-                        system: checked,
-                      });
-                    }}
-                  />
-                </FormControl>
-              </div>
-            )}
-          />
-        </div>
+        <NotificationSection 
+          form={form}
+          data={data}
+          onFormChange={onFormChange}
+        />
       </div>
     </Form>
   );
