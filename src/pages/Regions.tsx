@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, Role } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,7 +42,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Globe
+  Globe,
+  User
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -56,8 +57,16 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
+import { UserFormData } from '@/types/user';
+import { mockUsers } from '@/data/mockUsers';
 
-// Saxta regionlar məlumatı
+// Saxta regionlar məlumatı ilə admini əlavə edək
 const mockRegions = [
   { 
     id: '1', 
@@ -67,7 +76,9 @@ const mockRegions = [
     schoolCount: 293,
     status: 'active',
     createdAt: '2023-01-10',
-    completionRate: 87
+    completionRate: 87,
+    adminId: 'user-1',
+    adminEmail: 'baki.admin@infoline.edu'
   },
   { 
     id: '2', 
@@ -77,7 +88,9 @@ const mockRegions = [
     schoolCount: 78,
     status: 'active',
     createdAt: '2023-01-11',
-    completionRate: 75
+    completionRate: 75,
+    adminId: 'user-2',
+    adminEmail: 'gence.admin@infoline.edu'
   },
   { 
     id: '3', 
@@ -87,7 +100,9 @@ const mockRegions = [
     schoolCount: 56,
     status: 'active',
     createdAt: '2023-01-12',
-    completionRate: 90
+    completionRate: 90,
+    adminId: 'user-3',
+    adminEmail: 'sumqayit.admin@infoline.edu'
   },
   { 
     id: '4', 
@@ -97,7 +112,9 @@ const mockRegions = [
     schoolCount: 29,
     status: 'active',
     createdAt: '2023-01-13',
-    completionRate: 65
+    completionRate: 65,
+    adminId: 'user-4',
+    adminEmail: 'mingecevir.admin@infoline.edu'
   },
   { 
     id: '5', 
@@ -107,7 +124,9 @@ const mockRegions = [
     schoolCount: 34,
     status: 'active',
     createdAt: '2023-01-14',
-    completionRate: 72
+    completionRate: 72,
+    adminId: 'user-5',
+    adminEmail: 'seki.admin@infoline.edu'
   },
   { 
     id: '6', 
@@ -117,7 +136,9 @@ const mockRegions = [
     schoolCount: 43,
     status: 'active',
     createdAt: '2023-01-15',
-    completionRate: 84
+    completionRate: 84,
+    adminId: 'user-6',
+    adminEmail: 'lenkeran.admin@infoline.edu'
   },
   { 
     id: '7', 
@@ -127,7 +148,9 @@ const mockRegions = [
     schoolCount: 21,
     status: 'inactive',
     createdAt: '2023-01-16',
-    completionRate: 38
+    completionRate: 38,
+    adminId: 'user-7',
+    adminEmail: 'sirvan.admin@infoline.edu'
   },
   { 
     id: '8', 
@@ -137,7 +160,9 @@ const mockRegions = [
     schoolCount: 67,
     status: 'active',
     createdAt: '2023-01-17',
-    completionRate: 81
+    completionRate: 81,
+    adminId: 'user-8',
+    adminEmail: 'naxcivan.admin@infoline.edu'
   },
 ];
 
@@ -151,16 +176,31 @@ const Regions = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
-  // Form daxiletmə vəziyyəti
-  const [formData, setFormData] = useState({
+  // Region əlavə etmə formu
+  const [regionFormData, setRegionFormData] = useState({
     name: '',
     description: '',
     status: 'active'
+  });
+  
+  // Admin əlavə etmə formu
+  const [adminFormData, setAdminFormData] = useState<UserFormData>({
+    name: '',
+    email: '',
+    password: '',
+    role: 'regionadmin' as Role,
+    status: 'active',
+    notificationSettings: {
+      email: true,
+      system: true
+    }
   });
   
   // Axtarışı həndlə etmək
@@ -172,7 +212,8 @@ const Regions = () => {
   // Axtarış terminə görə regionların filtirlənməsi
   const filteredRegions = regions.filter(region =>
     region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    region.description.toLowerCase().includes(searchTerm.toLowerCase())
+    region.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    region.adminEmail.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   // Sıralamaq üçün
@@ -216,34 +257,101 @@ const Regions = () => {
   
   // Region əlavə etmək
   const handleAddDialogOpen = () => {
-    setFormData({
+    setRegionFormData({
       name: '',
       description: '',
       status: 'active'
     });
+    
+    setAdminFormData({
+      name: '',
+      email: '',
+      password: '',
+      role: 'regionadmin' as Role,
+      status: 'active',
+      notificationSettings: {
+        email: true,
+        system: true
+      }
+    });
+    
     setIsAddDialogOpen(true);
   };
   
-  // Region əlavə etmək formu
+  // Admin məlumatlarına baxmaq
+  const handleViewAdmin = (region) => {
+    setSelectedRegion(region);
+    // Burada admin məlumatlarını API-dən alardıq, amma mock data istifadə edirik
+    const admin = mockUsers.find(user => user.id === region.adminId);
+    setSelectedAdmin(admin || { 
+      id: region.adminId, 
+      name: 'Admin', 
+      email: region.adminEmail,
+      role: 'regionadmin' as Role,
+      status: 'active'
+    });
+    setIsUserDialogOpen(true);
+  };
+  
+  // Region form dəyişikliyini idarə etmək
+  const handleRegionFormChange = (e) => {
+    const { name, value } = e.target;
+    setRegionFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Region adı dəyişdikdə, admin email təklifi yarat
+    if (name === 'name' && value) {
+      const suggestedEmail = `${value.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
+      setAdminFormData(prev => ({ 
+        ...prev, 
+        email: suggestedEmail,
+        name: `${value} Admin`
+      }));
+    }
+  };
+  
+  // Admin form dəyişikliyini idarə etmək
+  const handleAdminFormChange = (data: UserFormData) => {
+    setAdminFormData(data);
+  };
+  
+  // Region və admin yaratma
   const handleAddSubmit = () => {
+    // Yeni region yaradaq
+    const newRegionId = (regions.length + 1).toString();
+    const newAdminId = `user-${Date.now()}`;
+    
     const newRegion = {
-      id: (regions.length + 1).toString(),
-      ...formData,
+      id: newRegionId,
+      ...regionFormData,
       sectorCount: 0,
       schoolCount: 0,
       createdAt: new Date().toISOString().split('T')[0],
-      completionRate: 0
+      completionRate: 0,
+      adminId: newAdminId,
+      adminEmail: adminFormData.email
     };
     
+    // Yeni admin əlavə edək
+    const newAdmin = {
+      ...adminFormData,
+      id: newAdminId,
+      regionId: newRegionId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Mock data-ya əlavə edək
     setRegions([...regions, newRegion]);
+    mockUsers.push(newAdmin);
+    
     setIsAddDialogOpen(false);
-    toast.success('Region uğurla əlavə edildi');
+    toast.success('Region və admin uğurla əlavə edildi');
   };
   
   // Region redaktə dialoqu açmaq
   const handleEditDialogOpen = (region) => {
     setSelectedRegion(region);
-    setFormData({
+    setRegionFormData({
       name: region.name,
       description: region.description,
       status: region.status
@@ -251,16 +359,10 @@ const Regions = () => {
     setIsEditDialogOpen(true);
   };
   
-  // Form dəyişikliyini idarə etmək
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
   // Redaktə formunu təqdim etmək
   const handleEditSubmit = () => {
     const updatedRegions = regions.map(region => 
-      region.id === selectedRegion.id ? { ...region, ...formData } : region
+      region.id === selectedRegion.id ? { ...region, ...regionFormData } : region
     );
     setRegions(updatedRegions);
     setIsEditDialogOpen(false);
@@ -299,6 +401,12 @@ const Regions = () => {
     } else {
       return <div className="flex items-center"><XCircle className="h-4 w-4 text-red-500 mr-1" /> Deaktiv</div>;
     }
+  };
+  
+  // Admin parolunu sıfırlamaq
+  const handleResetPassword = () => {
+    toast.success(`${selectedAdmin.email} üçün parol sıfırlama linki göndərildi`);
+    setIsUserDialogOpen(false);
   };
   
   return (
@@ -344,6 +452,7 @@ const Regions = () => {
                     </TableHead>
                     <TableHead className="hidden md:table-cell">Sektorlar</TableHead>
                     <TableHead className="hidden md:table-cell">Məktəblər</TableHead>
+                    <TableHead className="hidden md:table-cell">Admin</TableHead>
                     <TableHead className="hidden md:table-cell">Tamamlanma</TableHead>
                     <TableHead className="hidden md:table-cell">Status</TableHead>
                     <TableHead className="text-right">Əməliyyatlar</TableHead>
@@ -366,6 +475,16 @@ const Regions = () => {
                             <School className="h-4 w-4 text-muted-foreground" />
                             {region.schoolCount}
                           </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Button 
+                            variant="link" 
+                            className="p-0 h-auto text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                            onClick={() => handleViewAdmin(region)}
+                          >
+                            <User className="h-4 w-4" />
+                            {region.adminEmail}
+                          </Button>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {renderCompletionRateBadge(region.completionRate)}
@@ -404,7 +523,7 @@ const Regions = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center h-24">
+                      <TableCell colSpan={8} className="text-center h-24">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <Map className="h-8 w-8 mb-2" />
                           <p>Region tapılmadı</p>
@@ -463,44 +582,107 @@ const Regions = () => {
             <DialogTitle>Region əlavə et</DialogTitle>
             <DialogDescription>Yeni region əlavə etmək üçün məlumatları daxil edin.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="add-name">Ad</Label>
-              <Input
-                id="add-name"
-                name="name"
-                value={formData.name}
-                onChange={handleFormChange}
-                placeholder="Region adı"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="add-description">Təsvir</Label>
-              <Input
-                id="add-description"
-                name="description"
-                value={formData.description}
-                onChange={handleFormChange}
-                placeholder="Region haqqında qısa məlumat"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="add-status">Status</Label>
-              <select
-                id="add-status"
-                name="status"
-                value={formData.status}
-                onChange={handleFormChange}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="active">Aktiv</option>
-                <option value="inactive">Deaktiv</option>
-              </select>
-            </div>
-          </div>
+          
+          <Accordion type="single" collapsible defaultValue="region" className="w-full">
+            <AccordionItem value="region">
+              <AccordionTrigger className="text-lg font-medium">
+                Region məlumatları
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="add-name">Ad</Label>
+                    <Input
+                      id="add-name"
+                      name="name"
+                      value={regionFormData.name}
+                      onChange={handleRegionFormChange}
+                      placeholder="Region adı"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="add-description">Təsvir</Label>
+                    <Input
+                      id="add-description"
+                      name="description"
+                      value={regionFormData.description}
+                      onChange={handleRegionFormChange}
+                      placeholder="Region haqqında qısa məlumat"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="add-status">Status</Label>
+                    <select
+                      id="add-status"
+                      name="status"
+                      value={regionFormData.status}
+                      onChange={handleRegionFormChange}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="active">Aktiv</option>
+                      <option value="inactive">Deaktiv</option>
+                    </select>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="admin">
+              <AccordionTrigger className="text-lg font-medium">
+                Admin məlumatları
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-name">Admin adı</Label>
+                    <Input
+                      id="admin-name"
+                      name="name"
+                      value={adminFormData.name}
+                      onChange={(e) => setAdminFormData({...adminFormData, name: e.target.value})}
+                      placeholder="Admin adı və soyadı"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">Email</Label>
+                    <Input
+                      id="admin-email"
+                      name="email"
+                      type="email"
+                      value={adminFormData.email}
+                      onChange={(e) => setAdminFormData({...adminFormData, email: e.target.value})}
+                      placeholder="admin@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Şifrə</Label>
+                    <Input
+                      id="admin-password"
+                      name="password"
+                      type="password"
+                      value={adminFormData.password}
+                      onChange={(e) => setAdminFormData({...adminFormData, password: e.target.value})}
+                      placeholder="Şifrə (minimum 6 simvol)"
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Ləğv et</Button>
-            <Button onClick={handleAddSubmit}>Əlavə et</Button>
+            <Button onClick={handleAddSubmit} 
+              disabled={
+                !regionFormData.name || 
+                !adminFormData.name || 
+                !adminFormData.email || 
+                !adminFormData.password || 
+                adminFormData.password.length < 6
+              }
+            >
+              Əlavə et
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -518,8 +700,8 @@ const Regions = () => {
               <Input
                 id="edit-name"
                 name="name"
-                value={formData.name}
-                onChange={handleFormChange}
+                value={regionFormData.name}
+                onChange={handleRegionFormChange}
               />
             </div>
             <div className="space-y-2">
@@ -527,8 +709,8 @@ const Regions = () => {
               <Input
                 id="edit-description"
                 name="description"
-                value={formData.description}
-                onChange={handleFormChange}
+                value={regionFormData.description}
+                onChange={handleRegionFormChange}
               />
             </div>
             <div className="space-y-2">
@@ -536,8 +718,8 @@ const Regions = () => {
               <select
                 id="edit-status"
                 name="status"
-                value={formData.status}
-                onChange={handleFormChange}
+                value={regionFormData.status}
+                onChange={handleRegionFormChange}
                 className="w-full p-2 border rounded-md"
               >
                 <option value="active">Aktiv</option>
@@ -571,9 +753,46 @@ const Regions = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Admin məlumatları dialoqu */}
+      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Admin məlumatları</DialogTitle>
+            <DialogDescription>
+              {selectedRegion?.name} regionunun admininə aid məlumatlar
+            </DialogDescription>
+          </DialogHeader>
+          {selectedAdmin && (
+            <div className="space-y-4 py-4">
+              <div className="flex flex-col space-y-1">
+                <Label className="text-sm text-muted-foreground">Ad</Label>
+                <p className="font-medium">{selectedAdmin.name}</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Label className="text-sm text-muted-foreground">Email</Label>
+                <p className="font-medium">{selectedAdmin.email}</p>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Label className="text-sm text-muted-foreground">Rol</Label>
+                <Badge variant="secondary" className="w-fit">Region admin</Badge>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Label className="text-sm text-muted-foreground">Status</Label>
+                <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                  {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
+            <Button onClick={handleResetPassword}>Parolu sıfırla</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarLayout>
   );
 };
 
 export default Regions;
-
