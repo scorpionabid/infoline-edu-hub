@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
@@ -6,10 +5,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Bell, School, FileBarChart, CheckCircle, AlertCircle, Clock, Users, Map, Globe } from 'lucide-react';
+import { Bell, School, FileBarChart, CheckCircle, AlertCircle, Clock, Users, Map, Globe, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-// Mock data for different dashboard types
 const mockData = {
   superadmin: {
     regions: 15,
@@ -71,7 +69,6 @@ const Dashboard = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Role-specific dashboard content
   const renderDashboardContent = () => {
     if (!user) return null;
     
@@ -89,13 +86,11 @@ const Dashboard = () => {
     }
   };
   
-  // Super Admin Dashboard
   const renderSuperAdminDashboard = () => {
     const data = mockData.superadmin;
     
     return (
       <div className="space-y-6">
-        {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard 
             title={t('totalRegions')}
@@ -123,7 +118,6 @@ const Dashboard = () => {
           />
         </div>
         
-        {/* Completion and Approvals */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -188,7 +182,6 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        {/* Notifications */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">{t('latestNotifications')}</CardTitle>
@@ -206,13 +199,11 @@ const Dashboard = () => {
     );
   };
   
-  // Region Admin Dashboard
   const renderRegionAdminDashboard = () => {
     const data = mockData.regionadmin;
     
     return (
       <div className="space-y-6">
-        {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard 
             title={t('sectors')}
@@ -234,7 +225,6 @@ const Dashboard = () => {
           />
         </div>
         
-        {/* Completion and Approvals */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -299,7 +289,6 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        {/* School Status */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard 
             title={t('pendingSchools')}
@@ -321,7 +310,6 @@ const Dashboard = () => {
           />
         </div>
         
-        {/* Notifications */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">{t('latestNotifications')}</CardTitle>
@@ -339,13 +327,11 @@ const Dashboard = () => {
     );
   };
   
-  // Sector Admin Dashboard
   const renderSectorAdminDashboard = () => {
     const data = mockData.sectoradmin;
     
     return (
       <div className="space-y-6">
-        {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard 
             title={t('schools')}
@@ -367,7 +353,6 @@ const Dashboard = () => {
           />
         </div>
         
-        {/* School Status */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard 
             title={t('pendingSchools')}
@@ -389,7 +374,6 @@ const Dashboard = () => {
           />
         </div>
         
-        {/* Notifications */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">{t('latestNotifications')}</CardTitle>
@@ -407,13 +391,11 @@ const Dashboard = () => {
     );
   };
   
-  // School Admin Dashboard
   const renderSchoolAdminDashboard = () => {
     const data = mockData.schooladmin;
     
     return (
       <div className="space-y-6">
-        {/* Form Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
           <StatsCard 
             title={t('pendingForms')}
@@ -447,7 +429,6 @@ const Dashboard = () => {
           />
         </div>
         
-        {/* Completion Rate */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">{t('completionRate')}</CardTitle>
@@ -476,7 +457,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Notifications */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">{t('latestNotifications')}</CardTitle>
@@ -494,7 +474,6 @@ const Dashboard = () => {
     );
   };
   
-  // Stats Card Component
   const StatsCard = ({ title, value, icon, color }) => {
     const colorClasses = {
       blue: 'bg-blue-50 dark:bg-blue-900/20',
@@ -526,14 +505,13 @@ const Dashboard = () => {
     );
   };
   
-  // Notification Item Component
   const NotificationItem = ({ notification }) => {
     const { type, title, message, time } = notification;
     
     const getIcon = () => {
       switch(type) {
         case 'newCategory':
-          return <Layers className="h-5 w-5 text-blue-500" />;
+          return <FileText className="h-5 w-5 text-blue-500" />;
         case 'formApproved':
           return <CheckCircle className="h-5 w-5 text-green-500" />;
         case 'formRejected':
@@ -559,7 +537,6 @@ const Dashboard = () => {
     );
   };
   
-  // Render the dashboard
   return (
     <SidebarLayout>
       <div className="space-y-8">
