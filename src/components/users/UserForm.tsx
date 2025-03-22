@@ -245,8 +245,8 @@ const UserForm: React.FC<UserFormProps> = ({
           <FormItem>
             <FormLabel>{t('region')}</FormLabel>
             <Select
-              value={data.regionId || ''}
-              onValueChange={(value) => onFormChange('regionId', value || undefined)}
+              value={data.regionId || "none"}
+              onValueChange={(value) => onFormChange('regionId', value === "none" ? undefined : value)}
             >
               <FormControl>
                 <SelectTrigger>
@@ -254,6 +254,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">{t('selectRegion')}</SelectItem>
                 {regions.map((region) => (
                   <SelectItem key={region.id} value={region.id}>
                     {region.name}
@@ -270,8 +271,8 @@ const UserForm: React.FC<UserFormProps> = ({
           <FormItem>
             <FormLabel>{t('sector')}</FormLabel>
             <Select
-              value={data.sectorId || ''}
-              onValueChange={(value) => onFormChange('sectorId', value || undefined)}
+              value={data.sectorId || "none"}
+              onValueChange={(value) => onFormChange('sectorId', value === "none" ? undefined : value)}
               disabled={filteredSectors.length === 0}
             >
               <FormControl>
@@ -280,6 +281,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">{t('selectSector')}</SelectItem>
                 {filteredSectors.map((sector) => (
                   <SelectItem key={sector.id} value={sector.id}>
                     {sector.name}
@@ -295,8 +297,8 @@ const UserForm: React.FC<UserFormProps> = ({
           <FormItem>
             <FormLabel>{t('school')}</FormLabel>
             <Select
-              value={data.schoolId || ''}
-              onValueChange={(value) => onFormChange('schoolId', value || undefined)}
+              value={data.schoolId || "none"}
+              onValueChange={(value) => onFormChange('schoolId', value === "none" ? undefined : value)}
               disabled={filteredSchools.length === 0}
             >
               <FormControl>
@@ -305,6 +307,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">{t('selectSchool')}</SelectItem>
                 {filteredSchools.map((school) => (
                   <SelectItem key={school.id} value={school.id}>
                     {school.name}
@@ -318,8 +321,8 @@ const UserForm: React.FC<UserFormProps> = ({
         <FormItem>
           <FormLabel>{t('language')}</FormLabel>
           <Select
-            value={data.language || ''}
-            onValueChange={(value) => onFormChange('language', value || undefined)}
+            value={data.language || "none"}
+            onValueChange={(value) => onFormChange('language', value === "none" ? undefined : value)}
           >
             <FormControl>
               <SelectTrigger>
@@ -327,6 +330,7 @@ const UserForm: React.FC<UserFormProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
+              <SelectItem value="none">{t('selectLanguage')}</SelectItem>
               <SelectItem value="az">{t('azerbaijani')}</SelectItem>
               <SelectItem value="en">{t('english')}</SelectItem>
               <SelectItem value="ru">{t('russian')}</SelectItem>
