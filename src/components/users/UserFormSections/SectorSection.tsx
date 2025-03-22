@@ -13,6 +13,7 @@ interface SectorSectionProps {
   isSuperAdmin: boolean;
   currentUserRole?: Role;
   filteredSectors: { id: string; name: string }[];
+  hideSection?: boolean;
 }
 
 const SectorSection: React.FC<SectorSectionProps> = ({
@@ -22,10 +23,11 @@ const SectorSection: React.FC<SectorSectionProps> = ({
   isSuperAdmin,
   currentUserRole,
   filteredSectors,
+  hideSection = false,
 }) => {
   const { t } = useLanguage();
 
-  if (!(((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
+  if (hideSection || !(((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
        (data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
     return null;
   }

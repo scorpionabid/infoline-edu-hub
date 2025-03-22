@@ -14,18 +14,31 @@ import { mockUsers } from '@/data/mockUsers';
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  entityType?: 'region' | 'sector' | 'school';
 }
 
-const AddUserDialog: React.FC<AddUserDialogProps> = ({ open, onOpenChange }) => {
+const AddUserDialog: React.FC<AddUserDialogProps> = ({ 
+  open, 
+  onOpenChange, 
+  entityType 
+}) => {
   const { t } = useLanguage();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  
+  // Set appropriate initial role based on entity type
+  const getInitialRole = (): Role => {
+    if (entityType === 'region') return 'regionadmin';
+    if (entityType === 'sector') return 'sectoradmin';
+    if (entityType === 'school') return 'schooladmin';
+    return 'schooladmin';
+  };
   
   const initialFormData: UserFormData = {
     name: '',
     email: '',
     password: '',
-    role: 'schooladmin',
+    role: getInitialRole(),
     status: 'active',
     regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     notificationSettings: {
@@ -35,6 +48,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ open, onOpenChange }) => 
   };
   
   const [formData, setFormData] = React.useState<UserFormData>(initialFormData);
+  
+  React.useEffect(() => {
+    // Reset form data when dialog opens
+    if (open) {
+      setFormData(initialFormData);
+    }
+  }, [open, entityType]);
   
   const handleSubmit = () => {
     setLoading(true);
@@ -63,12 +83,26 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ open, onOpenChange }) => 
     }, 1000);
   };
   
+  const getDialogTitle = () => {
+    if (entityType === 'region') return t('addNewRegionWithAdmin');
+    if (entityType === 'sector') return t('addNewSectorWithAdmin');
+    if (entityType === 'school') return t('addNewSchoolWithAdmin');
+    return t('addNewUser');
+  };
+  
+  const getDialogDescription = () => {
+    if (entityType === 'region') return t('addNewRegionWithAdminDesc');
+    if (entityType === 'sector') return t('addNewSectorWithAdminDesc');
+    if (entityType === 'school') return t('addNewSchoolWithAdminDesc');
+    return t('addNewUserDesc');
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{t('addNewUser')}</DialogTitle>
-          <DialogDescription>{t('addNewUserDesc')}</DialogDescription>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
+          <DialogDescription>{getDialogDescription()}</DialogDescription>
         </DialogHeader>
         
         <UserForm 
@@ -77,6 +111,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ open, onOpenChange }) => 
           currentUserRole={currentUser?.role}
           currentUserRegionId={currentUser?.regionId}
           passwordRequired
+          entityType={entityType}
         />
         
         <DialogFooter>

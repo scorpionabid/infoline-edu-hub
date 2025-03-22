@@ -13,6 +13,7 @@ interface RegionSectionProps {
   isSuperAdmin: boolean;
   currentUserRole?: Role;
   regions: { id: string; name: string }[];
+  hideSection?: boolean;
 }
 
 const RegionSection: React.FC<RegionSectionProps> = ({
@@ -22,10 +23,11 @@ const RegionSection: React.FC<RegionSectionProps> = ({
   isSuperAdmin,
   currentUserRole,
   regions,
+  hideSection = false,
 }) => {
   const { t } = useLanguage();
 
-  if (!(isSuperAdmin && (data.role === 'regionadmin' || data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
+  if (hideSection || !(isSuperAdmin && (data.role === 'regionadmin' || data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
     return null;
   }
 

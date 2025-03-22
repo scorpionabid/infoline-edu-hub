@@ -4,6 +4,7 @@ import { UserFormData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
 import { Form } from '@/components/ui/form';
 import { Role, useRole } from '@/context/AuthContext';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Import custom hook
 import { useUserForm } from '@/hooks/useUserForm';
@@ -26,6 +27,7 @@ interface UserFormProps {
   currentUserRegionId?: string;
   isEdit?: boolean;
   passwordRequired?: boolean;
+  entityType?: 'region' | 'sector' | 'school';
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -35,6 +37,7 @@ const UserForm: React.FC<UserFormProps> = ({
   currentUserRegionId,
   isEdit = false,
   passwordRequired = false,
+  entityType,
 }) => {
   const { t } = useLanguage();
   const isSuperAdmin = useRole('superadmin');
@@ -66,56 +69,156 @@ const UserForm: React.FC<UserFormProps> = ({
     return getFilteredSchools(data.sectorId);
   }, [data.sectorId]);
 
+  // If we're creating a specific entity-admin pair, automatically set the role
+  React.useEffect(() => {
+    if (entityType && !isEdit) {
+      let newRole: Role = 'schooladmin';
+      
+      if (entityType === 'region') {
+        newRole = 'regionadmin';
+      } else if (entityType === 'sector') {
+        newRole = 'sectoradmin';
+      }
+      
+      handleFieldChange('role', newRole);
+    }
+  }, [entityType, isEdit, handleFieldChange]);
+
+  // For entity-specific forms, determine which form sections to show
+  const showEntitySection = entityType && !isEdit;
+
   return (
     <Form {...form}>
       <div className="py-4 space-y-6">
-        <BasicInfoSection 
-          form={form}
-          data={data}
-          onFormChange={handleFieldChange}
-          availableRoles={availableRoles}
-          isEdit={isEdit}
-          passwordRequired={passwordRequired}
-        />
+        {showEntitySection ? (
+          <Accordion type="single" collapsible defaultValue="entity" className="w-full">
+            <AccordionItem value="entity">
+              <AccordionTrigger className="text-lg font-medium">
+                {entityType === 'region' ? t('regionDetails') : 
+                 entityType === 'sector' ? t('sectorDetails') : 
+                 t('schoolDetails')}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="py-4 space-y-4">
+                  {/* Entity-specific form fields would go here */}
+                  <p className="text-muted-foreground">{t('entityDetailsDescription')}</p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="admin">
+              <AccordionTrigger className="text-lg font-medium">
+                {t('adminDetails')}
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="py-4 space-y-4">
+                  <BasicInfoSection 
+                    form={form}
+                    data={data}
+                    onFormChange={handleFieldChange}
+                    availableRoles={availableRoles}
+                    isEdit={isEdit}
+                    passwordRequired={passwordRequired}
+                    hideRoleSelector={!!entityType}
+                  />
+                
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <RegionSection 
+                      form={form}
+                      data={data}
+                      onFormChange={handleFieldChange}
+                      isSuperAdmin={isSuperAdmin}
+                      currentUserRole={currentUserRole}
+                      regions={mockRegions}
+                      hideSection={entityType === 'region'}
+                    />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <RegionSection 
-            form={form}
-            data={data}
-            onFormChange={handleFieldChange}
-            isSuperAdmin={isSuperAdmin}
-            currentUserRole={currentUserRole}
-            regions={mockRegions}
-          />
+                    <SectorSection 
+                      form={form}
+                      data={data}
+                      onFormChange={handleFieldChange}
+                      isSuperAdmin={isSuperAdmin}
+                      currentUserRole={currentUserRole}
+                      filteredSectors={filteredSectors}
+                      hideSection={entityType === 'sector'}
+                    />
 
-          <SectorSection 
-            form={form}
-            data={data}
-            onFormChange={handleFieldChange}
-            isSuperAdmin={isSuperAdmin}
-            currentUserRole={currentUserRole}
-            filteredSectors={filteredSectors}
-          />
+                    <SchoolSection 
+                      form={form}
+                      data={data}
+                      onFormChange={handleFieldChange}
+                      filteredSchools={filteredSchools}
+                      hideSection={entityType === 'school'}
+                    />
 
-          <SchoolSection 
-            form={form}
-            data={data}
-            onFormChange={handleFieldChange}
-            filteredSchools={filteredSchools}
-          />
+                    <LanguageSection 
+                      form={form}
+                      data={data}
+                      onFormChange={handleFieldChange}
+                    />
+                  </div>
 
-          <LanguageSection 
-            form={form}
-            data={data}
-            onFormChange={handleFieldChange}
-          />
-        </div>
+                  <NotificationSection 
+                    form={form}
+                    data={data}
+                    onFormChange={handleFieldChange}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        ) : (
+          // Standard form layout for regular user creation/editing
+          <>
+            <BasicInfoSection 
+              form={form}
+              data={data}
+              onFormChange={handleFieldChange}
+              availableRoles={availableRoles}
+              isEdit={isEdit}
+              passwordRequired={passwordRequired}
+            />
 
-        <NotificationSection 
-          form={form}
-          data={data}
-          onFormChange={handleFieldChange}
-        />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <RegionSection 
+                form={form}
+                data={data}
+                onFormChange={handleFieldChange}
+                isSuperAdmin={isSuperAdmin}
+                currentUserRole={currentUserRole}
+                regions={mockRegions}
+              />
+
+              <SectorSection 
+                form={form}
+                data={data}
+                onFormChange={handleFieldChange}
+                isSuperAdmin={isSuperAdmin}
+                currentUserRole={currentUserRole}
+                filteredSectors={filteredSectors}
+              />
+
+              <SchoolSection 
+                form={form}
+                data={data}
+                onFormChange={handleFieldChange}
+                filteredSchools={filteredSchools}
+              />
+
+              <LanguageSection 
+                form={form}
+                data={data}
+                onFormChange={handleFieldChange}
+              />
+            </div>
+
+            <NotificationSection 
+              form={form}
+              data={data}
+              onFormChange={handleFieldChange}
+            />
+          </>
+        )}
       </div>
     </Form>
   );

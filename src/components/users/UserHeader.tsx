@@ -2,14 +2,15 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { UserPlus, Upload, Download, Filter } from 'lucide-react';
+import { UserPlus, Upload, Download, Filter, Building2, MapPin, School } from 'lucide-react';
 import { H1 } from '@/components/ui/typography';
 import AddUserDialog from './AddUserDialog';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { 
@@ -21,10 +22,15 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 
-const UserHeader = () => {
+interface UserHeaderProps {
+  entityTypes?: Array<'region' | 'sector' | 'school'>;
+}
+
+const UserHeader: React.FC<UserHeaderProps> = ({ entityTypes = [] }) => {
   const { t } = useLanguage();
   const [showAddDialog, setShowAddDialog] = React.useState(false);
   const [importDialogOpen, setImportDialogOpen] = React.useState(false);
+  const [selectedEntityType, setSelectedEntityType] = React.useState<'region' | 'sector' | 'school' | undefined>(undefined);
   const [loading, setLoading] = React.useState({
     import: false,
     export: false
@@ -51,6 +57,18 @@ const UserHeader = () => {
       setLoading(prev => ({ ...prev, export: false }));
       toast.success(t('usersExported'));
     }, 1500);
+  };
+
+  // Xüsusi tip istifadəçi əlavə etmək üçün
+  const handleAddEntityAdmin = (type: 'region' | 'sector' | 'school') => {
+    setSelectedEntityType(type);
+    setShowAddDialog(true);
+  };
+
+  // Sadəcə istifadəçi əlavə etmək üçün
+  const handleAddUser = () => {
+    setSelectedEntityType(undefined);
+    setShowAddDialog(true);
   };
 
   return (
@@ -90,18 +108,61 @@ const UserHeader = () => {
           {loading.import ? t('importing') : t('import')}
         </Button>
         
-        <Button 
-          onClick={() => setShowAddDialog(true)}
-          className="flex items-center gap-2"
-        >
-          <UserPlus className="size-4" />
-          <span>{t('addUser')}</span>
-        </Button>
+        {entityTypes.length > 0 ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t('addNew')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {entityTypes.includes('region') && (
+                <DropdownMenuItem onClick={() => handleAddEntityAdmin('region')}>
+                  <Building2 className="mr-2 h-4 w-4" />
+                  {t('addRegionWithAdmin')}
+                </DropdownMenuItem>
+              )}
+              
+              {entityTypes.includes('sector') && (
+                <DropdownMenuItem onClick={() => handleAddEntityAdmin('sector')}>
+                  <MapPin className="mr-2 h-4 w-4" />
+                  {t('addSectorWithAdmin')}
+                </DropdownMenuItem>
+              )}
+              
+              {entityTypes.includes('school') && (
+                <DropdownMenuItem onClick={() => handleAddEntityAdmin('school')}>
+                  <School className="mr-2 h-4 w-4" />
+                  {t('addSchoolWithAdmin')}
+                </DropdownMenuItem>
+              )}
+              
+              {entityTypes.length > 0 && (
+                <DropdownMenuSeparator />
+              )}
+              
+              <DropdownMenuItem onClick={handleAddUser}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t('addUser')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button 
+            onClick={handleAddUser}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="size-4" />
+            <span>{t('addUser')}</span>
+          </Button>
+        )}
       </div>
 
       <AddUserDialog 
         open={showAddDialog} 
-        onOpenChange={setShowAddDialog} 
+        onOpenChange={setShowAddDialog}
+        entityType={selectedEntityType}
       />
       
       {/* Import Dialog */}

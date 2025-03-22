@@ -10,6 +10,7 @@ interface SchoolSectionProps {
   data: UserFormData;
   onFormChange: (fieldName: string, value: any) => void;
   filteredSchools: { id: string; name: string }[];
+  hideSection?: boolean;
 }
 
 const SchoolSection: React.FC<SchoolSectionProps> = ({
@@ -17,10 +18,11 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
   data,
   onFormChange,
   filteredSchools,
+  hideSection = false,
 }) => {
   const { t } = useLanguage();
 
-  if (!(data.role === 'schooladmin' && data.sectorId)) {
+  if (hideSection || !(data.role === 'schooladmin' && data.sectorId)) {
     return null;
   }
 

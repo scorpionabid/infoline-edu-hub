@@ -27,7 +27,7 @@ const Users = () => {
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6 space-y-6">
-        <UserHeader />
+        <UserHeader entityTypes={['region', 'sector', 'school']} />
         <UserList currentUserRole={user?.role} currentUserRegionId={user?.regionId} />
       </div>
     </SidebarLayout>
