@@ -10,6 +10,10 @@ import ColumnList from "@/components/columns/ColumnList";
 import ColumnHeader from "@/components/columns/ColumnHeader";
 import AddColumnDialog from "@/components/columns/AddColumnDialog";
 import ImportColumnsDialog from "@/components/columns/ImportColumnsDialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Database, FileSpreadsheet, InfoIcon, LayoutGrid } from "lucide-react";
 
 // Fake API call to fetch categories
 const fetchCategories = async (): Promise<Category[]> => {
@@ -26,6 +30,8 @@ const fetchCategories = async (): Promise<Category[]> => {
       updatedAt: new Date("2023-02-10").toISOString(),
       status: "active",
       priority: 1,
+      description: "Məktəbin ümumi təsviri və əsas məlumatları",
+      columnCount: 3,
     },
     {
       id: "2",
@@ -35,6 +41,8 @@ const fetchCategories = async (): Promise<Category[]> => {
       updatedAt: new Date("2023-03-05").toISOString(),
       status: "active",
       priority: 2,
+      description: "Tədris planı və proqram məlumatları",
+      columnCount: 2,
     },
     {
       id: "3",
@@ -44,8 +52,32 @@ const fetchCategories = async (): Promise<Category[]> => {
       updatedAt: new Date("2023-02-20").toISOString(),
       status: "active",
       priority: 3,
+      description: "Məktəbin infrastruktur və texniki məlumatları",
+      columnCount: 3,
     },
   ];
+};
+
+// Fake API call to fetch column stats
+const fetchColumnStats = async () => {
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  
+  return {
+    totalColumns: 8,
+    requiredColumns: 6,
+    columnsPerType: {
+      text: 2,
+      number: 2,
+      date: 1,
+      select: 1,
+      checkbox: 1,
+      radio: 1,
+      file: 0,
+      image: 0,
+    },
+    completionRate: 75,
+  };
 };
 
 // Fake API call to fetch columns
@@ -153,6 +185,7 @@ const Columns = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [columnToEdit, setColumnToEdit] = useState<Column | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState("list");
 
   // Fetch categories data
   const {
@@ -174,6 +207,15 @@ const Columns = () => {
     queryFn: fetchColumns,
   });
 
+  // Fetch column stats
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+  } = useQuery({
+    queryKey: ["columnStats"],
+    queryFn: fetchColumnStats,
+  });
+
   // Filter columns based on search query and filters
   const filteredColumns = columns.filter((column) => {
     const matchesSearch = column.name
@@ -188,6 +230,21 @@ const Columns = () => {
 
     return matchesSearch && matchesCategory && matchesType && matchesStatus;
   });
+
+  // Group columns by category for grid view
+  const columnsByCategory = categories.map(category => {
+    const categoryColumns = columns.filter(column => 
+      column.categoryId === category.id && 
+      (statusFilter === "all" || column.status === statusFilter) &&
+      (typeFilter === "all" || column.type === typeFilter) &&
+      column.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    return {
+      ...category,
+      columns: categoryColumns,
+    };
+  }).filter(category => category.columns.length > 0);
 
   // Add/Edit column
   const handleAddOrEditColumn = async (columnData: Omit<Column, "id">) => {
@@ -309,6 +366,86 @@ const Columns = () => {
     }
   };
 
+  // Stats display component
+  const StatsDisplay = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center">
+            <div className="text-3xl font-bold">{isStatsLoading ? "..." : stats?.totalColumns}</div>
+            <p className="text-muted-foreground">{t("totalColumns")}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center">
+            <div className="text-3xl font-bold">{isStatsLoading ? "..." : stats?.requiredColumns}</div>
+            <p className="text-muted-foreground">{t("requiredColumns")}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center">
+            <div className="text-3xl font-bold">{categories.length}</div>
+            <p className="text-muted-foreground">{t("categories")}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="text-3xl font-bold">{isStatsLoading ? "..." : `${stats?.completionRate}%`}</div>
+            <Progress value={isStatsLoading ? 0 : stats?.completionRate} className="w-4/5" />
+            <p className="text-muted-foreground">{t("completionRate")}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // Grid view component
+  const GridView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {columnsByCategory.map((category) => (
+        <Card key={category.id}>
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-lg mb-4">{category.name}</h3>
+            <div className="space-y-3">
+              {category.columns.map((column) => (
+                <div 
+                  key={column.id} 
+                  className="flex items-center justify-between p-2 rounded-md hover:bg-muted cursor-pointer"
+                  onClick={() => handleEditColumn(column)}
+                >
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 rounded-full mr-2 ${column.isRequired ? 'bg-destructive' : 'bg-muted-foreground'}`} />
+                    <span>{column.name}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-secondary px-2 py-1 rounded-full">{t(column.type)}</span>
+                    {column.status === "inactive" && (
+                      <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">{t("inactive")}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+      
+      {columnsByCategory.length === 0 && (
+        <div className="col-span-full text-center py-12">
+          <InfoIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-medium">{t("noColumnsFound")}</h3>
+          <p className="text-muted-foreground">{t("adjustFiltersOrAddNew")}</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <SidebarLayout>
       <div className="space-y-6">
@@ -330,15 +467,34 @@ const Columns = () => {
           onImportColumns={() => setIsImportDialogOpen(true)}
         />
 
-        <ColumnList
-          columns={filteredColumns}
-          categories={categories}
-          isLoading={isColumnsLoading || isCategoriesLoading}
-          isError={isColumnsError}
-          onDeleteColumn={handleDeleteColumn}
-          onUpdateStatus={handleUpdateColumnStatus}
-          onEditColumn={handleEditColumn}
-        />
+        <StatsDisplay />
+
+        <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="list">
+              <Database className="h-4 w-4 mr-2" />
+              {t("listView")}
+            </TabsTrigger>
+            <TabsTrigger value="grid">
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              {t("gridView")}
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="list">
+            <ColumnList
+              columns={filteredColumns}
+              categories={categories}
+              isLoading={isColumnsLoading || isCategoriesLoading}
+              isError={isColumnsError}
+              onDeleteColumn={handleDeleteColumn}
+              onUpdateStatus={handleUpdateColumnStatus}
+              onEditColumn={handleEditColumn}
+            />
+          </TabsContent>
+          <TabsContent value="grid">
+            <GridView />
+          </TabsContent>
+        </Tabs>
 
         <AddColumnDialog
           isOpen={isAddDialogOpen}
