@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
@@ -14,7 +13,10 @@ import {
   UserCog,
   LogOut,
   Menu,
-  ChevronDown
+  ChevronDown,
+  MapPin,
+  Building,
+  FolderKanban
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,21 +53,15 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
       roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
     },
     {
-      name: t('dataEntry'),
-      path: '/data-entry',
-      icon: <FileInput className="h-5 w-5" />,
-      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
+      name: t('regions'),
+      path: '/regions',
+      icon: <MapPin className="h-5 w-5" />,
+      roles: ['superadmin']
     },
     {
-      name: t('reports'),
-      path: '/reports',
-      icon: <BarChart3 className="h-5 w-5" />,
-      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
-    },
-    {
-      name: t('users'),
-      path: '/users',
-      icon: <Users className="h-5 w-5" />,
+      name: t('sectors'),
+      path: '/sectors',
+      icon: <Building className="h-5 w-5" />,
       roles: ['superadmin', 'regionadmin']
     },
     {
@@ -77,8 +73,26 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
     {
       name: t('categories'),
       path: '/categories',
-      icon: <Settings className="h-5 w-5" />,
+      icon: <FolderKanban className="h-5 w-5" />,
       roles: ['superadmin', 'regionadmin']
+    },
+    {
+      name: t('users'),
+      path: '/users',
+      icon: <Users className="h-5 w-5" />,
+      roles: ['superadmin', 'regionadmin']
+    },
+    {
+      name: t('dataEntry'),
+      path: '/data-entry',
+      icon: <FileInput className="h-5 w-5" />,
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
+    },
+    {
+      name: t('reports'),
+      path: '/reports',
+      icon: <BarChart3 className="h-5 w-5" />,
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
     }
   ];
   
@@ -219,3 +233,4 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
 };
 
 export default NavigationMenu;
+

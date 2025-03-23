@@ -17,6 +17,8 @@ const navigation = {
   terms: "Şərtlər",
   privacy: "Gizlilik",
   forms: "Formalar",
+  regions: "Regionlar",
+  sectors: "Sektorlar",
   formStatus: "Form statusu",
   formStatusDesc: "Formalarınızın ümumi vəziyyəti",
   addNewData: "Məlumat əlavə et",

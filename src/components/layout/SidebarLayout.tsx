@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings } from 'lucide-react';
+import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings, MapPin, Building } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationControl from '../notifications/NotificationControl';
@@ -70,6 +71,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageCategories = isSuperAdmin || isRegionAdmin;
+  const canManageRegions = isSuperAdmin;
+  const canManageSectors = isSuperAdmin || isRegionAdmin;
   
   const navItems = [
     {
@@ -79,22 +82,16 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       show: true
     },
     {
-      href: "/data-entry",
-      icon: <FileInput size={20} />,
-      label: t('dataEntry'),
-      show: true
+      href: "/regions",
+      icon: <MapPin size={20} />,
+      label: t('regions'),
+      show: canManageRegions
     },
     {
-      href: "/reports",
-      icon: <PieChart size={20} />,
-      label: t('reports'),
-      show: true
-    },
-    {
-      href: "/users",
-      icon: <Users size={20} />,
-      label: t('users'),
-      show: canManageUsers
+      href: "/sectors",
+      icon: <Building size={20} />,
+      label: t('sectors'),
+      show: canManageSectors
     },
     {
       href: "/schools",
@@ -107,6 +104,24 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       icon: <FolderKanban size={20} />,
       label: t('categories'),
       show: canManageCategories
+    },
+    {
+      href: "/users",
+      icon: <Users size={20} />,
+      label: t('users'),
+      show: canManageUsers
+    },
+    {
+      href: "/data-entry",
+      icon: <FileInput size={20} />,
+      label: t('dataEntry'),
+      show: true
+    },
+    {
+      href: "/reports",
+      icon: <PieChart size={20} />,
+      label: t('reports'),
+      show: true
     }
   ];
   

@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, useRole } from "@/context/AuthContext";
 
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
@@ -15,14 +15,16 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
+import Profile from "@/pages/Profile";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: string[];
 }
 
 // Protected Route Component
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
   
   if (isLoading) {
     return (
@@ -34,6 +36,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+  
+  // Əgər allowedRoles varsa və istifadəçinin rolu bu siyahıda deyilsə
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
@@ -83,7 +90,7 @@ const AppRoutes = [
   {
     path: "/sectors",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
         <Sectors />
       </ProtectedRoute>
     ),
@@ -91,7 +98,7 @@ const AppRoutes = [
   {
     path: "/regions",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin']}>
         <Regions />
       </ProtectedRoute>
     ),
@@ -99,7 +106,7 @@ const AppRoutes = [
   {
     path: "/schools",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
         <Schools />
       </ProtectedRoute>
     ),
@@ -107,7 +114,7 @@ const AppRoutes = [
   {
     path: "/categories",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
         <Categories />
       </ProtectedRoute>
     ),
@@ -115,7 +122,7 @@ const AppRoutes = [
   {
     path: "/columns",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
         <Columns />
       </ProtectedRoute>
     ),
@@ -123,7 +130,7 @@ const AppRoutes = [
   {
     path: "/users",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
         <Users />
       </ProtectedRoute>
     ),
@@ -141,6 +148,14 @@ const AppRoutes = [
     element: (
       <ProtectedRoute>
         <Settings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <Profile />
       </ProtectedRoute>
     ),
   },
