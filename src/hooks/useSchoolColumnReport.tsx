@@ -60,6 +60,10 @@ const fetchSchoolColumnData = async (categoryId: string, regionId?: string): Pro
   
   // Kateqoriyaya uyğun məlumatları generasiya edək
   return filteredSchools.map(school => {
+    // Status dəyişkənini təsadüfi olaraq təyin edək (əsl API-də bu status verilənlər bazasından gələcək)
+    const statuses = ["Gözləmədə", "Təsdiqləndi", "Rədd edildi"];
+    const randomStatus = Math.random() < 0.6 ? "Gözləmədə" : (Math.random() < 0.8 ? "Təsdiqləndi" : "Rədd edildi");
+    
     // Kateqoriyaya uyğun sütun məlumatlarını generasiya edək
     let columnData = [];
     
@@ -87,6 +91,8 @@ const fetchSchoolColumnData = async (categoryId: string, regionId?: string): Pro
       schoolName: school.name,
       region: school.region,
       sector: school.sector,
+      status: randomStatus,
+      rejectionReason: randomStatus === "Rədd edildi" ? "Məlumatlar tam deyil" : undefined,
       columnData
     };
   });
@@ -121,7 +127,8 @@ export const useSchoolColumnReport = () => {
   // Seçilmiş kateqoriyaya əsasən məktəblərin məlumatlarını əldə etmək
   const {
     data: schoolColumnData = [],
-    isLoading: isDataLoading
+    isLoading: isDataLoading,
+    refetch: refetchSchoolData
   } = useQuery({
     queryKey: ['reportSchoolData', selectedCategoryId, userRegionId],
     queryFn: () => fetchSchoolColumnData(selectedCategoryId, userRegionId),
@@ -208,6 +215,7 @@ export const useSchoolColumnReport = () => {
     selectAllSchools,
     deselectAllSchools,
     getSelectedSchoolsData,
-    exportData
+    exportData,
+    refetchSchoolData
   };
 };

@@ -4,8 +4,10 @@ import { ColumnType } from './column';
 export interface SchoolColumnData {
   schoolId: string;
   schoolName: string;
-  region?: string; // Əlavə edildi
-  sector?: string; // Əlavə edildi
+  region?: string;
+  sector?: string;
+  status?: "Gözləmədə" | "Təsdiqləndi" | "Rədd edildi";
+  rejectionReason?: string;
   columnData: {
     columnId: string;
     value: string | number | boolean | null;

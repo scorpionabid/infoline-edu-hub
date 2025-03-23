@@ -61,7 +61,27 @@ const reports = {
   manageSchools: "Məktəbləri idarə et",
   manageUsers: "İstifadəçiləri idarə et",
   manageCategories: "Kateqoriyaları idarə et",
-  viewReports: "Hesabatlara bax"
+  viewReports: "Hesabatlara bax",
+
+  // Təsdiq/rədd etmə əməliyyatları
+  approve: "Təsdiqlə",
+  reject: "Rədd et",
+  confirmApproval: "Təsdiq əməliyyatını təsdiqləyin",
+  confirmRejection: "Rədd etmə əməliyyatını təsdiqləyin",
+  rejectionReason: "Rədd etmə səbəbi",
+  enterRejectionReason: "Rədd etmə səbəbini daxil edin",
+  processing: "Əməliyyat yerinə yetirilir...",
+  cancel: "Ləğv et",
+  status: "Status",
+  actions: "Əməliyyatlar",
+  viewDetails: "Ətraflı bax",
+  unexpectedError: "Gözlənilməz xəta baş verdi",
+  schoolsSelected: "məktəb seçilib",
+  approveSelected: "Seçilənləri təsdiqlə",
+  rejectSelected: "Seçilənləri rədd et",
+  selectAll: "Hamısını seç",
+  deselectAll: "Seçimi ləğv et",
+  noSchoolsSelected: "Heç bir məktəb seçilməyib"
 };
 
 export default reports;

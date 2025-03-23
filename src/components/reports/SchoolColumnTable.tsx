@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { 
   Table, 
   TableHeader, 
@@ -14,7 +17,8 @@ import {
   Card, 
   CardContent,
   CardHeader,
-  CardTitle
+  CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import {
   Select,
@@ -25,21 +29,58 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CategoryWithColumns } from '@/types/column';
-import { Check, X, Loader2, FileDown, Filter, Search, RotateCcw } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { 
+  Check, 
+  X, 
+  Loader2, 
+  FileDown, 
+  Filter, 
+  Search, 
+  RotateCcw,
+  CheckSquare,
+  Eye,
+  FileX,
+  FileCheck,
+  RefreshCcw
+} from 'lucide-react';
 import { ExportOptions } from '@/types/report';
-import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth } from '@/context/AuthContext';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const [isSelectAll, setIsSelectAll] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [currentSchoolId, setCurrentSchoolId] = useState<string | null>(null);
+  const [isBulkAction, setIsBulkAction] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const form = useForm({
+    defaultValues: {
+      rejectionReason: '',
+    },
+  });
   
   const {
     categories,
@@ -50,7 +91,11 @@ const SchoolColumnTable: React.FC = () => {
     isCategoriesLoading,
     isCategoriesError,
     isDataLoading,
-    exportData
+    exportData,
+    toggleSchoolSelection,
+    selectAllSchools,
+    deselectAllSchools,
+    getSelectedSchoolsData
   } = useSchoolColumnReport();
 
   const selectedCategory = React.useMemo(() => {
@@ -68,14 +113,20 @@ const SchoolColumnTable: React.FC = () => {
       
       // Sektor filtirləmədən keçdi
       const matchesSector = selectedSectors.length === 0 || 
-        selectedSectors.includes(school.sector);
+        selectedSectors.includes(school.sector || '');
       
       return matchesSearch && matchesSector;
     });
   }, [schoolColumnData, searchTerm, selectedSectors]);
 
+  useEffect(() => {
+    // Əgər bütün məktəblər seçilibsə isSelectAll true, əks halda false
+    setIsSelectAll(selectedSchools.length === filteredData.length && filteredData.length > 0);
+  }, [selectedSchools, filteredData]);
+
   const handleCategoryChange = (value: string) => {
     setSelectedCategoryId(value);
+    setSelectedSchools([]);
   };
 
   const handleExportToExcel = () => {
@@ -92,14 +143,17 @@ const SchoolColumnTable: React.FC = () => {
       const workbook = XLSX.utils.book_new();
       
       // Başlıqları əlavə edək
-      const headers = ['Məktəb adı', 'Region', 'Sektor'];
+      const headers = ['Məktəb adı', 'Region', 'Sektor', 'Status'];
       selectedCategory.columns.forEach(column => {
         headers.push(column.name);
       });
       
       // Məlumatları əlavə edək
       const rows = filteredData.map(school => {
-        const row: (string | number | boolean)[] = [school.schoolName, school.region, school.sector];
+        // Məktəb statusu (default olaraq "Gözləmədə")
+        const status = school.status || "Gözləmədə";
+        
+        const row: (string | number | boolean)[] = [school.schoolName, school.region || '', school.sector || '', status];
         selectedCategory.columns.forEach(column => {
           const columnData = school.columnData.find(cd => cd.columnId === column.id);
           // Məlumatı string-ə çeviririk
@@ -139,6 +193,129 @@ const SchoolColumnTable: React.FC = () => {
     setSelectedSectors([]);
   };
 
+  const handleSelectAllChange = () => {
+    if (isSelectAll) {
+      deselectAllSchools();
+    } else {
+      // Filterlənmiş bütün məktəbləri seç
+      const allSchoolIds = filteredData.map(school => school.schoolId);
+      setSelectedSchools(allSchoolIds);
+    }
+    setIsSelectAll(!isSelectAll);
+  };
+
+  const handleSchoolSelection = (schoolId: string) => {
+    toggleSchoolSelection(schoolId);
+  };
+
+  const handleApproveClick = (schoolId: string) => {
+    setCurrentSchoolId(schoolId);
+    setIsBulkAction(false);
+    setShowApproveDialog(true);
+  };
+
+  const handleRejectClick = (schoolId: string) => {
+    setCurrentSchoolId(schoolId);
+    setIsBulkAction(false);
+    setShowRejectDialog(true);
+  };
+
+  const handleBulkApprove = () => {
+    if (selectedSchools.length === 0) {
+      toast.error(t("noSchoolsSelected"));
+      return;
+    }
+    setIsBulkAction(true);
+    setShowApproveDialog(true);
+  };
+
+  const handleBulkReject = () => {
+    if (selectedSchools.length === 0) {
+      toast.error(t("noSchoolsSelected"));
+      return;
+    }
+    setIsBulkAction(true);
+    setShowRejectDialog(true);
+  };
+
+  const confirmApprove = async () => {
+    setIsSubmitting(true);
+    try {
+      // Burada API çağırışı həyata keçiriləcək
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (isBulkAction) {
+        toast.success(`${selectedSchools.length} məktəbin məlumatları təsdiqləndi`);
+        // Təsdiqlənmiş məktəblərin statusunu yeniləyəririk (əsl tətbiqdə bu API ilə edilməlidir)
+        selectedSchools.forEach(schoolId => {
+          const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === schoolId);
+          if (schoolIndex !== -1) {
+            schoolColumnData[schoolIndex].status = "Təsdiqləndi";
+          }
+        });
+        // Seçilmiş məktəbləri sıfırlayırıq
+        deselectAllSchools();
+      } else if (currentSchoolId) {
+        toast.success("Məktəb məlumatları təsdiqləndi");
+        // Təsdiqlənmiş məktəbin statusunu yeniləyirik (əsl tətbiqdə bu API ilə edilməlidir)
+        const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === currentSchoolId);
+        if (schoolIndex !== -1) {
+          schoolColumnData[schoolIndex].status = "Təsdiqləndi";
+        }
+      }
+    } catch (error) {
+      toast.error(t("unexpectedError"));
+    } finally {
+      setIsSubmitting(false);
+      setShowApproveDialog(false);
+      setCurrentSchoolId(null);
+      setIsBulkAction(false);
+    }
+  };
+
+  const confirmReject = async (formData: { rejectionReason: string }) => {
+    setIsSubmitting(true);
+    try {
+      // Burada API çağırışı həyata keçiriləcək
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (isBulkAction) {
+        toast.success(`${selectedSchools.length} məktəbin məlumatları rədd edildi`);
+        // Rədd edilmiş məktəblərin statusunu yeniləyirik (əsl tətbiqdə bu API ilə edilməlidir)
+        selectedSchools.forEach(schoolId => {
+          const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === schoolId);
+          if (schoolIndex !== -1) {
+            schoolColumnData[schoolIndex].status = "Rədd edildi";
+            schoolColumnData[schoolIndex].rejectionReason = formData.rejectionReason;
+          }
+        });
+        // Seçilmiş məktəbləri sıfırlayırıq
+        deselectAllSchools();
+      } else if (currentSchoolId) {
+        toast.success("Məktəb məlumatları rədd edildi");
+        // Rədd edilmiş məktəbin statusunu yeniləyirik (əsl tətbiqdə bu API ilə edilməlidir)
+        const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === currentSchoolId);
+        if (schoolIndex !== -1) {
+          schoolColumnData[schoolIndex].status = "Rədd edildi";
+          schoolColumnData[schoolIndex].rejectionReason = formData.rejectionReason;
+        }
+      }
+    } catch (error) {
+      toast.error(t("unexpectedError"));
+    } finally {
+      setIsSubmitting(false);
+      setShowRejectDialog(false);
+      setCurrentSchoolId(null);
+      setIsBulkAction(false);
+      form.reset();
+    }
+  };
+
+  const handleViewDetails = (schoolId: string) => {
+    // Bu funksiya məktəbin bütün detallarını göstərən səhifəyə yönləndirəcək
+    navigate(`/data-entry?schoolId=${schoolId}&categoryId=${selectedCategoryId}`);
+  };
+
   const renderCellValue = (value: any) => {
     if (value === null || value === undefined) {
       return "-";
@@ -151,6 +328,17 @@ const SchoolColumnTable: React.FC = () => {
     }
 
     return value;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case "Təsdiqləndi":
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Təsdiqləndi</span>;
+      case "Rədd edildi":
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rədd edildi</span>;
+      default:
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Gözləmədə</span>;
+    }
   };
 
   if (isCategoriesLoading) {
@@ -286,6 +474,42 @@ const SchoolColumnTable: React.FC = () => {
         </Card>
       )}
 
+      {/* Toplu əməliyyatlar paneli */}
+      {selectedSchools.length > 0 && (
+        <div className="flex items-center justify-between bg-muted p-4 rounded-md">
+          <div className="text-sm font-medium">
+            {selectedSchools.length} {t('schoolsSelected')}
+          </div>
+          <div className="space-x-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleBulkApprove}
+              className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            >
+              <FileCheck className="mr-2 h-4 w-4" />
+              {t('approveSelected')}
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleBulkReject}
+              className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+            >
+              <FileX className="mr-2 h-4 w-4" />
+              {t('rejectSelected')}
+            </Button>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={deselectAllSchools}
+            >
+              {t('deselectAll')}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0 overflow-auto">
           {isDataLoading ? (
@@ -296,20 +520,29 @@ const SchoolColumnTable: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[40px]">
+                    <Checkbox 
+                      checked={isSelectAll} 
+                      onCheckedChange={handleSelectAllChange}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <TableHead className="font-medium min-w-[250px]">{t("schoolName")}</TableHead>
                   <TableHead className="font-medium">{t("region")}</TableHead>
                   <TableHead className="font-medium">{t("sector")}</TableHead>
+                  <TableHead className="font-medium">{t("status")}</TableHead>
                   {selectedCategory?.columns.map(column => (
                     <TableHead key={column.id} className="font-medium min-w-[150px]">
                       {column.name}
                     </TableHead>
                   ))}
+                  <TableHead className="text-right min-w-[180px]">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={selectedCategory?.columns.length ? selectedCategory.columns.length + 3 : 4} className="text-center py-8">
+                    <TableCell colSpan={selectedCategory?.columns.length ? selectedCategory.columns.length + 6 : 7} className="text-center py-8">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <h3 className="text-lg font-medium">{t("noDataAvailable")}</h3>
                         <p className="mt-2 text-sm">{t("selectAnotherCategory")}</p>
@@ -319,9 +552,17 @@ const SchoolColumnTable: React.FC = () => {
                 ) : (
                   filteredData.map(school => (
                     <TableRow key={school.schoolId}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedSchools.includes(school.schoolId)}
+                          onCheckedChange={() => handleSchoolSelection(school.schoolId)}
+                          aria-label={`Select ${school.schoolName}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{school.schoolName}</TableCell>
-                      <TableCell>{school.region}</TableCell>
-                      <TableCell>{school.sector}</TableCell>
+                      <TableCell>{school.region || "-"}</TableCell>
+                      <TableCell>{school.sector || "-"}</TableCell>
+                      <TableCell>{getStatusBadge(school.status || "Gözləmədə")}</TableCell>
                       {selectedCategory?.columns.map(column => {
                         const columnData = school.columnData.find(
                           cd => cd.columnId === column.id
@@ -332,6 +573,38 @@ const SchoolColumnTable: React.FC = () => {
                           </TableCell>
                         );
                       })}
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewDetails(school.schoolId)}
+                            title={t("viewDetails")}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleApproveClick(school.schoolId)}
+                            title={t("approve")}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            disabled={school.status === "Təsdiqləndi"}
+                          >
+                            <FileCheck className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRejectClick(school.schoolId)}
+                            title={t("reject")}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            disabled={school.status === "Təsdiqləndi"}
+                          >
+                            <FileX className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -340,6 +613,91 @@ const SchoolColumnTable: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Təsdiq dialoqu */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmApproval")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isBulkAction 
+                ? `${selectedSchools.length} məktəbin məlumatlarını təsdiqləmək istədiyinizə əminsiniz?` 
+                : `Bu məktəbin məlumatlarını təsdiqləmək istədiyinizə əminsiniz?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmApprove}
+              disabled={isSubmitting}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("processing")}
+                </>
+              ) : (
+                t("approve")
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rədd dialoqu */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <Form {...form} onSubmit={form.handleSubmit(confirmReject)}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("confirmRejection")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {isBulkAction 
+                  ? `${selectedSchools.length} məktəbin məlumatlarını rədd etmək istədiyinizə əminsiniz?` 
+                  : `Bu məktəbin məlumatlarını rədd etmək istədiyinizə əminsiniz?`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="py-4">
+              <FormField
+                control={form.control}
+                name="rejectionReason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("rejectionReason")}</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder={t("enterRejectionReason")}
+                        {...field}
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <AlertDialogFooter>
+              <AlertDialogCancel type="button" disabled={isSubmitting}>{t("cancel")}</AlertDialogCancel>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t("processing")}
+                  </>
+                ) : (
+                  t("reject")
+                )}
+              </Button>
+            </AlertDialogFooter>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
