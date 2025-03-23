@@ -10,7 +10,8 @@ export type ColumnType =
   | "image"
   | "email"  
   | "phone"  
-  | "boolean";
+  | "boolean"
+  | "textarea";  // Əlavə olundu
 
 export type ColumnOption = {
   label: string;
@@ -44,6 +45,7 @@ export type Column = {
   options?: ColumnOption[] | string[]; // for select, checkbox, radio types
   placeholder?: string;
   helpText?: string;
+  description?: string; // Əlavə edildi
   deadline?: string;
   order: number;
   parentColumnId?: string;

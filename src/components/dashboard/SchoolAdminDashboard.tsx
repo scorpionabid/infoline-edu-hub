@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import NotificationsCard from './NotificationsCard';
 import FormStatusSection from './school-admin/FormStatusSection';
 import FormTabs from './school-admin/FormTabs';
@@ -98,7 +97,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   navigateToDataEntry,
   handleFormClick 
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const navigate = useNavigate();
   const [overallProgress, setOverallProgress] = useState(data.completionRate || 0);
   
@@ -138,9 +137,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     <div className="space-y-6">
       {/* Ümumi tamamlanma faizini göstərən proqres */}
       <DataEntryProgress 
-        overallProgress={data.completionRate} 
-        completedEntries={data.completedForms || 0} 
-        totalCategories={data.totalForms || 0} 
+        percentage={data.completionRate} 
+        completed={data.completedForms || 0} 
+        total={data.totalForms || 0} 
       />
       
       {/* Form statusları bölməsi */}

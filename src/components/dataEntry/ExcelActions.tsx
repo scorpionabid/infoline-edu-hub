@@ -6,7 +6,7 @@ import { useLanguageSafe } from '@/context/LanguageContext';
 
 export interface ExcelActionsProps {
   onDownload: (categoryId?: string) => void;
-  onUpload: (file: File, categoryId?: string) => void;
+  onUpload: (file: File, categoryId?: string) => Promise<void>;
 }
 
 const ExcelActions: React.FC<ExcelActionsProps> = ({ onDownload, onUpload }) => {
@@ -58,26 +58,27 @@ const ExcelActions: React.FC<ExcelActionsProps> = ({ onDownload, onUpload }) => 
         {t('excelTemplate')}
       </Button>
       
-      <Button 
-        variant="outline" 
-        size="sm" 
-        as="label"
-        disabled={isUploading}
-      >
-        {isUploading ? (
-          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-        ) : (
-          <Upload className="h-4 w-4 mr-1" />
-        )}
-        {t('uploadExcel')}
+      <div className="relative">
+        <Button 
+          variant="outline" 
+          size="sm"
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4 mr-1" />
+          )}
+          {t('uploadExcel')}
+        </Button>
         <input
           type="file"
-          className="hidden"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           accept=".xlsx,.xls"
           onChange={handleFileChange}
           disabled={isUploading}
         />
-      </Button>
+      </div>
     </>
   );
 };

@@ -46,7 +46,7 @@ const FormField: React.FC<FormFieldProps> = ({
   
   const renderField = () => {
     switch (type) {
-      case 'text':
+      case "text":
         return (
           <Input
             id={id}
@@ -59,7 +59,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
         
-      case 'number':
+      case "number":
         return (
           <Input
             id={id}
@@ -73,7 +73,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
         
-      case 'textarea':
+      case "textarea":
         return (
           <Textarea
             id={id}
@@ -86,7 +86,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
         
-      case 'checkbox':
+      case "checkbox":
         return (
           <Checkbox
             id={id}
@@ -97,7 +97,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
         
-      case 'radio':
+      case "radio":
         return (
           <RadioGroup
             value={value as string}
@@ -125,7 +125,7 @@ const FormField: React.FC<FormFieldProps> = ({
           </RadioGroup>
         );
         
-      case 'select':
+      case "select":
         return (
           <Select
             value={value as string || ''}
@@ -150,7 +150,7 @@ const FormField: React.FC<FormFieldProps> = ({
           </Select>
         );
         
-      case 'date':
+      case "date":
         return (
           <Popover>
             <PopoverTrigger asChild>
@@ -192,7 +192,7 @@ const FormField: React.FC<FormFieldProps> = ({
             {label}
             {required && <span className="text-red-500 ml-1">*</span>}
           </label>
-          {helpText && <FormFieldHelp text={helpText} />}
+          {helpText && <FormFieldHelp helpText={helpText} />}
         </div>
       </div>
       

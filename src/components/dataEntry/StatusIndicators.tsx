@@ -19,11 +19,12 @@ const StatusIndicators: React.FC<StatusIndicatorsProps> = ({
   timestamp 
 }) => {
   const { t } = useLanguageSafe();
+  const hasErrors = errors && errors.length > 0;
 
   if (!showMessages) {
     return (
       <>
-        {errors && errors.length > 0 && (
+        {hasErrors && (
           <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
             <AlertTriangle className="h-3 w-3 mr-1" /> {errors.length} {t('error')}
           </Badge>
@@ -74,7 +75,7 @@ const StatusIndicators: React.FC<StatusIndicatorsProps> = ({
         </div>
       )}
       
-      {errors && errors.length > 0 && (
+      {hasErrors && (
         <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
           <h4 className="font-medium text-red-700 dark:text-red-300 flex items-center">
             <AlertTriangle className="h-4 w-4 mr-2" /> {t('formHasErrors')}
