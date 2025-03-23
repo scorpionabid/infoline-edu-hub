@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/context/LanguageContext';
+import { cn } from '@/lib/utils';
 
 const DataEntryContainer: React.FC = () => {
   const {
@@ -241,7 +242,7 @@ const DataEntryContainer: React.FC = () => {
                 {t('formData')}
                 {errors.length > 0 && (
                   <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    <AlertTriangle className="h-3 w-3 mr-1" /> {errors.length} {t('error', { count: errors.length })}
+                    <AlertTriangle className="h-3 w-3 mr-1" /> {errors.length} {t('error')}
                   </Badge>
                 )}
                 {formData.status === 'submitted' && (
@@ -395,7 +396,7 @@ const DataEntryContainer: React.FC = () => {
                     <li key={index}>{error.message}</li>
                   ))}
                   {errors.length > 3 && (
-                    <li>... {t('andOtherErrors', { count: errors.length - 3 })}</li>
+                    <li>... {t('andOtherErrors')}</li>
                   )}
                 </ul>
               </div>
@@ -447,3 +448,4 @@ const DataEntryContainer: React.FC = () => {
 };
 
 export default DataEntryContainer;
+
