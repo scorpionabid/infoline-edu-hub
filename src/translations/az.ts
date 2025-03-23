@@ -511,12 +511,12 @@ const az = {
   reportDownloadedDesc: "Hesabat uğurla yükləndi",
   printInitiated: "Çap başladıldı",
   printInitiatedDesc: "Çap prosesi başladıldı",
-  data: "Məlumatlar",
+  dataInfo: "Məlumatlar", // data açarını dataInfo ilə əvəzlədim
   summary: "Xülasə",
   name: "Ad",
   value: "Dəyər",
   settingsDescription: "Hesab və tətbiq parametrlərini idarə edin",
-  uploadExcel: "Excel ilə yüklə", // Fərqli açar adı verildi
+  uploadWithExcel: "Excel ilə yüklə", // uploadExcel açarını uploadWithExcel ilə əvəzlədim
 };
 
 export default az;
