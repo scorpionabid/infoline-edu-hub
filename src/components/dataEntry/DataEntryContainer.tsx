@@ -339,7 +339,6 @@ const DataEntryContainer: React.FC = () => {
               <Progress 
                 value={formData.overallProgress} 
                 className="h-2" 
-                // Rəng ilə statusa uyğun progress bar
                 indicatorClassName={cn(
                   formData.overallProgress < 50 ? "bg-red-500" :
                   formData.overallProgress < 80 ? "bg-amber-500" :
@@ -448,4 +447,3 @@ const DataEntryContainer: React.FC = () => {
 };
 
 export default DataEntryContainer;
-
