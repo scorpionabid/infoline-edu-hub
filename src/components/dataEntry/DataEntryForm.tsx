@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Save, Send, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -116,273 +115,271 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
                   </Alert>
                 )}
                 
-                <Form>
-                  <form className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {tab.id === 'general' && (
-                        <>
-                          <FormField
-                            label={t('schoolName')}
-                            isRequired={true}
-                            error={getErrorForColumn('schoolName')}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {tab.id === 'general' && (
+                      <>
+                        <FormField
+                          label={t('schoolName')}
+                          isRequired={true}
+                          error={getErrorForColumn('schoolName')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            placeholder={t('enterSchoolName')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'schoolName', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'schoolName')?.value as string) || ''}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">{t('enterFullSchoolName')}</p>
+                        </FormField>
+                        
+                        <FormField
+                          label={t('schoolType')}
+                          isRequired={true}
+                          error={getErrorForColumn('schoolType')}
+                        >
+                          <select 
+                            className="w-full px-3 py-2 border rounded-md"
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'schoolType', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'schoolType')?.value as string) || ''}
                           >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              placeholder={t('enterSchoolName')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'schoolName', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'schoolName')?.value as string) || ''}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">{t('enterFullSchoolName')}</p>
-                          </FormField>
-                          
-                          <FormField
-                            label={t('schoolType')}
-                            isRequired={true}
-                            error={getErrorForColumn('schoolType')}
+                            <option value="">{t('select')}</option>
+                            <option value="primary">{t('primarySchool')}</option>
+                            <option value="secondary">{t('secondarySchool')}</option>
+                            <option value="high">{t('highSchool')}</option>
+                          </select>
+                        </FormField>
+                        
+                        <FormField
+                          label={t('address')}
+                          isRequired={true}
+                          error={getErrorForColumn('address')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            placeholder={t('enterAddress')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'address', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'address')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('phoneNumber')}
+                          isRequired={true}
+                          error={getErrorForColumn('phoneNumber')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            placeholder={t('enterPhoneNumber')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'phoneNumber', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'phoneNumber')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('email')}
+                          isRequired={true}
+                          error={getErrorForColumn('email')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="email"
+                            placeholder={t('enterEmail')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'email', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'email')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('website')}
+                          isRequired={false}
+                          error={getErrorForColumn('website')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            placeholder={t('enterWebsite')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'website', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'website')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('teachingLanguage')}
+                          isRequired={true}
+                          error={getErrorForColumn('teachingLanguage')}
+                        >
+                          <select 
+                            className="w-full px-3 py-2 border rounded-md"
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'teachingLanguage', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'teachingLanguage')?.value as string) || ''}
                           >
-                            <select 
-                              className="w-full px-3 py-2 border rounded-md"
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'schoolType', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'schoolType')?.value as string) || ''}
-                            >
-                              <option value="">{t('select')}</option>
-                              <option value="primary">{t('primarySchool')}</option>
-                              <option value="secondary">{t('secondarySchool')}</option>
-                              <option value="high">{t('highSchool')}</option>
-                            </select>
-                          </FormField>
-                          
-                          <FormField
-                            label={t('address')}
-                            isRequired={true}
-                            error={getErrorForColumn('address')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              placeholder={t('enterAddress')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'address', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'address')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('phoneNumber')}
-                            isRequired={true}
-                            error={getErrorForColumn('phoneNumber')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              placeholder={t('enterPhoneNumber')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'phoneNumber', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'phoneNumber')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('email')}
-                            isRequired={true}
-                            error={getErrorForColumn('email')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="email"
-                              placeholder={t('enterEmail')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'email', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'email')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('website')}
-                            isRequired={false}
-                            error={getErrorForColumn('website')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              placeholder={t('enterWebsite')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'website', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'website')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('teachingLanguage')}
-                            isRequired={true}
-                            error={getErrorForColumn('teachingLanguage')}
-                          >
-                            <select 
-                              className="w-full px-3 py-2 border rounded-md"
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'teachingLanguage', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'teachingLanguage')?.value as string) || ''}
-                            >
-                              <option value="">{t('select')}</option>
-                              <option value="az">{t('azerbaijani')}</option>
-                              <option value="ru">{t('russian')}</option>
-                              <option value="en">{t('english')}</option>
-                              <option value="mixed">{t('mixed')}</option>
-                            </select>
-                          </FormField>
-                          
-                          <FormField
-                            label={t('foundingYear')}
-                            isRequired={false}
-                            error={getErrorForColumn('foundingYear')}
-                            className="md:col-span-2"
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterFoundingYear')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'foundingYear', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'foundingYear')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('notes')}
-                            isRequired={false}
-                            error={getErrorForColumn('notes')}
-                            className="md:col-span-2"
-                          >
-                            <textarea 
-                              className="w-full px-3 py-2 border rounded-md min-h-[100px]"
-                              placeholder={t('enterNotes')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'notes', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'notes')?.value as string) || ''}
-                            />
-                          </FormField>
-                        </>
-                      )}
-                      
-                      {tab.id === 'student' && (
-                        <>
-                          {/* Burada tələbə məlumatlarını göstərəcək sahələr olacaq */}
-                          <FormField
-                            label={t('totalStudents')}
-                            isRequired={true}
-                            error={getErrorForColumn('totalStudents')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterTotalStudents')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'totalStudents', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'totalStudents')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('maleStudents')}
-                            isRequired={true}
-                            error={getErrorForColumn('maleStudents')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterMaleStudents')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'maleStudents', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'maleStudents')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('femaleStudents')}
-                            isRequired={true}
-                            error={getErrorForColumn('femaleStudents')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterFemaleStudents')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'femaleStudents', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'femaleStudents')?.value as string) || ''}
-                            />
-                          </FormField>
-                        </>
-                      )}
-                      
-                      {tab.id === 'teacher' && (
-                        <>
-                          {/* Burada müəllim məlumatlarını göstərəcək sahələr olacaq */}
-                          <FormField
-                            label={t('totalTeachers')}
-                            isRequired={true}
-                            error={getErrorForColumn('totalTeachers')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterTotalTeachers')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'totalTeachers', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'totalTeachers')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('permanentTeachers')}
-                            isRequired={false}
-                            error={getErrorForColumn('permanentTeachers')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterPermanentTeachers')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'permanentTeachers', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'permanentTeachers')?.value as string) || ''}
-                            />
-                          </FormField>
-                        </>
-                      )}
-                      
-                      {tab.id === 'resources' && (
-                        <>
-                          {/* Burada resurslar məlumatlarını göstərəcək sahələr olacaq */}
-                          <FormField
-                            label={t('classrooms')}
-                            isRequired={true}
-                            error={getErrorForColumn('classrooms')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterClassrooms')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'classrooms', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'classrooms')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('libraries')}
-                            isRequired={false}
-                            error={getErrorForColumn('libraries')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterLibraries')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'libraries', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'libraries')?.value as string) || ''}
-                            />
-                          </FormField>
-                          
-                          <FormField
-                            label={t('computersForStudents')}
-                            isRequired={false}
-                            error={getErrorForColumn('computersForStudents')}
-                          >
-                            <input 
-                              className="w-full px-3 py-2 border rounded-md"
-                              type="number"
-                              placeholder={t('enterComputersForStudents')}
-                              onChange={(e) => updateValue(currentCategory?.id || '', 'computersForStudents', e.target.value)}
-                              value={(currentEntryData?.values.find(v => v.columnId === 'computersForStudents')?.value as string) || ''}
-                            />
-                          </FormField>
-                        </>
-                      )}
-                    </div>
-                  </form>
-                </Form>
+                            <option value="">{t('select')}</option>
+                            <option value="az">{t('azerbaijani')}</option>
+                            <option value="ru">{t('russian')}</option>
+                            <option value="en">{t('english')}</option>
+                            <option value="mixed">{t('mixed')}</option>
+                          </select>
+                        </FormField>
+                        
+                        <FormField
+                          label={t('foundingYear')}
+                          isRequired={false}
+                          error={getErrorForColumn('foundingYear')}
+                          className="md:col-span-2"
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterFoundingYear')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'foundingYear', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'foundingYear')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('notes')}
+                          isRequired={false}
+                          error={getErrorForColumn('notes')}
+                          className="md:col-span-2"
+                        >
+                          <textarea 
+                            className="w-full px-3 py-2 border rounded-md min-h-[100px]"
+                            placeholder={t('enterNotes')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'notes', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'notes')?.value as string) || ''}
+                          />
+                        </FormField>
+                      </>
+                    )}
+                    
+                    {tab.id === 'student' && (
+                      <>
+                        {/* Burada tələbə məlumatlarını göstərəcək sahələr olacaq */}
+                        <FormField
+                          label={t('totalStudents')}
+                          isRequired={true}
+                          error={getErrorForColumn('totalStudents')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterTotalStudents')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'totalStudents', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'totalStudents')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('maleStudents')}
+                          isRequired={true}
+                          error={getErrorForColumn('maleStudents')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterMaleStudents')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'maleStudents', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'maleStudents')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('femaleStudents')}
+                          isRequired={true}
+                          error={getErrorForColumn('femaleStudents')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterFemaleStudents')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'femaleStudents', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'femaleStudents')?.value as string) || ''}
+                          />
+                        </FormField>
+                      </>
+                    )}
+                    
+                    {tab.id === 'teacher' && (
+                      <>
+                        {/* Burada müəllim məlumatlarını göstərəcək sahələr olacaq */}
+                        <FormField
+                          label={t('totalTeachers')}
+                          isRequired={true}
+                          error={getErrorForColumn('totalTeachers')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterTotalTeachers')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'totalTeachers', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'totalTeachers')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('permanentTeachers')}
+                          isRequired={false}
+                          error={getErrorForColumn('permanentTeachers')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterPermanentTeachers')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'permanentTeachers', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'permanentTeachers')?.value as string) || ''}
+                          />
+                        </FormField>
+                      </>
+                    )}
+                    
+                    {tab.id === 'resources' && (
+                      <>
+                        {/* Burada resurslar məlumatlarını göstərəcək sahələr olacaq */}
+                        <FormField
+                          label={t('classrooms')}
+                          isRequired={true}
+                          error={getErrorForColumn('classrooms')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterClassrooms')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'classrooms', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'classrooms')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('libraries')}
+                          isRequired={false}
+                          error={getErrorForColumn('libraries')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterLibraries')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'libraries', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'libraries')?.value as string) || ''}
+                          />
+                        </FormField>
+                        
+                        <FormField
+                          label={t('computersForStudents')}
+                          isRequired={false}
+                          error={getErrorForColumn('computersForStudents')}
+                        >
+                          <input 
+                            className="w-full px-3 py-2 border rounded-md"
+                            type="number"
+                            placeholder={t('enterComputersForStudents')}
+                            onChange={(e) => updateValue(currentCategory?.id || '', 'computersForStudents', e.target.value)}
+                            value={(currentEntryData?.values.find(v => v.columnId === 'computersForStudents')?.value as string) || ''}
+                          />
+                        </FormField>
+                      </>
+                    )}
+                  </div>
+                </div>
               </TabsContent>
             ))}
           </Tabs>
@@ -399,7 +396,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
                 {t('saveAsDraft')}
               </Button>
               <Button 
-                onClick={() => submitForApproval()}
+                onClick={submitForApproval}
                 disabled={isSubmitting || errors.length > 0}
               >
                 <Send className="h-4 w-4 mr-2" />

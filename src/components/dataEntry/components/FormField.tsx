@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormMessage } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
 
 interface FormFieldProps {
@@ -20,22 +20,22 @@ const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className={cn("space-y-2", className)}>
-      <FormItem>
+      <div className="form-item">
         <div className="flex items-center">
-          <FormLabel className="flex items-center space-x-2 text-base mb-1">
+          <label className="flex items-center space-x-2 text-base font-medium mb-1">
             <span>{label}</span>
             {isRequired && <span className="text-red-500 ml-1">*</span>}
-          </FormLabel>
+          </label>
         </div>
         
         {children}
         
         {error && (
-          <FormMessage>
+          <div className="text-sm font-medium text-destructive mt-1">
             {error}
-          </FormMessage>
+          </div>
         )}
-      </FormItem>
+      </div>
     </div>
   );
 };
