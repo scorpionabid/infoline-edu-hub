@@ -14,6 +14,7 @@ export interface CategoryEntryData {
   isCompleted: boolean;
   isSubmitted: boolean;
   completionPercentage: number;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface DataEntryForm {

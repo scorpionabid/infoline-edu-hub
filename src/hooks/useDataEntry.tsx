@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntryForm, EntryValue, CategoryEntryData, ColumnValidationError } from '@/types/dataEntry';
@@ -279,7 +278,8 @@ export const useDataEntry = () => {
       })),
       isCompleted: false,
       isSubmitted: false,
-      completionPercentage: 0
+      completionPercentage: 0,
+      approvalStatus: 'pending'
     }));
 
     setFormData(prev => ({
@@ -484,7 +484,8 @@ export const useDataEntry = () => {
           status: 'submitted',
           entries: prev.entries.map(entry => ({
             ...entry,
-            isSubmitted: true
+            isSubmitted: true,
+            approvalStatus: 'pending'
           }))
         }));
         
