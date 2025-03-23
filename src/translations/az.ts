@@ -1,3 +1,4 @@
+
 const az = {
   // General
   welcome: "Xoş gəlmisiniz",
@@ -35,13 +36,11 @@ const az = {
   // Data Entry
   dataEntry: "Məlumat daxil etmə",
   enterDataAndSubmit: "Məlumatları daxil edin və təsdiq üçün göndərin",
-  welcome: "Xoş gəlmisiniz",
   welcomeToDataEntry: "Məlumat daxil etmə səhifəsinə xoş gəlmisiniz",
   welcomeToDataEntryDesc: "Bu səhifədə kateqoriyalara uyğun məlumatları daxil edib təsdiq üçün göndərə bilərsiniz",
   savingData: "Məlumatlar saxlanılır...",
   dataSaved: "Məlumatlar saxlanıldı",
   dataSavedAt: "Məlumatlar saxlanıldı: {time}",
-  save: "Saxla",
   sending: "Göndərilir...",
   submitForApproval: "Təsdiq üçün göndər",
   submitForApprovalTooltip: "Məlumatları təsdiq üçün göndərmək",
@@ -61,11 +60,9 @@ const az = {
   changesAutoSaved: "Dəyişikliklər avtomatik saxlanıldı",
   lastSaved: "Son saxlama",
   saving: "Saxlanılır",
-  error: "Xəta",
   fillAllRequiredFields: "Zəhmət olmasa, bütün məcburi sahələri doldurun",
   completeAllRequiredFields: "Zəhmət olmasa, bütün məcburi sahələri doldurun",
   pleaseCorrectErrors: "Zəhmət olmasa, göstərilən xətaları düzəldin",
-  success: "Uğurlu",
   dataSentForApproval: "Məlumatlar təsdiq üçün göndərildi",
   categoryChanged: "Kateqoriya dəyişdirildi",
   submissionSuccess: "Göndərmə uğurlu oldu",
@@ -216,8 +213,6 @@ const az = {
   
   // Buttons
   button: "Düymə",
-  submit: "Təsdiq et",
-  reset: "Sıfırla",
   
   // Dropdowns
   dropdown: "Açılan menyu",
@@ -307,9 +302,6 @@ const az = {
   
   // Files
   file: "Fayl",
-  upload: "Yüklə",
-  download: "Endir",
-  preview: "Önbaxış",
   
   // Media
   image: "Şəkil",
@@ -326,7 +318,7 @@ const az = {
   map: "Xəritə",
   location: "Məkan",
   
-  // Time
+  // Time related
   calendar: "Təqvim",
   schedule: "Cədvəl",
   
@@ -349,7 +341,6 @@ const az = {
   less: "Daha az",
   all: "Hamısı",
   none: "Heç biri",
-  other: "Digər",
   
   // App specific
   appName: "InfoLine",

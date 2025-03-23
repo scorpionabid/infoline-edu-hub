@@ -111,7 +111,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         {onSubmitCategory && !isSubmitted && entryData.isSubmitted && entryData.approvalStatus !== 'approved' && (
           <Button 
             onClick={onSubmitCategory} 
-            disabled={!isCompleted || entryData.approvalStatus === 'approved'}
+            disabled={!isCompleted}
             className="ml-auto"
             variant="outline"
           >

@@ -51,23 +51,30 @@ export const useCategoryData = ({
           columns: [
             {
               id: "demo-col1",
+              categoryId: "demo1",
               name: "Binanın vəziyyəti",
               type: "select",
               isRequired: true,
               options: ["Əla", "Yaxşı", "Qənaətbəxş", "Təmir tələb edir"],
               placeholder: "Binanın vəziyyətini seçin",
-              helpText: "Məktəb binasının ümumi vəziyyətini seçin"
+              helpText: "Məktəb binasının ümumi vəziyyətini seçin",
+              order: 1,
+              status: "active"
             },
             {
               id: "demo-col2",
+              categoryId: "demo1",
               name: "Son təmir tarixi",
               type: "date",
               isRequired: true,
               placeholder: "Son təmir tarixini seçin",
-              helpText: "Məktəbdə aparılan son təmir işlərinin tarixini qeyd edin"
+              helpText: "Məktəbdə aparılan son təmir işlərinin tarixini qeyd edin",
+              order: 2,
+              status: "active"
             },
             {
               id: "demo-col3",
+              categoryId: "demo1",
               name: "Sinif otaqlarının sayı",
               type: "number",
               isRequired: true,
@@ -76,7 +83,9 @@ export const useCategoryData = ({
                 maxValue: 100
               },
               placeholder: "Sinif otaqlarının sayını daxil edin",
-              helpText: "Məktəbdəki ümumi sinif otaqlarının sayını daxil edin"
+              helpText: "Məktəbdəki ümumi sinif otaqlarının sayını daxil edin",
+              order: 3,
+              status: "active"
             }
           ]
         },
@@ -91,15 +100,19 @@ export const useCategoryData = ({
           columns: [
             {
               id: "demo-col4",
+              categoryId: "demo2",
               name: "Tədris dili",
               type: "select",
               isRequired: true,
               options: ["Azərbaycan", "Rus", "İngilis", "Qarışıq"],
               placeholder: "Tədris dilini seçin",
-              helpText: "Məktəbin əsas tədris dilini seçin"
+              helpText: "Məktəbin əsas tədris dilini seçin",
+              order: 1,
+              status: "active"
             },
             {
               id: "demo-col5",
+              categoryId: "demo2",
               name: "Həftəlik dərs saatları",
               type: "number",
               isRequired: true,
@@ -108,16 +121,21 @@ export const useCategoryData = ({
                 maxValue: 40
               },
               placeholder: "Həftəlik dərs saatlarını daxil edin",
-              helpText: "Bir həftə ərzində keçirilən ümumi dərs saatlarını daxil edin"
+              helpText: "Bir həftə ərzində keçirilən ümumi dərs saatlarını daxil edin",
+              order: 2,
+              status: "active"
             },
             {
               id: "demo-col6",
+              categoryId: "demo2",
               name: "Əlavə təhsil proqramları",
               type: "text",
               multiline: true,
               isRequired: false,
               placeholder: "Əlavə təhsil proqramlarını daxil edin",
-              helpText: "Məktəbdə tətbiq edilən əlavə təhsil proqramlarını təsvir edin"
+              helpText: "Məktəbdə tətbiq edilən əlavə təhsil proqramlarını təsvir edin",
+              order: 3,
+              status: "active"
             }
           ]
         }
