@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  School, 
+  School as SchoolIcon, 
   Pencil, 
   Trash2, 
   Eye,
@@ -37,19 +37,19 @@ import {
   getSchoolTypeLabel, 
   getLanguageLabel, 
   getSchoolInitial,
-  School as SchoolType,
+  School,
   SortConfig
 } from '@/data/schoolsData';
 
 interface SchoolTableProps {
-  currentItems: SchoolType[];
+  currentItems: School[];
   userRole?: string;
   searchTerm: string;
   sortConfig: SortConfig;
   handleSort: (key: string) => void;
-  handleEditDialogOpen: (school: SchoolType) => void;
-  handleDeleteDialogOpen: (school: SchoolType) => void;
-  handleAdminDialogOpen: (school: SchoolType) => void;
+  handleEditDialogOpen: (school: School) => void;
+  handleDeleteDialogOpen: (school: School) => void;
+  handleAdminDialogOpen: (school: School) => void;
 }
 
 const SchoolTable: React.FC<SchoolTableProps> = ({
@@ -206,7 +206,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
             <TableRow>
               <TableCell colSpan={9} className="text-center h-24">
                 <div className="flex flex-col items-center justify-center text-muted-foreground">
-                  <School className="h-8 w-8 mb-2" />
+                  <SchoolIcon className="h-8 w-8 mb-2" />
                   <p>Məktəb tapılmadı</p>
                   {searchTerm && (
                     <p className="text-sm">Başqa axtarış termini sınayın</p>

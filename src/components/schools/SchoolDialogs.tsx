@@ -10,7 +10,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
-import { Mail, KeyRound, User, Globe } from 'lucide-react';
+import { Mail, KeyRound, User, Globe, School as SchoolIcon } from 'lucide-react';
 import SchoolForm from './SchoolForm';
 import { School, SchoolFormData } from '@/data/schoolsData';
 
@@ -344,7 +344,7 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="adminSchool">Məktəb</Label>
               <div className="flex items-center gap-2">
-                <School className="h-4 w-4 text-muted-foreground" />
+                <SchoolIcon className="h-4 w-4 text-muted-foreground" />
                 <span id="adminSchool">{selectedAdmin.name}</span>
               </div>
             </div>
