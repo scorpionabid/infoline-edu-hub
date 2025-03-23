@@ -50,13 +50,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
   onDeleteCategory,
   onUpdateStatus,
 }) => {
-  const { t, currentLanguage } = useLanguage();
+  const { t, language } = useLanguage();
   const canManageCategories = useRole(["superadmin", "regionadmin"]);
   const [categoryToDelete, setCategoryToDelete] = React.useState<string | null>(null);
 
   // Helper function to get the appropriate locale for date-fns
   const getLocale = () => {
-    switch (currentLanguage) {
+    switch (language) {
       case "az":
         return az;
       case "ru":
