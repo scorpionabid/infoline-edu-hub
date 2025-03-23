@@ -14,30 +14,34 @@ interface FormStatusSectionProps {
     overdue: number;
   };
   navigateToDataEntry: () => void;
+  compact?: boolean; // Kompakt görünüş üçün
 }
 
-const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateToDataEntry }) => {
+const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateToDataEntry, compact = false }) => {
   const { t } = useLanguage();
   
   const totalForms = forms.pending + forms.approved + forms.rejected + forms.dueSoon + forms.overdue;
   
   return (
     <section>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">{t('formStatus')}</h2>
-        <Button onClick={navigateToDataEntry} className="gap-1">
-          <FileText className="h-4 w-4" />
-          <span>{t('enterData')}</span>
-        </Button>
-      </div>
+      {!compact && (
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">{t('formStatus')}</h2>
+          <Button onClick={navigateToDataEntry} className="gap-1">
+            <FileText className="h-4 w-4" />
+            <span>{t('enterData')}</span>
+          </Button>
+        </div>
+      )}
       
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+      <div className={`grid gap-3 ${compact ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-6'}`}>
         <FormStatus 
           count={totalForms} 
           label={t('allForms')} 
           icon={<FileText className="h-4 w-4" />} 
           variant="default"
           onClick={navigateToDataEntry}
+          compact={compact}
         />
         <FormStatus 
           count={forms.pending} 
@@ -45,6 +49,7 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateTo
           icon={<Clock className="h-4 w-4" />} 
           variant="pending"
           onClick={navigateToDataEntry}
+          compact={compact}
         />
         <FormStatus 
           count={forms.approved} 
@@ -52,6 +57,7 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateTo
           icon={<CheckCircle2 className="h-4 w-4" />} 
           variant="approved"
           onClick={navigateToDataEntry}
+          compact={compact}
         />
         <FormStatus 
           count={forms.rejected} 
@@ -59,6 +65,7 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateTo
           icon={<XCircle className="h-4 w-4" />} 
           variant="rejected"
           onClick={navigateToDataEntry}
+          compact={compact}
         />
         <FormStatus 
           count={forms.dueSoon} 
@@ -66,6 +73,7 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateTo
           icon={<AlertTriangle className="h-4 w-4" />} 
           variant="due"
           onClick={navigateToDataEntry}
+          compact={compact}
         />
         <FormStatus 
           count={forms.overdue} 
@@ -73,6 +81,7 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({ forms, navigateTo
           icon={<AlertCircle className="h-4 w-4" />} 
           variant="overdue"
           onClick={navigateToDataEntry}
+          compact={compact}
         />
       </div>
     </section>

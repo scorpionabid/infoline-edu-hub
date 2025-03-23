@@ -71,6 +71,21 @@ const dataEntry = {
   helpTip7: "Son tarixə diqqət edin, vaxtında təqdim etməyə çalışın",
   submitWarning: "Məlumatları təsdiq üçün göndərmək istədiyinizə əminsiniz? Təsdiq üçün göndərdikdən sonra dəyişiklik edə bilməyəcəksiniz.",
   saveAsDraft: "Qaralama kimi saxla",
+  selectCategory: "Kateqoriya seçin",
+  notStarted: "Başlanmayıb",
+  complete: "tamamlanıb",
+  noCategoriesFound: "Kateqoriyalar tapılmadı",
+  noCategoriesFoundDesc: "Hal-hazırda doldurulacaq kateqoriyalar yoxdur",
+  chooseCategory: "Kateqoriya seçin",
+  chooseCategoryDescription: "Məlumat daxil etmək üçün statuslardan və ya kateqoriya siyahısından bir kateqoriya seçin",
+  backToDashboard: "Dashboard-a qayıt",
+  understood: "Başa düşdüm",
+  upcomingDeadlines: "Yaxınlaşan son tarixlər",
+  viewAll: "Hamısına bax",
+  daysLeft: "gün qalıb",
+  lastEditedCategory: "Son işlədilən kateqoriya",
+  continueEditing: "Redaktə etməyə davam et",
+  continue: "Davam et",
 };
 
 export default dataEntry;

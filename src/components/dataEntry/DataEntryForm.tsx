@@ -3,21 +3,26 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Save, Send, AlertTriangle } from 'lucide-react';
+import { Save, Send, AlertTriangle, HelpCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import FormField from './components/FormField';
+import DataEntryDialogs from './DataEntryDialogs';
+import StatusIndicators from './StatusIndicators';
 
 interface DataEntryFormProps {
   initialCategoryId?: string | null;
+  onDataChanged?: () => void; // Data dəyişikliklərini izləmək üçün callback
 }
 
-const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
+const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId, onDataChanged }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('general');
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   
   const {
     categories,
@@ -36,9 +41,38 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
     errors
   } = useDataEntry(initialCategoryId);
 
+  // Data dəyişikliklərini izlə
+  useEffect(() => {
+    if (onDataChanged) {
+      onDataChanged();
+    }
+  }, [formData, onDataChanged]);
+
   // Əmin olaq ki, categories mövcuddur
   const currentCategory = categories.length > 0 ? categories[currentCategoryIndex] : null;
   const currentEntryData = currentCategory ? formData.entries.find(entry => entry.categoryId === currentCategory.id) : null;
+  
+  // Təsdiq sorğusu
+  const handleSubmitClick = () => {
+    if (errors.length > 0) {
+      toast({
+        title: t('pleaseCorrectErrors'),
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSubmitDialogOpen(true);
+  };
+
+  // Təsdiq prosesini tamamla
+  const handleSubmitConfirm = () => {
+    setIsSubmitDialogOpen(false);
+    submitForApproval();
+    // Son dəfə işlənən kateqoriyanı qeyd et (gələcək ziyarətlər üçün)
+    if (currentCategory) {
+      localStorage.setItem('lastEditedCategory', currentCategory.id);
+    }
+  };
   
   // Yükləmə zamanı loader göstərmək
   if (isLoading) {
@@ -49,7 +83,17 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
     );
   }
   
-  // Melumat formasi ve kategoriyalar
+  // Əgər heç bir kateqoriya yoxdursa
+  if (categories.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium mb-2">{t('noCategoriesFound')}</h3>
+        <p className="text-muted-foreground">{t('noCategoriesFoundDesc')}</p>
+      </div>
+    );
+  }
+  
+  // Tabları kateqoriyalar əsasında formalaşdır
   const tabs = [
     { id: 'general', label: t('generalInfo') },
     { id: 'student', label: t('studentInfo') },
@@ -62,7 +106,17 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
       <Card className="border-none shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-            <CardTitle className="text-xl">{t('dataForm')}</CardTitle>
+            <div className="flex items-center">
+              <CardTitle className="text-xl">{currentCategory?.name || t('dataForm')}</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="ml-2" 
+                onClick={() => setIsHelpDialogOpen(true)}
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            </div>
             {currentCategory?.deadline && (
               <div className="flex items-center text-amber-600 text-sm">
                 <AlertTriangle size={16} className="mr-1" />
@@ -78,8 +132,56 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Kateqoriya seçici */}
+          {categories.length > 0 && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-1">{t('selectCategory')}</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {categories.map((category, index) => {
+                  const entry = formData.entries.find(e => e.categoryId === category.id);
+                  const isComplete = entry?.isCompleted || false;
+                  const isCurrentCategory = index === currentCategoryIndex;
+                  
+                  return (
+                    <Button
+                      key={category.id}
+                      variant={isCurrentCategory ? "default" : "outline"}
+                      className={cn(
+                        "justify-start h-auto py-2 px-3",
+                        isComplete && !isCurrentCategory && "border-green-200 bg-green-50 text-green-800 hover:bg-green-100",
+                        category.deadline && new Date(category.deadline) < new Date() && !isCurrentCategory && "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+                      )}
+                      onClick={() => changeCategory(index)}
+                    >
+                      <div className="flex items-start justify-between w-full">
+                        <div className="flex flex-col items-start text-left">
+                          <span className="font-medium">{category.name}</span>
+                          <span className="text-xs opacity-80 truncate max-w-[150px]">
+                            {entry?.completionPercentage ? `${Math.round(entry.completionPercentage)}% ${t('complete')}` : t('notStarted')}
+                          </span>
+                        </div>
+                        
+                        {entry?.approvalStatus && (
+                          <StatusBadge status={entry.approvalStatus === 'approved' ? 'approved' : entry.approvalStatus === 'rejected' ? 'rejected' : 'pending'} />
+                        )}
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          {/* Status indikatorları */}
+          <StatusIndicators 
+            errors={errors.filter(e => e.categoryId === currentCategory?.id)} 
+            status={formData.status}
+            showMessages
+          />
+          
+          {/* Form kontentləri */}
           <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
               {tabs.map(tab => (
                 <TabsTrigger 
                   key={tab.id} 
@@ -389,14 +491,25 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
             <div className="flex gap-2">
               <Button 
                 variant="outline"
-                onClick={saveForm}
+                onClick={() => {
+                  saveForm();
+                  // Son dəfə işlənən kateqoriyanı qeyd et (gələcək ziyarətlər üçün)
+                  if (currentCategory) {
+                    localStorage.setItem('lastEditedCategory', currentCategory.id);
+                  }
+                }}
                 disabled={isAutoSaving || isSubmitting}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {t('saveAsDraft')}
+                {isAutoSaving ? (
+                  <span className="flex items-center">
+                    <span className="w-3 h-3 mr-2 rounded-full animate-pulse bg-primary/60"></span>
+                    {t('saving')}...
+                  </span>
+                ) : t('saveAsDraft')}
               </Button>
               <Button 
-                onClick={submitForApproval}
+                onClick={handleSubmitClick}
                 disabled={isSubmitting || errors.length > 0}
               >
                 <Send className="h-4 w-4 mr-2" />
@@ -406,8 +519,21 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({ initialCategoryId }) => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Dialog komponentləri */}
+      <DataEntryDialogs
+        isSubmitDialogOpen={isSubmitDialogOpen}
+        setIsSubmitDialogOpen={setIsSubmitDialogOpen}
+        isHelpDialogOpen={isHelpDialogOpen}
+        setIsHelpDialogOpen={setIsHelpDialogOpen}
+        submitForApproval={handleSubmitConfirm}
+      />
     </div>
   );
 };
+
+// Helper üçün import əlavə etmək lazımdır
+import StatusBadge from './components/StatusBadge';
+import { cn } from "@/lib/utils";
 
 export default DataEntryForm;

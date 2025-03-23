@@ -8,9 +8,10 @@ interface FormStatusProps {
   icon: React.ReactNode;
   variant: 'default' | 'pending' | 'approved' | 'rejected' | 'due' | 'overdue';
   onClick: () => void;
+  compact?: boolean; // Kompakt görünüş üçün
 }
 
-const FormStatus: React.FC<FormStatusProps> = ({ count, label, icon, variant, onClick }) => {
+const FormStatus: React.FC<FormStatusProps> = ({ count, label, icon, variant, onClick, compact = false }) => {
   const variantStyles = {
     default: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200',
     pending: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
@@ -25,11 +26,12 @@ const FormStatus: React.FC<FormStatusProps> = ({ count, label, icon, variant, on
       onClick={onClick}
       className={cn(
         'flex flex-col items-center justify-center p-4 rounded-lg border transition-colors',
+        compact ? 'p-2 sm:p-3' : 'p-4',
         variantStyles[variant]
       )}
     >
-      <div className="text-3xl font-bold mb-1">{count}</div>
-      <div className="flex items-center gap-1 text-sm">
+      <div className={cn("font-bold mb-1", compact ? "text-xl" : "text-3xl")}>{count}</div>
+      <div className={cn("flex items-center gap-1", compact ? "text-xs" : "text-sm")}>
         {icon}
         <span>{label}</span>
       </div>

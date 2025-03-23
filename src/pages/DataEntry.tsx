@@ -7,8 +7,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Upload, AlertCircle } from 'lucide-react';
+import { FileSpreadsheet, Upload, AlertCircle, ArrowLeft, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import FormStatusSection from '@/components/dashboard/school-admin/FormStatusSection';
 import { 
   Dialog, 
   DialogContent, 
@@ -17,6 +18,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const DataEntry = () => {
   const location = useLocation();
@@ -26,6 +28,15 @@ const DataEntry = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Məktəb status statistikaları (demo)
+  const formStatistics = {
+    pending: 3,
+    approved: 5,
+    rejected: 1,
+    dueSoon: 2,
+    overdue: 1
+  };
   
   // URL-dən parametrləri alırıq
   const queryParams = new URLSearchParams(location.search);
@@ -75,6 +86,11 @@ const DataEntry = () => {
     });
   };
 
+  // Geri qayıt
+  const handleGoBack = () => {
+    navigate('/dashboard');
+  };
+
   // Fayl seçimini idarə et
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -119,6 +135,15 @@ const DataEntry = () => {
         <div className="container mx-auto py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleGoBack} 
+                className="mb-2"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('backToDashboard')}
+              </Button>
               <h1 className="text-3xl font-bold">{t('dataEntry')}</h1>
               <p className="text-muted-foreground mt-1">{t('schoolInfoInstructions')}</p>
             </div>
@@ -142,7 +167,33 @@ const DataEntry = () => {
             </div>
           </div>
           
-          <DataEntryForm initialCategoryId={categoryId} />
+          {/* Form statusları bölməsi */}
+          <div className="mb-6">
+            <FormStatusSection 
+              forms={formStatistics} 
+              navigateToDataEntry={() => {}} 
+              compact
+            />
+          </div>
+          
+          {/* Kateqoriya seçilmədiyi zaman info göstər */}
+          {!categoryId && (
+            <Alert className="mb-6 bg-blue-50 border-blue-100 text-blue-800">
+              <Info className="h-4 w-4" />
+              <AlertTitle>{t('chooseCategory')}</AlertTitle>
+              <AlertDescription>
+                {t('chooseCategoryDescription')}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <DataEntryForm 
+            initialCategoryId={categoryId} 
+            onDataChanged={() => {
+              // Məlumatlar dəyişdiyində status statistikalarını yeniləmək (real sistemdə)
+              console.log("Data changed, stats would be updated");
+            }}
+          />
         </div>
         
         {/* Excel Upload Dialog */}
