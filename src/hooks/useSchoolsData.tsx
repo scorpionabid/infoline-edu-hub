@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { School, SchoolFormData, mockSchools, mockRegions, mockSectors } from '@/data/schoolsData';
 import { toast } from 'sonner';
 
@@ -38,18 +38,18 @@ interface UseSchoolsDataReturn {
 
 export const useSchoolsData = (): UseSchoolsDataReturn => {
   const [schools, setSchools] = useState<School[]>(mockSchools);
-  const [schoolsVersion, setSchoolsVersion] = useState(0); // Dövri vəziyyəti yeniləmək üçün
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedSector, setSelectedSector] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
+  const [version, setVersion] = useState(0); // State yeniləmək üçün version əlavə edirik
   const itemsPerPage = 5;
 
   // Məlumatları yeniləmək üçün metod
   const refreshData = useCallback(() => {
-    setSchoolsVersion(prev => prev + 1);
+    setVersion(prev => prev + 1);
   }, []);
 
   // Filtered sectors based on selected region
@@ -75,7 +75,7 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
       
       return searchMatch && regionMatch && sectorMatch && statusMatch;
     });
-  }, [schools, searchTerm, selectedRegion, selectedSector, selectedStatus, schoolsVersion]);
+  }, [schools, searchTerm, selectedRegion, selectedSector, selectedStatus, version]);
 
   // Sort schools based on sort config
   const sortedSchools = useMemo(() => {
@@ -92,25 +92,21 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
       });
     }
     return sortableSchools;
-  }, [filteredSchools, sortConfig, schoolsVersion]);
+  }, [filteredSchools, sortConfig]);
 
   // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = useMemo(() => {
-    return sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
-  }, [sortedSchools, indexOfFirstItem, indexOfLastItem, schoolsVersion]);
-  
   const totalPages = useMemo(() => {
     return Math.ceil(sortedSchools.length / itemsPerPage);
   }, [sortedSchools.length, itemsPerPage]);
 
   // Səhifə sayı dəyişəndə cari səhifə nömrəsini yenidən hesablayaq
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+  const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  
+  const currentItems = useMemo(() => {
+    return sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
+  }, [sortedSchools, indexOfFirstItem, indexOfLastItem, version]);
 
   // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,8 +155,8 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   // CRUD operations
   const handleAddSchool = useCallback((newSchool: School) => {
     setSchools(prevSchools => [...prevSchools, newSchool]);
-    refreshData();
     toast.success('Məktəb uğurla əlavə edildi');
+    refreshData();
   }, [refreshData]);
 
   const handleUpdateSchool = useCallback((updatedSchool: School) => {
@@ -169,14 +165,14 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
         school.id === updatedSchool.id ? updatedSchool : school
       )
     );
-    refreshData();
     toast.success('Məktəb uğurla yeniləndi');
+    refreshData();
   }, [refreshData]);
 
   const handleDeleteSchool = useCallback((schoolId: string) => {
     setSchools(prevSchools => prevSchools.filter(school => school.id !== schoolId));
-    refreshData();
     toast.success('Məktəb uğurla silindi');
+    refreshData();
   }, [refreshData]);
 
   return {
@@ -187,7 +183,7 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
     selectedStatus,
     filteredSectors,
     sortConfig,
-    currentPage,
+    currentPage: adjustedCurrentPage,
     itemsPerPage,
     filteredSchools,
     sortedSchools,

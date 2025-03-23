@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Table, 
@@ -63,13 +63,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
   handleAdminDialogOpen
 }) => {
   const navigate = useNavigate();
-  const [items, setItems] = useState<School[]>([]);
-  
-  // Daxil olan məlumatları daxili vəziyyətə kopyalayırıq ki, 
-  // komponent içərisində dəyişikliklər baş verəndə məlumatlar stabil qalsın
-  useEffect(() => {
-    setItems([...currentItems]);
-  }, [currentItems]);
 
   // Tamamlanma faizi badge
   const renderCompletionRateBadge = (rate: number) => {
@@ -141,8 +134,8 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.length > 0 ? (
-            items.map(school => (
+          {currentItems.length > 0 ? (
+            currentItems.map(school => (
               <TableRow key={school.id} className="hover:bg-muted/50">
                 <TableCell>
                   <Avatar className="h-9 w-9">
@@ -183,7 +176,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                 <TableCell className="hidden md:table-cell">
                   {school.adminEmail ? (
                     <button 
-                      className="text-blue-500 hover:underline flex items-center gap-1"
+                      className="text-blue-500 hover:underline flex items-center gap-1 cursor-pointer"
                       onClick={() => handleAdminDialogOpen(school)}
                     >
                       <Mail className="h-3 w-3" />
@@ -211,7 +204,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                         <span className="sr-only">Əməliyyatlar</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="min-w-[160px] bg-background">
+                    <DropdownMenuContent align="end" className="z-50 bg-background">
                       <DropdownMenuItem 
                         className="cursor-pointer flex items-center" 
                         onClick={() => handleDropdownAction('view', school)}

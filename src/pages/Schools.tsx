@@ -8,6 +8,7 @@ const Schools = () => {
   return (
     <SidebarLayout>
       <SchoolsContainer />
+      {/* Toaster-ı bir dəfə əlavə edirik */}
       <Toaster position="top-right" closeButton richColors />
     </SidebarLayout>
   );
