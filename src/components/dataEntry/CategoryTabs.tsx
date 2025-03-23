@@ -10,7 +10,8 @@ import {
   AlertCircle, 
   Clock,
   ChevronRight, 
-  ChevronLeft 
+  ChevronLeft,
+  AlertTriangle 
 } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -45,22 +46,26 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   
   const getCurrentDate = () => new Date();
 
-  const getStatusIcon = (categoryId: string) => {
+  const getStatusIcon = (categoryId: string, required: boolean = false) => {
     const entry = entries.find(e => e.categoryId === categoryId);
     const category = categories.find(c => c.id === categoryId);
     
     if (!entry) return null;
     
     if (entry.isCompleted) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className={`h-4 w-4 ${required ? 'ml-1' : ''} text-green-500`} />;
     }
     
     if (category?.deadline && isAfter(getCurrentDate(), new Date(category.deadline))) {
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className={`h-4 w-4 ${required ? 'ml-1' : ''} text-red-500`} />;
+    }
+    
+    if (entry.values.some(v => v.errorMessage)) {
+      return <AlertTriangle className={`h-4 w-4 ${required ? 'ml-1' : ''} text-amber-500`} />;
     }
     
     if (entry.completionPercentage > 0) {
-      return <Clock className="h-4 w-4 text-amber-500" />;
+      return <Clock className={`h-4 w-4 ${required ? 'ml-1' : ''} text-amber-500`} />;
     }
     
     return null;
@@ -160,28 +165,58 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           className="w-full overflow-x-auto"
         >
           <TabsList className="h-auto p-1 flex flex-nowrap min-w-full">
-            {categories.map((category, index) => (
-              <TabsTrigger
-                key={category.id}
-                value={category.id}
-                className={cn(
-                  "flex-col h-auto py-2 px-3 w-full text-left flex-nowrap relative data-[state=active]:border-b-2 data-[state=active]:border-primary",
-                  "justify-start items-start",
-                  tabWidth < 33 ? "min-w-[150px]" : ""
-                )}
-                style={{ minWidth: tabWidth < 33 ? '150px' : `${tabWidth}%` }}
-              >
-                <div className="flex items-center w-full">
-                  <span className="mr-1 text-muted-foreground">{index + 1}.</span>
-                  <span className="flex-1 truncate text-sm">{category.name}</span>
-                  {getStatusIcon(category.id)}
-                </div>
-                <div className="flex flex-wrap gap-1 mt-1 w-full">
-                  {getCompletionBadge(category.id)}
-                  {getDeadlineBadge(category)}
-                </div>
-              </TabsTrigger>
-            ))}
+            {categories.map((category, index) => {
+              const isCurrent = index === currentCategoryIndex;
+              const entry = entries.find(e => e.categoryId === category.id);
+              const hasErrors = entry?.values.some(v => v.errorMessage);
+              
+              return (
+                <TabsTrigger
+                  key={category.id}
+                  value={category.id}
+                  className={cn(
+                    "flex-col h-auto py-2 px-3 w-full text-left flex-nowrap relative data-[state=active]:border-b-2 data-[state=active]:border-primary",
+                    "justify-start items-start group",
+                    hasErrors ? "border-amber-300 dark:border-amber-700" : "",
+                    isCurrent ? "border-primary-600 ring-2 ring-primary-100" : "",
+                    tabWidth < 33 ? "min-w-[150px]" : ""
+                  )}
+                  style={{ minWidth: tabWidth < 33 ? '150px' : `${tabWidth}%` }}
+                >
+                  <div className="flex items-center w-full">
+                    <span className={cn(
+                      "mr-1", 
+                      isCurrent ? "text-primary-600 font-medium" : "text-muted-foreground"
+                    )}>
+                      {index + 1}.
+                    </span>
+                    <span className={cn(
+                      "flex-1 truncate text-sm",
+                      isCurrent ? "font-medium" : ""
+                    )}>
+                      {category.name}
+                    </span>
+                    {category.deadline && isAfter(getCurrentDate(), new Date(category.deadline)) && (
+                      <Badge variant="outline" className="ml-1 bg-red-50 text-red-600 border-red-200 text-[10px] px-1 py-0">
+                        Gecikmiş
+                      </Badge>
+                    )}
+                    {getStatusIcon(category.id)}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1 w-full">
+                    {getCompletionBadge(category.id)}
+                    {getDeadlineBadge(category)}
+                  </div>
+                  
+                  {/* Hover-da göstəriləcək qısa təsvir tooltip */}
+                  {category.description && (
+                    <div className="absolute left-0 top-full mt-2 z-50 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg p-3 text-sm border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity">
+                      {category.description}
+                    </div>
+                  )}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
         </Tabs>
       </div>

@@ -189,6 +189,35 @@ const mockCategories: CategoryWithColumns[] = [
         helpText: "Tədris prosesinin inkişafı üçün təkliflər"
       }
     ]
+  },
+  {
+    id: "cat5",
+    name: "Yeni kateqoriya",
+    description: "Bu kateqoriya yeni əlavə edilib və doldurulması tələb olunur",
+    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 gün sonra
+    columns: [
+      { 
+        id: "col15", 
+        categoryId: "cat5", 
+        name: "Yeni əlavə olunmuş field", 
+        type: "text", 
+        isRequired: true, 
+        order: 1, 
+        status: "active",
+        helpText: "Bu field yeni əlavə olunub və mütləq doldurulmalıdır", 
+      },
+      { 
+        id: "col16", 
+        categoryId: "cat5", 
+        name: "İkinci yeni field", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Seçim 1", "Seçim 2", "Seçim 3"], 
+        order: 2, 
+        status: "active",
+        helpText: "Bu da yeni əlavə olunmuş seçim sahəsidir"
+      }
+    ]
   }
 ];
 
@@ -208,8 +237,40 @@ export const useDataEntry = () => {
 
   // Forma ilkin dəyərləri yükləmək
   useEffect(() => {
+    // Yeni əlavə olunmuş kateqoriyaları və yaxın müddəti olan kateqoriyaları öndə göstərmək
+    const sortedCategories = [...mockCategories].sort((a, b) => {
+      // Əvvəlcə deadline-a görə sıralama
+      if (a.deadline && b.deadline) {
+        const deadlineA = new Date(a.deadline);
+        const deadlineB = new Date(b.deadline);
+        return deadlineA.getTime() - deadlineB.getTime();
+      } else if (a.deadline) {
+        return -1; // a-nın deadline-ı var, öndə olmalıdır
+      } else if (b.deadline) {
+        return 1; // b-nin deadline-ı var, öndə olmalıdır
+      }
+      return 0;
+    });
+    
+    setCategories(sortedCategories);
+    
+    // Vaxtı keçən və ya yaxınlaşan kategorya varsa, ona fokuslanmaq
+    const now = new Date();
+    const threeDaysLater = new Date(now);
+    threeDaysLater.setDate(now.getDate() + 3);
+
+    const overdueOrUrgentCategoryIndex = sortedCategories.findIndex(category => {
+      if (!category.deadline) return false;
+      const deadlineDate = new Date(category.deadline);
+      return deadlineDate <= threeDaysLater;
+    });
+
+    if (overdueOrUrgentCategoryIndex !== -1) {
+      setCurrentCategoryIndex(overdueOrUrgentCategoryIndex);
+    }
+
     // Real vəziyyətdə burada API-dən məlumatlar yüklənə bilər
-    const initialEntries: CategoryEntryData[] = categories.map(category => ({
+    const initialEntries: CategoryEntryData[] = sortedCategories.map(category => ({
       categoryId: category.id,
       values: category.columns.map(column => ({
         columnId: column.id,
@@ -227,9 +288,14 @@ export const useDataEntry = () => {
       lastSaved: new Date().toISOString()
     }));
     
+    // Məlumatları yüklədikdən sonra validasiyanı işə salaq
+    setTimeout(() => {
+      validateForm();
+    }, 500);
+    
     // Konsol log məlumatı
     console.log("Forma məlumatları yükləndi");
-  }, [categories]);
+  }, []);
 
   // Sütun tipinə görə ilkin dəyər təyin etmək
   const getDefaultValueByType = (type: string, defaultValue?: string) => {
@@ -264,12 +330,14 @@ export const useDataEntry = () => {
         const valueIndex = newEntries[categoryIndex].values.findIndex(v => v.columnId === columnId);
         
         if (valueIndex !== -1) {
-          newEntries[categoryIndex].values[valueIndex].value = value;
-          // Hər hansı dəyişiklik baş verdikdə, statusu 'pending' edirik
-          if (newEntries[categoryIndex].values[valueIndex].status === 'rejected') {
-            newEntries[categoryIndex].values[valueIndex].status = 'pending';
-            delete newEntries[categoryIndex].values[valueIndex].errorMessage;
-          }
+          newEntries[categoryIndex].values[valueIndex] = {
+            ...newEntries[categoryIndex].values[valueIndex],
+            value,
+            status: 'pending'
+          };
+          
+          // Əgər əvvəlcədən xəta var idisə, silək
+          delete newEntries[categoryIndex].values[valueIndex].errorMessage;
         } else {
           newEntries[categoryIndex].values.push({
             columnId,
@@ -301,6 +369,11 @@ export const useDataEntry = () => {
       const overallProgress = newEntries.reduce((sum, entry) => sum + entry.completionPercentage, 0) / newEntries.length;
       
       setIsAutoSaving(true);
+      
+      // Hər dəyişiklikdən sonra validasiya etmək
+      setTimeout(() => {
+        validateForm();
+      }, 300);
       
       return {
         ...prev,
@@ -339,26 +412,53 @@ export const useDataEntry = () => {
       if (categoryEntry) {
         category.columns.forEach(column => {
           if (column.isRequired) {
-            const value = categoryEntry.values.find(v => v.columnId === column.id)?.value;
+            const valueObj = categoryEntry.values.find(v => v.columnId === column.id);
+            const value = valueObj?.value;
             
             if (value === undefined || value === null || value === '') {
               newErrors.push({
                 columnId: column.id,
-                message: `${column.name} doldurulmalıdır`
+                message: `"${category.name}" kateqoriyasında "${column.name}" doldurulmalıdır`
               });
+              
+              // Value obyektinə error mesajı əlavə edək
+              if (valueObj) {
+                valueObj.errorMessage = `${column.name} doldurulmalıdır`;
+              }
             } else if (column.type === 'number' && column.validationRules) {
               const numValue = Number(value);
-              if (column.validationRules.minValue !== undefined && numValue < column.validationRules.minValue) {
+              
+              if (isNaN(numValue)) {
                 newErrors.push({
                   columnId: column.id,
-                  message: `${column.name} minimum ${column.validationRules.minValue} olmalıdır`
+                  message: `"${category.name}" kateqoriyasında "${column.name}" rəqəm olmalıdır`
                 });
-              }
-              if (column.validationRules.maxValue !== undefined && numValue > column.validationRules.maxValue) {
-                newErrors.push({
-                  columnId: column.id,
-                  message: `${column.name} maksimum ${column.validationRules.maxValue} olmalıdır`
-                });
+                
+                if (valueObj) {
+                  valueObj.errorMessage = `${column.name} rəqəm olmalıdır`;
+                }
+              } else {
+                if (column.validationRules.minValue !== undefined && numValue < column.validationRules.minValue) {
+                  newErrors.push({
+                    columnId: column.id,
+                    message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${column.validationRules.minValue} olmalıdır`
+                  });
+                  
+                  if (valueObj) {
+                    valueObj.errorMessage = `Minimum ${column.validationRules.minValue} olmalıdır`;
+                  }
+                }
+                
+                if (column.validationRules.maxValue !== undefined && numValue > column.validationRules.maxValue) {
+                  newErrors.push({
+                    columnId: column.id,
+                    message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${column.validationRules.maxValue} olmalıdır`
+                  });
+                  
+                  if (valueObj) {
+                    valueObj.errorMessage = `Maksimum ${column.validationRules.maxValue} olmalıdır`;
+                  }
+                }
               }
             }
           }
@@ -405,7 +505,7 @@ export const useDataEntry = () => {
       
       // Xəta olan ilk kateqoriyaya keçid
       const firstErrorIndex = errors.length > 0 
-        ? categories.findIndex(cat => cat.columns.some(col => col.id === errors[0].columnId))
+        ? categories.findIndex(cat => cat.columns.some(col => errors.some(err => err.columnId === col.id)))
         : -1;
         
       if (firstErrorIndex !== -1) {
@@ -432,8 +532,19 @@ export const useDataEntry = () => {
 
   // Sütun üçün xəta mesajını almaq
   const getErrorForColumn = useCallback((columnId: string) => {
-    return errors.find(err => err.columnId === columnId)?.message;
-  }, [errors]);
+    const error = errors.find(err => err.columnId === columnId);
+    if (error) return error.message;
+    
+    // Alternativ olaraq, entry məlumatlarından da xəta mesajını ala bilərik
+    for (const entry of formData.entries) {
+      const valueObj = entry.values.find(v => v.columnId === columnId);
+      if (valueObj && valueObj.errorMessage) {
+        return valueObj.errorMessage;
+      }
+    }
+    
+    return undefined;
+  }, [errors, formData.entries]);
 
   // Excel şablonunu yükləmək
   const downloadExcelTemplate = useCallback(() => {
@@ -465,7 +576,9 @@ export const useDataEntry = () => {
       "col9": true,
       "col10": true,
       "col11": "Yaxşı",
-      "col12": new Date("2022-08-15")
+      "col12": new Date("2022-08-15"),
+      "col15": "Excel ilə doldurulmuş məlumat",
+      "col16": "Seçim 2"
     };
     
     setFormData(prev => {
@@ -482,7 +595,14 @@ export const useDataEntry = () => {
             const valueIndex = newEntries[categoryIndex].values.findIndex(v => v.columnId === columnId);
             
             if (valueIndex !== -1) {
-              newEntries[categoryIndex].values[valueIndex].value = value;
+              newEntries[categoryIndex].values[valueIndex] = {
+                ...newEntries[categoryIndex].values[valueIndex],
+                value,
+                status: 'pending'
+              };
+              
+              // Xəta mesajını silirik
+              delete newEntries[categoryIndex].values[valueIndex].errorMessage;
             } else {
               newEntries[categoryIndex].values.push({
                 columnId,
@@ -515,6 +635,11 @@ export const useDataEntry = () => {
       // Ümumi tamamlanma faizini yeniləmək
       const overallProgress = newEntries.reduce((sum, entry) => sum + entry.completionPercentage, 0) / newEntries.length;
       
+      // Excel yüklənib bitdikdən sonra formanı validasiya etmək
+      setTimeout(() => {
+        validateForm();
+      }, 500);
+      
       return {
         ...prev,
         entries: newEntries,
@@ -522,7 +647,7 @@ export const useDataEntry = () => {
         lastSaved: new Date().toISOString()
       };
     });
-  }, [categories]);
+  }, [categories, validateForm]);
 
   return {
     categories,

@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { CheckCircle, AlertCircle, Clock, FileText, FileClock, Filter, Calendar, ArrowUpDown, Search } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, FileText, FileClock, Filter, Calendar, ArrowUpDown, Search, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 import StatsCard from './StatsCard';
 import CompletionRateCard from './CompletionRateCard';
 import NotificationsCard from './NotificationsCard';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SchoolAdminDashboardProps {
   data: {
@@ -37,7 +39,9 @@ const activeForms = [
     dueDate: new Date(Date.now() + 86400000 * 3), // 3 gün sonra
     completionStatus: 75,
     category: 'Müəllim məlumatları',
-    priority: 'high'
+    priority: 'high',
+    isNew: false,
+    unsavedChanges: true
   },
   {
     id: 'form2',
@@ -45,7 +49,9 @@ const activeForms = [
     dueDate: new Date(Date.now() + 86400000 * 2), // 2 gün sonra
     completionStatus: 40,
     category: 'Şagird məlumatları',
-    priority: 'medium'
+    priority: 'medium',
+    isNew: false,
+    unsavedChanges: false
   },
   {
     id: 'form3',
@@ -53,7 +59,9 @@ const activeForms = [
     dueDate: new Date(Date.now() + 86400000 * 5), // 5 gün sonra
     completionStatus: 10,
     category: 'İnfrastruktur',
-    priority: 'low'
+    priority: 'low',
+    isNew: true,
+    unsavedChanges: false
   },
   {
     id: 'form4',
@@ -61,7 +69,9 @@ const activeForms = [
     dueDate: new Date(Date.now() + 86400000 * 1), // 1 gün sonra
     completionStatus: 90,
     category: 'Tədris',
-    priority: 'high'
+    priority: 'high',
+    isNew: false,
+    unsavedChanges: true
   },
   {
     id: 'form5',
@@ -69,7 +79,9 @@ const activeForms = [
     dueDate: new Date(Date.now() - 86400000 * 1), // 1 gün əvvəl (vaxtı keçmiş)
     completionStatus: 60,
     category: 'Şagird məlumatları',
-    priority: 'high'
+    priority: 'high',
+    isNew: false,
+    unsavedChanges: false
   }
 ];
 
@@ -83,11 +95,13 @@ const overdueItems = activeForms
 
 const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'dueDate' | 'priority' | 'completion'>('dueDate');
   const [activeTab, setActiveTab] = useState('active');
   
   const handleContinueForm = (formId: string, formTitle: string) => {
+    navigate('/data-entry');
     toast.info(t('formContinue'), {
       description: `${formTitle} formasını doldurmağa davam edirsiniz.`
     });
@@ -146,6 +160,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
   const activeTabForms = sortedForms.filter(form => form.completionStatus < 100);
   const completedTabForms = sortedForms.filter(form => form.completionStatus === 100);
   const overdueTabForms = sortedForms.filter(form => isAfter(new Date(), form.dueDate) && form.completionStatus < 100);
+  const newForms = sortedForms.filter(form => form.isNew);
   
   return (
     <div className="space-y-6">
@@ -199,13 +214,46 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {newForms.length > 0 && (
+              <div>
+                <h4 className="font-medium text-green-500 mb-2 flex items-center gap-1">
+                  <Badge variant="success">Yeni</Badge> Yeni əlavə olunmuş formalar
+                </h4>
+                {newForms.slice(0, 2).map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="border-l-2 border-green-500 pl-3 py-1 mb-2 hover:bg-green-50 cursor-pointer transition-colors rounded-r" 
+                    onClick={() => handleContinueForm(item.id, item.title)}
+                  >
+                    <div className="font-medium flex items-center">
+                      {item.title} 
+                      <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">Yeni</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center justify-between">
+                      <span>
+                        {format(item.dueDate, 'dd.MM.yyyy')} · {getDaysText(item.dueDate)}
+                      </span>
+                      <Badge variant="outline" className={getPriorityColor(item.priority)}>
+                        {item.priority === 'high' ? t('highPriority') : 
+                         item.priority === 'medium' ? t('mediumPriority') : t('lowPriority')}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             {overdueItems.length > 0 && (
               <div>
                 <h4 className="font-medium text-red-500 mb-2 flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" /> {t('overdue')}
                 </h4>
                 {overdueItems.slice(0, 2).map((item) => (
-                  <div key={item.id} className="border-l-2 border-red-500 pl-3 py-1 mb-2">
+                  <div 
+                    key={item.id} 
+                    className="border-l-2 border-red-500 pl-3 py-1 mb-2 hover:bg-red-50 cursor-pointer transition-colors rounded-r" 
+                    onClick={() => handleContinueForm(item.id, item.title)}
+                  >
                     <div className="font-medium">{item.title}</div>
                     <div className="text-sm text-muted-foreground flex items-center justify-between">
                       <span>
@@ -219,7 +267,15 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                   </div>
                 ))}
                 {overdueItems.length > 2 && (
-                  <Button variant="ghost" size="sm" className="mt-1 text-muted-foreground">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-1 text-muted-foreground"
+                    onClick={() => {
+                      setActiveTab('overdue');
+                      document.getElementById('form-management-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
                     + {overdueItems.length - 2} {t('moreOverdue')}
                   </Button>
                 )}
@@ -231,8 +287,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                 <Clock className="h-4 w-4" /> {t('upcoming')}
               </h4>
               {upcomingDeadlines.slice(0, 3).map((item) => (
-                <div key={item.id} className="border-l-2 border-blue-500 pl-3 py-1 mb-2">
-                  <div className="font-medium">{item.title}</div>
+                <div 
+                  key={item.id} 
+                  className="border-l-2 border-blue-500 pl-3 py-1 mb-2 hover:bg-blue-50 cursor-pointer transition-colors rounded-r" 
+                  onClick={() => handleContinueForm(item.id, item.title)}
+                >
+                  <div className="font-medium flex items-center">
+                    {item.title}
+                    {item.unsavedChanges && (
+                      <Badge variant="outline" className="ml-2 text-xs bg-amber-50 text-amber-700 border-amber-200">Saxlanmamış</Badge>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground flex items-center justify-between">
                     <span>
                       {format(item.dueDate, 'dd.MM.yyyy')} · {getDaysText(item.dueDate)}
@@ -245,7 +310,15 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                 </div>
               ))}
               {upcomingDeadlines.length > 3 && (
-                <Button variant="ghost" size="sm" className="mt-1 text-muted-foreground">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-1 text-muted-foreground"
+                  onClick={() => {
+                    setActiveTab('active');
+                    document.getElementById('form-management-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
                   + {upcomingDeadlines.length - 3} {t('moreUpcoming')}
                 </Button>
               )}
@@ -254,7 +327,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
         </Card>
       </div>
       
-      <Card>
+      <Card id="form-management-section">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle className="text-lg">{t('manageForms')}</CardTitle>
@@ -297,6 +370,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium">{form.title}</h4>
+                          {form.isNew && <Badge variant="success">Yeni</Badge>}
                           <Badge variant="outline" className={getPriorityColor(form.priority)}>
                             {form.priority === 'high' ? t('highPriority') : 
                              form.priority === 'medium' ? t('mediumPriority') : t('lowPriority')}
@@ -315,13 +389,23 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                         </div>
                       </div>
                       <div className="flex gap-2 self-end md:self-center">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleContinueForm(form.id, form.title)}
-                        >
-                          {t('continue')}
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => navigate('/data-entry')}
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                {t('continue')}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Məlumat daxil etmə səhifəsinə keçin</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <Button 
                           variant="default"
                           size="sm"
@@ -365,13 +449,24 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                         </div>
                       </div>
                       <div className="flex gap-2 self-end md:self-center">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleContinueForm(form.id, form.title)}
-                        >
-                          {t('continue')}
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => navigate('/data-entry')}
+                                className="text-red-600 border-red-200 hover:bg-red-100"
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                {t('continue')}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Təcili! Gecikmiş məlumatları daxil edin</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <Button 
                           variant="default"
                           size="sm"
@@ -414,9 +509,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => toast.info(t('viewForm'), {
-                            description: `${form.title} formasını görüntüləyirsiniz.`
-                          })}
+                          onClick={() => navigate('/data-entry')}
                         >
                           {t('view')}
                         </Button>
@@ -434,7 +527,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
           </div>
         </CardContent>
         <CardFooter>
-          <Button variant="ghost" size="sm" className="mx-auto">
+          <Button variant="ghost" size="sm" className="mx-auto" onClick={() => navigate('/data-entry')}>
             {t('viewAllForms')}
           </Button>
         </CardFooter>

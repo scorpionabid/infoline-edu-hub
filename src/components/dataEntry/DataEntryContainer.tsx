@@ -3,13 +3,39 @@ import React, { useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Save, Send, Info, Download, Upload, HelpCircle } from 'lucide-react';
+import { 
+  Save, 
+  Send, 
+  Info, 
+  Download, 
+  Upload, 
+  HelpCircle, 
+  Check, 
+  ChevronLeft,
+  AlertTriangle 
+} from 'lucide-react';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import CategoryTabs from './CategoryTabs';
 import DataEntryForm from './DataEntryForm';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { useNavigate } from 'react-router-dom';
+import { 
+  AlertDialog, 
+  AlertDialogContent, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogCancel, 
+  AlertDialogAction 
+} from '@/components/ui/alert-dialog';
 import { toast } from '@/components/ui/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 const DataEntryContainer: React.FC = () => {
   const {
@@ -24,9 +50,11 @@ const DataEntryContainer: React.FC = () => {
     saveForm,
     getErrorForColumn,
     downloadExcelTemplate,
-    uploadExcelData
+    uploadExcelData,
+    errors
   } = useDataEntry();
 
+  const navigate = useNavigate();
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -42,17 +70,15 @@ const DataEntryContainer: React.FC = () => {
   }, []);
 
   const handleSubmitClick = () => {
-    // Əgər formada xətalar varsa, xəbərdarlıq əvəzinə dialoqu açırıq
-    const canSubmit = true; // Bu funksiya useDataEntry-dən gələ bilər
-    if (canSubmit) {
-      setIsSubmitDialogOpen(true);
-    } else {
+    if (errors.length > 0) {
       toast({
         title: "Xəta",
-        description: "Zəhmət olmasa bütün məcburi sahələri doldurun",
+        description: "Zəhmət olmasa bütün məcburi sahələri düzgün şəkildə doldurun",
         variant: "destructive",
       });
+      return;
     }
+    setIsSubmitDialogOpen(true);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +109,17 @@ const DataEntryContainer: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Məlumat daxil etmə</h1>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/dashboard')}
+              className="p-0 h-8 w-8"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold tracking-tight">Məlumat daxil etmə</h1>
+          </div>
           <p className="text-muted-foreground">
             Kateqoriyalar üzrə məlumatları daxil edin və təsdiq üçün göndərin
           </p>
@@ -127,7 +163,7 @@ const DataEntryContainer: React.FC = () => {
                     variant="default" 
                     size="sm"
                     onClick={handleSubmitClick}
-                    disabled={isSubmitting || formData.status === 'submitted'}
+                    disabled={isSubmitting || formData.status === 'submitted' || errors.length > 0}
                   >
                     <Send className="mr-2 h-4 w-4" />
                     {isSubmitting ? 'Göndərilir...' : 'Təsdiq üçün göndər'}
@@ -161,7 +197,19 @@ const DataEntryContainer: React.FC = () => {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <CardTitle className="text-xl">Form məlumatları</CardTitle>
+              <CardTitle className="text-xl">
+                Form məlumatları
+                {errors.length > 0 && (
+                  <Badge variant="outline" className="ml-2 bg-red-50 text-red-700 border-red-200">
+                    <AlertTriangle className="h-3 w-3 mr-1" /> {errors.length} xəta
+                  </Badge>
+                )}
+                {formData.status === 'submitted' && (
+                  <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
+                    <Check className="h-3 w-3 mr-1" /> Təqdim edilib
+                  </Badge>
+                )}
+              </CardTitle>
               <div className="flex gap-2">
                 <input
                   type="file"
@@ -228,6 +276,22 @@ const DataEntryContainer: React.FC = () => {
                   <h4 className="font-medium text-blue-700 dark:text-blue-300">Məlumatlar təsdiq gözləyir</h4>
                   <p className="text-sm text-blue-600 dark:text-blue-400">Məlumatlarınız sektor admini tərəfindən yoxlanılır və təsdiqlənəcək.</p>
                 </div>
+              </div>
+            )}
+            
+            {errors.length > 0 && (
+              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
+                <h4 className="font-medium text-red-700 dark:text-red-300 flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2" /> Formanızda xətalar var
+                </h4>
+                <ul className="mt-2 space-y-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.slice(0, 3).map((error, index) => (
+                    <li key={index}>{error.message}</li>
+                  ))}
+                  {errors.length > 3 && (
+                    <li>... və {errors.length - 3} digər xəta</li>
+                  )}
+                </ul>
               </div>
             )}
           </CardContent>
