@@ -27,7 +27,7 @@ export const useCategoryData = ({
 }: UseCategoryDataProps) => {
   
   const loadCategoryData = useCallback(() => {
-    // URL-də kateqoriya dəyişibsə yükləməni yenidən başladırıq
+    // URL-də kateqoriya dəyişibsə yükləməyi yenidən başladırıq
     if (selectedCategoryId !== lastCategoryIdRef.current) {
       setIsLoading(true);
       lastCategoryIdRef.current = selectedCategoryId;
@@ -75,7 +75,7 @@ export const useCategoryData = ({
         }
       }
 
-      // Real vəziyyətdə burada API-dən məlumatlar yüklənə bilər
+      // İlkin məlumatlar (LocalStorage-də mövcud deyilsə)
       const initialEntries: CategoryEntryData[] = sortedCategories.map(category => ({
         categoryId: category.id,
         values: category.columns.map(column => ({
@@ -129,7 +129,7 @@ export const useCategoryData = ({
         setIsLoading(false);
       }, 300);
       
-      // Konsol log məlumatı
+      // Sadəcə bir dəfə konsola məlumat yazırıq, hər dəfə yox
       console.log("Forma məlumatları yükləndi");
     }, 800);
     

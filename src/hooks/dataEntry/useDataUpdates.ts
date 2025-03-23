@@ -83,23 +83,37 @@ export const useDataUpdates = ({
     // Ümumi tamamlanma faizini yeniləmək
     const overallProgress = newEntries.reduce((sum, entry) => sum + entry.completionPercentage, 0) / newEntries.length;
     
+    // Excel yüklənməsindən sonra məlumatları da saxlayaq
+    const updatedFormData = {
+      ...formData,
+      entries: newEntries,
+      overallProgress,
+      lastSaved: new Date().toISOString()
+    };
+    
+    // LocalStorage-də saxlayaq
+    localStorage.setItem('infolineFormData', JSON.stringify(updatedFormData));
+    
     initializeForm(newEntries, formData.status);
     
     // Excel yüklənib bitdikdən sonra formanı validasiya etmək
     setTimeout(() => {
       validateForm();
     }, 500);
-  }, [categories, formData.entries, formData.status, initializeForm, validateForm]);
+  }, [categories, formData, initializeForm, validateForm]);
 
   // Kateqoriya dəyişmək
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
+      // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
+      localStorage.setItem('infolineFormData', JSON.stringify(formData));
+      
       setCurrentCategoryIndex(index);
       
       // Kateqoriya dəyişən kimi formanın üstünə scroll etmək
       window.scrollTo(0, 0);
     }
-  }, [categories.length, setCurrentCategoryIndex]);
+  }, [categories.length, setCurrentCategoryIndex, formData]);
 
   // Təsdiq üçün göndərmək
   const submitForApproval = useCallback(() => {
