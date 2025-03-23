@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useMockReports } from '@/hooks/useMockReports';
 import ReportPreviewDialog from './ReportPreviewDialog';
-import { Report } from '@/types/report';
+import { Report, ReportType } from '@/types/report';
 
 const ReportList: React.FC = () => {
   const { t } = useLanguage();
@@ -23,7 +23,7 @@ const ReportList: React.FC = () => {
   const [previewReport, setPreviewReport] = React.useState<Report | null>(null);
   
   // Report type icon mapping
-  const getReportIcon = (type: string) => {
+  const getReportIcon = (type: ReportType) => {
     switch (type) {
       case 'statistics':
         return <BarChart2 className="h-5 w-5 text-blue-500" />;
@@ -51,7 +51,7 @@ const ReportList: React.FC = () => {
           <Card key={report.id} className="overflow-hidden">
             <CardContent className="p-0">
               <div className="h-32 bg-muted flex items-center justify-center relative overflow-hidden">
-                {getReportIcon(report.type)}
+                {getReportIcon(report.type as ReportType)}
                 <div className="absolute top-2 right-2">
                   <Badge
                     variant={
@@ -67,13 +67,13 @@ const ReportList: React.FC = () => {
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-semibold text-lg mb-1">{report.title}</h3>
+                <h3 className="font-semibold text-lg mb-1">{report.title || report.name}</h3>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                   {report.description}
                 </p>
                 <div className="flex items-center text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3 mr-1" />
-                  {new Date(report.created).toLocaleDateString()}
+                  {new Date(report.createdAt || report.created || '').toLocaleDateString()}
                 </div>
               </div>
             </CardContent>

@@ -71,7 +71,7 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{report.title}</DialogTitle>
+          <DialogTitle>{report.title || report.name}</DialogTitle>
           <DialogDescription>{report.description}</DialogDescription>
         </DialogHeader>
         
@@ -84,7 +84,7 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
           
           <TabsContent value="chart" className="pt-4">
             <div className="h-96 w-full">
-              <ReportChart reportType={report.type} data={report.data} />
+              {report.data && <ReportChart reportType={report.type as any} data={report.data} />}
             </div>
           </TabsContent>
           

@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
 import { 
@@ -23,8 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { CategoryWithColumns } from '@/types/column';
 import { Check, X, Loader2, FileDown } from 'lucide-react';
-import { exportTableToExcel } from '@/utils/excelExport';
-import { toast } from '@/components/ui/use-toast';
+import { exportToExcel } from '@/utils/excelExport';
+import { toast } from 'sonner';
 import { ExportOptions } from '@/types/report';
 
 const SchoolColumnTable: React.FC = () => {
@@ -59,9 +60,10 @@ const SchoolColumnTable: React.FC = () => {
 
     const fileName = `məktəb-məlumatları-${selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}`;
     const options: ExportOptions = { customFileName: fileName };
-    const success = exportTableToExcel(schoolColumnData, selectedCategory, options);
     
-    if (success) {
+    const result = exportToExcel(schoolColumnData, selectedCategory.columns, options);
+    
+    if (result.success) {
       toast({
         title: t("exportSuccess"),
         description: t("fileDownloaded"),

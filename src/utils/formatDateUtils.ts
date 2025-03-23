@@ -30,3 +30,18 @@ export const formatRelativeDate = (dateString: string, language: Language) => {
     return dateString;
   }
 };
+
+/**
+ * Tarix formatlaması üçün köməkçi funksiya
+ * @param dateString - Formatlanacaq tarix
+ * @returns Formatlanmış tarix
+ */
+export const formatDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  } catch (error) {
+    console.error("Date formatting error:", error);
+    return dateString;
+  }
+};

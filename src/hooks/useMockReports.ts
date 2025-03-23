@@ -1,14 +1,17 @@
 
 import { useEffect, useState } from 'react';
-import { Report } from '@/types/report';
+import { Report, ReportType } from '@/types/report';
 
 export const mockReports: Report[] = [
   {
     id: 'report-1',
+    name: 'Məktəb Performans Statistikası',
     title: 'Məktəb Performans Statistikası',
-    type: 'statistics',
+    type: 'statistics' as ReportType,
     description: 'Bütün məktəblər üzrə məlumat doldurma performansı və statistika.',
+    createdAt: '2023-10-15T08:30:00Z',
     created: '2023-10-15T08:30:00Z',
+    createdBy: 'admin',
     data: [
       { name: 'Bakı', value: 85, category: 'Region' },
       { name: 'Gəncə', value: 72, category: 'Region' },
@@ -30,10 +33,13 @@ export const mockReports: Report[] = [
   },
   {
     id: 'report-2',
+    name: 'Kateqoriyalar üzrə Tamamlanma Faizi',
     title: 'Kateqoriyalar üzrə Tamamlanma Faizi',
-    type: 'completion',
+    type: 'completion' as ReportType,
     description: 'Müxtəlif kateqoriyalar üzrə məlumat doldurulma faizinin analizi.',
+    createdAt: '2023-10-10T14:45:00Z',
     created: '2023-10-10T14:45:00Z',
+    createdBy: 'admin',
     data: [
       { name: 'Tədris Planı', value: 92, category: 'Akademik' },
       { name: 'Şagird Qeydiyyatı', value: 87, category: 'İdarəetmə' },
