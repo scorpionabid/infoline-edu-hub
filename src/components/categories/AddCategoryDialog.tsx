@@ -36,12 +36,14 @@ interface AddCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAddCategory: (category: Omit<Category, "id">) => Promise<boolean>;
+  editCategory?: Category | null;
 }
 
 const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   isOpen,
   onClose,
   onAddCategory,
+  editCategory = null,
 }) => {
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -64,27 +66,44 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      assignment: "all",
-      priority: 1,
-      status: "active",
+      name: editCategory?.name || "",
+      assignment: editCategory?.assignment || "all",
+      priority: editCategory?.priority || 1,
+      status: editCategory?.status || "active",
     },
   });
+
+  // Reset form when dialog closes or editCategory changes
+  React.useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        name: editCategory?.name || "",
+        assignment: editCategory?.assignment || "all",
+        priority: editCategory?.priority || 1,
+        status: editCategory?.status || "active",
+      });
+    }
+  }, [isOpen, editCategory, form]);
 
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      const newCategory: Omit<Category, "id"> = {
+      const categoryData: Omit<Category, "id"> = {
         name: values.name,
         assignment: values.assignment,
         priority: values.priority,
         status: values.status,
-        createdAt: new Date().toISOString(),
+        createdAt: editCategory?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      const success = await onAddCategory(newCategory);
+      // Əgər düzəliş edilən kateqoriya varsa, mövcud ID-ni qoruyuruq
+      if (editCategory?.id) {
+        categoryData.id = editCategory.id;
+      }
+
+      const success = await onAddCategory(categoryData);
       if (success) {
         form.reset();
         onClose();
@@ -96,20 +115,13 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     }
   };
 
-  // Reset form when dialog closes
-  React.useEffect(() => {
-    if (!isOpen) {
-      form.reset();
-    }
-  }, [isOpen, form]);
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t("addCategory")}</DialogTitle>
+          <DialogTitle>{editCategory ? t("editCategory") : t("addCategory")}</DialogTitle>
           <DialogDescription>
-            {t("addCategoryDescription")}
+            {editCategory ? t("editCategoryDescription") : t("addCategoryDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -141,6 +153,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -194,6 +207,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>

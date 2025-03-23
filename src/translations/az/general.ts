@@ -39,7 +39,7 @@ const general = {
   // Form status tərcümələri
   formStatus: "Form statusu",
   allForms: "Bütün formlar",
-  pendingForms: "Gözləyən",
+  pendingForms: "Gözləyən formlar",
   approvedForms: "Təsdiqlənmiş",
   rejectedForms: "Rədd edilmiş",
   dueSoonForms: "Vaxtı yaxınlaşır",
@@ -89,7 +89,7 @@ const general = {
   enterData: "Məlumat daxil et",
   forms: "Formlar",
   recentForms: "Son formlar",
-  pendingForms: "Gözləyən formlar",
+  // pendingForms: "Gözləyən formlar", (Bu təkrarlanan sətri silindi)
   urgentForms: "Təcili formlar",
   openingForm: "Form açılır",
   formId: "Form ID",
