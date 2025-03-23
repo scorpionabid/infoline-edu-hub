@@ -3,8 +3,8 @@ import React, { createContext, useState, useContext, ReactNode, useEffect, useCa
 import { Language, LanguageInfo, LanguageContextType } from '@/types/language';
 import { translate, getSavedLanguage, saveLanguage } from '@/utils/languageUtils';
 
-// Dil seçimləri
-const languageOptions: Record<Language, LanguageInfo> = {
+// Export the language options
+export const languageOptions: Record<Language, LanguageInfo> = {
   az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
   en: { nativeName: 'English', flag: '🇬🇧' },
   ru: { nativeName: 'Русский', flag: '🇷🇺' },
