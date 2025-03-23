@@ -28,6 +28,7 @@ const DataEntry = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   
   // Məktəb status statistikaları (demo)
   const formStatistics = {
@@ -42,6 +43,14 @@ const DataEntry = () => {
   const queryParams = new URLSearchParams(location.search);
   const categoryId = queryParams.get('categoryId');
   const showAlert = queryParams.get('alert');
+  const statusParam = queryParams.get('status');
+  
+  // Status parametrini URL-dən götürürük və state-ə təyin edirik
+  useEffect(() => {
+    if (statusParam) {
+      setSelectedStatus(statusParam);
+    }
+  }, [statusParam]);
   
   useEffect(() => {
     // Əgər URL-də alert parametri varsa, müvafiq bildiriş göstəririk
@@ -126,6 +135,26 @@ const DataEntry = () => {
     }, 2000);
   };
 
+  // Status kartına klikləndikdə çağırılan funksiya
+  const navigateToDataEntryWithStatus = (status: string | null) => {
+    // Əgər eyni statusa klikləndikdə, statusu sıfırlayırıq
+    const newStatus = status === selectedStatus ? null : status;
+    setSelectedStatus(newStatus);
+    
+    // URL-i yeniləyirik
+    const newParams = new URLSearchParams(queryParams);
+    if (newStatus) {
+      newParams.set('status', newStatus);
+    } else {
+      newParams.delete('status');
+    }
+    
+    navigate({ 
+      pathname: location.pathname, 
+      search: newParams.toString() 
+    }, { replace: true });
+  };
+
   return (
     <>
       <Helmet>
@@ -167,17 +196,18 @@ const DataEntry = () => {
             </div>
           </div>
           
-          {/* Form statusları bölməsi */}
+          {/* Form statusları bölməsi - aktiv statusu seçmək imkanı əlavə edildi */}
           <div className="mb-6">
             <FormStatusSection 
               forms={formStatistics} 
-              navigateToDataEntry={() => {}} 
+              navigateToDataEntry={navigateToDataEntryWithStatus} 
+              activeStatus={selectedStatus}
               compact
             />
           </div>
           
           {/* Kateqoriya seçilmədiyi zaman info göstər */}
-          {!categoryId && (
+          {!categoryId && !selectedStatus && (
             <Alert className="mb-6 bg-blue-50 border-blue-100 text-blue-800">
               <Info className="h-4 w-4" />
               <AlertTitle>{t('chooseCategory')}</AlertTitle>
@@ -189,6 +219,7 @@ const DataEntry = () => {
           
           <DataEntryForm 
             initialCategoryId={categoryId} 
+            statusFilter={selectedStatus as any} 
             onDataChanged={() => {
               // Məlumatlar dəyişdiyində status statistikalarını yeniləmək (real sistemdə)
               console.log("Data changed, stats would be updated");

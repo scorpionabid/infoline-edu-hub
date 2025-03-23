@@ -76,6 +76,7 @@ const dataEntry = {
   complete: "tamamlanıb",
   noCategoriesFound: "Kateqoriyalar tapılmadı",
   noCategoriesFoundDesc: "Hal-hazırda doldurulacaq kateqoriyalar yoxdur",
+  noCategoriesWithSelectedStatus: "Seçilmiş statusda kateqoriya tapılmadı",
   chooseCategory: "Kateqoriya seçin",
   chooseCategoryDescription: "Məlumat daxil etmək üçün statuslardan və ya kateqoriya siyahısından bir kateqoriya seçin",
   backToDashboard: "Dashboard-a qayıt",
@@ -86,6 +87,8 @@ const dataEntry = {
   lastEditedCategory: "Son işlədilən kateqoriya",
   continueEditing: "Redaktə etməyə davam et",
   continue: "Davam et",
+  clearFilters: "Filtrləri təmizlə",
+  loadingDataEntryForm: "Məlumat formu yüklənir...",
 };
 
 export default dataEntry;
