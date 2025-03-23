@@ -2,7 +2,7 @@
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Save, Send, Info, HelpCircle, ChevronLeft, RotateCw } from 'lucide-react';
+import { Save, Send, HelpCircle, ChevronLeft, RotateCw } from 'lucide-react';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import CategoryTabs from './CategoryTabs';
 import DataEntryForm from './DataEntryForm';
@@ -10,7 +10,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLanguage } from '@/context/LanguageContext';
-import { cn } from '@/lib/utils';
 import ExcelActions from './ExcelActions';
 import DataEntryDialogs from './DataEntryDialogs';
 import StatusIndicators from './StatusIndicators';
