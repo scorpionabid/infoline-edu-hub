@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import DataEntryProgress from '../dataEntry/DataEntryProgress';
 import { CalendarClock, Clock, FileText, PlusCircle } from 'lucide-react';
-import { Form } from '@/types/form';
+import { Form, FormStatus } from '@/types/form';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -38,7 +38,7 @@ interface SchoolAdminDashboardProps {
       id: string;
       title: string;
       category: string;
-      status: "pending" | "approved" | "rejected" | "draft" | "overdue" | "due";
+      status: FormStatus;
       completionPercentage: number;
       deadline?: string;
     }>;
