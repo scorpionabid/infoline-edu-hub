@@ -1,0 +1,51 @@
+
+/**
+ * Təşkilati struktur tərcümələri
+ */
+const organization = {
+  // Organization
+  schoolName: "Məktəb adı",
+  enterSchoolName: "Məktəbin adını daxil edin",
+  enterFullSchoolName: "Məktəbin tam rəsmi adını daxil edin",
+  schoolType: "Məktəb növü",
+  selectType: "Növü seçin",
+  primarySchool: "İbtidai məktəb",
+  secondarySchool: "Orta məktəb",
+  highSchool: "Tam orta məktəb",
+  teachingLanguage: "Tədris dili",
+  azerbaijani: "Azərbaycan dili",
+  russian: "Rus dili",
+  english: "İngilis dili",
+  turkish: "Türk dili",
+  mixed: "Qarışıq",
+  foundingYear: "Quruluş ili",
+  enterFoundingYear: "Quruluş ilini daxil edin",
+  notesField: "Qeydlər",
+  enterNotes: "Əlavə qeydləri daxil edin",
+  totalStudents: "Ümumi şagird sayı",
+  enterTotalStudents: "Ümumi şagird sayını daxil edin",
+  maleStudents: "Oğlan şagirdlərin sayı",
+  enterMaleStudents: "Oğlan şagirdlərin sayını daxil edin",
+  femaleStudents: "Qız şagirdlərin sayı",
+  enterFemaleStudents: "Qız şagirdlərin sayını daxil edin",
+  totalTeachers: "Ümumi müəllim sayı",
+  enterTotalTeachers: "Ümumi müəllim sayını daxil edin",
+  permanentTeachers: "Daimi müəllimlərin sayı",
+  enterPermanentTeachers: "Daimi müəllimlərin sayını daxil edin",
+  classrooms: "Sinif otaqlarının sayı",
+  enterClassrooms: "Sinif otaqlarının sayını daxil edin",
+  libraries: "Kitabxanaların sayı",
+  enterLibraries: "Kitabxanaların sayını daxil edin",
+  computersForStudents: "Şagirdlər üçün kompüterlərin sayı",
+  enterComputersForStudents: "Şagirdlər üçün kompüterlərin sayını daxil edin",
+  generalInfo: "Ümumi Məlumatlar",
+  studentInfo: "Tələbə Məlumatları",
+  teacherInfo: "Müəllim Məlumatları",
+  resources: "Resurslar",
+  schoolBasicInfoDesc: "Məktəbin əsas məlumatlarını daxil edin",
+  studentInfoDesc: "Məktəbin tələbə məlumatlarını daxil edin",
+  teacherInfoDesc: "Məktəbin müəllim məlumatlarını daxil edin",
+  resourcesInfoDesc: "Məktəbin resursları haqqında məlumatları daxil edin",
+};
+
+export default organization;
