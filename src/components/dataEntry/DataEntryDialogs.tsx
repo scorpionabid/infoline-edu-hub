@@ -1,18 +1,17 @@
 
 import React from 'react';
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction
-} from '@/components/ui/alert-dialog';
-import { useLanguage } from '@/context/LanguageContext';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from '@/components/ui/button';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
-interface DataEntryDialogsProps {
+export interface DataEntryDialogsProps {
   isSubmitDialogOpen: boolean;
   setIsSubmitDialogOpen: (open: boolean) => void;
   isHelpDialogOpen: boolean;
@@ -27,48 +26,92 @@ const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
   setIsHelpDialogOpen,
   submitForApproval
 }) => {
-  const { t } = useLanguage();
-
+  const { t } = useLanguageSafe();
+  
+  const handleSubmitConfirm = () => {
+    submitForApproval();
+    setIsSubmitDialogOpen(false);
+  };
+  
   return (
     <>
-      {/* Təsdiq sorğusu dialoqu */}
-      <AlertDialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('submitForApproval')}</AlertDialogTitle>
-            <AlertDialogDescription>
+      {/* Submit Confirmation Dialog */}
+      <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('submitForApproval')}</DialogTitle>
+            <DialogDescription>
               {t('submitWarning')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={submitForApproval}>{t('confirm')}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Yardım dialoqu */}
-      <AlertDialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('aboutDataEntry')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              <ul className="list-disc pl-5 space-y-2 mt-2">
-                <li>{t('helpTip1')}</li>
-                <li>{t('helpTip2')}</li>
-                <li>{t('helpTip3')}</li>
-                <li>{t('helpTip4')}</li>
-                <li>{t('helpTip5')}</li>
-                <li>{t('helpTip6')}</li>
-                <li>{t('helpTip7')}</li>
-              </ul>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction>{t('understood')}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={handleSubmitConfirm}>
+              {t('submitForApprovalBtn')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Help Dialog */}
+      <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('aboutDataEntry')}</DialogTitle>
+          </DialogHeader>
+          <ul className="space-y-2 my-4">
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                1
+              </span>
+              <span>{t('helpTip1')}</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                2
+              </span>
+              <span>{t('helpTip2')}</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                3
+              </span>
+              <span>{t('helpTip3')}</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                4
+              </span>
+              <span>{t('helpTip4')}</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                5
+              </span>
+              <span>{t('helpTip5')}</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                6
+              </span>
+              <span>{t('helpTip6')}</span>
+            </li>
+            <li className="flex items-start space-x-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0">
+                7
+              </span>
+              <span>{t('helpTip7')}</span>
+            </li>
+          </ul>
+          <DialogFooter>
+            <Button onClick={() => setIsHelpDialogOpen(false)}>
+              {t('understood')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

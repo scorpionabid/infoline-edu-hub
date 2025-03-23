@@ -1,27 +1,29 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, FileText, FileCheck, Info, Check } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { AlertTriangle, FileText, FileCheck, Info, Check, Clock } from 'lucide-react';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { ColumnValidationError } from '@/types/dataEntry';
 
 interface StatusIndicatorsProps {
-  errors: ColumnValidationError[];
-  status: string;
+  errors?: ColumnValidationError[];
+  status?: string;
   showMessages?: boolean;
+  timestamp?: string;
 }
 
 const StatusIndicators: React.FC<StatusIndicatorsProps> = ({ 
-  errors, 
+  errors = [], 
   status, 
-  showMessages = false 
+  showMessages = false,
+  timestamp 
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
 
   if (!showMessages) {
     return (
       <>
-        {errors.length > 0 && (
+        {errors && errors.length > 0 && (
           <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
             <AlertTriangle className="h-3 w-3 mr-1" /> {errors.length} {t('error')}
           </Badge>
@@ -34,6 +36,16 @@ const StatusIndicators: React.FC<StatusIndicatorsProps> = ({
         {status === 'approved' && (
           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
             <FileCheck className="h-3 w-3 mr-1" /> {t('approved')}
+          </Badge>
+        )}
+        {status === 'saving' && (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            <Clock className="h-3 w-3 mr-1" /> {t('saving')}
+          </Badge>
+        )}
+        {status === 'saved' && timestamp && (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Check className="h-3 w-3 mr-1" /> {t('saved')} {timestamp}
           </Badge>
         )}
       </>
@@ -62,7 +74,7 @@ const StatusIndicators: React.FC<StatusIndicatorsProps> = ({
         </div>
       )}
       
-      {errors.length > 0 && (
+      {errors && errors.length > 0 && (
         <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
           <h4 className="font-medium text-red-700 dark:text-red-300 flex items-center">
             <AlertTriangle className="h-4 w-4 mr-2" /> {t('formHasErrors')}

@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, Send, FileSpreadsheet, Upload } from 'lucide-react';
+import { Save, Send, FileSpreadsheet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import DataEntryProgress from './DataEntryProgress';
 import ExcelActions from './ExcelActions';
@@ -28,6 +29,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   onDataChanged 
 }) => {
   const { t } = useLanguageSafe();
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   
   const {
     categories,
@@ -116,43 +119,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const isRejected = categoryEntry?.approvalStatus === 'rejected';
   const isApproved = categoryEntry?.approvalStatus === 'approved';
   
-  const getCompletionStatus = (
-    completionPercentage: number,
-    isApproved: boolean,
-    isRejected: boolean,
-    deadline?: Date
-  ) => {
-    if (isApproved) return 'approved';
-    if (isRejected) return 'rejected';
-    
-    const now = new Date();
-    
-    if (deadline && deadline < now) return 'overdue';
-    if (deadline && deadline.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) return 'dueSoon';
-    
-    if (completionPercentage === 100) return 'completed';
-    if (completionPercentage > 0) return 'inProgress';
-    
-    return 'notStarted';
-  };
-  
-  const getFormattedDeadline = (deadline: Date) => {
-    const now = new Date();
-    const diffTime = deadline.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) {
-      return `${Math.abs(diffDays)} ${t('daysLate')}`;
-    } else if (diffDays === 0) {
-      return t('today');
-    } else if (diffDays === 1) {
-      return t('tomorrow');
-    } else {
-      return `${diffDays} ${t('daysLeft')}`;
-    }
-  };
-  
-  const activeColumns = currentCategory?.columns.filter(col => col.status === 'active') || [];
+  const activeColumns = currentCategory?.columns?.filter(col => col.status === 'active') || [];
   
   const handleTabChange = (tabValue: string) => {
     const newIndex = filteredCategories.findIndex(cat => cat.id === tabValue);
@@ -165,9 +132,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     await saveForm();
   };
   
-  const handleSubmit = async () => {
-    await submitForApproval();
+  const handleSubmitClick = () => {
+    setIsSubmitDialogOpen(true);
   };
+  
+  const formattedLastSaved = formData.lastSaved 
+    ? new Date(formData.lastSaved).toLocaleTimeString() 
+    : '';
   
   return (
     <>
@@ -184,7 +155,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             <div className="flex flex-wrap gap-2 items-center">
               <StatusIndicators 
                 status={isAutoSaving ? "saving" : "saved"} 
-                timestamp={formData.lastSaved} 
+                timestamp={formattedLastSaved} 
               />
               <div className="flex gap-2">
                 <Button 
@@ -204,7 +175,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   size="sm" 
                   className="whitespace-nowrap"
                   disabled={isSubmitting || isApproved} 
-                  onClick={handleSubmit}
+                  onClick={handleSubmitClick}
                 >
                   <Send className="h-4 w-4 mr-1" />
                   {isSubmitting ? t('sending') : t('submitForApprovalBtn')}
@@ -251,7 +222,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               <TabsContent key={category.id} value={category.id} className="pt-2">
                 <CategoryHeader 
                   name={category.name}
-                  description={category.description}
+                  description={category.description || ''}
                   deadline={category.deadline}
                   isSubmitted={categoryEntry?.isSubmitted || false}
                 />
@@ -275,7 +246,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                       options={column.options}
                       placeholder={column.placeholder}
                       helpText={column.description}
-                      value={categoryEntry?.values.find(v => v.columnId === column.id)?.value}
+                      value={categoryEntry?.values.find(v => v.columnId === column.id)?.value || ''}
                       error={getErrorForColumn(column.id)}
                       onChange={(newValue) => updateValue(category.id, column.id, newValue)}
                       disabled={isApproved || isSubmitting}
@@ -288,7 +259,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         </div>
       </div>
       
-      <DataEntryDialogs />
+      <DataEntryDialogs 
+        isSubmitDialogOpen={isSubmitDialogOpen}
+        setIsSubmitDialogOpen={setIsSubmitDialogOpen}
+        isHelpDialogOpen={isHelpDialogOpen}
+        setIsHelpDialogOpen={setIsHelpDialogOpen}
+        submitForApproval={submitForApproval}
+      />
     </>
   );
 };
