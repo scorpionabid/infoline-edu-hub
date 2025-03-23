@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -10,6 +9,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Mail, KeyRound, User, Globe, School as SchoolIcon } from 'lucide-react';
 import SchoolForm from './SchoolForm';
 import { School, SchoolFormData } from '@/data/schoolsData';
@@ -312,7 +312,7 @@ interface AdminDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
-  onResetPassword: () => void;
+  onResetPassword: (newPassword: string) => void;
   selectedAdmin: School | null;
 }
 
@@ -323,8 +323,40 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
   onResetPassword,
   selectedAdmin
 }) => {
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewPassword(e.target.value);
+    if (e.target.value.length < 6) {
+      setPasswordError('Parol minimum 6 simvol olmalıdır');
+    } else {
+      setPasswordError('');
+    }
+  };
+
+  const handleResetPassword = () => {
+    if (newPassword.length < 6) {
+      setPasswordError('Parol minimum 6 simvol olmalıdır');
+      return;
+    }
+    onResetPassword(newPassword);
+    setShowPasswordReset(false);
+    setNewPassword('');
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setShowPasswordReset(false);
+      setNewPassword('');
+      setPasswordError('');
+      onClose();
+    }
+  }; 
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Məktəb admini</DialogTitle>
@@ -334,38 +366,76 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
         </DialogHeader>
         {selectedAdmin && (
           <div className="grid gap-4 py-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="adminEmail">E-poçt</Label>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span id="adminEmail">{selectedAdmin.adminEmail}</span>
+            {!showPasswordReset ? (
+              <>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="adminEmail">E-poçt</Label>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span id="adminEmail">{selectedAdmin.adminEmail}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="adminSchool">Məktəb</Label>
+                  <div className="flex items-center gap-2">
+                    <SchoolIcon className="h-4 w-4 text-muted-foreground" />
+                    <span id="adminSchool">{selectedAdmin.name}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="adminRegion">Region/Sektor</Label>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <span id="adminRegion">{selectedAdmin.region} / {selectedAdmin.sector}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col space-y-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="newPassword">Yeni parol</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="Yeni parol daxil edin (minimum 6 simvol)"
+                    className={passwordError ? "border-red-500" : ""}
+                  />
+                  {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p>Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.</p>
+                </div>
               </div>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="adminSchool">Məktəb</Label>
-              <div className="flex items-center gap-2">
-                <SchoolIcon className="h-4 w-4 text-muted-foreground" />
-                <span id="adminSchool">{selectedAdmin.name}</span>
-              </div>
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="adminRegion">Region/Sektor</Label>
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-muted-foreground" />
-                <span id="adminRegion">{selectedAdmin.region} / {selectedAdmin.sector}</span>
-              </div>
-            </div>
+            )}
           </div>
         )}
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onResetPassword}>
-            <KeyRound className="h-4 w-4 mr-2" />
-            Parolu sıfırla
-          </Button>
-          <Button onClick={onUpdate}>
-            <User className="h-4 w-4 mr-2" />
-            Yenilə
-          </Button>
+          {!showPasswordReset ? (
+            <>
+              <Button variant="outline" onClick={() => setShowPasswordReset(true)}>
+                <KeyRound className="h-4 w-4 mr-2" />
+                Parolu dəyiş
+              </Button>
+              <Button onClick={onUpdate}>
+                <User className="h-4 w-4 mr-2" />
+                Yenilə
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setShowPasswordReset(false)}>
+                Ləğv et
+              </Button>
+              <Button 
+                onClick={handleResetPassword}
+                disabled={newPassword.length < 6}
+              >
+                Parolu dəyiş
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

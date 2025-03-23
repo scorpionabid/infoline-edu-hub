@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, Role } from '@/context/AuthContext';
@@ -43,7 +42,8 @@ import {
   XCircle,
   AlertCircle,
   Globe,
-  User
+  User,
+  KeyRound
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -66,7 +66,6 @@ import {
 import { UserFormData } from '@/types/user';
 import { mockUsers } from '@/data/mockUsers';
 
-// Saxta regionlar məlumatı ilə admini əlavə edək
 const mockRegions = [
   { 
     id: '1', 
@@ -183,14 +182,12 @@ const Regions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
-  // Region əlavə etmə formu
   const [regionFormData, setRegionFormData] = useState({
     name: '',
     description: '',
     status: 'active'
   });
   
-  // Admin əlavə etmə formu
   const [adminFormData, setAdminFormData] = useState<UserFormData>({
     name: '',
     email: '',
@@ -203,20 +200,21 @@ const Regions = () => {
     }
   });
   
-  // Axtarışı həndlə etmək
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Axtarış ediləndə ilk səhifəyə qayıt
+    setCurrentPage(1);
   };
   
-  // Axtarış terminə görə regionların filtirlənməsi
   const filteredRegions = regions.filter(region =>
     region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     region.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     region.adminEmail.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Sıralamaq üçün
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -225,7 +223,6 @@ const Regions = () => {
     setSortConfig({ key, direction });
   };
   
-  // Sıralama konfiqurasiyasına görə regionların sıralanması
   const sortedRegions = React.useMemo(() => {
     const sortableRegions = [...filteredRegions];
     if (sortConfig.key) {
@@ -242,20 +239,16 @@ const Regions = () => {
     return sortableRegions;
   }, [filteredRegions, sortConfig]);
   
-  // Səhifə üçün göstəriləcək məlumatları ala bilirik
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedRegions.slice(indexOfFirstItem, indexOfLastItem);
   
-  // Səhifə nömrəsini dəyişir
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
   
-  // Ümumi səhifə sayı
   const totalPages = Math.ceil(sortedRegions.length / itemsPerPage);
   
-  // Region əlavə etmək
   const handleAddDialogOpen = () => {
     setRegionFormData({
       name: '',
@@ -278,10 +271,8 @@ const Regions = () => {
     setIsAddDialogOpen(true);
   };
   
-  // Admin məlumatlarına baxmaq
   const handleViewAdmin = (region) => {
     setSelectedRegion(region);
-    // Burada admin məlumatlarını API-dən alardıq, amma mock data istifadə edirik
     const admin = mockUsers.find(user => user.id === region.adminId);
     setSelectedAdmin(admin || { 
       id: region.adminId, 
@@ -293,12 +284,10 @@ const Regions = () => {
     setIsUserDialogOpen(true);
   };
   
-  // Region form dəyişikliyini idarə etmək
   const handleRegionFormChange = (e) => {
     const { name, value } = e.target;
     setRegionFormData(prev => ({ ...prev, [name]: value }));
     
-    // Region adı dəyişdikdə, admin email təklifi yarat
     if (name === 'name' && value) {
       const suggestedEmail = `${value.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
       setAdminFormData(prev => ({ 
@@ -309,14 +298,11 @@ const Regions = () => {
     }
   };
   
-  // Admin form dəyişikliyini idarə etmək
   const handleAdminFormChange = (data: UserFormData) => {
     setAdminFormData(data);
   };
   
-  // Region və admin yaratma
   const handleAddSubmit = () => {
-    // Yeni region yaradaq
     const newRegionId = (regions.length + 1).toString();
     const newAdminId = `user-${Date.now()}`;
     
@@ -331,7 +317,6 @@ const Regions = () => {
       adminEmail: adminFormData.email
     };
     
-    // Yeni admin əlavə edək
     const newAdmin = {
       ...adminFormData,
       id: newAdminId,
@@ -340,7 +325,6 @@ const Regions = () => {
       updatedAt: new Date()
     };
     
-    // Mock data-ya əlavə edək
     setRegions([...regions, newRegion]);
     mockUsers.push(newAdmin);
     
@@ -348,7 +332,6 @@ const Regions = () => {
     toast.success('Region və admin uğurla əlavə edildi');
   };
   
-  // Region redaktə dialoqu açmaq
   const handleEditDialogOpen = (region) => {
     setSelectedRegion(region);
     setRegionFormData({
@@ -359,7 +342,6 @@ const Regions = () => {
     setIsEditDialogOpen(true);
   };
   
-  // Redaktə formunu təqdim etmək
   const handleEditSubmit = () => {
     const updatedRegions = regions.map(region => 
       region.id === selectedRegion.id ? { ...region, ...regionFormData } : region
@@ -369,13 +351,11 @@ const Regions = () => {
     toast.success('Region uğurla yeniləndi');
   };
   
-  // Silmə dialoqunu açmaq
   const handleDeleteDialogOpen = (region) => {
     setSelectedRegion(region);
     setIsDeleteDialogOpen(true);
   };
   
-  // Silməni təsdiqləmək
   const handleDeleteConfirm = () => {
     const updatedRegions = regions.filter(region => region.id !== selectedRegion.id);
     setRegions(updatedRegions);
@@ -383,7 +363,6 @@ const Regions = () => {
     toast.success('Region uğurla silindi');
   };
   
-  // Tamamlanma dərəcəsi badge-ni göstərmək
   const renderCompletionRateBadge = (rate) => {
     if (rate >= 80) {
       return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{rate}%</Badge>;
@@ -394,7 +373,6 @@ const Regions = () => {
     }
   };
   
-  // Status badge-ni göstərmək
   const renderStatusBadge = (status) => {
     if (status === 'active') {
       return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
@@ -403,9 +381,18 @@ const Regions = () => {
     }
   };
   
-  // Admin parolunu sıfırlamaq
   const handleResetPassword = () => {
-    toast.success(`${selectedAdmin.email} üçün parol sıfırlama linki göndərildi`);
+    if (newPassword.length < 6) {
+      setPasswordError('Parol minimum 6 simvol olmalıdır');
+      return;
+    }
+    
+    toast.success(`${selectedAdmin?.email} üçün yeni parol təyin edildi`, {
+      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
+    });
+    
+    setShowPasswordReset(false);
+    setNewPassword('');
     setIsUserDialogOpen(false);
   };
   
@@ -538,7 +525,6 @@ const Regions = () => {
               </Table>
             </div>
             
-            {/* Səhifələndirmə */}
             {sortedRegions.length > itemsPerPage && (
               <div className="mt-4">
                 <Pagination>
@@ -575,7 +561,6 @@ const Regions = () => {
         </Card>
       </div>
       
-      {/* Region əlavə etmək dialoqu */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -687,7 +672,6 @@ const Regions = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Region redaktə dialoqu */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -734,7 +718,6 @@ const Regions = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Silmə təsdiq dialoqu */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -754,8 +737,14 @@ const Regions = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Admin məlumatları dialoqu */}
-      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+      <Dialog open={isUserDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setShowPasswordReset(false);
+          setNewPassword('');
+          setPasswordError('');
+        }
+        setIsUserDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Admin məlumatları</DialogTitle>
@@ -765,29 +754,75 @@ const Regions = () => {
           </DialogHeader>
           {selectedAdmin && (
             <div className="space-y-4 py-4">
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Ad</Label>
-                <p className="font-medium">{selectedAdmin.name}</p>
-              </div>
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Email</Label>
-                <p className="font-medium">{selectedAdmin.email}</p>
-              </div>
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Rol</Label>
-                <Badge variant="secondary" className="w-fit">Region admin</Badge>
-              </div>
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Status</Label>
-                <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                  {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                </Badge>
-              </div>
+              {!showPasswordReset ? (
+                <>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Ad</Label>
+                    <p className="font-medium">{selectedAdmin.name}</p>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Email</Label>
+                    <p className="font-medium">{selectedAdmin.email}</p>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Rol</Label>
+                    <Badge variant="secondary" className="w-fit">Region admin</Badge>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Status</Label>
+                    <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                      {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="newPassword">Yeni parol</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (e.target.value.length < 6) {
+                          setPasswordError('Parol minimum 6 simvol olmalıdır');
+                        } else {
+                          setPasswordError('');
+                        }
+                      }}
+                      placeholder="Yeni parol daxil edin (minimum 6 simvol)"
+                      className={passwordError ? "border-red-500" : ""}
+                    />
+                    {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <p>Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
-            <Button onClick={handleResetPassword}>Parolu sıfırla</Button>
+            {!showPasswordReset ? (
+              <>
+                <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
+                <Button onClick={() => setShowPasswordReset(true)}>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Parolu dəyiş
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowPasswordReset(false)}>Ləğv et</Button>
+                <Button 
+                  onClick={handleResetPassword}
+                  disabled={newPassword.length < 6}
+                >
+                  Parolu dəyiş
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

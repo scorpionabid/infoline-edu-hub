@@ -77,7 +77,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('password')}</FormLabel>
+              <FormLabel>{isEdit ? t('newPassword') : t('password')}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -86,8 +86,14 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     field.onChange(e);
                     onFormChange('password', e.target.value);
                   }}
+                  placeholder={isEdit ? t('enterNewPassword') : t('enterPassword')}
                 />
               </FormControl>
+              {isEdit && passwordRequired && (
+                <p className="text-sm text-muted-foreground">
+                  {t('passwordResetHelp')}
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}

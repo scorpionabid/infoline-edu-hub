@@ -1,6 +1,53 @@
+import React from 'react';
 
-// Saxta məktəb məlumatları
-export const mockSchools = [
+export interface School {
+  id: string;
+  name: string;
+  principalName: string;
+  address: string;
+  region: string;
+  regionId: string;
+  sector: string;
+  sectorId: string;
+  phone: string;
+  email: string;
+  studentCount: number;
+  teacherCount: number;
+  status: 'active' | 'inactive';
+  type: 'full_secondary' | 'general_secondary' | 'primary' | 'lyceum' | 'gymnasium';
+  language: 'az' | 'ru' | 'en' | 'tr';
+  createdAt: string;
+  completionRate: number;
+  logo: string;
+  adminEmail: string;
+}
+
+export interface SchoolFormData {
+  name: string;
+  principalName: string;
+  address: string;
+  regionId: string;
+  sectorId: string;
+  phone: string;
+  email: string;
+  studentCount: string;
+  teacherCount: string;
+  status: 'active' | 'inactive';
+  type: 'full_secondary' | 'general_secondary' | 'primary' | 'lyceum' | 'gymnasium';
+  language: 'az' | 'ru' | 'en' | 'tr';
+  adminEmail?: string;
+  adminFullName?: string;
+  adminPassword?: string;
+  adminStatus?: string;
+}
+
+export interface SortConfig {
+  key: string | null;
+  direction: string | null;
+}
+
+// Mock data for schools
+export const mockSchools: School[] = [
   {
     id: '1',
     name: '20 nömrəli orta məktəb',
@@ -171,7 +218,7 @@ export const mockSchools = [
   },
 ];
 
-// Saxta sektor və region məlumatları
+// Mock data for sectors
 export const mockSectors = [
   { id: '1', name: 'Yasamal', regionId: '1' },
   { id: '2', name: 'Nizami', regionId: '1' },
@@ -183,6 +230,7 @@ export const mockSectors = [
   { id: '8', name: 'Xətai', regionId: '1' },
 ];
 
+// Mock data for regions
 export const mockRegions = [
   { id: '1', name: 'Bakı' },
   { id: '2', name: 'Gəncə' },
@@ -190,7 +238,7 @@ export const mockRegions = [
   { id: '4', name: 'Mingəçevir' },
 ];
 
-// Məktəb növü formatı üçün funksiya
+// Utility functions
 export const getSchoolTypeLabel = (type: string): string => {
   switch (type) {
     case 'full_secondary': return 'Tam orta';
@@ -202,7 +250,6 @@ export const getSchoolTypeLabel = (type: string): string => {
   }
 };
 
-// Tədris dili formatı üçün funksiya
 export const getLanguageLabel = (language: string): string => {
   switch (language) {
     case 'az': return 'Azərbaycan';
@@ -213,69 +260,6 @@ export const getLanguageLabel = (language: string): string => {
   }
 };
 
-// Məktəb üçün loqo initial
 export const getSchoolInitial = (name: string): string => {
   return name.charAt(0).toUpperCase();
 };
-
-// School tipini müəyyən etmək
-export interface School {
-  id: string;
-  name: string;
-  principalName: string;
-  address: string;
-  region: string;
-  regionId: string;
-  sector: string;
-  sectorId: string;
-  phone: string;
-  email: string;
-  studentCount: number;
-  teacherCount: number;
-  status: 'active' | 'inactive';
-  type: string;
-  language: string;
-  createdAt: string;
-  completionRate: number;
-  logo: string;
-  adminEmail: string;
-}
-
-// Region tipini müəyyən etmək
-export interface Region {
-  id: string;
-  name: string;
-}
-
-// Sektor tipini müəyyən etmək
-export interface Sector {
-  id: string;
-  name: string;
-  regionId: string;
-}
-
-// Form məlumatları üçün tip müəyyən etmək
-export interface SchoolFormData {
-  name: string;
-  principalName: string;
-  address: string;
-  regionId: string;
-  sectorId: string;
-  phone: string;
-  email: string;
-  studentCount: string;
-  teacherCount: string;
-  status: 'active' | 'inactive';
-  type: string;
-  language: string;
-  adminEmail: string;
-  adminFullName: string;
-  adminPassword: string;
-  adminStatus: 'active' | 'inactive';
-}
-
-// Sıralama konfiqurasiyası üçün tip
-export interface SortConfig {
-  key: string | null;
-  direction: 'asc' | 'desc' | null;
-}

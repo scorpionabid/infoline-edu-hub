@@ -23,6 +23,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const { t } = useLanguage();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const [showPasswordReset, setShowPasswordReset] = React.useState(false);
   
   // Convert User to UserFormData
   const initialFormData: UserFormData = {
@@ -37,7 +38,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     passwordResetDate: user.passwordResetDate,
     twoFactorEnabled: user.twoFactorEnabled,
     language: user.language,
-    notificationSettings: user.notificationSettings
+    notificationSettings: user.notificationSettings,
+    password: ''  // Add empty password field for reset
   };
   
   const [formData, setFormData] = React.useState<UserFormData>(initialFormData);
@@ -46,6 +48,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   React.useEffect(() => {
     if (user) {
       setFormData(initialFormData);
+      setShowPasswordReset(false);
     }
   }, [user]);
   
@@ -62,12 +65,25 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
       
       onSave(updatedUser);
       setLoading(false);
+      setShowPasswordReset(false);
       onOpenChange(false);
     }, 1000);
   };
+
+  const togglePasswordReset = () => {
+    setShowPasswordReset(!showPasswordReset);
+    if (!showPasswordReset) {
+      setFormData(prev => ({ ...prev, password: '' }));
+    }
+  };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!open) {
+        setShowPasswordReset(false);
+      }
+      onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{t('editUser')}</DialogTitle>
@@ -79,10 +95,21 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           onChange={setFormData} 
           currentUserRole={currentUser?.role}
           currentUserRegionId={currentUser?.regionId}
-          isEdit
+          isEdit={true}
+          passwordRequired={showPasswordReset}
         />
         
         <DialogFooter>
+          <div className="mr-auto">
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={togglePasswordReset}
+            >
+              {showPasswordReset ? t('cancelPasswordReset') : t('resetPassword')}
+            </Button>
+          </div>
+          
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
@@ -91,7 +118,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || !formData.name || !formData.email}
+            disabled={loading || !formData.name || !formData.email || (showPasswordReset && (!formData.password || formData.password.length < 6))}
           >
             {loading ? t('saving') : t('saveChanges')}
           </Button>
