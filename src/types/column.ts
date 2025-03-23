@@ -11,7 +11,7 @@ export type ColumnType =
   | "email"  
   | "phone"  
   | "boolean"
-  | "textarea";  // Əlavə olundu
+  | "textarea";
 
 export type ColumnOption = {
   label: string;

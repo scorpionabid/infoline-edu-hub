@@ -245,7 +245,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                       required={column.isRequired}
                       options={column.options}
                       placeholder={column.placeholder}
-                      helpText={column.description}
+                      helpText={column.helpText || column.description}
                       value={categoryEntry?.values.find(v => v.columnId === column.id)?.value || ''}
                       error={getErrorForColumn(column.id)}
                       onChange={(newValue) => updateValue(category.id, column.id, newValue)}

@@ -11,7 +11,7 @@ export const createFormSchema = (t: (key: string) => string) => {
   return z.object({
     name: z.string().min(1, { message: t("columnNameRequired") }),
     categoryId: z.string().min(1, { message: t("categoryRequired") }),
-    type: z.enum(["text", "number", "date", "select", "checkbox", "radio", "file", "image", "email", "phone", "boolean"]),
+    type: z.enum(["text", "number", "date", "select", "checkbox", "radio", "file", "image", "email", "phone", "boolean", "textarea"]),
     isRequired: z.boolean().default(false),
     validationRules: z.object({
       minValue: z.number().optional(),

@@ -14,18 +14,18 @@ const ExcelActions: React.FC<ExcelActionsProps> = ({ onDownload, onUpload }) => 
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       setIsUploading(true);
       
-      onUpload(file)
-        .then(() => {
-          setIsUploading(false);
-        })
-        .catch(() => {
-          setIsUploading(false);
-        });
+      try {
+        await onUpload(file);
+      } catch (error) {
+        console.error("File upload error:", error);
+      } finally {
+        setIsUploading(false);
+      }
       
       // Reset the input
       event.target.value = '';
