@@ -45,4 +45,6 @@ export type CategoryWithColumns = {
   columns: Column[];
   status?: "active" | "inactive"; // Əlavə edildi: status
   createdAt?: string; // Əlavə edildi: yaradılma tarixi
+  priority?: number; // Əlavə edildi: prioritet xüsusiyyəti
 };
+
