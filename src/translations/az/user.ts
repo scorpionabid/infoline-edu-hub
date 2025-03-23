@@ -58,6 +58,13 @@ const user = {
   passwordNoMatch: "Parollar uyğun gəlmir",
   passwordMinLength: "Parol minimum 6 simvol olmalıdır",
   passwordUpdateSuccess: "Parol uğurla yeniləndi",
+  passwordChanged: "Parol dəyişdirildi",
+  passwordChangedDesc: "Parol uğurla dəyişdirildi",
+  updating: "Yenilənir...",
+  updatePassword: "Parolu yenilə",
+  changePassword: "Parolu dəyiş",
+  changePasswordDescription: "Təhlükəsizlik üçün parolunuzu mütəmadi olaraq dəyişdirin",
+  passwordRequirements: "Parol minimum 6 simvol olmalıdır",
   
   // İstifadəçi idarəetməsi
   addUser: "İstifadəçi əlavə et",
@@ -98,7 +105,11 @@ const user = {
   selectLanguage: "Dil seçin",
   notifications: "Bildirişlər",
   systemNotifications: "Sistem bildirişləri",
-  emailNotifications: "E-poçt bildirişləri"
+  emailNotifications: "E-poçt bildirişləri",
+  profileUpdated: "Profil yeniləndi",
+  profileInformation: "Profil məlumatları",
+  profileInformationDescription: "Şəxsi məlumatlarınızı yeniləyin",
+  changeAvatar: "Profil şəklini dəyiş"
 };
 
 export default user;

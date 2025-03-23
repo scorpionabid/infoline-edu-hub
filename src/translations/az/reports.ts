@@ -79,7 +79,11 @@ const reports = {
   applyFilters: "Filtirləri tətbiq et",
   resetFilters: "Filtirləri sıfırla",
   saveAsTemplate: "Şablon kimi yadda saxla",
-  systemActivity: "Sistem aktivliyi"
+  systemActivity: "Sistem aktivliyi",
+  totalRegions: "Ümumi regionlar",
+  totalSectors: "Ümumi sektorlar",
+  totalSchools: "Ümumi məktəblər",
+  totalUsers: "Ümumi istifadəçilər"
 };
 
 export default reports;

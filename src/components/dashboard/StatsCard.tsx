@@ -14,9 +14,10 @@ interface StatsCardProps {
     isPositive?: boolean;
     label?: string;
   };
+  onClick?: () => void;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, trend }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, trend, onClick }) => {
   const colorClasses = {
     blue: 'bg-blue-50 dark:bg-blue-900/20',
     green: 'bg-green-50 dark:bg-green-900/20',
@@ -54,6 +55,8 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, trend 
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
+      onClick={onClick}
+      className={onClick ? 'cursor-pointer' : ''}
     >
       <Card className={`border-l-4 ${borderClasses[color]}`}>
         <CardContent className="p-6">
