@@ -34,7 +34,9 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
 
   const closeDeleteDialog = useCallback(() => {
     setIsDeleteDialogOpen(false);
-    setSelectedSchool(null);
+    setTimeout(() => {
+      setSelectedSchool(null);
+    }, 300); // Dialog animasiyasını tamamlamaq üçün kiçik gecikmə
   }, []);
 
   const openEditDialog = useCallback((school: School) => {
@@ -44,7 +46,9 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
 
   const closeEditDialog = useCallback(() => {
     setIsEditDialogOpen(false);
-    setSelectedSchool(null);
+    setTimeout(() => {
+      setSelectedSchool(null);
+    }, 300);
   }, []);
 
   const openAddDialog = useCallback(() => {
@@ -62,7 +66,9 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
 
   const closeAdminDialog = useCallback(() => {
     setIsAdminDialogOpen(false);
-    setSelectedAdmin(null);
+    setTimeout(() => {
+      setSelectedAdmin(null);
+    }, 300);
   }, []);
 
   return {

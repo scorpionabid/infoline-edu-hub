@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { School, SchoolFormData, mockRegions, mockSectors } from '@/data/schoolsData';
 import { toast } from 'sonner';
 
@@ -47,24 +47,26 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
   }, []);
 
   const setFormDataFromSchool = useCallback((school: School) => {
-    setFormData({
+    const newFormData = {
       name: school.name,
-      principalName: school.principalName,
-      address: school.address,
+      principalName: school.principalName || '',
+      address: school.address || '',
       regionId: school.regionId,
       sectorId: school.sectorId,
-      phone: school.phone,
-      email: school.email,
-      studentCount: school.studentCount.toString(),
-      teacherCount: school.teacherCount.toString(),
-      status: school.status,
-      type: school.type,
-      language: school.language,
+      phone: school.phone || '',
+      email: school.email || '',
+      studentCount: school.studentCount?.toString() || '',
+      teacherCount: school.teacherCount?.toString() || '',
+      status: school.status || 'active',
+      type: school.type || 'full_secondary',
+      language: school.language || 'az',
       adminEmail: school.adminEmail || '',
       adminFullName: '',
       adminPassword: '',
       adminStatus: 'active'
-    });
+    };
+    
+    setFormData(newFormData);
   }, []);
 
   const resetForm = useCallback(() => {
@@ -85,6 +87,14 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
     
     return true;
   }, [formData, currentTab]);
+
+  // Component unmount olduqdan sonra formanı sıfırla
+  useEffect(() => {
+    return () => {
+      setFormData(getInitialFormState());
+      setCurrentTab('school');
+    };
+  }, []);
 
   return {
     formData,
