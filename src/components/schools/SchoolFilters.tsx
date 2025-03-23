@@ -3,14 +3,14 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Region, Sector, mockRegions } from '@/data/schoolsData';
+import { mockRegions } from '@/data/schoolsData';
 
 interface SchoolFiltersProps {
   searchTerm: string;
   selectedRegion: string;
   selectedSector: string;
   selectedStatus: string;
-  filteredSectors: Sector[];
+  filteredSectors: { id: string; regionId: string; name: string; }[];
   handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleSectorFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;

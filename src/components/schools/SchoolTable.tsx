@@ -38,8 +38,8 @@ import {
   getLanguageLabel, 
   getSchoolInitial,
   School,
-  SortConfig
 } from '@/data/schoolsData';
+import { SortConfig } from '@/hooks/useSchoolsData';
 
 interface SchoolTableProps {
   currentItems: School[];
