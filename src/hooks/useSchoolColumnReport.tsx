@@ -52,66 +52,186 @@ const fetchCategoriesWithColumns = async (): Promise<CategoryWithColumns[]> => {
         {
           id: "1",
           name: "Təcili məlumatlar",
-          assignment: "All",
+          assignment: "all",
           priority: 1,
           description: "Təcili şəkildə toplanması tələb olunan məlumatlar",
           status: "active",
           columns: [
-            { id: "c1", name: "Şagird sayı", type: "number", isRequired: true },
-            { id: "c2", name: "Müəllim sayı", type: "number", isRequired: true },
-            { id: "c3", name: "Sinif sayı", type: "number", isRequired: true }
+            { 
+              id: "c1", 
+              categoryId: "1", 
+              name: "Şagird sayı", 
+              type: "number", 
+              isRequired: true, 
+              order: 1, 
+              status: "active" 
+            },
+            { 
+              id: "c2", 
+              categoryId: "1", 
+              name: "Müəllim sayı", 
+              type: "number", 
+              isRequired: true, 
+              order: 2, 
+              status: "active" 
+            },
+            { 
+              id: "c3", 
+              categoryId: "1", 
+              name: "Sinif sayı", 
+              type: "number", 
+              isRequired: true, 
+              order: 3, 
+              status: "active" 
+            }
           ]
         },
         {
           id: "2",
           name: "Tədris",
-          assignment: "All",
+          assignment: "all",
           priority: 2,
           description: "Tədris prosesi haqqında məlumatlar",
           status: "active",
           columns: [
-            { id: "c4", name: "Dərs saatı", type: "number", isRequired: true },
-            { id: "c5", name: "Fənn sayı", type: "number", isRequired: false },
-            { id: "c6", name: "Təhsil keyfiyyəti", type: "text", isRequired: false }
+            { 
+              id: "c4", 
+              categoryId: "2", 
+              name: "Dərs saatı", 
+              type: "number", 
+              isRequired: true, 
+              order: 1, 
+              status: "active" 
+            },
+            { 
+              id: "c5", 
+              categoryId: "2", 
+              name: "Fənn sayı", 
+              type: "number", 
+              isRequired: false, 
+              order: 2, 
+              status: "active" 
+            },
+            { 
+              id: "c6", 
+              categoryId: "2", 
+              name: "Təhsil keyfiyyəti", 
+              type: "text", 
+              isRequired: false, 
+              order: 3, 
+              status: "active" 
+            }
           ]
         },
         {
           id: "3",
           name: "İnfrastruktur",
-          assignment: "Sectors",
+          assignment: "sectors",
           priority: 3,
           description: "Məktəb infrastrukturu haqqında məlumatlar",
           status: "active",
           columns: [
-            { id: "c7", name: "Bina sahəsi", type: "number", isRequired: true },
-            { id: "c8", name: "Kompüter sayı", type: "number", isRequired: true },
-            { id: "c9", name: "İnternet mövcudluğu", type: "checkbox", isRequired: true }
+            { 
+              id: "c7", 
+              categoryId: "3", 
+              name: "Bina sahəsi", 
+              type: "number", 
+              isRequired: true, 
+              order: 1, 
+              status: "active" 
+            },
+            { 
+              id: "c8", 
+              categoryId: "3", 
+              name: "Kompüter sayı", 
+              type: "number", 
+              isRequired: true, 
+              order: 2, 
+              status: "active" 
+            },
+            { 
+              id: "c9", 
+              categoryId: "3", 
+              name: "İnternet mövcudluğu", 
+              type: "checkbox", 
+              isRequired: true, 
+              order: 3, 
+              status: "active" 
+            }
           ]
         },
         {
           id: "4",
           name: "Davamiyyət",
-          assignment: "All",
+          assignment: "all",
           priority: 4,
           description: "Şagird davamiyyəti haqqında məlumatlar",
           status: "active",
           columns: [
-            { id: "c10", name: "Ümumi davamiyyət %", type: "number", isRequired: true },
-            { id: "c11", name: "Dərsə gecikənlər", type: "number", isRequired: false },
-            { id: "c12", name: "Buraxılan günlər", type: "number", isRequired: true }
+            { 
+              id: "c10", 
+              categoryId: "4", 
+              name: "Ümumi davamiyyət %", 
+              type: "number", 
+              isRequired: true, 
+              order: 1, 
+              status: "active" 
+            },
+            { 
+              id: "c11", 
+              categoryId: "4", 
+              name: "Dərsə gecikənlər", 
+              type: "number", 
+              isRequired: false, 
+              order: 2, 
+              status: "active" 
+            },
+            { 
+              id: "c12", 
+              categoryId: "4", 
+              name: "Buraxılan günlər", 
+              type: "number", 
+              isRequired: true, 
+              order: 3, 
+              status: "active" 
+            }
           ]
         },
         {
           id: "5",
           name: "Nailiyyət",
-          assignment: "Sectors",
+          assignment: "sectors",
           priority: 5,
           description: "Şagird nailiyyətləri haqqında məlumatlar",
           status: "active",
           columns: [
-            { id: "c13", name: "Olimpiada iştirakçıları", type: "number", isRequired: false },
-            { id: "c14", name: "Orta bal", type: "number", isRequired: true },
-            { id: "c15", name: "Ali məktəbə qəbul %", type: "number", isRequired: true }
+            { 
+              id: "c13", 
+              categoryId: "5", 
+              name: "Olimpiada iştirakçıları", 
+              type: "number", 
+              isRequired: false, 
+              order: 1, 
+              status: "active" 
+            },
+            { 
+              id: "c14", 
+              categoryId: "5", 
+              name: "Orta bal", 
+              type: "number", 
+              isRequired: true, 
+              order: 2, 
+              status: "active" 
+            },
+            { 
+              id: "c15", 
+              categoryId: "5", 
+              name: "Ali məktəbə qəbul %", 
+              type: "number", 
+              isRequired: true, 
+              order: 3, 
+              status: "active" 
+            }
           ]
         }
       ]);

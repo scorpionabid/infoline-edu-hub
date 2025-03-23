@@ -31,4 +31,7 @@ export interface CategoryColumn {
   id: string;
   name: string;
   type: string;
+  categoryId?: string;
+  order?: number;
+  status?: string;
 }
