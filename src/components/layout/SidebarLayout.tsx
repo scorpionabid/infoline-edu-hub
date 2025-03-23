@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutGrid, Users, Settings, LogOut, ChevronLeft, ChevronRight,
-         Globe, School, Map, PanelTop, Database, Layers, Bell, Menu } from 'lucide-react';
+         Globe, School, Map, PanelTop, Database, Layers, Bell, Menu, 
+         FileBarChart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -42,7 +43,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { title: t('categories'), icon: Layers, path: '/categories', roles: ['superadmin', 'regionadmin'] },
     { title: t('columns'), icon: Database, path: '/columns', roles: ['superadmin', 'regionadmin'] },
     { title: t('users'), icon: Users, path: '/users', roles: ['superadmin', 'regionadmin', 'sectoradmin'] },
-    // Reports bölməsi silindi - 'schooladmin' rolundan
     { title: t('reports'), icon: FileBarChart, path: '/reports', roles: ['superadmin', 'regionadmin', 'sectoradmin'] },
     { title: t('settings'), icon: Settings, path: '/settings', roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] },
   ];
