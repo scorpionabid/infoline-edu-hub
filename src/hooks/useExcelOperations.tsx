@@ -47,21 +47,21 @@ export const useExcelOperations = (
             
             if (column.type === 'number') {
               if (rules.minValue !== undefined && rules.maxValue !== undefined) {
-                validationText = `${t('numberBetween')} ${rules.minValue} - ${rules.maxValue}`;
+                validationText = t('numberBetween').replace('{min}', rules.minValue.toString()).replace('{max}', rules.maxValue.toString());
               } else if (rules.minValue !== undefined) {
-                validationText = `${t('minValue')} ${rules.minValue}`;
+                validationText = t('minValue').replace('{min}', rules.minValue.toString());
               } else if (rules.maxValue !== undefined) {
-                validationText = `${t('maxValue')} ${rules.maxValue}`;
+                validationText = t('maxValue').replace('{max}', rules.maxValue.toString());
               }
             }
             
             if (column.type === 'text' && (rules.minLength || rules.maxLength)) {
               if (rules.minLength && rules.maxLength) {
-                validationText = `${t('lengthBetween')} ${rules.minLength} - ${rules.maxLength}`;
+                validationText = t('lengthBetween').replace('{min}', rules.minLength.toString()).replace('{max}', rules.maxLength.toString());
               } else if (rules.minLength) {
-                validationText = `${t('minLength')} ${rules.minLength}`;
+                validationText = t('minLength').replace('{min}', rules.minLength.toString());
               } else if (rules.maxLength) {
-                validationText = `${t('maxLength')} ${rules.maxLength}`;
+                validationText = t('maxLength').replace('{max}', rules.maxLength.toString());
               }
             }
             
@@ -145,7 +145,7 @@ export const useExcelOperations = (
               
               const sheetName = workbook.SheetNames.find(name => name === category.name);
               if (!sheetName) {
-                toast.error(t('categorySheetNotFound', { name: category.name }));
+                toast.error(t('categorySheetNotFound').replace('{name}', category.name));
                 reject(new Error(`Sheet for category ${category.name} not found`));
                 return;
               }

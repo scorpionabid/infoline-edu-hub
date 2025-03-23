@@ -20,7 +20,7 @@ const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ total, completed,
       </div>
       <Progress value={percentage} className="h-2" />
       <p className="text-xs text-muted-foreground">
-        {t('completedCategories', { completed, total })}
+        {t('completedCategories').replace('{completed}', completed.toString()).replace('{total}', total.toString())}
       </p>
     </div>
   );
