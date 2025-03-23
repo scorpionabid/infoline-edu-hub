@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntryForm, EntryValue, CategoryEntryData, ColumnValidationError } from '@/types/dataEntry';
 import { toast } from '@/components/ui/use-toast';
+import { useLocation } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Mock kateqoriyalar və sütunlar
 const mockCategories: CategoryWithColumns[] = [
@@ -221,6 +223,11 @@ const mockCategories: CategoryWithColumns[] = [
 ];
 
 export const useDataEntry = () => {
+  const { t } = useLanguage();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialCategoryId = queryParams.get('categoryId');
+  
   const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [formData, setFormData] = useState<DataEntryForm>({
@@ -233,69 +240,117 @@ export const useDataEntry = () => {
   const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
   const [errors, setErrors] = useState<ColumnValidationError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Forma ilkin dəyərləri yükləmək
   useEffect(() => {
-    // Yeni əlavə olunmuş kateqoriyaları və yaxın müddəti olan kateqoriyaları öndə göstərmək
-    const sortedCategories = [...mockCategories].sort((a, b) => {
-      // Əvvəlcə deadline-a görə sıralama
-      if (a.deadline && b.deadline) {
-        const deadlineA = new Date(a.deadline);
-        const deadlineB = new Date(b.deadline);
-        return deadlineA.getTime() - deadlineB.getTime();
-      } else if (a.deadline) {
-        return -1; // a-nın deadline-ı var, öndə olmalıdır
-      } else if (b.deadline) {
-        return 1; // b-nin deadline-ı var, öndə olmalıdır
-      }
-      return 0;
-    });
+    // Yükləmə simulyasiyası
+    setIsLoading(true);
     
-    setCategories(sortedCategories);
-    
-    // Vaxtı keçən və ya yaxınlaşan kategorya varsa, ona fokuslanmaq
-    const now = new Date();
-    const threeDaysLater = new Date(now);
-    threeDaysLater.setDate(now.getDate() + 3);
-
-    const overdueOrUrgentCategoryIndex = sortedCategories.findIndex(category => {
-      if (!category.deadline) return false;
-      const deadlineDate = new Date(category.deadline);
-      return deadlineDate <= threeDaysLater;
-    });
-
-    if (overdueOrUrgentCategoryIndex !== -1) {
-      setCurrentCategoryIndex(overdueOrUrgentCategoryIndex);
-    }
-
-    // Real vəziyyətdə burada API-dən məlumatlar yüklənə bilər
-    const initialEntries: CategoryEntryData[] = sortedCategories.map(category => ({
-      categoryId: category.id,
-      values: category.columns.map(column => ({
-        columnId: column.id,
-        value: getDefaultValueByType(column.type, column.defaultValue),
-        status: 'pending'
-      })),
-      isCompleted: false,
-      isSubmitted: false,
-      completionPercentage: 0,
-      approvalStatus: 'pending'
-    }));
-
-    setFormData(prev => ({
-      ...prev,
-      entries: initialEntries,
-      lastSaved: new Date().toISOString()
-    }));
-    
-    // Məlumatları yüklədikdən sonra validasiyanı işə salaq
     setTimeout(() => {
-      validateForm();
-    }, 500);
-    
-    // Konsol log məlumatı
-    console.log("Forma məlumatları yükləndi");
-  }, []);
+      // Yeni əlavə olunmuş kateqoriyaları və yaxın müddəti olan kateqoriyaları öndə göstərmək
+      const sortedCategories = [...mockCategories].sort((a, b) => {
+        // Əvvəlcə deadline-a görə sıralama
+        if (a.deadline && b.deadline) {
+          const deadlineA = new Date(a.deadline);
+          const deadlineB = new Date(b.deadline);
+          return deadlineA.getTime() - deadlineB.getTime();
+        } else if (a.deadline) {
+          return -1; // a-nın deadline-ı var, öndə olmalıdır
+        } else if (b.deadline) {
+          return 1; // b-nin deadline-ı var, öndə olmalıdır
+        }
+        return 0;
+      });
+      
+      setCategories(sortedCategories);
+      
+      // URL-dən kateqoriya ID-si aldıqda həmin kateqoriyaya keçirik
+      if (initialCategoryId) {
+        const categoryIndex = sortedCategories.findIndex(cat => cat.id === initialCategoryId);
+        if (categoryIndex !== -1) {
+          setCurrentCategoryIndex(categoryIndex);
+        }
+      } else {
+        // Vaxtı keçən və ya yaxınlaşan kategorya varsa, ona fokuslanmaq
+        const now = new Date();
+        const threeDaysLater = new Date(now);
+        threeDaysLater.setDate(now.getDate() + 3);
+
+        const overdueOrUrgentCategoryIndex = sortedCategories.findIndex(category => {
+          if (!category.deadline) return false;
+          const deadlineDate = new Date(category.deadline);
+          return deadlineDate <= threeDaysLater;
+        });
+
+        if (overdueOrUrgentCategoryIndex !== -1) {
+          setCurrentCategoryIndex(overdueOrUrgentCategoryIndex);
+        }
+      }
+
+      // Real vəziyyətdə burada API-dən məlumatlar yüklənə bilər
+      const initialEntries: CategoryEntryData[] = sortedCategories.map(category => ({
+        categoryId: category.id,
+        values: category.columns.map(column => ({
+          columnId: column.id,
+          value: getDefaultValueByType(column.type, column.defaultValue),
+          status: 'pending'
+        })),
+        isCompleted: false,
+        isSubmitted: false,
+        completionPercentage: 0,
+        approvalStatus: 'pending'
+      }));
+
+      // URL-dan gələn status parametrini yoxlayırıq
+      const statusParam = queryParams.get('status');
+      let formStatus: 'draft' | 'submitted' | 'approved' | 'rejected' = 'draft';
+      
+      if (statusParam === 'submitted') {
+        formStatus = 'submitted';
+        // Bütün entries-ləri submitted edirik
+        initialEntries.forEach(entry => {
+          entry.isSubmitted = true;
+        });
+      } else if (statusParam === 'approved') {
+        formStatus = 'approved';
+        // Bütün entries-ləri approved edirik
+        initialEntries.forEach(entry => {
+          entry.isSubmitted = true;
+          entry.approvalStatus = 'approved';
+        });
+      } else if (statusParam === 'rejected') {
+        formStatus = 'rejected';
+        // Bütün entries-ləri rejected edirik
+        initialEntries.forEach(entry => {
+          entry.isSubmitted = true;
+          entry.approvalStatus = 'rejected';
+          
+          // Random xəta mesajları əlavə edirik (real mühitdə API-dən gələcək)
+          if (entry.values.length > 0) {
+            const randomValueIndex = Math.floor(Math.random() * entry.values.length);
+            entry.values[randomValueIndex].errorMessage = "Bu dəyər uyğun deyil, zəhmət olmasa yenidən yoxlayın";
+          }
+        });
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        entries: initialEntries,
+        lastSaved: new Date().toISOString(),
+        status: formStatus
+      }));
+      
+      // Məlumatları yüklədikdən sonra validasiyanı işə salaq
+      setTimeout(() => {
+        validateForm();
+        setIsLoading(false);
+      }, 500);
+      
+      // Konsol log məlumatı
+      console.log("Forma məlumatları yükləndi");
+    }, 1000);
+  }, [initialCategoryId]);
 
   // Sütun tipinə görə ilkin dəyər təyin etmək
   const getDefaultValueByType = (type: string, defaultValue?: string) => {
@@ -317,6 +372,9 @@ export const useDataEntry = () => {
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       setCurrentCategoryIndex(index);
+      
+      // Burada URL-i yeniləyə bilərik, amma biz bunu etməyəcəyik
+      // history.pushState(null, '', `?categoryId=${categories[index].id}`);
     }
   }, [categories.length]);
 
@@ -393,14 +451,14 @@ export const useDataEntry = () => {
         setIsAutoSaving(false);
         
         toast({
-          title: "Dəyişikliklər avtomatik saxlanıldı",
+          title: t('changesAutoSaved'),
           variant: "default",
         });
       }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [formData, isAutoSaving]);
+  }, [formData, isAutoSaving, t]);
 
   // Formanı validasiya etmək
   const validateForm = useCallback(() => {
@@ -492,8 +550,8 @@ export const useDataEntry = () => {
         setIsSubmitting(false);
         
         toast({
-          title: "Məlumatlar təsdiq üçün göndərildi",
-          description: "Məlumatlarınız sektor admininə göndərildi",
+          title: t('submissionSuccess'),
+          description: t('submissionDescription'),
           variant: "default",
         });
       }, 2000);
@@ -553,11 +611,11 @@ export const useDataEntry = () => {
     console.log("Excel şablonu yükləndi");
     
     toast({
-      title: "Excel şablonu yükləndi",
-      description: "Şablonu dolduraraq geri yükləyə bilərsiniz",
+      title: t('excelTemplateDownloaded'),
+      description: t('canUploadAfterFilling'),
       variant: "default",
     });
-  }, []);
+  }, [t]);
 
   // Excel faylını yükləmək və məlumatları doldurmaq
   const uploadExcelData = useCallback((file: File) => {
@@ -656,6 +714,7 @@ export const useDataEntry = () => {
     formData,
     isAutoSaving,
     isSubmitting,
+    isLoading,
     errors,
     changeCategory,
     updateValue,
