@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
@@ -26,6 +25,7 @@ import { CategoryWithColumns } from '@/types/column';
 import { Check, X, Loader2, FileDown } from 'lucide-react';
 import { ExportOptions } from '@/types/report';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
@@ -36,7 +36,8 @@ const SchoolColumnTable: React.FC = () => {
     schoolColumnData,
     isCategoriesLoading,
     isCategoriesError,
-    isDataLoading
+    isDataLoading,
+    exportData
   } = useSchoolColumnReport();
 
   const selectedCategory = React.useMemo(() => {
@@ -58,36 +59,34 @@ const SchoolColumnTable: React.FC = () => {
     
     try {
       // Excel faylını yaradaq
-      const workbook = new Excel.Workbook();
-      const worksheet = workbook.addWorksheet('Məktəb məlumatları');
+      const workbook = XLSX.utils.book_new();
+      const worksheet = workbook.addWorksheet || XLSX.utils.book_append_sheet;
       
       // Başlıqları əlavə edək
       const headers = ['Məktəb adı'];
       selectedCategory.columns.forEach(column => {
         headers.push(column.name);
       });
-      worksheet.addRow(headers);
       
       // Məlumatları əlavə edək
-      schoolColumnData.forEach(school => {
-        const row = [school.schoolName];
+      const rows = schoolColumnData.map(school => {
+        const row: any[] = [school.schoolName];
         selectedCategory.columns.forEach(column => {
           const columnData = school.columnData.find(cd => cd.columnId === column.id);
-          row.push(columnData?.value ?? '');
+          // Məlumatı string-ə çeviririk
+          let value = columnData?.value !== undefined ? String(columnData.value) : '';
+          row.push(value);
         });
-        worksheet.addRow(row);
+        return row;
       });
       
+      // Məlumatları worksheet-ə əlavə edək
+      const wsData = [headers, ...rows];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(workbook, ws, 'Məktəb məlumatları');
+      
       // Faylı yükləyək
-      workbook.xlsx.writeBuffer().then(buffer => {
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${fileName}.xlsx`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      });
+      XLSX.writeFile(workbook, `${fileName}.xlsx`);
       
       toast.success(t("fileDownloaded"));
     } catch (error) {

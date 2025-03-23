@@ -72,3 +72,41 @@ export const formatDateTime = (dateString: string): string => {
     return '';
   }
 };
+
+/**
+ * Nisbi tarix formatını qaytarır (bugün, dünən, 3 gün əvvəl və s.)
+ * @param dateString - ISO formatında tarix
+ * @returns Nisbi tarix formatı
+ */
+export const formatRelativeDate = (dateString: string): string => {
+  try {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Bugün';
+    } else if (diffDays === 1) {
+      return 'Dünən';
+    } else if (diffDays < 7) {
+      return `${diffDays} gün əvvəl`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} həftə əvvəl`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} ay əvvəl`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      return `${years} il əvvəl`;
+    }
+  } catch (error) {
+    console.error('Nisbi tarix formatı xətası:', error);
+    return '';
+  }
+};

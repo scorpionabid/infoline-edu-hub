@@ -84,13 +84,22 @@ export const useSchoolColumnReport = () => {
   } = useQuery({
     queryKey: ['reportCategories'],
     queryFn: fetchCategories,
-    onSuccess: (data) => {
-      // İlk kateqoriyanı default olaraq seçək
-      if (data.length > 0 && !selectedCategoryId) {
-        setSelectedCategoryId(data[0].id);
+    meta: {
+      successCallback: (data: CategoryWithColumns[]) => {
+        // İlk kateqoriyanı default olaraq seçək
+        if (data.length > 0 && !selectedCategoryId) {
+          setSelectedCategoryId(data[0].id);
+        }
       }
     }
   });
+
+  // useEffect ilə successCallback-ı simulyasiya edək
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
 
   // Seçilmiş kateqoriyaya əsasən məktəblərin məlumatlarını əldə etmək
   const {
