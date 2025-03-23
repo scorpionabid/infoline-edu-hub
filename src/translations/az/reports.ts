@@ -47,6 +47,7 @@ const reports = {
   selectCategory: "Kateqoriya seçin:",
   schoolName: "Məktəb adı",
   noDataAvailable: "Məlumat mövcud deyil",
+  selectAnotherCategory: "Başqa kateqoriya seçin və ya yeni məlumat əlavə edin",
   statistics: "Statistika",
   completion: "Tamamlanma",
   comparison: "Müqayisə",

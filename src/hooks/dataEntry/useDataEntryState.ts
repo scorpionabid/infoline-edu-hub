@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { ColumnValidationError } from '@/types/dataEntry';
 
-// Validasiya xətalarını idarə edən funksiya
+// Validasiya xətalarını idarə edən funksiya 
 export const handleValidationError = (errors: ColumnValidationError[]) => {
   const { t } = useLanguage();
   

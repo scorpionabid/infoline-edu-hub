@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
 import { 
@@ -24,9 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { CategoryWithColumns } from '@/types/column';
 import { Check, X, Loader2, FileDown } from 'lucide-react';
-import { exportToExcel } from '@/utils/excelExport';
-import { toast } from 'sonner';
 import { ExportOptions } from '@/types/report';
+import { toast } from 'sonner';
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
@@ -57,11 +56,42 @@ const SchoolColumnTable: React.FC = () => {
     const fileName = `məktəb-məlumatları-${selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}`;
     const options: ExportOptions = { customFileName: fileName };
     
-    const result = exportToExcel(schoolColumnData, selectedCategory.columns, options);
-    
-    if (result.success) {
+    try {
+      // Excel faylını yaradaq
+      const workbook = new Excel.Workbook();
+      const worksheet = workbook.addWorksheet('Məktəb məlumatları');
+      
+      // Başlıqları əlavə edək
+      const headers = ['Məktəb adı'];
+      selectedCategory.columns.forEach(column => {
+        headers.push(column.name);
+      });
+      worksheet.addRow(headers);
+      
+      // Məlumatları əlavə edək
+      schoolColumnData.forEach(school => {
+        const row = [school.schoolName];
+        selectedCategory.columns.forEach(column => {
+          const columnData = school.columnData.find(cd => cd.columnId === column.id);
+          row.push(columnData?.value ?? '');
+        });
+        worksheet.addRow(row);
+      });
+      
+      // Faylı yükləyək
+      workbook.xlsx.writeBuffer().then(buffer => {
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileName}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      });
+      
       toast.success(t("fileDownloaded"));
-    } else {
+    } catch (error) {
+      console.error('Excel ixrac xətası:', error);
       toast.error(t("tryAgainLater"));
     }
   };
@@ -162,21 +192,32 @@ const SchoolColumnTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {schoolColumnData.map(school => (
-                  <TableRow key={school.schoolId}>
-                    <TableCell className="font-medium">{school.schoolName}</TableCell>
-                    {selectedCategory?.columns.map(column => {
-                      const columnData = school.columnData.find(
-                        cd => cd.columnId === column.id
-                      );
-                      return (
-                        <TableCell key={`${school.schoolId}-${column.id}`}>
-                          {renderCellValue(columnData?.value)}
-                        </TableCell>
-                      );
-                    })}
+                {schoolColumnData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={selectedCategory?.columns.length ? selectedCategory.columns.length + 1 : 2} className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <h3 className="text-lg font-medium">{t("noDataAvailable")}</h3>
+                        <p className="mt-2 text-sm">{t("selectAnotherCategory")}</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  schoolColumnData.map(school => (
+                    <TableRow key={school.schoolId}>
+                      <TableCell className="font-medium">{school.schoolName}</TableCell>
+                      {selectedCategory?.columns.map(column => {
+                        const columnData = school.columnData.find(
+                          cd => cd.columnId === column.id
+                        );
+                        return (
+                          <TableCell key={`${school.schoolId}-${column.id}`}>
+                            {renderCellValue(columnData?.value)}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           )}
