@@ -51,7 +51,14 @@ const reports = {
   completion: "Tamamlanma",
   comparison: "Müqayisə",
   preview: "Önbaxış",
-  download: "Yüklə"
+  download: "Yüklə",
+  exportToExcel: "Excel-ə ixrac et",
+  exportSuccess: "İxrac uğurlu oldu",
+  exportError: "İxrac xətası",
+  fileDownloaded: "Fayl yükləndi",
+  errorExporting: "İxrac xətası",
+  noDataToExport: "İxrac etmək üçün məlumat yoxdur",
+  tryAgainLater: "Zəhmət olmasa bir az sonra yenidən cəhd edin"
 };
 
 export default reports;

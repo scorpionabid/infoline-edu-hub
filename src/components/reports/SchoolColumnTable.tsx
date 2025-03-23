@@ -21,8 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { CategoryWithColumns } from '@/types/column';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, FileDown } from 'lucide-react';
+import { exportTableToExcel } from '@/utils/excelExport';
+import { toast } from '@/components/ui/use-toast';
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
@@ -44,6 +47,35 @@ const SchoolColumnTable: React.FC = () => {
   // Kateqoriya seçimi dəyişdikdə
   const handleCategoryChange = (value: string) => {
     setSelectedCategoryId(value);
+  };
+
+  // Excel-ə ixrac etmək üçün handler
+  const handleExportToExcel = () => {
+    if (isDataLoading || !selectedCategory || schoolColumnData.length === 0) {
+      toast({
+        title: t("errorExporting"),
+        description: t("noDataToExport"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileName = `məktəb-məlumatları-${selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}`;
+    const success = exportTableToExcel(schoolColumnData, selectedCategory, fileName);
+    
+    if (success) {
+      toast({
+        title: t("exportSuccess"),
+        description: t("fileDownloaded"),
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: t("exportError"),
+        description: t("tryAgainLater"),
+        variant: "destructive",
+      });
+    }
   };
 
   // Dəyər tipinə görə göstərilməsi
@@ -110,6 +142,17 @@ const SchoolColumnTable: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportToExcel}
+            disabled={isDataLoading || schoolColumnData.length === 0}
+            className="ml-2"
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("exportToExcel")}
+          </Button>
         </div>
       </div>
 
