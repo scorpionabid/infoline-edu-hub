@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
-import { Column, CategoryWithColumns } from '@/types/column';
+import { Column, CategoryWithColumns, ColumnType, ColumnOption } from '@/types/column'; // ColumnType import əlavə edildi
 import { SchoolColumnData, ExportOptions } from '@/types/report';
 import { exportToExcel } from '@/utils/excelExport';
 import { mockSchools } from '@/data/schoolsData';
@@ -191,7 +191,8 @@ export const useSchoolColumnReport = () => {
       // Column tipini CategoryColumn tipinə düzgün çevirmək
       const typedColumns = selectedCategory.columns.map(column => ({
         ...column,
-        type: column.type as ColumnType
+        type: column.type as ColumnType,
+        order: column.order || 0 // order məcburidir, default 0 dəyərini əlavə edirik
       }));
 
       const result = exportToExcel(dataToExport, typedColumns, options);

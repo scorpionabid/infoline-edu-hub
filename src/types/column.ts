@@ -42,15 +42,44 @@ export interface Column {
 }
 
 export interface CategoryWithColumns {
-  id?: string;          // CategoryWithColumns üçün id əlavə edildi
-  name?: string;        // CategoryWithColumns üçün name əlavə edildi
+  id?: string;
+  name?: string;
   description?: string;
-  deadline?: string;    // CategoryWithColumns üçün deadline əlavə edildi
+  deadline?: string;
   status?: string;
   columns: Column[];
-  assignment?: 'all' | 'sectors'; // assignment property əlavə edildi
+  assignment?: 'all' | 'sectors';
+  createdAt?: string;    // createdAt əlavə edildi
 }
 
-export type CategoryColumn = Omit<Column, 'type'> & {
+export type CategoryColumn = {
+  id: string;
+  categoryId: string;
+  name: string;
   type: ColumnType;
+  isRequired?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: (string | ColumnOption)[];
+  order: number;          // order burada məcburi olduğundan əmin olun
+  status?: 'active' | 'inactive';
+  parentColumnId?: string;
+  defaultValue?: any;
+  validation?: {
+    minLength?: number;
+    maxLength?: number;
+    minValue?: number;
+    maxValue?: number;
+    pattern?: string;
+    regex?: string;
+    minDate?: string;
+    maxDate?: string;
+  };
+  dependsOn?: {
+    columnId: string;
+    condition: {
+      type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+      value: any;
+    }
+  };
 };

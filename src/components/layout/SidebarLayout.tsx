@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -11,7 +10,6 @@ import { useNotifications } from '@/context/NotificationContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
-// Logo component
 const Logo = () => (
   <div className="flex items-center space-x-2">
     <div className="bg-primary w-8 h-8 rounded-md flex items-center justify-center text-primary-foreground font-bold text-lg">I</div>
@@ -55,14 +53,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const { notifications, markAsRead, markAllAsRead, clearAll } = useNotifications();
   
-  // Close the mobile sidebar when switching to desktop view
   useEffect(() => {
     if (isDesktop && open) {
       setOpen(false);
     }
   }, [isDesktop, open]);
   
-  // Close the mobile sidebar when the route changes
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
@@ -170,14 +166,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   
   return (
     <div className="min-h-screen flex">
-      {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r">
         {sidebarContent}
       </div>
       
-      {/* Main content */}
       <div className="flex-1">
-        {/* Navbar for mobile */}
         <header className="h-16 border-b flex items-center justify-between px-4 lg:px-6 lg:justify-end">
           <div className="flex items-center lg:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
@@ -213,7 +206,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </div>
         </header>
         
-        {/* Page content */}
         <main className="p-4 lg:p-6">
           {children}
         </main>
