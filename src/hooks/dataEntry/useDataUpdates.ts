@@ -109,11 +109,11 @@ export const useDataUpdates = ({
     }, 500);
   }, [categories, formData, initializeForm, validateForm]);
 
-  // Kateqoriya dəyişmək - bu funksiya yeniləndi
+  // Kateqoriya dəyişmək - bu funksiya təkmilləşdirildi
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
-      saveForm(); // <-- Yeni əlavə: Kateqoriyaları dəyişməzdən əvvəl avtomatik manual olaraq saxlayırıq
+      saveForm(); // <-- Manual olaraq saxlayırıq
       
       // İndi kateqoriyanı dəyişək
       setCurrentCategoryIndex(index);

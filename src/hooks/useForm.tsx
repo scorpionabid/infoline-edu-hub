@@ -163,7 +163,7 @@ export const useForm = (categories: CategoryWithColumns[]) => {
     }));
   }, [formData, t]);
   
-  // Təsdiq üçün göndərmək
+  // Təsdiq üçün göndərmək - TypeScript xətası burada düzəldildi
   const submitForm = useCallback((validateFn: () => boolean) => {
     lastOperationTimeRef.current = Date.now();
     const isValid = validateFn();
@@ -173,17 +173,14 @@ export const useForm = (categories: CategoryWithColumns[]) => {
       
       // API çağırışı simulyasiyası
       setTimeout(() => {
-        // Burada tipləri dəqiq təyin edirik - bu xətanın həlli budur
-        const updatedStatus: 'draft' | 'submitted' | 'approved' | 'rejected' = 'submitted';
-        const updatedApprovalStatus: 'pending' | 'approved' | 'rejected' = 'pending';
-        
+        // Burada tipləri dəqiq təyin edirik - TypeScript xətasının həlli
         const updatedFormData: DataEntryForm = {
           ...formData,
-          status: updatedStatus,
+          status: 'submitted' as 'draft' | 'submitted' | 'approved' | 'rejected',
           entries: formData.entries.map(entry => ({
             ...entry,
             isSubmitted: true,
-            approvalStatus: updatedApprovalStatus
+            approvalStatus: 'pending' as 'pending' | 'approved' | 'rejected'
           }))
         };
         

@@ -38,7 +38,11 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       formContainer.scrollTop = 0;
     }
     window.scrollTo(0, 0);
-  }, [category.id]);
+    
+    // Konsola məlumatları çıxaaq - debug üçün
+    console.log(`Cari kateqoriya: ${category.name}, ID: ${category.id}`);
+    console.log(`Cari kateqoriya dəyərləri:`, entryData.values);
+  }, [category.id, entryData]);
 
   return (
     <div className="space-y-6">
