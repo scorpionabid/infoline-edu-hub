@@ -17,16 +17,28 @@ interface SuperAdminDashboardProps {
     pendingApprovals: number;
     notifications: Notification[];
     activityData?: Array<{
-      name: string;
-      value: number;
+      id: string;
+      action: string;
+      actor: string;
+      target: string;
+      time: string;
     }>;
+    pendingSchools?: number;
+    approvedSchools?: number;
+    rejectedSchools?: number;
+    statusData?: {
+      completed: number;
+      pending: number;
+      rejected: number;
+      notStarted: number;
+    };
   };
 }
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   
-  const activityData = data.activityData || [
+  const activityData = [
     { name: 'Yan', value: 20 },
     { name: 'Fev', value: 45 },
     { name: 'Mar', value: 28 },

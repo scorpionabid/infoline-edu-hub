@@ -5,6 +5,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from './NotificationsCard';
 import FormStatusSection from './school-admin/FormStatusSection';
 import FormTabs from './school-admin/FormTabs';
+import { Notification } from './NotificationsCard';
 
 // Mock data for recent forms
 const recentForms = [
@@ -52,12 +53,15 @@ interface SchoolAdminDashboardProps {
       overdue: number;
     };
     completionRate: number;
-    notifications: Array<{
-      id: number;
-      type: string;
-      title: string;
-      message: string;
-      time: string;
+    notifications: Notification[];
+    categories?: number;
+    totalForms?: number;
+    completedForms?: number;
+    pendingForms?: number;
+    rejectedForms?: number;
+    dueDates?: Array<{
+      category: string;
+      date: string;
     }>;
   };
 }

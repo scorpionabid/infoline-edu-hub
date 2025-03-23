@@ -8,6 +8,7 @@ import RegionAdminDashboard from '@/components/dashboard/RegionAdminDashboard';
 import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
 import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
 import { useAuth } from '@/context/AuthContext';
+import { Notification } from '@/components/dashboard/NotificationsCard';
 
 // Mock data
 import { mockSchools } from '@/data/schoolsData';
@@ -38,9 +39,9 @@ const Dashboard: React.FC = () => {
             notStarted: 67,
           },
           notifications: [
-            { id: "n1", type: "info", title: "Yeni hesabatlar", message: "24 yeni hesabat əlavə edilib", time: "2 saat əvvəl" },
-            { id: "n2", type: "warning", title: "Son tarix yaxınlaşır", message: "Müəllim məlumatları üçün son tarix yaxınlaşır", time: "5 saat əvvəl" },
-            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "Məktəb məlumatları 3 region üçün təsdiqləndi", time: "dünən" },
+            { id: 1, type: "info", title: "Yeni hesabatlar", message: "24 yeni hesabat əlavə edilib", time: "2 saat əvvəl" },
+            { id: 2, type: "warning", title: "Son tarix yaxınlaşır", message: "Müəllim məlumatları üçün son tarix yaxınlaşır", time: "5 saat əvvəl" },
+            { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "Məktəb məlumatları 3 region üçün təsdiqləndi", time: "dünən" },
           ],
           activityData: [
             { id: "a1", action: "İstifadəçi yaradıldı", actor: "Əhməd Məmmədov", target: "Leyla Əliyeva (Region 4 Admin)", time: "1 saat əvvəl" },
@@ -61,9 +62,9 @@ const Dashboard: React.FC = () => {
           approvedSchools: 124,
           rejectedSchools: 8,
           notifications: [
-            { id: "n1", type: "info", title: "Yeni məlumatlar", message: "15 məktəb üçün yeni məlumatlar daxil edilib", time: "3 saat əvvəl" },
-            { id: "n2", type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "8 məktəb üçün məlumatlar təsdiqlənməlidir", time: "5 saat əvvəl" },
-            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "12 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
+            { id: 1, type: "info", title: "Yeni məlumatlar", message: "15 məktəb üçün yeni məlumatlar daxil edilib", time: "3 saat əvvəl" },
+            { id: 2, type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "8 məktəb üçün məlumatlar təsdiqlənməlidir", time: "5 saat əvvəl" },
+            { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "12 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
           ],
           // Category completion data
           categories: [
@@ -95,9 +96,9 @@ const Dashboard: React.FC = () => {
           approvedSchools: 16,
           rejectedSchools: 3,
           notifications: [
-            { id: "n1", type: "info", title: "Yeni məlumatlar", message: "5 məktəb üçün yeni məlumatlar daxil edilib", time: "1 saat əvvəl" },
-            { id: "n2", type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "12 məktəb üçün məlumatlar təsdiqlənməlidir", time: "3 saat əvvəl" },
-            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "4 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
+            { id: 1, type: "info", title: "Yeni məlumatlar", message: "5 məktəb üçün yeni məlumatlar daxil edilib", time: "1 saat əvvəl" },
+            { id: 2, type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "12 məktəb üçün məlumatlar təsdiqlənməlidir", time: "3 saat əvvəl" },
+            { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "4 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
           ],
           activityData: [
             { id: "a1", action: "Məlumatlar təsdiqləndi", actor: "Siz", target: "28 nömrəli məktəb", time: "2 saat əvvəl" },
@@ -107,27 +108,29 @@ const Dashboard: React.FC = () => {
         };
       case 'schooladmin':
         return {
+          completionRate: 57,
+          forms: {
+            pending: 4,
+            approved: 8,
+            rejected: 2,
+            dueSoon: 3,
+            overdue: 1
+          },
+          notifications: [
+            { id: 1, type: "warning", title: "Son tarix yaxınlaşır", message: "Tədris məlumatları üçün son tarix yaxınlaşır", time: "2 saat əvvəl" },
+            { id: 2, type: "error", title: "Məlumatlar rədd edildi", message: "Müəllim məlumatları düzəlişlər tələb edir", time: "dünən" },
+            { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "İnfrastruktur məlumatları təsdiqləndi", time: "2 gün əvvəl" },
+          ],
           categories: 5,
           totalForms: 14,
           completedForms: 8,
           pendingForms: 4,
           rejectedForms: 2,
-          completionRate: 57,
           dueDates: [
             { category: "Tədris məlumatları", date: "2023-10-15" },
             { category: "Müəllim məlumatları", date: "2023-10-20" },
             { category: "İnfrastruktur məlumatları", date: "2023-11-10" },
           ],
-          notifications: [
-            { id: "n1", type: "warning", title: "Son tarix yaxınlaşır", message: "Tədris məlumatları üçün son tarix yaxınlaşır", time: "2 saat əvvəl" },
-            { id: "n2", type: "error", title: "Məlumatlar rədd edildi", message: "Müəllim məlumatları düzəlişlər tələb edir", time: "dünən" },
-            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "İnfrastruktur məlumatları təsdiqləndi", time: "2 gün əvvəl" },
-          ],
-          activityData: [
-            { id: "a1", action: "Məlumatlar daxil edildi", actor: "Siz", target: "Tədris məlumatları", time: "1 saat əvvəl" },
-            { id: "a2", action: "Məlumatlar yeniləndi", actor: "Siz", target: "Müəllim məlumatları", time: "3 saat əvvəl" },
-            { id: "a3", action: "Excel yükləndi", actor: "Siz", target: "İnfrastruktur məlumatları", time: "dünən" },
-          ]
         };
       default:
         return {};
@@ -136,11 +139,38 @@ const Dashboard: React.FC = () => {
   
   const dashboardData = getMockDashboardData();
   
+  // Mövcud komponentləri yeni DashboardTabs komponentinə uyğunlaşdırmaq üçün lazım olan məlumatlar
+  const activityData = [
+    { name: 'Yan', value: 20 },
+    { name: 'Fev', value: 45 },
+    { name: 'Mar', value: 28 },
+    { name: 'Apr', value: 80 },
+    { name: 'May', value: 99 },
+    { name: 'İyn', value: 43 },
+    { name: 'İyl', value: 50 },
+  ];
+  
+  const regionSchoolsData = [
+    { name: 'Bakı', value: 120 },
+    { name: 'Sumqayıt', value: 75 },
+    { name: 'Gəncə', value: 65 },
+    { name: 'Lənkəran', value: 45 },
+    { name: 'Şəki', value: 30 },
+  ];
+  
+  const categoryCompletionData = [
+    { name: 'Ümumi məlumat', completed: 78 },
+    { name: 'Müəllim heyəti', completed: 65 },
+    { name: 'Texniki baza', completed: 82 },
+    { name: 'Maliyyə', completed: 59 },
+    { name: 'Tədris planı', completed: 91 },
+  ];
+  
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
     switch (user?.role) {
       case 'superadmin':
-        return <SuperAdminDashboard data={dashboardData} activeTab={tab} />;
+        return <SuperAdminDashboard data={dashboardData} />;
       case 'regionadmin':
         return <RegionAdminDashboard data={dashboardData} />;
       case 'sectoradmin':
@@ -158,7 +188,11 @@ const Dashboard: React.FC = () => {
         <DashboardHeader />
         
         {user?.role === 'superadmin' && (
-          <DashboardTabs activeTab={tab} setActiveTab={setTab} />
+          <DashboardTabs 
+            activityData={activityData}
+            regionSchoolsData={regionSchoolsData}
+            categoryCompletionData={categoryCompletionData}
+          />
         )}
         
         {renderDashboard()}
