@@ -41,6 +41,17 @@ const reports = {
   overdue: "Vaxtı keçmiş",
   settingsDescription: "Hesab və tətbiq parametrlərini idarə edin",
   additionalSettings: "Əlavə parametrlər",
+  
+  // Məktəb sütun hesabatı
+  schoolColumnReportTitle: "Məktəb məlumatları hesabatı",
+  selectCategory: "Kateqoriya seçin",
+  schoolName: "Məktəb adı",
+  noDataAvailable: "Məlumat mövcud deyil",
+  statistics: "Statistika",
+  completion: "Tamamlanma",
+  comparison: "Müqayisə",
+  preview: "Önbaxış",
+  download: "Yüklə"
 };
 
 export default reports;

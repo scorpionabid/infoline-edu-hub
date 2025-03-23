@@ -1,7 +1,7 @@
 
 export interface ReportDataItem {
   name: string;
-  value: number;
+  value: number | string;
   category: string;
   comparisonValue?: number;
 }
@@ -16,4 +16,19 @@ export interface Report {
   summary: string;
   insights?: string[];
   recommendations?: string[];
+}
+
+export interface SchoolColumnData {
+  schoolId: string;
+  schoolName: string;
+  columnData: {
+    columnId: string;
+    value: string | number | boolean | null;
+  }[];
+}
+
+export interface CategoryColumn {
+  id: string;
+  name: string;
+  type: string;
 }
