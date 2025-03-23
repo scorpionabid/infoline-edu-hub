@@ -83,6 +83,29 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
       return <div className="flex items-center"><XCircle className="h-4 w-4 text-red-500 mr-1" /> Deaktiv</div>;
     }
   };
+
+  // Dropdown menyu tıklama işləyicisi
+  const handleDropdownAction = (action: string, school: School) => {
+    switch (action) {
+      case 'view':
+        navigate(`/schools/${school.id}`);
+        break;
+      case 'edit':
+        handleEditDialogOpen(school);
+        break;
+      case 'data':
+        navigate(`/schools/${school.id}/data`);
+        break;
+      case 'delete':
+        handleDeleteDialogOpen(school);
+        break;
+      case 'admin':
+        handleAdminDialogOpen(school);
+        break;
+      default:
+        break;
+    }
+  };
   
   return (
     <div className="rounded-md border">
@@ -172,26 +195,42 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="cursor-pointer"
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(`/schools/${school.id}`)}>
+                    <DropdownMenuContent align="end" className="bg-background">
+                      <DropdownMenuItem 
+                        className="cursor-pointer" 
+                        onClick={() => handleDropdownAction('view', school)}
+                      >
                         <Eye className="h-4 w-4 mr-2" />
                         Bax
                       </DropdownMenuItem>
                       {(userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin') && (
                         <>
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditDialogOpen(school)}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer" 
+                            onClick={() => handleDropdownAction('edit', school)}
+                          >
                             <Pencil className="h-4 w-4 mr-2" />
                             Redaktə et
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(`/schools/${school.id}/data`)}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer" 
+                            onClick={() => handleDropdownAction('data', school)}
+                          >
                             <GalleryVerticalEnd className="h-4 w-4 mr-2" />
                             Məlumatlar
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => handleDeleteDialogOpen(school)}>
+                          <DropdownMenuItem 
+                            className="cursor-pointer text-destructive" 
+                            onClick={() => handleDropdownAction('delete', school)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Sil
                           </DropdownMenuItem>

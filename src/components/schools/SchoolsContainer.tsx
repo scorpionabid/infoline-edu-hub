@@ -1,17 +1,17 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { mockRegions, mockSectors, School, SchoolFormData } from '@/data/schoolsData';
+import { mockRegions, mockSectors, School } from '@/data/schoolsData';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
 import SchoolPagination from './SchoolPagination';
 import SchoolHeader from './SchoolHeader';
 import { DeleteDialog, EditDialog, AddDialog, AdminDialog } from './SchoolDialogs';
 import { useSchoolsData } from '@/hooks/useSchoolsData';
-import { useSchoolForm, getInitialFormState } from '@/hooks/useSchoolForm';
+import { useSchoolForm } from '@/hooks/useSchoolForm';
 import { useSchoolDialogs } from '@/hooks/useSchoolDialogs';
 
 const SchoolsContainer: React.FC = () => {
@@ -70,12 +70,12 @@ const SchoolsContainer: React.FC = () => {
   } = useSchoolDialogs();
 
   // Handle Add Dialog
-  const handleAddDialogOpen = () => {
+  const handleAddDialogOpen = useCallback(() => {
     resetForm();
     openAddDialog();
-  };
+  }, [resetForm, openAddDialog]);
 
-  const handleAddSubmit = () => {
+  const handleAddSubmit = useCallback(() => {
     if (!validateForm()) return;
     
     const newSchool: School = {
@@ -97,15 +97,15 @@ const SchoolsContainer: React.FC = () => {
     if (formData.adminEmail) {
       toast.success('Məktəb admini uğurla yaradıldı');
     }
-  };
+  }, [formData, schools.length, validateForm, handleAddSchool, closeAddDialog]);
 
   // Handle Edit Dialog
-  const handleEditDialogOpen = (school: School) => {
+  const handleEditDialogOpen = useCallback((school: School) => {
     setFormDataFromSchool(school);
     openEditDialog(school);
-  };
+  }, [setFormDataFromSchool, openEditDialog]);
 
-  const handleEditSubmit = () => {
+  const handleEditSubmit = useCallback(() => {
     if (!validateForm() || !selectedSchool) return;
     
     const updatedSchool: School = { 
@@ -119,26 +119,26 @@ const SchoolsContainer: React.FC = () => {
     
     handleUpdateSchool(updatedSchool);
     closeEditDialog();
-  };
+  }, [formData, selectedSchool, validateForm, handleUpdateSchool, closeEditDialog]);
 
   // Handle Delete Dialog
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = useCallback(() => {
     if (!selectedSchool) return;
     handleDeleteSchool(selectedSchool.id);
     closeDeleteDialog();
-  };
+  }, [selectedSchool, handleDeleteSchool, closeDeleteDialog]);
 
   // Handle Admin Dialog
-  const handleAdminDialogOpen = (school: School) => {
+  const handleAdminDialogOpen = useCallback((school: School) => {
     openAdminDialog(school);
-  };
+  }, [openAdminDialog]);
 
-  const handleAdminUpdate = () => {
+  const handleAdminUpdate = useCallback(() => {
     toast.success('Admin məlumatları yeniləndi');
     closeAdminDialog();
-  };
+  }, [closeAdminDialog]);
 
-  const handleResetPassword = (newPassword: string) => {
+  const handleResetPassword = useCallback((newPassword: string) => {
     if (!selectedAdmin) return;
     
     const adminEmail = selectedAdmin.adminEmail;
@@ -148,16 +148,16 @@ const SchoolsContainer: React.FC = () => {
     });
     
     closeAdminDialog();
-  };
+  }, [selectedAdmin, closeAdminDialog]);
 
   // Excel operations
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     toast.success('Excel faylı yüklənir...');
-  };
+  }, []);
 
-  const handleImport = () => {
+  const handleImport = useCallback(() => {
     toast.success('Excel faylından məlumatlar yükləndi');
-  };
+  }, []);
 
   return (
     <div className="space-y-6">

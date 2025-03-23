@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -22,8 +23,8 @@ interface DeleteDialogProps {
 
 export const DeleteDialog: React.FC<DeleteDialogProps> = ({ isOpen, onClose, onConfirm }) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Məktəbi sil</DialogTitle>
           <DialogDescription>
@@ -65,7 +66,7 @@ export const AddDialog: React.FC<AddDialogProps> = ({
   filteredSectors 
 }) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Yeni məktəb əlavə et</DialogTitle>
@@ -113,7 +114,7 @@ export const EditDialog: React.FC<EditDialogProps> = ({
   filteredSectors 
 }) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Məktəbi redaktə et</DialogTitle>
@@ -327,6 +328,15 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
+  // Dialog açıldıqda və ya bağlandıqda state-ləri sıfırla
+  useEffect(() => {
+    if (!isOpen) {
+      setShowPasswordReset(false);
+      setNewPassword('');
+      setPasswordError('');
+    }
+  }, [isOpen]);
+
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewPassword(e.target.value);
     if (e.target.value.length < 6) {
@@ -346,17 +356,8 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
     setNewPassword('');
   };
 
-  const handleDialogClose = (open: boolean) => {
-    if (!open) {
-      setShowPasswordReset(false);
-      setNewPassword('');
-      setPasswordError('');
-      onClose();
-    }
-  }; 
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Məktəb admini</DialogTitle>
@@ -418,7 +419,10 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
                 <KeyRound className="h-4 w-4 mr-2" />
                 Parolu dəyiş
               </Button>
-              <Button onClick={onUpdate}>
+              <Button 
+                onClick={onUpdate}
+                className="cursor-pointer"
+              >
                 <User className="h-4 w-4 mr-2" />
                 Yenilə
               </Button>
@@ -431,6 +435,7 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
               <Button 
                 onClick={handleResetPassword}
                 disabled={newPassword.length < 6}
+                className="cursor-pointer"
               >
                 Parolu dəyiş
               </Button>
