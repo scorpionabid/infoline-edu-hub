@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
@@ -26,6 +25,7 @@ import { CategoryWithColumns } from '@/types/column';
 import { Check, X, Loader2, FileDown } from 'lucide-react';
 import { exportTableToExcel } from '@/utils/excelExport';
 import { toast } from '@/components/ui/use-toast';
+import { ExportOptions } from '@/types/report';
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
@@ -39,17 +39,14 @@ const SchoolColumnTable: React.FC = () => {
     isDataLoading
   } = useSchoolColumnReport();
 
-  // Seçilən kateqoriyanı tapaq
   const selectedCategory = React.useMemo(() => {
     return categories.find(cat => cat.id === selectedCategoryId);
   }, [categories, selectedCategoryId]);
 
-  // Kateqoriya seçimi dəyişdikdə
   const handleCategoryChange = (value: string) => {
     setSelectedCategoryId(value);
   };
 
-  // Excel-ə ixrac etmək üçün handler
   const handleExportToExcel = () => {
     if (isDataLoading || !selectedCategory || schoolColumnData.length === 0) {
       toast({
@@ -61,8 +58,8 @@ const SchoolColumnTable: React.FC = () => {
     }
 
     const fileName = `məktəb-məlumatları-${selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}`;
-    // Düzəliş: fileName-dən öncə {} əlavə edirəm
-    const success = exportTableToExcel(schoolColumnData, selectedCategory, { customFileName: fileName });
+    const options: ExportOptions = { customFileName: fileName };
+    const success = exportTableToExcel(schoolColumnData, selectedCategory, options);
     
     if (success) {
       toast({
@@ -79,7 +76,6 @@ const SchoolColumnTable: React.FC = () => {
     }
   };
 
-  // Dəyər tipinə görə göstərilməsi
   const renderCellValue = (value: any) => {
     if (value === null || value === undefined) {
       return "-";
@@ -94,7 +90,6 @@ const SchoolColumnTable: React.FC = () => {
     return value;
   };
 
-  // Yüklənmə vəziyyəti
   if (isCategoriesLoading) {
     return (
       <Card>
@@ -107,7 +102,6 @@ const SchoolColumnTable: React.FC = () => {
     );
   }
 
-  // Xəta vəziyyəti
   if (isCategoriesError) {
     return (
       <Card>

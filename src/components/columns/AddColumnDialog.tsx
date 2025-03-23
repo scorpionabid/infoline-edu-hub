@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { Column, ColumnType } from "@/types/column";
@@ -66,13 +65,19 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   const formSchema = z.object({
     name: z.string().min(1, { message: t("columnNameRequired") }),
     categoryId: z.string().min(1, { message: t("categoryRequired") }),
-    type: z.enum(["text", "number", "date", "select", "checkbox", "radio", "file", "image"]),
+    type: z.enum(["text", "number", "date", "select", "checkbox", "radio", "file", "image", "email", "phone", "boolean"]),
     isRequired: z.boolean().default(false),
     validationRules: z.object({
       minValue: z.number().optional(),
       maxValue: z.number().optional(),
       format: z.string().optional(),
       regex: z.string().optional(),
+      minLength: z.number().optional(),
+      maxLength: z.number().optional(),
+      pattern: z.string().optional(),
+      patternError: z.string().optional(),
+      minDate: z.string().optional(),
+      maxDate: z.string().optional(),
     }).optional(),
     defaultValue: z.string().optional(),
     placeholder: z.string().optional(),
@@ -98,6 +103,12 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
         maxValue: undefined,
         format: "",
         regex: "",
+        minLength: undefined,
+        maxLength: undefined,
+        pattern: "",
+        patternError: "",
+        minDate: "",
+        maxDate: "",
       },
       defaultValue: "",
       placeholder: "",
@@ -145,6 +156,12 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
           maxValue: undefined,
           format: "",
           regex: "",
+          minLength: undefined,
+          maxLength: undefined,
+          pattern: "",
+          patternError: "",
+          minDate: "",
+          maxDate: "",
         },
         defaultValue: "",
         placeholder: "",
@@ -288,6 +305,9 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                         <SelectItem value="radio">{t("radio")}</SelectItem>
                         <SelectItem value="file">{t("file")}</SelectItem>
                         <SelectItem value="image">{t("image")}</SelectItem>
+                        <SelectItem value="email">{t("email")}</SelectItem>
+                        <SelectItem value="phone">{t("phone")}</SelectItem>
+                        <SelectItem value="boolean">{t("boolean")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

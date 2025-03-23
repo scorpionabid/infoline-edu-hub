@@ -8,9 +8,9 @@ export type ColumnType =
   | "radio"
   | "file"
   | "image"
-  | "email"  // Yeni tip
-  | "phone"  // Yeni tip
-  | "boolean"; // Yeni tip
+  | "email"  
+  | "phone"  
+  | "boolean";
 
 export type Column = {
   id: string;

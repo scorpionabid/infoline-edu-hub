@@ -23,8 +23,13 @@ const ProfileSettings: React.FC = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Düzəliş: phone və position xüsusiyyətlərini user tipi üçün təmin edirik
-    updateUser({ name, email, phone, position });
+    // User tipine uyğun olsun deyə phone və position xüsusiyyətlərini daxil edirik
+    updateUser({ 
+      name, 
+      email,
+      phone,
+      position
+    });
     toast.success(t('profileUpdated'));
   };
   

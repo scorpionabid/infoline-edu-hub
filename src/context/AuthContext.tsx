@@ -20,6 +20,8 @@ export interface User {
     email: boolean;
     system: boolean;
   };
+  phone?: string;  // Əlavə edildi
+  position?: string; // Əlavə edildi
 }
 
 // Auth state interface

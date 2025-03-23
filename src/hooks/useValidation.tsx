@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { ColumnValidationError } from '@/types/dataEntry';
 import { CategoryWithColumns } from '@/types/column';

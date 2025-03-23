@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from '@/components/ui/use-toast';
@@ -16,9 +15,8 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const urlCategoryId = queryParams.get('categoryId');
-  // Prioritize function parameter over URL parameter
   const selectedCategoryId = initialCategoryId || urlCategoryId;
-  
+
   const { 
     categories, 
     setCategories, 
@@ -29,7 +27,6 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     lastCategoryIdRef
   } = useDataEntryState(selectedCategoryId);
 
-  // Form hook və validasiya
   const { 
     formData, 
     isAutoSaving, 
@@ -43,7 +40,6 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
   
   const { errors, validateForm, getErrorForColumn } = useValidation(categories, formData.entries);
   
-  // Kateqoriya dəyişikliyinin izlənməsi və məlumatların yüklənməsi
   const { loadCategoryData } = useCategoryData({
     selectedCategoryId,
     lastCategoryIdRef,
@@ -55,7 +51,6 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     queryParams
   });
 
-  // Məlumatların yenilənməsi ilə bağlı funksionallar - əlavə parametrlər ötürürük
   const { updateFormDataFromExcel, changeCategory, submitForApproval } = useDataUpdates({
     categories,
     formData,
@@ -64,18 +59,16 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     validateForm,
     submitForm,
     setCurrentCategoryIndex,
-    updateValue,  // Yeni əlavə
-    saveForm      // Yeni əlavə
+    updateValue,
+    saveForm
   });
 
   const { downloadExcelTemplate, uploadExcelData } = useExcelOperations(categories, updateFormDataFromExcel);
   
-  // Auto saxlama ilə validasiya əlaqəsi
   useEffect(() => {
     return setupAutoSave(validateForm);
   }, [setupAutoSave, validateForm]);
 
-  // İlkin məlumatların yüklənməsi - veriləcək loq mesajını sadələşdiririk
   useEffect(() => {
     loadCategoryData();
   }, [loadCategoryData]);
@@ -92,7 +85,7 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     updateValue,
     submitForApproval,
     saveForm,
-    getErrorForColumn: (columnId: string) => getErrorForColumn(columnId, formData.entries.flatMap(e => e.values)),
+    getErrorForColumn: (columnId: string) => getErrorForColumn(columnId),
     downloadExcelTemplate,
     uploadExcelData
   };
