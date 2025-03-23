@@ -15,6 +15,7 @@ interface BasicInfoSectionProps {
   isEdit: boolean;
   passwordRequired: boolean;
   hideRoleSelector?: boolean;
+  showPasswordReset?: boolean;
 }
 
 const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
@@ -25,6 +26,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   isEdit,
   passwordRequired,
   hideRoleSelector = false,
+  showPasswordReset = false,
 }) => {
   const { t } = useLanguage();
 
@@ -71,7 +73,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         )}
       />
 
-      {(!isEdit || passwordRequired) && (
+      {((!isEdit || passwordRequired) || (isEdit && showPasswordReset)) && (
         <FormField
           control={form.control}
           name="password"
@@ -89,7 +91,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                   placeholder={isEdit ? t('enterNewPassword') : t('enterPassword')}
                 />
               </FormControl>
-              {isEdit && passwordRequired && (
+              {isEdit && (showPasswordReset || passwordRequired) && (
                 <p className="text-sm text-muted-foreground">
                   {t('passwordResetHelp')}
                 </p>

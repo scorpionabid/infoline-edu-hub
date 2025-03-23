@@ -42,6 +42,16 @@ const user = {
   deleteError: "Silinmə xətası",
   deleteErrorDesc: "İstifadəçi silinərkən xəta baş verdi",
   deleting: "Silinir...",
+  resetPassword: "Parolu sıfırla",
+  cancelPasswordReset: "Parol sıfırlamasını ləğv et",
+  passwordResetHelp: "Yeni bir şifrə təyin edərək istifadəçinin girişini sıfırlayırsınız",
+  passwordResetSuccess: "Parol uğurla sıfırlandı",
+  passwordResetError: "Parol sıfırlanarkən xəta baş verdi",
+  newPassword: "Yeni parol",
+  enterNewPassword: "Yeni parolu daxil edin",
+  password: "Parol",
+  enterPassword: "Parolu daxil edin",
+  passwordTooShort: "Parol ən azı 6 simvoldan ibarət olmalıdır",
 };
 
 export default user;
