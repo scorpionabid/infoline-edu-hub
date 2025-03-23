@@ -1,7 +1,6 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { mockRegions, mockSectors, School } from '@/data/schoolsData';
 import SchoolFilters from './SchoolFilters';
@@ -12,6 +11,7 @@ import { DeleteDialog, EditDialog, AddDialog, AdminDialog } from './SchoolDialog
 import { useSchoolsData } from '@/hooks/useSchoolsData';
 import { useSchoolForm } from '@/hooks/useSchoolForm';
 import { useSchoolDialogs } from '@/hooks/useSchoolDialogs';
+import { toast } from '@/hooks/use-toast';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -69,6 +69,14 @@ const SchoolsContainer: React.FC = () => {
     closeAdminDialog
   } = useSchoolDialogs();
 
+  // Məlumatların yenilənməsini təmin etmək üçün effect
+  useEffect(() => {
+    if (isOperationComplete) {
+      refreshData();
+      setIsOperationComplete(false);
+    }
+  }, [isOperationComplete, refreshData]);
+
   // Handle Add Dialog
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
@@ -95,14 +103,18 @@ const SchoolsContainer: React.FC = () => {
     handleAddSchool(newSchool);
     
     if (formData.adminEmail) {
-      toast.success('Məktəb admini uğurla yaradıldı');
+      toast({
+        title: "Məktəb admini uğurla yaradıldı",
+        variant: "default",
+      });
     }
     
     setIsOperationComplete(true);
+    // Daha uzun gecikmə ilə məlumatları yeniləyək
     setTimeout(() => {
-      setIsOperationComplete(false);
-    }, 100);
-  }, [formData, schools.length, validateForm, handleAddSchool, closeAddDialog]);
+      refreshData();
+    }, 300);
+  }, [formData, schools.length, validateForm, handleAddSchool, closeAddDialog, refreshData]);
 
   // Handle Edit Dialog
   const handleEditDialogOpen = useCallback((school: School) => {
@@ -126,10 +138,11 @@ const SchoolsContainer: React.FC = () => {
     handleUpdateSchool(updatedSchool);
     
     setIsOperationComplete(true);
+    // Daha uzun gecikmə ilə məlumatları yeniləyək
     setTimeout(() => {
-      setIsOperationComplete(false);
-    }, 100);
-  }, [formData, selectedSchool, validateForm, handleUpdateSchool, closeEditDialog]);
+      refreshData();
+    }, 300);
+  }, [formData, selectedSchool, validateForm, handleUpdateSchool, closeEditDialog, refreshData]);
 
   // Handle Delete Dialog
   const handleDeleteConfirm = useCallback(() => {
@@ -139,10 +152,11 @@ const SchoolsContainer: React.FC = () => {
     handleDeleteSchool(selectedSchool.id);
     
     setIsOperationComplete(true);
+    // Daha uzun gecikmə ilə məlumatları yeniləyək
     setTimeout(() => {
-      setIsOperationComplete(false);
-    }, 100);
-  }, [selectedSchool, handleDeleteSchool, closeDeleteDialog]);
+      refreshData();
+    }, 300);
+  }, [selectedSchool, handleDeleteSchool, closeDeleteDialog, refreshData]);
 
   // Handle Admin Dialog
   const handleAdminDialogOpen = useCallback((school: School) => {
@@ -150,39 +164,53 @@ const SchoolsContainer: React.FC = () => {
   }, [openAdminDialog]);
 
   const handleAdminUpdate = useCallback(() => {
-    toast.success('Admin məlumatları yeniləndi');
+    toast({
+      title: "Admin məlumatları yeniləndi",
+      variant: "default",
+    });
     closeAdminDialog();
     
     setIsOperationComplete(true);
+    // Daha uzun gecikmə ilə məlumatları yeniləyək
     setTimeout(() => {
-      setIsOperationComplete(false);
-    }, 100);
-  }, [closeAdminDialog]);
+      refreshData();
+    }, 300);
+  }, [closeAdminDialog, refreshData]);
 
   const handleResetPassword = useCallback((newPassword: string) => {
     if (!selectedAdmin) return;
     
     const adminEmail = selectedAdmin.adminEmail;
     
-    toast.success(`${adminEmail} üçün yeni parol təyin edildi`, {
-      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
+    toast({
+      title: `${adminEmail} üçün yeni parol təyin edildi`,
+      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək.",
+      variant: "default",
     });
     
     closeAdminDialog();
     
     setIsOperationComplete(true);
+    // Daha uzun gecikmə ilə məlumatları yeniləyək
     setTimeout(() => {
-      setIsOperationComplete(false);
-    }, 100);
-  }, [selectedAdmin, closeAdminDialog]);
+      refreshData();
+    }, 300);
+  }, [selectedAdmin, closeAdminDialog, refreshData]);
 
   // Excel operations
   const handleExport = useCallback(() => {
-    toast.success('Excel faylı yüklənir...');
-  }, []);
+    toast({
+      title: "Excel faylı yüklənir...",
+      variant: "default",
+    });
+    refreshData();
+  }, [refreshData]);
 
   const handleImport = useCallback(() => {
-    toast.success('Excel faylından məlumatlar yükləndi');
+    toast({
+      title: "Excel faylından məlumatlar yükləndi",
+      variant: "default",
+    });
     refreshData();
   }, [refreshData]);
 

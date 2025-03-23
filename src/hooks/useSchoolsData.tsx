@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { School, SchoolFormData, mockSchools, mockRegions, mockSectors } from '@/data/schoolsData';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 // Define interfaces for hook return
 export interface SortConfig {
@@ -44,7 +44,7 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
-  const [version, setVersion] = useState(0); // State yeniləmək üçün version əlavə edirik
+  const [version, setVersion] = useState(0); // Məlumatların yenilənməsini izləmək üçün
   const itemsPerPage = 5;
 
   // Məlumatları yeniləmək üçün metod
@@ -155,7 +155,10 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   // CRUD operations
   const handleAddSchool = useCallback((newSchool: School) => {
     setSchools(prevSchools => [...prevSchools, newSchool]);
-    toast.success('Məktəb uğurla əlavə edildi');
+    toast({
+      title: "Məktəb uğurla əlavə edildi",
+      variant: "default",
+    });
     refreshData();
   }, [refreshData]);
 
@@ -165,13 +168,19 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
         school.id === updatedSchool.id ? updatedSchool : school
       )
     );
-    toast.success('Məktəb uğurla yeniləndi');
+    toast({
+      title: "Məktəb uğurla yeniləndi",
+      variant: "default",
+    });
     refreshData();
   }, [refreshData]);
 
   const handleDeleteSchool = useCallback((schoolId: string) => {
     setSchools(prevSchools => prevSchools.filter(school => school.id !== schoolId));
-    toast.success('Məktəb uğurla silindi');
+    toast({
+      title: "Məktəb uğurla silindi",
+      variant: "default",
+    });
     refreshData();
   }, [refreshData]);
 
