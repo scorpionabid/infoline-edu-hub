@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { School, SchoolFormData, mockSchools, mockRegions, mockSectors } from '@/data/schoolsData';
 import { toast } from 'sonner';
 
@@ -33,10 +33,12 @@ interface UseSchoolsDataReturn {
   handleAddSchool: (newSchool: School) => void;
   handleUpdateSchool: (updatedSchool: School) => void;
   handleDeleteSchool: (schoolId: string) => void;
+  refreshData: () => void;
 }
 
 export const useSchoolsData = (): UseSchoolsDataReturn => {
   const [schools, setSchools] = useState<School[]>(mockSchools);
+  const [schoolsVersion, setSchoolsVersion] = useState(0); // Dövri vəziyyəti yeniləmək üçün
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedSector, setSelectedSector] = useState('');
@@ -45,10 +47,17 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // Məlumatları yeniləmək üçün metod
+  const refreshData = useCallback(() => {
+    setSchoolsVersion(prev => prev + 1);
+  }, []);
+
   // Filtered sectors based on selected region
-  const filteredSectors = selectedRegion 
-    ? mockSectors.filter(sector => sector.regionId === selectedRegion) 
-    : mockSectors;
+  const filteredSectors = useMemo(() => {
+    return selectedRegion 
+      ? mockSectors.filter(sector => sector.regionId === selectedRegion) 
+      : mockSectors;
+  }, [selectedRegion]);
 
   // Filter schools based on search term and filters
   const filteredSchools = useMemo(() => {
@@ -66,7 +75,7 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
       
       return searchMatch && regionMatch && sectorMatch && statusMatch;
     });
-  }, [schools, searchTerm, selectedRegion, selectedSector, selectedStatus]);
+  }, [schools, searchTerm, selectedRegion, selectedSector, selectedStatus, schoolsVersion]);
 
   // Sort schools based on sort config
   const sortedSchools = useMemo(() => {
@@ -83,13 +92,25 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
       });
     }
     return sortableSchools;
-  }, [filteredSchools, sortConfig]);
+  }, [filteredSchools, sortConfig, schoolsVersion]);
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    return sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
+  }, [sortedSchools, indexOfFirstItem, indexOfLastItem, schoolsVersion]);
+  
+  const totalPages = useMemo(() => {
+    return Math.ceil(sortedSchools.length / itemsPerPage);
+  }, [sortedSchools.length, itemsPerPage]);
+
+  // Səhifə sayı dəyişəndə cari səhifə nömrəsini yenidən hesablayaq
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,10 +120,8 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
 
   const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedRegion(e.target.value);
+    setSelectedSector('');
     setCurrentPage(1);
-    if (e.target.value === '') {
-      setSelectedSector('');
-    }
   }, []);
 
   const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -124,8 +143,10 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   }, [sortConfig]);
 
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
 
   const resetFilters = useCallback(() => {
     setSearchTerm('');
@@ -138,8 +159,9 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   // CRUD operations
   const handleAddSchool = useCallback((newSchool: School) => {
     setSchools(prevSchools => [...prevSchools, newSchool]);
+    refreshData();
     toast.success('Məktəb uğurla əlavə edildi');
-  }, []);
+  }, [refreshData]);
 
   const handleUpdateSchool = useCallback((updatedSchool: School) => {
     setSchools(prevSchools => 
@@ -147,13 +169,15 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
         school.id === updatedSchool.id ? updatedSchool : school
       )
     );
+    refreshData();
     toast.success('Məktəb uğurla yeniləndi');
-  }, []);
+  }, [refreshData]);
 
   const handleDeleteSchool = useCallback((schoolId: string) => {
     setSchools(prevSchools => prevSchools.filter(school => school.id !== schoolId));
+    refreshData();
     toast.success('Məktəb uğurla silindi');
-  }, []);
+  }, [refreshData]);
 
   return {
     schools,
@@ -178,6 +202,7 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
     resetFilters,
     handleAddSchool,
     handleUpdateSchool,
-    handleDeleteSchool
+    handleDeleteSchool,
+    refreshData
   };
 };

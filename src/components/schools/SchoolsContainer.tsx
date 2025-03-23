@@ -1,6 +1,5 @@
 
-import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -16,7 +15,7 @@ import { useSchoolDialogs } from '@/hooks/useSchoolDialogs';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [isDialogOperationCompleted, setIsDialogOperationCompleted] = useState(false);
   
   // Custom hooks
   const {
@@ -39,7 +38,8 @@ const SchoolsContainer: React.FC = () => {
     resetFilters,
     handleAddSchool,
     handleUpdateSchool,
-    handleDeleteSchool
+    handleDeleteSchool,
+    refreshData
   } = useSchoolsData();
   
   const {
@@ -69,6 +69,14 @@ const SchoolsContainer: React.FC = () => {
     closeAdminDialog
   } = useSchoolDialogs();
 
+  // Dialog işləmlərindən sonra məlumatları yeniləmək
+  useEffect(() => {
+    if (isDialogOperationCompleted) {
+      refreshData();
+      setIsDialogOperationCompleted(false);
+    }
+  }, [isDialogOperationCompleted, refreshData]);
+
   // Handle Add Dialog
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
@@ -93,6 +101,7 @@ const SchoolsContainer: React.FC = () => {
     
     handleAddSchool(newSchool);
     closeAddDialog();
+    setIsDialogOperationCompleted(true);
     
     if (formData.adminEmail) {
       toast.success('Məktəb admini uğurla yaradıldı');
@@ -119,6 +128,7 @@ const SchoolsContainer: React.FC = () => {
     
     handleUpdateSchool(updatedSchool);
     closeEditDialog();
+    setIsDialogOperationCompleted(true);
   }, [formData, selectedSchool, validateForm, handleUpdateSchool, closeEditDialog]);
 
   // Handle Delete Dialog
@@ -126,6 +136,7 @@ const SchoolsContainer: React.FC = () => {
     if (!selectedSchool) return;
     handleDeleteSchool(selectedSchool.id);
     closeDeleteDialog();
+    setIsDialogOperationCompleted(true);
   }, [selectedSchool, handleDeleteSchool, closeDeleteDialog]);
 
   // Handle Admin Dialog
@@ -136,6 +147,7 @@ const SchoolsContainer: React.FC = () => {
   const handleAdminUpdate = useCallback(() => {
     toast.success('Admin məlumatları yeniləndi');
     closeAdminDialog();
+    setIsDialogOperationCompleted(true);
   }, [closeAdminDialog]);
 
   const handleResetPassword = useCallback((newPassword: string) => {
@@ -148,6 +160,7 @@ const SchoolsContainer: React.FC = () => {
     });
     
     closeAdminDialog();
+    setIsDialogOperationCompleted(true);
   }, [selectedAdmin, closeAdminDialog]);
 
   // Excel operations
@@ -157,6 +170,7 @@ const SchoolsContainer: React.FC = () => {
 
   const handleImport = useCallback(() => {
     toast.success('Excel faylından məlumatlar yükləndi');
+    setIsDialogOperationCompleted(true);
   }, []);
 
   return (

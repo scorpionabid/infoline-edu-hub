@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Table, 
@@ -63,6 +63,13 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
   handleAdminDialogOpen
 }) => {
   const navigate = useNavigate();
+  const [items, setItems] = useState<School[]>([]);
+  
+  // Daxil olan məlumatları daxili vəziyyətə kopyalayırıq ki, 
+  // komponent içərisində dəyişikliklər baş verəndə məlumatlar stabil qalsın
+  useEffect(() => {
+    setItems([...currentItems]);
+  }, [currentItems]);
 
   // Tamamlanma faizi badge
   const renderCompletionRateBadge = (rate: number) => {
@@ -134,9 +141,9 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {currentItems.length > 0 ? (
-            currentItems.map(school => (
-              <TableRow key={school.id}>
+          {items.length > 0 ? (
+            items.map(school => (
+              <TableRow key={school.id} className="hover:bg-muted/50">
                 <TableCell>
                   <Avatar className="h-9 w-9">
                     {school.logo ? (
@@ -198,14 +205,15 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="cursor-pointer"
+                        className="cursor-pointer hover:bg-accent"
                       >
                         <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Əməliyyatlar</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-background">
+                    <DropdownMenuContent align="end" className="min-w-[160px] bg-background">
                       <DropdownMenuItem 
-                        className="cursor-pointer" 
+                        className="cursor-pointer flex items-center" 
                         onClick={() => handleDropdownAction('view', school)}
                       >
                         <Eye className="h-4 w-4 mr-2" />
@@ -214,21 +222,21 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                       {(userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin') && (
                         <>
                           <DropdownMenuItem 
-                            className="cursor-pointer" 
+                            className="cursor-pointer flex items-center" 
                             onClick={() => handleDropdownAction('edit', school)}
                           >
                             <Pencil className="h-4 w-4 mr-2" />
                             Redaktə et
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            className="cursor-pointer" 
+                            className="cursor-pointer flex items-center" 
                             onClick={() => handleDropdownAction('data', school)}
                           >
                             <GalleryVerticalEnd className="h-4 w-4 mr-2" />
                             Məlumatlar
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            className="cursor-pointer text-destructive" 
+                            className="cursor-pointer flex items-center text-destructive" 
                             onClick={() => handleDropdownAction('delete', school)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
