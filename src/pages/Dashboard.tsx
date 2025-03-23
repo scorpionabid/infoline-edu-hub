@@ -53,6 +53,7 @@ const Dashboard: React.FC = () => {
       case 'regionadmin':
         // For Region Admin, include category completion and sector data
         return {
+          regions: 1, // Region admini bir region üçün məsuldur, buna görə də regions: 1 əlavə edirik
           sectors: 12,
           schools: 167,
           users: 185,
@@ -169,14 +170,92 @@ const Dashboard: React.FC = () => {
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
     switch (user?.role) {
-      case 'superadmin':
-        return <SuperAdminDashboard data={dashboardData} />;
-      case 'regionadmin':
-        return <RegionAdminDashboard data={dashboardData} />;
-      case 'sectoradmin':
-        return <SectorAdminDashboard data={dashboardData} />;
-      case 'schooladmin':
-        return <SchoolAdminDashboard data={dashboardData} />;
+      case 'superadmin': {
+        const superAdminData = dashboardData as {
+          regions: number;
+          sectors: number;
+          schools: number;
+          users: number;
+          completionRate: number;
+          pendingApprovals: number;
+          notifications: Notification[];
+          activityData?: {
+            id: string;
+            action: string;
+            actor: string;
+            target: string;
+            time: string;
+          }[];
+          pendingSchools?: number;
+          approvedSchools?: number;
+          rejectedSchools?: number;
+          statusData?: {
+            completed: number;
+            pending: number;
+            rejected: number;
+            notStarted: number;
+          };
+        };
+        return <SuperAdminDashboard data={superAdminData} />;
+      }
+      case 'regionadmin': {
+        const regionAdminData = dashboardData as {
+          sectors: number;
+          schools: number;
+          users: number;
+          completionRate: number;
+          pendingApprovals: number;
+          pendingSchools: number;
+          approvedSchools: number;
+          rejectedSchools: number;
+          notifications: Notification[];
+          categories: {
+            name: string;
+            completionRate: number;
+            color: string;
+          }[];
+          sectorCompletions: {
+            name: string;
+            completionRate: number;
+          }[];
+        };
+        return <RegionAdminDashboard data={regionAdminData} />;
+      }
+      case 'sectoradmin': {
+        const sectorAdminData = dashboardData as {
+          schools: number;
+          completionRate: number;
+          pendingApprovals: number;
+          pendingSchools: number;
+          approvedSchools: number;
+          rejectedSchools: number;
+          notifications: Notification[];
+        };
+        return <SectorAdminDashboard data={sectorAdminData} />;
+      }
+      case 'schooladmin': {
+        const schoolAdminData = dashboardData as {
+          forms: {
+            pending: number;
+            approved: number;
+            rejected: number;
+            dueSoon: number;
+            overdue: number;
+          };
+          completionRate: number;
+          notifications: Notification[];
+          categories?: number;
+          totalForms?: number;
+          completedForms?: number;
+          pendingForms?: number;
+          rejectedForms?: number;
+          dueDates?: Array<{
+            category: string;
+            date: string;
+          }>;
+        };
+        return <SchoolAdminDashboard data={schoolAdminData} />;
+      }
       default:
         return null;
     }
