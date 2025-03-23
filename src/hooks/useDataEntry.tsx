@@ -9,32 +9,7 @@ import { useValidation } from '@/hooks/useValidation';
 import { useExcelOperations } from '@/hooks/useExcelOperations';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useDataUpdates } from '@/hooks/dataEntry/useDataUpdates';
-
-// useDataEntryState hook-u yenidən yazıldığı üçün burada öz versiyamızı yaradırıq
-const useDataEntryStateWrapper = (selectedCategoryId?: string | null) => {
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const lastCategoryIdRef = useRef<string | null>(null);
-  
-  // Kateqoriya məlumatlarını sıfırlamaq üçün funksiya
-  const resetCategories = useCallback(() => {
-    setCategories([]);
-    setIsLoading(true);
-    setCurrentCategoryIndex(0);
-  }, []);
-
-  return {
-    categories,
-    setCategories,
-    isLoading,
-    setIsLoading,
-    currentCategoryIndex,
-    setCurrentCategoryIndex,
-    lastCategoryIdRef,
-    resetCategories
-  };
-};
+import { useDataEntryState } from '@/hooks/dataEntry/useDataEntryState';
 
 export const useDataEntry = (initialCategoryId?: string | null) => {
   const { t } = useLanguage();
@@ -51,7 +26,7 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     currentCategoryIndex, 
     setCurrentCategoryIndex, 
     lastCategoryIdRef
-  } = useDataEntryStateWrapper(selectedCategoryId);
+  } = useDataEntryState(selectedCategoryId);
 
   const { 
     formData, 
