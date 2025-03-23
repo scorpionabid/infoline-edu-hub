@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
+import { Language } from '@/types/language';
 import { Globe } from 'lucide-react';
 import {
   DropdownMenu,
