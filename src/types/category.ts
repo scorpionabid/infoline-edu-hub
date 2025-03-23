@@ -1,21 +1,21 @@
 
-export type Category = {
+export type CategoryStatus = 'active' | 'inactive' | 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue';
+
+export interface Category {
   id: string;
   name: string;
-  assignment: "all" | "sectors";
-  createdAt: string;
-  updatedAt: string;
-  status: "active" | "inactive" | "pending" | "approved" | "rejected" | "dueSoon" | "overdue";
-  priority: number;
-  archived?: boolean;
-  description?: string; // Kateqoriya haqqında əlavə məlumat
-  deadline?: string; // Son tarix
-  columnCount?: number; // Kateqoriyaya aid sütunların sayı
-};
+  description?: string;
+  deadline?: string;
+  status: CategoryStatus | string;
+  priority?: number;
+  assignment?: 'all' | 'sectors';
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-export type CategoryFilter = {
-  search: string;
-  status: 'active' | 'inactive' | '';
-  showArchived: boolean;
-  assignment: 'all' | 'sectors' | '';
-};
+export interface CategoryWithProgress extends Category {
+  completionPercentage?: number;
+  entryCount?: number;
+  completedEntryCount?: number;
+  rejectedEntryCount?: number;
+}

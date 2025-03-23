@@ -10,31 +10,36 @@ export interface User {
   sectorId?: string;
   schoolId?: string;
   avatar?: string;
-  status: 'active' | 'inactive' | 'blocked';
-  lastLogin?: Date;
-  passwordResetDate?: Date;
-  twoFactorEnabled?: boolean;
+  phone?: string;
+  position?: string;
   language?: string;
+  lastLogin?: Date;
+  twoFactorEnabled?: boolean;
   notificationSettings?: {
     email: boolean;
     system: boolean;
   };
-  // Əlavə edilmiş xüsusiyyətlər
-  phone?: string;
-  position?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string;
+  updatedAt?: string;
+  status?: 'active' | 'inactive' | 'blocked';
 }
 
-export type UserFormData = Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'lastLogin'> & {
+export interface UserFormData {
+  id?: string;
+  name: string;
+  email: string;
   password?: string;
-};
-
-export type UserFilter = {
-  role?: Role;
-  status?: 'active' | 'inactive' | 'blocked';
+  confirmPassword?: string;
+  role: Role;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  search?: string;
-};
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
+}

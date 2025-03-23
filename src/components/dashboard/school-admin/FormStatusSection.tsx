@@ -1,11 +1,19 @@
 
 import React from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  AlertTriangle, 
+  AlertCircle, 
+  FileInput 
+} from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
-import { Check, Clock, XCircle, AlertTriangle, AlertCircle, FileText } from 'lucide-react';
 
-interface FormStatisticsProps {
+interface FormStatusCounts {
   pending: number;
   approved: number;
   rejected: number;
@@ -14,94 +22,91 @@ interface FormStatisticsProps {
 }
 
 interface FormStatusSectionProps {
-  forms: FormStatisticsProps;
+  forms: FormStatusCounts;
   navigateToDataEntry: (status: string | null) => void;
-  activeStatus?: string | null;
+  activeStatus: string | null;
   compact?: boolean;
 }
 
-const FormStatusSection: React.FC<FormStatusSectionProps> = ({ 
-  forms, 
+const FormStatusSection: React.FC<FormStatusSectionProps> = ({
+  forms,
   navigateToDataEntry,
-  activeStatus = null,
+  activeStatus,
   compact = false
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   
-  const totalForms = forms.pending + forms.approved + forms.rejected + forms.dueSoon + forms.overdue;
-  
-  // Minimalist versiya əlavə edildi
-  const statusCards = [
-    {
-      id: null,
-      name: t('allForms'),
-      count: totalForms,
-      icon: <FileText size={16} />,
-      color: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
-      activeColor: 'bg-gray-700 text-white',
-    },
+  const statusItems = [
     {
       id: 'pending',
-      name: t('pendingForms'),
+      label: t('pending'),
       count: forms.pending,
-      icon: <Clock size={16} />,
-      color: 'bg-amber-100 text-amber-800 hover:bg-amber-200',
-      activeColor: 'bg-amber-600 text-white',
+      icon: <Clock className="h-4 w-4" />,
+      color: 'bg-yellow-100 text-yellow-700'
     },
     {
       id: 'approved',
-      name: t('approvedForms'),
+      label: t('approved'),
       count: forms.approved,
-      icon: <Check size={16} />,
-      color: 'bg-green-100 text-green-800 hover:bg-green-200',
-      activeColor: 'bg-green-600 text-white',
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      color: 'bg-green-100 text-green-700'
     },
     {
       id: 'rejected',
-      name: t('rejectedForms'),
+      label: t('rejected'),
       count: forms.rejected,
-      icon: <XCircle size={16} />,
-      color: 'bg-red-100 text-red-800 hover:bg-red-200',
-      activeColor: 'bg-red-600 text-white',
+      icon: <XCircle className="h-4 w-4" />,
+      color: 'bg-red-100 text-red-700'
     },
     {
       id: 'dueSoon',
-      name: t('dueSoonForms'),
+      label: t('dueSoon'),
       count: forms.dueSoon,
-      icon: <AlertTriangle size={16} />,
-      color: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
-      activeColor: 'bg-blue-600 text-white',
+      icon: <AlertTriangle className="h-4 w-4" />,
+      color: 'bg-orange-100 text-orange-700'
     },
     {
       id: 'overdue',
-      name: t('overdueForms'),
+      label: t('overdue'),
       count: forms.overdue,
-      icon: <AlertCircle size={16} />,
-      color: 'bg-rose-100 text-rose-800 hover:bg-rose-200',
-      activeColor: 'bg-rose-600 text-white',
+      icon: <AlertCircle className="h-4 w-4" />,
+      color: 'bg-red-100 text-red-700'
     }
   ];
   
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        {statusCards.map((status) => (
-          <button 
-            key={status.id || 'all'} 
-            className={cn(
-              "py-1 px-3 rounded-full flex items-center gap-1 text-sm",
-              activeStatus === status.id ? status.activeColor : status.color,
-              "transition-colors duration-200"
-            )}
-            onClick={() => navigateToDataEntry(status.id)}
+    <Card>
+      <CardContent className={cn("flex flex-wrap gap-2", compact ? "py-3" : "py-6")}>
+        {compact && (
+          <Button
+            variant={activeStatus === null ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={() => navigateToDataEntry(null)}
           >
-            {status.icon}
-            <span>{status.name}</span>
-            <span className="font-bold ml-1">{status.count}</span>
-          </button>
+            <FileInput className="h-4 w-4" />
+            {t('all')}
+          </Button>
+        )}
+        
+        {statusItems.map(item => (
+          <Button
+            key={item.id}
+            variant={activeStatus === item.id ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={() => navigateToDataEntry(item.id)}
+            disabled={item.count === 0}
+          >
+            <span className={cn("flex items-center gap-1 px-1 py-0.5 rounded", item.color)}>
+              {item.icon}
+              <span>{item.count}</span>
+            </span>
+            <span>{item.label}</span>
+          </Button>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
