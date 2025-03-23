@@ -20,8 +20,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import ApprovalAlert from './components/ApprovalAlert';
 import RejectionAlert from './components/RejectionAlert';
-import { Category } from '@/types/category'; // Category tipini category faylından idxal edirik
-import { Column } from '@/types/column'; // Column tipini column faylından idxal edirik
+import { Category } from '@/types/category'; // Kateqoriya tipini düzgün yerdən idxal edirik
+import { Column } from '@/types/column'; // Sütun tipini düzgün yerdən idxal edirik
 
 interface DataEntryFormProps {
   selectedCategory?: string | null;
@@ -216,7 +216,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               <TabsContent key={category.id} value={category.id} className="space-y-2">
                 <CategoryHeader 
                   name={category.name}
-                  description={category.description}
+                  description={category.description || ''}
                   deadline={category.deadline}
                   isSubmitted={false}
                 />
@@ -241,8 +241,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         )}
       </CardContent>
       <CardFooter className="justify-between">
-        <ApprovalAlert isApproved={false} />
-        <RejectionAlert errorMessage={""} />
+        <ApprovalAlert />
+        <RejectionAlert errorMessage="" />
         <Button type="submit">{t('submitForm')}</Button>
       </CardFooter>
     </Card>

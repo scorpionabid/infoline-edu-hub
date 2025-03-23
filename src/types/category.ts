@@ -5,7 +5,7 @@ export type Category = {
   assignment: "all" | "sectors";
   createdAt: string;
   updatedAt: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "pending" | "approved" | "rejected" | "dueSoon" | "overdue";
   priority: number;
   archived?: boolean;
   description?: string; // Kateqoriya haqqında əlavə məlumat
