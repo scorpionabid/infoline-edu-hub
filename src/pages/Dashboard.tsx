@@ -101,6 +101,28 @@ const Dashboard: React.FC = () => {
             { id: 2, type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "12 məktəb üçün məlumatlar təsdiqlənməlidir", time: "3 saat əvvəl" },
             { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "4 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
           ],
+          // Sektor admin üçün məktəb məlumatları
+          schoolsData: [
+            { id: 1, name: "28 nömrəli məktəb", status: "pending", completionRate: 75 },
+            { id: 2, name: "42 nömrəli məktəb", status: "approved", completionRate: 100 },
+            { id: 3, name: "12 nömrəli məktəb", status: "pending", completionRate: 60 },
+            { id: 4, name: "117 nömrəli məktəb", status: "rejected", completionRate: 45 },
+            { id: 5, name: "45 nömrəli məktəb", status: "pending", completionRate: 30 },
+          ],
+          // Sektor admin üçün kateqoriya tamamlanma məlumatları
+          categoriesData: [
+            { name: "Tədris məlumatları", completionRate: 72, color: "bg-blue-500" },
+            { name: "Müəllim məlumatları", completionRate: 58, color: "bg-green-500" },
+            { name: "İnfrastruktur məlumatları", completionRate: 43, color: "bg-amber-500" },
+            { name: "Maliyyə məlumatları", completionRate: 29, color: "bg-purple-500" },
+          ],
+          // Sektor admin üçün təsdiq gözləyən məlumatlar
+          pendingApprovalsData: [
+            { id: 1, schoolName: "28 nömrəli məktəb", category: "Tədris məlumatları", submitted: "2023-10-12", formCount: 3 },
+            { id: 2, schoolName: "12 nömrəli məktəb", category: "Müəllim məlumatları", submitted: "2023-10-14", formCount: 2 },
+            { id: 3, schoolName: "45 nömrəli məktəb", category: "İnfrastruktur məlumatları", submitted: "2023-10-15", formCount: 1 },
+          ],
+          // Sektor admin üçün aktivlik məlumatları
           activityData: [
             { id: "a1", action: "Məlumatlar təsdiqləndi", actor: "Siz", target: "28 nömrəli məktəb", time: "2 saat əvvəl" },
             { id: "a2", action: "Məlumatlar rədd edildi", actor: "Siz", target: "45 nömrəli məktəb", time: "4 saat əvvəl" },
