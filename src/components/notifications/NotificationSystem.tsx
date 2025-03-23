@@ -1,7 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { Notification } from '@/components/dashboard/NotificationsCard';
+import React from 'react';
+import { useNotifications } from '@/context/NotificationContext';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { Bell, BellOff, Check } from 'lucide-react';
 import { 
@@ -12,65 +11,18 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import NotificationItem from '@/components/dashboard/NotificationItem';
+import NotificationItem from '@/components/notifications/NotificationItem';
 import { cn } from '@/lib/utils';
-
-// Demo bildirişlər
-const DEMO_NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    type: 'deadline',
-    title: 'Son tarix yaxınlaşır',
-    message: 'Ümumi məlumatlar kateqoriyası üçün son tarixə 2 gün qalıb',
-    time: '1 saat əvvəl'
-  },
-  {
-    id: 2,
-    type: 'approval',
-    title: 'Məlumatlar təsdiqləndi',
-    message: 'Müəllim heyəti kateqoriyası üzrə məlumatlarınız təsdiqləndi',
-    time: '3 saat əvvəl'
-  },
-  {
-    id: 3,
-    type: 'rejection',
-    title: 'Məlumatlar rədd edildi',
-    message: 'Şagird kontingenti məlumatları düzəliş tələb edir',
-    time: '1 gün əvvəl'
-  },
-  {
-    id: 4,
-    type: 'system',
-    title: 'Sistem yeniləndi',
-    message: 'Sistem v1.2 versiyasına yeniləndi, yeni funksiyalar əlavə edildi',
-    time: '2 gün əvvəl'
-  },
-  {
-    id: 5,
-    type: 'category',
-    title: 'Yeni kateqoriya',
-    message: 'Dərs saatları kateqoriyası əlavə edildi',
-    time: '3 gün əvvəl'
-  }
-];
 
 const NotificationSystem = () => {
   const { t } = useLanguageSafe();
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>(DEMO_NOTIFICATIONS);
-  const [unreadCount, setUnreadCount] = useState<number>(3);
-  
-  // Demo məqsədilə bildiriş oxunma statusunu simulyasiya edirik
-  const markAllAsRead = () => {
-    setUnreadCount(0);
-    // Gerçək tətbiqdə burada API çağırışı olacaq
-  };
-  
-  const clearAllNotifications = () => {
-    setNotifications([]);
-    setUnreadCount(0);
-    // Gerçək tətbiqdə burada API çağırışı olacaq
-  };
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    clearAll 
+  } = useNotifications();
   
   return (
     <Popover>
@@ -109,7 +61,7 @@ const NotificationSystem = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={clearAllNotifications}
+                  onClick={clearAll}
                 >
                   <BellOff className="h-4 w-4 mr-1" />
                   <span className="text-xs">{t('clearAll')}</span>
@@ -127,10 +79,13 @@ const NotificationSystem = () => {
                   key={notification.id} 
                   className={cn(
                     "hover:bg-muted transition-colors",
-                    notification.id <= unreadCount ? "bg-muted/50" : ""
+                    !notification.isRead ? "bg-muted/50" : ""
                   )}
                 >
-                  <NotificationItem notification={notification} />
+                  <NotificationItem 
+                    notification={notification} 
+                    onMarkAsRead={markAsRead}
+                  />
                 </div>
               ))}
             </div>

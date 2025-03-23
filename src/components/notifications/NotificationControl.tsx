@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Notification } from '@/types/notification';
 import {
   Popover,
   PopoverContent,
@@ -10,24 +9,18 @@ import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationList from './NotificationList';
+import { useNotifications } from '@/context/NotificationContext';
 
-interface NotificationControlProps {
-  notifications: Notification[];
-  onMarkAsRead: (id: string) => void;
-  onMarkAllAsRead: () => void;
-  onClearAll: () => void;
-}
-
-const NotificationControl: React.FC<NotificationControlProps> = ({
-  notifications,
-  onMarkAsRead,
-  onMarkAllAsRead,
-  onClearAll,
-}) => {
+const NotificationControl: React.FC = () => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    clearAll 
+  } = useNotifications();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -47,11 +40,9 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
         </div>
         <NotificationList 
           notifications={notifications}
-          onMarkAsRead={(id) => {
-            onMarkAsRead(id);
-          }}
-          onMarkAllAsRead={onMarkAllAsRead}
-          onClearAll={onClearAll}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearAll}
         />
       </PopoverContent>
     </Popover>
