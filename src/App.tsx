@@ -19,6 +19,7 @@ import Users from "./pages/Users";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import DataEntry from "./pages/DataEntry";
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/data-entry" 
+        element={
+          <ProtectedRoute>
+            <DataEntry />
           </ProtectedRoute>
         } 
       />

@@ -81,6 +81,7 @@ const DataEntryContainer: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with navigation and action buttons */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -157,7 +158,7 @@ const DataEntryContainer: React.FC = () => {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{formData.status === 'submitted' ? t('resubmitTooltip') : t('submitForApprovalTooltip')}</p>
+                  <p>{t('submitForApprovalTooltip')}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -180,6 +181,7 @@ const DataEntryContainer: React.FC = () => {
         </div>
       </div>
 
+      {/* Main content card */}
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader className="pb-3">
