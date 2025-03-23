@@ -9,5 +9,6 @@ export type Category = {
   priority: number;
   archived?: boolean;
   description?: string; // Kateqoriya haqqında əlavə məlumat
+  deadline?: string; // Son tarix
   columnCount?: number; // Kateqoriyaya aid sütunların sayı
 };

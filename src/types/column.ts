@@ -33,10 +33,13 @@ export type Column = {
     value: string;
   };
   status: "active" | "inactive";
+  multiline?: boolean; // Əlavə edildi: çoxsətirli mətn sahələri üçün
 };
 
 export type CategoryWithColumns = {
   id: string;
   name: string;
+  description?: string; // Əlavə edildi: kateqoriya təsviri
+  deadline?: string; // Əlavə edildi: kateqoriya son tarixi
   columns: Column[];
 };
