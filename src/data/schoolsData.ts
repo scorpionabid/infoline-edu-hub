@@ -50,6 +50,11 @@ export interface Sector {
   name: string;
 }
 
+export interface SortConfig {
+  key: string | null;
+  direction: 'asc' | 'desc' | null;
+}
+
 export const mockSchools: School[] = [
   {
     "id": "1",
@@ -323,21 +328,22 @@ export const getLanguageLabel = (language: string): string => {
   }
 };
 
-export const getSchoolInitial = (): SchoolFormData => ({
-  name: '',
-  principalName: '',
-  address: '',
-  regionId: '',
-  sectorId: '',
-  phone: '',
-  email: '',
-  studentCount: '',
-  teacherCount: '',
-  status: 'active',
-  type: 'full_secondary',
-  language: 'az',
-  adminEmail: '',
-  adminFullName: '',
-  adminPassword: '',
-  adminStatus: 'active'
-});
+export const getSchoolInitial = (schoolName?: string): string => {
+  if (!schoolName) return '';
+  const words = schoolName.split(' ').filter(word => word.length > 0);
+  if (words.length === 0) return '';
+  
+  // İlk kelimeden ilk harf
+  const firstInitial = words[0][0].toUpperCase();
+  
+  // Eğer ikinci kelime varsa, onun da ilk harfini al
+  if (words.length > 1) {
+    for (let i = 1; i < words.length; i++) {
+      if (words[i].length > 0 && /[a-zA-Z0-9]/.test(words[i][0])) {
+        return firstInitial + words[i][0].toUpperCase();
+      }
+    }
+  }
+  
+  return firstInitial;
+};
