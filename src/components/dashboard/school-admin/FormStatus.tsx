@@ -26,12 +26,12 @@ const FormStatus: React.FC<FormStatusProps> = ({ count, label, icon, variant, on
   };
 
   const tooltipText = {
-    default: t('allFormsTooltip', 'Bütün formlar'),
-    pending: t('pendingFormsTooltip', 'Təsdiq gözləyən formlar'),
-    approved: t('approvedFormsTooltip', 'Təsdiqlənmiş formlar'),
-    rejected: t('rejectedFormsTooltip', 'Düzəliş tələb edən formlar'),
-    due: t('dueSoonTooltip', 'Son tarixi yaxınlaşan formlar'),
-    overdue: t('overdueTooltip', 'Son tarixi keçmiş formlar')
+    default: t('allFormsTooltip'),
+    pending: t('pendingFormsTooltip'),
+    approved: t('approvedFormsTooltip'),
+    rejected: t('rejectedFormsTooltip'),
+    due: t('dueSoonTooltip'),
+    overdue: t('overdueTooltip')
   };
 
   return (

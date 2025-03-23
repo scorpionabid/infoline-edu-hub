@@ -1,181 +1,107 @@
 
 /**
- * UI element tərcümələri
+ * UI elementlər ilə bağlı tərcümələr
  */
 const ui = {
-  // Form və data statuslar
-  pending: "Gözləyir",
-  approved: "Təsdiqlənib",
-  rejected: "Rədd edilib",
-  draft: "Qaralama",
-  overdue: "Gecikmiş",
-  dueSoon: "Vaxtı yaxınlaşır",
-  completed: "Tamamlanıb",
-  
-  // Formlar
-  forms: "Formlar",
-  form: "Form",
-  formStatus: "Form statusu",
-  formProgress: "Tamamlanma dərəcəsi",
-  formDeadline: "Son tarix",
-  formCategory: "Kateqoriya",
-  formTitle: "Başlıq",
-  formDescription: "Təsvir",
-  formSubmittedBy: "Təqdim edən",
-  formSubmittedOn: "Təqdim edilmə tarixi",
-  formApprovedBy: "Təsdiqləyən",
-  formApprovedOn: "Təsdiqlənmə tarixi",
-  formRejectedBy: "Rədd edən",
-  formRejectedOn: "Rədd edilmə tarixi",
-  formRejectionReason: "Rədd edilmə səbəbi",
-  searchForms: "Formları axtar...",
-  
-  // Categories
-  categories: "Kateqoriyalar",
-  category: "Kateqoriya",
-  subcategories: "Alt kateqoriyalar",
-  subcategory: "Alt kateqoriya",
-  addCategory: "Kateqoriya əlavə et",
-  editCategory: "Kateqoriyanı redaktə et",
-  deleteCategory: "Kateqoriyanı sil",
-
-  // Tables
-  table: "Cədvəl",
-  row: "Sətir",
-  column: "Sütun",
-  cell: "Xana",
-  header: "Başlıq",
-  footer: "Alt hissə",
-  pagination: "Səhifələmə",
-  itemsPerPage: "Səhifə başına elementlər",
-  totalItems: "Ümumi elementlər",
-  page: "Səhifə",
-  of: "/ {total}",
-
-  // Modals
-  modal: "Modal",
-  dialog: "Dialoq",
+  // Button Labels
+  save: "Saxla",
+  cancel: "Ləğv et",
   close: "Bağla",
-
-  // Tooltips
-  tooltip: "İpucu",
-
-  // Alerts
-  alert: "Xəbərdarlıq",
+  confirm: "Təsdiqlə",
+  discard: "İmtina et",
+  add: "Əlavə et",
+  remove: "Sil",
+  search: "Axtar",
+  filter: "Filtrlə",
+  apply: "Tətbiq et",
+  clear: "Təmizlə",
+  upload: "Yüklə",
+  download: "Endir",
+  submit: "Təqdim et",
+  edit: "Redaktə et",
+  create: "Yarat",
+  delete: "Sil",
+  resetPassword: "Şifrəni sıfırla",
+  changePassword: "Şifrəni dəyiş",
+  signIn: "Daxil ol",
+  signUp: "Qeydiyyatdan keç",
+  signOut: "Çıxış",
+  
+  // General UI elements
+  loadMore: "Daha çox yüklə",
+  showMore: "Daha çox göstər",
+  showLess: "Daha az göstər",
+  searchResults: "Axtarış nəticələri",
+  noResults: "Nəticə tapılmadı",
+  loading: "Yüklənir...",
+  success: "Uğurlu",
+  error: "Xəta",
+  warning: "Xəbərdarlıq",
+  info: "Məlumat",
+  status: "Status",
+  actions: "Əməliyyatlar",
+  details: "Detallar",
+  summary: "Xülasə",
+  description: "Təsvir",
+  
+  // Data table elements
+  rowsPerPage: "Səhifə başına sətir",
+  of: "of", // e.g. "1-10 of 100"
+  previous: "Əvvəlki",
+  next: "Növbəti",
+  first: "İlk",
+  last: "Son",
+  page: "Səhifə",
+  sortAscending: "Artan sıralama",
+  sortDescending: "Azalan sıralama",
+  
+  // Form elements
+  required: "Məcburi",
+  optional: "İstəyə bağlı",
+  invalidFormat: "Yanlış format",
+  pleaseEnter: "Zəhmət olmasa daxil edin",
+  select: "Seçin",
+  selectAll: "Hamısını seç",
+  unselectAll: "Hamısını ləğv et",
+  selectDate: "Tarix seçin",
+  selectTime: "Vaxt seçin",
+  today: "Bu gün",
+  yesterday: "Dünən",
+  tomorrow: "Sabah",
+  now: "İndi",
+  clearSelection: "Seçimi təmizlə",
+  
+  // Dialog elements
+  close: "Bağla",
+  areYouSure: "Əminsiniz?",
+  thisActionCannot: "Bu əməliyyat geri qaytarıla bilməz",
+  
+  // Navigation
+  goBack: "Geri qayıt",
+  goForward: "İrəli get",
+  home: "Ana səhifə",
+  
+  // Notifications
   dismiss: "Bağla",
-
-  // Buttons
-  button: "Düymə",
-
-  // Dropdowns
-  dropdown: "Açılan menyu",
-  selectOption: "Seç",
-  option: "Seçim",
-
-  // Tabs
-  tabs: "Tablar",
-  tab: "Tab",
-
-  // Cards
-  card: "Kart",
-
-  // Lists
-  list: "Siyahı",
-  item: "Element",
-
-  // Forms
-  form: "Form",
-  input: "Giriş",
-  label: "Etiket",
-  placeholder: "Nümunə",
+  dismissAll: "Hamısını bağla",
+  viewAll: "Hamısına bax",
   
-  // Colors
-  color: "Rəng",
-  red: "Qırmızı",
-  green: "Yaşıl",
-  blue: "Mavi",
-  yellow: "Sarı",
-  purple: "Bənövşəyi",
-  orange: "Narıncı",
-  black: "Qara",
-  white: "Ağ",
-  gray: "Boz",
-  
-  // Sizes
-  size: "Ölçü",
-  small: "Kiçik",
-  medium: "Orta",
-  large: "Böyük",
-  
-  // Directions
-  direction: "İstiqamət",
-  up: "Yuxarı",
-  down: "Aşağı",
-  left: "Sol",
-  right: "Sağ",
-  
-  // Alignment
-  alignment: "Düzləndirmə",
-  center: "Mərkəz",
-  justify: "Kənarlar boyu",
-  
-  // Social
-  social: "Sosial",
-  share: "Paylaş",
-  like: "Bəyən",
-  follow: "İzlə",
-  
-  // Commerce
-  price: "Qiymət",
-  discount: "Endirim",
-  total: "Ümumi",
-  subtotal: "Ara cəm",
-  tax: "Vergi",
-  shipping: "Çatdırılma",
-  payment: "Ödəniş",
-  checkout: "Sifarişi tamamla",
-  
-  // Files
-  file: "Fayl",
-  
-  // Media
-  image: "Şəkil",
-  video: "Video",
-  audio: "Audio",
-  
-  // Charts
-  chart: "Qrafik",
-  bar: "Sütun",
-  line: "Xətt",
-  pie: "Dairə",
-  
-  // Maps
-  map: "Xəritə",
-  location: "Məkan",
-  
-  // Weather
-  weather: "Hava",
-  temperature: "Temperatur",
-  
-  // Devices
-  device: "Cihaz",
-  mobile: "Mobil",
-  desktop: "Masaüstü",
-  tablet: "Tablet",
-  
-  // Accessibility
-  accessibility: "Əlçatanlıq",
-  screenReader: "Ekran oxuyucusu",
-  
-  // Misc
-  more: "Daha çox",
-  less: "Daha az",
-  all: "Hamısı",
-  none: "Heç biri",
-  understood: "Anlaşıldı",
+  // Theme & Display
+  light: "İşıqlı",
+  dark: "Qaranlıq",
+  system: "Sistem",
+  themeMode: "Görünüş rejimi",
   language: "Dil",
-  selectLanguage: "Dil seçin",
+  
+  // Form fields
+  name: "Ad",
+  label: "Yarlıq",
   value: "Dəyər",
+  optionLabel: "Seçim yarlığı",
+  optionValue: "Seçim dəyəri",
+  options: "Seçimlər",
+  addOption: "Seçim əlavə et",
+  noOptionsAdded: "Heç bir seçim əlavə edilməyib"
 };
 
 export default ui;

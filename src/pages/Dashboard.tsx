@@ -17,6 +17,36 @@ import { useLanguage } from '@/context/LanguageContext';
 import { mockSchools } from '@/data/schoolsData';
 import { mockCategories } from '@/data/mockCategories';
 
+// İnterfeysi əlavə edək
+interface SchoolAdminDashboardType {
+  forms: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+  };
+  completionRate: number;
+  notifications: Notification[];
+  categories?: number;
+  totalForms?: number;
+  completedForms?: number;
+  pendingForms?: number;
+  rejectedForms?: number;
+  dueDates?: Array<{
+    category: string;
+    date: string;
+  }>;
+  recentForms?: Array<{
+    id: string;
+    title: string;
+    category: string;
+    status: "pending" | "approved" | "rejected" | "draft" | "overdue" | "due";
+    completionPercentage: number;
+    deadline?: string;
+  }>;
+}
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -239,7 +269,7 @@ const Dashboard: React.FC = () => {
               id: "form8", 
               title: "İnkişaf planı", 
               category: "İdarəetmə", 
-              status: "approved", 
+              status: "due", 
               completionPercentage: 100, 
               deadline: "2023-10-05" 
             }
@@ -354,37 +384,10 @@ const Dashboard: React.FC = () => {
         return <SectorAdminDashboard data={sectorAdminData} />;
       }
       case 'schooladmin': {
-        const schoolAdminData = dashboardData as {
-          forms: {
-            pending: number;
-            approved: number;
-            rejected: number;
-            dueSoon: number;
-            overdue: number;
-          };
-          completionRate: number;
-          notifications: Notification[];
-          categories?: number;
-          totalForms?: number;
-          completedForms?: number;
-          pendingForms?: number;
-          rejectedForms?: number;
-          dueDates?: Array<{
-            category: string;
-            date: string;
-          }>;
-          recentForms?: Array<{
-            id: string;
-            title: string;
-            category: string;
-            status: "pending" | "approved" | "rejected" | "draft" | "overdue";
-            completionPercentage: number;
-            deadline?: string;
-          }>;
-        };
+        const schoolAdminData = dashboardData as SchoolAdminDashboardType;
         return (
           <SchoolAdminDashboard 
-            data={schoolAdminData} 
+            data={schoolAdminData}
             navigateToDataEntry={navigateToDataEntry}
             handleFormClick={handleFormClick}
           />

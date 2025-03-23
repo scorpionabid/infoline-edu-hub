@@ -12,7 +12,7 @@ interface Form {
   id: string;
   title: string;
   category: string;
-  status: "pending" | "approved" | "rejected" | "draft" | "overdue";
+  status: "pending" | "approved" | "rejected" | "draft" | "overdue" | "due";
   completionPercentage: number;
   deadline?: string;
 }
@@ -42,6 +42,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
       filteredForms = filteredForms.filter(form => 
         form.status === 'rejected' || 
         form.status === 'overdue' ||
+        (form.status === 'due') || // Son tarixi yaxınlaşan formlar
         (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)) // 3 gün içində olanlar
       );
     }
@@ -121,6 +122,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
               <SelectItem value="rejected">{t('rejected')}</SelectItem>
               <SelectItem value="draft">{t('draft')}</SelectItem>
               <SelectItem value="overdue">{t('overdue')}</SelectItem>
+              <SelectItem value="due">{t('dueSoon')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
