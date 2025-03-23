@@ -12,6 +12,11 @@ export type ColumnType =
   | "phone"  
   | "boolean";
 
+export type ColumnOption = {
+  label: string;
+  value: string;
+};
+
 export type Column = {
   id: string;
   categoryId: string;
@@ -36,7 +41,7 @@ export type Column = {
     };
   };
   defaultValue?: string;
-  options?: string[]; // for select, checkbox, radio types
+  options?: ColumnOption[] | string[]; // for select, checkbox, radio types
   placeholder?: string;
   helpText?: string;
   deadline?: string;

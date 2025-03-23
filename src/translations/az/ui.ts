@@ -101,6 +101,31 @@ const ui = {
   options: "Seçimlər",
   addOption: "Seçim əlavə et",
   noOptionsAdded: "Heç bir seçim əlavə edilməyib",
+
+  // Validation field labels
+  minValue: "Minimum dəyər",
+  maxValue: "Maksimum dəyər",
+  format: "Format",
+  regex: "Regex",
+  minLength: "Minimum uzunluq",
+  maxLength: "Maksimum uzunluq",
+  
+  // Validation field placeholders
+  enterMinValue: "Minimum dəyər daxil edin",
+  enterMaxValue: "Maksimum dəyər daxil edin",
+  selectFormat: "Format seçin",
+  enterRegex: "Regex nümunəsi daxil edin",
+  enterMinLength: "Minimum simvol sayını daxil edin",
+  enterMaxLength: "Maksimum simvol sayını daxil edin",
+  
+  // Format options
+  noFormat: "Format yoxdur",
+  email: "E-poçt",
+  phone: "Telefon",
+  url: "URL",
+  
+  // Validation descriptions
+  regexDescription: "Məlumatın uyğun gəlməli olduğu regex nümunəsi",
   
   // Category and Column specific
   saveChanges: "Dəyişiklikləri saxla",

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Column, ColumnType } from "@/types/column";
+import { Column, ColumnType, ColumnOption } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
 
 // Form sxemasını yaratmaq üçün funksiya
@@ -49,10 +49,10 @@ export const useColumnForm = (
 ) => {
   const { t } = useLanguage();
   const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
-  const [options, setOptions] = useState<{ label: string; value: string }[]>(
+  const [options, setOptions] = useState<ColumnOption[]>(
     editColumn?.options 
       ? Array.isArray(editColumn.options) 
-        ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+        ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
         : []
       : []
   );
@@ -101,7 +101,7 @@ export const useColumnForm = (
       if (editColumn.options) {
         setOptions(
           Array.isArray(editColumn.options) 
-            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
             : []
         );
       }
@@ -121,7 +121,7 @@ export const useColumnForm = (
         status: editColumn.status,
         options: editColumn.options 
           ? Array.isArray(editColumn.options) 
-            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
             : []
           : [],
       });
@@ -183,7 +183,7 @@ export const useColumnForm = (
         status: values.status,
         // Seçimlər yalnız seçim növü sahəsi dəstəkləyirsə əlavə edirik
         options: ["select", "checkbox", "radio"].includes(values.type) 
-          ? options.map(opt => ({ label: opt.label, value: opt.value }))
+          ? options
           : undefined,
       };
 

@@ -52,7 +52,7 @@ const general = {
   approvedFormsTooltip: "Təsdiqlənmiş formlar",
   rejectedFormsTooltip: "Düzəliş tələb edən formlar",
   dueSoonTooltip: "Son tarixi yaxınlaşan formlar",
-  overdueTooltip: "Son tarixi keçmiş formlar",
+  overdueTooltip: "Vaxtı keçmiş formlar",
   
   // Form statusları
   pending: "Gözləyən",
@@ -60,6 +60,7 @@ const general = {
   rejected: "Rədd edilmiş",
   dueSoon: "Vaxtı yaxınlaşır",
   overdue: "Vaxtı keçmiş",
+  empty: "Boş",
   
   // Form axtarış və filtrləmə
   searchForms: "Formları axtar...",

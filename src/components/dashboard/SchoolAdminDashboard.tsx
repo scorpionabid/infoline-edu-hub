@@ -42,7 +42,7 @@ const recentForms: Form[] = [
     id: 'form4', 
     title: 'Təlim nəticələri', 
     category: 'Akademik göstəricilər', 
-    status: 'empty', 
+    status: 'draft', 
     completionPercentage: 0, 
     deadline: '2023-06-25' 
   }
@@ -89,9 +89,15 @@ interface SchoolAdminDashboardProps {
       date: string;
     }>;
   };
+  navigateToDataEntry?: () => void;
+  handleFormClick?: (formId: string) => void;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => {
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
+  data,
+  navigateToDataEntry,
+  handleFormClick 
+}) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [overallProgress, setOverallProgress] = useState(data.completionRate || 0);
@@ -112,12 +118,20 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
     }
   }, [navigate, t]);
   
-  const handleFormClick = (formId: string) => {
-    navigate(`/data-entry?categoryId=${formId}`);
+  const handleFormItemClick = (formId: string) => {
+    if (handleFormClick) {
+      handleFormClick(formId);
+    } else {
+      navigate(`/data-entry?categoryId=${formId}`);
+    }
   };
   
-  const navigateToDataEntry = () => {
-    navigate('/data-entry');
+  const handleNavigateToDataEntry = () => {
+    if (navigateToDataEntry) {
+      navigateToDataEntry();
+    } else {
+      navigate('/data-entry');
+    }
   };
   
   return (
@@ -132,13 +146,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
       {/* Form statusları bölməsi */}
       <FormStatusSection 
         forms={data.forms} 
-        navigateToDataEntry={navigateToDataEntry} 
+        navigateToDataEntry={handleNavigateToDataEntry} 
       />
       
       {/* Formaların tablarla göstərilməsi */}
       <FormTabs 
         recentForms={recentForms} 
-        handleFormClick={handleFormClick} 
+        handleFormClick={handleFormItemClick} 
       />
       
       {/* Yaxınlaşan son tarixlərin göstərilməsi */}
@@ -151,7 +165,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/data-entry')}
+            onClick={handleNavigateToDataEntry}
           >
             {t('viewAll')}
           </Button>

@@ -6,14 +6,16 @@ import { FileText, Clock, CheckCircle2, AlertTriangle, XCircle, AlertCircle } fr
 import FormStatus from './FormStatus';
 import { useNavigate } from 'react-router-dom';
 
+interface FormStatusData {
+  pending: number;
+  approved: number;
+  rejected: number;
+  dueSoon: number;
+  overdue: number;
+}
+
 interface FormStatusSectionProps {
-  forms: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    dueSoon: number;
-    overdue: number;
-  };
+  forms: FormStatusData;
   navigateToDataEntry: () => void;
   compact?: boolean; // Kompakt görünüş üçün
 }
