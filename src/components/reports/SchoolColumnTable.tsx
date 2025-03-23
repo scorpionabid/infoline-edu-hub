@@ -60,7 +60,6 @@ const SchoolColumnTable: React.FC = () => {
     try {
       // Excel faylını yaradaq
       const workbook = XLSX.utils.book_new();
-      const worksheet = workbook.addWorksheet || XLSX.utils.book_append_sheet;
       
       // Başlıqları əlavə edək
       const headers = ['Məktəb adı'];
@@ -70,7 +69,7 @@ const SchoolColumnTable: React.FC = () => {
       
       // Məlumatları əlavə edək
       const rows = schoolColumnData.map(school => {
-        const row: any[] = [school.schoolName];
+        const row: (string | number | boolean)[] = [school.schoolName];
         selectedCategory.columns.forEach(column => {
           const columnData = school.columnData.find(cd => cd.columnId === column.id);
           // Məlumatı string-ə çeviririk
