@@ -2,6 +2,8 @@
 import { useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { CategoryEntryData, DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
+import { toast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
@@ -11,6 +13,8 @@ interface UseDataUpdatesProps {
   validateForm: () => boolean;
   submitForm: (validateFn: () => boolean) => boolean;
   setCurrentCategoryIndex: (index: number) => void;
+  updateValue: (categoryId: string, columnId: string, value: any) => void;
+  saveForm: () => void;
 }
 
 export const useDataUpdates = ({
@@ -20,8 +24,11 @@ export const useDataUpdates = ({
   initializeForm,
   validateForm,
   submitForm,
-  setCurrentCategoryIndex
+  setCurrentCategoryIndex,
+  updateValue,
+  saveForm
 }: UseDataUpdatesProps) => {
+  const { t } = useLanguage();
   
   // Excel əməliyyatları üçün updateFormData funksiyası
   const updateFormDataFromExcel = useCallback((excelData: Record<string, any>, categoryId?: string) => {
@@ -102,18 +109,26 @@ export const useDataUpdates = ({
     }, 500);
   }, [categories, formData, initializeForm, validateForm]);
 
-  // Kateqoriya dəyişmək
+  // Kateqoriya dəyişmək - bu funksiya yeniləndi
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
-      localStorage.setItem('infolineFormData', JSON.stringify(formData));
+      saveForm(); // <-- Yeni əlavə: Kateqoriyaları dəyişməzdən əvvəl avtomatik manual olaraq saxlayırıq
       
+      // İndi kateqoriyanı dəyişək
       setCurrentCategoryIndex(index);
+      
+      // Yeni kateqoriyaya keçdiyimizi bildirək
+      toast({
+        title: t('categoryChanged'),
+        description: categories[index].name,
+        variant: "default",
+      });
       
       // Kateqoriya dəyişən kimi formanın üstünə scroll etmək
       window.scrollTo(0, 0);
     }
-  }, [categories.length, setCurrentCategoryIndex, formData]);
+  }, [categories, setCurrentCategoryIndex, saveForm, t]);
 
   // Təsdiq üçün göndərmək
   const submitForApproval = useCallback(() => {

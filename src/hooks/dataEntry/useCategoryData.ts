@@ -1,5 +1,5 @@
 
-import { useCallback, MutableRefObject } from 'react';
+import { useCallback, MutableRefObject, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { CategoryEntryData } from '@/types/dataEntry';
 import { mockCategories, getDefaultValueByType } from '@/data/mockCategories';
@@ -25,6 +25,8 @@ export const useCategoryData = ({
   validateForm,
   queryParams
 }: UseCategoryDataProps) => {
+  // Bir dəfə log göstərmək üçün ref
+  const hasLoggedRef = useRef<boolean>(false);
   
   const loadCategoryData = useCallback(() => {
     // URL-də kateqoriya dəyişibsə yükləməyi yenidən başladırıq
@@ -130,7 +132,10 @@ export const useCategoryData = ({
       }, 300);
       
       // Sadəcə bir dəfə konsola məlumat yazırıq, hər dəfə yox
-      console.log("Forma məlumatları yükləndi");
+      if (!hasLoggedRef.current) {
+        console.log("Forma məlumatları yükləndi");
+        hasLoggedRef.current = true;
+      }
     }, 800);
     
     return () => {

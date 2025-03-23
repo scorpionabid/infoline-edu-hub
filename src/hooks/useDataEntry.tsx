@@ -55,7 +55,7 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     queryParams
   });
 
-  // Məlumatların yenilənməsi ilə bağlı funksionallar
+  // Məlumatların yenilənməsi ilə bağlı funksionallar - əlavə parametrlər ötürürük
   const { updateFormDataFromExcel, changeCategory, submitForApproval } = useDataUpdates({
     categories,
     formData,
@@ -63,7 +63,9 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     initializeForm,
     validateForm,
     submitForm,
-    setCurrentCategoryIndex
+    setCurrentCategoryIndex,
+    updateValue,  // Yeni əlavə
+    saveForm      // Yeni əlavə
   });
 
   const { downloadExcelTemplate, uploadExcelData } = useExcelOperations(categories, updateFormDataFromExcel);
@@ -73,7 +75,7 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
     return setupAutoSave(validateForm);
   }, [setupAutoSave, validateForm]);
 
-  // İlkin məlumatların yüklənməsi
+  // İlkin məlumatların yüklənməsi - veriləcək loq mesajını sadələşdiririk
   useEffect(() => {
     loadCategoryData();
   }, [loadCategoryData]);
