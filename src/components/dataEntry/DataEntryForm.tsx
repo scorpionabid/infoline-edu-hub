@@ -11,7 +11,7 @@ import FormField from './components/FormField';
 import ApprovalAlert from './components/ApprovalAlert';
 import CategoryHeader from './components/CategoryHeader';
 import { Button } from '@/components/ui/button';
-import { Send } from 'lucide-react';
+import { Send, Save } from 'lucide-react';
 import StatusBadge from './components/StatusBadge';
 
 interface DataEntryFormProps {
@@ -61,12 +61,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         isSubmitted={isSubmitted}
       />
       
-      {category.description && (
-        <div className="text-sm text-muted-foreground mb-6 bg-muted/50 p-3 rounded-md">
-          {category.description}
-        </div>
-      )}
-
       {entryData.approvalStatus === 'rejected' && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -97,21 +91,23 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         
         {/* Təsdiq üçün göndər düyməsi - yalnız form səviyyəsində göstərilir */}
         {onSubmitCategory && !isSubmitted && entryData.approvalStatus !== 'approved' && (
-          <Button 
-            onClick={onSubmitCategory} 
-            disabled={!isCompleted}
-            className="ml-auto"
-            variant={entryData.isSubmitted ? "outline" : "default"}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={onSubmitCategory} 
+              disabled={!isCompleted}
+              className="ml-auto"
+              variant={entryData.isSubmitted ? "outline" : "default"}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
+            </Button>
+          </div>
         )}
       </div>
       
       <Form {...form}>
         <form className="space-y-4">
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {category.columns.map(column => (
               <FormField
                 key={column.id}
@@ -126,6 +122,28 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           </div>
         </form>
       </Form>
+      
+      {/* Aşağıda düymələrin olduğu sabit panel */}
+      {onSubmitCategory && !isSubmitted && entryData.approvalStatus !== 'approved' && (
+        <div className="sticky bottom-4 flex justify-end py-4 mt-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t pt-4">
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {t('saveAsDraft')}
+            </Button>
+            <Button 
+              onClick={onSubmitCategory}
+              disabled={!isCompleted}
+              variant="default"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -81,6 +81,10 @@ const DataEntry = () => {
       </Helmet>
       <SidebarLayout>
         <div className="container mx-auto py-6">
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold">{t('dataEntry')}</h1>
+            <p className="text-muted-foreground mt-2">{t('dataEntryDescription')}</p>
+          </header>
           <DataEntryContainer initialCategoryId={categoryId} />
         </div>
       </SidebarLayout>

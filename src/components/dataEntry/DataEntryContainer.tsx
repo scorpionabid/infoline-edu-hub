@@ -2,7 +2,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Save, Send, HelpCircle, ChevronLeft, RotateCw } from 'lucide-react';
+import { Save, Send, HelpCircle, ChevronLeft, RotateCw, FileSpreadsheet, Upload } from 'lucide-react';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import CategoryTabs from './CategoryTabs';
 import DataEntryForm from './DataEntryForm';
@@ -119,7 +119,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
 
   return (
     <div className="space-y-6">
-      {/* Header with navigation and action buttons */}
+      {/* Header - Səhifə başlığı, geri qayıtma düyməsi və izah */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card p-4 rounded-lg shadow-sm">
         <div>
           <div className="flex items-center gap-2">
@@ -138,7 +138,9 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
           </p>
         </div>
         
+        {/* Əsas əməliyyat düymələri - Excel import/export, saxlama və təqdim etmə */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Son saxlama vaxtı göstəricisi */}
           <div className="text-sm text-muted-foreground flex items-center">
             {isAutoSaving ? (
               <span className="flex items-center">
@@ -155,6 +157,59 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
           
           <TooltipProvider>
             <div className="flex items-center gap-2">
+              {/* Excel ilə yüklə düyməsi */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => downloadExcelTemplate()}
+                    disabled={isSubmitting || formData.status === 'approved'}
+                    className="border-primary/20 text-primary hover:bg-primary/10"
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    {t('excelTemplate')}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('downloadExcelTemplate')}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Excel şablonu düyməsi */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById('excel-upload')?.click();
+                    }}
+                    disabled={isSubmitting || formData.status === 'approved'}
+                    className="border-primary/20 text-primary hover:bg-primary/10"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {t('uploadExcel')}
+                    <input
+                      id="excel-upload"
+                      type="file"
+                      accept=".xlsx, .xls"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          uploadExcelData(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('uploadExcelData')}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Saxla düyməsi */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
@@ -174,6 +229,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
                 </TooltipContent>
               </Tooltip>
 
+              {/* Təsdiq üçün göndər düyməsi */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
@@ -202,6 +258,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
                 </TooltipContent>
               </Tooltip>
 
+              {/* Kömək düyməsi */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
@@ -221,27 +278,22 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
         </div>
       </div>
 
-      {/* Main content card */}
+      {/* Əsas məlumat kartı */}
       <div className="grid grid-cols-1 gap-6">
         <Card className="border-none shadow-md">
           <CardHeader className="pb-3 bg-muted/30">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <CardTitle className="text-xl flex items-center flex-wrap gap-2">
+              <CardTitle className="text-xl">
                 {t('formData')}
                 <StatusIndicators 
                   errors={errors} 
                   status={formData.status} 
                 />
               </CardTitle>
-              <ExcelActions 
-                downloadExcelTemplate={downloadExcelTemplate} 
-                downloadCategoryTemplate={downloadCategoryTemplate}
-                uploadExcelData={uploadExcelData}
-                formStatus={formData.status}
-              />
             </div>
           </CardHeader>
           <CardContent className="pb-6">
+            {/* Ümumi tamamlanma göstəriciləri */}
             <DataEntryProgress 
               overallProgress={formData.overallProgress} 
               completedEntries={formData.entries.filter(e => e.isCompleted).length}
@@ -249,16 +301,32 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
             />
 
             {categories.length > 0 && (
-              <CategoryTabs 
-                categories={categories} 
-                currentCategoryIndex={currentCategoryIndex} 
-                entries={formData.entries}
-                onCategoryChange={changeCategory} 
-              />
+              <div className="mt-4 mb-6">
+                <h3 className="text-lg font-semibold mb-2">{t('informationForm')}</h3>
+                {/* Son tarix göstəricisi */}
+                {currentCategory?.deadline && (
+                  <div className="flex items-center text-amber-600 text-sm mb-4">
+                    <span className="font-medium mr-2">⚠️ {t('deadline')}:</span>
+                    <span className="font-bold">{new Date(currentCategory.deadline).toLocaleDateString('az-AZ', {day: 'numeric', month: 'long', year: 'numeric'})}</span>
+                    <span className="ml-2 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                      ({Math.ceil((new Date(currentCategory.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} {t('daysLeft')})
+                    </span>
+                  </div>
+                )}
+                
+                {/* Kateqoriya tabları */}
+                <CategoryTabs 
+                  categories={categories} 
+                  currentCategoryIndex={currentCategoryIndex} 
+                  entries={formData.entries}
+                  onCategoryChange={changeCategory} 
+                />
+              </div>
             )}
 
+            {/* Aktiv kateqoriyanın məlumat daxiletmə formu */}
             {currentCategory && currentEntryData && (
-              <div className="mt-6 bg-white dark:bg-slate-900 p-6 rounded-md shadow-sm border">
+              <div className="mt-4 bg-white dark:bg-slate-900 p-6 rounded-md shadow-sm border">
                 <DataEntryForm 
                   category={currentCategory}
                   entryData={currentEntryData}
@@ -270,6 +338,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
               </div>
             )}
             
+            {/* Aşağıda xəta və status məlumatları */}
             <StatusIndicators 
               errors={errors} 
               status={formData.status}
@@ -279,6 +348,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
         </Card>
       </div>
 
+      {/* Dialoqular (Submit və Help) */}
       <DataEntryDialogs 
         isSubmitDialogOpen={isSubmitDialogOpen}
         setIsSubmitDialogOpen={setIsSubmitDialogOpen}
