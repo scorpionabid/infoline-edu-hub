@@ -1,306 +1,137 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from "@tanstack/react-query";
-import { CategoryWithColumns, Column } from '@/types/column';
+
+import { useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import { Column } from '@/types/column';
 import { SchoolColumnData, ExportOptions } from '@/types/report';
-import { mockSchools } from '@/data/schoolsData';
-import { toast } from '@/components/ui/use-toast';
+import { exportToExcel } from '@/utils/excelExport';
 
-// Mock data generator
-const generateMockSchoolColumnData = (
-  categoryId: string, 
-  columns: Column[]
-): SchoolColumnData[] => {
-  return mockSchools.map(school => {
-    return {
-      schoolId: school.id,
-      schoolName: school.name,
-      columnData: columns.map(column => {
-        // Simple random value generation based on column type
-        let value: string | number | boolean | null = null;
-        
-        switch (column.type) {
-          case 'number':
-            value = Math.floor(Math.random() * 1000);
-            break;
-          case 'text':
-            const options = ['Yaxşı', 'Orta', 'Əla', 'Kafi', 'Qeyri-kafi'];
-            value = options[Math.floor(Math.random() * options.length)];
-            break;
-          case 'checkbox':
-            value = Math.random() > 0.5;
-            break;
-          default:
-            value = `Dəyər ${column.name}`;
-        }
-        
-        return {
-          columnId: column.id,
-          value
-        };
-      })
-    };
-  });
-};
+// Sample data to simulate API response
+const sampleSchoolData: SchoolColumnData[] = [
+  {
+    schoolId: "school1",
+    schoolName: "Bakı 6 saylı məktəb",
+    columnData: [
+      { columnId: "col1", value: 125 },
+      { columnId: "col2", value: "Azərbaycan" },
+      { columnId: "col3", value: "2023-09-01" }
+    ]
+  },
+  {
+    schoolId: "school2",
+    schoolName: "Bakı 28 saylı məktəb",
+    columnData: [
+      { columnId: "col1", value: 210 },
+      { columnId: "col2", value: "Azərbaycan" },
+      { columnId: "col3", value: "2023-09-15" }
+    ]
+  },
+  {
+    schoolId: "school3",
+    schoolName: "Sumqayıt 5 saylı məktəb",
+    columnData: [
+      { columnId: "col1", value: 98 },
+      { columnId: "col2", value: "Rus" },
+      { columnId: "col3", value: "2023-08-25" }
+    ]
+  }
+];
 
-// Mock API çağırışı
-const fetchCategoriesWithColumns = async (): Promise<CategoryWithColumns[]> => {
-  // Bu hissədə həqiqi API çağırışı olmalıdır
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: "1",
-          name: "Təcili məlumatlar",
-          assignment: "all",
-          priority: 1,
-          description: "Təcili şəkildə toplanması tələb olunan məlumatlar",
-          status: "active",
-          columns: [
-            { 
-              id: "c1", 
-              categoryId: "1", 
-              name: "Şagird sayı", 
-              type: "number", 
-              isRequired: true, 
-              order: 1, 
-              status: "active" 
-            },
-            { 
-              id: "c2", 
-              categoryId: "1", 
-              name: "Müəllim sayı", 
-              type: "number", 
-              isRequired: true, 
-              order: 2, 
-              status: "active" 
-            },
-            { 
-              id: "c3", 
-              categoryId: "1", 
-              name: "Sinif sayı", 
-              type: "number", 
-              isRequired: true, 
-              order: 3, 
-              status: "active" 
-            }
-          ]
-        },
-        {
-          id: "2",
-          name: "Tədris",
-          assignment: "all",
-          priority: 2,
-          description: "Tədris prosesi haqqında məlumatlar",
-          status: "active",
-          columns: [
-            { 
-              id: "c4", 
-              categoryId: "2", 
-              name: "Dərs saatı", 
-              type: "number", 
-              isRequired: true, 
-              order: 1, 
-              status: "active" 
-            },
-            { 
-              id: "c5", 
-              categoryId: "2", 
-              name: "Fənn sayı", 
-              type: "number", 
-              isRequired: false, 
-              order: 2, 
-              status: "active" 
-            },
-            { 
-              id: "c6", 
-              categoryId: "2", 
-              name: "Təhsil keyfiyyəti", 
-              type: "text", 
-              isRequired: false, 
-              order: 3, 
-              status: "active" 
-            }
-          ]
-        },
-        {
-          id: "3",
-          name: "İnfrastruktur",
-          assignment: "sectors",
-          priority: 3,
-          description: "Məktəb infrastrukturu haqqında məlumatlar",
-          status: "active",
-          columns: [
-            { 
-              id: "c7", 
-              categoryId: "3", 
-              name: "Bina sahəsi", 
-              type: "number", 
-              isRequired: true, 
-              order: 1, 
-              status: "active" 
-            },
-            { 
-              id: "c8", 
-              categoryId: "3", 
-              name: "Kompüter sayı", 
-              type: "number", 
-              isRequired: true, 
-              order: 2, 
-              status: "active" 
-            },
-            { 
-              id: "c9", 
-              categoryId: "3", 
-              name: "İnternet mövcudluğu", 
-              type: "checkbox", 
-              isRequired: true, 
-              order: 3, 
-              status: "active" 
-            }
-          ]
-        },
-        {
-          id: "4",
-          name: "Davamiyyət",
-          assignment: "all",
-          priority: 4,
-          description: "Şagird davamiyyəti haqqında məlumatlar",
-          status: "active",
-          columns: [
-            { 
-              id: "c10", 
-              categoryId: "4", 
-              name: "Ümumi davamiyyət %", 
-              type: "number", 
-              isRequired: true, 
-              order: 1, 
-              status: "active" 
-            },
-            { 
-              id: "c11", 
-              categoryId: "4", 
-              name: "Dərsə gecikənlər", 
-              type: "number", 
-              isRequired: false, 
-              order: 2, 
-              status: "active" 
-            },
-            { 
-              id: "c12", 
-              categoryId: "4", 
-              name: "Buraxılan günlər", 
-              type: "number", 
-              isRequired: true, 
-              order: 3, 
-              status: "active" 
-            }
-          ]
-        },
-        {
-          id: "5",
-          name: "Nailiyyət",
-          assignment: "sectors",
-          priority: 5,
-          description: "Şagird nailiyyətləri haqqında məlumatlar",
-          status: "active",
-          columns: [
-            { 
-              id: "c13", 
-              categoryId: "5", 
-              name: "Olimpiada iştirakçıları", 
-              type: "number", 
-              isRequired: false, 
-              order: 1, 
-              status: "active" 
-            },
-            { 
-              id: "c14", 
-              categoryId: "5", 
-              name: "Orta bal", 
-              type: "number", 
-              isRequired: true, 
-              order: 2, 
-              status: "active" 
-            },
-            { 
-              id: "c15", 
-              categoryId: "5", 
-              name: "Ali məktəbə qəbul %", 
-              type: "number", 
-              isRequired: true, 
-              order: 3, 
-              status: "active" 
-            }
-          ]
-        }
-      ]);
-    }, 500);
-  });
-};
-
-// Mock data əldə etmə
-const fetchSchoolColumnData = async (
-  categoryId: string,
-  columns: Column[]
-): Promise<SchoolColumnData[]> => {
-  // Bu hissədə həqiqi API çağırışı olmalıdır
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(generateMockSchoolColumnData(categoryId, columns));
-    }, 800);
-  });
-};
+// Sample columns
+const sampleColumns: Column[] = [
+  { id: "col1", categoryId: "cat1", name: "Şagird sayı", type: "number", isRequired: true, order: 1, status: "active" },
+  { id: "col2", categoryId: "cat1", name: "Tədris dili", type: "text", isRequired: true, order: 2, status: "active" },
+  { id: "col3", categoryId: "cat1", name: "Tədris ili başlama tarixi", type: "date", isRequired: true, order: 3, status: "active" }
+];
 
 export const useSchoolColumnReport = () => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [schoolColumnData, setSchoolColumnData] = useState<SchoolColumnData[]>([]);
-  const [isDataLoading, setIsDataLoading] = useState(false);
+  const { t } = useLanguage();
+  const [data, setData] = useState<SchoolColumnData[]>(sampleSchoolData);
+  const [columns, setColumns] = useState<Column[]>(sampleColumns);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
 
-  // Kateqoriyaları əldə etmək
-  const { 
-    data: categories = [],
-    isLoading: isCategoriesLoading,
-    isError: isCategoriesError
-  } = useQuery({
-    queryKey: ["categories-with-columns"],
-    queryFn: fetchCategoriesWithColumns,
-  });
-
-  // Seçilmiş kateqoriya məlumatlarını əldə etmək
-  useEffect(() => {
-    if (selectedCategoryId && categories.length > 0) {
-      const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-      if (selectedCategory) {
-        setIsDataLoading(true);
-        
-        fetchSchoolColumnData(selectedCategoryId, selectedCategory.columns)
-          .then(data => {
-            setSchoolColumnData(data);
-            setIsDataLoading(false);
-          })
-          .catch(error => {
-            console.error("Məlumat yüklənərkən xəta baş verdi:", error);
-            toast({
-              title: "Xəta",
-              description: "Məlumatlar yüklənərkən problem yarandı",
-              variant: "destructive",
-            });
-            setIsDataLoading(false);
-          });
-      }
-    } else if (categories.length > 0 && !selectedCategoryId) {
-      // İlk kateqoriyanı seçək
-      setSelectedCategoryId(categories[0].id);
+  const fetchData = async (categoryId: string) => {
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real application, you would fetch from API
+      // const response = await api.get(`/reports/categories/${categoryId}/schools`);
+      // setData(response.data.schoolsData);
+      // setColumns(response.data.columns);
+      
+      // For now, we're using the sample data
+      setData(sampleSchoolData);
+      setColumns(sampleColumns);
+      
+      toast.success(t("dataFetchSuccess"));
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+      toast.error(t("dataFetchError"));
+    } finally {
+      setIsLoading(false);
     }
-  }, [selectedCategoryId, categories]);
+  };
+
+  const toggleSchoolSelection = (schoolId: string) => {
+    setSelectedSchools(prevSelected => {
+      if (prevSelected.includes(schoolId)) {
+        return prevSelected.filter(id => id !== schoolId);
+      } else {
+        return [...prevSelected, schoolId];
+      }
+    });
+  };
+
+  const selectAllSchools = () => {
+    const allSchoolIds = data.map(school => school.schoolId);
+    setSelectedSchools(allSchoolIds);
+  };
+
+  const deselectAllSchools = () => {
+    setSelectedSchools([]);
+  };
+
+  const getSelectedSchoolsData = () => {
+    if (selectedSchools.length === 0) return data;
+    return data.filter(school => selectedSchools.includes(school.schoolId));
+  };
+
+  const exportData = (options: ExportOptions = {}) => {
+    try {
+      const dataToExport = getSelectedSchoolsData();
+      
+      if (dataToExport.length === 0) {
+        toast.error(t("noDataToExport"));
+        return;
+      }
+      
+      const result = exportToExcel(dataToExport, columns, options);
+      
+      if (result.success) {
+        toast.success(t("exportSuccess", { fileName: result.fileName }));
+      } else {
+        toast.error(t("exportError"));
+      }
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast.error(t("exportError"));
+    }
+  };
 
   return {
-    categories,
-    selectedCategoryId,
-    setSelectedCategoryId,
-    schoolColumnData,
-    isCategoriesLoading,
-    isCategoriesError,
-    isDataLoading
+    data,
+    columns,
+    isLoading,
+    selectedSchools,
+    fetchData,
+    toggleSchoolSelection,
+    selectAllSchools,
+    deselectAllSchools,
+    getSelectedSchoolsData,
+    exportData
   };
 };

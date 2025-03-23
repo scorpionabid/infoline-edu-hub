@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { mockCategories } from '@/data/mockCategories';
@@ -79,9 +80,9 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
           consecutiveErrorsRef.current = 0;
           
           if (prevState.saveMethod === 'manual') {
-            toast.success(t('manualSaveSuccess'));
+            toast.success(t("manualSaveSuccess"));
           } else {
-            toast.success(t('autoSaveSuccess'));
+            toast.success(t("autoSaveSuccess"));
           }
         } catch (error) {
           console.error('Data saxlanması zamanı xəta:', error);
@@ -93,12 +94,12 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
             const timeSinceAttempt = Date.now() - saveAttemptTimestampRef.current;
             
             if (timeSinceAttempt < 500) {
-              toast.error(t('serverNotResponding'));
+              toast.error(t("serverNotResponding"));
             } else if (consecutiveErrorsRef.current >= 3) {
               setNetworkError(true);
-              toast.error(t('persistentSaveErrors'));
+              toast.error(t("persistentSaveErrors"));
             } else {
-              toast.error(t('autoSaveError'));
+              toast.error(t("autoSaveError"));
             }
             
             return {
@@ -138,11 +139,11 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
         let message = '';
         
         if (autoSaveState.inProgress) {
-          message = t('savingInProgressWarning');
+          message = t("savingInProgressWarning");
         } else if (networkError) {
-          message = t('unsavedChangesNetworkError');
+          message = t("unsavedChangesNetworkError");
         } else if (dataChanged || autoSaveState.pendingChanges) {
-          message = t('unsavedChangesWarning');
+          message = t("unsavedChangesWarning");
         }
         
         e.returnValue = message;
@@ -168,13 +169,9 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
       }));
       setDataChanged(true);
       
-      toast.info(t('retryingSave'), {
-        description: t('retryingSaveDescription'),
-      });
+      toast.info(t("retryingSave"));
     } else {
-      toast.info(t('noChangesToSave'), {
-        description: t('allChangesSaved')
-      });
+      toast.info(t("noChangesToSave"));
     }
   };
   
@@ -187,15 +184,9 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
       }));
       setDataChanged(true);
       
-      toast.success(t('workPaused'), {
-        description: t('workPausedDescription'),
-        duration: 4000
-      });
+      toast.success(t("workPaused"));
     } else {
-      toast.info(t('workPaused'), {
-        description: t('noChangesPaused'),
-        duration: 3000
-      });
+      toast.info(t("workPaused"));
     }
   };
 

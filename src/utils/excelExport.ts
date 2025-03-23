@@ -1,427 +1,330 @@
 import * as XLSX from 'xlsx';
 import { SchoolColumnData, ExportOptions } from '@/types/report';
-import { CategoryWithColumns, ColumnType } from '@/types/column';
+import { Column } from '@/types/column';
+import { formatDate } from './formatDateUtils';
 
-export function exportTableToExcel(
+/**
+ * Excel formatında məlumatları export edir
+ */
+export const exportToExcel = (
   data: SchoolColumnData[],
-  category: CategoryWithColumns | undefined,
+  columns: Column[],
   options: ExportOptions = {}
-) {
-  if (!category || data.length === 0) {
-    console.error('No data or category to export');
-    return false;
-  }
-
-  // Default export parametrləri
-  const {
-    includeHeaders = true,
-    customFileName,
-    sheetName = category.name,
-    includeTimestamp = true,
-    includeSchoolInfo = true,
-    format = 'xlsx',
-    filterColumns
-  } = options;
-
+) => {
   try {
-    // Excel faylının adını formalaşdıraq
-    const timestamp = includeTimestamp ? `-${new Date().toISOString().split('T')[0]}` : '';
-    const fileName = customFileName 
-      ? `${customFileName}${timestamp}` 
-      : `school-data-report-${category.name.replace(/\s+/g, '-').toLowerCase()}${timestamp}`;
+    const {
+      customFileName,
+      includeHeaders = true,
+      sheetName = 'Məlumatlar',
+      excludeColumns = [],
+      includeTimestamp = true,
+      includeSchoolInfo = true,
+      format = 'xlsx',
+      filterColumns = []
+    } = options;
 
-    // Excel data strukturu yaradaq
-    const excelData = data.map(school => {
-      // Məktəb məlumatlarından yeni obyekt yaradaq
-      const rowData: Record<string, any> = {};
+    // XLSX üçün uyğun format yaratmaq
+    const worksheet = XLSX.utils.aoa_to_sheet([]);
+    const filteredColumns = columns.filter(col => !excludeColumns.includes(col.id) && 
+                                                (filterColumns.length === 0 || filterColumns.includes(col.id)));
+    
+    // Başlıqlar
+    if (includeHeaders) {
+      const headers = [];
       
-      // Əgər məktəb məlumatları daxil edilməlidirsə
       if (includeSchoolInfo) {
-        rowData['Məktəb adı'] = school.schoolName;
-        if (school.schoolCode) rowData['Məktəb kodu'] = school.schoolCode;
-        if (school.region) rowData['Region'] = school.region;
-        if (school.sector) rowData['Sektor'] = school.sector;
+        headers.push('Məktəb ID');
+        headers.push('Məktəb Adı');
+        headers.push('Region');
+        headers.push('Sektor');
       }
-
-      // Hər bir sütun üçün datanı əlavə edək (əgər filter varsa, yalnız seçilmiş sütunları daxil edək)
-      category.columns.forEach(column => {
-        // Əgər filter tətbiq edilməlidirsə və bu sütun filterdə yoxdursa, keçək
-        if (filterColumns && !filterColumns.includes(column.id)) {
-          return;
-        }
-        
-        const columnData = school.columnData.find(cd => cd.columnId === column.id);
-        
-        // Dəyər tipini yoxlayaq və uyğun formata çevirək
-        let value = columnData?.value;
-        if (typeof value === 'boolean') {
-          value = value ? 'Bəli' : 'Xeyr';
-        } else if (value === null || value === undefined) {
-          value = '-';
-        } else if (typeof value === 'object' && value instanceof Date) {
-          value = value.toLocaleDateString();
-        } else if (Array.isArray(value)) {
-          value = value.join(', ');
-        }
-        
-        rowData[column.name] = value;
-      });
-
-      return rowData;
-    });
-
-    // Excel worksheetini yaradaq
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-    // Header stillərini konfiqurasiya edək
-    if (includeHeaders && excelData.length > 0) {
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
       
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const address = XLSX.utils.encode_col(C) + '1';
-        if (!worksheet[address]) continue;
-        
-        worksheet[address].s = {
-          font: { bold: true, color: { rgb: '000000' } },
-          fill: { fgColor: { rgb: 'E9E9E9' } },
-          alignment: { horizontal: 'center' }
-        };
-      }
+      filteredColumns.forEach(column => {
+        headers.push(column.name);
+      });
+      
+      XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: 0 });
     }
-
-    // Excel workbookunu yaradaq
+    
+    // Məlumatlar
+    let rowIndex = includeHeaders ? 1 : 0;
+    
+    data.forEach(schoolData => {
+      const row = [];
+      
+      if (includeSchoolInfo) {
+        row.push(schoolData.schoolId || '');
+        row.push(schoolData.schoolName || '');
+        row.push(schoolData.region || '');
+        row.push(schoolData.sector || '');
+      }
+      
+      filteredColumns.forEach(column => {
+        const dataPoint = schoolData.columnData.find(d => d.columnId === column.id);
+        
+        if (dataPoint) {
+          // Xüsusi tip formatlaşdırması
+          let cellValue = dataPoint.value;
+          
+          if (typeof cellValue === 'string' && column.type === 'date' && cellValue) {
+            try {
+              cellValue = formatDate(cellValue);
+            } catch (e) {
+              console.error('Date format error:', e);
+            }
+          }
+          
+          row.push(cellValue ?? '');
+        } else {
+          row.push('');
+        }
+      });
+      
+      XLSX.utils.sheet_add_aoa(worksheet, [row], { origin: rowIndex++ });
+    });
+    
+    // Workbook yaratmaq
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-
-    // Sütun genişliklərini tənzimləyək
-    const maxWidth = 50;
-    const minWidth = 10;
     
-    // Bütün məlumatlar əsasında optimal sütun genişliklərini hesablayaq
-    const columnWidths: { wch: number }[] = [];
+    // Fayl adını təyin etmək
+    const timestamp = includeTimestamp ? `_${new Date().toISOString().split('T')[0]}` : '';
+    const fileName = `${customFileName || 'export'}${timestamp}.${format}`;
     
-    if (excelData.length > 0) {
-      const sampleRow = excelData[0];
-      
-      Object.keys(sampleRow).forEach((key, index) => {
-        // Sütun başlığının və nümunə dəyərin uzunluğu əsasında genişlik hesablayaq
-        const headerLength = key.length;
-        
-        // Nümunə dəyərin uzunluğunu hesablayaq (maksimum 10 sətir yoxlayaq)
-        let maxDataLength = 0;
-        for (let i = 0; i < Math.min(10, excelData.length); i++) {
-          const val = excelData[i][key];
-          const valLength = String(val).length;
-          maxDataLength = Math.max(maxDataLength, valLength);
-        }
-        
-        // Minimum və maksimum aralığında optimal genişlik hesablayaq
-        const optimalWidth = Math.min(maxWidth, Math.max(minWidth, Math.max(headerLength, maxDataLength) + 2));
-        columnWidths[index] = { wch: optimalWidth };
-      });
-    } else {
-      // Default sütun genişlikləri
-      columnWidths.push({ wch: 30 });  // Məktəb adı sütunu
-      category.columns.forEach(() => columnWidths.push({ wch: 15 }));  // Digər sütunlar
-    }
+    // Excel faylını yaratmaq və yükləmək
+    XLSX.writeFile(workbook, fileName);
     
-    worksheet['!cols'] = columnWidths;
-
-    // Fayl formatına uyğun ixrac edək
-    let fullFileName = '';
-    
-    switch (format) {
-      case 'csv':
-        fullFileName = `${fileName}.csv`;
-        XLSX.writeFile(workbook, fullFileName, { bookType: 'csv' });
-        break;
-      case 'txt':
-        fullFileName = `${fileName}.txt`;
-        // TAB-delimited text
-        XLSX.writeFile(workbook, fullFileName, { bookType: 'txt' });
-        break;
-      default:
-        fullFileName = `${fileName}.xlsx`;
-        XLSX.writeFile(workbook, fullFileName);
-    }
-    
-    console.log(`Exported file: ${fullFileName}`);
-    return true;
+    return { success: true, fileName };
   } catch (error) {
     console.error('Excel export error:', error);
-    return false;
+    return { success: false, error };
   }
-}
+};
 
-// Excel template-ni yaratmaq
-export function createExcelTemplate(
-  category: CategoryWithColumns,
+/**
+ * Excel formatındakı məlumatları idxal edir
+ */
+export const importFromExcel = async (
+  file: File,
+  columns: Column[],
   options: {
-    includeInstructions?: boolean;
-    includeValidation?: boolean;
-    customFileName?: string;
+    headerRow?: number;
+    startCol?: number;
   } = {}
-) {
-  if (!category) {
-    console.error('No category provided for template');
-    return false;
-  }
-  
-  const {
-    includeInstructions = true,
-    includeValidation = true,
-    customFileName
-  } = options;
-  
+): Promise<{
+  success: boolean;
+  data?: any[];
+  error?: string;
+}> => {
   try {
-    // Template-in adını təyin et
-    const fileName = customFileName 
-      ? `${customFileName}-template.xlsx` 
-      : `${category.name.replace(/\s+/g, '-').toLowerCase()}-template.xlsx`;
+    const { headerRow = 0, startCol = 0 } = options;
     
-    // Boş worksheet yaradaq
-    const worksheet = XLSX.utils.aoa_to_sheet([]);
-    
-    // Başlıqların şablonu
-    const headers: string[] = ['Məktəb adı', 'Məktəb kodu'];
-    
-    // Təlimatlar üçün məlumatları hazırlayaq
-    const instructions: any[][] = [];
-    
-    if (includeInstructions) {
-      instructions.push(['InfoLine Excel İmport Şablonu']);
-      instructions.push([`Kateqoriya: ${category.name}`]);
-      instructions.push(['Təlimatlar:']);
-      instructions.push(['1. Aşağıdakı sahələri doldurun və faylı saxlayın']);
-      instructions.push(['2. Doldurulmuş faylı InfoLine portalına yükləyin']);
-      instructions.push(['3. Məcburi sahələr tünd göstərilmişdir']);
-      instructions.push(['4. Faylı redaktə edərkən başlıq sətirini dəyişdirməyin']);
-      instructions.push(['']);
-    }
-    
-    // Sütunların başlıqlarını əlavə edək
-    category.columns.forEach(column => {
-      headers.push(column.isRequired ? `${column.name} *` : column.name);
-    });
-    
-    // Təlimatları və başlıqları əlavə edək
-    const allRows = [...instructions, headers];
-    
-    // Boş məlumat şablonu əlavə edək (2 nümunə sətir)
-    for (let i = 0; i < 2; i++) {
-      const emptyRow: any[] = ['Məktəb adı nümunəsi', `SC${1000 + i}`];
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
       
-      category.columns.forEach(column => {
-        // Sütun tipinə görə nümunə dəyər əlavə edək
-        switch(column.type) {
-          case 'number':
-            emptyRow.push(column.validationRules?.minValue || 0);
-            break;
-          case 'date':
-            emptyRow.push(new Date().toLocaleDateString());
-            break;
-          case 'select':
-            emptyRow.push(column.options?.[0] || '');
-            break;
-          case 'checkbox':
-            emptyRow.push('Bəli');
-            break;
-          default:
-            emptyRow.push(`Nümunə ${column.name}`);
-        }
-      });
-      
-      allRows.push(emptyRow);
-    }
-    
-    // Worksheet-ə bütün sətirləri əlavə edək
-    XLSX.utils.sheet_add_aoa(worksheet, allRows);
-    
-    // Başlıq və təlimatlar üçün stili konfiqurasiya edək
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    
-    // Təlimatlar üçün stil
-    if (includeInstructions) {
-      for (let R = 0; R < instructions.length; R++) {
-        for (let C = 0; C <= range.e.c; C++) {
-          const address = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!worksheet[address]) continue;
-          
-          worksheet[address].s = {
-            font: { italic: R > 1, bold: R <= 1, color: { rgb: '666666' } },
-            alignment: { horizontal: 'left' }
-          };
-        }
-      }
-    }
-    
-    // Başlıqlar üçün stil
-    const headerRow = includeInstructions ? instructions.length : 0;
-    for (let C = 0; C <= range.e.c; C++) {
-      const address = XLSX.utils.encode_cell({ r: headerRow, c: C });
-      if (!worksheet[address]) continue;
-      
-      worksheet[address].s = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        fill: { fgColor: { rgb: '4F81BD' } },
-        alignment: { horizontal: 'center', vertical: 'center' }
-      };
-    }
-    
-    // Sütun genişliklərini tənzimləyək
-    const columnWidths = [
-      { wch: 30 },  // Məktəb adı
-      { wch: 15 },  // Məktəb kodu
-      ...category.columns.map(col => ({ wch: Math.max(15, col.name.length + 5) }))
-    ];
-    
-    worksheet['!cols'] = columnWidths;
-    
-    // Excel workbookunu yaradaq və worksheet-i əlavə edək
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Entry');
-    
-    // Validasiya və məlumatlar üçün əlavə bir worksheet yaradaq
-    if (includeValidation) {
-      const helpWorksheet = XLSX.utils.aoa_to_sheet([
-        ['Validasiya qaydaları və təlimatlar'],
-        [''],
-        ['Sütun adı', 'Tip', 'Məcburi', 'Validasiya qaydaları', 'Təlimat']
-      ]);
-      
-      // Hər bir sütun üçün validasiya qaydalarını əlavə edək
-      const validationRows: string[][] = category.columns.map(column => {
-        const rules: string[] = [];
-        
-        if (column.validationRules) {
-          if (column.type === 'number') {
-            if (column.validationRules.minValue !== undefined) 
-              rules.push(`Minimum: ${column.validationRules.minValue}`);
-            if (column.validationRules.maxValue !== undefined) 
-              rules.push(`Maksimum: ${column.validationRules.maxValue}`);
-          } else if (column.type === 'text') {
-            if (column.validationRules.minLength !== undefined) 
-              rules.push(`Minimum uzunluq: ${column.validationRules.minLength}`);
-            if (column.validationRules.maxLength !== undefined) 
-              rules.push(`Maksimum uzunluq: ${column.validationRules.maxLength}`);
-          } else if (column.type === 'date') {
-            if (column.validationRules.minDate) 
-              rules.push(`Minimum tarix: ${new Date(column.validationRules.minDate).toLocaleDateString()}`);
-            if (column.validationRules.maxDate) 
-              rules.push(`Maksimum tarix: ${new Date(column.validationRules.maxDate).toLocaleDateString()}`);
+      reader.onload = (e) => {
+        try {
+          if (!e.target || !e.target.result) {
+            return resolve({
+              success: false,
+              error: 'Excel faylı oxunarkən xəta baş verdi.'
+            });
           }
+          
+          const data = e.target.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Məlumatları massiv kimi almaq
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            defval: null,
+            blankrows: false
+          });
+          
+          if (!Array.isArray(jsonData) || jsonData.length <= headerRow) {
+            return resolve({
+              success: false,
+              error: 'Excel faylında məlumatlar tapılmadı.'
+            });
+          }
+          
+          // Məlumatları emal etmək
+          const headers = jsonData[headerRow] as string[];
+          if (!headers || headers.length === 0) {
+            return resolve({
+              success: false,
+              error: 'Excel faylında başlıqlar tapılmadı.'
+            });
+          }
+          
+          const processedData = [];
+          
+          // Məlumat sətirləri üçün
+          for (let rowIndex = headerRow + 1; rowIndex < jsonData.length; rowIndex++) {
+            const row = jsonData[rowIndex] as any[];
+            if (!row || row.length === 0) continue;
+            
+            const rowData: Record<string, any> = {};
+            
+            // Hər bir sütun üçün məlumatları emal etmək
+            for (let colIndex = startCol; colIndex < headers.length; colIndex++) {
+              const header = headers[colIndex];
+              if (!header) continue;
+              
+              // Müvafiq sütunu tapmaq
+              const matchingColumn = columns.find(col => col.name === header);
+              if (!matchingColumn) continue;
+              
+              let cellValue = row[colIndex];
+              
+              // Məlumat tipinə görə düzəlişlər etmək
+              if (cellValue !== null && cellValue !== undefined) {
+                switch (matchingColumn.type) {
+                  case 'number':
+                    cellValue = typeof cellValue === 'number' ? 
+                      cellValue : 
+                      (parseFloat(String(cellValue)) || null);
+                    break;
+                  case 'date':
+                    if (typeof cellValue === 'string') {
+                      try {
+                        const dateValue = new Date(cellValue);
+                        if (!isNaN(dateValue.getTime())) {
+                          cellValue = dateValue.toISOString();
+                        }
+                      } catch (e) {
+                        console.error('Date parse error:', e);
+                      }
+                    } else if (typeof cellValue === 'number') {
+                      // Excel date conversions
+                      try {
+                        const dateValue = new Date((cellValue - 25569) * 86400 * 1000);
+                        if (!isNaN(dateValue.getTime())) {
+                          cellValue = dateValue.toISOString();
+                        }
+                      } catch (e) {
+                        console.error('Excel date conversion error:', e);
+                      }
+                    }
+                    break;
+                  case 'boolean':
+                    if (typeof cellValue === 'string') {
+                      cellValue = cellValue.toLowerCase() === 'true' || 
+                                 cellValue === '1' || 
+                                 cellValue.toLowerCase() === 'yes';
+                    } else if (typeof cellValue === 'number') {
+                      cellValue = cellValue === 1;
+                    }
+                    break;
+                  default:
+                    cellValue = String(cellValue);
+                }
+              }
+              
+              // Validasiya
+              const validationResult = validateCellValue(cellValue, matchingColumn);
+              if (!validationResult.valid) {
+                console.warn(`Sətir ${rowIndex + 1}, Sütun "${header}": ${validationResult.message}`);
+                // Xəta olduqda null əlavə edirik (istədiyiniz davranışdan asılı olaraq dəyişə bilər)
+                cellValue = null;
+              }
+              
+              rowData[matchingColumn.id] = cellValue;
+            }
+            
+            processedData.push(rowData);
+          }
+          
+          resolve({
+            success: true,
+            data: processedData
+          });
+        } catch (err) {
+          console.error('Excel import error:', err);
+          resolve({
+            success: false,
+            error: `Excel faylı emal edilərkən xəta: ${err instanceof Error ? err.message : String(err)}`
+          });
         }
-        
-        if (column.type === 'select' && column.options) {
-          rules.push(`Seçimlər: ${column.options.join(', ')}`);
-        } else if (column.type === 'checkbox') {
-          rules.push('Dəyərlər: Bəli, Xeyr');
-        }
-        
-        return [
-          column.name,
-          translateColumnType(column.type),
-          column.isRequired ? 'Bəli' : 'Xeyr',
-          rules.join('\n'),
-          column.helpText || ''
-        ];
-      });
+      };
       
-      // Validasiya qaydalarını worksheet-ə əlavə edək
-      XLSX.utils.sheet_add_aoa(helpWorksheet, validationRows, { origin: 'A4' });
+      reader.onerror = () => {
+        resolve({
+          success: false,
+          error: 'Excel faylı oxunarkən xəta baş verdi.'
+        });
+      };
       
-      // Stili konfiqurasiya edək
-      const helpRange = XLSX.utils.decode_range(helpWorksheet['!ref'] || 'A1');
-      
-      // Başlıq stili
-      for (let C = 0; C <= helpRange.e.c; C++) {
-        const address = XLSX.utils.encode_cell({ r: 0, c: C });
-        if (!helpWorksheet[address]) continue;
-        
-        helpWorksheet[address].s = {
-          font: { bold: true, size: 14, color: { rgb: '000000' } },
-          alignment: { horizontal: 'center' }
-        };
+      reader.readAsBinaryString(file);
+    });
+  } catch (error) {
+    console.error('Excel import function error:', error);
+    return {
+      success: false,
+      error: `Excel idxalı zamanı xəta: ${error instanceof Error ? error.message : String(error)}`
+    };
+  }
+};
+
+/**
+ * Hüceyrə dəyərini validasiya edir
+ */
+function validateCellValue(value: any, column: Column): { valid: boolean; message?: string } {
+  if (column.isRequired && (value === null || value === undefined || value === '')) {
+    return { valid: false, message: `${column.name} sütunu məcburidir.` };
+  }
+  
+  if (value === null || value === undefined || value === '') {
+    return { valid: true };
+  }
+  
+  if (column.validationRules) {
+    const { validationRules } = column;
+    
+    if (column.type === 'number' && typeof value === 'number') {
+      if (validationRules.minValue !== undefined && value < validationRules.minValue) {
+        return { valid: false, message: `Dəyər ${validationRules.minValue} və ya daha böyük olmalıdır.` };
       }
       
-      // Cədvəl başlıqları stili
-      for (let C = 0; C <= helpRange.e.c; C++) {
-        const address = XLSX.utils.encode_cell({ r: 2, c: C });
-        if (!helpWorksheet[address]) continue;
-        
-        helpWorksheet[address].s = {
-          font: { bold: true, color: { rgb: 'FFFFFF' } },
-          fill: { fgColor: { rgb: '4F81BD' } },
-          alignment: { horizontal: 'center' }
-        };
+      if (validationRules.maxValue !== undefined && value > validationRules.maxValue) {
+        return { valid: false, message: `Dəyər ${validationRules.maxValue} və ya daha kiçik olmalıdır.` };
       }
-      
-      // Sütun genişliklərini tənzimləyək
-      helpWorksheet['!cols'] = [
-        { wch: 30 },  // Sütun adı
-        { wch: 15 },  // Tip
-        { wch: 15 },  // Məcburi
-        { wch: 40 },  // Validasiya qaydaları
-        { wch: 50 }   // Təlimat
-      ];
-      
-      // Təlimatlar worksheetini workbook-a əlavə edək
-      XLSX.utils.book_append_sheet(workbook, helpWorksheet, 'Təlimat');
     }
     
-    // Faylı saxlayaq
-    XLSX.writeFile(workbook, fileName);
-    console.log(`Created template: ${fileName}`);
-    return true;
-  } catch (error) {
-    console.error('Excel template creation error:', error);
-    return false;
-  }
-}
-
-// Excel template-nin məlumatlarını parse etmək
-export function parseExcelTemplate(file: File): Promise<any[]> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        // İlk worksheet-i seçək
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        
-        // Məlumatları parse edək
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: null });
-        resolve(jsonData);
-      } catch (error) {
-        reject(error);
+    if (column.type === 'text' && typeof value === 'string') {
+      if (validationRules.minLength !== undefined && value.length < validationRules.minLength) {
+        return { valid: false, message: `Mətn uzunluğu ən az ${validationRules.minLength} simvol olmalıdır.` };
       }
-    };
+      
+      if (validationRules.maxLength !== undefined && value.length > validationRules.maxLength) {
+        return { valid: false, message: `Mətn uzunluğu ən çox ${validationRules.maxLength} simvol olmalıdır.` };
+      }
+      
+      if (validationRules.regex && !new RegExp(validationRules.regex).test(value)) {
+        return { valid: false, message: 'Mətn tələb olunan formatda deyil.' };
+      }
+    }
     
-    reader.onerror = (error) => {
-      reject(error);
-    };
+    if (column.type === 'date' && typeof value === 'string') {
+      const date = new Date(value);
+      
+      if (isNaN(date.getTime())) {
+        return { valid: false, message: 'Keçərli tarix formatı deyil.' };
+      }
+      
+      if (validationRules.minDate && date < new Date(validationRules.minDate)) {
+        return { valid: false, message: `Tarix ${validationRules.minDate} və ya daha sonra olmalıdır.` };
+      }
+      
+      if (validationRules.maxDate && date > new Date(validationRules.maxDate)) {
+        return { valid: false, message: `Tarix ${validationRules.maxDate} və ya daha əvvəl olmalıdır.` };
+      }
+    }
     
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-// Köməkçi funksiya: Sütun tipini Azərbaycan dilinə tərcümə etmək
-function translateColumnType(type: ColumnType): string {
-  switch (type) {
-    case 'text': return 'Mətn';
-    case 'number': return 'Rəqəm';
-    case 'date': return 'Tarix';
-    case 'select': return 'Seçim';
-    case 'checkbox': return 'Bəli/Xeyr';
-    case 'radio': return 'Radio seçim';
-    case 'email': return 'E-poçt';
-    case 'phone': return 'Telefon';
-    case 'file': return 'Fayl';
-    case 'image': return 'Şəkil';
-    default: return type;
+    // Other validations can be added
   }
+  
+  return { valid: true };
 }

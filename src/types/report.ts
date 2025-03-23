@@ -26,4 +26,22 @@ export interface ExportOptions {
   includeHeaders?: boolean;
   sheetName?: string;
   excludeColumns?: string[];
+  includeTimestamp?: boolean;
+  includeSchoolInfo?: boolean;
+  format?: string;
+  filterColumns?: string[];
+}
+
+export interface Report {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy: string;
+  type: 'standard' | 'custom';
+  categoryId?: string;
+  columns?: CategoryColumn[];
+  filters?: any;
+  exportOptions?: ExportOptions;
 }
