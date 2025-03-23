@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { az } from 'date-fns/locale';
+import { AlertCircle, CalendarIcon, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,6 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useForm } from 'react-hook-form';
 
 interface DataEntryFormProps {
@@ -55,25 +58,59 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return value !== undefined ? value : '';
   };
 
+  const getStatusForColumn = (columnId: string): 'pending' | 'approved' | 'rejected' => {
+    return entryData.values.find(v => v.columnId === columnId)?.status || 'pending';
+  };
+
   const renderFormField = (column: Column) => {
     const errorMessage = getErrorForColumn(column.id);
     const isDisabled = isSubmitted;
+    const status = getStatusForColumn(column.id);
+    
+    const isRejected = status === 'rejected';
     
     return (
       <div key={column.id} className="mb-6">
-        <FormItem className="space-y-2">
-          <FormLabel className="flex items-center space-x-2">
-            <span>{column.name}</span>
-            {column.isRequired && <span className="text-red-500">*</span>}
-          </FormLabel>
+        <FormItem className={cn("space-y-2", isRejected && "bg-red-50 p-3 rounded-md dark:bg-red-900/20")}>
+          <div className="flex items-center justify-between">
+            <FormLabel className="flex items-center space-x-2">
+              <span>{column.name}</span>
+              {column.isRequired && <span className="text-red-500">*</span>}
+            </FormLabel>
+            {column.helpText && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">{column.helpText}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           
-          {column.type === 'text' && (
+          {column.type === 'text' && !column.multiline && (
             <FormControl>
               <Input
                 value={getValueForColumn(column.id) || ''}
                 onChange={(e) => onValueChange(category.id, column.id, e.target.value)}
                 placeholder={column.placeholder || `${column.name} daxil edin`}
-                className={errorMessage ? 'border-red-500' : ''}
+                className={cn(errorMessage ? 'border-red-500' : '', isRejected && "border-red-400")}
+                disabled={isDisabled}
+              />
+            </FormControl>
+          )}
+
+          {column.type === 'text' && column.multiline && (
+            <FormControl>
+              <Textarea
+                value={getValueForColumn(column.id) || ''}
+                onChange={(e) => onValueChange(category.id, column.id, e.target.value)}
+                placeholder={column.placeholder || `${column.name} daxil edin`}
+                className={cn(errorMessage ? 'border-red-500' : '', isRejected && "border-red-400")}
+                rows={4}
                 disabled={isDisabled}
               />
             </FormControl>
@@ -86,20 +123,22 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 value={getValueForColumn(column.id) || ''}
                 onChange={(e) => onValueChange(category.id, column.id, e.target.value ? Number(e.target.value) : '')}
                 placeholder={column.placeholder || `${column.name} daxil edin`}
-                className={errorMessage ? 'border-red-500' : ''}
+                className={cn(errorMessage ? 'border-red-500' : '', isRejected && "border-red-400")}
                 disabled={isDisabled}
+                min={column.validationRules?.minValue}
+                max={column.validationRules?.maxValue}
               />
             </FormControl>
           )}
           
           {column.type === 'select' && column.options && (
             <Select
-              defaultValue={getValueForColumn(column.id) || ''}
+              value={getValueForColumn(column.id) || ''}
               onValueChange={(value) => onValueChange(category.id, column.id, value)}
               disabled={isDisabled}
             >
               <FormControl>
-                <SelectTrigger className={errorMessage ? 'border-red-500' : ''}>
+                <SelectTrigger className={cn(errorMessage ? 'border-red-500' : '', isRejected && "border-red-400")}>
                   <SelectValue placeholder={column.placeholder || 'Seçin'} />
                 </SelectTrigger>
               </FormControl>
@@ -122,12 +161,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                     className={cn(
                       "w-full pl-3 text-left font-normal",
                       !getValueForColumn(column.id) && "text-muted-foreground",
-                      errorMessage && "border-red-500"
+                      errorMessage && "border-red-500",
+                      isRejected && "border-red-400"
                     )}
                     disabled={isDisabled}
                   >
                     {getValueForColumn(column.id) ? (
-                      format(new Date(getValueForColumn(column.id)), 'PP')
+                      format(new Date(getValueForColumn(column.id)), 'dd MMMM yyyy', { locale: az })
                     ) : (
                       <span>Tarix seçin</span>
                     )}
@@ -142,6 +182,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   onSelect={(date) => onValueChange(category.id, column.id, date)}
                   disabled={isDisabled}
                   className={cn("p-3 pointer-events-auto")}
+                  locale={az}
                 />
               </PopoverContent>
             </Popover>
@@ -154,26 +195,37 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 checked={!!getValueForColumn(column.id)}
                 onCheckedChange={(checked) => onValueChange(category.id, column.id, checked)}
                 disabled={isDisabled}
+                className={isRejected ? "border-red-400" : ""}
               />
               <label
                 htmlFor={column.id}
-                className="text-sm text-muted-foreground"
+                className={cn("text-sm", isRejected ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}
               >
                 {column.placeholder || 'Seçin'}
               </label>
             </div>
           )}
           
-          {column.helpText && (
-            <FormDescription>
-              {column.helpText}
-            </FormDescription>
+          {isRejected && entryData.values.find(v => v.columnId === column.id)?.errorMessage && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="text-sm ml-2">Rədd edilmə səbəbi</AlertTitle>
+              <AlertDescription className="text-sm ml-2">
+                {entryData.values.find(v => v.columnId === column.id)?.errorMessage}
+              </AlertDescription>
+            </Alert>
           )}
           
-          {errorMessage && (
+          {errorMessage && !isRejected && (
             <FormMessage>
               {errorMessage}
             </FormMessage>
+          )}
+          
+          {column.helpText && (
+            <FormDescription className={isRejected ? "text-red-600 dark:text-red-400" : ""}>
+              {column.helpText}
+            </FormDescription>
           )}
         </FormItem>
       </div>
@@ -181,8 +233,22 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium mb-4">{category.name}</h3>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium mb-4">{category.name}</h3>
+        {category.deadline && (
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <span>Son tarix:</span>
+            <span className="font-medium">{format(new Date(category.deadline), 'dd.MM.yyyy')}</span>
+          </div>
+        )}
+      </div>
+      
+      {category.description && (
+        <div className="text-sm text-muted-foreground mb-6 bg-muted/50 p-3 rounded-md">
+          {category.description}
+        </div>
+      )}
       
       <Form {...form}>
         <form className="space-y-4">

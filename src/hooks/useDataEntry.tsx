@@ -2,46 +2,192 @@
 import { useState, useCallback, useEffect } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntryForm, EntryValue, CategoryEntryData, ColumnValidationError } from '@/types/dataEntry';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 
 // Mock kateqoriyalar və sütunlar
 const mockCategories: CategoryWithColumns[] = [
   {
     id: "cat1",
     name: "Ümumi məlumatlar",
+    description: "Məktəbin əsas statistik göstəriciləri haqqında məlumatlar",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 gün sonra
     columns: [
-      { id: "col1", categoryId: "cat1", name: "Şagird sayı", type: "number", isRequired: true, order: 1, status: "active" },
-      { id: "col2", categoryId: "cat1", name: "Müəllim sayı", type: "number", isRequired: true, order: 2, status: "active" },
-      { id: "col3", categoryId: "cat1", name: "Sinif otaqlarının sayı", type: "number", isRequired: true, order: 3, status: "active" },
-      { id: "col4", categoryId: "cat1", name: "Kompüter otaqlarının sayı", type: "number", isRequired: false, order: 4, status: "active" }
+      { 
+        id: "col1", 
+        categoryId: "cat1", 
+        name: "Şagird sayı", 
+        type: "number", 
+        isRequired: true, 
+        order: 1, 
+        status: "active",
+        helpText: "Məktəbdə təhsil alan bütün şagirdlərin sayı", 
+        validationRules: { minValue: 0, maxValue: 5000 }
+      },
+      { 
+        id: "col2", 
+        categoryId: "cat1", 
+        name: "Müəllim sayı", 
+        type: "number", 
+        isRequired: true, 
+        order: 2, 
+        status: "active",
+        helpText: "Məktəbdə çalışan bütün müəllimlərin sayı", 
+        validationRules: { minValue: 0, maxValue: 500 }
+      },
+      { 
+        id: "col3", 
+        categoryId: "cat1", 
+        name: "Sinif otaqlarının sayı", 
+        type: "number", 
+        isRequired: true, 
+        order: 3, 
+        status: "active",
+        helpText: "Tədris məqsədlə istifadə olunan sinif otaqlarının sayı", 
+        validationRules: { minValue: 0 }
+      },
+      { 
+        id: "col4", 
+        categoryId: "cat1", 
+        name: "Kompüter otaqlarının sayı", 
+        type: "number", 
+        isRequired: false, 
+        order: 4, 
+        status: "active",
+        helpText: "İnformatika dərsləri üçün nəzərdə tutulmuş kompüter otaqlarının sayı"
+      }
     ]
   },
   {
     id: "cat2",
     name: "Tədris məlumatları",
+    description: "Məktəbin tədris fəaliyyəti ilə bağlı məlumatlar",
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 gün sonra
     columns: [
-      { id: "col5", categoryId: "cat2", name: "Tədris dili", type: "select", isRequired: true, options: ["Azərbaycan", "Rus", "İngilis"], order: 1, status: "active" },
-      { id: "col6", categoryId: "cat2", name: "Tədris proqramı", type: "text", isRequired: true, order: 2, status: "active" },
-      { id: "col7", categoryId: "cat2", name: "Təhsil növü", type: "select", isRequired: true, options: ["Tam orta", "Ümumi orta", "İbtidai"], order: 3, status: "active" }
+      { 
+        id: "col5", 
+        categoryId: "cat2", 
+        name: "Tədris dili", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Azərbaycan", "Rus", "İngilis", "Qarışıq"], 
+        order: 1, 
+        status: "active",
+        helpText: "Məktəbdə əsas tədris dili"
+      },
+      { 
+        id: "col6", 
+        categoryId: "cat2", 
+        name: "Tədris proqramı", 
+        type: "text", 
+        isRequired: true, 
+        order: 2, 
+        status: "active",
+        multiline: true,
+        helpText: "Məktəbin istifadə etdiyi əsas tədris proqramı(ları)"
+      },
+      { 
+        id: "col7", 
+        categoryId: "cat2", 
+        name: "Təhsil növü", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Tam orta", "Ümumi orta", "İbtidai", "Qarışıq"], 
+        order: 3, 
+        status: "active",
+        helpText: "Məktəbdə verilən təhsilin növü"
+      }
     ]
   },
   {
     id: "cat3",
     name: "İnfrastruktur",
+    description: "Məktəb binası və infrastrukturu haqqında məlumatlar",
+    deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 gün sonra
     columns: [
-      { id: "col8", categoryId: "cat3", name: "İdman zalı", type: "checkbox", isRequired: false, order: 1, status: "active" },
-      { id: "col9", categoryId: "cat3", name: "Kitabxana", type: "checkbox", isRequired: false, order: 2, status: "active" },
-      { id: "col10", categoryId: "cat3", name: "Yeməkxana", type: "checkbox", isRequired: false, order: 3, status: "active" },
-      { id: "col11", categoryId: "cat3", name: "Binanın vəziyyəti", type: "select", isRequired: true, options: ["Əla", "Yaxşı", "Kafi", "Qənaətbəxş deyil"], order: 4, status: "active" },
-      { id: "col12", categoryId: "cat3", name: "Son təmir tarixi", type: "date", isRequired: true, order: 5, status: "active" }
+      { 
+        id: "col8", 
+        categoryId: "cat3", 
+        name: "İdman zalı", 
+        type: "checkbox", 
+        isRequired: false, 
+        order: 1, 
+        status: "active",
+        placeholder: "Məktəbdə idman zalı mövcuddur",
+        helpText: "İdman zalının olub-olmadığını qeyd edin"
+      },
+      { 
+        id: "col9", 
+        categoryId: "cat3", 
+        name: "Kitabxana", 
+        type: "checkbox", 
+        isRequired: false, 
+        order: 2, 
+        status: "active",
+        placeholder: "Məktəbdə kitabxana mövcuddur", 
+        helpText: "Kitabxananın olub-olmadığını qeyd edin"
+      },
+      { 
+        id: "col10", 
+        categoryId: "cat3", 
+        name: "Yeməkxana", 
+        type: "checkbox", 
+        isRequired: false, 
+        order: 3, 
+        status: "active",
+        placeholder: "Məktəbdə yeməkxana mövcuddur", 
+        helpText: "Yeməkxananın olub-olmadığını qeyd edin"
+      },
+      { 
+        id: "col11", 
+        categoryId: "cat3", 
+        name: "Binanın vəziyyəti", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Əla", "Yaxşı", "Kafi", "Qənaətbəxş deyil"], 
+        order: 4, 
+        status: "active",
+        helpText: "Məktəb binasının ümumi vəziyyətini qiymətləndirin"
+      },
+      { 
+        id: "col12", 
+        categoryId: "cat3", 
+        name: "Son təmir tarixi", 
+        type: "date", 
+        isRequired: true, 
+        order: 5, 
+        status: "active",
+        helpText: "Məktəbdə son təmir işlərinin aparıldığı tarix"
+      }
     ]
   },
   {
     id: "cat4",
     name: "Digər məlumatlar",
+    description: "Əlavə məlumatlar və qeydlər",
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 gün sonra
     columns: [
-      { id: "col13", categoryId: "cat4", name: "Əlavə qeydlər", type: "text", isRequired: false, order: 1, status: "active" },
-      { id: "col14", categoryId: "cat4", name: "Təklif və rəylər", type: "text", isRequired: false, order: 2, status: "active" }
+      { 
+        id: "col13", 
+        categoryId: "cat4", 
+        name: "Əlavə qeydlər", 
+        type: "text", 
+        isRequired: false, 
+        order: 1, 
+        status: "active",
+        multiline: true,
+        helpText: "Məktəb haqqında əlavə qeydlər və məlumatlar"
+      },
+      { 
+        id: "col14", 
+        categoryId: "cat4", 
+        name: "Təklif və rəylər", 
+        type: "text", 
+        isRequired: false, 
+        order: 2, 
+        status: "active",
+        multiline: true,
+        helpText: "Tədris prosesinin inkişafı üçün təkliflər"
+      }
     ]
   }
 ];
@@ -80,13 +226,16 @@ export const useDataEntry = () => {
       entries: initialEntries,
       lastSaved: new Date().toISOString()
     }));
+    
+    // Konsol log məlumatı
+    console.log("Forma məlumatları yükləndi");
   }, [categories]);
 
   // Sütun tipinə görə ilkin dəyər təyin etmək
   const getDefaultValueByType = (type: string, defaultValue?: string) => {
     switch (type) {
       case 'number':
-        return defaultValue ? Number(defaultValue) : 0;
+        return defaultValue ? Number(defaultValue) : '';
       case 'checkbox':
         return defaultValue === 'true';
       case 'date':
@@ -116,6 +265,11 @@ export const useDataEntry = () => {
         
         if (valueIndex !== -1) {
           newEntries[categoryIndex].values[valueIndex].value = value;
+          // Hər hansı dəyişiklik baş verdikdə, statusu 'pending' edirik
+          if (newEntries[categoryIndex].values[valueIndex].status === 'rejected') {
+            newEntries[categoryIndex].values[valueIndex].status = 'pending';
+            delete newEntries[categoryIndex].values[valueIndex].errorMessage;
+          }
         } else {
           newEntries[categoryIndex].values.push({
             columnId,
@@ -248,8 +402,17 @@ export const useDataEntry = () => {
         description: "Zəhmət olmasa bütün məcburi sahələri doldurun",
         variant: "destructive",
       });
+      
+      // Xəta olan ilk kateqoriyaya keçid
+      const firstErrorIndex = errors.length > 0 
+        ? categories.findIndex(cat => cat.columns.some(col => col.id === errors[0].columnId))
+        : -1;
+        
+      if (firstErrorIndex !== -1) {
+        setCurrentCategoryIndex(firstErrorIndex);
+      }
     }
-  }, [validateForm]);
+  }, [validateForm, errors, categories]);
 
   // Manuel saxlama (Save düyməsi üçün)
   const saveForm = useCallback(() => {
@@ -272,6 +435,95 @@ export const useDataEntry = () => {
     return errors.find(err => err.columnId === columnId)?.message;
   }, [errors]);
 
+  // Excel şablonunu yükləmək
+  const downloadExcelTemplate = useCallback(() => {
+    // Burada real API çağırışı olmalıdır
+    console.log("Excel şablonu yükləndi");
+    
+    toast({
+      title: "Excel şablonu yükləndi",
+      description: "Şablonu dolduraraq geri yükləyə bilərsiniz",
+      variant: "default",
+    });
+  }, []);
+
+  // Excel faylını yükləmək və məlumatları doldurmaq
+  const uploadExcelData = useCallback((file: File) => {
+    // Burada real API çağırışı olmalıdır
+    console.log("Excel faylı yükləndi:", file.name);
+    
+    // Excel formatlaması və məlumatların doldurulması simulyasiyası
+    const mockDataFromExcel: Record<string, any> = {
+      "col1": 500,
+      "col2": 45,
+      "col3": 30,
+      "col4": 2,
+      "col5": "Azərbaycan",
+      "col6": "Standart tədris proqramı",
+      "col7": "Tam orta",
+      "col8": true,
+      "col9": true,
+      "col10": true,
+      "col11": "Yaxşı",
+      "col12": new Date("2022-08-15")
+    };
+    
+    setFormData(prev => {
+      const newEntries = [...prev.entries];
+      
+      // Excel-dən alınan məlumatları forma daxil edirik
+      Object.entries(mockDataFromExcel).forEach(([columnId, value]) => {
+        const category = categories.find(cat => cat.columns.some(col => col.id === columnId));
+        
+        if (category) {
+          const categoryIndex = newEntries.findIndex(entry => entry.categoryId === category.id);
+          
+          if (categoryIndex !== -1) {
+            const valueIndex = newEntries[categoryIndex].values.findIndex(v => v.columnId === columnId);
+            
+            if (valueIndex !== -1) {
+              newEntries[categoryIndex].values[valueIndex].value = value;
+            } else {
+              newEntries[categoryIndex].values.push({
+                columnId,
+                value,
+                status: 'pending'
+              });
+            }
+          }
+        }
+      });
+      
+      // Kateqoriya tamamlanma faizini yeniləmək
+      newEntries.forEach(entry => {
+        const category = categories.find(c => c.id === entry.categoryId);
+        if (category) {
+          const requiredColumns = category.columns.filter(col => col.isRequired);
+          const filledRequiredValues = entry.values.filter(val => {
+            const column = category.columns.find(col => col.id === val.columnId);
+            return column?.isRequired && val.value !== '' && val.value !== null && val.value !== undefined;
+          });
+          
+          entry.completionPercentage = requiredColumns.length > 0 
+            ? (filledRequiredValues.length / requiredColumns.length) * 100 
+            : 100;
+          
+          entry.isCompleted = entry.completionPercentage === 100;
+        }
+      });
+      
+      // Ümumi tamamlanma faizini yeniləmək
+      const overallProgress = newEntries.reduce((sum, entry) => sum + entry.completionPercentage, 0) / newEntries.length;
+      
+      return {
+        ...prev,
+        entries: newEntries,
+        overallProgress,
+        lastSaved: new Date().toISOString()
+      };
+    });
+  }, [categories]);
+
   return {
     categories,
     currentCategoryIndex,
@@ -283,6 +535,8 @@ export const useDataEntry = () => {
     updateValue,
     submitForApproval,
     saveForm,
-    getErrorForColumn
+    getErrorForColumn,
+    downloadExcelTemplate,
+    uploadExcelData
   };
 };
