@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
@@ -102,16 +101,13 @@ const SchoolColumnTable: React.FC = () => {
     return categories.find(cat => cat.id === selectedCategoryId);
   }, [categories, selectedCategoryId]);
 
-  // Filtrelenmiş məlumatları əldə etmək üçün
   const filteredData = React.useMemo(() => {
     if (!schoolColumnData) return [];
 
     return schoolColumnData.filter(school => {
-      // Axtarış termi ilə filtirləmə
       const matchesSearch = searchTerm === '' || 
         school.schoolName.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Sektor filtirləmədən keçdi
       const matchesSector = selectedSectors.length === 0 || 
         selectedSectors.includes(school.sector || '');
       
@@ -120,7 +116,6 @@ const SchoolColumnTable: React.FC = () => {
   }, [schoolColumnData, searchTerm, selectedSectors]);
 
   useEffect(() => {
-    // Əgər bütün məktəblər seçilibsə isSelectAll true, əks halda false
     setIsSelectAll(selectedSchools.length === filteredData.length && filteredData.length > 0);
   }, [selectedSchools, filteredData]);
 
@@ -139,36 +134,29 @@ const SchoolColumnTable: React.FC = () => {
     const options: ExportOptions = { customFileName: fileName };
     
     try {
-      // Excel faylını yaradaq
       const workbook = XLSX.utils.book_new();
       
-      // Başlıqları əlavə edək
       const headers = ['Məktəb adı', 'Region', 'Sektor', 'Status'];
       selectedCategory.columns.forEach(column => {
         headers.push(column.name);
       });
       
-      // Məlumatları əlavə edək
       const rows = filteredData.map(school => {
-        // Məktəb statusu (default olaraq "Gözləmədə")
         const status = school.status || "Gözləmədə";
         
         const row: (string | number | boolean)[] = [school.schoolName, school.region || '', school.sector || '', status];
         selectedCategory.columns.forEach(column => {
           const columnData = school.columnData.find(cd => cd.columnId === column.id);
-          // Məlumatı string-ə çeviririk
           const value = columnData?.value !== undefined ? String(columnData.value) : '';
           row.push(value);
         });
         return row;
       });
       
-      // Məlumatları worksheet-ə əlavə edək
       const wsData = [headers, ...rows];
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       XLSX.utils.book_append_sheet(workbook, ws, 'Məktəb məlumatları');
       
-      // Faylı yükləyək
       XLSX.writeFile(workbook, `${fileName}.xlsx`);
       
       toast.success(t("fileDownloaded"));
@@ -197,7 +185,6 @@ const SchoolColumnTable: React.FC = () => {
     if (isSelectAll) {
       deselectAllSchools();
     } else {
-      // Filterlənmiş bütün məktəbləri seç
       const allSchoolIds = filteredData.map(school => school.schoolId);
       setSelectedSchools(allSchoolIds);
     }
@@ -241,23 +228,19 @@ const SchoolColumnTable: React.FC = () => {
   const confirmApprove = async () => {
     setIsSubmitting(true);
     try {
-      // Burada API çağırışı həyata keçiriləcək
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (isBulkAction) {
         toast.success(`${selectedSchools.length} məktəbin məlumatları təsdiqləndi`);
-        // Təsdiqlənmiş məktəblərin statusunu yeniləyəririk (əsl tətbiqdə bu API ilə edilməlidir)
         selectedSchools.forEach(schoolId => {
           const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === schoolId);
           if (schoolIndex !== -1) {
             schoolColumnData[schoolIndex].status = "Təsdiqləndi";
           }
         });
-        // Seçilmiş məktəbləri sıfırlayırıq
         deselectAllSchools();
       } else if (currentSchoolId) {
         toast.success("Məktəb məlumatları təsdiqləndi");
-        // Təsdiqlənmiş məktəbin statusunu yeniləyirik (əsl tətbiqdə bu API ilə edilməlidir)
         const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === currentSchoolId);
         if (schoolIndex !== -1) {
           schoolColumnData[schoolIndex].status = "Təsdiqləndi";
@@ -276,12 +259,10 @@ const SchoolColumnTable: React.FC = () => {
   const confirmReject = async (formData: { rejectionReason: string }) => {
     setIsSubmitting(true);
     try {
-      // Burada API çağırışı həyata keçiriləcək
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       if (isBulkAction) {
         toast.success(`${selectedSchools.length} məktəbin məlumatları rədd edildi`);
-        // Rədd edilmiş məktəblərin statusunu yeniləyirik (əsl tətbiqdə bu API ilə edilməlidir)
         selectedSchools.forEach(schoolId => {
           const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === schoolId);
           if (schoolIndex !== -1) {
@@ -289,11 +270,9 @@ const SchoolColumnTable: React.FC = () => {
             schoolColumnData[schoolIndex].rejectionReason = formData.rejectionReason;
           }
         });
-        // Seçilmiş məktəbləri sıfırlayırıq
         deselectAllSchools();
       } else if (currentSchoolId) {
         toast.success("Məktəb məlumatları rədd edildi");
-        // Rədd edilmiş məktəbin statusunu yeniləyirik (əsl tətbiqdə bu API ilə edilməlidir)
         const schoolIndex = schoolColumnData.findIndex(s => s.schoolId === currentSchoolId);
         if (schoolIndex !== -1) {
           schoolColumnData[schoolIndex].status = "Rədd edildi";
@@ -312,7 +291,6 @@ const SchoolColumnTable: React.FC = () => {
   };
 
   const handleViewDetails = (schoolId: string) => {
-    // Bu funksiya məktəbin bütün detallarını göstərən səhifəyə yönləndirəcək
     navigate(`/data-entry?schoolId=${schoolId}&categoryId=${selectedCategoryId}`);
   };
 
@@ -474,7 +452,6 @@ const SchoolColumnTable: React.FC = () => {
         </Card>
       )}
 
-      {/* Toplu əməliyyatlar paneli */}
       {selectedSchools.length > 0 && (
         <div className="flex items-center justify-between bg-muted p-4 rounded-md">
           <div className="text-sm font-medium">
@@ -614,7 +591,6 @@ const SchoolColumnTable: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Təsdiq dialoqu */}
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -645,57 +621,59 @@ const SchoolColumnTable: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Rədd dialoqu */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
-          <Form {...form} onSubmit={form.handleSubmit(confirmReject)}>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("confirmRejection")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {isBulkAction 
-                  ? `${selectedSchools.length} məktəbin məlumatlarını rədd etmək istədiyinizə əminsiniz?` 
-                  : `Bu məktəbin məlumatlarını rədd etmək istədiyinizə əminsiniz?`}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            
-            <div className="py-4">
-              <FormField
-                control={form.control}
-                name="rejectionReason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("rejectionReason")}</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder={t("enterRejectionReason")}
-                        {...field}
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <AlertDialogFooter>
-              <AlertDialogCancel type="button" disabled={isSubmitting}>{t("cancel")}</AlertDialogCancel>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-red-600 text-white hover:bg-red-700"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("processing")}
-                  </>
-                ) : (
-                  t("reject")
-                )}
-              </Button>
-            </AlertDialogFooter>
-          </Form>
+          <div>
+            <Form {...form}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("confirmRejection")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {isBulkAction 
+                    ? `${selectedSchools.length} məktəbin məlumatlarını rədd etmək istədiyinizə əminsiniz?` 
+                    : `Bu məktəbin məlumatlarını rədd etmək istədiyinizə əminsiniz?`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              
+              <div className="py-4">
+                <FormField
+                  control={form.control}
+                  name="rejectionReason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("rejectionReason")}</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder={t("enterRejectionReason")}
+                          {...field}
+                          rows={3}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <AlertDialogFooter>
+                <AlertDialogCancel type="button" disabled={isSubmitting}>{t("cancel")}</AlertDialogCancel>
+                <Button
+                  type="button"
+                  disabled={isSubmitting}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                  onClick={form.handleSubmit(confirmReject)}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t("processing")}
+                    </>
+                  ) : (
+                    t("reject")
+                  )}
+                </Button>
+              </AlertDialogFooter>
+            </Form>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
