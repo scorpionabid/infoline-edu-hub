@@ -103,7 +103,7 @@ const SchoolColumnTable: React.FC = () => {
         selectedCategory.columns.forEach(column => {
           const columnData = school.columnData.find(cd => cd.columnId === column.id);
           // Məlumatı string-ə çeviririk
-          let value = columnData?.value !== undefined ? String(columnData.value) : '';
+          const value = columnData?.value !== undefined ? String(columnData.value) : '';
           row.push(value);
         });
         return row;

@@ -1,151 +1,167 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import SuperAdminDashboard from '@/components/dashboard/SuperAdminDashboard';
 import RegionAdminDashboard from '@/components/dashboard/RegionAdminDashboard';
 import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
 import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
-// Genişləndirilmiş mock məlumatlar
-const mockData = {
-  superadmin: {
-    regions: 15,
-    sectors: 45,
-    schools: 634,
-    users: 912,
-    completionRate: 78,
-    pendingApprovals: 23,
-    notifications: [
-      { id: 1, type: 'newCategory', title: 'Yeni Kateqoriya', message: 'Şagird məlumatları kateqoriyası yaradılıb', time: '10 dəq əvvəl' },
-      { id: 2, type: 'formApproved', title: 'Form Təsdiqləndi', message: '45 saylı məktəbin formu təsdiqləndi', time: '2 saat əvvəl' },
-      { id: 3, type: 'systemUpdate', title: 'Sistem Yeniləməsi', message: 'Sistem 15 iyun 2023-cü il tarixində yenilənəcək', time: '1 gün əvvəl' },
-    ],
-    activityData: [
-      { name: 'Yan', value: 65 },
-      { name: 'Fev', value: 78 },
-      { name: 'Mar', value: 67 },
-      { name: 'Apr', value: 89 },
-      { name: 'May', value: 92 },
-      { name: 'İyun', value: 87 },
-      { name: 'İyul', value: 94 },
-    ]
-  },
-  regionadmin: {
-    sectors: 8,
-    schools: 126,
-    users: 158,
-    completionRate: 72,
-    pendingApprovals: 18,
-    pendingSchools: 34,
-    approvedSchools: 82,
-    rejectedSchools: 10,
-    notifications: [
-      { id: 1, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Məktəb inventarları məlumatları 3 gün ərzində təqdim edilməlidir', time: '30 dəq əvvəl' },
-      { id: 2, type: 'formRejected', title: 'Form Rədd Edildi', message: '23 saylı məktəbin formu düzəlişlər tələb edir', time: '5 saat əvvəl' },
-    ],
-    activityData: [
-      { name: 'Yan', value: 45 },
-      { name: 'Fev', value: 58 },
-      { name: 'Mar', value: 47 },
-      { name: 'Apr', value: 79 },
-      { name: 'May', value: 82 },
-      { name: 'İyun', value: 77 },
-      { name: 'İyul', value: 84 },
-    ]
-  },
-  sectoradmin: {
-    schools: 24,
-    completionRate: 68,
-    pendingApprovals: 12,
-    pendingSchools: 8,
-    approvedSchools: 14,
-    rejectedSchools: 2,
-    notifications: [
-      { id: 1, type: 'formApproved', title: 'Form Təsdiqləndi', message: '12 saylı məktəbin formu təsdiqləndi', time: '1 saat əvvəl' },
-      { id: 2, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Müəllim kvalifikasiya məlumatları sabah təqdim edilməlidir', time: '3 saat əvvəl' },
-    ],
-    activityData: [
-      { name: 'Yan', value: 35 },
-      { name: 'Fev', value: 48 },
-      { name: 'Mar', value: 37 },
-      { name: 'Apr', value: 69 },
-      { name: 'May', value: 72 },
-      { name: 'İyun', value: 67 },
-      { name: 'İyul', value: 74 },
-    ]
-  },
-  schooladmin: {
-    forms: {
-      pending: 5,
-      approved: 12,
-      rejected: 2,
-      dueSoon: 4,
-      overdue: 1,
-    },
-    completionRate: 78,
-    notifications: [
-      { id: 1, type: 'newCategory', title: 'Yeni Kateqoriya', message: 'Şagird nailiyyətləri kateqoriyası əlavə edilib', time: '15 dəq əvvəl' },
-      { id: 2, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Müəllim ixtisasartırma məlumatları 2 gün ərzində doldurulmalıdır', time: '1 saat əvvəl' },
-      { id: 3, type: 'formRejected', title: 'Form Rədd Edildi', message: 'Maddi-texniki baza formu düzəliş tələb edir', time: '3 saat əvvəl' },
-      { id: 4, type: 'formApproved', title: 'Form Təsdiqləndi', message: 'Şagird kontingenti məlumatları təsdiqləndi', time: '1 gün əvvəl' }
-    ]
-  }
-};
+// Mock data
+import { mockSchools } from '@/data/schoolsData';
+import { mockCategories } from '@/data/mockCategories';
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(true);
+  const [tab, setTab] = useState<string>("overview");
   
-  useEffect(() => {
-    // Demo məlumatlar üçün yükləmə effekti
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      // İstifadəçiyə salamlama bildirişi
-      toast.success(t('welcomeBack'), {
-        description: `${user?.name}, ${t('dashboard')} yenilənib.`
-      });
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [user, t]);
-  
-  const renderDashboardContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">{t('loadingDashboard')}</p>
-        </div>
-      );
-    }
-    
-    if (!user) return null;
-    
-    switch(user.role) {
+  // Generate mock data based on user's role
+  const getMockDashboardData = () => {
+    switch (user?.role) {
       case 'superadmin':
-        return <SuperAdminDashboard data={mockData.superadmin} />;
+        return {
+          regions: 10,
+          sectors: 45,
+          schools: 596,
+          users: 684,
+          completionRate: 78,
+          pendingApprovals: 23,
+          pendingSchools: 65,
+          approvedSchools: 452,
+          rejectedSchools: 12,
+          statusData: {
+            completed: 452,
+            pending: 65,
+            rejected: 12,
+            notStarted: 67,
+          },
+          notifications: [
+            { id: "n1", type: "info", title: "Yeni hesabatlar", message: "24 yeni hesabat əlavə edilib", time: "2 saat əvvəl" },
+            { id: "n2", type: "warning", title: "Son tarix yaxınlaşır", message: "Müəllim məlumatları üçün son tarix yaxınlaşır", time: "5 saat əvvəl" },
+            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "Məktəb məlumatları 3 region üçün təsdiqləndi", time: "dünən" },
+          ],
+          activityData: [
+            { id: "a1", action: "İstifadəçi yaradıldı", actor: "Əhməd Məmmədov", target: "Leyla Əliyeva (Region 4 Admin)", time: "1 saat əvvəl" },
+            { id: "a2", action: "Kateqoriya yaradıldı", actor: "Cavid Hüseynov", target: "İnfrastruktur məlumatları", time: "3 saat əvvəl" },
+            { id: "a3", action: "Məlumatlar təsdiqləndi", actor: "Samirə Qasımova", target: "Bakı şəhəri, 28 məktəb", time: "4 saat əvvəl" },
+            { id: "a4", action: "Hesabat yaradıldı", actor: "Orxan Nəsibov", target: "Bölgə üzrə şagird sayı hesabatı", time: "dünən" },
+          ]
+        };
       case 'regionadmin':
-        return <RegionAdminDashboard data={mockData.regionadmin} />;
+        // For Region Admin, include category completion and sector data
+        return {
+          sectors: 12,
+          schools: 167,
+          users: 185,
+          completionRate: 72,
+          pendingApprovals: 18,
+          pendingSchools: 28,
+          approvedSchools: 124,
+          rejectedSchools: 8,
+          notifications: [
+            { id: "n1", type: "info", title: "Yeni məlumatlar", message: "15 məktəb üçün yeni məlumatlar daxil edilib", time: "3 saat əvvəl" },
+            { id: "n2", type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "8 məktəb üçün məlumatlar təsdiqlənməlidir", time: "5 saat əvvəl" },
+            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "12 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
+          ],
+          // Category completion data
+          categories: [
+            { name: "Tədris məlumatları", completionRate: 82, color: "bg-blue-500" },
+            { name: "Müəllim məlumatları", completionRate: 67, color: "bg-green-500" },
+            { name: "İnfrastruktur məlumatları", completionRate: 45, color: "bg-amber-500" },
+            { name: "Maliyyə məlumatları", completionRate: 34, color: "bg-purple-500" },
+          ],
+          // Sector completion data
+          sectorCompletions: [
+            { name: "Sektor 1", completionRate: 92 },
+            { name: "Sektor 2", completionRate: 78 },
+            { name: "Sektor 3", completionRate: 63 },
+            { name: "Sektor 4", completionRate: 45 },
+            { name: "Sektor 5", completionRate: 29 },
+          ],
+          activityData: [
+            { id: "a1", action: "İstifadəçi yaradıldı", actor: "Siz", target: "Ramin Rəsulov (Sektor 3 Admin)", time: "2 saat əvvəl" },
+            { id: "a2", action: "Məlumatlar təsdiqləndi", actor: "Siz", target: "Sektor 2, 8 məktəb", time: "5 saat əvvəl" },
+            { id: "a3", action: "Hesabat yaradıldı", actor: "Siz", target: "Region üzrə şagird sayı hesabatı", time: "dünən" },
+          ]
+        };
       case 'sectoradmin':
-        return <SectorAdminDashboard data={mockData.sectoradmin} />;
+        return {
+          schools: 34,
+          completionRate: 68,
+          pendingApprovals: 12,
+          pendingSchools: 15,
+          approvedSchools: 16,
+          rejectedSchools: 3,
+          notifications: [
+            { id: "n1", type: "info", title: "Yeni məlumatlar", message: "5 məktəb üçün yeni məlumatlar daxil edilib", time: "1 saat əvvəl" },
+            { id: "n2", type: "warning", title: "Təsdiq gözləyən məlumatlar", message: "12 məktəb üçün məlumatlar təsdiqlənməlidir", time: "3 saat əvvəl" },
+            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "4 məktəb üçün məlumatlar təsdiqləndi", time: "dünən" },
+          ],
+          activityData: [
+            { id: "a1", action: "Məlumatlar təsdiqləndi", actor: "Siz", target: "28 nömrəli məktəb", time: "2 saat əvvəl" },
+            { id: "a2", action: "Məlumatlar rədd edildi", actor: "Siz", target: "45 nömrəli məktəb", time: "4 saat əvvəl" },
+            { id: "a3", action: "Bildiriş göndərildi", actor: "Siz", target: "Bütün məktəblərə", time: "dünən" },
+          ]
+        };
       case 'schooladmin':
-        return <SchoolAdminDashboard data={mockData.schooladmin} />;
+        return {
+          categories: 5,
+          totalForms: 14,
+          completedForms: 8,
+          pendingForms: 4,
+          rejectedForms: 2,
+          completionRate: 57,
+          dueDates: [
+            { category: "Tədris məlumatları", date: "2023-10-15" },
+            { category: "Müəllim məlumatları", date: "2023-10-20" },
+            { category: "İnfrastruktur məlumatları", date: "2023-11-10" },
+          ],
+          notifications: [
+            { id: "n1", type: "warning", title: "Son tarix yaxınlaşır", message: "Tədris məlumatları üçün son tarix yaxınlaşır", time: "2 saat əvvəl" },
+            { id: "n2", type: "error", title: "Məlumatlar rədd edildi", message: "Müəllim məlumatları düzəlişlər tələb edir", time: "dünən" },
+            { id: "n3", type: "success", title: "Məlumatlar təsdiqləndi", message: "İnfrastruktur məlumatları təsdiqləndi", time: "2 gün əvvəl" },
+          ],
+          activityData: [
+            { id: "a1", action: "Məlumatlar daxil edildi", actor: "Siz", target: "Tədris məlumatları", time: "1 saat əvvəl" },
+            { id: "a2", action: "Məlumatlar yeniləndi", actor: "Siz", target: "Müəllim məlumatları", time: "3 saat əvvəl" },
+            { id: "a3", action: "Excel yükləndi", actor: "Siz", target: "İnfrastruktur məlumatları", time: "dünən" },
+          ]
+        };
+      default:
+        return {};
+    }
+  };
+  
+  const dashboardData = getMockDashboardData();
+  
+  // Render appropriate dashboard based on user role
+  const renderDashboard = () => {
+    switch (user?.role) {
+      case 'superadmin':
+        return <SuperAdminDashboard data={dashboardData} activeTab={tab} />;
+      case 'regionadmin':
+        return <RegionAdminDashboard data={dashboardData} />;
+      case 'sectoradmin':
+        return <SectorAdminDashboard data={dashboardData} />;
+      case 'schooladmin':
+        return <SchoolAdminDashboard data={dashboardData} />;
       default:
         return null;
     }
   };
-  
+
   return (
     <SidebarLayout>
-      <div className="space-y-8 container mx-auto px-4 py-4">
+      <div className="space-y-4">
         <DashboardHeader />
-        {renderDashboardContent()}
+        
+        {user?.role === 'superadmin' && (
+          <DashboardTabs activeTab={tab} setActiveTab={setTab} />
+        )}
+        
+        {renderDashboard()}
       </div>
     </SidebarLayout>
   );
