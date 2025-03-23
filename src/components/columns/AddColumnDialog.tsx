@@ -198,11 +198,16 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
     try {
       // Ensure all required fields from Column type are present and properly typed
       const columnData: Omit<Column, "id"> = {
-        name: values.name, // Ensure name is always provided and non-optional
+        name: values.name, 
         categoryId: values.categoryId,
         type: values.type,
         isRequired: values.isRequired,
-        validationRules: values.validationRules,
+        validationRules: values.validationRules ? {
+          ...values.validationRules,
+          // Convert Date objects to string for minDate and maxDate
+          minDate: values.validationRules.minDate,
+          maxDate: values.validationRules.maxDate
+        } : undefined,
         defaultValue: values.defaultValue || undefined,
         placeholder: values.placeholder || undefined,
         helpText: values.helpText || undefined,

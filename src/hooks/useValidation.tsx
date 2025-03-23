@@ -74,7 +74,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                   });
                   
                   if (valueObj) {
-                    valueObj.errorMessage = t('minValue', { min: column.validationRules.minValue });
+                    valueObj.errorMessage = t('minValue');
                   }
                 }
                 
@@ -86,7 +86,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                   });
                   
                   if (valueObj) {
-                    valueObj.errorMessage = t('maxValue', { max: column.validationRules.maxValue });
+                    valueObj.errorMessage = t('maxValue');
                   }
                 }
                 
@@ -122,7 +122,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 });
                 
                 if (valueObj) {
-                  valueObj.errorMessage = t('minLength', { min: column.validationRules.minLength });
+                  valueObj.errorMessage = t('minLength');
                 }
               }
               
@@ -135,7 +135,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 });
                 
                 if (valueObj) {
-                  valueObj.errorMessage = t('maxLength', { max: column.validationRules.maxLength });
+                  valueObj.errorMessage = t('maxLength');
                 }
               }
               
@@ -180,7 +180,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                     });
                     
                     if (valueObj) {
-                      valueObj.errorMessage = t('minDate', { date: minDate.toLocaleDateString() });
+                      valueObj.errorMessage = t('minDate');
                     }
                   }
                 }
@@ -197,7 +197,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                     });
                     
                     if (valueObj) {
-                      valueObj.errorMessage = t('maxDate', { date: maxDate.toLocaleDateString() });
+                      valueObj.errorMessage = t('maxDate');
                     }
                   }
                 }

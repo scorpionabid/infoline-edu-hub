@@ -46,8 +46,8 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
     
     autoSaveTimerRef.current = window.setTimeout(() => {
       console.log('Auto-saving data...');
-      setAutoSaveState(prev => ({
-        ...prev, 
+      setAutoSaveState(prevState => ({
+        ...prevState, 
         inProgress: true,
         pendingChanges: true,
         saveMethod: 'auto'
@@ -79,9 +79,7 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
           consecutiveErrorsRef.current = 0;
           
           if (prevState.saveMethod === 'manual') {
-            toast.success(t('manualSaveSuccess'), {
-              description: t('changesSavedAt', { time: currentTime.toLocaleTimeString() })
-            });
+            toast.success(t('manualSaveSuccess'));
           } else {
             toast.success(t('autoSaveSuccess'));
           }
@@ -95,18 +93,12 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
             const timeSinceAttempt = Date.now() - saveAttemptTimestampRef.current;
             
             if (timeSinceAttempt < 500) {
-              toast.error(t('serverNotResponding'), {
-                description: t('tryAgainLater')
-              });
+              toast.error(t('serverNotResponding'));
             } else if (consecutiveErrorsRef.current >= 3) {
               setNetworkError(true);
-              toast.error(t('persistentSaveErrors'), {
-                description: t('checkNetworkConnection')
-              });
+              toast.error(t('persistentSaveErrors'));
             } else {
-              toast.error(t('autoSaveError'), {
-                description: t('autoSaveErrorRetry')
-              });
+              toast.error(t('autoSaveError'));
             }
             
             return {

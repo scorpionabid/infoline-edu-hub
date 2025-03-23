@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
-import { CategoryWithColumns } from '@/types/column';
-import { SchoolColumnData, CategoryColumn } from '@/types/report';
+import { CategoryWithColumns, Column } from '@/types/column';
+import { SchoolColumnData, ExportOptions } from '@/types/report';
 import { mockSchools } from '@/data/schoolsData';
 import { toast } from '@/components/ui/use-toast';
 
 // Mock data generator
 const generateMockSchoolColumnData = (
   categoryId: string, 
-  columns: CategoryColumn[]
+  columns: Column[]
 ): SchoolColumnData[] => {
   return mockSchools.map(school => {
     return {
@@ -241,7 +241,7 @@ const fetchCategoriesWithColumns = async (): Promise<CategoryWithColumns[]> => {
 // Mock data əldə etmə
 const fetchSchoolColumnData = async (
   categoryId: string,
-  columns: CategoryColumn[]
+  columns: Column[]
 ): Promise<SchoolColumnData[]> => {
   // Bu hissədə həqiqi API çağırışı olmalıdır
   return new Promise((resolve) => {

@@ -28,8 +28,8 @@ export type Column = {
     maxLength?: number;
     pattern?: string;
     patternError?: string;
-    minDate?: string | Date;
-    maxDate?: string | Date;
+    minDate?: string; // Tipi string kimi müəyyən edilir
+    maxDate?: string; // Tipi string kimi müəyyən edilir
     warningThreshold?: {
       min?: number;
       max?: number;
