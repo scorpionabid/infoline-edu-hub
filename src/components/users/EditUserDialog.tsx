@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { User, UserFormData } from '@/types/user';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, useRole } from '@/context/AuthContext';
+import { toast } from 'sonner';
 import UserForm from './UserForm';
 
 interface EditUserDialogProps {
@@ -24,6 +25,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [showPasswordReset, setShowPasswordReset] = React.useState(false);
+  const canResetPassword = useRole(['superadmin', 'regionadmin']) && 
+                           currentUser?.role !== user.role &&
+                           user.id !== currentUser?.id;
   
   // Convert User to UserFormData
   const initialFormData: UserFormData = {
@@ -61,9 +65,22 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         ...user,
         ...formData,
         updatedAt: new Date(),
+        // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
+        ...(showPasswordReset && { passwordResetDate: new Date() })
       };
       
       onSave(updatedUser);
+      
+      if (showPasswordReset) {
+        toast.success(t('passwordResetSuccess'), {
+          description: t('passwordResetRequired')
+        });
+      } else {
+        toast.success(t('userUpdated'), {
+          description: t('userUpdatedDesc')
+        });
+      }
+      
       setLoading(false);
       setShowPasswordReset(false);
       onOpenChange(false);
@@ -73,6 +90,10 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const togglePasswordReset = () => {
     setShowPasswordReset(!showPasswordReset);
     if (!showPasswordReset) {
+      // Parol sıfırlanma aktivləşdirildikdə, təsadüfi parol təyin etmək və ya boş saxlamaq
+      setFormData(prev => ({ ...prev, password: 'password123' }));
+    } else {
+      // Parol sıfırlanma deaktivləşdirildikdə, parolu təmizləmək
       setFormData(prev => ({ ...prev, password: '' }));
     }
   };
@@ -100,15 +121,17 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         />
         
         <DialogFooter>
-          <div className="mr-auto">
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={togglePasswordReset}
-            >
-              {showPasswordReset ? t('cancelPasswordReset') : t('resetPassword')}
-            </Button>
-          </div>
+          {canResetPassword && (
+            <div className="mr-auto">
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={togglePasswordReset}
+              >
+                {showPasswordReset ? t('cancelPasswordReset') : t('resetPassword')}
+              </Button>
+            </div>
+          )}
           
           <Button 
             variant="outline" 

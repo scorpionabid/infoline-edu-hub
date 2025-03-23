@@ -23,23 +23,23 @@ const SchoolHeader: React.FC<SchoolHeaderProps> = ({
     <div className="flex flex-col md:flex-row justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('schools')}</h1>
-        <p className="text-muted-foreground">Məktəbləri idarə et və izlə</p>
+        <p className="text-muted-foreground">{t('schoolsDescription')}</p>
       </div>
       
       <div className="flex flex-col sm:flex-row gap-2">
         {(userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin') && (
           <Button onClick={onAddClick} className="gap-1">
             <Plus className="h-4 w-4" />
-            Məktəb əlavə et
+            {t('addSchool')}
           </Button>
         )}
         <Button variant="outline" onClick={onExportClick} className="gap-1">
           <FileDown className="h-4 w-4" />
-          Excel Export
+          {t('exportToExcel')}
         </Button>
         <Button variant="outline" onClick={onImportClick} className="gap-1">
           <FileUp className="h-4 w-4" />
-          Excel Import
+          {t('importFromExcel')}
         </Button>
       </div>
     </div>

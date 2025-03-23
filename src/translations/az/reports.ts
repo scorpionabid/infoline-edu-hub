@@ -59,7 +59,27 @@ const reports = {
   fileDownloaded: "Fayl yükləndi",
   errorExporting: "İxrac xətası",
   noDataToExport: "İxrac etmək üçün məlumat yoxdur",
-  tryAgainLater: "Zəhmət olmasa bir az sonra yenidən cəhd edin"
+  tryAgainLater: "Zəhmət olmasa bir az sonra yenidən cəhd edin",
+  
+  // Əlavə tərcümələr
+  viewReport: "Hesabata bax",
+  generateNew: "Yeni hesabat yarat",
+  customizeReport: "Hesabatı fərdiləşdir",
+  saveReport: "Hesabatı yadda saxla",
+  savedReports: "Yadda saxlanılmış hesabatlar",
+  noReportsFound: "Hesabat tapılmadı",
+  noReportsFoundDesc: "Hal-hazırda heç bir hesabat yoxdur",
+  selectReportType: "Hesabat növünü seçin",
+  loadingReport: "Hesabat yüklənir...",
+  exportPDF: "PDF formatına ixrac et",
+  comparisonPeriod: "Müqayisə dövrü",
+  dateRange: "Tarix aralığı",
+  startDate: "Başlanğıc tarixi",
+  endDate: "Bitmə tarixi",
+  applyFilters: "Filtirləri tətbiq et",
+  resetFilters: "Filtirləri sıfırla",
+  saveAsTemplate: "Şablon kimi yadda saxla",
+  systemActivity: "Sistem aktivliyi"
 };
 
 export default reports;
