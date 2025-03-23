@@ -11,10 +11,13 @@ import {
   Clock,
   ChevronRight, 
   ChevronLeft,
-  AlertTriangle 
+  AlertTriangle,
+  FilePlus,
+  FileCheck
 } from 'lucide-react';
-import { format, isAfter } from 'date-fns';
+import { format, isAfter, differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CategoryTabsProps {
   categories: CategoryWithColumns[];
@@ -29,6 +32,8 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   entries,
   onCategoryChange
 }) => {
+  const { t } = useLanguage();
+  
   // Tablar üçün genişlik hesablayırıq
   const tabWidth = Math.min(100, Math.floor(100 / Math.min(5, categories.length)));
   
@@ -98,7 +103,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
     const deadlineDate = new Date(category.deadline);
     const now = getCurrentDate();
     const isOverdue = isAfter(now, deadlineDate);
-    const daysLeft = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysLeft = differenceInDays(deadlineDate, now);
     
     return (
       <Badge 
@@ -113,20 +118,63 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
         )}
       >
         {isOverdue 
-          ? 'Gecikmiş' 
+          ? t('overdue') 
           : daysLeft === 0 
-            ? 'Bugün' 
+            ? t('today') 
             : daysLeft === 1 
-              ? 'Sabah' 
-              : `${daysLeft} gün qalıb`}
+              ? t('tomorrow') 
+              : `${daysLeft} ${t('daysLeft')}`}
       </Badge>
     );
+  };
+
+  const getStatusBadge = (categoryId: string) => {
+    const entry = entries.find(e => e.categoryId === categoryId);
+    if (!entry) return null;
+    
+    if (entry.isSubmitted && entry.approvalStatus === 'approved') {
+      return (
+        <Badge 
+          variant="outline" 
+          className="ml-2 text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        >
+          <FileCheck className="h-3 w-3 mr-1" />
+          {t('approved')}
+        </Badge>
+      );
+    }
+    
+    if (entry.isSubmitted && entry.approvalStatus === 'rejected') {
+      return (
+        <Badge 
+          variant="outline" 
+          className="ml-2 text-xs bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+        >
+          <AlertCircle className="h-3 w-3 mr-1" />
+          {t('rejected')}
+        </Badge>
+      );
+    }
+    
+    if (entry.isSubmitted) {
+      return (
+        <Badge 
+          variant="outline" 
+          className="ml-2 text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+        >
+          <FilePlus className="h-3 w-3 mr-1" />
+          {t('submitted')}
+        </Badge>
+      );
+    }
+    
+    return null;
   };
 
   return (
     <div className="space-y-4 mb-8">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Kateqoriyalar</h3>
+        <h3 className="text-sm font-medium">{t('categories')}</h3>
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
@@ -198,7 +246,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     </span>
                     {category.deadline && isAfter(getCurrentDate(), new Date(category.deadline)) && (
                       <Badge variant="outline" className="ml-1 bg-red-50 text-red-600 border-red-200 text-[10px] px-1 py-0">
-                        Gecikmiş
+                        {t('overdue')}
                       </Badge>
                     )}
                     {getStatusIcon(category.id)}
@@ -206,6 +254,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                   <div className="flex flex-wrap gap-1 mt-1 w-full">
                     {getCompletionBadge(category.id)}
                     {getDeadlineBadge(category)}
+                    {getStatusBadge(category.id)}
                   </div>
                   
                   {/* Hover-da göstəriləcək qısa təsvir tooltip */}

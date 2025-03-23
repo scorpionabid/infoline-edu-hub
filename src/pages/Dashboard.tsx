@@ -81,16 +81,18 @@ const mockData = {
   },
   schooladmin: {
     forms: {
-      pending: 3,
+      pending: 5,
       approved: 12,
-      rejected: 1,
-      dueSoon: 2,
-      overdue: 0,
+      rejected: 2,
+      dueSoon: 4,
+      overdue: 1,
     },
-    completionRate: 85,
+    completionRate: 78,
     notifications: [
-      { id: 1, type: 'formRejected', title: 'Form Rədd Edildi', message: 'İnfrastruktur formu düzəlişlər tələb edir', time: '45 dəq əvvəl' },
-      { id: 2, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Şagird davamiyyət məlumatları 2 gün ərzində təqdim edilməlidir', time: '4 saat əvvəl' },
+      { id: 1, type: 'newCategory', title: 'Yeni Kateqoriya', message: 'Şagird nailiyyətləri kateqoriyası əlavə edilib', time: '15 dəq əvvəl' },
+      { id: 2, type: 'dueDateReminder', title: 'Son Tarix Xatırlatması', message: 'Müəllim ixtisasartırma məlumatları 2 gün ərzində doldurulmalıdır', time: '1 saat əvvəl' },
+      { id: 3, type: 'formRejected', title: 'Form Rədd Edildi', message: 'Maddi-texniki baza formu düzəliş tələb edir', time: '3 saat əvvəl' },
+      { id: 4, type: 'formApproved', title: 'Form Təsdiqləndi', message: 'Şagird kontingenti məlumatları təsdiqləndi', time: '1 gün əvvəl' }
     ]
   }
 };
