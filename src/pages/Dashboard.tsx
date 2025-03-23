@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -183,12 +182,43 @@ const Dashboard: React.FC = () => {
           ]
         };
       case 'schooladmin':
+        // mockCategories üzərindən kateqoriya məlumatlarını əldə edirik
+        const categoryCount = mockCategories.length;
+        const totalFormsCount = mockCategories.reduce((total, cat) => total + cat.columns.length, 0);
+        
+        // Təsdiqlənmiş, gözləmədə və rədd edilmiş formların sayını hesablayırıq
+        const completedFormsCount = Math.floor(totalFormsCount * 0.45); // 45% tamamlanmış
+        const pendingFormsCount = Math.floor(totalFormsCount * 0.35);  // 35% gözləmədə
+        const rejectedFormsCount = Math.floor(totalFormsCount * 0.20); // 20% rədd edilmiş
+        
+        // Son tarixlər üçün kateqoriya məlumatlarından istifadə edirik
+        const dueDates = mockCategories
+          .filter(cat => cat.deadline)
+          .map(cat => ({
+            category: cat.name,
+            date: cat.deadline || new Date().toISOString()
+          }));
+        
+        // Son formalar üçün MockCategories-dəki mövcud kateqoriyalardan və onların sütunlarından istifadə edirik
+        const recentForms = mockCategories.flatMap(category => 
+          category.columns.slice(0, 2).map((column, idx) => ({
+            id: `${category.id}-${column.id}`,
+            title: column.name,
+            category: category.name,
+            status: idx % 4 === 0 ? "pending" : 
+                   idx % 4 === 1 ? "approved" : 
+                   idx % 4 === 2 ? "rejected" : "draft",
+            completionPercentage: idx % 4 === 1 ? 100 : Math.floor(Math.random() * 80) + 20,
+            deadline: category.deadline
+          }))
+        ).slice(0, 8);
+        
         return {
           completionRate: 57,
           forms: {
-            pending: 4,
-            approved: 8,
-            rejected: 2,
+            pending: pendingFormsCount,
+            approved: completedFormsCount,
+            rejected: rejectedFormsCount,
             dueSoon: 3,
             overdue: 1
           },
@@ -197,83 +227,13 @@ const Dashboard: React.FC = () => {
             { id: 2, type: "error", title: "Məlumatlar rədd edildi", message: "Müəllim məlumatları düzəlişlər tələb edir", time: "dünən" },
             { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "İnfrastruktur məlumatları təsdiqləndi", time: "2 gün əvvəl" },
           ],
-          categories: 5,
-          totalForms: 18, 
-          completedForms: 8,
-          pendingForms: 4,
-          rejectedForms: 2,
-          dueDates: [
-            { category: "Tədris məlumatları", date: "2023-10-15" },
-            { category: "Müəllim məlumatları", date: "2023-10-20" },
-            { category: "İnfrastruktur məlumatları", date: "2023-11-10" },
-          ],
-          // Məktəb admini üçün form məlumatları
-          recentForms: [
-            { 
-              id: "form1", 
-              title: "Tədris planı", 
-              category: "Tədris məlumatları", 
-              status: "pending", 
-              completionPercentage: 85, 
-              deadline: "2023-10-20" 
-            },
-            { 
-              id: "form2", 
-              title: "Müəllim ştatları", 
-              category: "Müəllim məlumatları", 
-              status: "approved", 
-              completionPercentage: 100, 
-              deadline: "2023-10-15" 
-            },
-            { 
-              id: "form3", 
-              title: "Şagird nailiyyətləri", 
-              category: "Tədris məlumatları", 
-              status: "rejected", 
-              completionPercentage: 60, 
-              deadline: "2023-10-25" 
-            },
-            { 
-              id: "form4", 
-              title: "Texniki baza", 
-              category: "İnfrastruktur məlumatları", 
-              status: "approved", 
-              completionPercentage: 100, 
-              deadline: "2023-11-05" 
-            },
-            { 
-              id: "form5", 
-              title: "Təhsil keyfiyyəti", 
-              category: "Tədris məlumatları", 
-              status: "draft", 
-              completionPercentage: 40, 
-              deadline: "2023-10-30" 
-            },
-            { 
-              id: "form6", 
-              title: "Maliyyə hesabatı", 
-              category: "Maliyyə məlumatları", 
-              status: "pending", 
-              completionPercentage: 75, 
-              deadline: "2023-11-15" 
-            },
-            { 
-              id: "form7", 
-              title: "Sinif otaqları", 
-              category: "İnfrastruktur məlumatları", 
-              status: "overdue", 
-              completionPercentage: 30, 
-              deadline: "2023-10-10" 
-            },
-            { 
-              id: "form8", 
-              title: "İnkişaf planı", 
-              category: "İdarəetmə", 
-              status: "due", 
-              completionPercentage: 100, 
-              deadline: "2023-10-05" 
-            }
-          ]
+          categories: categoryCount,
+          totalForms: totalFormsCount, 
+          completedForms: completedFormsCount,
+          pendingForms: pendingFormsCount,
+          rejectedForms: rejectedFormsCount,
+          dueDates: dueDates,
+          recentForms: recentForms
         };
       default:
         return {};

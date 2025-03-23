@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
@@ -12,62 +13,6 @@ import { Form } from '@/types/form';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-
-// Mocklar üçün dataları təkmilləşdirək
-const recentForms: Form[] = [
-  { 
-    id: 'form1', 
-    title: 'Şagird kontingenti', 
-    category: 'Əsas məlumatlar', 
-    status: 'pending', 
-    completionPercentage: 80, 
-    deadline: '2023-06-20' 
-  },
-  { 
-    id: 'form2', 
-    title: 'Müəllim kadrları', 
-    category: 'Əsas məlumatlar', 
-    status: 'approved', 
-    completionPercentage: 100, 
-    deadline: '2023-06-15' 
-  },
-  { 
-    id: 'form3', 
-    title: 'Maddi-texniki baza', 
-    category: 'İnfrastruktur', 
-    status: 'rejected', 
-    completionPercentage: 75, 
-    deadline: '2023-06-18' 
-  },
-  { 
-    id: 'form4', 
-    title: 'Təlim nəticələri', 
-    category: 'Akademik göstəricilər', 
-    status: 'draft', 
-    completionPercentage: 0, 
-    deadline: '2023-06-25' 
-  }
-];
-
-// Yaxınlaşan son tarixləri əlavə edək
-const upcomingDeadlines = [
-  {
-    id: 'dl1',
-    title: 'Şagird kontingenti',
-    category: 'Əsas məlumatlar',
-    deadline: '2023-06-20',
-    daysLeft: 3,
-    status: 'inProgress' as const
-  },
-  {
-    id: 'dl2',
-    title: 'Təlim nəticələri',
-    category: 'Akademik göstəricilər',
-    deadline: '2023-06-25',
-    daysLeft: 8,
-    status: 'notStarted' as const
-  }
-];
 
 interface SchoolAdminDashboardProps {
   data: {
@@ -88,6 +33,14 @@ interface SchoolAdminDashboardProps {
     dueDates?: Array<{
       category: string;
       date: string;
+    }>;
+    recentForms?: Array<{
+      id: string;
+      title: string;
+      category: string;
+      status: "pending" | "approved" | "rejected" | "draft" | "overdue" | "due";
+      completionPercentage: number;
+      deadline?: string;
     }>;
   };
   navigateToDataEntry?: () => void;
@@ -139,6 +92,21 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       }
     }
   };
+
+  // İndi mockCategories-dən gələn dataları istifadə edirik
+  const recentForms = data.recentForms || [];
+  
+  // Son tarixlərə görə listi hazırlayırıq
+  const upcomingDeadlines = data.dueDates 
+    ? data.dueDates.map((item, index) => ({
+        id: `dl${index + 1}`,
+        title: item.category,
+        category: item.category,
+        deadline: item.date,
+        daysLeft: Math.floor((new Date(item.date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)),
+        status: index % 2 === 0 ? 'inProgress' as const : 'notStarted' as const
+      })).filter(item => item.daysLeft > 0).sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 3)
+    : [];
   
   return (
     <div className="space-y-6">
@@ -196,12 +164,16 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                     form.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
                     form.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
                     form.status === 'pending' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                    form.status === 'overdue' ? 'bg-red-100 text-red-800 border-red-200' :
+                    form.status === 'due' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                     'bg-gray-100 text-gray-800 border-gray-200'
                   }`}
                 >
                   {form.status === 'approved' ? t('approved') :
                    form.status === 'rejected' ? t('rejected') :
-                   form.status === 'pending' ? t('pending') : t('draft')}
+                   form.status === 'pending' ? t('pending') :
+                   form.status === 'overdue' ? t('overdue') :
+                   form.status === 'due' ? t('due') : t('draft')}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{form.category}</p>

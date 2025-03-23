@@ -42,4 +42,3 @@ const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved = false }) => 
 };
 
 export default ApprovalAlert;
-

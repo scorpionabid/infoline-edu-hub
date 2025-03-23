@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -21,7 +20,7 @@ import { cn } from '@/lib/utils';
 import ApprovalAlert from './components/ApprovalAlert';
 import RejectionAlert from './components/RejectionAlert';
 import { Category } from '@/types/category'; // Kateqoriya tipini düzgün yerdən idxal edirik
-import { Column } from '@/types/column'; // Sütun tipini düzgün yerdən idxal edirik
+import { Column } from '@/types/column'; // Sütun tipini düzgün yerdən idxal edirik';
 
 interface DataEntryFormProps {
   selectedCategory?: string | null;
@@ -51,7 +50,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   
-  // İlkin seçilmiş kateqoriyanı təyin edirik
   useEffect(() => {
     if (selectedCategory && categories.length > 0) {
       setActiveTab(selectedCategory);
@@ -60,19 +58,16 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
   }, [selectedCategory, categories, activeTab]);
   
-  // Kateqoriya dəyişdikdə callback funksiyasını çağırırıq
   useEffect(() => {
     if (onCategoryChange && activeTab) {
       onCategoryChange(activeTab);
     }
   }, [activeTab, onCategoryChange]);
   
-  // Aktiv kateqoriyaya aid sütunları tapırıq
   const getColumnsForCategory = (categoryId: string): Column[] => {
     return columns.filter(column => column.categoryId === categoryId);
   };
   
-  // Kateqoriya başlığına klikləndikdə
   const handleCategoryClick = (categoryId: string) => {
     if (expandedCategory === categoryId) {
       setExpandedCategory(null);
@@ -81,22 +76,28 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
   };
   
-  // Sütun seçildikdə
   const handleColumnClick = (columnId: string) => {
     setSelectedColumnId(columnId);
   };
   
-  // Form sahəsi dəyəri dəyişdikdə
   const handleFieldChange = (value: any) => {
     console.log('Field value changed:', value);
     if (onDataChanged) onDataChanged();
   };
   
-  // Minimal görünüş - bütün kateqoriyalar görünür, kateqoriya seçildikdə sütunlar sətir formasında göstərilir
+  const isCategoryApproved = (categoryId: string): boolean => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.status === 'approved';
+  };
+
+  const isCategoryRejected = (categoryId: string): boolean => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.status === 'rejected';
+  };
+  
   if (!selectedCategory && categories.length > 0) {
     return (
       <div className="space-y-4">
-        {/* Kateqoriyalar siyahısı */}
         {categories.map(category => (
           <Card key={category.id} className="overflow-hidden">
             <div 
@@ -113,7 +114,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               {expandedCategory === category.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
             </div>
             
-            {/* Sütunlar siyahısı - kateqoriya seçildikdə göstərilir */}
             {expandedCategory === category.id && (
               <CardContent className="pt-4">
                 <div className="flex flex-wrap gap-2">
@@ -134,7 +134,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   ))}
                 </div>
                 
-                {/* Seçilmiş sütun üçün form sahəsi */}
                 {selectedColumnId && (
                   <div className="mt-4 border p-4 rounded-md">
                     {columns.find(c => c.id === selectedColumnId)?.name && (
@@ -178,7 +177,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               {categories.map((category) => (
                 <TabsTrigger key={category.id} value={category.id} className="relative">
                   {category.name}
-                  {/* Status badge - optional */}
                   {category.status === 'pending' && (
                     <Badge variant="secondary" className="absolute top-1 right-1">
                       <Clock className="h-3 w-3 mr-1" />
@@ -241,7 +239,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         )}
       </CardContent>
       <CardFooter className="justify-between">
-        <ApprovalAlert />
+        <ApprovalAlert isApproved={activeTab ? isCategoryApproved(activeTab) : false} />
         <RejectionAlert errorMessage="" />
         <Button type="submit">{t('submitForm')}</Button>
       </CardFooter>
