@@ -28,7 +28,6 @@ interface UserFormProps {
   isEdit?: boolean;
   passwordRequired?: boolean;
   entityType?: 'region' | 'sector' | 'school';
-  showPasswordReset?: boolean;
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -39,7 +38,6 @@ const UserForm: React.FC<UserFormProps> = ({
   isEdit = false,
   passwordRequired = false,
   entityType,
-  showPasswordReset = false,
 }) => {
   const { t } = useLanguage();
   const isSuperAdmin = useRole('superadmin');
@@ -48,7 +46,7 @@ const UserForm: React.FC<UserFormProps> = ({
   const { form, handleFieldChange } = useUserForm({
     initialData: data,
     onFormChange: onChange,
-    passwordRequired: passwordRequired || showPasswordReset
+    passwordRequired
   });
   
   // Determine available roles based on current user role
@@ -122,7 +120,6 @@ const UserForm: React.FC<UserFormProps> = ({
                     isEdit={isEdit}
                     passwordRequired={passwordRequired}
                     hideRoleSelector={!!entityType}
-                    showPasswordReset={showPasswordReset}
                   />
                 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -180,7 +177,6 @@ const UserForm: React.FC<UserFormProps> = ({
               availableRoles={availableRoles}
               isEdit={isEdit}
               passwordRequired={passwordRequired}
-              showPasswordReset={showPasswordReset}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

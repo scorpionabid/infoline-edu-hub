@@ -63,11 +63,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         updatedAt: new Date(),
       };
       
-      // If password was reset, update the passwordResetDate
-      if (showPasswordReset && formData.password) {
-        updatedUser.passwordResetDate = new Date();
-      }
-      
       onSave(updatedUser);
       setLoading(false);
       setShowPasswordReset(false);
@@ -80,27 +75,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     if (!showPasswordReset) {
       setFormData(prev => ({ ...prev, password: '' }));
     }
-  };
-  
-  // Check if current user can reset this user's password
-  const canResetPassword = () => {
-    if (!currentUser || !user) return false;
-    
-    // Super admin can reset anyone's password
-    if (currentUser.role === 'superadmin') return true;
-    
-    // Region admin can reset sector and school admins' passwords
-    if (currentUser.role === 'regionadmin' && 
-       (user.role === 'sectoradmin' || user.role === 'schooladmin')) {
-      return true;
-    }
-    
-    // Sector admin can reset school admins' passwords
-    if (currentUser.role === 'sectoradmin' && user.role === 'schooladmin') {
-      return true;
-    }
-    
-    return false;
   };
   
   return (
@@ -122,21 +96,18 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           currentUserRole={currentUser?.role}
           currentUserRegionId={currentUser?.regionId}
           isEdit={true}
-          passwordRequired={false}
-          showPasswordReset={showPasswordReset}
+          passwordRequired={showPasswordReset}
         />
         
         <DialogFooter>
           <div className="mr-auto">
-            {canResetPassword() && (
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={togglePasswordReset}
-              >
-                {showPasswordReset ? t('cancelPasswordReset') : t('resetPassword')}
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={togglePasswordReset}
+            >
+              {showPasswordReset ? t('cancelPasswordReset') : t('resetPassword')}
+            </Button>
           </div>
           
           <Button 
