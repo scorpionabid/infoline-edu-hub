@@ -173,13 +173,17 @@ export const useForm = (categories: CategoryWithColumns[]) => {
       
       // API çağırışı simulyasiyası
       setTimeout(() => {
-        const updatedFormData = {
+        // Burada tipləri dəqiq təyin edirik - bu xətanın həlli budur
+        const updatedStatus: 'draft' | 'submitted' | 'approved' | 'rejected' = 'submitted';
+        const updatedApprovalStatus: 'pending' | 'approved' | 'rejected' = 'pending';
+        
+        const updatedFormData: DataEntryForm = {
           ...formData,
-          status: 'submitted',
+          status: updatedStatus,
           entries: formData.entries.map(entry => ({
             ...entry,
             isSubmitted: true,
-            approvalStatus: 'pending'
+            approvalStatus: updatedApprovalStatus
           }))
         };
         
