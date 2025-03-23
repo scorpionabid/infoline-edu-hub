@@ -68,7 +68,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
   });
   
   // Handle category status toggle
-  const handleStatusToggle = async (categoryId: string, currentStatus: 'active' | 'inactive') => {
+  const handleStatusToggle = async (categoryId: string, currentStatus: string) => {
+    // Əgər status aktiv və ya qeyri-aktiv deyilsə, əməliyyatı dayandırırıq
+    if (currentStatus !== 'active' && currentStatus !== 'inactive') {
+      toast.error(t('cannotToggleSpecialStatus'));
+      return;
+    }
+    
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     
     // Call onUpdateStatus if provided, otherwise use the demo toast
@@ -174,13 +180,30 @@ const CategoryList: React.FC<CategoryListProps> = ({
                 <TableCell>{category.description}</TableCell>
                 <TableCell>{getAssignmentBadge(category.assignment)}</TableCell>
                 <TableCell>
-                  <Switch
-                    checked={category.status === 'active'}
-                    onCheckedChange={() => handleStatusToggle(
-                      category.id, 
-                      category.status
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={category.status === 'active'}
+                      onCheckedChange={() => handleStatusToggle(
+                        category.id, 
+                        category.status
+                      )}
+                      disabled={category.status !== 'active' && category.status !== 'inactive'}
+                    />
+                    {category.status !== 'active' && category.status !== 'inactive' && (
+                      <Badge 
+                        variant={
+                          category.status === 'approved' ? 'default' :
+                          category.status === 'pending' ? 'secondary' :
+                          category.status === 'rejected' ? 'destructive' :
+                          category.status === 'dueSoon' ? 'outline' :
+                          category.status === 'overdue' ? 'destructive' :
+                          'default'
+                        }
+                      >
+                        {t(category.status)}
+                      </Badge>
                     )}
-                  />
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -248,3 +271,4 @@ const CategoryList: React.FC<CategoryListProps> = ({
 };
 
 export default CategoryList;
+

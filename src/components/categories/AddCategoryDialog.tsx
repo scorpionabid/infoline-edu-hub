@@ -59,7 +59,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       .number()
       .min(1, t("priorityMinValue"))
       .max(100, t("priorityMaxValue")),
-    status: z.enum(["active", "inactive"]),
+    status: z.enum(["active", "inactive"]), // Burada form üçün yalnız aktiv və qeyri-aktiv seçimlərini saxlıyırıq
   });
 
   // Initialize form
@@ -69,7 +69,9 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       name: editCategory?.name || "",
       assignment: editCategory?.assignment || "all",
       priority: editCategory?.priority || 1,
-      status: editCategory?.status || "active",
+      status: (editCategory?.status === "active" || editCategory?.status === "inactive") 
+        ? editCategory.status 
+        : "active", // Əgər status aktiv və ya qeyri-aktiv deyilsə, default aktiv edirik
     },
   });
 
@@ -80,7 +82,9 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
         name: editCategory?.name || "",
         assignment: editCategory?.assignment || "all",
         priority: editCategory?.priority || 1,
-        status: editCategory?.status || "active",
+        status: (editCategory?.status === "active" || editCategory?.status === "inactive") 
+          ? editCategory.status 
+          : "active",
       });
     }
   }, [isOpen, editCategory, form]);
@@ -93,7 +97,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
         name: values.name,
         assignment: values.assignment,
         priority: values.priority,
-        status: values.status,
+        status: values.status, // Burada values.status-un tipi "active" | "inactive" olacaq
         createdAt: editCategory?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -244,3 +248,4 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
 };
 
 export default AddCategoryDialog;
+

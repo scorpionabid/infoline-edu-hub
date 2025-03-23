@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useLanguageSafe } from '@/context/LanguageContext';
 
 interface ApprovalAlertProps {
-  isApproved: boolean;
+  isApproved?: boolean;
 }
 
 const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -24,7 +25,7 @@ const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved }) => {
+const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved = false }) => {
   const { t } = useLanguageSafe();
   
   if (!isApproved) return null;
@@ -41,3 +42,4 @@ const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved }) => {
 };
 
 export default ApprovalAlert;
+
