@@ -9,12 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Eye, EyeOff, Lock, Save } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Save, Loader2 } from 'lucide-react';
 
 // Şifrə dəyişdirmə forması üçün schema
 const passwordFormSchema = z.object({
   currentPassword: z.string().min(1, 'required'),
-  newPassword: z.string().min(6, 'passwordTooShort'),
+  newPassword: z.string().min(6, 'passwordTooShort')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'passwordRequirementsNotMet'),
   confirmPassword: z.string().min(1, 'required'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'passwordMismatch',
@@ -41,24 +42,34 @@ const PasswordChangeForm: React.FC = () => {
   });
   
   // Şifrə dəyişdirmə funksiyası
-  const handlePasswordChange = (data: PasswordFormData) => {
-    setIsSubmitting(true);
-    
-    // Simulyasiya et - real tətbiqdə burada API olacaq
-    setTimeout(() => {
-      setIsSubmitting(false);
+  const handlePasswordChange = async (data: PasswordFormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      // Burada API çağırışı ediləcək
+      // Simulyasiya et - real tətbiqdə burada API olacaq
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       toast.success(t('passwordChanged'), {
         description: t('passwordChangedDesc')
       });
+      
       passwordForm.reset();
-    }, 1500);
+    } catch (error) {
+      toast.error(t('passwordChangeFailed'), {
+        description: t('passwordChangeFailedDesc')
+      });
+      console.error('Şifrə dəyişdirilmə xətası:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Lock className="h-5 w-5" />
+          <KeyRound className="h-5 w-5" />
           {t('changePassword')}
         </CardTitle>
         <CardDescription>
@@ -79,6 +90,7 @@ const PasswordChangeForm: React.FC = () => {
                       <Input 
                         type={showCurrentPassword ? "text" : "password"}
                         placeholder="••••••••"
+                        disabled={isSubmitting}
                         {...field}
                       />
                     </FormControl>
@@ -88,12 +100,16 @@ const PasswordChangeForm: React.FC = () => {
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      disabled={isSubmitting}
                     >
                       {showCurrentPassword ? (
                         <EyeOff className="h-4 w-4 text-muted-foreground" />
                       ) : (
                         <Eye className="h-4 w-4 text-muted-foreground" />
                       )}
+                      <span className="sr-only">
+                        {showCurrentPassword ? t('hidePassword') : t('showPassword')}
+                      </span>
                     </Button>
                   </div>
                   <FormMessage />
@@ -112,6 +128,7 @@ const PasswordChangeForm: React.FC = () => {
                       <Input 
                         type={showNewPassword ? "text" : "password"}
                         placeholder="••••••••"
+                        disabled={isSubmitting}
                         {...field}
                       />
                     </FormControl>
@@ -121,12 +138,16 @@ const PasswordChangeForm: React.FC = () => {
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2"
                       onClick={() => setShowNewPassword(!showNewPassword)}
+                      disabled={isSubmitting}
                     >
                       {showNewPassword ? (
                         <EyeOff className="h-4 w-4 text-muted-foreground" />
                       ) : (
                         <Eye className="h-4 w-4 text-muted-foreground" />
                       )}
+                      <span className="sr-only">
+                        {showNewPassword ? t('hidePassword') : t('showPassword')}
+                      </span>
                     </Button>
                   </div>
                   <FormDescription>
@@ -148,6 +169,7 @@ const PasswordChangeForm: React.FC = () => {
                       <Input 
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
+                        disabled={isSubmitting}
                         {...field}
                       />
                     </FormControl>
@@ -157,12 +179,16 @@ const PasswordChangeForm: React.FC = () => {
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      disabled={isSubmitting}
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-4 w-4 text-muted-foreground" />
                       ) : (
                         <Eye className="h-4 w-4 text-muted-foreground" />
                       )}
+                      <span className="sr-only">
+                        {showConfirmPassword ? t('hidePassword') : t('showPassword')}
+                      </span>
                     </Button>
                   </div>
                   <FormMessage />
@@ -175,8 +201,17 @@ const PasswordChangeForm: React.FC = () => {
               disabled={isSubmitting}
               className="w-full sm:w-auto flex items-center gap-2"
             >
-              <Save className="h-4 w-4" />
-              {isSubmitting ? t('updating') : t('updatePassword')}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('updating')}
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  {t('updatePassword')}
+                </>
+              )}
             </Button>
           </form>
         </Form>

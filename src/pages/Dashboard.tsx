@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
@@ -9,6 +9,9 @@ import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
 import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
 import { useAuth } from '@/context/AuthContext';
 import { Notification } from '@/components/dashboard/NotificationsCard';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Mock data
 import { mockSchools } from '@/data/schoolsData';
@@ -16,7 +19,27 @@ import { mockCategories } from '@/data/mockCategories';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<string>("overview");
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Səhifəni yükləmə simulyasiyası
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Data entry səhifəsinə keçid
+  const navigateToDataEntry = () => {
+    navigate('/data-entry');
+    toast.success(t('navigatingToDataEntry'), {
+      description: t('navigatingToDataEntryDesc')
+    });
+  };
   
   // Generate mock data based on user's role
   const getMockDashboardData = () => {
@@ -145,7 +168,7 @@ const Dashboard: React.FC = () => {
             { id: 3, type: "success", title: "Məlumatlar təsdiqləndi", message: "İnfrastruktur məlumatları təsdiqləndi", time: "2 gün əvvəl" },
           ],
           categories: 5,
-          totalForms: 14,
+          totalForms: 18, 
           completedForms: 8,
           pendingForms: 4,
           rejectedForms: 2,
@@ -154,6 +177,73 @@ const Dashboard: React.FC = () => {
             { category: "Müəllim məlumatları", date: "2023-10-20" },
             { category: "İnfrastruktur məlumatları", date: "2023-11-10" },
           ],
+          // Məktəb admini üçün form məlumatları
+          recentForms: [
+            { 
+              id: "form1", 
+              title: "Tədris planı", 
+              category: "Tədris məlumatları", 
+              status: "pending", 
+              completionPercentage: 85, 
+              deadline: "2023-10-20" 
+            },
+            { 
+              id: "form2", 
+              title: "Müəllim ştatları", 
+              category: "Müəllim məlumatları", 
+              status: "approved", 
+              completionPercentage: 100, 
+              deadline: "2023-10-15" 
+            },
+            { 
+              id: "form3", 
+              title: "Şagird nailiyyətləri", 
+              category: "Tədris məlumatları", 
+              status: "rejected", 
+              completionPercentage: 60, 
+              deadline: "2023-10-25" 
+            },
+            { 
+              id: "form4", 
+              title: "Texniki baza", 
+              category: "İnfrastruktur məlumatları", 
+              status: "approved", 
+              completionPercentage: 100, 
+              deadline: "2023-11-05" 
+            },
+            { 
+              id: "form5", 
+              title: "Təhsil keyfiyyəti", 
+              category: "Tədris məlumatları", 
+              status: "draft", 
+              completionPercentage: 40, 
+              deadline: "2023-10-30" 
+            },
+            { 
+              id: "form6", 
+              title: "Maliyyə hesabatı", 
+              category: "Maliyyə məlumatları", 
+              status: "pending", 
+              completionPercentage: 75, 
+              deadline: "2023-11-15" 
+            },
+            { 
+              id: "form7", 
+              title: "Sinif otaqları", 
+              category: "İnfrastruktur məlumatları", 
+              status: "overdue", 
+              completionPercentage: 30, 
+              deadline: "2023-10-10" 
+            },
+            { 
+              id: "form8", 
+              title: "İnkişaf planı", 
+              category: "İdarəetmə", 
+              status: "approved", 
+              completionPercentage: 100, 
+              deadline: "2023-10-05" 
+            }
+          ]
         };
       default:
         return {};
@@ -188,6 +278,14 @@ const Dashboard: React.FC = () => {
     { name: 'Maliyyə', completed: 59 },
     { name: 'Tədris planı', completed: 91 },
   ];
+  
+  // Form-a keçid funksiyası - Data entry səhifəsinə yönləndirir və form ID-sini ötürür
+  const handleFormClick = (formId: string) => {
+    navigate(`/data-entry?formId=${formId}`);
+    toast.info(t('openingForm'), {
+      description: `${t('formId')}: ${formId}`
+    });
+  };
   
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
@@ -275,8 +373,22 @@ const Dashboard: React.FC = () => {
             category: string;
             date: string;
           }>;
+          recentForms?: Array<{
+            id: string;
+            title: string;
+            category: string;
+            status: "pending" | "approved" | "rejected" | "draft" | "overdue";
+            completionPercentage: number;
+            deadline?: string;
+          }>;
         };
-        return <SchoolAdminDashboard data={schoolAdminData} />;
+        return (
+          <SchoolAdminDashboard 
+            data={schoolAdminData} 
+            navigateToDataEntry={navigateToDataEntry}
+            handleFormClick={handleFormClick}
+          />
+        );
       }
       default:
         return null;

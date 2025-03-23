@@ -3,6 +3,33 @@
  * UI element tərcümələri
  */
 const ui = {
+  // Form və data statuslar
+  pending: "Gözləyir",
+  approved: "Təsdiqlənib",
+  rejected: "Rədd edilib",
+  draft: "Qaralama",
+  overdue: "Gecikmiş",
+  dueSoon: "Vaxtı yaxınlaşır",
+  completed: "Tamamlanıb",
+  
+  // Formlar
+  forms: "Formlar",
+  form: "Form",
+  formStatus: "Form statusu",
+  formProgress: "Tamamlanma dərəcəsi",
+  formDeadline: "Son tarix",
+  formCategory: "Kateqoriya",
+  formTitle: "Başlıq",
+  formDescription: "Təsvir",
+  formSubmittedBy: "Təqdim edən",
+  formSubmittedOn: "Təqdim edilmə tarixi",
+  formApprovedBy: "Təsdiqləyən",
+  formApprovedOn: "Təsdiqlənmə tarixi",
+  formRejectedBy: "Rədd edən",
+  formRejectedOn: "Rədd edilmə tarixi",
+  formRejectionReason: "Rədd edilmə səbəbi",
+  searchForms: "Formları axtar...",
+  
   // Categories
   categories: "Kateqoriyalar",
   category: "Kateqoriya",

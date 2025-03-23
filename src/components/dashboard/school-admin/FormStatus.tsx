@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface FormStatusProps {
   count: number;
@@ -12,6 +14,8 @@ interface FormStatusProps {
 }
 
 const FormStatus: React.FC<FormStatusProps> = ({ count, label, icon, variant, onClick, compact = false }) => {
+  const { t } = useLanguage();
+  
   const variantStyles = {
     default: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200',
     pending: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
@@ -21,21 +25,39 @@ const FormStatus: React.FC<FormStatusProps> = ({ count, label, icon, variant, on
     overdue: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
   };
 
+  const tooltipText = {
+    default: t('allFormsTooltip', 'Bütün formlar'),
+    pending: t('pendingFormsTooltip', 'Təsdiq gözləyən formlar'),
+    approved: t('approvedFormsTooltip', 'Təsdiqlənmiş formlar'),
+    rejected: t('rejectedFormsTooltip', 'Düzəliş tələb edən formlar'),
+    due: t('dueSoonTooltip', 'Son tarixi yaxınlaşan formlar'),
+    overdue: t('overdueTooltip', 'Son tarixi keçmiş formlar')
+  };
+
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex flex-col items-center justify-center p-4 rounded-lg border transition-colors',
-        compact ? 'p-2 sm:p-3' : 'p-4',
-        variantStyles[variant]
-      )}
-    >
-      <div className={cn("font-bold mb-1", compact ? "text-xl" : "text-3xl")}>{count}</div>
-      <div className={cn("flex items-center gap-1", compact ? "text-xs" : "text-sm")}>
-        {icon}
-        <span>{label}</span>
-      </div>
-    </button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onClick}
+            className={cn(
+              'flex flex-col items-center justify-center rounded-lg border transition-colors',
+              compact ? 'p-2 sm:p-3' : 'p-4',
+              variantStyles[variant]
+            )}
+          >
+            <div className={cn("font-bold mb-1", compact ? "text-xl" : "text-3xl")}>{count}</div>
+            <div className={cn("flex items-center gap-1", compact ? "text-xs" : "text-sm")}>
+              {icon}
+              <span>{label}</span>
+            </div>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltipText[variant]}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
