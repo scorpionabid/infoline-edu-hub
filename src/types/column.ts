@@ -32,7 +32,13 @@ export interface Column {
   validationRules?: any; // Köhnə kodla uyğunluq üçün
   deadline?: string;     // Köhnə kodla uyğunluq üçün
   multiline?: boolean;   // Köhnə kodla uyğunluq üçün
-  dependsOn?: string;    // Köhnə kodla uyğunluq üçün
+  dependsOn?: {          // Asılılıq üçün əlavə edildi
+    columnId: string;
+    condition: {
+      type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+      value: any;
+    }
+  };
 }
 
 export interface CategoryWithColumns {
@@ -42,6 +48,7 @@ export interface CategoryWithColumns {
   deadline?: string;    // CategoryWithColumns üçün deadline əlavə edildi
   status?: string;
   columns: Column[];
+  assignment?: 'all' | 'sectors'; // assignment property əlavə edildi
 }
 
 export type CategoryColumn = Omit<Column, 'type'> & {

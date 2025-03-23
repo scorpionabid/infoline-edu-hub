@@ -48,7 +48,7 @@ export const useColumnForm = (
   onAddColumn?: (newColumn: Omit<Column, "id">) => Promise<boolean>
 ) => {
   const { t } = useLanguage();
-  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
+  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type as ColumnType || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     editColumn?.options 
       ? Array.isArray(editColumn.options) 
@@ -96,7 +96,7 @@ export const useColumnForm = (
   // Redaktə rejimində form dəyərlərini təyin etmək
   useEffect(() => {
     if (isEditMode && editColumn) {
-      setSelectedType(editColumn.type);
+      setSelectedType(editColumn.type as ColumnType);
       
       if (editColumn.options) {
         setOptions(
@@ -109,16 +109,16 @@ export const useColumnForm = (
       form.reset({
         name: editColumn.name,
         categoryId: editColumn.categoryId,
-        type: editColumn.type,
+        type: editColumn.type as ColumnType,
         isRequired: editColumn.isRequired,
-        validationRules: editColumn.validationRules,
+        validationRules: editColumn.validationRules || editColumn.validation,
         defaultValue: editColumn.defaultValue || "",
         placeholder: editColumn.placeholder || "",
         helpText: editColumn.helpText || "",
         deadline: editColumn.deadline ? new Date(editColumn.deadline) : undefined,
-        order: editColumn.order,
+        order: editColumn.order || 1,
         parentColumnId: editColumn.parentColumnId,
-        status: editColumn.status,
+        status: editColumn.status as "active" | "inactive" || "active",
         options: editColumn.options 
           ? Array.isArray(editColumn.options) 
             ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
@@ -166,9 +166,9 @@ export const useColumnForm = (
       const columnData: Omit<Column, "id"> = {
         name: values.name, 
         categoryId: values.categoryId,
-        type: values.type,
+        type: values.type as ColumnType,
         isRequired: values.isRequired,
-        validationRules: values.validationRules ? {
+        validation: values.validationRules ? {
           ...values.validationRules,
           // Date obyektləri string-ə çevirmək
           minDate: values.validationRules.minDate,
@@ -196,8 +196,10 @@ export const useColumnForm = (
 
   // Tip dəyişikliyini emal etmək
   const handleTypeChange = (value: string) => {
-    setSelectedType(value as ColumnType);
-    form.setValue("type", value as ColumnType);
+    // value dəyərini məcburi ColumnType-a çeviririk
+    const typeValue = value as ColumnType;
+    setSelectedType(typeValue);
+    form.setValue("type", typeValue);
   };
 
   // Yeni seçim əlavə etmək

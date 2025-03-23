@@ -321,8 +321,8 @@ const Regions = () => {
       ...adminFormData,
       id: newAdminId,
       regionId: newRegionId,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
     setRegions([...regions, newRegion]);

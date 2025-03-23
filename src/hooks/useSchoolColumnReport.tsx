@@ -188,7 +188,13 @@ export const useSchoolColumnReport = () => {
         return;
       }
 
-      const result = exportToExcel(dataToExport, selectedCategory.columns, options);
+      // Column tipini CategoryColumn tipinə düzgün çevirmək
+      const typedColumns = selectedCategory.columns.map(column => ({
+        ...column,
+        type: column.type as ColumnType
+      }));
+
+      const result = exportToExcel(dataToExport, typedColumns, options);
       
       if (result.success) {
         toast.success(t("exportSuccess"));

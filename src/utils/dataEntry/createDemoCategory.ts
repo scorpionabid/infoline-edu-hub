@@ -1,4 +1,3 @@
-
 import { CategoryWithColumns, Column } from '@/types/column';
 import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
 import { getDefaultValueByType } from '@/data/mockCategories';
@@ -102,6 +101,97 @@ export const createDemoCategories = (): CategoryWithColumns[] => {
           isRequired: false,
           placeholder: "Əlavə təhsil proqramlarını daxil edin",
           helpText: "Məktəbdə tətbiq edilən əlavə təhsil proqramlarını təsvir edin",
+          order: 3,
+          status: "active"
+        }
+      ]
+    },
+    {
+      id: "student-info",
+      name: "Şagird məlumatları",
+      description: "Məktəbdəki şagirdlər haqqında əsas məlumatlar",
+      deadline: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
+      status: "active",
+      assignment: "all", // added as expected in the interface
+      columns: [
+        {
+          id: "student-col1",
+          categoryId: "student-info",
+          name: "Şagirdin adı",
+          type: "text",
+          isRequired: true,
+          placeholder: "Şagirdin adını daxil edin",
+          helpText: "Məktəbdəki şagirdin adını daxil edin",
+          order: 1,
+          status: "active"
+        },
+        {
+          id: "student-col2",
+          categoryId: "student-info",
+          name: "Şagirdin soyadı",
+          type: "text",
+          isRequired: true,
+          placeholder: "Şagirdin soyadını daxil edin",
+          helpText: "Məktəbdəki şagirdin soyadını daxil edin",
+          order: 2,
+          status: "active"
+        },
+        {
+          id: "student-col3",
+          categoryId: "student-info",
+          name: "Şagirdin yaşı",
+          type: "number",
+          isRequired: true,
+          validationRules: {
+            minValue: 1,
+            maxValue: 100
+          },
+          placeholder: "Şagirdin yaşını daxil edin",
+          helpText: "Məktəbdəki şagirdin yaşını daxil edin",
+          order: 3,
+          status: "active"
+        }
+      ]
+    },
+    {
+      id: "teacher-info",
+      name: "Müəllim məlumatları",
+      description: "Məktəbdəki müəllimlər haqqında əsas məlumatlar",
+      deadline: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
+      status: "active",
+      assignment: "all", // added as expected in the interface
+      columns: [
+        {
+          id: "teacher-col1",
+          categoryId: "teacher-info",
+          name: "Müəllimin adı",
+          type: "text",
+          isRequired: true,
+          placeholder: "Müəllimin adını daxil edin",
+          helpText: "Məktəbdəki müəllimin adını daxil edin",
+          order: 1,
+          status: "active"
+        },
+        {
+          id: "teacher-col2",
+          categoryId: "teacher-info",
+          name: "Müəllimin soyadı",
+          type: "text",
+          isRequired: true,
+          placeholder: "Müəllimin soyadını daxil edin",
+          helpText: "Məktəbdəki müəllimin soyadını daxil edin",
+          order: 2,
+          status: "active"
+        },
+        {
+          id: "teacher-col3",
+          categoryId: "teacher-info",
+          name: "Müəllimin təhsilı",
+          type: "select",
+          isRequired: true,
+          options: ["Lise", "Üniversitet", "Qarışıq"],
+          placeholder: "Müəllimin təhsilini seçin",
+          helpText: "Məktəbdəki müəllimin təhsilini seçin",
           order: 3,
           status: "active"
         }

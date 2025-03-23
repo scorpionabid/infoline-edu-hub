@@ -1,7 +1,17 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { ColumnValidationError } from '@/types/dataEntry';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
+
+// DependsOn tipi üçün interfeys
+interface DependsOnCondition {
+  columnId: string;
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: any;
+  };
+}
 
 export const useValidation = (categories: CategoryWithColumns[], entries: any[]) => {
   const [errors, setErrors] = useState<ColumnValidationError[]>([]);
@@ -64,12 +74,13 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidFormat');
                 }
-              } else if (column.validationRules) {
+              } else if (column.validation || column.validationRules) {
+                const validationRules = column.validation || column.validationRules;
                 // Min/max validasiyaları
-                if (column.validationRules.minValue !== undefined && numValue < column.validationRules.minValue) {
+                if (validationRules?.minValue !== undefined && numValue < validationRules.minValue) {
                   newErrors.push({
                     columnId: column.id,
-                    message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${column.validationRules.minValue} olmalıdır`,
+                    message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${validationRules.minValue} olmalıdır`,
                     categoryId: category.id
                   });
                   
@@ -78,10 +89,10 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                   }
                 }
                 
-                if (column.validationRules.maxValue !== undefined && numValue > column.validationRules.maxValue) {
+                if (validationRules?.maxValue !== undefined && numValue > validationRules.maxValue) {
                   newErrors.push({
                     columnId: column.id,
-                    message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${column.validationRules.maxValue} olmalıdır`,
+                    message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${validationRules.maxValue} olmalıdır`,
                     categoryId: category.id
                   });
                   
@@ -91,8 +102,8 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 }
                 
                 // Xəbərdarlıq: Qeyri-adi dəyər (error deyil)
-                if (column.validationRules.warningThreshold) {
-                  const { min, max } = column.validationRules.warningThreshold;
+                if (validationRules?.warningThreshold) {
+                  const { min, max } = validationRules.warningThreshold;
                   
                   if ((min !== undefined && numValue < min) || (max !== undefined && numValue > max)) {
                     newWarnings.push({
@@ -110,14 +121,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
             }
             
             // Mətn tipli sahələr üçün validasiya
-            else if (column.type === 'text' && column.validationRules) {
+            else if (column.type === 'text' && (column.validation || column.validationRules)) {
               const strValue = String(value);
+              const validationRules = column.validation || column.validationRules;
               
               // Minimal uzunluq
-              if (column.validationRules.minLength !== undefined && strValue.length < column.validationRules.minLength) {
+              if (validationRules?.minLength !== undefined && strValue.length < validationRules.minLength) {
                 newErrors.push({
                   columnId: column.id,
-                  message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${column.validationRules.minLength} simvol olmalıdır`,
+                  message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${validationRules.minLength} simvol olmalıdır`,
                   categoryId: category.id
                 });
                 
@@ -127,10 +139,10 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
               
               // Maksimal uzunluq
-              if (column.validationRules.maxLength !== undefined && strValue.length > column.validationRules.maxLength) {
+              if (validationRules?.maxLength !== undefined && strValue.length > validationRules.maxLength) {
                 newErrors.push({
                   columnId: column.id,
-                  message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${column.validationRules.maxLength} simvol olmalıdır`,
+                  message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${validationRules.maxLength} simvol olmalıdır`,
                   categoryId: category.id
                 });
                 
@@ -140,7 +152,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
               
               // Regex validasiyası
-              if (column.validationRules.pattern && !new RegExp(column.validationRules.pattern).test(strValue)) {
+              if (validationRules?.pattern && !new RegExp(validationRules.pattern).test(strValue)) {
                 newErrors.push({
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" düzgün formatda deyil`,
@@ -148,14 +160,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 });
                 
                 if (valueObj) {
-                  valueObj.errorMessage = column.validationRules.patternError || t('invalidFormat');
+                  valueObj.errorMessage = validationRules.patternError || t('invalidFormat');
                 }
               }
             }
             
             // Tarix tipli sahələr üçün validasiya
-            else if (column.type === 'date' && column.validationRules) {
+            else if (column.type === 'date' && (column.validation || column.validationRules)) {
               const dateValue = new Date(value);
+              const validationRules = column.validation || column.validationRules;
               
               if (isNaN(dateValue.getTime())) {
                 newErrors.push({
@@ -169,8 +182,8 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 }
               } else {
                 // Minimum tarix validasiyası
-                if (column.validationRules.minDate) {
-                  const minDate = new Date(column.validationRules.minDate);
+                if (validationRules?.minDate) {
+                  const minDate = new Date(validationRules.minDate);
                   
                   if (dateValue < minDate) {
                     newErrors.push({
@@ -186,8 +199,8 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 }
                 
                 // Maksimum tarix validasiyası
-                if (column.validationRules.maxDate) {
-                  const maxDate = new Date(column.validationRules.maxDate);
+                if (validationRules?.maxDate) {
+                  const maxDate = new Date(validationRules.maxDate);
                   
                   if (dateValue > maxDate) {
                     newErrors.push({
@@ -241,21 +254,22 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
         // Asılı sahələrin validasiyası
         category.columns.forEach(column => {
           if (column.dependsOn) {
-            const parentValueObj = categoryEntry.values.find((v: any) => v.columnId === column.dependsOn?.columnId);
+            const dependsOn = column.dependsOn as DependsOnCondition;
+            const parentValueObj = categoryEntry.values.find((v: any) => v.columnId === dependsOn.columnId);
             const currentValueObj = categoryEntry.values.find((v: any) => v.columnId === column.id);
             
-            if (parentValueObj && column.dependsOn.condition) {
+            if (parentValueObj && dependsOn.condition) {
               const parentValue = parentValueObj.value;
               let conditionMet = false;
               
               // Şərt tipindən asılı olaraq yoxlama
-              if (column.dependsOn.condition.type === 'equals' && parentValue === column.dependsOn.condition.value) {
+              if (dependsOn.condition.type === 'equals' && parentValue === dependsOn.condition.value) {
                 conditionMet = true;
-              } else if (column.dependsOn.condition.type === 'notEquals' && parentValue !== column.dependsOn.condition.value) {
+              } else if (dependsOn.condition.type === 'notEquals' && parentValue !== dependsOn.condition.value) {
                 conditionMet = true;
-              } else if (column.dependsOn.condition.type === 'greaterThan' && Number(parentValue) > Number(column.dependsOn.condition.value)) {
+              } else if (dependsOn.condition.type === 'greaterThan' && Number(parentValue) > Number(dependsOn.condition.value)) {
                 conditionMet = true;
-              } else if (column.dependsOn.condition.type === 'lessThan' && Number(parentValue) < Number(column.dependsOn.condition.value)) {
+              } else if (dependsOn.condition.type === 'lessThan' && Number(parentValue) < Number(dependsOn.condition.value)) {
                 conditionMet = true;
               }
               

@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, Role } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,7 +29,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { 
-  Globe, 
+  Map, 
   School, 
   Search, 
   Plus, 
@@ -42,135 +41,128 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  User
+  Globe,
+  User,
+  KeyRound
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 import { 
   Accordion, 
   AccordionContent, 
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion";
-import { Role } from '@/context/AuthContext';
 import { UserFormData } from '@/types/user';
 import { mockUsers } from '@/data/mockUsers';
 
-// Mock data for sectors
 const mockSectors = [
   { 
     id: '1', 
     name: 'Yasamal', 
-    region: 'Baku', 
+    description: 'Bakının mərkəzi rayonlarından biri',
     regionId: '1',
-    description: 'Yasamal district in Baku city',
-    schoolCount: 24,
+    schoolCount: 45,
     status: 'active',
-    createdAt: '2023-01-15',
-    completionRate: 78,
-    adminId: 'sector-admin-1',
+    createdAt: '2023-01-10',
+    completionRate: 87,
+    adminId: 'user-1',
     adminEmail: 'yasamal.admin@infoline.edu'
   },
   { 
     id: '2', 
-    name: 'Nizami', 
-    region: 'Baku', 
+    name: 'Nəsimi', 
+    description: 'Şəhərin tarixi və mədəni hissəsi',
     regionId: '1',
-    description: 'Nizami district in Baku city',
-    schoolCount: 18,
+    schoolCount: 38,
     status: 'active',
-    createdAt: '2023-01-16',
-    completionRate: 82,
-    adminId: 'sector-admin-2',
-    adminEmail: 'nizami.admin@infoline.edu'
-  },
-  { 
-    id: '3', 
-    name: 'Nasimi', 
-    region: 'Baku', 
-    regionId: '1',
-    description: 'Nasimi district in Baku city',
-    schoolCount: 21,
-    status: 'active',
-    createdAt: '2023-01-17',
-    completionRate: 65,
-    adminId: 'sector-admin-3',
+    createdAt: '2023-01-11',
+    completionRate: 75,
+    adminId: 'user-2',
     adminEmail: 'nasimi.admin@infoline.edu'
   },
   { 
-    id: '4', 
-    name: 'Sabunchu', 
-    region: 'Baku', 
+    id: '3', 
+    name: 'Səbail', 
+    description: 'Dənizkənarı bulvarı ilə məşhurdur',
     regionId: '1',
-    description: 'Sabunchu district in Baku city',
-    schoolCount: 26,
+    schoolCount: 52,
     status: 'active',
-    createdAt: '2023-01-18',
-    completionRate: 71,
-    adminId: 'sector-admin-4',
-    adminEmail: 'sabunchu.admin@infoline.edu'
+    createdAt: '2023-01-12',
+    completionRate: 90,
+    adminId: 'user-3',
+    adminEmail: 'sabail.admin@infoline.edu'
+  },
+  { 
+    id: '4', 
+    name: 'Binəqədi', 
+    description: 'Şəhərin böyük yaşayış massivlərindən biri',
+    regionId: '1',
+    schoolCount: 61,
+    status: 'active',
+    createdAt: '2023-01-13',
+    completionRate: 65,
+    adminId: 'user-4',
+    adminEmail: 'bineqedi.admin@infoline.edu'
   },
   { 
     id: '5', 
-    name: 'Surakhani', 
-    region: 'Baku', 
+    name: 'Xətai', 
+    description: 'Sənaye və ticarət mərkəzi',
     regionId: '1',
-    description: 'Surakhani district in Baku city',
-    schoolCount: 19,
+    schoolCount: 29,
     status: 'active',
-    createdAt: '2023-01-19',
-    completionRate: 59,
-    adminId: 'sector-admin-5',
-    adminEmail: 'surakhani.admin@infoline.edu'
+    createdAt: '2023-01-14',
+    completionRate: 72,
+    adminId: 'user-5',
+    adminEmail: 'xetai.admin@infoline.edu'
   },
   { 
     id: '6', 
-    name: 'Binagadi', 
-    region: 'Baku', 
+    name: 'Nizami', 
+    description: 'Geniş parkları və meydanları ilə tanınır',
     regionId: '1',
-    description: 'Binagadi district in Baku city',
-    schoolCount: 22,
+    schoolCount: 33,
     status: 'active',
-    createdAt: '2023-01-20',
-    completionRate: 88,
-    adminId: 'sector-admin-6',
-    adminEmail: 'binagadi.admin@infoline.edu'
+    createdAt: '2023-01-15',
+    completionRate: 84,
+    adminId: 'user-6',
+    adminEmail: 'nizami.admin@infoline.edu'
   },
   { 
     id: '7', 
-    name: 'Narimanov', 
-    region: 'Baku', 
+    name: 'Suraxanı', 
+    description: 'Neft sənayesi ilə əlaqəli rayon',
     regionId: '1',
-    description: 'Narimanov district in Baku city',
-    schoolCount: 17,
-    status: 'active',
-    createdAt: '2023-01-21',
-    completionRate: 76,
-    adminId: 'sector-admin-7',
-    adminEmail: 'narimanov.admin@infoline.edu'
+    schoolCount: 22,
+    status: 'inactive',
+    createdAt: '2023-01-16',
+    completionRate: 38,
+    adminId: 'user-7',
+    adminEmail: 'suraxani.admin@infoline.edu'
   },
   { 
     id: '8', 
-    name: 'Khatai', 
-    region: 'Baku', 
+    name: 'Xəzər', 
+    description: 'Dənizə yaxın əraziləri əhatə edir',
     regionId: '1',
-    description: 'Khatai district in Baku city',
-    schoolCount: 20,
-    status: 'inactive',
-    createdAt: '2023-01-22',
-    completionRate: 45,
-    adminId: 'sector-admin-8',
-    adminEmail: 'khatai.admin@infoline.edu'
+    schoolCount: 41,
+    status: 'active',
+    createdAt: '2023-01-17',
+    completionRate: 81,
+    adminId: 'user-8',
+    adminEmail: 'xezer.admin@infoline.edu'
   },
-];
-
-// Mock data for regions
-const mockRegions = [
-  { id: '1', name: 'Baku' },
-  { id: '2', name: 'Ganja' },
-  { id: '3', name: 'Sumgait' },
-  { id: '4', name: 'Lankaran' },
 ];
 
 const Sectors = () => {
@@ -187,16 +179,15 @@ const Sectors = () => {
   const [selectedSector, setSelectedSector] = useState(null);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   
-  // Form state
   const [sectorFormData, setSectorFormData] = useState({
     name: '',
-    regionId: '',
     description: '',
     status: 'active'
   });
   
-  // Admin əlavə etmə formu
   const [adminFormData, setAdminFormData] = useState<UserFormData>({
     name: '',
     email: '',
@@ -209,20 +200,22 @@ const Sectors = () => {
     }
   });
   
-  // Handle search
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
   
-  // Filter sectors based on search term
   const filteredSectors = sectors.filter(sector =>
     sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sector.region.toLowerCase().includes(searchTerm.toLowerCase()) ||
     sector.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     sector.adminEmail.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Handle sort
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -231,7 +224,6 @@ const Sectors = () => {
     setSortConfig({ key, direction });
   };
   
-  // Sort sectors based on sort config
   const sortedSectors = React.useMemo(() => {
     const sortableSectors = [...filteredSectors];
     if (sortConfig.key) {
@@ -248,11 +240,19 @@ const Sectors = () => {
     return sortableSectors;
   }, [filteredSectors, sortConfig]);
   
-  // Sektor əlavə etmək
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedSectors.slice(indexOfFirstItem, indexOfLastItem);
+  
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+  
+  const totalPages = Math.ceil(sortedSectors.length / itemsPerPage);
+  
   const handleAddDialogOpen = () => {
     setSectorFormData({
       name: '',
-      regionId: '',
       description: '',
       status: 'active'
     });
@@ -272,10 +272,8 @@ const Sectors = () => {
     setIsAddDialogOpen(true);
   };
   
-  // Admin məlumatlarına baxmaq
   const handleViewAdmin = (sector) => {
     setSelectedSector(sector);
-    // Burada admin məlumatlarını API-dən alardıq, amma mock data istifadə edirik
     const admin = mockUsers.find(user => user.id === sector.adminId);
     setSelectedAdmin(admin || { 
       id: sector.adminId, 
@@ -287,12 +285,10 @@ const Sectors = () => {
     setIsUserDialogOpen(true);
   };
   
-  // Sektor form dəyişikliyini idarə etmək
   const handleSectorFormChange = (e) => {
     const { name, value } = e.target;
     setSectorFormData(prev => ({ ...prev, [name]: value }));
     
-    // Sektor adı dəyişdikdə, admin email təklifi yarat
     if (name === 'name' && value) {
       const suggestedEmail = `${value.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
       setAdminFormData(prev => ({ 
@@ -303,22 +299,18 @@ const Sectors = () => {
     }
   };
   
-  // Admin form dəyişikliyini idarə etmək
-  const handleAdminFormChange = (e) => {
-    const { name, value } = e.target;
-    setAdminFormData(prev => ({ ...prev, [name]: value }));
+  const handleAdminFormChange = (data: UserFormData) => {
+    setAdminFormData(data);
   };
   
-  // Sektor və admin yaratma
   const handleAddSubmit = () => {
-    // Yeni sektor yaradaq
     const newSectorId = (sectors.length + 1).toString();
-    const newAdminId = `sector-admin-${Date.now()}`;
+    const newAdminId = `user-${Date.now()}`;
     
     const newSector = {
       id: newSectorId,
       ...sectorFormData,
-      region: mockRegions.find(r => r.id === sectorFormData.regionId)?.name || '',
+      regionId: selectedRegion,
       schoolCount: 0,
       createdAt: new Date().toISOString().split('T')[0],
       completionRate: 0,
@@ -326,17 +318,15 @@ const Sectors = () => {
       adminEmail: adminFormData.email
     };
     
-    // Yeni admin əlavə edək
     const newAdmin = {
       ...adminFormData,
       id: newAdminId,
-      regionId: sectorFormData.regionId,
+      regionId: selectedRegion,
       sectorId: newSectorId,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString(), // Date -> string olarak değiştirildi
+      updatedAt: new Date().toISOString()  // Date -> string olarak değiştirildi
     };
     
-    // Mock data-ya əlavə edək
     setSectors([...sectors, newSector]);
     mockUsers.push(newAdmin);
     
@@ -344,39 +334,31 @@ const Sectors = () => {
     toast.success('Sektor və admin uğurla əlavə edildi');
   };
   
-  // Handle edit dialog open
   const handleEditDialogOpen = (sector) => {
     setSelectedSector(sector);
     setSectorFormData({
       name: sector.name,
-      regionId: sector.regionId,
       description: sector.description,
       status: sector.status
     });
+    setSelectedRegion(sector.regionId);
     setIsEditDialogOpen(true);
   };
   
-  // Handle edit form submit
   const handleEditSubmit = () => {
     const updatedSectors = sectors.map(sector => 
-      sector.id === selectedSector.id ? { 
-        ...sector, 
-        ...sectorFormData,
-        region: mockRegions.find(r => r.id === sectorFormData.regionId)?.name || sector.region
-      } : sector
+      sector.id === selectedSector.id ? { ...sector, ...sectorFormData, regionId: selectedRegion } : sector
     );
     setSectors(updatedSectors);
     setIsEditDialogOpen(false);
     toast.success('Sektor uğurla yeniləndi');
   };
   
-  // Handle delete dialog open
   const handleDeleteDialogOpen = (sector) => {
     setSelectedSector(sector);
     setIsDeleteDialogOpen(true);
   };
   
-  // Handle delete confirm
   const handleDeleteConfirm = () => {
     const updatedSectors = sectors.filter(sector => sector.id !== selectedSector.id);
     setSectors(updatedSectors);
@@ -384,13 +366,6 @@ const Sectors = () => {
     toast.success('Sektor uğurla silindi');
   };
   
-  // Admin parolunu sıfırlamaq
-  const handleResetPassword = () => {
-    toast.success(`${selectedAdmin.email} üçün parol sıfırlama linki göndərildi`);
-    setIsUserDialogOpen(false);
-  };
-  
-  // Render completion rate badge
   const renderCompletionRateBadge = (rate) => {
     if (rate >= 80) {
       return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{rate}%</Badge>;
@@ -401,14 +376,34 @@ const Sectors = () => {
     }
   };
   
-  // Render status badge
   const renderStatusBadge = (status) => {
     if (status === 'active') {
-      return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Active</div>;
+      return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
     } else {
-      return <div className="flex items-center"><XCircle className="h-4 w-4 text-red-500 mr-1" /> Inactive</div>;
+      return <div className="flex items-center"><XCircle className="h-4 w-4 text-red-500 mr-1" /> Deaktiv</div>;
     }
   };
+  
+  const handleResetPassword = () => {
+    if (newPassword.length < 6) {
+      setPasswordError('Parol minimum 6 simvol olmalıdır');
+      return;
+    }
+    
+    toast.success(`${selectedAdmin?.email} üçün yeni parol təyin edildi`, {
+      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
+    });
+    
+    setShowPasswordReset(false);
+    setNewPassword('');
+    setIsUserDialogOpen(false);
+  };
+  
+  const regions = [
+    { id: '1', name: 'Bakı' },
+    { id: '2', name: 'Gəncə' },
+    { id: '3', name: 'Sumqayıt' },
+  ];
   
   return (
     <SidebarLayout>
@@ -416,9 +411,9 @@ const Sectors = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{t('sectors')}</h1>
-            <p className="text-muted-foreground">Manage and view sectors</p>
+            <p className="text-muted-foreground">Sektorları idarə et və izlə</p>
           </div>
-          {(user?.role === 'superadmin' || user?.role === 'regionadmin') && (
+          {user?.role === 'regionadmin' && (
             <Button onClick={handleAddDialogOpen} className="gap-1">
               <Plus className="h-4 w-4" />
               Sektor əlavə et
@@ -432,7 +427,7 @@ const Sectors = () => {
               <div className="relative w-full md:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search sectors..."
+                  placeholder="Sektorları axtar..."
                   className="pl-8"
                   value={searchTerm}
                   onChange={handleSearch}
@@ -451,12 +446,7 @@ const Sectors = () => {
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </div>
                     </TableHead>
-                    <TableHead onClick={() => handleSort('region')} className="cursor-pointer">
-                      <div className="flex items-center">
-                        Region
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                    </TableHead>
+                    <TableHead className="hidden md:table-cell">Region</TableHead>
                     <TableHead className="hidden md:table-cell">Məktəblər</TableHead>
                     <TableHead className="hidden md:table-cell">Admin</TableHead>
                     <TableHead className="hidden md:table-cell">Tamamlanma</TableHead>
@@ -465,12 +455,14 @@ const Sectors = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedSectors.length > 0 ? (
-                    sortedSectors.map(sector => (
+                  {currentItems.length > 0 ? (
+                    currentItems.map(sector => (
                       <TableRow key={sector.id}>
                         <TableCell className="font-medium">{sector.id}</TableCell>
                         <TableCell>{sector.name}</TableCell>
-                        <TableCell>{sector.region}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {regions.find(region => region.id === sector.regionId)?.name}
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <div className="flex items-center gap-1">
                             <School className="h-4 w-4 text-muted-foreground" />
@@ -505,7 +497,7 @@ const Sectors = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Bax
                               </DropdownMenuItem>
-                              {(user?.role === 'superadmin' || user?.role === 'regionadmin') && (
+                              {user?.role === 'regionadmin' && (
                                 <>
                                   <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditDialogOpen(sector)}>
                                     <Pencil className="h-4 w-4 mr-2" />
@@ -526,7 +518,7 @@ const Sectors = () => {
                     <TableRow>
                       <TableCell colSpan={8} className="text-center h-24">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Globe className="h-8 w-8 mb-2" />
+                          <Map className="h-8 w-8 mb-2" />
                           <p>Sektor tapılmadı</p>
                           {searchTerm && (
                             <p className="text-sm">Başqa axtarış termini sınayın</p>
@@ -538,11 +530,43 @@ const Sectors = () => {
                 </TableBody>
               </Table>
             </div>
+            
+            {sortedSectors.length > itemsPerPage && (
+              <div className="mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} 
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink 
+                          isActive={currentPage === page}
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)} 
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
       
-      {/* Sektor əlavə etmək dialoqu */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -568,21 +592,6 @@ const Sectors = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="add-region">Region</Label>
-                    <select
-                      id="add-region"
-                      name="regionId"
-                      value={sectorFormData.regionId}
-                      onChange={handleSectorFormChange}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      <option value="">Region seçin</option>
-                      {mockRegions.map(region => (
-                        <option key={region.id} value={region.id}>{region.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="add-description">Təsvir</Label>
                     <Input
                       id="add-description"
@@ -591,6 +600,21 @@ const Sectors = () => {
                       onChange={handleSectorFormChange}
                       placeholder="Sektor haqqında qısa məlumat"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="add-region">Region</Label>
+                    <select
+                      id="add-region"
+                      name="regionId"
+                      value={selectedRegion}
+                      onChange={(e) => setSelectedRegion(e.target.value)}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="">Region seçin</option>
+                      {regions.map(region => (
+                        <option key={region.id} value={region.id}>{region.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="add-status">Status</Label>
@@ -621,7 +645,7 @@ const Sectors = () => {
                       id="admin-name"
                       name="name"
                       value={adminFormData.name}
-                      onChange={handleAdminFormChange}
+                      onChange={(e) => setAdminFormData({...adminFormData, name: e.target.value})}
                       placeholder="Admin adı və soyadı"
                     />
                   </div>
@@ -632,7 +656,7 @@ const Sectors = () => {
                       name="email"
                       type="email"
                       value={adminFormData.email}
-                      onChange={handleAdminFormChange}
+                      onChange={(e) => setAdminFormData({...adminFormData, email: e.target.value})}
                       placeholder="admin@example.com"
                     />
                   </div>
@@ -643,7 +667,7 @@ const Sectors = () => {
                       name="password"
                       type="password"
                       value={adminFormData.password}
-                      onChange={handleAdminFormChange}
+                      onChange={(e) => setAdminFormData({...adminFormData, password: e.target.value})}
                       placeholder="Şifrə (minimum 6 simvol)"
                     />
                   </div>
@@ -657,7 +681,7 @@ const Sectors = () => {
             <Button onClick={handleAddSubmit} 
               disabled={
                 !sectorFormData.name || 
-                !sectorFormData.regionId || 
+                !selectedRegion ||
                 !adminFormData.name || 
                 !adminFormData.email || 
                 !adminFormData.password || 
@@ -670,7 +694,6 @@ const Sectors = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -688,21 +711,6 @@ const Sectors = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-region">Region</Label>
-              <select
-                id="edit-region"
-                name="regionId"
-                value={sectorFormData.regionId}
-                onChange={handleSectorFormChange}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">Region seçin</option>
-                {mockRegions.map(region => (
-                  <option key={region.id} value={region.id}>{region.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="edit-description">Təsvir</Label>
               <Input
                 id="edit-description"
@@ -710,6 +718,21 @@ const Sectors = () => {
                 value={sectorFormData.description}
                 onChange={handleSectorFormChange}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-region">Region</Label>
+              <select
+                id="edit-region"
+                name="regionId"
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Region seçin</option>
+                {regions.map(region => (
+                  <option key={region.id} value={region.id}>{region.name}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-status">Status</Label>
@@ -732,7 +755,6 @@ const Sectors = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -752,8 +774,14 @@ const Sectors = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Admin məlumatları dialoqu */}
-      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+      <Dialog open={isUserDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setShowPasswordReset(false);
+          setNewPassword('');
+          setPasswordError('');
+        }
+        setIsUserDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Admin məlumatları</DialogTitle>
@@ -763,29 +791,75 @@ const Sectors = () => {
           </DialogHeader>
           {selectedAdmin && (
             <div className="space-y-4 py-4">
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Ad</Label>
-                <p className="font-medium">{selectedAdmin.name}</p>
-              </div>
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Email</Label>
-                <p className="font-medium">{selectedAdmin.email}</p>
-              </div>
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Rol</Label>
-                <Badge variant="secondary" className="w-fit">Sektor admin</Badge>
-              </div>
-              <div className="flex flex-col space-y-1">
-                <Label className="text-sm text-muted-foreground">Status</Label>
-                <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                  {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                </Badge>
-              </div>
+              {!showPasswordReset ? (
+                <>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Ad</Label>
+                    <p className="font-medium">{selectedAdmin.name}</p>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Email</Label>
+                    <p className="font-medium">{selectedAdmin.email}</p>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Rol</Label>
+                    <Badge variant="secondary" className="w-fit">Sektor admin</Badge>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <Label className="text-sm text-muted-foreground">Status</Label>
+                    <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                      {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="newPassword">Yeni parol</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (e.target.value.length < 6) {
+                          setPasswordError('Parol minimum 6 simvol olmalıdır');
+                        } else {
+                          setPasswordError('');
+                        }
+                      }}
+                      placeholder="Yeni parol daxil edin (minimum 6 simvol)"
+                      className={passwordError ? "border-red-500" : ""}
+                    />
+                    {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <p>Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
-            <Button onClick={handleResetPassword}>Parolu sıfırla</Button>
+            {!showPasswordReset ? (
+              <>
+                <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
+                <Button onClick={() => setShowPasswordReset(true)}>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Parolu dəyiş
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowPasswordReset(false)}>Ləğv et</Button>
+                <Button 
+                  onClick={handleResetPassword}
+                  disabled={newPassword.length < 6}
+                >
+                  Parolu dəyiş
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

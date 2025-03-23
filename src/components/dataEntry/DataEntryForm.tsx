@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -20,7 +21,7 @@ import { cn } from '@/lib/utils';
 import ApprovalAlert from './components/ApprovalAlert';
 import RejectionAlert from './components/RejectionAlert';
 import { Category } from '@/types/category'; // Kateqoriya tipini düzgün yerdən idxal edirik
-import { Column } from '@/types/column'; // Sütun tipini düzgün yerdən idxal edirik';
+import { Column, ColumnOption } from '@/types/column'; // Sütun tipini düzgün yerdən idxal edirik';
 
 interface DataEntryFormProps {
   selectedCategory?: string | null;
@@ -143,7 +144,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                         label={columns.find(c => c.id === selectedColumnId)?.name || ''}
                         type={columns.find(c => c.id === selectedColumnId)?.type || 'text'}
                         required={columns.find(c => c.id === selectedColumnId)?.isRequired || false}
-                        options={columns.find(c => c.id === selectedColumnId)?.options}
+                        options={columns.find(c => c.id === selectedColumnId)?.options as any}
                         placeholder={columns.find(c => c.id === selectedColumnId)?.placeholder}
                         helpText={columns.find(c => c.id === selectedColumnId)?.helpText}
                         value=""
@@ -226,7 +227,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                     label={column.name}
                     type={column.type}
                     required={column.isRequired}
-                    options={column.options}
+                    options={column.options as any}
                     placeholder={column.placeholder}
                     helpText={column.helpText}
                     value=""
