@@ -280,16 +280,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
               </Button>
             </div>
           </div>
-          <Tabs defaultValue="active" onValueChange={setActiveTab}>
+          <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-3 w-full sm:w-[400px]">
               <TabsTrigger value="active">{t('active')}</TabsTrigger>
               <TabsTrigger value="overdue">{t('overdue')}</TabsTrigger>
               <TabsTrigger value="completed">{t('completed')}</TabsTrigger>
             </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+          
             <TabsContent value="active" className="space-y-4 mt-0">
               {activeTabForms.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">{t('noActiveForms')}</p>
@@ -429,6 +426,11 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
                 ))
               )}
             </TabsContent>
+          </Tabs>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* TabsContent komponentləri artıq CardHeader daxilində Tabs içində yerləşdirildi */}
           </div>
         </CardContent>
         <CardFooter>
