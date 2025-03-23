@@ -16,6 +16,13 @@ const navigation = {
   faq: "FAQ",
   terms: "Şərtlər",
   privacy: "Gizlilik",
+  forms: "Formalar",
+  formStatus: "Form statusu",
+  formStatusDesc: "Formalarınızın ümumi vəziyyəti",
+  addNewData: "Məlumat əlavə et",
+  viewAllForms: "Bütün formları göstər",
+  allForms: "Bütün formlar",
+  recentForms: "Son formlar"
 };
 
 export default navigation;

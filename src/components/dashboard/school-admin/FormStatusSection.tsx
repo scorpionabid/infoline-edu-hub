@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { File, Clock, CheckCircle, XCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Check, Clock, XCircle, AlertTriangle, AlertCircle, FileText } from 'lucide-react';
 
 interface FormStatisticsProps {
   pending: number;
@@ -30,94 +30,75 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({
   
   const totalForms = forms.pending + forms.approved + forms.rejected + forms.dueSoon + forms.overdue;
   
+  // Minimalist versiya əlavə edildi
   const statusCards = [
     {
       id: null,
       name: t('allForms'),
       count: totalForms,
-      icon: <File />,
-      color: 'bg-gray-900 text-gray-50 hover:bg-gray-800',
-      activeColor: 'bg-gray-900 text-gray-50',
-      activeClass: 'ring-4 ring-gray-300'
+      icon: <FileText size={16} />,
+      color: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
+      activeColor: 'bg-gray-700 text-white',
     },
     {
       id: 'pending',
       name: t('pendingForms'),
       count: forms.pending,
-      icon: <Clock />,
-      color: 'bg-amber-800 text-amber-50 hover:bg-amber-700',
-      activeColor: 'bg-amber-800 text-amber-50',
-      activeClass: 'ring-4 ring-amber-200'
+      icon: <Clock size={16} />,
+      color: 'bg-amber-100 text-amber-800 hover:bg-amber-200',
+      activeColor: 'bg-amber-600 text-white',
     },
     {
       id: 'approved',
       name: t('approvedForms'),
       count: forms.approved,
-      icon: <CheckCircle />,
-      color: 'bg-green-800 text-green-50 hover:bg-green-700',
-      activeColor: 'bg-green-800 text-green-50',
-      activeClass: 'ring-4 ring-green-200'
+      icon: <Check size={16} />,
+      color: 'bg-green-100 text-green-800 hover:bg-green-200',
+      activeColor: 'bg-green-600 text-white',
     },
     {
       id: 'rejected',
       name: t('rejectedForms'),
       count: forms.rejected,
-      icon: <XCircle />,
-      color: 'bg-red-800 text-red-50 hover:bg-red-700',
-      activeColor: 'bg-red-800 text-red-50',
-      activeClass: 'ring-4 ring-red-200'
+      icon: <XCircle size={16} />,
+      color: 'bg-red-100 text-red-800 hover:bg-red-200',
+      activeColor: 'bg-red-600 text-white',
     },
     {
       id: 'dueSoon',
       name: t('dueSoonForms'),
       count: forms.dueSoon,
-      icon: <AlertTriangle />,
-      color: 'bg-blue-800 text-blue-50 hover:bg-blue-700',
-      activeColor: 'bg-blue-800 text-blue-50',
-      activeClass: 'ring-4 ring-blue-200'
+      icon: <AlertTriangle size={16} />,
+      color: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+      activeColor: 'bg-blue-600 text-white',
     },
     {
       id: 'overdue',
       name: t('overdueForms'),
       count: forms.overdue,
-      icon: <AlertCircle />,
-      color: 'bg-rose-800 text-rose-50 hover:bg-rose-700',
-      activeColor: 'bg-rose-800 text-rose-50',
-      activeClass: 'ring-4 ring-rose-200'
+      icon: <AlertCircle size={16} />,
+      color: 'bg-rose-100 text-rose-800 hover:bg-rose-200',
+      activeColor: 'bg-rose-600 text-white',
     }
   ];
   
-  const getCardClasses = (status: { id: string | null, activeClass: string, color: string, activeColor: string }) => {
-    const isActive = activeStatus === status.id;
-    
-    return cn(
-      'transition-all duration-200',
-      isActive ? status.activeColor : status.color,
-      isActive ? status.activeClass : '',
-      'shadow hover:shadow-md cursor-pointer'
-    );
-  };
-  
   return (
-    <div className="space-y-3">
-      <h3 className={cn("font-medium", compact ? "" : "text-lg")}>
-        {t('formStatus')}
-      </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
         {statusCards.map((status) => (
-          <Card 
+          <button 
             key={status.id || 'all'} 
-            className={getCardClasses(status)}
+            className={cn(
+              "py-1 px-3 rounded-full flex items-center gap-1 text-sm",
+              activeStatus === status.id ? status.activeColor : status.color,
+              "transition-colors duration-200"
+            )}
             onClick={() => navigateToDataEntry(status.id)}
           >
-            <div className="p-3 flex flex-col items-center justify-center text-center space-y-1">
-              <div className="text-4xl font-bold">{status.count}</div>
-              <div className="flex items-center gap-1">
-                {status.icon}
-                <div className={compact ? "text-xs" : "text-sm"}>{status.name}</div>
-              </div>
-            </div>
-          </Card>
+            {status.icon}
+            <span>{status.name}</span>
+            <span className="font-bold ml-1">{status.count}</span>
+          </button>
         ))}
       </div>
     </div>

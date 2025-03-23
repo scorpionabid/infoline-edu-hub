@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Users, FileBarChart, Settings, LogOut, ChevronLeft, ChevronRight,
+import { LayoutGrid, Users, Settings, LogOut, ChevronLeft, ChevronRight,
          Globe, School, Map, PanelTop, Database, Layers, Bell, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -33,7 +33,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   
-  // Navigation items
+  // Navigation items - Məktəb admini üçün reports bölməsi silindi
   const navItems: NavItem[] = [
     { title: t('dashboard'), icon: LayoutGrid, path: '/dashboard', roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] },
     { title: t('regions'), icon: Map, path: '/regions', roles: ['superadmin'] },
@@ -42,7 +42,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { title: t('categories'), icon: Layers, path: '/categories', roles: ['superadmin', 'regionadmin'] },
     { title: t('columns'), icon: Database, path: '/columns', roles: ['superadmin', 'regionadmin'] },
     { title: t('users'), icon: Users, path: '/users', roles: ['superadmin', 'regionadmin', 'sectoradmin'] },
-    { title: t('reports'), icon: FileBarChart, path: '/reports', roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] },
+    // Reports bölməsi silindi - 'schooladmin' rolundan
+    { title: t('reports'), icon: FileBarChart, path: '/reports', roles: ['superadmin', 'regionadmin', 'sectoradmin'] },
     { title: t('settings'), icon: Settings, path: '/settings', roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] },
   ];
   

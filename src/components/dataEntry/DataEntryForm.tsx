@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, Send, FileSpreadsheet } from 'lucide-react';
+import { Save, Send, FileSpreadsheet, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import DataEntryProgress from './DataEntryProgress';
 import ExcelActions from './ExcelActions';
@@ -31,6 +31,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const { t } = useLanguageSafe();
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
+  const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   
   const {
     categories,
@@ -125,6 +126,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     const newIndex = filteredCategories.findIndex(cat => cat.id === tabValue);
     if (newIndex !== -1) {
       changeCategory(newIndex);
+      setSelectedColumnId(null); // Kateqoriya dəyişdikdə seçilmiş sütunu sıfırla
     }
   };
   
@@ -144,8 +146,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     <>
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="p-4 xl:p-6">
-          <div className="flex flex-col lg:flex-row justify-between">
-            <div className="mb-4 lg:mb-0">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+            <div>
               <DataEntryProgress 
                 total={filteredCategories.length} 
                 completed={formData.entries.filter(e => e.isCompleted).length}
@@ -184,7 +186,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             </div>
           </div>
           
-          <Separator className="my-4" />
+          <Separator className="mb-4" />
           
           <Tabs defaultValue={currentCategory?.id} value={currentCategory?.id} onValueChange={handleTabChange}>
             <TabsList className="mb-4 flex flex-nowrap overflow-x-auto pb-1">
@@ -235,23 +237,67 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   <RejectionAlert errorMessage={categoryEntry.rejectionReason} />
                 )}
                 
-                <div className="grid gap-4 mt-6">
-                  {activeColumns.map((column) => (
-                    <FormField
-                      key={column.id}
-                      id={column.id}
-                      label={column.name}
-                      type={column.type}
-                      required={column.isRequired}
-                      options={column.options}
-                      placeholder={column.placeholder}
-                      helpText={column.helpText || column.description}
-                      value={categoryEntry?.values.find(v => v.columnId === column.id)?.value || ''}
-                      error={getErrorForColumn(column.id)}
-                      onChange={(newValue) => updateValue(category.id, column.id, newValue)}
-                      disabled={isApproved || isSubmitting}
-                    />
-                  ))}
+                {/* Sütunları sətir şəklində göstər */}
+                <div className="mt-6 overflow-x-auto">
+                  <div className="grid grid-cols-1 gap-1 bg-slate-50 p-2 rounded-md">
+                    {activeColumns.map((column) => (
+                      <div 
+                        key={column.id}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded cursor-pointer hover:bg-slate-100",
+                          selectedColumnId === column.id ? "bg-blue-50 border border-blue-200" : "bg-white border",
+                          getErrorForColumn(column.id) ? "border-red-300" : ""
+                        )}
+                        onClick={() => setSelectedColumnId(column.id === selectedColumnId ? null : column.id)}
+                      >
+                        <div className="flex items-center">
+                          <span className={cn("font-medium", column.isRequired ? "after:content-['*'] after:text-red-500 after:ml-0.5" : "")}>
+                            {column.name}
+                          </span>
+                          {getErrorForColumn(column.id) && (
+                            <Badge variant="destructive" className="ml-2 text-xs">
+                              {getErrorForColumn(column.id)}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center">
+                          <div className="text-sm text-muted-foreground mr-2">
+                            {categoryEntry?.values.find(v => v.columnId === column.id)?.value 
+                              ? (column.type === 'select' || column.type === 'radio' || column.type === 'checkbox' 
+                                ? categoryEntry?.values.find(v => v.columnId === column.id)?.value 
+                                : t('filled')) 
+                              : t('empty')}
+                          </div>
+                          <ChevronRight className={cn("h-5 w-5 text-muted-foreground transition-transform", 
+                            selectedColumnId === column.id ? "rotate-90" : "")} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Seçilmiş sütunun detallı görünüşü */}
+                  {selectedColumnId && (
+                    <div className="mt-4 p-4 bg-white border rounded-md">
+                      {activeColumns
+                        .filter(column => column.id === selectedColumnId)
+                        .map(column => (
+                          <FormField
+                            key={column.id}
+                            id={column.id}
+                            label={column.name}
+                            type={column.type}
+                            required={column.isRequired}
+                            options={column.options}
+                            placeholder={column.placeholder}
+                            helpText={column.helpText || column.description}
+                            value={categoryEntry?.values.find(v => v.columnId === column.id)?.value || ''}
+                            error={getErrorForColumn(column.id)}
+                            onChange={(newValue) => updateValue(category.id, column.id, newValue)}
+                            disabled={isApproved || isSubmitting}
+                          />
+                        ))}
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             ))}

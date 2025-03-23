@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import NotificationsCard from './NotificationsCard';
 import FormStatusSection from './school-admin/FormStatusSection';
-import FormTabs from './school-admin/FormTabs';
 import { Notification } from './NotificationsCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import DataEntryProgress from '../dataEntry/DataEntryProgress';
-import { CalendarClock, Clock } from 'lucide-react';
+import { CalendarClock, Clock, FileText, PlusCircle } from 'lucide-react';
 import { Form } from '@/types/form';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 // Mocklar üçün dataları təkmilləşdirək
 const recentForms: Form[] = [
@@ -99,7 +101,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 }) => {
   const { t } = useLanguageSafe();
   const navigate = useNavigate();
-  const [overallProgress, setOverallProgress] = useState(data.completionRate || 0);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   
   // Son dəfə işlənmiş kateqoriya bildirişi üçün effekt
   useEffect(() => {
@@ -125,49 +127,109 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     }
   };
   
-  const handleNavigateToDataEntry = () => {
+  const handleNavigateToDataEntry = (status: string | null = null) => {
+    setSelectedStatus(status);
     if (navigateToDataEntry) {
       navigateToDataEntry();
     } else {
-      navigate('/data-entry');
+      if (status) {
+        navigate(`/data-entry?status=${status}`);
+      } else {
+        navigate('/data-entry');
+      }
     }
   };
   
   return (
     <div className="space-y-6">
+      {/* Minimalist Form Status Bölməsi */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">{t('forms')}</h3>
+            <p className="text-sm text-muted-foreground">{t('formStatusDesc')}</p>
+          </div>
+          <Button onClick={() => navigate('/data-entry')} size="sm">
+            <PlusCircle className="h-4 w-4 mr-1" />
+            {t('addNewData')}
+          </Button>
+        </div>
+        
+        <FormStatusSection 
+          forms={data.forms} 
+          navigateToDataEntry={handleNavigateToDataEntry} 
+          activeStatus={selectedStatus}
+          compact
+        />
+      </div>
+      
       {/* Ümumi tamamlanma faizini göstərən proqres */}
-      <DataEntryProgress 
-        percentage={data.completionRate} 
-        completed={data.completedForms || 0} 
-        total={data.totalForms || 0} 
-      />
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border">
+        <DataEntryProgress 
+          percentage={data.completionRate} 
+          completed={data.completedForms || 0} 
+          total={data.totalForms || 0} 
+        />
+      </div>
       
-      {/* Form statusları bölməsi */}
-      <FormStatusSection 
-        forms={data.forms} 
-        navigateToDataEntry={handleNavigateToDataEntry} 
-      />
-      
-      {/* Formaların tablarla göstərilməsi */}
-      <FormTabs 
-        recentForms={recentForms} 
-        handleFormClick={handleFormItemClick} 
-      />
-      
-      {/* Yaxınlaşan son tarixlərin göstərilməsi */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border">
+      {/* Formaların sadələşdirilmiş görünüşü */}
+      <Card className="p-4 border shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold flex items-center">
-            <CalendarClock className="h-5 w-5 mr-2 text-amber-500" />
-            {t('upcomingDeadlines')}
+          <h3 className="text-lg font-semibold">
+            <FileText className="h-5 w-5 inline mr-2 text-primary" />
+            {t('recentForms')}
           </h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {recentForms.slice(0, 4).map(form => (
+            <div
+              key={form.id}
+              className="border rounded-md p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => handleFormItemClick(form.id)}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-medium line-clamp-1">{form.title}</h4>
+                <Badge 
+                  variant="outline" 
+                  className={`${
+                    form.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                    form.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                    form.status === 'pending' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                    'bg-gray-100 text-gray-800 border-gray-200'
+                  }`}
+                >
+                  {form.status === 'approved' ? t('approved') :
+                   form.status === 'rejected' ? t('rejected') :
+                   form.status === 'pending' ? t('pending') : t('draft')}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{form.category}</p>
+              <div className="flex items-center justify-between">
+                <div className="w-full max-w-24">
+                  <Progress value={form.completionPercentage} className="h-1.5" />
+                </div>
+                <span className="text-xs ml-2">{form.completionPercentage}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-4 text-center">
           <Button 
             variant="ghost" 
-            size="sm" 
-            onClick={handleNavigateToDataEntry}
+            onClick={() => navigate('/data-entry')}
           >
-            {t('viewAll')}
+            {t('viewAllForms')}
           </Button>
+        </div>
+      </Card>
+      
+      {/* Yaxınlaşan son tarixlərin göstərilməsi */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border">
+        <div className="flex items-center mb-4">
+          <CalendarClock className="h-5 w-5 mr-2 text-amber-500" />
+          <h3 className="text-lg font-semibold">{t('upcomingDeadlines')}</h3>
         </div>
         
         <div className="space-y-3">
