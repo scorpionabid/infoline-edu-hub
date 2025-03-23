@@ -1,10 +1,17 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ColumnValidationError } from '@/types/dataEntry';
 import { CategoryWithColumns } from '@/types/column';
 
 export const useValidation = (categories: CategoryWithColumns[], entries: any[]) => {
   const [errors, setErrors] = useState<ColumnValidationError[]>([]);
+  
+  // İlkin yüklənmə zamanı və ya entries dəyişdikdə validasiya etmək
+  useEffect(() => {
+    if (categories.length > 0 && entries.length > 0) {
+      validateForm();
+    }
+  }, [categories, entries]);
   
   // Formanı validasiya etmək
   const validateForm = useCallback(() => {

@@ -1,5 +1,5 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Save, Send, HelpCircle, ChevronLeft, RotateCw } from 'lucide-react';
@@ -26,6 +26,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
     formData,
     isAutoSaving,
     isSubmitting,
+    isLoading,
     changeCategory,
     updateValue,
     submitForApproval,
@@ -41,8 +42,22 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const { t } = useLanguage();
 
-  const currentCategory = categories[currentCategoryIndex];
-  const currentEntryData = formData.entries.find(entry => entry.categoryId === currentCategory?.id);
+  // Əmin olaq ki, categories mövcuddur
+  const currentCategory = categories.length > 0 ? categories[currentCategoryIndex] : null;
+  const currentEntryData = currentCategory ? formData.entries.find(entry => entry.categoryId === currentCategory.id) : null;
+
+  // Yükləmə zamanı loader göstərmək
+  useEffect(() => {
+    if (isLoading) {
+      document.body.style.cursor = 'wait';
+    } else {
+      document.body.style.cursor = 'default';
+    }
+    
+    return () => {
+      document.body.style.cursor = 'default';
+    };
+  }, [isLoading]);
 
   const formatTime = useCallback((isoString?: string) => {
     if (!isoString) return '';
@@ -82,6 +97,15 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
       }, 500);
     }
   };
+
+  // Əgər yükləmə gedirsə, yükləmə ekranı göstərmək
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -212,12 +236,14 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
               totalCategories={categories.length}
             />
 
-            <CategoryTabs 
-              categories={categories} 
-              currentCategoryIndex={currentCategoryIndex} 
-              entries={formData.entries}
-              onCategoryChange={changeCategory} 
-            />
+            {categories.length > 0 && (
+              <CategoryTabs 
+                categories={categories} 
+                currentCategoryIndex={currentCategoryIndex} 
+                entries={formData.entries}
+                onCategoryChange={changeCategory} 
+              />
+            )}
 
             {currentCategory && currentEntryData && (
               <DataEntryForm 

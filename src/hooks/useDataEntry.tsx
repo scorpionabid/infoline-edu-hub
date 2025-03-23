@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { CategoryEntryData } from '@/types/dataEntry';
 import { toast } from '@/components/ui/use-toast';
@@ -21,6 +21,9 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // URL-də dəyişiklik olduqda category-nin yenilənməsi üçün ref
+  const lastCategoryIdRef = useRef<string | null>(selectedCategoryId);
 
   // Alt hookları birləşdirmək
   const { 
@@ -38,6 +41,8 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
   
   // Excel əməliyyatları üçün updateFormData funksiyası
   const updateFormDataFromExcel = useCallback((excelData: Record<string, any>, categoryId?: string) => {
+    console.log("Excel məlumatları alındı:", excelData);
+    
     const newEntries = [...formData.entries];
     
     // Excel-dən alınan məlumatları forma daxil edirik
@@ -111,10 +116,14 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
 
   // Forma ilkin dəyərləri yükləmək
   useEffect(() => {
-    // Yükləmə simulyasiyası
-    setIsLoading(true);
+    // URL-də kateqoriya dəyişibsə yükləməni yenidən başladırıq
+    if (selectedCategoryId !== lastCategoryIdRef.current) {
+      setIsLoading(true);
+      lastCategoryIdRef.current = selectedCategoryId;
+    }
     
-    setTimeout(() => {
+    // Yükləmə simulyasiyası
+    const loadTimer = setTimeout(() => {
       // Yeni əlavə olunmuş kateqoriyaları və yaxın müddəti olan kateqoriyaları öndə göstərmək
       const sortedCategories = [...mockCategories].sort((a, b) => {
         // Əvvəlcə deadline-a görə sıralama
@@ -207,17 +216,24 @@ export const useDataEntry = (initialCategoryId?: string | null) => {
       setTimeout(() => {
         validateForm();
         setIsLoading(false);
-      }, 500);
+      }, 300);
       
       // Konsol log məlumatı
       console.log("Forma məlumatları yükləndi");
-    }, 1000);
+    }, 800);
+    
+    return () => {
+      clearTimeout(loadTimer);
+    };
   }, [selectedCategoryId, initializeForm, queryParams, validateForm]);
 
   // Kateqoriya dəyişmək
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       setCurrentCategoryIndex(index);
+      
+      // Kateqoriya dəyişən kimi formanın üstünə scroll etmək
+      window.scrollTo(0, 0);
     }
   }, [categories.length]);
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CategoryWithColumns, Column } from '@/types/column';
 import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
 import { 
@@ -58,6 +58,15 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const form = useForm();
   const { t } = useLanguage();
 
+  // Kateqoriya dəyişdikdə scroll-u yuxarı qaldıraq
+  useEffect(() => {
+    const formContainer = document.querySelector('.space-y-4');
+    if (formContainer) {
+      formContainer.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, [category.id]);
+
   const getValueForColumn = (columnId: string): any => {
     const value = entryData.values.find(v => v.columnId === columnId)?.value;
     return value !== undefined ? value : '';
@@ -86,7 +95,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             <div className="flex items-center">
               <FormLabel className="flex items-center space-x-2">
                 <span>{column.name}</span>
-                {column.isRequired && <span className="text-red-500">*</span>}
+                {column.isRequired && <span className="text-red-500 ml-1">*</span>}
               </FormLabel>
               {isApproved && (
                 <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 text-xs px-1.5 py-0">
@@ -167,7 +176,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           
           {column.type === 'select' && column.options && (
             <Select
-              value={getValueForColumn(column.id) || ''}
+              value={String(getValueForColumn(column.id) || '')}
               onValueChange={(value) => onValueChange(category.id, column.id, value)}
               disabled={isDisabled}
             >
@@ -180,7 +189,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   <SelectValue placeholder={column.placeholder || 'Seçin'} />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent className="max-h-80 overflow-y-auto">
                 {column.options.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
@@ -214,7 +223,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
                   mode="single"
                   selected={getValueForColumn(column.id) ? new Date(getValueForColumn(column.id)) : undefined}

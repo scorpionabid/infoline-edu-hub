@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { CategoryEntryData } from '@/types/dataEntry';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,6 +33,24 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   onCategoryChange
 }) => {
   const { t } = useLanguage();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  
+  // Seçilmiş tabı görmək üçün scroll etmək
+  useEffect(() => {
+    if (tabsRef.current && categories.length > 0) {
+      const tabsList = tabsRef.current.querySelector('[role="tablist"]');
+      const activeTab = tabsRef.current.querySelector('[data-state="active"]');
+      
+      if (tabsList && activeTab) {
+        const tabsListRect = tabsList.getBoundingClientRect();
+        const activeTabRect = activeTab.getBoundingClientRect();
+        
+        const scrollLeft = activeTabRect.left - tabsListRect.left - (tabsListRect.width / 2) + (activeTabRect.width / 2);
+        
+        tabsList.scrollLeft = scrollLeft;
+      }
+    }
+  }, [currentCategoryIndex, categories]);
   
   // Tablar üçün genişlik hesablayırıq
   const tabWidth = Math.min(100, Math.floor(100 / Math.min(5, categories.length)));
@@ -171,6 +189,14 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
     return null;
   };
 
+  // Əmin olaq ki, categories massivi boş deyil
+  if (categories.length === 0) {
+    return <div className="py-4 text-center text-muted-foreground">{t('noCategories')}</div>;
+  }
+
+  // Cari kateqoriyanın ID-si
+  const currentCategoryId = categories[currentCategoryIndex]?.id || '';
+
   return (
     <div className="space-y-4 mb-8">
       <div className="flex items-center justify-between">
@@ -200,10 +226,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
         </div>
       </div>
 
-      <div className="relative overflow-auto">
+      <div className="relative overflow-auto" ref={tabsRef}>
         <Tabs 
-          defaultValue={categories[currentCategoryIndex]?.id} 
-          value={categories[currentCategoryIndex]?.id}
+          value={currentCategoryId}
           onValueChange={(value) => {
             const index = categories.findIndex(cat => cat.id === value);
             if (index !== -1) {

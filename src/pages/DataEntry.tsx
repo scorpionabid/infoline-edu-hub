@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DataEntryContainer from '@/components/dataEntry/DataEntryContainer';
 import { Helmet } from 'react-helmet';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 
 const DataEntry = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [showWelcome, setShowWelcome] = useState(false);
@@ -26,18 +27,34 @@ const DataEntry = () => {
         description: t('deadlineApproachingDesc'),
         variant: "default",
       });
+      
+      // Alert göstərildikdən sonra URL-dən alert parametrini təmizləyək
+      // ki, səhifəni yenidən açanda yenə göstərilməsin
+      const newParams = new URLSearchParams(queryParams);
+      newParams.delete('alert');
+      navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
     } else if (showAlert === 'newcategory') {
       toast({
         title: t('newCategoryAdded'),
         description: t('newCategoryAddedDesc'),
         variant: "default",
       });
+      
+      // Alert göstərildikdən sonra URL-dən alert parametrini təmizləyək
+      const newParams = new URLSearchParams(queryParams);
+      newParams.delete('alert');
+      navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
     } else if (showAlert === 'rejected') {
       toast({
         title: t('formRejected'),
         description: t('formRejectedDesc'),
         variant: "destructive",
       });
+      
+      // Alert göstərildikdən sonra URL-dən alert parametrini təmizləyək
+      const newParams = new URLSearchParams(queryParams);
+      newParams.delete('alert');
+      navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
     }
     
     // İlk dəfə səhifə açıldıqda xoş gəldiniz mesajı göstəririk
@@ -45,7 +62,7 @@ const DataEntry = () => {
       setShowWelcome(true);
       localStorage.setItem('dataEntryWelcomeSeen', 'true');
     }
-  }, [toast, showAlert, t]);
+  }, [toast, showAlert, t, navigate, location.pathname, queryParams]);
   
   useEffect(() => {
     if (showWelcome) {
