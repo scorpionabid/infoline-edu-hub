@@ -1,221 +1,190 @@
 import { CategoryWithColumns, Column } from '@/types/column';
-import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
-import { getDefaultValueByType } from '@/data/mockCategories';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Demo kateqoriyalar yaradar
+ * Demo kateqoriya yaratmaq üçün funksiya
+ * 
+ * @returns Yaradılan demo kateqoriya
  */
-export const createDemoCategories = (): CategoryWithColumns[] => {
-  const demoCategories: CategoryWithColumns[] = [
-    {
-      id: "demo1",
-      name: "İnfrastruktur",
-      description: "Məktəbin infrastruktur məlumatları haqqında",
-      assignment: "all", // assignment istifadə edirik
-      status: "active",
-      deadline: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), // 5 gün sonra
-      createdAt: new Date().toISOString(),
-      columns: [
-        {
-          id: "demo-col1",
-          categoryId: "demo1",
-          name: "Binanın vəziyyəti",
-          type: "select",
-          isRequired: true,
-          options: ["Əla", "Yaxşı", "Qənaətbəxş", "Təmir tələb edir"],
-          placeholder: "Binanın vəziyyətini seçin",
-          helpText: "Məktəb binasının ümumi vəziyyətini seçin",
-          order: 1,
-          status: "active"
-        },
-        {
-          id: "demo-col2",
-          categoryId: "demo1",
-          name: "Son təmir tarixi",
-          type: "date",
-          isRequired: true,
-          placeholder: "Son təmir tarixini seçin",
-          helpText: "Məktəbdə aparılan son təmir işlərinin tarixini qeyd edin",
-          order: 2,
-          status: "active"
-        },
-        {
-          id: "demo-col3",
-          categoryId: "demo1",
-          name: "Sinif otaqlarının sayı",
-          type: "number",
-          isRequired: true,
-          validationRules: {
-            minValue: 1,
-            maxValue: 100
-          },
-          placeholder: "Sinif otaqlarının sayını daxil edin",
-          helpText: "Məktəbdəki ümumi sinif otaqlarının sayını daxil edin",
-          order: 3,
-          status: "active"
-        }
-      ]
-    },
-    {
-      id: "demo2",
-      name: "Tədris məlumatları",
-      description: "Məktəbin tədris prosesi ilə bağlı məlumatlar",
-      assignment: "all", // assignment istifadə edirik
-      status: "active",
-      deadline: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString(), // 3 gün sonra
-      createdAt: new Date().toISOString(),
-      columns: [
-        {
-          id: "demo-col4",
-          categoryId: "demo2",
-          name: "Tədris dili",
-          type: "select",
-          isRequired: true,
-          options: ["Azərbaycan", "Rus", "İngilis", "Qarışıq"],
-          placeholder: "Tədris dilini seçin",
-          helpText: "Məktəbin əsas tədris dilini seçin",
-          order: 1,
-          status: "active"
-        },
-        {
-          id: "demo-col5",
-          categoryId: "demo2",
-          name: "Həftəlik dərs saatları",
-          type: "number",
-          isRequired: true,
-          validationRules: {
-            minValue: 20,
-            maxValue: 40
-          },
-          placeholder: "Həftəlik dərs saatlarını daxil edin",
-          helpText: "Bir həftə ərzində keçirilən ümumi dərs saatlarını daxil edin",
-          order: 2,
-          status: "active"
-        },
-        {
-          id: "demo-col6",
-          categoryId: "demo2",
-          name: "Əlavə təhsil proqramları",
-          type: "text",
-          multiline: true,
-          isRequired: false,
-          placeholder: "Əlavə təhsil proqramlarını daxil edin",
-          helpText: "Məktəbdə tətbiq edilən əlavə təhsil proqramlarını təsvir edin",
-          order: 3,
-          status: "active"
-        }
-      ]
-    },
-    {
-      id: "student-info",
-      name: "Şagird məlumatları",
-      description: "Məktəbdəki şagirdlər haqqında əsas məlumatlar",
-      deadline: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
-      status: "active",
-      assignment: "all", // added as expected in the interface
-      columns: [
-        {
-          id: "student-col1",
-          categoryId: "student-info",
-          name: "Şagirdin adı",
-          type: "text",
-          isRequired: true,
-          placeholder: "Şagirdin adını daxil edin",
-          helpText: "Məktəbdəki şagirdin adını daxil edin",
-          order: 1,
-          status: "active"
-        },
-        {
-          id: "student-col2",
-          categoryId: "student-info",
-          name: "Şagirdin soyadı",
-          type: "text",
-          isRequired: true,
-          placeholder: "Şagirdin soyadını daxil edin",
-          helpText: "Məktəbdəki şagirdin soyadını daxil edin",
-          order: 2,
-          status: "active"
-        },
-        {
-          id: "student-col3",
-          categoryId: "student-info",
-          name: "Şagirdin yaşı",
-          type: "number",
-          isRequired: true,
-          validationRules: {
-            minValue: 1,
-            maxValue: 100
-          },
-          placeholder: "Şagirdin yaşını daxil edin",
-          helpText: "Məktəbdəki şagirdin yaşını daxil edin",
-          order: 3,
-          status: "active"
-        }
-      ]
-    },
-    {
-      id: "teacher-info",
-      name: "Müəllim məlumatları",
-      description: "Məktəbdəki müəllimlər haqqında əsas məlumatlar",
-      deadline: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
-      status: "active",
-      assignment: "all", // added as expected in the interface
-      columns: [
-        {
-          id: "teacher-col1",
-          categoryId: "teacher-info",
-          name: "Müəllimin adı",
-          type: "text",
-          isRequired: true,
-          placeholder: "Müəllimin adını daxil edin",
-          helpText: "Məktəbdəki müəllimin adını daxil edin",
-          order: 1,
-          status: "active"
-        },
-        {
-          id: "teacher-col2",
-          categoryId: "teacher-info",
-          name: "Müəllimin soyadı",
-          type: "text",
-          isRequired: true,
-          placeholder: "Müəllimin soyadını daxil edin",
-          helpText: "Məktəbdəki müəllimin soyadını daxil edin",
-          order: 2,
-          status: "active"
-        },
-        {
-          id: "teacher-col3",
-          categoryId: "teacher-info",
-          name: "Müəllimin təhsilı",
-          type: "select",
-          isRequired: true,
-          options: ["Lise", "Üniversitet", "Qarışıq"],
-          placeholder: "Müəllimin təhsilini seçin",
-          helpText: "Məktəbdəki müəllimin təhsilini seçin",
-          order: 3,
-          status: "active"
-        }
-      ]
-    }
-  ];
+export const createDemoCategory = (): CategoryWithColumns => {
+  const categoryId = uuidv4();
   
-  return demoCategories;
+  // Tələbə məlumatları kateqoriyasını yaradaq
+  return {
+    id: categoryId,
+    name: "Tələbə məlumatları",
+    description: "Məktəbdəki tələbələr haqqında əsas məlumatlar",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 həftə sonra
+    status: "active",
+    assignment: "all", // Bütün məktəblərə aid
+    createdAt: new Date().toISOString(), // createdAt üçün cari tarixi string formatında istifadə edirik
+    columns: [
+      // Tələbə sayı sütunu
+      {
+        id: uuidv4(),
+        categoryId,
+        name: "Tələbə sayı",
+        type: "number",
+        isRequired: true,
+        placeholder: "Məktəbdəki cəmi tələbə sayını daxil edin",
+        helpText: "Bura ümumi say daxil edilməlidir, siniflər üzrə bölünməməlidir",
+        order: 1,
+        status: "active",
+        validation: {
+          minValue: 0,
+          maxValue: 5000
+        },
+        // validationRules əvəzinə validation istifadə edək
+        validationRules: {
+          min: 0,
+          max: 5000,
+          required: true
+        }
+      },
+      
+      // Qız tələbə sayı
+      {
+        id: uuidv4(),
+        categoryId,
+        name: "Qız tələbə sayı",
+        type: "number",
+        isRequired: true,
+        placeholder: "Məktəbdəki qız tələbələrin sayını daxil edin",
+        helpText: "Bura qız şagirdlərin ümumi sayı daxil edilməlidir",
+        order: 2,
+        status: "active",
+        validation: {
+          minValue: 0,
+          maxValue: 3000
+        },
+        // validationRules əvəzinə validation istifadə edək
+        validationRules: {
+          min: 0,
+          max: 3000,
+          required: true
+        }
+      },
+      
+      // Əlavə qeydlər
+      {
+        id: uuidv4(),
+        categoryId,
+        name: "Əlavə qeydlər",
+        type: "textarea",
+        isRequired: false,
+        placeholder: "Əlavə qeydləri buraya yazın",
+        helpText: "Tələbələrlə bağlı vacib qeydləri buraya əlavə edə bilərsiniz",
+        order: 3,
+        status: "active",
+        multiline: true // textarea üçün multiline xüsusiyyətini true edək
+      }
+    ]
+  };
 };
 
 /**
- * Kateqoriyalar üçün ilkin məlumatlar yaradır
+ * İkinci demo kateqoriya yaratmaq üçün funksiya - bu dəfə müəllim məlumatları
+ * 
+ * @returns Yaradılan demo kateqoriya
  */
-export const createInitialEntries = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
-  return categories.map(category => ({
-    categoryId: category.id,
-    values: category.columns.map(column => ({
-      columnId: column.id,
-      value: getDefaultValueByType(column.type, column.defaultValue),
-      status: 'pending' as 'pending' | 'approved' | 'rejected'
-    })),
-    isCompleted: false,
-    isSubmitted: false,
-    completionPercentage: 0,
-    approvalStatus: 'pending' as 'pending' | 'approved' | 'rejected'
-  }));
+export const createTeachersDemoCategory = (): CategoryWithColumns => {
+  const categoryId = uuidv4();
+  
+  // Müəllim məlumatları kateqoriyasını yaradaq
+  return {
+    id: categoryId,
+    name: "Müəllim məlumatları",
+    description: "Məktəbdəki müəllimlər haqqında əsas məlumatlar",
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 gün sonra
+    status: "active",
+    assignment: "sectors", // Sektorlar üçün nəzərdə tutulmuş
+    createdAt: new Date().toISOString(), // createdAt üçün cari tarixi string formatında istifadə edirik
+    columns: [
+      // Müəllim sayı sütunu
+      {
+        id: uuidv4(),
+        categoryId,
+        name: "Müəllim sayı",
+        type: "number",
+        isRequired: true,
+        placeholder: "Məktəbdəki cəmi müəllim sayını daxil edin",
+        helpText: "Bura ümumi say daxil edilməlidir",
+        order: 1,
+        status: "active",
+        validation: {
+          minValue: 0,
+          maxValue: 1000
+        },
+        // validationRules əvəzinə validation istifadə edək
+        validationRules: {
+          min: 0,
+          max: 1000,
+          required: true
+        }
+      },
+      
+      // Ali təhsilli müəllim sayı
+      {
+        id: uuidv4(),
+        categoryId,
+        name: "Ali təhsilli müəllim sayı",
+        type: "number",
+        isRequired: true,
+        placeholder: "Ali təhsilli müəllimlərin sayını daxil edin",
+        helpText: "Yalnız ali təhsili olan müəllimlər daxil edilməlidir",
+        order: 2,
+        status: "active",
+        validation: {
+          minValue: 0,
+          maxValue: 1000
+        },
+        // validationRules əvəzinə validation istifadə edək
+        validationRules: {
+          min: 0,
+          max: 1000,
+          required: true
+        }
+      },
+      
+      // Əlavə qeydlər
+      {
+        id: uuidv4(),
+        categoryId,
+        name: "Əlavə qeydlər",
+        type: "textarea",
+        isRequired: false,
+        placeholder: "Əlavə qeydləri buraya yazın",
+        helpText: "Müəllimlərlə bağlı vacib qeydləri buraya əlavə edə bilərsiniz",
+        order: 3,
+        status: "active",
+        multiline: true // textarea üçün multiline xüsusiyyətini true edək
+      }
+    ]
+  };
+};
+
+/**
+ * Yaradılmış demo kateqoriyalara id əlavə et
+ * 
+ * @param categories Mövcud kateqoriyalar
+ * @returns Id ilə yaradılmış kateqoriyalar
+ */
+export const addIdsToCategories = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
+  return categories.map((category) => {
+    // Əgər kateqoriyanın id-si artıq varsa, heç nə dəyişdirmirik
+    if (category.id) return category;
+    
+    // Əgər yoxdursa, id əlavə edirik
+    const categoryId = uuidv4();
+    
+    return {
+      ...category,
+      id: categoryId,
+      columns: category.columns.map((column) => ({
+        ...column,
+        id: column.id || uuidv4(),
+        categoryId: column.categoryId || categoryId
+      }))
+    };
+  });
 };

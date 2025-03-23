@@ -61,8 +61,8 @@ export type CategoryColumn = {
   placeholder?: string;
   helpText?: string;
   options?: (string | ColumnOption)[];
-  order: number;          // order burada məcburi olduğundan əmin olun
-  status?: 'active' | 'inactive';
+  order: number;
+  status: 'active' | 'inactive';  // status xüsusiyyətini məcburi edirik
   parentColumnId?: string;
   defaultValue?: any;
   validation?: {
