@@ -71,19 +71,6 @@ const fetchCategories = async (): Promise<Category[]> => {
   ];
 };
 
-// Fake API call to fetch stats
-const fetchCategoryStats = async () => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  
-  return {
-    totalCategories: 5,
-    activeCategories: 5,
-    totalColumns: 13,
-    pendingApprovals: 3,
-  };
-};
-
 export const useCategories = () => {
   const { t } = useLanguage();
 
@@ -96,15 +83,6 @@ export const useCategories = () => {
   } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
-  });
-
-  // Fetch category stats
-  const {
-    data: stats,
-    isLoading: isStatsLoading,
-  } = useQuery({
-    queryKey: ["categoryStats"],
-    queryFn: fetchCategoryStats,
   });
 
   // İstifadə edəcəyimiz filtrasiya hook-u
@@ -189,9 +167,7 @@ export const useCategories = () => {
   return {
     categories,
     filteredCategories,
-    stats,
     isLoading,
-    isStatsLoading,
     isError,
     searchQuery,
     setSearchQuery,

@@ -4,7 +4,6 @@ import SidebarLayout from "@/components/layout/SidebarLayout";
 import { useLanguage } from "@/context/LanguageContext";
 import CategoryList from "@/components/categories/CategoryList";
 import CategoryHeader from "@/components/categories/CategoryHeader";
-import CategoryStats from "@/components/categories/CategoryStats";
 import AddCategoryDialog from "@/components/categories/AddCategoryDialog";
 import { useCategories } from "@/hooks/useCategories";
 
@@ -14,9 +13,7 @@ const Categories = () => {
   
   const { 
     filteredCategories,
-    stats,
     isLoading,
-    isStatsLoading,
     isError,
     searchQuery,
     setSearchQuery,
@@ -33,8 +30,6 @@ const Categories = () => {
           onSearchChange={setSearchQuery}
           searchQuery={searchQuery}
         />
-
-        <CategoryStats stats={stats} isLoading={isStatsLoading} />
 
         <CategoryList
           categories={filteredCategories}
