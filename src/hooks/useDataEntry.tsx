@@ -4,7 +4,7 @@ import { CategoryWithColumns } from '@/types/column';
 import { toast } from '@/components/ui/use-toast';
 import { useLocation } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
-import { useForm } from '@/hooks/useForm';
+import { useForm } from '@/hooks/form';
 import { useValidation } from '@/hooks/useValidation';
 import { useExcelOperations } from '@/hooks/useExcelOperations';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
