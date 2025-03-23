@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 import Login from "@/pages/Login";
@@ -16,8 +16,12 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
@@ -32,11 +36,15 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
-  return children;
+  return <>{children}</>;
 };
 
+interface PublicRouteProps {
+  children: React.ReactNode;
+}
+
 // Public Route Component (redirects to dashboard if already logged in)
-const PublicRoute = ({ children }) => {
+const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
@@ -51,17 +59,18 @@ const PublicRoute = ({ children }) => {
     return <Navigate to="/dashboard" replace />;
   }
   
-  return children;
+  return <>{children}</>;
 };
 
 // App Router Component
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
   
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [location.pathname]);
   
   return (
     <Routes>

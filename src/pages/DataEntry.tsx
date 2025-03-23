@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DataEntryContainer from '@/components/dataEntry/DataEntryContainer';
-import { Toaster } from '@/components/ui/toaster';
 import { Helmet } from 'react-helmet';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -64,8 +63,7 @@ const DataEntry = () => {
         <title>{t('dataEntry')} | InfoLine</title>
       </Helmet>
       <SidebarLayout>
-        <DataEntryContainer />
-        <Toaster />
+        <DataEntryContainer initialCategoryId={categoryId} />
       </SidebarLayout>
     </>
   );

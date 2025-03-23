@@ -4,23 +4,42 @@ import { toast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryWithColumns } from '@/types/column';
 
-export const useExcelOperations = (categories: CategoryWithColumns[], updateFormData: (data: Record<string, any>) => void) => {
+export const useExcelOperations = (
+  categories: CategoryWithColumns[], 
+  updateFormData: (data: Record<string, any>, categoryId?: string) => void
+) => {
   const { t } = useLanguage();
 
   // Excel şablonunu yükləmək
-  const downloadExcelTemplate = useCallback(() => {
+  const downloadExcelTemplate = useCallback((categoryId?: string) => {
     // Burada real API çağırışı olmalıdır
-    console.log("Excel şablonu yükləndi");
     
-    toast({
-      title: t('excelTemplateDownloaded'),
-      description: t('canUploadAfterFilling'),
-      variant: "default",
-    });
-  }, [t]);
+    if (categoryId) {
+      // Spesifik kateqoriya üçün şablon yükləmək
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        console.log(`${category.name} kateqoriyası üçün Excel şablonu yükləndi`);
+        
+        toast({
+          title: t('categoryExcelTemplateDownloaded'),
+          description: `${category.name} ${t('categoryTemplateDownloaded')}`,
+          variant: "default",
+        });
+      }
+    } else {
+      // Bütün kateqoriyalar üçün şablon yükləmək
+      console.log("Bütün kateqoriyalar üçün Excel şablonu yükləndi");
+      
+      toast({
+        title: t('excelTemplateDownloaded'),
+        description: t('canUploadAfterFilling'),
+        variant: "default",
+      });
+    }
+  }, [categories, t]);
 
   // Excel faylını yükləmək və məlumatları doldurmaq
-  const uploadExcelData = useCallback((file: File) => {
+  const uploadExcelData = useCallback((file: File, categoryId?: string) => {
     // Burada real API çağırışı olmalıdır
     console.log("Excel faylı yükləndi:", file.name);
     
@@ -43,8 +62,26 @@ export const useExcelOperations = (categories: CategoryWithColumns[], updateForm
     };
     
     // Excel-dən məlumatları forma ötürmək
-    updateFormData(mockDataFromExcel);
-  }, [updateFormData]);
+    updateFormData(mockDataFromExcel, categoryId);
+    
+    // Əgər spesifik kateqoriya üçün yüklənmişsə
+    if (categoryId) {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        toast({
+          title: t('categoryDataUploaded'),
+          description: `${category.name} ${t('categoryDataSuccessfullyUploaded')}`,
+          variant: "default",
+        });
+      }
+    } else {
+      toast({
+        title: t('excelDataUploaded'),
+        description: t('dataSuccessfullyUploaded'),
+        variant: "default",
+      });
+    }
+  }, [categories, updateFormData, t]);
 
   return {
     downloadExcelTemplate,

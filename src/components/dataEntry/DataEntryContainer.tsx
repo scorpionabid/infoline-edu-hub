@@ -15,7 +15,11 @@ import DataEntryDialogs from './DataEntryDialogs';
 import StatusIndicators from './StatusIndicators';
 import DataEntryProgress from './DataEntryProgress';
 
-const DataEntryContainer: React.FC = () => {
+interface DataEntryContainerProps {
+  initialCategoryId?: string | null;
+}
+
+const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategoryId }) => {
   const {
     categories,
     currentCategoryIndex,
@@ -30,7 +34,7 @@ const DataEntryContainer: React.FC = () => {
     downloadExcelTemplate,
     uploadExcelData,
     errors
-  } = useDataEntry();
+  } = useDataEntry(initialCategoryId);
 
   const navigate = useNavigate();
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
@@ -74,7 +78,7 @@ const DataEntryContainer: React.FC = () => {
       });
       // İndiki kateqoriya üçün şablon yükləmə simulyasiyası
       setTimeout(() => {
-        downloadExcelTemplate();
+        downloadExcelTemplate(currentCategory.id);
       }, 500);
     }
   };

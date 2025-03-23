@@ -10,11 +10,13 @@ import { useForm } from '@/hooks/useForm';
 import { useValidation } from '@/hooks/useValidation';
 import { useExcelOperations } from '@/hooks/useExcelOperations';
 
-export const useDataEntry = () => {
+export const useDataEntry = (initialCategoryId?: string | null) => {
   const { t } = useLanguage();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const initialCategoryId = queryParams.get('categoryId');
+  const urlCategoryId = queryParams.get('categoryId');
+  // Prioritize function parameter over URL parameter
+  const selectedCategoryId = initialCategoryId || urlCategoryId;
   
   const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
@@ -35,12 +37,15 @@ export const useDataEntry = () => {
   const { errors, validateForm, getErrorForColumn } = useValidation(categories, formData.entries);
   
   // Excel əməliyyatları üçün updateFormData funksiyası
-  const updateFormDataFromExcel = useCallback((excelData: Record<string, any>) => {
+  const updateFormDataFromExcel = useCallback((excelData: Record<string, any>, categoryId?: string) => {
     const newEntries = [...formData.entries];
     
     // Excel-dən alınan məlumatları forma daxil edirik
     Object.entries(excelData).forEach(([columnId, value]) => {
-      const category = categories.find(cat => cat.columns.some(col => col.id === columnId));
+      // Əgər konkret kateqoriya göstərilibsə, yalnız ona aid olan sütunları yeniləyirik
+      const category = categoryId 
+        ? categories.find(cat => cat.id === categoryId && cat.columns.some(col => col.id === columnId))
+        : categories.find(cat => cat.columns.some(col => col.id === columnId));
       
       if (category) {
         const categoryIndex = newEntries.findIndex(entry => entry.categoryId === category.id);
@@ -127,9 +132,9 @@ export const useDataEntry = () => {
       
       setCategories(sortedCategories);
       
-      // URL-dən kateqoriya ID-si aldıqda həmin kateqoriyaya keçirik
-      if (initialCategoryId) {
-        const categoryIndex = sortedCategories.findIndex(cat => cat.id === initialCategoryId);
+      // Konkret kateqoriya ID-si verilibsə, həmin kateqoriyaya keçirik
+      if (selectedCategoryId) {
+        const categoryIndex = sortedCategories.findIndex(cat => cat.id === selectedCategoryId);
         if (categoryIndex !== -1) {
           setCurrentCategoryIndex(categoryIndex);
         }
@@ -207,7 +212,7 @@ export const useDataEntry = () => {
       // Konsol log məlumatı
       console.log("Forma məlumatları yükləndi");
     }, 1000);
-  }, [initialCategoryId, initializeForm, queryParams, validateForm]);
+  }, [selectedCategoryId, initializeForm, queryParams, validateForm]);
 
   // Kateqoriya dəyişmək
   const changeCategory = useCallback((index: number) => {
