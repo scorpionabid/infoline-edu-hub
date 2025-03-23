@@ -1,0 +1,137 @@
+
+/**
+ * Ümumi tərcümələr
+ */
+const common = {
+  // Naviqasiya
+  dashboard: "Dashboard",
+  dataEntry: "Məlumat daxil etmə",
+  reports: "Hesabatlar",
+  users: "İstifadəçilər",
+  schools: "Məktəblər",
+  categories: "Kateqoriyalar",
+  settings: "Tənzimləmələr",
+  profile: "Profil",
+  logout: "Çıxış",
+  
+  // Ümumi 
+  save: "Yadda saxla",
+  cancel: "Ləğv et",
+  delete: "Sil",
+  edit: "Düzəlt",
+  create: "Yarat",
+  submit: "Təqdim et",
+  update: "Yenilə",
+  add: "Əlavə et",
+  remove: "Sil",
+  view: "Bax",
+  search: "Axtar",
+  filter: "Filtrlə",
+  reset: "Sıfırla",
+  close: "Bağla",
+  confirm: "Təsdiqlə",
+  loading: "Yüklənir...",
+  back: "Geri",
+  next: "İrəli",
+  start: "Başla",
+  end: "Bitir",
+  yes: "Bəli",
+  no: "Xeyr",
+  all: "Hamısı",
+  none: "Heç biri",
+  showMore: "Daha çox göstər",
+  showLess: "Daha az göstər",
+  saveChanges: "Dəyişiklikləri yadda saxla",
+  saving: "Yadda saxlanılır...",
+  position: "Vəzifə",
+  
+  // Statuslar
+  active: "Aktiv",
+  inactive: "Deaktiv",
+  pending: "Gözləmədə",
+  approved: "Təsdiqləndi",
+  rejected: "Rədd edildi",
+  draft: "Qaralama",
+  completed: "Tamamlandı",
+  due: "Vaxtı çatır",
+  overdue: "Vaxtı keçib",
+  empty: "Boş",
+  dueSoon: "Vaxtı yaxınlaşır",
+  
+  // Tarix
+  today: "Bu gün",
+  yesterday: "Dünən",
+  tomorrow: "Sabah",
+  lastWeek: "Keçən həftə",
+  nextWeek: "Gələn həftə",
+  lastMonth: "Keçən ay",
+  nextMonth: "Gələn ay",
+  daysAgo: "{days} gün əvvəl",
+  dayAgo: "1 gün əvvəl",
+  hoursAgo: "{hours} saat əvvəl",
+  hourAgo: "1 saat əvvəl",
+  minutesAgo: "{minutes} dəqiqə əvvəl",
+  minuteAgo: "1 dəqiqə əvvəl",
+  justNow: "İndicə",
+  
+  // Bildirişlər - Genel bildirim mesajları
+  success: "Uğurlu",
+  error: "Xəta",
+  warning: "Diqqət",
+  info: "Məlumat",
+  operationSuccess: "Əməliyyat uğurla tamamlandı",
+  operationFailed: "Əməliyyat zamanı xəta baş verdi",
+  confirmAction: "Bu əməliyyatı təsdiqləmək istədiyinizə əminsiniz?",
+  confirmDelete: "Bu elementi silmək istədiyinizə əminsiniz?",
+  actionCannotUndone: "Bu əməliyyat geri qaytarıla bilməz.",
+  
+  // Profil səhifəsi
+  generalInfo: "Ümumi məlumat",
+  security: "Təhlükəsizlik",
+  notifications: "Bildirişlər",
+  language: "Dil",
+  profileUpdated: "Profil yeniləndi",
+  profileUpdatedDesc: "Profil məlumatlarınız uğurla yeniləndi",
+  changePassword: "Parolu dəyiş",
+  changePasswordDescription: "Təhlükəsizlik üçün parolunuzu mütəmadi olaraq dəyişdirin",
+  notificationPreferences: "Bildiriş tənzimləmələri",
+  notificationPreferencesDesc: "Hansı bildirişləri almaq istədiyinizi tənzimləyin",
+  emailNotificationsDesc: "E-poçt ünvanınıza bildirişlər göndəriləcək",
+  systemNotificationsDesc: "Sistem daxilində bildirişləri görmək üçün aktivləşdirin",
+  passwordChanged: "Parol dəyişdirildi",
+  passwordChangedDesc: "Parol uğurla dəyişdirildi",
+  languageDescription: "Interfeys dilini dəyişmək üçün dil seçin",
+  updating: "Yenilənir...",
+  
+  // Məktəb/Sektor/Region
+  regions: "Regionlar",
+  sectors: "Sektorlar",
+  selectRegion: "Region seçin",
+  selectSector: "Sektor seçin",
+  selectSchool: "Məktəb seçin",
+  
+  // Hesabat
+  exportToExcel: "Excel-ə ixrac et",
+  generateReport: "Hesabat yarat",
+  reportGenerated: "Hesabat yaradıldı",
+  
+  // Digər
+  moreOptions: "Daha çox",
+  actions: "Əməliyyatlar",
+  details: "Ətraflı məlumat",
+  statistics: "Statistika",
+  overview: "Ümumi baxış",
+  welcomeBack: "Xoş gəlmisiniz, {name}!",
+  lastLogin: "Son giriş: {time}",
+  noDataAvailable: "Məlumat mövcud deyil",
+  allForms: "Bütün formalar",
+  pendingForms: "Gözləyən formalar",
+  approvedForms: "Təsdiqlənmiş formalar",
+  rejectedForms: "Rədd edilmiş formalar",
+  dueSoonForms: "Vaxtı yaxınlaşan formalar",
+  overdueForms: "Vaxtı keçmiş formalar",
+  formStatusDesc: "Formalarınızın ümumi statusu",
+  continueEditing: "Dəyişməyə davam edin"
+};
+
+export default common;

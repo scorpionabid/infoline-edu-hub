@@ -1,15 +1,14 @@
 
-import azTranslations from './az';
-import enTranslations from './en';
-import ruTranslations from './ru';
-import trTranslations from './tr';
+import az from './az';
+import en from './en';
+import ru from './ru';
+import tr from './tr';
 
-// Bütün dillər üçün tərcümələri birləşdiririk
 const translations = {
-  az: azTranslations,
-  en: enTranslations,
-  ru: ruTranslations,
-  tr: trTranslations
+  az,
+  en,
+  ru,
+  tr
 };
 
 export default translations;
