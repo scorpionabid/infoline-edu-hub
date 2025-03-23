@@ -45,6 +45,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     // Konsola məlumatları çıxaraq - debug üçün
     console.log(`Cari kateqoriya: ${category.name}, ID: ${category.id}`);
     console.log(`Cari kateqoriya dəyərləri:`, entryData.values);
+    console.log(`Cari kateqoriya sütunları:`, category.columns);
   }, [category.id, entryData]);
 
   // Tamamlanma faizini hesablayaq
@@ -88,21 +89,34 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-muted-foreground">
-          {t('completionStatus')}: <span className="font-medium">{Math.round(completionPercentage)}%</span>
+          <span className="font-medium">{Math.round(completionPercentage)}%</span> {t('tamamlandı')}
           {entryData.approvalStatus && 
             <StatusBadge status={entryData.approvalStatus} />
           }
         </div>
         
-        {/* Təsdiq üçün göndər düyməsi */}
-        {onSubmitCategory && !isSubmitted && (
+        {/* Təsdiq üçün göndər düyməsi - yalnız form səviyyəsində göstərilir, aşağıda göstərilmir */}
+        {onSubmitCategory && !isSubmitted && !entryData.isSubmitted && (
           <Button 
             onClick={onSubmitCategory} 
             disabled={!isCompleted || entryData.approvalStatus === 'approved'}
             className="ml-auto"
           >
             <Send className="h-4 w-4 mr-2" />
-            {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
+            {t('submitForApproval')}
+          </Button>
+        )}
+        
+        {/* Yenidən göndər düyməsi - əgər artıq göndərilibsə, amma təsdiqlənməyibsə */}
+        {onSubmitCategory && !isSubmitted && entryData.isSubmitted && entryData.approvalStatus !== 'approved' && (
+          <Button 
+            onClick={onSubmitCategory} 
+            disabled={!isCompleted || entryData.approvalStatus === 'approved'}
+            className="ml-auto"
+            variant="outline"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {t('resubmit')}
           </Button>
         )}
       </div>
@@ -125,7 +139,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         </form>
       </Form>
       
-      {/* Aşağıdakı submit düyməsi - yalnız scroll uzun olduqda görünəcək */}
+      {/* Aşağıdakı submit düyməsi - yalnız scroll uzun olduqda və isSubmitted=false olduqda görünəcək */}
       {onSubmitCategory && !isSubmitted && (
         <div className="sticky bottom-4 flex justify-end py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <Button 

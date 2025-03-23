@@ -109,7 +109,7 @@ export const useDataUpdates = ({
     }, 500);
   }, [categories, formData, initializeForm, validateForm]);
 
-  // Kateqoriya dəyişmək - bu funksiya təkmilləşdirildi
+  // Kateqoriya dəyişmək - təkmilləşdirilmiş funksiya
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
@@ -117,6 +117,18 @@ export const useDataUpdates = ({
       
       // İndi kateqoriyanı dəyişək
       setCurrentCategoryIndex(index);
+      
+      // Kateqoriya dəyişdiyi haqqında daha detallı məlumat verək
+      console.log(`Kateqoriya dəyişdirilib: ${categories[index].name}`);
+      console.log(`Kateqoriya sütunları:`, categories[index].columns);
+      
+      // Kateqoriya daxilində məlumatların mövcudluğunu yoxlayaq
+      const entry = formData.entries.find(e => e.categoryId === categories[index].id);
+      if (entry) {
+        console.log(`Kateqoriya məlumatları:`, entry.values);
+      } else {
+        console.log(`Kateqoriya üçün məlumatlar tapılmadı`);
+      }
       
       // Yeni kateqoriyaya keçdiyimizi bildirək
       toast({
@@ -128,7 +140,7 @@ export const useDataUpdates = ({
       // Kateqoriya dəyişən kimi formanın üstünə scroll etmək
       window.scrollTo(0, 0);
     }
-  }, [categories, setCurrentCategoryIndex, saveForm, t]);
+  }, [categories, setCurrentCategoryIndex, saveForm, t, formData.entries]);
 
   // Təsdiq üçün göndərmək
   const submitForApproval = useCallback(() => {

@@ -33,12 +33,106 @@ export const useCategoryData = ({
     if (selectedCategoryId !== lastCategoryIdRef.current) {
       setIsLoading(true);
       lastCategoryIdRef.current = selectedCategoryId;
+      console.log(`Kateqoriya ID dəyişdi: ${selectedCategoryId}`);
     }
     
     // Yükləmə simulyasiyası
     const loadTimer = setTimeout(() => {
+      // Demo kateqoriyalar - əgər mockCategories boşdursa və ya az elementimlərə malikdirsə, demo əlavə edirik
+      const demoCategories: CategoryWithColumns[] = [
+        {
+          id: "demo1",
+          name: "İnfrastruktur",
+          description: "Məktəbin infrastruktur məlumatları",
+          type: "school",
+          status: "active",
+          deadline: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
+          createdAt: new Date().toISOString(),
+          columns: [
+            {
+              id: "demo-col1",
+              name: "Binanın vəziyyəti",
+              type: "select",
+              isRequired: true,
+              options: ["Əla", "Yaxşı", "Qənaətbəxş", "Təmir tələb edir"],
+              placeholder: "Binanın vəziyyətini seçin",
+              helpText: "Məktəb binasının ümumi vəziyyətini seçin"
+            },
+            {
+              id: "demo-col2",
+              name: "Son təmir tarixi",
+              type: "date",
+              isRequired: true,
+              placeholder: "Son təmir tarixini seçin",
+              helpText: "Məktəbdə aparılan son təmir işlərinin tarixini qeyd edin"
+            },
+            {
+              id: "demo-col3",
+              name: "Sinif otaqlarının sayı",
+              type: "number",
+              isRequired: true,
+              validationRules: {
+                minValue: 1,
+                maxValue: 100
+              },
+              placeholder: "Sinif otaqlarının sayını daxil edin",
+              helpText: "Məktəbdəki ümumi sinif otaqlarının sayını daxil edin"
+            }
+          ]
+        },
+        {
+          id: "demo2",
+          name: "Tədris məlumatları",
+          description: "Məktəbin tədris prosesi ilə bağlı məlumatlar",
+          type: "school",
+          status: "active",
+          deadline: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString(),
+          createdAt: new Date().toISOString(),
+          columns: [
+            {
+              id: "demo-col4",
+              name: "Tədris dili",
+              type: "select",
+              isRequired: true,
+              options: ["Azərbaycan", "Rus", "İngilis", "Qarışıq"],
+              placeholder: "Tədris dilini seçin",
+              helpText: "Məktəbin əsas tədris dilini seçin"
+            },
+            {
+              id: "demo-col5",
+              name: "Həftəlik dərs saatları",
+              type: "number",
+              isRequired: true,
+              validationRules: {
+                minValue: 20,
+                maxValue: 40
+              },
+              placeholder: "Həftəlik dərs saatlarını daxil edin",
+              helpText: "Bir həftə ərzində keçirilən ümumi dərs saatlarını daxil edin"
+            },
+            {
+              id: "demo-col6",
+              name: "Əlavə təhsil proqramları",
+              type: "text",
+              multiline: true,
+              isRequired: false,
+              placeholder: "Əlavə təhsil proqramlarını daxil edin",
+              helpText: "Məktəbdə tətbiq edilən əlavə təhsil proqramlarını təsvir edin"
+            }
+          ]
+        }
+      ];
+      
+      // Mövcud kateqoriyaları və demo kateqoriyaları birləşdiririk
+      const combinedCategories = [...mockCategories];
+      
+      // Əgər mövcud kateqoriyalar 2-dən azdırsa, demo kateqoriyaları əlavə edirik
+      if (mockCategories.length < 2) {
+        combinedCategories.push(...demoCategories);
+      }
+      
       // Yeni əlavə olunmuş kateqoriyaları və yaxın müddəti olan kateqoriyaları öndə göstərmək
-      const sortedCategories = [...mockCategories].sort((a, b) => {
+      const sortedCategories = [...combinedCategories].sort((a, b) => {
         // Əvvəlcə deadline-a görə sıralama
         if (a.deadline && b.deadline) {
           const deadlineA = new Date(a.deadline);
@@ -52,13 +146,18 @@ export const useCategoryData = ({
         return 0;
       });
       
+      console.log(`Yüklənmiş kateqoriyalar:`, sortedCategories);
       setCategories(sortedCategories);
       
       // Konkret kateqoriya ID-si verilibsə, həmin kateqoriyaya keçirik
       if (selectedCategoryId) {
         const categoryIndex = sortedCategories.findIndex(cat => cat.id === selectedCategoryId);
         if (categoryIndex !== -1) {
+          console.log(`Seçilmiş kateqoriya indeksi: ${categoryIndex}`);
           setCurrentCategoryIndex(categoryIndex);
+        } else {
+          console.log(`Seçilmiş kateqoriya ID (${selectedCategoryId}) tapılmadı, ilk kateqoriyaya keçirilir`);
+          setCurrentCategoryIndex(0);
         }
       } else {
         // Vaxtı keçən və ya yaxınlaşan kategorya varsa, ona fokuslanmaq
@@ -73,7 +172,11 @@ export const useCategoryData = ({
         });
 
         if (overdueOrUrgentCategoryIndex !== -1) {
+          console.log(`Təcili kateqoriya indeksi: ${overdueOrUrgentCategoryIndex}`);
           setCurrentCategoryIndex(overdueOrUrgentCategoryIndex);
+        } else {
+          console.log(`Təcili kateqoriya tapılmadı, ilk kateqoriyaya keçirilir`);
+          setCurrentCategoryIndex(0);
         }
       }
 
