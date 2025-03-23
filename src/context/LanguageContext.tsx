@@ -1,14 +1,21 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 
 // Dil tiplərini müəyyən edirik
-type Language = 'az' | 'en' | 'ru' | 'tr';
+export type Language = 'az' | 'en' | 'ru' | 'tr';
 
-// Dil seçimləri üçün etiketlər
-const languageLabels: Record<Language, string> = {
-  az: 'Azərbaycan',
-  en: 'English',
-  ru: 'Русский',
-  tr: 'Türkçe'
+// Dil məlumatları interfeysi
+interface LanguageInfo {
+  nativeName: string;
+  flag: string;
+}
+
+// Dil seçimləri
+const languageOptions: Record<Language, LanguageInfo> = {
+  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
+  en: { nativeName: 'English', flag: '🇬🇧' },
+  ru: { nativeName: 'Русский', flag: '🇷🇺' },
+  tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
 };
 
 // Tərcümələr
@@ -64,6 +71,7 @@ const translations: Record<Language, Record<string, string>> = {
     unarchiveFailed: 'Məlumat arxivdən çıxarılarkən xəta baş verdi',
     noMatchingRecordsFound: 'Uyğun məlumat tapılmadı',
     loading: 'Yüklənir...',
+    language: 'Dil',
     
     // Data entry page
     dataEntry: 'Məlumatların daxil edilməsi',
@@ -86,7 +94,6 @@ const translations: Record<Language, Record<string, string>> = {
     rejected: 'Rədd edilmiş',
     completion: 'Tamamlanma',
     completed: 'Tamamlanmış',
-    categories: 'Kateqoriyalar',
     category: 'Kateqoriya',
     excelTemplate: 'Excel şablonu',
     downloadAllTemplate: 'Tam şablonu endir',
@@ -128,7 +135,6 @@ const translations: Record<Language, Record<string, string>> = {
     helpTip6: 'Son tarixlər keçdikdə bildiriş alacaqsınız',
     helpTip7: 'Problem yaşadıqda texniki dəstəklə əlaqə saxlayın',
     understood: 'Başa düşdüm',
-    cancel: 'Ləğv et',
     confirm: 'Təsdiq et',
     submitWarning: 'Məlumatlarınızı təsdiq üçün göndərmək istədiyinizə əminsiniz? Təsdiqləndikdən sonra düzəliş edə bilməyəcəksiniz.',
     resubmit: 'Yenidən göndər',
@@ -145,7 +151,12 @@ const translations: Record<Language, Record<string, string>> = {
     today: 'Bu gün',
     tomorrow: 'Sabah',
     daysLeft: 'gün qalıb',
-    submitted: 'Göndərildi'
+    submitted: 'Göndərildi',
+    forgotPassword: 'Şifrəni unutmusunuz?',
+    resetPassword: 'Şifrəni sıfırla',
+    password: 'Şifrə',
+    email: 'E-poçt',
+    login: 'Giriş'
   },
   en: {
     selectLanguage: 'Select Language',
@@ -198,6 +209,7 @@ const translations: Record<Language, Record<string, string>> = {
     unarchiveFailed: 'Failed to unarchive data',
     noMatchingRecordsFound: 'No matching records found',
     loading: 'Loading...',
+    language: 'Language',
     
     // Data entry page translations (brief example)
     dataEntry: 'Data Entry',
@@ -221,7 +233,6 @@ const translations: Record<Language, Record<string, string>> = {
     rejected: 'Rejected',
     completion: 'Completion',
     completed: 'Completed',
-    categories: 'Categories',
     category: 'Category',
     excelTemplate: 'Excel Template',
     downloadAllTemplate: 'Download Full Template',
@@ -280,7 +291,11 @@ const translations: Record<Language, Record<string, string>> = {
     tomorrow: 'Tomorrow',
     daysLeft: 'days left',
     submitted: 'Submitted',
-    cancel: 'Cancel'
+    forgotPassword: 'Forgot Password?',
+    resetPassword: 'Reset Password',
+    password: 'Password',
+    email: 'Email',
+    login: 'Login'
   },
   ru: {
     selectLanguage: 'Выберите язык',
@@ -333,6 +348,7 @@ const translations: Record<Language, Record<string, string>> = {
     unarchiveFailed: 'Не удалось разархивировать данные',
     noMatchingRecordsFound: 'Совпадений не найдено',
     loading: 'Загрузка...',
+    language: 'Язык',
     
     // Data entry page translations (brief example)
     dataEntry: 'Ввод данных',
@@ -356,7 +372,6 @@ const translations: Record<Language, Record<string, string>> = {
     rejected: 'Отклонено',
     completion: 'Завершение',
     completed: 'Завершено',
-    categories: 'Категории',
     category: 'Категория',
     excelTemplate: 'Excel шаблон',
     downloadAllTemplate: 'Скачать полный шаблон',
@@ -415,7 +430,11 @@ const translations: Record<Language, Record<string, string>> = {
     tomorrow: 'Завтра',
     daysLeft: 'дней осталось',
     submitted: 'Отправлено',
-    cancel: 'Отмена'
+    forgotPassword: 'Забыли пароль?',
+    resetPassword: 'Сбросить пароль',
+    password: 'Пароль',
+    email: 'Эл. почта',
+    login: 'Вход'
   },
   tr: {
     selectLanguage: 'Dil Seçin',
@@ -468,6 +487,7 @@ const translations: Record<Language, Record<string, string>> = {
     unarchiveFailed: 'Veri arşivden çıkarılırken hata oluştu',
     noMatchingRecordsFound: 'Eşleşen kayıt bulunamadı',
     loading: 'Yükleniyor...',
+    language: 'Dil',
     
     // Data entry page translations (brief example)
     dataEntry: 'Veri Girişi',
@@ -491,7 +511,6 @@ const translations: Record<Language, Record<string, string>> = {
     rejected: 'Reddedildi',
     completion: 'Tamamlama',
     completed: 'Tamamlandı',
-    categories: 'Kategoriler',
     category: 'Kategori',
     excelTemplate: 'Excel Şablonu',
     downloadAllTemplate: 'Tam Şablonu İndir',
@@ -550,7 +569,11 @@ const translations: Record<Language, Record<string, string>> = {
     tomorrow: 'Yarın',
     daysLeft: 'gün kaldı',
     submitted: 'Gönderildi',
-    cancel: 'İptal'
+    forgotPassword: 'Şifreyi unuttunuz mu?',
+    resetPassword: 'Şifreyi Sıfırla',
+    password: 'Şifre',
+    email: 'E-posta',
+    login: 'Giriş'
   }
 };
 
@@ -559,7 +582,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
-  languageLabels: Record<Language, string>;
+  languages: Record<Language, LanguageInfo>;
 }
 
 // Context-i yaradırıq
@@ -581,7 +604,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     language,
     setLanguage,
     t,
-    languageLabels
+    languages: languageOptions
   };
 
   return (

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const LanguageSelector = () => {
-  const { currentLanguage, setLanguage, languages, t } = useLanguage();
+  const { language, setLanguage, languages, t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const handleSelectLanguage = (lang: Language) => {
@@ -32,16 +32,16 @@ const LanguageSelector = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
-        {Object.entries(languages).map(([code, language]) => (
+        {Object.entries(languages).map(([code, langInfo]) => (
           <DropdownMenuItem
             key={code}
             className={`flex items-center justify-between ${
-              currentLanguage === code ? 'font-semibold bg-accent/50' : ''
+              language === code ? 'font-semibold bg-accent/50' : ''
             }`}
             onClick={() => handleSelectLanguage(code as Language)}
           >
-            <span className="mr-2">{language.flag}</span>
-            <span>{language.nativeName}</span>
+            <span className="mr-2">{langInfo.flag}</span>
+            <span>{langInfo.nativeName}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
