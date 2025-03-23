@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { mockSchools } from '@/data/schoolsData';
 import { mockCategories } from '@/data/mockCategories';
 import { Notification } from '@/components/dashboard/NotificationsCard';
+import { FormStatus } from '@/types/form';
 
 // SuperAdmin üçün data interfeysi
 export interface SuperAdminDashboardData {
@@ -89,7 +89,7 @@ export interface SchoolAdminDashboardData {
     id: string;
     title: string;
     category: string;
-    status: "pending" | "approved" | "rejected" | "draft" | "overdue" | "due";
+    status: FormStatus;
     completionPercentage: number;
     deadline?: string;
   }>;
@@ -219,9 +219,9 @@ const getSchoolAdminData = (): SchoolAdminDashboardData => {
       id: `${category.id}-${column.id}`,
       title: column.name,
       category: category.name,
-      status: idx % 4 === 0 ? "pending" : 
-              idx % 4 === 1 ? "approved" : 
-              idx % 4 === 2 ? "rejected" : "draft",
+      status: idx % 4 === 0 ? "pending" as FormStatus : 
+              idx % 4 === 1 ? "approved" as FormStatus : 
+              idx % 4 === 2 ? "rejected" as FormStatus : "draft" as FormStatus,
       completionPercentage: idx % 4 === 1 ? 100 : Math.floor(Math.random() * 80) + 20,
       deadline: category.deadline
     }))
