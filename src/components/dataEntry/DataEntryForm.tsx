@@ -96,27 +96,15 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         </div>
         
         {/* Təsdiq üçün göndər düyməsi - yalnız form səviyyəsində göstərilir, aşağıda göstərilmir */}
-        {onSubmitCategory && !isSubmitted && !entryData.isSubmitted && (
-          <Button 
-            onClick={onSubmitCategory} 
-            disabled={!isCompleted || entryData.approvalStatus === 'approved'}
-            className="ml-auto"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {t('submitForApproval')}
-          </Button>
-        )}
-        
-        {/* Yenidən göndər düyməsi - əgər artıq göndərilibsə, amma təsdiqlənməyibsə */}
-        {onSubmitCategory && !isSubmitted && entryData.isSubmitted && entryData.approvalStatus !== 'approved' && (
+        {onSubmitCategory && !isSubmitted && entryData.approvalStatus !== 'approved' && (
           <Button 
             onClick={onSubmitCategory} 
             disabled={!isCompleted}
             className="ml-auto"
-            variant="outline"
+            variant={entryData.isSubmitted ? "outline" : "default"}
           >
             <Send className="h-4 w-4 mr-2" />
-            {t('resubmit')}
+            {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
           </Button>
         )}
       </div>
@@ -140,11 +128,12 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       </Form>
       
       {/* Aşağıdakı submit düyməsi - yalnız scroll uzun olduqda və isSubmitted=false olduqda görünəcək */}
-      {onSubmitCategory && !isSubmitted && (
+      {onSubmitCategory && !isSubmitted && entryData.approvalStatus !== 'approved' && (
         <div className="sticky bottom-4 flex justify-end py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <Button 
             onClick={onSubmitCategory}
-            disabled={!isCompleted || entryData.approvalStatus === 'approved'}
+            disabled={!isCompleted}
+            variant={entryData.isSubmitted ? "outline" : "default"}
           >
             <Send className="h-4 w-4 mr-2" />
             {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
