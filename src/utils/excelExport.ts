@@ -1,17 +1,6 @@
-
 import * as XLSX from 'xlsx';
-import { SchoolColumnData } from '@/types/report';
-import { CategoryWithColumns } from '@/types/column';
-
-interface ExportOptions {
-  includeHeaders?: boolean;
-  customFileName?: string;
-  sheetName?: string;
-  includeTimestamp?: boolean;
-  includeSchoolInfo?: boolean;
-  format?: 'xlsx' | 'csv' | 'txt';
-  filterColumns?: string[];
-}
+import { SchoolColumnData, ExportOptions } from '@/types/report';
+import { CategoryWithColumns, ColumnType } from '@/types/column';
 
 export function exportTableToExcel(
   data: SchoolColumnData[],
@@ -49,9 +38,9 @@ export function exportTableToExcel(
       // Əgər məktəb məlumatları daxil edilməlidirsə
       if (includeSchoolInfo) {
         rowData['Məktəb adı'] = school.schoolName;
-        rowData['Məktəb kodu'] = school.schoolCode || '';
-        rowData['Region'] = school.region || '';
-        rowData['Sektor'] = school.sector || '';
+        if (school.schoolCode) rowData['Məktəb kodu'] = school.schoolCode;
+        if (school.region) rowData['Region'] = school.region;
+        if (school.sector) rowData['Sektor'] = school.sector;
       }
 
       // Hər bir sütun üçün datanı əlavə edək (əgər filter varsa, yalnız seçilmiş sütunları daxil edək)
@@ -69,7 +58,7 @@ export function exportTableToExcel(
           value = value ? 'Bəli' : 'Xeyr';
         } else if (value === null || value === undefined) {
           value = '-';
-        } else if (value instanceof Date) {
+        } else if (typeof value === 'object' && value instanceof Date) {
           value = value.toLocaleDateString();
         } else if (Array.isArray(value)) {
           value = value.join(', ');
@@ -234,7 +223,7 @@ export function createExcelTemplate(
           case 'select':
             emptyRow.push(column.options?.[0] || '');
             break;
-          case 'boolean':
+          case 'checkbox':
             emptyRow.push('Bəli');
             break;
           default:
@@ -325,7 +314,7 @@ export function createExcelTemplate(
         
         if (column.type === 'select' && column.options) {
           rules.push(`Seçimlər: ${column.options.join(', ')}`);
-        } else if (column.type === 'boolean') {
+        } else if (column.type === 'checkbox') {
           rules.push('Dəyərlər: Bəli, Xeyr');
         }
         
@@ -421,15 +410,18 @@ export function parseExcelTemplate(file: File): Promise<any[]> {
 }
 
 // Köməkçi funksiya: Sütun tipini Azərbaycan dilinə tərcümə etmək
-function translateColumnType(type: string): string {
+function translateColumnType(type: ColumnType): string {
   switch (type) {
     case 'text': return 'Mətn';
     case 'number': return 'Rəqəm';
     case 'date': return 'Tarix';
     case 'select': return 'Seçim';
-    case 'boolean': return 'Bəli/Xeyr';
+    case 'checkbox': return 'Bəli/Xeyr';
+    case 'radio': return 'Radio seçim';
     case 'email': return 'E-poçt';
     case 'phone': return 'Telefon';
+    case 'file': return 'Fayl';
+    case 'image': return 'Şəkil';
     default: return type;
   }
 }

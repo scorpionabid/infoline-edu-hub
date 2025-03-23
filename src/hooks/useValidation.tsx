@@ -289,31 +289,17 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
   }, [categories, entries, t]);
   
   // Sütun üçün xəta mesajını almaq
-  const getErrorForColumn = useCallback((columnId: string, entryValues: any[]) => {
+  const getErrorForColumn = useCallback((columnId: string) => {
     const error = errors.find(err => err.columnId === columnId);
     if (error) return error.message;
-    
-    // Alternativ olaraq, entry məlumatlarından da xəta mesajını ala bilərik
-    for (const valueObj of entryValues) {
-      if (valueObj.columnId === columnId && valueObj.errorMessage) {
-        return valueObj.errorMessage;
-      }
-    }
     
     return undefined;
   }, [errors]);
   
   // Sütun üçün xəbərdarlıq mesajını almaq
-  const getWarningForColumn = useCallback((columnId: string, entryValues: any[]) => {
+  const getWarningForColumn = useCallback((columnId: string) => {
     const warning = warnings.find(w => w.columnId === columnId);
     if (warning) return warning.message;
-    
-    // Alternativ olaraq, entry məlumatlarından da xəbərdarlıq mesajını ala bilərik
-    for (const valueObj of entryValues) {
-      if (valueObj.columnId === columnId && valueObj.warningMessage && !valueObj.errorMessage) {
-        return valueObj.warningMessage;
-      }
-    }
     
     return undefined;
   }, [warnings]);

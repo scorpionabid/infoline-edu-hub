@@ -19,6 +19,9 @@ export interface User {
     email: boolean;
     system: boolean;
   };
+  // Əlavə edilmiş xüsusiyyətlər
+  phone?: string;
+  position?: string;
   createdAt: Date;
   updatedAt: Date;
 }

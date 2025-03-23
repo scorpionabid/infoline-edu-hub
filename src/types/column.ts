@@ -7,7 +7,10 @@ export type ColumnType =
   | "checkbox"
   | "radio"
   | "file"
-  | "image";
+  | "image"
+  | "email"  // Yeni tip
+  | "phone"  // Yeni tip
+  | "boolean"; // Yeni tip
 
 export type Column = {
   id: string;
@@ -20,6 +23,17 @@ export type Column = {
     maxValue?: number;
     format?: string;
     regex?: string;
+    // Yeni validasiya xüsusiyyətləri
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    patternError?: string;
+    minDate?: string | Date;
+    maxDate?: string | Date;
+    warningThreshold?: {
+      min?: number;
+      max?: number;
+    };
   };
   defaultValue?: string;
   options?: string[]; // for select, checkbox, radio types
@@ -31,6 +45,14 @@ export type Column = {
   conditionalDisplay?: {
     columnId: string;
     value: string;
+  };
+  // Asılılıq xüsusiyyəti
+  dependsOn?: {
+    columnId: string;
+    condition?: {
+      type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+      value: string | number;
+    }
   };
   status: "active" | "inactive";
   multiline?: boolean; // Əlavə edildi: çoxsətirli mətn sahələri üçün
@@ -47,4 +69,3 @@ export type CategoryWithColumns = {
   createdAt?: string; // Əlavə edildi: yaradılma tarixi
   priority?: number; // Əlavə edildi: prioritet xüsusiyyəti
 };
-

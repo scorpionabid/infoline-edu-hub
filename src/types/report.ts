@@ -1,37 +1,34 @@
 
-export interface ReportDataItem {
-  name: string;
-  value: number | string;
-  category: string;
-  comparisonValue?: number;
-}
-
 export interface Report {
   id: string;
   title: string;
-  type: string; // 'statistics' | 'completion' | 'comparison'
+  type: 'statistics' | 'completion' | 'comparison';
   description: string;
   created: string;
-  data: ReportDataItem[];
+  data: any[];
   summary: string;
-  insights?: string[];
-  recommendations?: string[];
+  insights: string[];
+  recommendations: string[];
 }
 
 export interface SchoolColumnData {
   schoolId: string;
   schoolName: string;
+  schoolCode?: string;  // Yeni əlavə olundu
+  region?: string;      // Yeni əlavə olundu
+  sector?: string;      // Yeni əlavə olundu
   columnData: {
     columnId: string;
-    value: string | number | boolean | null;
+    value: any;
   }[];
 }
 
-export interface CategoryColumn {
-  id: string;
-  name: string;
-  type: string;
-  categoryId?: string;
-  order?: number;
-  status?: string;
+export interface ExportOptions {
+  includeHeaders?: boolean;
+  customFileName?: string;
+  sheetName?: string;
+  includeTimestamp?: boolean;
+  includeSchoolInfo?: boolean;
+  format?: 'xlsx' | 'csv' | 'txt';
+  filterColumns?: string[];
 }

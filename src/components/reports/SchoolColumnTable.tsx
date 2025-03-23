@@ -61,7 +61,8 @@ const SchoolColumnTable: React.FC = () => {
     }
 
     const fileName = `məktəb-məlumatları-${selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}`;
-    const success = exportTableToExcel(schoolColumnData, selectedCategory, fileName);
+    // Düzəliş: fileName-dən öncə {} əlavə edirəm
+    const success = exportTableToExcel(schoolColumnData, selectedCategory, { customFileName: fileName });
     
     if (success) {
       toast({

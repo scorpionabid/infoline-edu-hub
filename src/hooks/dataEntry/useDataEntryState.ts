@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { mockCategories } from '@/data/mockCategories';
@@ -75,8 +74,8 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
           
           const currentTime = new Date();
           // Saxlama uğurlu oldu
-          setAutoSaveState(prev => ({
-            ...prev, 
+          setAutoSaveState(prevState => ({
+            ...prevState, 
             inProgress: false,
             lastSaved: currentTime,
             errors: [],
@@ -91,15 +90,13 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
           consecutiveErrorsRef.current = 0;
           
           // Saxlamanın uğurlu olduğunu bildirişi (əl ilə saxlama üçün bildiriş daha qabarıq)
-          if (prev.saveMethod === 'manual') {
+          if (prevState.saveMethod === 'manual') {
             toast.success(t('manualSaveSuccess'), {
-              description: t('changesSavedAt', { time: currentTime.toLocaleTimeString() }),
-              duration: 3000
+              description: t('changesSavedAt', { time: currentTime.toLocaleTimeString() })
             });
           } else {
             toast.success(t('autoSaveSuccess'), {
-              description: t('autoSaveDescription'),
-              duration: 2000
+              description: t('autoSaveDescription')
             });
           }
           
@@ -108,35 +105,32 @@ export const useDataEntryState = (selectedCategoryId: string | null) => {
           consecutiveErrorsRef.current += 1;
           
           // Xəta vəziyyətini yeniləyək
-          setAutoSaveState(prev => {
-            const newRetryCount = prev.retryCount + 1;
-            const newErrors = [...prev.errors, String(error)];
+          setAutoSaveState(prevState => {
+            const newRetryCount = prevState.retryCount + 1;
+            const newErrors = [...prevState.errors, String(error)];
             const timeSinceAttempt = Date.now() - saveAttemptTimestampRef.current;
             
             // İstifadəçiyə müxtəlif xəta bildirişləri göstərək
             if (timeSinceAttempt < 500) {
               // Sürətli xəta - server cavab vermir
               toast.error(t('serverNotResponding'), {
-                description: t('tryAgainLater'),
-                duration: 4000
+                description: t('tryAgainLater')
               });
             } else if (consecutiveErrorsRef.current >= 3) {
               // Bir-birinin ardınca çoxlu xətalar
               setNetworkError(true);
               toast.error(t('persistentSaveErrors'), {
-                description: t('checkNetworkConnection'),
-                duration: 5000
+                description: t('checkNetworkConnection')
               });
             } else {
               // Standart xəta
               toast.error(t('autoSaveError'), {
-                description: t('autoSaveErrorRetry'),
-                duration: 4000
+                description: t('autoSaveErrorRetry')
               });
             }
             
             return {
-              ...prev,
+              ...prevState,
               inProgress: false,
               errors: newErrors,
               retryCount: newRetryCount,

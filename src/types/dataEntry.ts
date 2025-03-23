@@ -97,7 +97,7 @@ export interface AutoSaveConfig {
   successMessage: boolean;
 }
 
-// Validasiya qaydaları tipi - daha ətraflı
+// Validasiya qaydaları tipi - Column.validationRules tipi ilə uyğunlaşdırılıb
 export interface ValidationRules {
   required?: boolean;
   minLength?: number;
@@ -112,5 +112,7 @@ export interface ValidationRules {
     min?: number;
     max?: number;
   };
+  format?: string;
+  regex?: string;
   customValidator?: (value: any) => { valid: boolean; message?: string };
 }
