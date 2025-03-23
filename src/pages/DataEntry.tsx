@@ -19,6 +19,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Category, Column } from '@/types/column';
 
 const DataEntry = () => {
   const location = useLocation();
@@ -29,6 +30,68 @@ const DataEntry = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  
+  // Demo məlumatlar
+  const demoCategories: Category[] = [
+    {
+      id: "cat1",
+      name: "Ümumi məlumatlar",
+      description: "Məktəb haqqında ümumi məlumatlar",
+      categoryId: "",
+      deadline: "2023-12-31",
+      status: "active",
+      priority: 1,
+      assignment: "all",
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    },
+    {
+      id: "cat2",
+      name: "Müəllim heyəti",
+      description: "Müəllimlər haqqında statistik məlumatlar",
+      categoryId: "",
+      deadline: "2023-12-31",
+      status: "active",
+      priority: 2,
+      assignment: "all",
+      createdAt: "2023-01-01",
+      updatedAt: "2023-01-01",
+    }
+  ];
+  
+  const demoColumns: Column[] = [
+    {
+      id: "col1",
+      categoryId: "cat1",
+      name: "Məktəbin adı",
+      type: "text",
+      isRequired: true,
+      placeholder: "Məktəbin tam adını daxil edin",
+      helpText: "Rəsmi sənədlərdəki adı qeyd edin",
+      order: 1,
+      status: "active"
+    },
+    {
+      id: "col2",
+      categoryId: "cat1",
+      name: "Şagird sayı",
+      type: "number",
+      isRequired: true,
+      placeholder: "Ümumi şagird sayını daxil edin",
+      order: 2,
+      status: "active"
+    },
+    {
+      id: "col3",
+      categoryId: "cat2",
+      name: "Müəllim sayı",
+      type: "number",
+      isRequired: true,
+      placeholder: "Ümumi müəllim sayını daxil edin",
+      order: 1,
+      status: "active"
+    }
+  ];
   
   // Məktəb status statistikaları (demo)
   const formStatistics = {
@@ -218,8 +281,10 @@ const DataEntry = () => {
           )}
           
           <DataEntryForm 
-            initialCategoryId={categoryId} 
-            statusFilter={selectedStatus as any} 
+            selectedCategory={categoryId}
+            categories={demoCategories}
+            columns={demoColumns}
+            onCategoryChange={(id) => console.log("Category changed:", id)}
             onDataChanged={() => {
               // Məlumatlar dəyişdiyində status statistikalarını yeniləmək (real sistemdə)
               console.log("Data changed, stats would be updated");

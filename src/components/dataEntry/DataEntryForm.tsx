@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -8,8 +9,8 @@ import {
   CardDescription
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CategoryHeader } from './components/CategoryHeader';
-import { FormField } from './components/FormField';
+import CategoryHeader from './components/CategoryHeader';
+import FormField from './components/FormField';
 import { useLanguage } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -17,9 +18,9 @@ import { useDataEntry } from '@/hooks/useDataEntry';
 import { Check, Clock, XCircle, AlertTriangle, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { ApprovalAlert } from './components/ApprovalAlert';
-import { RejectionAlert } from './components/RejectionAlert';
-import { Category, Column } from '@/types/dataEntry';
+import ApprovalAlert from './components/ApprovalAlert';
+import RejectionAlert from './components/RejectionAlert';
+import { Category, Column } from '@/types/column'; // dataEntry tipi əvəzinə column tipindən istifadə edirik
 
 interface DataEntryFormProps {
   selectedCategory?: string | null;
@@ -28,6 +29,9 @@ interface DataEntryFormProps {
   columns: Column[];
   loading?: boolean;
   compact?: boolean;
+  initialCategoryId?: string | null; // Props üçün initialCategoryId əlavə edirik
+  statusFilter?: string | null; // Statusfiltri əlavə edirik
+  onDataChanged?: () => void; // Verilənlər dəyişdiyində çağırılacaq callback
 }
 
 const DataEntryForm: React.FC<DataEntryFormProps> = ({
@@ -36,7 +40,10 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   categories,
   columns,
   loading = false,
-  compact = false
+  compact = false,
+  initialCategoryId,
+  statusFilter,
+  onDataChanged
 }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string | null>(selectedCategory);
@@ -81,6 +88,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   // Form sahəsi dəyəri dəyişdikdə
   const handleFieldChange = (value: any) => {
     console.log('Field value changed:', value);
+    if (onDataChanged) onDataChanged();
   };
   
   // Minimal görünüş - bütün kateqoriyalar görünür, kateqoriya seçildikdə sütunlar sətir formasında göstərilir
@@ -130,6 +138,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   <div className="mt-4 border p-4 rounded-md">
                     {columns.find(c => c.id === selectedColumnId)?.name && (
                       <FormField
+                        key={selectedColumnId}
                         column={columns.find(c => c.id === selectedColumnId)!}
                         value=""
                         onChange={handleFieldChange}
@@ -198,14 +207,25 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             </TabsList>
             {categories.map((category) => (
               <TabsContent key={category.id} value={category.id} className="space-y-2">
-                <CategoryHeader category={category} />
+                <CategoryHeader 
+                  name={category.name}
+                  description={category.description}
+                  deadline={category.deadline}
+                  isSubmitted={false}
+                />
                 <Separator />
                 {getColumnsForCategory(category.id).map((column) => (
                   <FormField
                     key={column.id}
-                    column={column}
+                    id={column.id}
+                    label={column.name}
+                    type={column.type}
+                    required={column.isRequired}
+                    options={column.options}
+                    placeholder={column.placeholder}
+                    helpText={column.helpText}
                     value=""
-                    onChange={() => {}}
+                    onChange={handleFieldChange}
                   />
                 ))}
               </TabsContent>
@@ -214,8 +234,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         )}
       </CardContent>
       <CardFooter className="justify-between">
-        <ApprovalAlert />
-        <RejectionAlert />
+        <ApprovalAlert isApproved={false} />
+        <RejectionAlert errorMessage={""} />
         <Button type="submit">{t('submitForm')}</Button>
       </CardFooter>
     </Card>
