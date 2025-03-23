@@ -80,7 +80,9 @@ const DataEntry = () => {
         <title>{t('dataEntry')} | InfoLine</title>
       </Helmet>
       <SidebarLayout>
-        <DataEntryContainer initialCategoryId={categoryId} />
+        <div className="container mx-auto py-6">
+          <DataEntryContainer initialCategoryId={categoryId} />
+        </div>
       </SidebarLayout>
     </>
   );

@@ -77,12 +77,22 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
     setIsSubmitDialogOpen(true);
   };
 
-  const handleSaveCurrentCategory = () => {
+  const handleSubmitCurrentCategory = () => {
+    // Əvvəlcə saxlayaq
     saveForm();
-    toast({
-      title: t('categorySaved'),
-      description: t('currentCategorySaved'),
-    });
+    
+    // Sonra təsdiq dialoqunu açaq
+    if (currentCategory && currentEntryData) {
+      if (currentEntryData.isCompleted) {
+        setIsSubmitDialogOpen(true);
+      } else {
+        toast({
+          title: t('error'),
+          description: t('completeAllRequiredFields'),
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const downloadCategoryTemplate = () => {
@@ -110,7 +120,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
   return (
     <div className="space-y-6">
       {/* Header with navigation and action buttons */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card p-4 rounded-lg shadow-sm">
         <div>
           <div className="flex items-center gap-2">
             <Button 
@@ -127,6 +137,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
             {t('enterDataAndSubmit')}
           </p>
         </div>
+        
         <div className="flex flex-wrap items-center gap-3">
           <div className="text-sm text-muted-foreground flex items-center">
             {isAutoSaving ? (
@@ -141,6 +152,7 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
               </span>
             )}
           </div>
+          
           <TooltipProvider>
             <div className="flex items-center gap-2">
               <Tooltip>
@@ -211,8 +223,8 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
 
       {/* Main content card */}
       <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="border-none shadow-md">
+          <CardHeader className="pb-3 bg-muted/30">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <CardTitle className="text-xl flex items-center flex-wrap gap-2">
                 {t('formData')}
@@ -246,14 +258,16 @@ const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ initialCategory
             )}
 
             {currentCategory && currentEntryData && (
-              <DataEntryForm 
-                category={currentCategory}
-                entryData={currentEntryData}
-                onValueChange={updateValue}
-                getErrorForColumn={getErrorForColumn}
-                isSubmitted={formData.status === 'approved'}
-                onSaveCategory={handleSaveCurrentCategory}
-              />
+              <div className="mt-6 bg-white dark:bg-slate-900 p-6 rounded-md shadow-sm border">
+                <DataEntryForm 
+                  category={currentCategory}
+                  entryData={currentEntryData}
+                  onValueChange={updateValue}
+                  getErrorForColumn={getErrorForColumn}
+                  isSubmitted={formData.status === 'approved'}
+                  onSubmitCategory={handleSubmitCurrentCategory}
+                />
+              </div>
             )}
             
             <StatusIndicators 

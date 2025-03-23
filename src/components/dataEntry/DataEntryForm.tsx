@@ -10,6 +10,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import FormField from './components/FormField';
 import ApprovalAlert from './components/ApprovalAlert';
 import CategoryHeader from './components/CategoryHeader';
+import { Button } from '@/components/ui/button';
+import { Send } from 'lucide-react';
+import StatusBadge from './components/StatusBadge';
 
 interface DataEntryFormProps {
   category: CategoryWithColumns;
@@ -17,7 +20,7 @@ interface DataEntryFormProps {
   onValueChange: (categoryId: string, columnId: string, value: any) => void;
   getErrorForColumn: (columnId: string) => string | undefined;
   isSubmitted: boolean;
-  onSaveCategory?: () => void;
+  onSubmitCategory?: () => void;
 }
 
 const DataEntryForm: React.FC<DataEntryFormProps> = ({
@@ -26,7 +29,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   onValueChange,
   getErrorForColumn,
   isSubmitted,
-  onSaveCategory
+  onSubmitCategory
 }) => {
   const form = useForm();
   const { t } = useLanguage();
@@ -39,10 +42,14 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
     window.scrollTo(0, 0);
     
-    // Konsola məlumatları çıxaaq - debug üçün
+    // Konsola məlumatları çıxaraq - debug üçün
     console.log(`Cari kateqoriya: ${category.name}, ID: ${category.id}`);
     console.log(`Cari kateqoriya dəyərləri:`, entryData.values);
   }, [category.id, entryData]);
+
+  // Tamamlanma faizini hesablayaq
+  const completionPercentage = entryData.completionPercentage || 0;
+  const isCompleted = entryData.isCompleted || false;
 
   return (
     <div className="space-y-6">
@@ -50,7 +57,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         name={category.name}
         description={category.description}
         deadline={category.deadline}
-        onSaveCategory={onSaveCategory}
         isSubmitted={isSubmitted}
       />
       
@@ -72,9 +78,38 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       
       <ApprovalAlert isApproved={entryData.approvalStatus === 'approved'} />
       
+      {/* Tamamlanma faizini göstərən indikator */}
+      <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-6">
+        <div 
+          className="bg-primary h-2.5 rounded-full transition-all duration-300" 
+          style={{ width: `${completionPercentage}%` }}
+        ></div>
+      </div>
+      
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-sm text-muted-foreground">
+          {t('completionStatus')}: <span className="font-medium">{Math.round(completionPercentage)}%</span>
+          {entryData.approvalStatus && 
+            <StatusBadge status={entryData.approvalStatus} />
+          }
+        </div>
+        
+        {/* Təsdiq üçün göndər düyməsi */}
+        {onSubmitCategory && !isSubmitted && (
+          <Button 
+            onClick={onSubmitCategory} 
+            disabled={!isCompleted || entryData.approvalStatus === 'approved'}
+            className="ml-auto"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
+          </Button>
+        )}
+      </div>
+      
       <Form {...form}>
         <form className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {category.columns.map(column => (
               <FormField
                 key={column.id}
@@ -89,6 +124,19 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           </div>
         </form>
       </Form>
+      
+      {/* Aşağıdakı submit düyməsi - yalnız scroll uzun olduqda görünəcək */}
+      {onSubmitCategory && !isSubmitted && (
+        <div className="sticky bottom-4 flex justify-end py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <Button 
+            onClick={onSubmitCategory}
+            disabled={!isCompleted || entryData.approvalStatus === 'approved'}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

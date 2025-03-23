@@ -132,6 +132,9 @@ export const useDataUpdates = ({
 
   // Təsdiq üçün göndərmək
   const submitForApproval = useCallback(() => {
+    // İlk olaraq məlumatları saxlayaq
+    saveForm();
+    
     const success = submitForm(validateForm);
     
     if (!success && errors.length > 0) {
@@ -142,9 +145,23 @@ export const useDataUpdates = ({
       
       if (firstErrorIndex !== -1) {
         setCurrentCategoryIndex(firstErrorIndex);
+        
+        // Xəta bildirisini göstərək
+        toast({
+          title: t('error'),
+          description: t('pleaseCorrectErrors'),
+          variant: "destructive",
+        });
       }
+    } else if (success) {
+      // Təsdiq üçün göndərildi bildirişi
+      toast({
+        title: t('success'),
+        description: t('dataSentForApproval'),
+        variant: "default",
+      });
     }
-  }, [submitForm, validateForm, errors, categories, setCurrentCategoryIndex]);
+  }, [submitForm, validateForm, errors, categories, setCurrentCategoryIndex, saveForm, t]);
 
   return {
     updateFormDataFromExcel,
