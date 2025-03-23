@@ -50,11 +50,7 @@ const SchoolColumnTable: React.FC = () => {
 
   const handleExportToExcel = () => {
     if (isDataLoading || !selectedCategory || schoolColumnData.length === 0) {
-      toast({
-        title: t("errorExporting"),
-        description: t("noDataToExport"),
-        variant: "destructive",
-      });
+      toast.error(t("noDataToExport"));
       return;
     }
 
@@ -64,17 +60,9 @@ const SchoolColumnTable: React.FC = () => {
     const result = exportToExcel(schoolColumnData, selectedCategory.columns, options);
     
     if (result.success) {
-      toast({
-        title: t("exportSuccess"),
-        description: t("fileDownloaded"),
-        variant: "default",
-      });
+      toast.success(t("fileDownloaded"));
     } else {
-      toast({
-        title: t("exportError"),
-        description: t("tryAgainLater"),
-        variant: "destructive",
-      });
+      toast.error(t("tryAgainLater"));
     }
   };
 

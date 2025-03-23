@@ -61,10 +61,13 @@ export const mockReports: Report[] = [
   },
   {
     id: 'report-3',
+    name: 'İllik Müqayisəli Analiz',
     title: 'İllik Müqayisəli Analiz',
-    type: 'comparison',
+    type: 'comparison' as ReportType,
     description: 'Ötən illə müqayisədə məktəb performansının analizi.',
+    createdAt: '2023-09-28T11:20:00Z',
     created: '2023-09-28T11:20:00Z',
+    createdBy: 'admin',
     data: [
       { name: 'Yanvar', value: 65, comparisonValue: 58, category: 'Ay' },
       { name: 'Fevral', value: 68, comparisonValue: 62, category: 'Ay' },
@@ -87,10 +90,13 @@ export const mockReports: Report[] = [
   },
   {
     id: 'report-4',
+    name: 'Sektorlar üzrə Müqayisəli Analiz',
     title: 'Sektorlar üzrə Müqayisəli Analiz',
-    type: 'comparison',
+    type: 'comparison' as ReportType,
     description: 'Məktəb sektorları üzrə performans müqayisəsi.',
+    createdAt: '2023-09-15T09:30:00Z',
     created: '2023-09-15T09:30:00Z',
+    createdBy: 'admin',
     data: [
       { name: 'Yasamal', value: 78, comparisonValue: 74, category: 'Sektor' },
       { name: 'Nəsimi', value: 82, comparisonValue: 76, category: 'Sektor' },
@@ -112,10 +118,13 @@ export const mockReports: Report[] = [
   },
   {
     id: 'report-5',
+    name: 'Məlumat Doldurma Statistikası',
     title: 'Məlumat Doldurma Statistikası',
-    type: 'statistics',
+    type: 'statistics' as ReportType,
     description: 'Məlumatların vaxtında doldurulmasının statistik təhlili.',
+    createdAt: '2023-09-05T15:40:00Z',
     created: '2023-09-05T15:40:00Z',
+    createdBy: 'admin',
     data: [
       { name: 'Vaxtında', value: 68, category: 'Zaman' },
       { name: '1-3 gün gecikdirmə', value: 22, category: 'Zaman' },
@@ -137,10 +146,13 @@ export const mockReports: Report[] = [
   },
   {
     id: 'report-6',
+    name: 'Məktəb Növləri üzrə Performans',
     title: 'Məktəb Növləri üzrə Performans',
-    type: 'completion',
+    type: 'completion' as ReportType,
     description: 'Məktəb növləri üzrə performans və tamamlanma faizləri.',
+    createdAt: '2023-08-20T10:15:00Z',
     created: '2023-08-20T10:15:00Z',
+    createdBy: 'admin',
     data: [
       { name: 'Tam orta məktəblər', value: 82, category: 'Məktəb növü' },
       { name: 'Ümumi orta məktəblər', value: 74, category: 'Məktəb növü' },
