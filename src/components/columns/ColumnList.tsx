@@ -3,12 +3,11 @@ import React from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useRole } from "@/context/AuthContext";
 import { Column } from "@/types/column";
-import { formatDistanceToNow } from "date-fns";
-import { az, ru, tr, enUS } from "date-fns/locale";
 import { Database, Edit, Trash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import DataTable from "@/components/common/DataTable";
+import { formatRelativeDate } from "@/utils/formatDateUtils";
 
 interface ColumnListProps {
   columns: Column[];
@@ -37,27 +36,6 @@ const ColumnList: React.FC<ColumnListProps> = ({
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : t("unknownCategory");
-  };
-
-  // Format date relative to now
-  const formatDate = (dateString: string) => {
-    try {
-      const getLocale = () => {
-        switch (language) {
-          case "az": return az;
-          case "ru": return ru;
-          case "tr": return tr;
-          default: return enUS;
-        }
-      };
-      
-      return formatDistanceToNow(new Date(dateString), {
-        addSuffix: true,
-        locale: getLocale(),
-      });
-    } catch (error) {
-      return dateString;
-    }
   };
 
   // Handle status toggle

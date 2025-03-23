@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
 import { Category } from "@/types/category";
+import { useFiltering } from "./useFiltering";
 
 // Fake API call to fetch categories
 const fetchCategories = async (): Promise<Category[]> => {
@@ -85,9 +86,6 @@ const fetchCategoryStats = async () => {
 
 export const useCategories = () => {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [assignmentFilter, setAssignmentFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Fetch categories data
   const {
@@ -109,20 +107,14 @@ export const useCategories = () => {
     queryFn: fetchCategoryStats,
   });
 
-  // Filter categories based on search query and filters
-  const filteredCategories = categories.filter((category) => {
-    const matchesSearch = category.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesAssignment =
-      assignmentFilter === "all" || 
-      (assignmentFilter === "all_users" && category.assignment === "all") ||
-      (assignmentFilter === "sectors_only" && category.assignment === "sectors");
-    const matchesStatus =
-      statusFilter === "all" || category.status === statusFilter;
-
-    return matchesSearch && matchesAssignment && matchesStatus;
-  });
+  // İstifadə edəcəyimiz filtrasiya hook-u
+  const {
+    searchQuery,
+    setSearchQuery,
+    filters,
+    updateFilter,
+    filteredData: filteredCategories
+  } = useFiltering(categories, ["name", "description"]);
 
   // Add new category
   const handleAddCategory = async (newCategory: Omit<Category, "id">) => {
@@ -205,10 +197,10 @@ export const useCategories = () => {
     isError,
     searchQuery,
     setSearchQuery,
-    assignmentFilter,
-    setAssignmentFilter,
-    statusFilter,
-    setStatusFilter,
+    assignmentFilter: filters.assignment || "all",
+    setAssignmentFilter: (value: string) => updateFilter("assignment", value),
+    statusFilter: filters.status || "all",
+    setStatusFilter: (value: string) => updateFilter("status", value),
     handleAddCategory,
     handleDeleteCategory,
     handleUpdateCategoryStatus,
