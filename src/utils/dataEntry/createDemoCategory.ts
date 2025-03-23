@@ -1,5 +1,6 @@
 
 import { CategoryWithColumns, Column } from '@/types/column';
+import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
 import { getDefaultValueByType } from '@/data/mockCategories';
 
 /**
@@ -10,10 +11,10 @@ export const createDemoCategories = (): CategoryWithColumns[] => {
     {
       id: "demo1",
       name: "İnfrastruktur",
-      description: "Məktəbin infrastruktur məlumatları",
-      assignment: "all", // assignment istifadə edirik type əvəzinə
+      description: "Məktəbin infrastruktur məlumatları haqqında",
+      assignment: "all", // assignment istifadə edirik
       status: "active",
-      deadline: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
+      deadline: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), // 5 gün sonra
       createdAt: new Date().toISOString(),
       columns: [
         {
@@ -60,9 +61,9 @@ export const createDemoCategories = (): CategoryWithColumns[] => {
       id: "demo2",
       name: "Tədris məlumatları",
       description: "Məktəbin tədris prosesi ilə bağlı məlumatlar",
-      assignment: "all", // assignment istifadə edirik type əvəzinə
+      assignment: "all", // assignment istifadə edirik
       status: "active",
-      deadline: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString(),
+      deadline: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString(), // 3 gün sonra
       createdAt: new Date().toISOString(),
       columns: [
         {
@@ -114,17 +115,17 @@ export const createDemoCategories = (): CategoryWithColumns[] => {
 /**
  * Kateqoriyalar üçün ilkin məlumatlar yaradır
  */
-export const createInitialEntries = (categories: CategoryWithColumns[]) => {
+export const createInitialEntries = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
   return categories.map(category => ({
     categoryId: category.id,
     values: category.columns.map(column => ({
       columnId: column.id,
       value: getDefaultValueByType(column.type, column.defaultValue),
-      status: 'pending'
+      status: 'pending' as 'pending' | 'approved' | 'rejected'
     })),
     isCompleted: false,
     isSubmitted: false,
     completionPercentage: 0,
-    approvalStatus: 'pending'
+    approvalStatus: 'pending' as 'pending' | 'approved' | 'rejected'
   }));
 };

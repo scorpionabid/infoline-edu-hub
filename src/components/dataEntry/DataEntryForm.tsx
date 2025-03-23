@@ -95,7 +95,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           }
         </div>
         
-        {/* Təsdiq üçün göndər düyməsi - yalnız form səviyyəsində göstərilir, aşağıda göstərilmir */}
+        {/* Təsdiq üçün göndər düyməsi - yalnız form səviyyəsində göstərilir */}
         {onSubmitCategory && !isSubmitted && entryData.approvalStatus !== 'approved' && (
           <Button 
             onClick={onSubmitCategory} 
@@ -126,20 +126,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           </div>
         </form>
       </Form>
-      
-      {/* Aşağıdakı submit düyməsi - yalnız scroll uzun olduqda və isSubmitted=false olduqda görünəcək */}
-      {onSubmitCategory && !isSubmitted && entryData.approvalStatus !== 'approved' && (
-        <div className="sticky bottom-4 flex justify-end py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <Button 
-            onClick={onSubmitCategory}
-            disabled={!isCompleted}
-            variant={entryData.isSubmitted ? "outline" : "default"}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {entryData.isSubmitted ? t('resubmit') : t('submitForApproval')}
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

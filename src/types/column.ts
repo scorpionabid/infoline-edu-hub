@@ -41,5 +41,8 @@ export type CategoryWithColumns = {
   name: string;
   description?: string; // Əlavə edildi: kateqoriya təsviri
   deadline?: string; // Əlavə edildi: kateqoriya son tarixi
+  assignment?: "all" | "sectors"; // Əlavə edildi: təyinat tipi
   columns: Column[];
+  status?: "active" | "inactive"; // Əlavə edildi: status
+  createdAt?: string; // Əlavə edildi: yaradılma tarixi
 };
