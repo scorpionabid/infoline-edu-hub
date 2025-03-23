@@ -5,9 +5,7 @@ import { useRole } from "@/context/AuthContext";
 import { Category } from "@/types/category";
 import { FileText, Layers, Trash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import DataTable from "@/components/common/DataTable";
-import { formatRelativeDate } from "@/utils/formatDateUtils";
 
 interface CategoryListProps {
   categories: Category[];
@@ -24,17 +22,9 @@ const CategoryList: React.FC<CategoryListProps> = ({
   onDeleteCategory,
   onUpdateStatus,
 }) => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const canManageCategories = useRole(["superadmin", "regionadmin"]);
   const [categoryToDelete, setCategoryToDelete] = React.useState<string | null>(null);
-
-  // Handle status toggle
-  const handleStatusToggle = async (category: Category) => {
-    if (!canManageCategories) return;
-    
-    const newStatus = category.status === "active" ? "inactive" : "active";
-    await onUpdateStatus(category.id, newStatus);
-  };
 
   const columns = [
     {
@@ -58,30 +48,9 @@ const CategoryList: React.FC<CategoryListProps> = ({
       )
     },
     {
-      key: "createdAt",
-      header: t("createdAt"),
-      cell: (category: Category) => formatRelativeDate(category.createdAt, language)
-    },
-    {
-      key: "updatedAt",
-      header: t("lastUpdated"),
-      cell: (category: Category) => formatRelativeDate(category.updatedAt, language)
-    },
-    {
-      key: "status",
-      header: t("status"),
-      cell: (category: Category) => (
-        canManageCategories ? (
-          <Switch
-            checked={category.status === "active"}
-            onCheckedChange={() => handleStatusToggle(category)}
-          />
-        ) : (
-          <Badge variant={category.status === "active" ? "success" : "destructive"}>
-            {category.status === "active" ? t("active") : t("inactive")}
-          </Badge>
-        )
-      )
+      key: "columnCount",
+      header: t("columnCount"),
+      cell: (category: Category) => <span>{category.columnCount || 0}</span>
     }
   ];
 

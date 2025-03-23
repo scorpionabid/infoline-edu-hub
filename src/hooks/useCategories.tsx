@@ -15,7 +15,7 @@ const fetchCategories = async (): Promise<Category[]> => {
   return [
     {
       id: "1",
-      name: "Ümumi məlumatlar",
+      name: "Təcili məlumatlar",
       assignment: "all",
       createdAt: new Date("2023-01-15").toISOString(),
       updatedAt: new Date("2023-02-10").toISOString(),
@@ -26,7 +26,7 @@ const fetchCategories = async (): Promise<Category[]> => {
     },
     {
       id: "2",
-      name: "Tədris planı",
+      name: "Tədris",
       assignment: "sectors",
       createdAt: new Date("2023-01-20").toISOString(),
       updatedAt: new Date("2023-03-05").toISOString(),
@@ -48,25 +48,25 @@ const fetchCategories = async (): Promise<Category[]> => {
     },
     {
       id: "4",
-      name: "Müəllim heyəti",
+      name: "Davamiyyət",
       assignment: "sectors",
       createdAt: new Date("2023-02-15").toISOString(),
       updatedAt: new Date("2023-04-10").toISOString(),
       status: "active",
       priority: 4,
-      description: "Müəllim heyəti haqqında məlumatlar",
-      columnCount: 0,
+      description: "Davamiyyət haqqında məlumatlar",
+      columnCount: 3,
     },
     {
       id: "5",
-      name: "Şagird nailiyyətləri",
+      name: "Nailiyyət",
       assignment: "sectors",
       createdAt: new Date("2023-03-01").toISOString(),
       updatedAt: new Date("2023-03-25").toISOString(),
-      status: "inactive",
+      status: "active",
       priority: 5,
       description: "Şagirdlərin akademik nailiyyətləri və statistikaları",
-      columnCount: 0,
+      columnCount: 2,
     }
   ];
 };
@@ -78,8 +78,8 @@ const fetchCategoryStats = async () => {
   
   return {
     totalCategories: 5,
-    activeCategories: 4,
-    totalColumns: 8,
+    activeCategories: 5,
+    totalColumns: 13,
     pendingApprovals: 3,
   };
 };
@@ -111,8 +111,6 @@ export const useCategories = () => {
   const {
     searchQuery,
     setSearchQuery,
-    filters,
-    updateFilter,
     filteredData: filteredCategories
   } = useFiltering(categories, ["name", "description"]);
 
@@ -197,10 +195,6 @@ export const useCategories = () => {
     isError,
     searchQuery,
     setSearchQuery,
-    assignmentFilter: filters.assignment || "all",
-    setAssignmentFilter: (value: string) => updateFilter("assignment", value),
-    statusFilter: filters.status || "all",
-    setStatusFilter: (value: string) => updateFilter("status", value),
     handleAddCategory,
     handleDeleteCategory,
     handleUpdateCategoryStatus,
