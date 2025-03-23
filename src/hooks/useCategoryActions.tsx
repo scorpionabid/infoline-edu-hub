@@ -10,25 +10,38 @@ export const useCategoryActions = (refetch: () => Promise<any>) => {
   const { t } = useLanguage();
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  // Add new category
-  const handleAddCategory = async (newCategory: Omit<Category, "id">) => {
+  // Add new category or update existing one
+  const handleAddCategory = async (categoryData: Omit<Category, "id"> & { id?: string }) => {
     setIsActionLoading(true);
     try {
-      await addCategory(newCategory);
+      // Əgər id varsa, bu redaktə əməliyyatıdır
+      const isEditing = !!categoryData.id;
       
-      toast.success(t("categoryAdded"), {
-        description: t("categoryAddedSuccess"),
-      });
+      await addCategory(categoryData);
+      
+      toast.success(
+        isEditing ? t("categoryUpdated") : t("categoryAdded"), 
+        {
+          description: isEditing 
+            ? t("categoryUpdatedSuccess") 
+            : t("categoryAddedSuccess"),
+        }
+      );
       
       // Refetch categories to update the list
       await refetch();
       
       return true;
     } catch (error) {
-      console.error("Error adding category:", error);
-      toast.error(t("categoryAddFailed"), {
-        description: t("categoryAddFailedDesc"),
-      });
+      console.error("Error with category operation:", error);
+      toast.error(
+        categoryData.id ? t("categoryUpdateFailed") : t("categoryAddFailed"), 
+        {
+          description: categoryData.id 
+            ? t("categoryUpdateFailedDesc") 
+            : t("categoryAddFailedDesc"),
+        }
+      );
       return false;
     } finally {
       setIsActionLoading(false);

@@ -98,11 +98,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
         updatedAt: new Date().toISOString(),
       };
 
-      // Əgər düzəliş edilən kateqoriya varsa, mövcud ID-ni qoruyuruq
-      if (editCategory?.id) {
-        categoryData.id = editCategory.id;
-      }
-
+      // Redaktə zamanı və ya yeni kateqoriya əlavə edərkən eyni API funksiyasından istifadə edirik
       const success = await onAddCategory(categoryData);
       if (success) {
         form.reset();

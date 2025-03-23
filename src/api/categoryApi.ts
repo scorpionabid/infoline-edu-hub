@@ -66,16 +66,16 @@ export const fetchCategories = async (): Promise<Category[]> => {
   ];
 };
 
-// Kateqoriya əlavə etmək üçün API funksiyası
-export const addCategory = async (newCategory: Omit<Category, "id">): Promise<Category> => {
+// Kateqoriya əlavə etmək və ya yeniləmək üçün API funksiyası
+export const addCategory = async (categoryData: Omit<Category, "id"> & { id?: string }): Promise<Category> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 800));
   
-  // Mock response with a generated ID
+  // Əgər id varsa, bu redaktə əməliyyatıdır, əks halda yeni kateqoriya yaradılır
   return {
-    ...newCategory,
-    id: Date.now().toString(),
-  };
+    ...categoryData,
+    id: categoryData.id || Date.now().toString(),
+  } as Category;
 };
 
 // Kateqoriya silmək üçün API funksiyası
