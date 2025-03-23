@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -116,7 +115,7 @@ const DataEntryContainer: React.FC = () => {
     saveForm();
     toast({
       title: t('categorySaved'),
-      description: t('currentCategorySaved', { category: currentCategory?.name }),
+      description: t('currentCategorySaved'),
     });
   };
 
@@ -124,7 +123,7 @@ const DataEntryContainer: React.FC = () => {
     if (currentCategory) {
       toast({
         title: t('downloadingTemplate'),
-        description: t('downloadingCategoryTemplate', { category: currentCategory.name }),
+        description: t('downloadingCategoryTemplate'),
       });
       // İndiki kateqoriya üçün şablon yükləmə simulyasiyası
       setTimeout(() => {
