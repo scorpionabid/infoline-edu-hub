@@ -1,7 +1,7 @@
 
 import { CategoryWithColumns, Column } from '@/types/column';
 import { v4 as uuidv4 } from 'uuid';
-import { CategoryEntryData } from '@/types/dataEntry';
+import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
 
 /**
  * Demo kateqoriya yaratmaq üçün funksiya
@@ -203,33 +203,42 @@ export const createDemoCategories = (): CategoryWithColumns[] => {
  */
 export const createInitialEntries = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
   return categories.map(category => {
-    const entries: CategoryEntryData = {
-      categoryId: category.id || '',
-      status: 'draft',
-      values: {}
-    };
-    
-    // Hər bir sütun üçün boş dəyər təyin edək
-    category.columns.forEach(column => {
+    // Hər sütun üçün bir EntryValue yaradırıq
+    const values: EntryValue[] = category.columns.map(column => {
+      let defaultValue: any = '';
+      
       if (column.defaultValue !== undefined) {
-        entries.values[column.id] = column.defaultValue;
+        defaultValue = column.defaultValue;
       } else {
         switch (column.type) {
           case 'number':
-            entries.values[column.id] = '';
+            defaultValue = '';
             break;
           case 'checkbox':
-            entries.values[column.id] = false;
+            defaultValue = false;
             break;
           case 'boolean':
-            entries.values[column.id] = false;
+            defaultValue = false;
             break;
           default:
-            entries.values[column.id] = '';
+            defaultValue = '';
         }
       }
+      
+      return {
+        columnId: column.id,
+        value: defaultValue,
+        status: 'pending'
+      };
     });
     
-    return entries;
+    return {
+      categoryId: category.id || '',
+      status: 'draft',
+      values: values,
+      isCompleted: false,
+      isSubmitted: false,
+      completionPercentage: 0
+    };
   });
 };
