@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, FileSpreadsheet, InfoIcon, LayoutGrid } from "lucide-react";
 
-// Fake API call to fetch categories
+// Kategoriziyaları əldə etmək üçün API 
 const fetchCategories = async (): Promise<Category[]> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 800));
@@ -24,7 +24,7 @@ const fetchCategories = async (): Promise<Category[]> => {
   return [
     {
       id: "1",
-      name: "Ümumi məlumatlar",
+      name: "Təcili məlumatlar",
       assignment: "all",
       createdAt: new Date("2023-01-15").toISOString(),
       updatedAt: new Date("2023-02-10").toISOString(),
@@ -35,7 +35,7 @@ const fetchCategories = async (): Promise<Category[]> => {
     },
     {
       id: "2",
-      name: "Tədris planı",
+      name: "Tədris",
       assignment: "sectors",
       createdAt: new Date("2023-01-20").toISOString(),
       updatedAt: new Date("2023-03-05").toISOString(),
@@ -55,10 +55,32 @@ const fetchCategories = async (): Promise<Category[]> => {
       description: "Məktəbin infrastruktur və texniki məlumatları",
       columnCount: 3,
     },
+    {
+      id: "4",
+      name: "Davamiyyət",
+      assignment: "sectors",
+      createdAt: new Date("2023-02-15").toISOString(),
+      updatedAt: new Date("2023-04-10").toISOString(),
+      status: "active",
+      priority: 4,
+      description: "Davamiyyət haqqında məlumatlar",
+      columnCount: 3,
+    },
+    {
+      id: "5",
+      name: "Nailiyyət",
+      assignment: "sectors",
+      createdAt: new Date("2023-03-01").toISOString(),
+      updatedAt: new Date("2023-03-25").toISOString(),
+      status: "active",
+      priority: 5,
+      description: "Şagirdlərin akademik nailiyyətləri və statistikaları",
+      columnCount: 2,
+    }
   ];
 };
 
-// Fake API call to fetch column stats
+// Sütun statistikası üçün API
 const fetchColumnStats = async () => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -80,7 +102,7 @@ const fetchColumnStats = async () => {
   };
 };
 
-// Fake API call to fetch columns
+// Sütunları əldə etmək üçün API
 const fetchColumns = async (): Promise<Column[]> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -172,6 +194,50 @@ const fetchColumns = async (): Promise<Column[]> => {
       isRequired: false,
       order: 3,
       status: "active",
+    },
+    {
+      id: "9",
+      categoryId: "4",
+      name: "Davamiyyət faizi",
+      type: "number",
+      isRequired: true,
+      validationRules: {
+        minValue: 0,
+        maxValue: 100,
+      },
+      order: 1,
+      status: "active",
+    },
+    {
+      id: "10",
+      categoryId: "4",
+      name: "Qeydiyyat tarixi",
+      type: "date",
+      isRequired: true,
+      order: 2,
+      status: "active",
+    },
+    {
+      id: "11",
+      categoryId: "5",
+      name: "Orta qiymət",
+      type: "number",
+      isRequired: true,
+      validationRules: {
+        minValue: 1,
+        maxValue: 5,
+      },
+      order: 1,
+      status: "active",
+    },
+    {
+      id: "12",
+      categoryId: "5",
+      name: "Olimpiada iştirakçıları",
+      type: "number",
+      isRequired: false,
+      order: 2,
+      status: "active",
     }
   ];
 };
@@ -187,7 +253,7 @@ const Columns = () => {
   const [columnToEdit, setColumnToEdit] = useState<Column | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("list");
 
-  // Fetch categories data
+  // Kateqoriyaları əldə etmək
   const {
     data: categories = [],
     isLoading: isCategoriesLoading,
@@ -196,7 +262,7 @@ const Columns = () => {
     queryFn: fetchCategories,
   });
 
-  // Fetch columns data
+  // Sütunları əldə etmək
   const {
     data: columns = [],
     isLoading: isColumnsLoading,
@@ -207,7 +273,7 @@ const Columns = () => {
     queryFn: fetchColumns,
   });
 
-  // Fetch column stats
+  // Sütun statistikasını əldə etmək
   const {
     data: stats,
     isLoading: isStatsLoading,
@@ -216,7 +282,7 @@ const Columns = () => {
     queryFn: fetchColumnStats,
   });
 
-  // Filter columns based on search query and filters
+  // Axtarış və filtrləmə
   const filteredColumns = columns.filter((column) => {
     const matchesSearch = column.name
       .toLowerCase()
@@ -231,7 +297,7 @@ const Columns = () => {
     return matchesSearch && matchesCategory && matchesType && matchesStatus;
   });
 
-  // Group columns by category for grid view
+  // Kateqoriyaya görə qruplaşdırma
   const columnsByCategory = categories.map(category => {
     const categoryColumns = columns.filter(column => 
       column.categoryId === category.id && 
@@ -246,28 +312,28 @@ const Columns = () => {
     };
   }).filter(category => category.columns.length > 0);
 
-  // Add/Edit column
+  // Sütunları əlavə etmə/redaktə etmə
   const handleAddOrEditColumn = async (columnData: Omit<Column, "id">) => {
     try {
-      // In a real app, this would be an API call
-      console.log("Adding/editing column:", columnData);
+      // Real tətbiqdə API çağırışı olacaq
+      console.log("Sütun əlavə edilir/redaktə edilir:", columnData);
       
-      // Simulate successful API call
+      // Uğurlu API çağırışı simulyasiyası
       const actionType = columnToEdit ? "updated" : "added";
       
       toast.success(t(columnToEdit ? "columnUpdated" : "columnAdded"), {
         description: t(columnToEdit ? "columnUpdatedSuccess" : "columnAddedSuccess"),
       });
       
-      // Clear edit state
+      // Redaktə halını sıfırla
       setColumnToEdit(undefined);
       
-      // Refetch columns to update the list
+      // Sütunları yenidən əldə et
       await refetchColumns();
       
       return true;
     } catch (error) {
-      console.error("Error adding/editing column:", error);
+      console.error("Sütunu əlavə etmə/redaktə etmə zamanı xəta:", error);
       toast.error(t(columnToEdit ? "columnUpdateFailed" : "columnAddFailed"), {
         description: t(columnToEdit ? "columnUpdateFailedDesc" : "columnAddFailedDesc"),
       });
@@ -275,23 +341,23 @@ const Columns = () => {
     }
   };
 
-  // Delete column
+  // Sütun silmə
   const handleDeleteColumn = async (id: string) => {
     try {
-      // In a real app, this would be an API call
-      console.log("Deleting column with ID:", id);
+      // Real tətbiqdə API çağırışı olacaq
+      console.log("Silinən sütun ID:", id);
       
-      // Simulate successful API call
+      // Uğurlu API çağırışı simulyasiyası
       toast.success(t("columnDeleted"), {
         description: t("columnDeletedSuccess"),
       });
       
-      // Refetch columns to update the list
+      // Sütunları yenidən əldə et
       await refetchColumns();
       
       return true;
     } catch (error) {
-      console.error("Error deleting column:", error);
+      console.error("Sütunu silmə zamanı xəta:", error);
       toast.error(t("columnDeleteFailed"), {
         description: t("columnDeleteFailedDesc"),
       });
@@ -299,23 +365,23 @@ const Columns = () => {
     }
   };
 
-  // Update column status
+  // Sütun statusunu yeniləmə
   const handleUpdateColumnStatus = async (id: string, status: "active" | "inactive") => {
     try {
-      // In a real app, this would be an API call
-      console.log("Updating column status:", id, status);
+      // Real tətbiqdə API çağırışı olacaq
+      console.log("Sütun statusu yenilənir:", id, status);
       
-      // Simulate successful API call
+      // Uğurlu API çağırışı simulyasiyası
       toast.success(t("columnUpdated"), {
         description: t("columnStatusUpdatedSuccess"),
       });
       
-      // Refetch columns to update the list
+      // Sütunları yenidən əldə et
       await refetchColumns();
       
       return true;
     } catch (error) {
-      console.error("Error updating column status:", error);
+      console.error("Sütun statusunu yeniləmə zamanı xəta:", error);
       toast.error(t("columnUpdateFailed"), {
         description: t("columnUpdateFailedDesc"),
       });
@@ -323,42 +389,42 @@ const Columns = () => {
     }
   };
 
-  // Handle column edit
+  // Sütun redaktə etmə
   const handleEditColumn = (column: Column) => {
     setColumnToEdit(column);
     setIsAddDialogOpen(true);
   };
 
-  // Handle template export
+  // Şablon ixracı
   const handleExportTemplate = () => {
-    // In a real app, this would generate and download an Excel template
-    console.log("Exporting Excel template");
+    // Real tətbiqdə Excel şablonu yaradıb yükləyəcək
+    console.log("Excel şablonu ixrac edilir");
     
     toast.success(t("templateExported"), {
       description: t("templateExportedSuccess"),
     });
   };
 
-  // Handle columns import
+  // Sütunların idxalı
   const handleImportColumns = async (file: File) => {
     try {
-      // In a real app, this would process the Excel file and import columns
-      console.log("Importing columns from file:", file.name);
+      // Real tətbiqdə Excel faylını emal edib sütunları idxal edəcək
+      console.log("Fayldan sütunlar idxal edilir:", file.name);
       
-      // Simulate processing
+      // Emal simulyasiyası
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simulate successful import
+      // Uğurlu idxal simulyasiyası
       toast.success(t("columnsImported"), {
         description: t("columnsImportedSuccess"),
       });
       
-      // Refetch columns to update the list
+      // Sütunları yenidən əldə et
       await refetchColumns();
       
       return true;
     } catch (error) {
-      console.error("Error importing columns:", error);
+      console.error("Sütunların idxalı zamanı xəta:", error);
       toast.error(t("importFailed"), {
         description: t("importFailedDesc"),
       });
@@ -366,46 +432,38 @@ const Columns = () => {
     }
   };
 
-  // Stats display component
-  const StatsDisplay = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold">{isStatsLoading ? "..." : stats?.totalColumns}</div>
-            <p className="text-muted-foreground">{t("totalColumns")}</p>
-          </div>
+  // Minimallaşdırılmış statistika kartları
+  const MinimalisticStats = () => (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{isStatsLoading ? "..." : stats?.totalColumns}</div>
+          <p className="text-gray-400">Ümumi sütunlar</p>
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold">{isStatsLoading ? "..." : stats?.requiredColumns}</div>
-            <p className="text-muted-foreground">{t("requiredColumns")}</p>
-          </div>
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{isStatsLoading ? "..." : stats?.requiredColumns}</div>
+          <p className="text-gray-400">Məcburi sütunlar</p>
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center">
-            <div className="text-3xl font-bold">{categories.length}</div>
-            <p className="text-muted-foreground">{t("categories")}</p>
-          </div>
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{categories.length}</div>
+          <p className="text-gray-400">Kateqoriyalar</p>
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center space-y-2">
-            <div className="text-3xl font-bold">{isStatsLoading ? "..." : `${stats?.completionRate}%`}</div>
-            <Progress value={isStatsLoading ? 0 : stats?.completionRate} className="w-4/5" />
-            <p className="text-muted-foreground">{t("completionRate")}</p>
-          </div>
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{isStatsLoading ? "..." : `${stats?.completionRate}%`}</div>
+          <Progress value={isStatsLoading ? 0 : stats?.completionRate} className="w-4/5 mt-2" />
+          <p className="text-gray-400 mt-2">Tamamlanma</p>
         </CardContent>
       </Card>
     </div>
   );
 
-  // Grid view component
+  // Grid görünüşü komponenti
   const GridView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {columnsByCategory.map((category) => (
@@ -467,17 +525,17 @@ const Columns = () => {
           onImportColumns={() => setIsImportDialogOpen(true)}
         />
 
-        <StatsDisplay />
+        <MinimalisticStats />
 
         <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="list">
               <Database className="h-4 w-4 mr-2" />
-              {t("listView")}
+              Cədvəl
             </TabsTrigger>
             <TabsTrigger value="grid">
               <LayoutGrid className="h-4 w-4 mr-2" />
-              {t("gridView")}
+              Şəbəkə
             </TabsTrigger>
           </TabsList>
           <TabsContent value="list">
