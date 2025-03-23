@@ -42,6 +42,22 @@ const user = {
   deleteError: "Silinmə xətası",
   deleteErrorDesc: "İstifadəçi silinərkən xəta baş verdi",
   deleting: "Silinir...",
+  
+  // Parol sıfırlama
+  resetPassword: "Parolu sıfırla",
+  cancelPasswordReset: "Parol sıfırlamanı ləğv et",
+  passwordResetSuccess: "Parol uğurla sıfırlandı",
+  passwordResetError: "Parol sıfırlanarkən xəta baş verdi",
+  passwordResetRequired: "Növbəti giriş zamanı yeni parol təyin edilməlidir",
+  newPassword: "Yeni parol",
+  confirmPassword: "Parolu təsdiqləyin",
+  currentPassword: "Cari parol",
+  enterNewPassword: "Yeni parol daxil edin",
+  enterCurrentPassword: "Cari parolu daxil edin",
+  confirmNewPassword: "Yeni parolu təsdiqləyin",
+  passwordNoMatch: "Parollar uyğun gəlmir",
+  passwordMinLength: "Parol minimum 6 simvol olmalıdır",
+  passwordUpdateSuccess: "Parol uğurla yeniləndi",
 };
 
 export default user;

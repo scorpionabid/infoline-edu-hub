@@ -21,8 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { CategoryWithColumns } from '@/types/column';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, FileDown } from 'lucide-react';
 import { exportTableToExcel } from '@/utils/excelExport';
 import { toast } from '@/components/ui/use-toast';
 
@@ -122,25 +123,38 @@ const SchoolColumnTable: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-2xl font-semibold">{t("schoolColumnReportTitle")}</h2>
         
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground mr-2">
-            {t("selectCategory")}:
-          </span>
-          <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder={t("selectCategory")} />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category: CategoryWithColumns) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              {t("selectCategory")}:
+            </span>
+            <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder={t("selectCategory")} />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category: CategoryWithColumns) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportToExcel}
+            disabled={isDataLoading || schoolColumnData.length === 0}
+            className="ml-2"
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("excelExport")}
+          </Button>
         </div>
       </div>
 

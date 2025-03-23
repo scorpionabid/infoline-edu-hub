@@ -44,7 +44,7 @@ const reports = {
   
   // Məktəb sütun hesabatı
   schoolColumnReportTitle: "Məktəb məlumatları hesabatı",
-  selectCategory: "Kateqoriya seçin",
+  selectCategory: "Kateqoriya seçin:",
   schoolName: "Məktəb adı",
   noDataAvailable: "Məlumat mövcud deyil",
   statistics: "Statistika",
@@ -53,6 +53,7 @@ const reports = {
   preview: "Önbaxış",
   download: "Yüklə",
   exportToExcel: "Excel-ə ixrac et",
+  excelExport: "Excel-ə ixrac et",
   exportSuccess: "İxrac uğurlu oldu",
   exportError: "İxrac xətası",
   fileDownloaded: "Fayl yükləndi",
