@@ -64,9 +64,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
       const updatedUser: User = {
         ...user,
         ...formData,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(), // Date -> string
         // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
-        ...(showPasswordReset && { passwordResetDate: new Date() })
+        ...(showPasswordReset && { passwordResetDate: new Date().toISOString() }) // Date -> string
       };
       
       onSave(updatedUser);

@@ -1,5 +1,10 @@
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea';
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea' | 'email' | 'phone' | 'boolean';
+
+export interface ColumnOption {
+  label: string;
+  value: string;
+}
 
 export interface Column {
   id: string;
@@ -9,7 +14,7 @@ export interface Column {
   isRequired?: boolean;
   placeholder?: string;
   helpText?: string;
-  options?: string[];
+  options?: (string | ColumnOption)[];
   order?: number;
   status?: 'active' | 'inactive';
   parentColumnId?: string;
@@ -21,9 +26,24 @@ export interface Column {
     maxValue?: number;
     pattern?: string;
     regex?: string;
+    minDate?: string;
+    maxDate?: string;
   };
+  validationRules?: any; // Köhnə kodla uyğunluq üçün
+  deadline?: string;     // Köhnə kodla uyğunluq üçün
+  multiline?: boolean;   // Köhnə kodla uyğunluq üçün
+  dependsOn?: string;    // Köhnə kodla uyğunluq üçün
 }
 
-export interface CategoryWithColumns extends Category {
+export interface CategoryWithColumns {
+  id?: string;          // CategoryWithColumns üçün id əlavə edildi
+  name?: string;        // CategoryWithColumns üçün name əlavə edildi
+  description?: string;
+  deadline?: string;    // CategoryWithColumns üçün deadline əlavə edildi
+  status?: string;
   columns: Column[];
 }
+
+export type CategoryColumn = Omit<Column, 'type'> & {
+  type: ColumnType;
+};

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,12 +21,17 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return t('notAvailable');
-    return format(new Date(date), 'dd/MM/yyyy HH:mm');
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return t('notAvailable');
+    try {
+      return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
+    } catch (error) {
+      console.error('Invalid date format:', dateStr);
+      return t('notAvailable');
+    }
   };
 
-  const getStatusBadgeStyle = (status: string) => {
+  function getStatusBadgeStyle(status: string) {
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800 hover:bg-green-100';
@@ -38,7 +42,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
       default:
         return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,8 +63,8 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
             <h3 className="text-xl font-semibold">{user.name}</h3>
             <p className="text-muted-foreground">{user.email}</p>
             <div className="mt-2">
-              <Badge variant="outline" className={getStatusBadgeStyle(user.status)}>
-                {t(user.status)}
+              <Badge variant="outline" className={user.status && getStatusBadgeStyle(user.status)}>
+                {t(user.status || 'active')}
               </Badge>
             </div>
           </div>

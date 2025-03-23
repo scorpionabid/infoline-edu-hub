@@ -13,15 +13,16 @@ export interface User {
   phone?: string;
   position?: string;
   language?: string;
-  lastLogin?: Date;
+  lastLogin?: string;  // Date -> string
   twoFactorEnabled?: boolean;
   notificationSettings?: {
     email: boolean;
     system: boolean;
   };
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: string;  // Date -> string
+  updatedAt?: string;  // Date -> string
   status?: 'active' | 'inactive' | 'blocked';
+  passwordResetDate?: string; // Əlavə edildi
 }
 
 export interface UserFormData {
@@ -38,8 +39,20 @@ export interface UserFormData {
   position?: string;
   language?: string;
   avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked'; // Əlavə edildi
+  twoFactorEnabled?: boolean; // Əlavə edildi
+  passwordResetDate?: string; // Əlavə edildi
   notificationSettings?: {
     email: boolean;
     system: boolean;
   };
+}
+
+export interface UserFilter {
+  role?: Role;
+  status?: string;
+  region?: string;
+  sector?: string;
+  school?: string;
+  search?: string;
 }

@@ -39,7 +39,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     email: '',
     password: '',
     role: getInitialRole(),
-    status: 'active',
+    status: 'active', // Artıq UserFormData interfeysinə əlavə edilib
     regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     notificationSettings: {
       email: true,
@@ -65,8 +65,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       const newUser = {
         ...formData,
         id: `user-${Date.now()}`,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date().toISOString(), // Date -> string
+        updatedAt: new Date().toISOString()  // Date -> string
       };
       
       mockUsers.push(newUser);

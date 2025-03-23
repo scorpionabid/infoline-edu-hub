@@ -1,4 +1,3 @@
-
 import { User } from '@/types/user';
 
 export const mockUsers: User[] = [
@@ -9,15 +8,15 @@ export const mockUsers: User[] = [
     role: 'superadmin',
     status: 'active',
     avatar: '',
-    lastLogin: new Date('2023-10-15T08:30:00'),
+    lastLogin: '2023-10-15T08:30:00',
     twoFactorEnabled: true,
     language: 'az',
     notificationSettings: {
       email: true,
       system: true
     },
-    createdAt: new Date('2023-01-01T00:00:00'),
-    updatedAt: new Date('2023-01-01T00:00:00')
+    createdAt: '2023-01-01T00:00:00',
+    updatedAt: '2023-01-01T00:00:00'
   },
   {
     id: 'regionadmin-1',
@@ -27,15 +26,15 @@ export const mockUsers: User[] = [
     regionId: 'region-1',
     status: 'active',
     avatar: '',
-    lastLogin: new Date('2023-10-14T14:22:00'),
+    lastLogin: '2023-10-14T14:22:00',
     twoFactorEnabled: false,
     language: 'az',
     notificationSettings: {
       email: true,
       system: true
     },
-    createdAt: new Date('2023-01-05T00:00:00'),
-    updatedAt: new Date('2023-05-12T00:00:00')
+    createdAt: '2023-01-05T00:00:00',
+    updatedAt: '2023-05-12T00:00:00'
   },
   {
     id: 'regionadmin-2',
@@ -45,15 +44,15 @@ export const mockUsers: User[] = [
     regionId: 'region-2',
     status: 'active',
     avatar: '',
-    lastLogin: new Date('2023-10-10T09:15:00'),
+    lastLogin: '2023-10-10T09:15:00',
     twoFactorEnabled: false,
     language: 'az',
     notificationSettings: {
       email: true,
       system: false
     },
-    createdAt: new Date('2023-02-15T00:00:00'),
-    updatedAt: new Date('2023-08-02T00:00:00')
+    createdAt: '2023-02-15T00:00:00',
+    updatedAt: '2023-08-02T00:00:00'
   },
   {
     id: 'sectoradmin-1',
@@ -64,15 +63,15 @@ export const mockUsers: User[] = [
     sectorId: 'sector-1',
     status: 'active',
     avatar: '',
-    lastLogin: new Date('2023-10-12T11:45:00'),
+    lastLogin: '2023-10-12T11:45:00',
     twoFactorEnabled: false,
     language: 'az',
     notificationSettings: {
       email: false,
       system: true
     },
-    createdAt: new Date('2023-03-10T00:00:00'),
-    updatedAt: new Date('2023-09-05T00:00:00')
+    createdAt: '2023-03-10T00:00:00',
+    updatedAt: '2023-09-05T00:00:00'
   },
   {
     id: 'sectoradmin-2',
@@ -89,8 +88,8 @@ export const mockUsers: User[] = [
       email: true,
       system: true
     },
-    createdAt: new Date('2023-03-15T00:00:00'),
-    updatedAt: new Date('2023-07-20T00:00:00')
+    createdAt: '2023-03-15T00:00:00',
+    updatedAt: '2023-07-20T00:00:00'
   },
   {
     id: 'schooladmin-1',
@@ -102,15 +101,15 @@ export const mockUsers: User[] = [
     schoolId: 'school-1',
     status: 'active',
     avatar: '',
-    lastLogin: new Date('2023-10-15T08:15:00'),
+    lastLogin: '2023-10-15T08:15:00',
     twoFactorEnabled: false,
     language: 'az',
     notificationSettings: {
       email: true,
       system: true
     },
-    createdAt: new Date('2023-04-01T00:00:00'),
-    updatedAt: new Date('2023-10-01T00:00:00')
+    createdAt: '2023-04-01T00:00:00',
+    updatedAt: '2023-10-01T00:00:00'
   },
   {
     id: 'schooladmin-2',
@@ -122,15 +121,15 @@ export const mockUsers: User[] = [
     schoolId: 'school-2',
     status: 'blocked',
     avatar: '',
-    lastLogin: new Date('2023-09-01T10:30:00'),
+    lastLogin: '2023-09-01T10:30:00',
     twoFactorEnabled: false,
     language: 'en',
     notificationSettings: {
       email: false,
       system: false
     },
-    createdAt: new Date('2023-04-15T00:00:00'),
-    updatedAt: new Date('2023-09-01T00:00:00')
+    createdAt: '2023-04-15T00:00:00',
+    updatedAt: '2023-09-01T00:00:00'
   },
   {
     id: 'schooladmin-3',
@@ -142,14 +141,14 @@ export const mockUsers: User[] = [
     schoolId: 'school-3',
     status: 'active',
     avatar: '',
-    lastLogin: new Date('2023-10-14T12:00:00'),
+    lastLogin: '2023-10-14T12:00:00',
     twoFactorEnabled: true,
     language: 'az',
     notificationSettings: {
       email: true,
       system: true
     },
-    createdAt: new Date('2023-05-01T00:00:00'),
-    updatedAt: new Date('2023-09-15T00:00:00')
+    createdAt: '2023-05-01T00:00:00',
+    updatedAt: '2023-09-15T00:00:00'
   }
 ];
