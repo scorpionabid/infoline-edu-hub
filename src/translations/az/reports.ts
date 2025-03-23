@@ -83,7 +83,28 @@ const reports = {
   totalRegions: "Ümumi regionlar",
   totalSectors: "Ümumi sektorlar",
   totalSchools: "Ümumi məktəblər",
-  totalUsers: "Ümumi istifadəçilər"
+  totalUsers: "Ümumi istifadəçilər",
+  
+  // Settings tərcümələri
+  exportData: "Verilənləri ixrac et",
+  importData: "Verilənləri idxal et",
+  resetData: "Verilənləri sıfırla",
+  resetDataWarning: "Verilənləri sıfırlamaq istədiyinizə əminsiniz?",
+  resetDataWarningDesc: "Bu əməliyyat bütün məlumatları siləcək və geri qaytarıla bilməz.",
+  resetDataSecurityNotice: "Bu əməliyyat yalnız Super Admin tərəfindən yerinə yetirilə bilər.",
+  confirmReset: "Sıfırlanmanı təsdiqlə",
+  resettingData: "Verilənlər sıfırlanır...",
+  dataResetSuccess: "Verilənlər sıfırlandı",
+  dataResetDescription: "Bütün verilənlər uğurla sıfırlandı",
+  exporting: "İxrac edilir...",
+  importing: "İdxal edilir...",
+  dataExportSuccess: "Verilənlər ixrac edildi",
+  dataExportDescription: "Bütün verilənlər uğurla ixrac edildi",
+  
+  // AutoSave tərcümələri
+  autoSaveSuccess: "Avtomatik saxlama",
+  autoSaveDescription: "Dəyişikliklər avtomatik yadda saxlandı",
+  unsavedChangesWarning: "Saxlanılmamış dəyişikliklər var. Səhifədən ayrılmaq istədiyinizə əminsiniz?"
 };
 
 export default reports;

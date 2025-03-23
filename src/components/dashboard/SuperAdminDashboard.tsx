@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { School, FileBarChart, Users, Map, Globe, Activity, PieChart, BarChart, Database, Clock, Calendar } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -33,7 +32,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  // Fəaliyyət qrafikası üçün demo məlumatlar
   const activityData = data.activityData || [
     { name: 'Yan', value: 20 },
     { name: 'Fev', value: 45 },
@@ -44,7 +42,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { name: 'İyl', value: 50 },
   ];
   
-  // Bölgələr üzrə məktəb sayı (demo məlumatlar)
   const regionSchoolsData = [
     { name: 'Bakı', value: 120 },
     { name: 'Sumqayıt', value: 75 },
@@ -53,10 +50,8 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { name: 'Şəki', value: 30 },
   ];
   
-  // Qrafikdə çoxrəngli göstərmək üçün rənglər
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
-  // Kateqoriyalar üzrə tamamlanma (demo məlumatlar)
   const categoryCompletionData = [
     { name: 'Ümumi məlumat', completed: 78 },
     { name: 'Müəllim heyəti', completed: 65 },
@@ -64,6 +59,13 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { name: 'Maliyyə', completed: 59 },
     { name: 'Tədris planı', completed: 91 },
   ];
+  
+  const navigateToRegions = () => navigate('/regions');
+  const navigateToSectors = () => navigate('/sectors');
+  const navigateToSchools = () => navigate('/schools');
+  const navigateToUsers = () => navigate('/users');
+  const navigateToReports = () => navigate('/reports');
+  const navigateToCategories = () => navigate('/categories');
   
   return (
     <div className="space-y-6">
@@ -73,28 +75,28 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
           value={data.regions}
           icon={<Map className="h-5 w-5 text-blue-500" />}
           color="blue"
-          onClick={() => navigate('/regions')}
+          onClick={navigateToRegions}
         />
         <StatsCard 
           title={t('totalSectors')}
           value={data.sectors}
           icon={<Globe className="h-5 w-5 text-purple-500" />}
           color="purple"
-          onClick={() => navigate('/sectors')}
+          onClick={navigateToSectors}
         />
         <StatsCard 
           title={t('totalSchools')}
           value={data.schools}
           icon={<School className="h-5 w-5 text-green-500" />}
           color="green"
-          onClick={() => navigate('/schools')}
+          onClick={navigateToSchools}
         />
         <StatsCard 
           title={t('totalUsers')}
           value={data.users}
           icon={<Users className="h-5 w-5 text-amber-500" />}
           color="amber"
-          onClick={() => navigate('/users')}
+          onClick={navigateToUsers}
         />
       </div>
       
@@ -150,7 +152,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
               <div className="text-sm text-muted-foreground">
                 Son 7 ay üzrə məlumat aktivliyi
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/reports')}>
+              <Button variant="outline" size="sm" onClick={navigateToReports}>
                 <FileBarChart className="mr-2 h-4 w-4" />
                 Ətraflı hesabatlar
               </Button>
@@ -189,7 +191,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button variant="outline" size="sm" onClick={() => navigate('/regions')}>
+              <Button variant="outline" size="sm" onClick={navigateToRegions}>
                 <Map className="mr-2 h-4 w-4" />
                 Bütün bölgələri göstər
               </Button>
@@ -222,7 +224,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button variant="outline" size="sm" onClick={() => navigate('/categories')}>
+              <Button variant="outline" size="sm" onClick={navigateToCategories}>
                 <Database className="mr-2 h-4 w-4" />
                 Bütün kateqoriyaları göstər
               </Button>

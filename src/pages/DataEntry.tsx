@@ -7,13 +7,25 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Upload } from 'lucide-react';
+import { FileSpreadsheet, Upload, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 
 const DataEntry = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: legacyToast } = useToast();
   const { t } = useLanguage();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   // URL-dən parametrləri alırıq
   const queryParams = new URLSearchParams(location.search);
@@ -23,7 +35,7 @@ const DataEntry = () => {
   useEffect(() => {
     // Əgər URL-də alert parametri varsa, müvafiq bildiriş göstəririk
     if (showAlert === 'deadline') {
-      toast({
+      legacyToast({
         title: t('deadlineApproaching'),
         description: t('deadlineApproachingDesc'),
         variant: "default",
@@ -34,7 +46,7 @@ const DataEntry = () => {
       newParams.delete('alert');
       navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
     } else if (showAlert === 'newcategory') {
-      toast({
+      legacyToast({
         title: t('newCategoryAdded'),
         description: t('newCategoryAddedDesc'),
         variant: "default",
@@ -44,7 +56,7 @@ const DataEntry = () => {
       newParams.delete('alert');
       navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
     } else if (showAlert === 'rejected') {
-      toast({
+      legacyToast({
         title: t('formRejected'),
         description: t('formRejectedDesc'),
         variant: "destructive",
@@ -54,7 +66,49 @@ const DataEntry = () => {
       newParams.delete('alert');
       navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
     }
-  }, [toast, showAlert, t, navigate, location.pathname, queryParams]);
+  }, [legacyToast, showAlert, t, navigate, location.pathname, queryParams]);
+
+  // Excel şablonunu yüklə
+  const handleDownloadTemplate = () => {
+    toast.success(t('excelTemplateDownloaded'), {
+      description: t('excelTemplateDownloadedDesc')
+    });
+  };
+
+  // Fayl seçimini idarə et
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+          file.type === 'application/vnd.ms-excel') {
+        setSelectedFile(file);
+      } else {
+        toast.error(t('invalidFileType'), {
+          description: t('pleaseSelectExcel')
+        });
+      }
+    }
+  };
+
+  // Excel faylını yüklə
+  const handleUpload = () => {
+    if (!selectedFile) {
+      toast.error(t('noFileSelected'));
+      return;
+    }
+
+    setIsUploading(true);
+
+    // Simulyasiya - real sistemdə API sorğusu olacaq
+    setTimeout(() => {
+      setIsUploading(false);
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      toast.success(t('uploadSuccess'), {
+        description: t('dataUploadedSuccessfully')
+      });
+    }, 2000);
+  };
 
   return (
     <>
@@ -69,11 +123,19 @@ const DataEntry = () => {
               <p className="text-muted-foreground mt-1">{t('schoolInfoInstructions')}</p>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => setUploadDialogOpen(true)}
+              >
                 <Upload size={16} />
                 {t('uploadExcel')}
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleDownloadTemplate}
+              >
                 <FileSpreadsheet size={16} />
                 {t('excelTemplate')}
               </Button>
@@ -82,6 +144,75 @@ const DataEntry = () => {
           
           <DataEntryForm initialCategoryId={categoryId} />
         </div>
+        
+        {/* Excel Upload Dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('uploadExcelFile')}</DialogTitle>
+              <DialogDescription>
+                {t('uploadExcelDescription')}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6">
+                <label className="flex flex-col items-center space-y-2 cursor-pointer">
+                  <FileSpreadsheet className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm font-medium">{selectedFile ? selectedFile.name : t('dragAndDropExcel')}</span>
+                  <span className="text-xs text-muted-foreground">{t('or')}</span>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    size="sm"
+                  >
+                    {t('browseFiles')}
+                  </Button>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+              
+              {!selectedFile && (
+                <div className="flex items-center text-sm">
+                  <AlertCircle className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span className="text-muted-foreground">{t('onlyExcelSupported')}</span>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter className="sm:justify-between">
+              <Button 
+                variant="outline" 
+                size="sm"
+                type="button"
+                onClick={handleDownloadTemplate}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                {t('downloadTemplate')}
+              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setUploadDialogOpen(false)}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button 
+                  type="button" 
+                  disabled={!selectedFile || isUploading}
+                  onClick={handleUpload}
+                >
+                  {isUploading ? t('uploading') : t('upload')}
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SidebarLayout>
     </>
   );
