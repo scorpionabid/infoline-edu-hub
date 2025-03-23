@@ -1,5 +1,7 @@
+
 import { CategoryWithColumns, Column } from '@/types/column';
 import { v4 as uuidv4 } from 'uuid';
+import { CategoryEntryData } from '@/types/dataEntry';
 
 /**
  * Demo kateqoriya yaratmaq üçün funksiya
@@ -186,5 +188,48 @@ export const addIdsToCategories = (categories: CategoryWithColumns[]): CategoryW
         categoryId: column.categoryId || categoryId
       }))
     };
+  });
+};
+
+/**
+ * Çoxlu demo kateqoriyalar yaratmaq üçün funksiya
+ */
+export const createDemoCategories = (): CategoryWithColumns[] => {
+  return [createDemoCategory(), createTeachersDemoCategory()];
+};
+
+/**
+ * Kateqoriyalar üçün ilkin məlumatları yaratmaq
+ */
+export const createInitialEntries = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
+  return categories.map(category => {
+    const entries: CategoryEntryData = {
+      categoryId: category.id || '',
+      status: 'draft',
+      values: {}
+    };
+    
+    // Hər bir sütun üçün boş dəyər təyin edək
+    category.columns.forEach(column => {
+      if (column.defaultValue !== undefined) {
+        entries.values[column.id] = column.defaultValue;
+      } else {
+        switch (column.type) {
+          case 'number':
+            entries.values[column.id] = '';
+            break;
+          case 'checkbox':
+            entries.values[column.id] = false;
+            break;
+          case 'boolean':
+            entries.values[column.id] = false;
+            break;
+          default:
+            entries.values[column.id] = '';
+        }
+      }
+    });
+    
+    return entries;
   });
 };

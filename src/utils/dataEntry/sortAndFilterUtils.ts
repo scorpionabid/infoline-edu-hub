@@ -1,6 +1,6 @@
 
 import { CategoryWithColumns } from '@/types/column';
-import { createDemoCategories } from './createDemoCategory';
+import { createDemoCategory, createTeachersDemoCategory } from './createDemoCategory';
 
 /**
  * Kateqoriyaları deadline və əhəmiyyət dərəcəsinə görə sıralayır
@@ -29,7 +29,7 @@ export const combineWithDemoCategories = (existingCategories: CategoryWithColumn
   
   // Əgər mövcud kateqoriyalar 2-dən azdırsa, demo kateqoriyaları əlavə edirik
   if (existingCategories.length < 2) {
-    combinedCategories.push(...createDemoCategories());
+    combinedCategories.push(createDemoCategory(), createTeachersDemoCategory());
   }
   
   return combinedCategories;

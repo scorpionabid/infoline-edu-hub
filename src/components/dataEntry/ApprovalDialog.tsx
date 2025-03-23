@@ -59,8 +59,8 @@ const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
           </DialogTitle>
           <DialogDescription>
             {activeTab === 'approve'
-              ? t('approveDescription', { category: categoryName })
-              : t('rejectDescription', { category: categoryName })}
+              ? t({ key: 'approveDescription', params: { category: categoryName } })
+              : t({ key: 'rejectDescription', params: { category: categoryName } })}
           </DialogDescription>
         </DialogHeader>
         
