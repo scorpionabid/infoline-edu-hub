@@ -11,7 +11,7 @@ interface UseCategoryDataProps {
   setCategories: (categories: CategoryWithColumns[]) => void;
   setCurrentCategoryIndex: (index: number) => void;
   initializeForm: (entries: CategoryEntryData[], status: 'draft' | 'submitted' | 'approved' | 'rejected') => void;
-  validateForm: () => void;
+  validateForm: () => boolean;
   queryParams: URLSearchParams;
 }
 

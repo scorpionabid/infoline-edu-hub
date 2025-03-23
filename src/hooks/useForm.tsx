@@ -162,7 +162,7 @@ export const useForm = (categories: CategoryWithColumns[]) => {
   }, [t]);
   
   // Auto saxlama simulyasiyası
-  const setupAutoSave = useCallback((validateFn: () => void) => {
+  const setupAutoSave = useCallback((validateFn: () => boolean) => {
     if (isAutoSaving) {
       // Yalnız son əməliyyatdan 1.5 saniyə keçibsə avtomatik saxlayaq
       const timer = setTimeout(() => {

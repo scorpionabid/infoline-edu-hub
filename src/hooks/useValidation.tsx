@@ -14,7 +14,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
   }, [categories, entries]);
   
   // Formanı validasiya etmək
-  const validateForm = useCallback(() => {
+  const validateForm = useCallback((): boolean => {
     const newErrors: ColumnValidationError[] = [];
     
     categories.forEach(category => {

@@ -8,8 +8,8 @@ interface UseDataUpdatesProps {
   formData: DataEntryForm;
   errors: ColumnValidationError[];
   initializeForm: (entries: CategoryEntryData[], status: 'draft' | 'submitted' | 'approved' | 'rejected') => void;
-  validateForm: () => void;
-  submitForm: (validateFn: () => void) => boolean;
+  validateForm: () => boolean;
+  submitForm: (validateFn: () => boolean) => boolean;
   setCurrentCategoryIndex: (index: number) => void;
 }
 
