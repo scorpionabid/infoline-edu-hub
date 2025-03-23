@@ -19,7 +19,7 @@ const az = {
   export: "İxrac et",
   import: "İdxal et",
   download: "Yüklə",
-  upload: "Yüklə",
+  uploadFile: "Fayl yüklə",
   submit: "Təsdiq et",
   confirm: "Təsdiqlə",
   back: "Geri",
@@ -42,7 +42,7 @@ const az = {
   dataSaved: "Məlumatlar saxlanıldı",
   dataSavedAt: "Məlumatlar saxlanıldı: {time}",
   sending: "Göndərilir...",
-  submitForApproval: "Təsdiq üçün göndər",
+  submitForApprovalAction: "Təsdiq üçün göndər",
   submitForApprovalTooltip: "Məlumatları təsdiq üçün göndərmək",
   formData: "Formada olan məlumatlar",
   downloadExcel: "Excel faylını yüklə",
@@ -82,6 +82,8 @@ const az = {
   rejectionReason: "Rədd səbəbi",
   tamamlandi: "tamamlandı",
   completionStatus: "Tamamlanma statusu",
+  categoryApproved: "Kateqoriya təsdiq edildi",
+  categoryApprovedDesc: "Bu kateqoriya təsdiq edilmiş və artıq dəyişdirilə bilməz",
   
   // Auth
   emailAddress: "E-poçt ünvanı",
@@ -147,9 +149,9 @@ const az = {
   firstName: "Ad",
   lastName: "Soyad",
   fullName: "Ad Soyad",
-  email: "E-poçt",
-  phone: "Telefon",
-  address: "Ünvan",
+  emailField: "E-poçt",
+  phoneNumber: "Telefon",
+  addressField: "Ünvan",
   city: "Şəhər",
   country: "Ölkə",
   postalCode: "Poçt kodu",
@@ -216,7 +218,7 @@ const az = {
   
   // Dropdowns
   dropdown: "Açılan menyu",
-  select: "Seç",
+  selectOption: "Seç",
   option: "Seçim",
   
   // Tabs
@@ -420,11 +422,8 @@ const az = {
   primarySchool: "İbtidai məktəb",
   secondarySchool: "Orta məktəb",
   highSchool: "Tam orta məktəb",
-  addressField: "Ünvan",
   enterAddress: "Ünvanı daxil edin",
-  phoneNumber: "Telefon nömrəsi",
   enterPhoneNumber: "Telefon nömrəsini daxil edin",
-  emailField: "E-mail",
   enterEmail: "E-mail ünvanını daxil edin",
   website: "Vebsayt",
   enterWebsite: "Vebsayt ünvanını daxil edin",
@@ -517,6 +516,7 @@ const az = {
   name: "Ad",
   value: "Dəyər",
   settingsDescription: "Hesab və tətbiq parametrlərini idarə edin",
+  uploadExcel: "Excel ilə yüklə", // Fərqli açar adı verildi
 };
 
 export default az;
