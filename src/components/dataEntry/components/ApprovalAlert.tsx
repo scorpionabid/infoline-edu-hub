@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
 interface ApprovalAlertProps {
   isApproved: boolean;
@@ -26,7 +25,7 @@ const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
   if (!isApproved) return null;
   

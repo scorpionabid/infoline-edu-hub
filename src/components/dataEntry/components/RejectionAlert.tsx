@@ -1,15 +1,14 @@
-
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
 interface RejectionAlertProps {
   errorMessage?: string;
 }
 
 const RejectionAlert: React.FC<RejectionAlertProps> = ({ errorMessage }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
   if (!errorMessage) return null;
   

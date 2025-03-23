@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +26,7 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({
   activeStatus = null,
   compact = false
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
   const totalForms = forms.pending + forms.approved + forms.rejected + forms.dueSoon + forms.overdue;
   

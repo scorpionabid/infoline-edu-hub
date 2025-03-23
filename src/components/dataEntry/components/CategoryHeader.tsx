@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext'; // useLanguage əvəzinə useLanguageSafe istifadə edirik
 import { CalendarClock } from 'lucide-react';
 
 interface CategoryHeaderProps {
@@ -17,7 +17,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   deadline,
   isSubmitted
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe(); // useLanguage əvəzinə useLanguageSafe istifadə edirik
   
   return (
     <div className="flex flex-col gap-2">

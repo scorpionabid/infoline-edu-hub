@@ -5,7 +5,7 @@ import DataEntryForm from '@/components/dataEntry/DataEntryForm';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext'; // useLanguage əvəzinə useLanguageSafe istifadə edirik
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet, Upload, AlertCircle, ArrowLeft, Info } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ const DataEntry = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast: legacyToast } = useToast();
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe(); // useLanguage yerinə useLanguageSafe istifadə edirik
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);

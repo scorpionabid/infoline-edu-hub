@@ -51,3 +51,19 @@ export const useLanguage = () => {
   }
   return context;
 };
+
+// Fallback tərcümə funksiyası - bunu əlavə edirik
+export const useLanguageSafe = () => {
+  const context = useContext(LanguageContext);
+  // Əgər kontekst mövcud deyilsə, sadə bir fallback qaytarırıq
+  if (context === undefined) {
+    console.warn("useLanguage LanguageProvider içində istifadə edilməyib. Fallback istifadə edilir.");
+    return {
+      language: "az" as Language,
+      setLanguage: () => {},
+      t: (key: string) => key,
+      languages: languageOptions
+    };
+  }
+  return context;
+};

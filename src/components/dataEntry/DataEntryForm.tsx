@@ -1,18 +1,14 @@
-
 import React, { useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Save, Send, FileSpreadsheet, Upload } from 'lucide-react';
-import { 
-  getCompletionStatus, 
-  getFormattedDeadline 
-} from './utils/formUtils';
+import { Badge } from '@/components/ui/badge';
 import DataEntryProgress from './DataEntryProgress';
-import { ExcelActions } from './ExcelActions';
-import { DataEntryDialogs } from './DataEntryDialogs';
+import ExcelActions from './ExcelActions';
+import DataEntryDialogs from './DataEntryDialogs';
 import StatusIndicators from './StatusIndicators';
 import { CategoryWithColumns } from '@/types/column';
 import FormField from './components/FormField';
@@ -31,9 +27,8 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   statusFilter = null,
   onDataChanged 
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
-  // useDataEntry hook-u ilə forma məlumatlarını və funksiyaları alırıq
   const {
     categories,
     currentCategoryIndex,
@@ -51,14 +46,12 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     uploadExcelData
   } = useDataEntry(initialCategoryId);
   
-  // Məlumatlar dəyişdikdə callback funksiyasını çağırırıq
   useEffect(() => {
     if (!isLoading && onDataChanged) {
       onDataChanged();
     }
   }, [formData, isLoading, onDataChanged]);
   
-  // Status filtrinə əsasən kategoriyaları filtirləyirik
   const filteredCategories = statusFilter ? categories.filter(category => {
     const categoryEntry = formData.entries.find(entry => entry.categoryId === category.id);
     
@@ -72,18 +65,15 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
       case 'rejected':
         return categoryEntry.approvalStatus === 'rejected';
       case 'dueSoon':
-        // Son tarixi 3 gün qalmış kategoriyalar
         return category.deadline && new Date(category.deadline).getTime() > Date.now() && 
                new Date(category.deadline).getTime() < Date.now() + (3 * 24 * 60 * 60 * 1000);
       case 'overdue':
-        // Son tarixi keçmiş kategoriyalar
         return category.deadline && new Date(category.deadline).getTime() < Date.now();
       default:
         return true;
     }
   }) : categories;
   
-  // Yüklənmə vəziyyətində isək
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -96,7 +86,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     );
   }
   
-  // Əgər filtirdən sonra heç bir kateqoriya qalmayıbsa
   if (filteredCategories.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
@@ -122,29 +111,49 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     );
   }
   
-  // Cari kateqoriya və onun daxil etmə məlumatları
   const currentCategory = filteredCategories[currentCategoryIndex];
   const categoryEntry = formData.entries.find(entry => entry.categoryId === currentCategory?.id);
   const isRejected = categoryEntry?.approvalStatus === 'rejected';
   const isApproved = categoryEntry?.approvalStatus === 'approved';
   
-  // Formun tamamlanma statusunu alırıq
-  const completionStatus = currentCategory ? getCompletionStatus(
-    categoryEntry?.completionPercentage || 0,
-    isApproved,
-    isRejected,
-    currentCategory.deadline ? new Date(currentCategory.deadline) : undefined
-  ) : null;
+  const getCompletionStatus = (
+    completionPercentage: number,
+    isApproved: boolean,
+    isRejected: boolean,
+    deadline?: Date
+  ) => {
+    if (isApproved) return 'approved';
+    if (isRejected) return 'rejected';
+    
+    const now = new Date();
+    
+    if (deadline && deadline < now) return 'overdue';
+    if (deadline && deadline.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) return 'dueSoon';
+    
+    if (completionPercentage === 100) return 'completed';
+    if (completionPercentage > 0) return 'inProgress';
+    
+    return 'notStarted';
+  };
   
-  // Formun son tarixini formatlanmış şəkildə alırıq
-  const formattedDeadline = currentCategory?.deadline 
-    ? getFormattedDeadline(new Date(currentCategory.deadline)) 
-    : null;
+  const getFormattedDeadline = (deadline: Date) => {
+    const now = new Date();
+    const diffTime = deadline.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return `${Math.abs(diffDays)} ${t('daysLate')}`;
+    } else if (diffDays === 0) {
+      return t('today');
+    } else if (diffDays === 1) {
+      return t('tomorrow');
+    } else {
+      return `${diffDays} ${t('daysLeft')}`;
+    }
+  };
   
-  // Sütunları filtirləyirik (aktiv olanları)
   const activeColumns = currentCategory?.columns.filter(col => col.status === 'active') || [];
   
-  // Tab dəyişdikdə, kateqoriya dəyişir
   const handleTabChange = (tabValue: string) => {
     const newIndex = filteredCategories.findIndex(cat => cat.id === tabValue);
     if (newIndex !== -1) {
@@ -152,12 +161,10 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     }
   };
   
-  // Manuel saxlama
   const handleSaveManually = async () => {
     await saveForm();
   };
   
-  // Təsdiq üçün göndərmə
   const handleSubmit = async () => {
     await submitForApproval();
   };
@@ -169,14 +176,15 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           <div className="flex flex-col lg:flex-row justify-between">
             <div className="mb-4 lg:mb-0">
               <DataEntryProgress 
-                categories={filteredCategories} 
-                formEntries={formData.entries}
+                total={filteredCategories.length} 
+                completed={formData.entries.filter(e => e.isCompleted).length}
+                percentage={formData.overallProgress}
               />
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               <StatusIndicators 
-                isAutoSaving={isAutoSaving} 
-                lastSaved={formData.lastSaved} 
+                status={isAutoSaving ? "saving" : "saved"} 
+                timestamp={formData.lastSaved} 
               />
               <div className="flex gap-2">
                 <Button 
@@ -242,37 +250,35 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
             {filteredCategories.map((category: CategoryWithColumns) => (
               <TabsContent key={category.id} value={category.id} className="pt-2">
                 <CategoryHeader 
-                  category={category} 
-                  completionStatus={
-                    categoryEntry?.categoryId === category.id ? completionStatus : null
-                  } 
-                  formattedDeadline={
-                    category.deadline ? getFormattedDeadline(new Date(category.deadline)) : null
-                  }
+                  name={category.name}
+                  description={category.description}
+                  deadline={category.deadline}
+                  isSubmitted={categoryEntry?.isSubmitted || false}
                 />
                 
-                {/* Təsdiq bildirişi */}
                 {categoryEntry?.approvalStatus === 'approved' && (
-                  <ApprovalAlert />
+                  <ApprovalAlert isApproved={true} />
                 )}
                 
-                {/* Rədd edilmə bildirişi */}
                 {categoryEntry?.approvalStatus === 'rejected' && (
-                  <RejectionAlert 
-                    reason={categoryEntry.rejectionReason} 
-                  />
+                  <RejectionAlert errorMessage={categoryEntry.rejectionReason} />
                 )}
                 
-                {/* Sütunlar üzrə sahələr */}
                 <div className="grid gap-4 mt-6">
                   {activeColumns.map((column) => (
                     <FormField
                       key={column.id}
-                      column={column}
+                      id={column.id}
+                      label={column.name}
+                      type={column.type}
+                      required={column.isRequired}
+                      options={column.options}
+                      placeholder={column.placeholder}
+                      helpText={column.description}
                       value={categoryEntry?.values.find(v => v.columnId === column.id)?.value}
                       error={getErrorForColumn(column.id)}
                       onChange={(newValue) => updateValue(category.id, column.id, newValue)}
-                      readOnly={isApproved || isSubmitting}
+                      disabled={isApproved || isSubmitting}
                     />
                   ))}
                 </div>
