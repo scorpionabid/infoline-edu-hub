@@ -24,12 +24,20 @@ interface CategoryListProps {
   categories: Category[];
   onEditCategory: (category: Category) => void;
   filter: CategoryFilter;
+  isLoading?: boolean;
+  isError?: boolean;
+  onDeleteCategory?: (id: string) => Promise<boolean>;
+  onUpdateStatus?: (id: string, status: 'active' | 'inactive') => Promise<boolean>;
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ 
   categories, 
   onEditCategory,
-  filter
+  filter,
+  isLoading = false,
+  isError = false,
+  onDeleteCategory,
+  onUpdateStatus
 }) => {
   const { t } = useLanguage();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -61,18 +69,45 @@ const CategoryList: React.FC<CategoryListProps> = ({
   
   // Handle category status toggle
   const handleStatusToggle = async (categoryId: string, currentStatus: 'active' | 'inactive') => {
-    // For demonstration only: in a real app, this would be an API call
-    toast.success(
-      currentStatus === 'active' 
-        ? t('categoryDeactivated')
-        : t('categoryActivated')
-    );
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    
+    // Call onUpdateStatus if provided, otherwise use the demo toast
+    if (onUpdateStatus) {
+      const success = await onUpdateStatus(categoryId, newStatus);
+      if (success) {
+        toast.success(
+          currentStatus === 'active' 
+            ? t('categoryDeactivated')
+            : t('categoryActivated')
+        );
+      } else {
+        toast.error(t('statusUpdateFailed'));
+      }
+    } else {
+      // For demonstration only: in a real app, this would be an API call
+      toast.success(
+        currentStatus === 'active' 
+          ? t('categoryDeactivated')
+          : t('categoryActivated')
+      );
+    }
   };
   
   // Handle category deletion
   const handleDelete = async (categoryId: string) => {
-    // For demonstration only: in a real app, this would be an API call
-    toast.success(t('categoryDeleted'));
+    // Call onDeleteCategory if provided, otherwise use the demo toast
+    if (onDeleteCategory) {
+      const success = await onDeleteCategory(categoryId);
+      if (success) {
+        toast.success(t('categoryDeleted'));
+      } else {
+        toast.error(t('deleteFailed'));
+      }
+    } else {
+      // For demonstration only: in a real app, this would be an API call
+      toast.success(t('categoryDeleted'));
+    }
+    
     setConfirmDelete(null);
   };
   
@@ -91,6 +126,22 @@ const CategoryList: React.FC<CategoryListProps> = ({
       ? <Badge variant="secondary">{t('allRegions')}</Badge>
       : <Badge variant="outline">{t('sectorsOnly')}</Badge>;
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <p>{t('loading')}...</p>
+      </div>
+    );
+  }
+  
+  if (isError) {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <p className="text-red-500">{t('errorLoadingData')}</p>
+      </div>
+    );
+  }
   
   return (
     <div className="rounded-md border">
@@ -129,7 +180,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
                       category.id, 
                       category.status
                     )}
-                    className="ml-0"
                   />
                 </TableCell>
                 <TableCell className="text-right">

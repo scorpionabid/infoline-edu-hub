@@ -32,10 +32,15 @@ export const createFormSchema = (t: (key: string) => string) => {
     order: z.number().positive().int(),
     parentColumnId: z.string().optional(),
     status: z.enum(["active", "inactive"]).default("active"),
+    options: z.array(z.object({
+      label: z.string(),
+      value: z.string()
+    })).optional(),
   });
 };
 
 export type ColumnFormValues = z.infer<ReturnType<typeof createFormSchema>>;
+export type ColumnFormData = ColumnFormValues;
 
 export const useColumnForm = (
   categories: { id: string; name: string }[],
@@ -44,7 +49,13 @@ export const useColumnForm = (
 ) => {
   const { t } = useLanguage();
   const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
-  const [options, setOptions] = useState<string[]>(editColumn?.options || []);
+  const [options, setOptions] = useState<{ label: string; value: string }[]>(
+    editColumn?.options 
+      ? Array.isArray(editColumn.options) 
+        ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+        : []
+      : []
+  );
   const [newOption, setNewOption] = useState("");
   const isEditMode = !!editColumn;
 
@@ -52,7 +63,7 @@ export const useColumnForm = (
   const formSchema = createFormSchema(t);
 
   // Formu inisializasiya etmək
-  const form = useForm<ColumnFormValues>({
+  const form = useForm<ColumnFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -78,6 +89,7 @@ export const useColumnForm = (
       order: 1,
       parentColumnId: undefined,
       status: "active",
+      options: [],
     },
   });
 
@@ -87,7 +99,11 @@ export const useColumnForm = (
       setSelectedType(editColumn.type);
       
       if (editColumn.options) {
-        setOptions(editColumn.options);
+        setOptions(
+          Array.isArray(editColumn.options) 
+            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+            : []
+        );
       }
       
       form.reset({
@@ -103,6 +119,11 @@ export const useColumnForm = (
         order: editColumn.order,
         parentColumnId: editColumn.parentColumnId,
         status: editColumn.status,
+        options: editColumn.options 
+          ? Array.isArray(editColumn.options) 
+            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+            : []
+          : [],
       });
     } else {
       setSelectedType("text");
@@ -131,12 +152,13 @@ export const useColumnForm = (
         order: 1,
         parentColumnId: undefined,
         status: "active",
+        options: [],
       });
     }
   }, [isEditMode, editColumn, form, categories]);
 
   // Form təqdimatını emal etmək
-  const onSubmit = async (values: ColumnFormValues) => {
+  const onSubmit = async (values: ColumnFormData) => {
     try {
       if (!onAddColumn) return false;
       
@@ -160,7 +182,9 @@ export const useColumnForm = (
         parentColumnId: values.parentColumnId || undefined,
         status: values.status,
         // Seçimlər yalnız seçim növü sahəsi dəstəkləyirsə əlavə edirik
-        options: ["select", "checkbox", "radio"].includes(values.type) ? options : undefined,
+        options: ["select", "checkbox", "radio"].includes(values.type) 
+          ? options.map(opt => ({ label: opt.label, value: opt.value }))
+          : undefined,
       };
 
       return await onAddColumn(columnData);
@@ -178,15 +202,15 @@ export const useColumnForm = (
 
   // Yeni seçim əlavə etmək
   const addOption = () => {
-    if (newOption.trim() !== "" && !options.includes(newOption.trim())) {
-      setOptions([...options, newOption.trim()]);
+    if (newOption.trim() !== "" && !options.some(opt => opt.value === newOption.trim())) {
+      setOptions([...options, { label: newOption.trim(), value: newOption.trim() }]);
       setNewOption("");
     }
   };
 
   // Seçimi silmək
-  const removeOption = (option: string) => {
-    setOptions(options.filter((o) => o !== option));
+  const removeOption = (optionValue: string) => {
+    setOptions(options.filter((o) => o.value !== optionValue));
   };
 
   return {

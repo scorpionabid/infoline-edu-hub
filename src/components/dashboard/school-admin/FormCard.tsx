@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, ChevronRight } from 'lucide-react';
+import { FormStatus } from '@/types/form';
 
 interface FormCardProps {
   id: string;
   title: string;
   category: string;
-  status: "pending" | "approved" | "rejected" | "empty";
+  status: FormStatus;
   completionPercentage: number;
   deadline?: string;
   onClick: () => void;
@@ -43,6 +44,21 @@ const FormCard: React.FC<FormCardProps> = ({
     },
     empty: { 
       label: 'Boş', 
+      icon: <AlertCircle className="h-4 w-4" />, 
+      variant: 'bg-slate-50 text-slate-700 border-slate-200' 
+    },
+    due: { 
+      label: 'Vaxtı yaxınlaşır', 
+      icon: <AlertCircle className="h-4 w-4" />, 
+      variant: 'bg-blue-50 text-blue-700 border-blue-200' 
+    },
+    overdue: { 
+      label: 'Vaxtı keçib', 
+      icon: <AlertCircle className="h-4 w-4" />, 
+      variant: 'bg-rose-50 text-rose-700 border-rose-200' 
+    },
+    draft: { 
+      label: 'Qaralama', 
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-slate-50 text-slate-700 border-slate-200' 
     }

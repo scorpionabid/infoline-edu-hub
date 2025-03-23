@@ -10,14 +10,15 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import DataEntryProgress from '../dataEntry/DataEntryProgress';
 import { CalendarClock, Clock } from 'lucide-react';
+import { Form } from '@/types/form';
 
 // Mocklar üçün dataları təkmilləşdirək
-const recentForms = [
+const recentForms: Form[] = [
   { 
     id: 'form1', 
     title: 'Şagird kontingenti', 
     category: 'Əsas məlumatlar', 
-    status: 'pending' as const, 
+    status: 'pending', 
     completionPercentage: 80, 
     deadline: '2023-06-20' 
   },
@@ -25,7 +26,7 @@ const recentForms = [
     id: 'form2', 
     title: 'Müəllim kadrları', 
     category: 'Əsas məlumatlar', 
-    status: 'approved' as const, 
+    status: 'approved', 
     completionPercentage: 100, 
     deadline: '2023-06-15' 
   },
@@ -33,7 +34,7 @@ const recentForms = [
     id: 'form3', 
     title: 'Maddi-texniki baza', 
     category: 'İnfrastruktur', 
-    status: 'rejected' as const, 
+    status: 'rejected', 
     completionPercentage: 75, 
     deadline: '2023-06-18' 
   },
@@ -41,7 +42,7 @@ const recentForms = [
     id: 'form4', 
     title: 'Təlim nəticələri', 
     category: 'Akademik göstəricilər', 
-    status: 'empty' as const, 
+    status: 'empty', 
     completionPercentage: 0, 
     deadline: '2023-06-25' 
   }

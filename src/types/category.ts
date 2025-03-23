@@ -12,3 +12,10 @@ export type Category = {
   deadline?: string; // Son tarix
   columnCount?: number; // Kateqoriyaya aid sütunların sayı
 };
+
+export type CategoryFilter = {
+  search: string;
+  status: 'active' | 'inactive' | '';
+  showArchived: boolean;
+  assignment: 'all' | 'sectors' | '';
+};

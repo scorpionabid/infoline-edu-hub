@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trash2, MoveVertical, Plus } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ColumnFormData } from '@/hooks/form';
+import { ColumnFormData } from '@/components/columns/columnDialog/useColumnForm';
 import { 
   DndContext, 
   closestCenter, 

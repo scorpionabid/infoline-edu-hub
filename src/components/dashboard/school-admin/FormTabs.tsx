@@ -7,15 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
-
-interface Form {
-  id: string;
-  title: string;
-  category: string;
-  status: "pending" | "approved" | "rejected" | "draft" | "overdue" | "due";
-  completionPercentage: number;
-  deadline?: string;
-}
+import { Form, FormStatus } from '@/types/form';
 
 interface FormTabsProps {
   recentForms: Form[];
@@ -54,7 +46,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
     
     // Status filtri
     if (selectedStatus !== 'all') {
-      filteredForms = filteredForms.filter(form => form.status === selectedStatus);
+      filteredForms = filteredForms.filter(form => form.status === selectedStatus as FormStatus);
     }
     
     // Axtarış filtri
@@ -123,6 +115,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
               <SelectItem value="draft">{t('draft')}</SelectItem>
               <SelectItem value="overdue">{t('overdue')}</SelectItem>
               <SelectItem value="due">{t('dueSoon')}</SelectItem>
+              <SelectItem value="empty">{t('noFormsFound')}</SelectItem>
             </SelectContent>
           </Select>
         </div>

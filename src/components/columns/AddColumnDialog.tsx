@@ -37,12 +37,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   const {
     form,
     selectedType,
-    options,
-    newOption,
-    setNewOption,
     handleTypeChange,
-    addOption,
-    removeOption,
     onSubmit,
     isEditMode,
     t
@@ -87,12 +82,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
               {/* Options for select, checkbox, radio */}
               {(selectedType === "select" || selectedType === "checkbox" || selectedType === "radio") && (
                 <OptionsField
-                  options={options}
-                  newOption={newOption}
-                  setNewOption={setNewOption}
-                  addOption={addOption}
-                  removeOption={removeOption}
-                  t={t}
+                  control={form.control}
                 />
               )}
             </div>

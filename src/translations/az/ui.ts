@@ -72,7 +72,6 @@ const ui = {
   clearSelection: "Seçimi təmizlə",
   
   // Dialog elements
-  close: "Bağla",
   areYouSure: "Əminsiniz?",
   thisActionCannot: "Bu əməliyyat geri qaytarıla bilməz",
   
@@ -101,7 +100,14 @@ const ui = {
   optionValue: "Seçim dəyəri",
   options: "Seçimlər",
   addOption: "Seçim əlavə et",
-  noOptionsAdded: "Heç bir seçim əlavə edilməyib"
+  noOptionsAdded: "Heç bir seçim əlavə edilməyib",
+  
+  // Category and Column specific
+  saveChanges: "Dəyişiklikləri saxla",
+  addColumn: "Sütun əlavə et",
+  editColumn: "Sütunu redaktə et",
+  columnNameRequired: "Sütun adı məcburidir",
+  categoryRequired: "Kateqoriya seçilməlidir"
 };
 
 export default ui;

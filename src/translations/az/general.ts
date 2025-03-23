@@ -102,6 +102,36 @@ const general = {
   appCopyright: "Bütün hüquqlar qorunur",
   appTerms: "İstifadə şərtləri",
   appPrivacy: "Gizlilik siyasəti",
+  
+  // Deadline related
+  upcomingDeadlines: "Yaxınlaşan son tarixlər",
+  daysLeft: "gün qalıb",
+  lastEditedCategory: "Son işlədiyiniz kateqoriya",
+  continueEditing: "davam etmək istəyirsiniz?",
+  continue: "Davam et",
+  
+  // Dashboard specific
+  completionRate: "Tamamlanma",
+  
+  // Error related
+  errorLoadingData: "Məlumatlar yüklənərkən xəta baş verdi",
+  statusUpdateFailed: "Status yenilənmədi",
+  deleteFailed: "Silinmə uğursuz oldu",
+  
+  // Category related
+  noMatchingRecordsFound: "Uyğun nəticə tapılmadı",
+  openMenu: "Menyunu aç",
+  deleteConfirmationMessage: "Bu əməliyyat geri qaytarıla bilməz",
+  categoryDeactivated: "Kateqoriya deaktiv edildi",
+  categoryActivated: "Kateqoriya aktiv edildi",
+  categoryDeleted: "Kateqoriya silindi",
+  categoryArchived: "Kateqoriya arxivləşdirildi",
+  categoryUnarchived: "Kateqoriya arxivdən çıxarıldı",
+  archive: "Arxivləşdir",
+  unarchive: "Arxivdən çıxar",
+  archived: "Arxivlənmiş",
+  allRegions: "Bütün regionlar",
+  sectorsOnly: "Yalnız sektorlar"
 };
 
 export default general;
