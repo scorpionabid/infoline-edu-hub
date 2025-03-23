@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +34,28 @@ const Schools = () => {
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<School | null>(null);
   const [currentTab, setCurrentTab] = useState('school');
+  
+  // Initialize formData state
+  const initialFormState: SchoolFormData = {
+    name: '',
+    principalName: '',
+    address: '',
+    regionId: '',
+    sectorId: '',
+    phone: '',
+    email: '',
+    studentCount: '0',
+    teacherCount: '0',
+    status: 'active',
+    type: 'full_secondary',
+    language: 'az',
+    adminEmail: '',
+    adminFullName: '',
+    adminPassword: '',
+    adminStatus: 'active'
+  };
+  
+  const [formData, setFormData] = useState<SchoolFormData>(initialFormState);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -259,37 +282,74 @@ const Schools = () => {
     toast.success('Excel faylından məlumatlar yükləndi');
   };
 
+  // Filtering logic
+  const filteredSchools = schools.filter(school => {
+    const searchMatch = 
+      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      school.principalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      school.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      school.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      school.phone.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const regionMatch = selectedRegion ? school.regionId === selectedRegion : true;
+    
+    const sectorMatch = selectedSector ? school.sectorId === selectedSector : true;
+    
+    const statusMatch = selectedStatus ? school.status === selectedStatus : true;
+    
+    return searchMatch && regionMatch && sectorMatch && statusMatch;
+  });
+
+  // Sorting logic
+  const sortedSchools = React.useMemo(() => {
+    const sortableSchools = [...filteredSchools];
+    if (sortConfig.key) {
+      sortableSchools.sort((a, b) => {
+        if (a[sortConfig.key as keyof School] < b[sortConfig.key as keyof School]) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (a[sortConfig.key as keyof School] > b[sortConfig.key as keyof School]) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableSchools;
+  }, [filteredSchools, sortConfig]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
+
   return (
     <SidebarLayout>
       <div className="space-y-6">
         <SchoolHeader 
           userRole={user?.role} 
-          handleAddDialogOpen={handleAddDialogOpen}
-          handleExport={handleExport}
-          handleImport={handleImport}
+          onAddClick={handleAddDialogOpen}
+          onExportClick={handleExport}
+          onImportClick={handleImport}
         />
         
         <Card>
           <CardContent className="p-6">
             <SchoolFilters 
               searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
               selectedRegion={selectedRegion}
-              setSelectedRegion={setSelectedRegion}
               selectedSector={selectedSector}
-              setSelectedSector={setSelectedSector}
               selectedStatus={selectedStatus}
-              setSelectedStatus={setSelectedStatus}
-              resetFilters={() => {
-                setSearchTerm('');
-                setSelectedRegion('');
-                setSelectedSector('');
-                setSelectedStatus('');
-                setCurrentPage(1);
-              }}
-              filteredSectors={selectedRegion 
-                ? mockSectors.filter(sector => sector.regionId === selectedRegion) 
-                : mockSectors}
+              filteredSectors={filteredSectors}
+              handleSearch={handleSearch}
+              handleRegionFilter={handleRegionFilter}
+              handleSectorFilter={handleSectorFilter}
+              handleStatusFilter={handleStatusFilter}
+              resetFilters={resetFilters}
             />
             
             <SchoolTable
@@ -297,7 +357,13 @@ const Schools = () => {
               userRole={user?.role}
               searchTerm={searchTerm}
               sortConfig={sortConfig}
-              handleSort={handleSort}
+              handleSort={(key) => {
+                let direction: 'asc' | 'desc' = 'asc';
+                if (sortConfig.key === key && sortConfig.direction === 'asc') {
+                  direction = 'desc';
+                }
+                setSortConfig({ key, direction });
+              }}
               handleEditDialogOpen={handleEditDialogOpen}
               handleDeleteDialogOpen={handleDeleteDialogOpen}
               handleAdminDialogOpen={handleAdminDialogOpen}
@@ -307,7 +373,7 @@ const Schools = () => {
               <SchoolPagination 
                 currentPage={currentPage} 
                 totalPages={totalPages} 
-                handlePageChange={handlePageChange} 
+                onPageChange={handlePageChange} 
               />
             )}
           </CardContent>
