@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DataEntryForm from '@/components/dataEntry/DataEntryForm';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { useLanguageSafe } from '@/context/LanguageContext'; // useLanguage əvəzinə useLanguageSafe istifadə edirik
+import { useLanguageSafe } from '@/context/LanguageContext'; 
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet, Upload, AlertCircle, ArrowLeft, Info } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,19 +18,19 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Category, Column } from '@/types/column';
+import { Category } from '@/types/category';
+import { Column } from '@/types/column';
 
 const DataEntry = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast: legacyToast } = useToast();
-  const { t } = useLanguageSafe(); // useLanguage yerinə useLanguageSafe istifadə edirik
+  const { t } = useLanguageSafe();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   
-  // Demo məlumatlar
   const demoCategories: Category[] = [
     {
       id: "cat1",
@@ -93,7 +92,6 @@ const DataEntry = () => {
     }
   ];
   
-  // Məktəb status statistikaları (demo)
   const formStatistics = {
     pending: 3,
     approved: 5,
@@ -102,13 +100,11 @@ const DataEntry = () => {
     overdue: 1
   };
   
-  // URL-dən parametrləri alırıq
   const queryParams = new URLSearchParams(location.search);
   const categoryId = queryParams.get('categoryId');
   const showAlert = queryParams.get('alert');
   const statusParam = queryParams.get('status');
   
-  // Status parametrini URL-dən götürürük və state-ə təyin edirik
   useEffect(() => {
     if (statusParam) {
       setSelectedStatus(statusParam);
@@ -116,7 +112,6 @@ const DataEntry = () => {
   }, [statusParam]);
   
   useEffect(() => {
-    // Əgər URL-də alert parametri varsa, müvafiq bildiriş göstəririk
     if (showAlert === 'deadline') {
       legacyToast({
         title: t('deadlineApproaching'),
@@ -124,7 +119,6 @@ const DataEntry = () => {
         variant: "default",
       });
       
-      // Alert göstərildikdən sonra URL-dən alert parametrini təmizləyək
       const newParams = new URLSearchParams(queryParams);
       newParams.delete('alert');
       navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
@@ -151,19 +145,16 @@ const DataEntry = () => {
     }
   }, [legacyToast, showAlert, t, navigate, location.pathname, queryParams]);
 
-  // Excel şablonunu yüklə
   const handleDownloadTemplate = () => {
     toast.success(t('excelTemplateDownloaded'), {
       description: t('excelTemplateDownloadedDesc')
     });
   };
 
-  // Geri qayıt
   const handleGoBack = () => {
     navigate('/dashboard');
   };
 
-  // Fayl seçimini idarə et
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
@@ -178,7 +169,6 @@ const DataEntry = () => {
     }
   };
 
-  // Excel faylını yüklə
   const handleUpload = () => {
     if (!selectedFile) {
       toast.error(t('noFileSelected'));
@@ -187,7 +177,6 @@ const DataEntry = () => {
 
     setIsUploading(true);
 
-    // Simulyasiya - real sistemdə API sorğusu olacaq
     setTimeout(() => {
       setIsUploading(false);
       setUploadDialogOpen(false);
@@ -198,13 +187,10 @@ const DataEntry = () => {
     }, 2000);
   };
 
-  // Status kartına klikləndikdə çağırılan funksiya
   const navigateToDataEntryWithStatus = (status: string | null) => {
-    // Əgər eyni statusa klikləndikdə, statusu sıfırlayırıq
     const newStatus = status === selectedStatus ? null : status;
     setSelectedStatus(newStatus);
     
-    // URL-i yeniləyirik
     const newParams = new URLSearchParams(queryParams);
     if (newStatus) {
       newParams.set('status', newStatus);
@@ -259,7 +245,6 @@ const DataEntry = () => {
             </div>
           </div>
           
-          {/* Form statusları bölməsi - aktiv statusu seçmək imkanı əlavə edildi */}
           <div className="mb-6">
             <FormStatusSection 
               forms={formStatistics} 
@@ -269,7 +254,6 @@ const DataEntry = () => {
             />
           </div>
           
-          {/* Kateqoriya seçilmədiyi zaman info göstər */}
           {!categoryId && !selectedStatus && (
             <Alert className="mb-6 bg-blue-50 border-blue-100 text-blue-800">
               <Info className="h-4 w-4" />
@@ -286,13 +270,11 @@ const DataEntry = () => {
             columns={demoColumns}
             onCategoryChange={(id) => console.log("Category changed:", id)}
             onDataChanged={() => {
-              // Məlumatlar dəyişdiyində status statistikalarını yeniləmək (real sistemdə)
               console.log("Data changed, stats would be updated");
             }}
           />
         </div>
         
-        {/* Excel Upload Dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>

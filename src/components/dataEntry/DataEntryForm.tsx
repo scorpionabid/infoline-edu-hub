@@ -20,7 +20,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import ApprovalAlert from './components/ApprovalAlert';
 import RejectionAlert from './components/RejectionAlert';
-import { Category, Column } from '@/types/column'; // dataEntry tipi əvəzinə column tipindən istifadə edirik
+import { Category } from '@/types/category'; // Category tipini category faylından idxal edirik
+import { Column } from '@/types/column'; // Column tipini column faylından idxal edirik
 
 interface DataEntryFormProps {
   selectedCategory?: string | null;
@@ -29,9 +30,9 @@ interface DataEntryFormProps {
   columns: Column[];
   loading?: boolean;
   compact?: boolean;
-  initialCategoryId?: string | null; // Props üçün initialCategoryId əlavə edirik
-  statusFilter?: string | null; // Statusfiltri əlavə edirik
-  onDataChanged?: () => void; // Verilənlər dəyişdiyində çağırılacaq callback
+  initialCategoryId?: string | null; 
+  statusFilter?: string | null; 
+  onDataChanged?: () => void;
 }
 
 const DataEntryForm: React.FC<DataEntryFormProps> = ({
@@ -139,7 +140,13 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                     {columns.find(c => c.id === selectedColumnId)?.name && (
                       <FormField
                         key={selectedColumnId}
-                        column={columns.find(c => c.id === selectedColumnId)!}
+                        id={selectedColumnId}
+                        label={columns.find(c => c.id === selectedColumnId)?.name || ''}
+                        type={columns.find(c => c.id === selectedColumnId)?.type || 'text'}
+                        required={columns.find(c => c.id === selectedColumnId)?.isRequired || false}
+                        options={columns.find(c => c.id === selectedColumnId)?.options}
+                        placeholder={columns.find(c => c.id === selectedColumnId)?.placeholder}
+                        helpText={columns.find(c => c.id === selectedColumnId)?.helpText}
                         value=""
                         onChange={handleFieldChange}
                       />
