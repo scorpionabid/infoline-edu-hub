@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Region } from '@/types/supabase';
 import { useRegions } from './useRegions';
@@ -42,10 +41,11 @@ export const useRegionsStore = () => {
   const fetchRegionStats = useCallback(async () => {
     try {
       // Hər region üçün məktəb sayını əldə etmək
+      // Düzgün sorğu: qruplaşdırma üçün count sorğusunu select daxilində vermək
       const { data: schoolCountsData, error: schoolError } = await supabase
         .from('schools')
         .select('region_id, count(*)')
-        .group('region_id');
+        .group('region_id')
       
       if (schoolError) throw schoolError;
       
