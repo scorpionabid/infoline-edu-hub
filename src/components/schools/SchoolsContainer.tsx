@@ -53,10 +53,10 @@ const SchoolsContainer: React.FC = () => {
     closeAdminDialog,
     handleAddDialogOpen,
     handleEditDialogOpen,
+    handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
     handleDeleteConfirm,
-    handleAdminDialogOpen,
     handleAdminUpdate,
     handleResetPassword,
     formData,
@@ -120,10 +120,7 @@ const SchoolsContainer: React.FC = () => {
             sortConfig={sortConfig}
             handleSort={handleSort}
             handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={(school: School) => {
-              // Tip çevrilməsini burada emalyatlar şəklində həyata keçiririk
-              openDeleteDialog(school as any);
-            }}
+            handleDeleteDialogOpen={openDeleteDialog}
             handleAdminDialogOpen={handleAdminDialogOpen}
           />
           
