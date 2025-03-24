@@ -21,6 +21,7 @@ interface UseSchoolDialogsReturn {
   closeAdminDialog: () => void;
   handleEditDialogOpen: (school: SupabaseSchool) => void;
   handleAdminDialogOpen: (school: SupabaseSchool) => void;
+  handleDeleteDialogOpen: (school: SupabaseSchool) => void;
 }
 
 export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
@@ -83,6 +84,10 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
     openAdminDialog(convertToSchoolType(school));
   }, [openAdminDialog]);
 
+  const handleDeleteDialogOpen = useCallback((school: SupabaseSchool) => {
+    openDeleteDialog(convertToSchoolType(school));
+  }, [openDeleteDialog]);
+
   return {
     isDeleteDialogOpen,
     isEditDialogOpen,
@@ -99,6 +104,7 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
     openAdminDialog,
     closeAdminDialog,
     handleEditDialogOpen,
-    handleAdminDialogOpen
+    handleAdminDialogOpen,
+    handleDeleteDialogOpen
   };
 };

@@ -25,7 +25,8 @@ export const useSchoolDialogHandlers = () => {
     openAdminDialog,
     closeAdminDialog,
     handleEditDialogOpen,
-    handleAdminDialogOpen
+    handleAdminDialogOpen,
+    handleDeleteDialogOpen
   } = useSchoolDialogs();
 
   const {
@@ -101,6 +102,7 @@ export const useSchoolDialogHandlers = () => {
     closeAdminDialog,
     handleAddDialogOpen,
     handleEditDialogOpen,
+    handleDeleteDialogOpen,
     handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
