@@ -67,11 +67,13 @@ import {
 import { UserFormData } from '@/types/user';
 import { mockUsers } from '@/data/mockUsers';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
+import { useRegions } from '@/hooks/useRegions';
 
 const Sectors = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { regions } = useRegions();
   
   const {
     sectors,
@@ -281,12 +283,6 @@ const Sectors = () => {
     setIsUserDialogOpen(false);
   };
   
-  const regions = [
-    { id: '1', name: 'Bakı' },
-    { id: '2', name: 'Gəncə' },
-    { id: '3', name: 'Sumqayıt' },
-  ];
-  
   return (
     <SidebarLayout>
       <div className="space-y-6">
@@ -295,7 +291,7 @@ const Sectors = () => {
             <h1 className="text-2xl font-bold tracking-tight">{t('sectors')}</h1>
             <p className="text-muted-foreground">Sektorları idarə et və izlə</p>
           </div>
-          {user?.role === 'regionadmin' && (
+          {user?.role === 'superadmin' || user?.role === 'regionadmin' && (
             <Button onClick={handleAddDialogOpen} className="gap-1">
               <Plus className="h-4 w-4" />
               Sektor əlavə et
@@ -397,7 +393,7 @@ const Sectors = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Bax
                               </DropdownMenuItem>
-                              {user?.role === 'regionadmin' && (
+                              {(user?.role === 'superadmin' || user?.role === 'regionadmin') && (
                                 <>
                                   <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditDialogOpen(sector)}>
                                     <Pencil className="h-4 w-4 mr-2" />
