@@ -44,7 +44,7 @@ export const useRegionsStore = () => {
       const { data: schoolCountsData, error: schoolError } = await supabase
         .from('schools')
         .select('region_id, count(*)')
-        .groupBy('region_id');
+        .order('region_id');
       
       if (schoolError) throw schoolError;
       
