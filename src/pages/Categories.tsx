@@ -45,7 +45,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useCategories } from '@/hooks/useCategories';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Category } from '@/types/supabase';
+import { Category, adaptCategoryToSupabase } from '@/types/category';
 
 const Categories = () => {
   const { t } = useLanguageSafe();
@@ -355,7 +355,7 @@ const Categories = () => {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center">{category.columnCount || 0}</TableCell>
+                        <TableCell className="text-center">{category.column_count || 0}</TableCell>
                         <TableCell>
                           <div className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                             category.status === 'active'
