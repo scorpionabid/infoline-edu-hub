@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, FileDown, FileUp } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Badge } from '@/components/ui/badge';
-import { type Role } from '@/types/auth';
+import { Role } from '@/context/AuthContext';
 
 export interface SchoolHeaderProps {
   userRole?: Role;

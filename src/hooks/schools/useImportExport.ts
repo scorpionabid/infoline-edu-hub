@@ -57,14 +57,32 @@ export const useImportExport = (onComplete: () => void) => {
       for (const school of schools) {
         try {
           // Zəruri sahələrin olduğunu yoxlayırıq
-          if (!school.name) {
+          if (!school.name || !school.region_id || !school.sector_id) {
+            console.error('Missing required fields for school:', school);
             errorCount++;
             continue;
           }
 
+          // Supabase tələb etdiyi formata uyğunlaşdırırıq
+          const schoolData = {
+            name: school.name,
+            region_id: school.region_id,
+            sector_id: school.sector_id,
+            principal_name: school.principal_name || null,
+            address: school.address || null,
+            phone: school.phone || null,
+            email: school.email || null,
+            student_count: school.student_count || null,
+            teacher_count: school.teacher_count || null,
+            status: school.status || 'active',
+            type: school.type || null,
+            language: school.language || null,
+            admin_email: school.admin_email || null
+          };
+
           const { error } = await supabase
             .from('schools')
-            .insert([school]);
+            .insert([schoolData]);
 
           if (error) {
             console.error('Error inserting school:', error);

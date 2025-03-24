@@ -134,8 +134,8 @@ export const importSchoolsFromExcel = async (
           // Məlumatları School formatına çeviririk
           const schools: Partial<School>[] = jsonData.map(row => {
             // Excel sütun adları sistemimizdəki adlara uyğunlaşdırılır
-            return {
-              name: row['Məktəb adı'] || '',
+            const schoolData: Partial<School> = {
+              name: row['Məktəb adı'],
               principal_name: row['Direktor'] || null,
               address: row['Ünvan'] || null,
               phone: row['Telefon'] || null,
@@ -144,8 +144,13 @@ export const importSchoolsFromExcel = async (
               teacher_count: row['Müəllim sayı'] ? Number(row['Müəllim sayı']) : null,
               status: row['Status'] === 'Aktiv' ? 'active' : 'inactive',
               admin_email: row['Admin e-poçt'] || null,
-              // region_id və sector_id sonradan təyin ediləcək
             };
+            
+            // Region və Sektor adları əsasında ID-lərini tapaq
+            // NOT: Bu funksionalılq sonradan əlavə ediləcək, 
+            // indiki versiyada istifadəçi region_id və sector_id-i manual təyin etməlidir
+            
+            return schoolData;
           });
           
           toast.success(`${schools.length} məktəb məlumatı uğurla oxundu`, {
