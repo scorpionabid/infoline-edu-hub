@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { School } from '@/data/schoolsData';
 import { toast } from 'sonner';
