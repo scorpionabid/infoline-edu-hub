@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, FileSpreadsheet, InfoIcon, LayoutGrid, Loader2 } from "lucide-react";
 import { exportColumnsToExcel } from "@/utils/excelExport";
-import { Column } from "@/types/supabase";
+import { adaptSupabaseColumn } from "@/types/column";
 
 const Columns = () => {
   const [searchParams] = useSearchParams();
@@ -26,7 +26,7 @@ const Columns = () => {
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get("category") || "all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [columnToEdit, setColumnToEdit] = useState<Column | undefined>(undefined);
+  const [columnToEdit, setColumnToEdit] = useState<any | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("list");
 
   // Supabase-dən kateqoriyaları əldə edirik
@@ -98,17 +98,17 @@ const Columns = () => {
   }, [columns, categories]);
   
   // Sütunları əlavə etmə/redaktə etmə
-  const handleAddOrEditColumn = async (columnData: Omit<Column, "id">) => {
+  const handleAddOrEditColumn = async (columnData: any) => {
     try {
       if (columnToEdit) {
         // Sütunu yeniləyirik
-        await updateColumn(columnToEdit.id, columnData as any);
+        await updateColumn(columnToEdit.id, columnData);
         toast.success(t("columnUpdated"), {
           description: t("columnUpdatedSuccess"),
         });
       } else {
         // Yeni sütun əlavə edirik
-        await addColumn(columnData as any);
+        await addColumn(columnData);
         toast.success(t("columnAdded"), {
           description: t("columnAddedSuccess"),
         });
@@ -160,8 +160,10 @@ const Columns = () => {
   };
 
   // Sütun redaktə etmə
-  const handleEditColumn = (column: Column) => {
-    setColumnToEdit(column);
+  const handleEditColumn = (column: any) => {
+    // Supabase Column'ı Column tipinə çeviririk
+    const adaptedColumn = adaptSupabaseColumn(column);
+    setColumnToEdit(adaptedColumn);
     setIsAddDialogOpen(true);
   };
 
@@ -337,7 +339,7 @@ const Columns = () => {
           onAddColumn={handleAddOrEditColumn}
           categories={categories}
           editColumn={columnToEdit}
-          columns={columns}
+          columns={columns.map(adaptSupabaseColumn)}
         />
 
         <ImportColumnsDialog

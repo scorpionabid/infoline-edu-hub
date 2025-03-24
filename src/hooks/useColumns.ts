@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Column } from '@/types/supabase';
+import { Column, adaptSupabaseColumn, adaptColumnToSupabase } from '@/types/column';
 
 export const useColumns = (categoryId?: string) => {
-  const [columns, setColumns] = useState<Column[]>([]);
+  const [columns, setColumns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
@@ -27,7 +27,7 @@ export const useColumns = (categoryId?: string) => {
 
       if (error) throw error;
       
-      setColumns(data as Column[]);
+      setColumns(data || []);
     } catch (err: any) {
       console.error('Error fetching columns:', err);
       setError(err);
@@ -39,21 +39,23 @@ export const useColumns = (categoryId?: string) => {
     }
   };
 
-  const addColumn = async (column: Omit<Column, 'id' | 'created_at' | 'updated_at'>) => {
+  const addColumn = async (column: Omit<Column, "id">) => {
     try {
+      const supabaseColumn = adaptColumnToSupabase(column);
+      
       const { data, error } = await supabase
         .from('columns')
-        .insert([column])
+        .insert([supabaseColumn])
         .select()
         .single();
 
       if (error) throw error;
       
-      setColumns(prev => [...prev, data as Column]);
+      setColumns(prev => [...prev, data]);
       
       // Kateqoriyadakı sütun sayını yeniləyirik
-      if (column.category_id) {
-        await updateCategoryColumnCount(column.category_id);
+      if (column.categoryId) {
+        await updateCategoryColumnCount(column.categoryId);
       }
       
       toast.success(t('columnAdded'), {
@@ -72,9 +74,11 @@ export const useColumns = (categoryId?: string) => {
 
   const updateColumn = async (id: string, updates: Partial<Column>) => {
     try {
+      const supabaseUpdates = adaptColumnToSupabase(updates);
+      
       const { data, error } = await supabase
         .from('columns')
-        .update(updates)
+        .update(supabaseUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -82,7 +86,7 @@ export const useColumns = (categoryId?: string) => {
       if (error) throw error;
       
       setColumns(prev => prev.map(column => 
-        column.id === id ? { ...column, ...data } as Column : column
+        column.id === id ? data : column
       ));
       
       toast.success(t('columnUpdated'), {

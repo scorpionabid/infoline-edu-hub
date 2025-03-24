@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Column, ColumnType, ColumnOption } from "@/types/column";
+import { Column, ColumnType, ColumnOption, adaptColumnToSupabase } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 // Form sxemasını yaratmaq üçün funksiya
 export const createFormSchema = (t: (key: string) => string) => {
@@ -175,7 +176,7 @@ export const useColumnForm = (
         help_text: values.helpText || null,
         order_index: values.order,
         status: values.status,
-        options: ["select", "checkbox", "radio"].includes(values.type) ? options : null
+        options: ["select", "checkbox", "radio"].includes(values.type) ? options as unknown as Json : null
       };
       
       // Əgər redaktə rejimindəyiksə

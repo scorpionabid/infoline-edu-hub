@@ -37,7 +37,24 @@ export type ExportOptions = {
   includeRejected?: boolean;
   includeHiddenColumns?: boolean;
   includeStatus?: boolean;
+  customFileName?: string; // Əlavə edildi
 };
+
+// Hesabat tipi
+export type Report = {
+  id: string;
+  name: string;
+  description: string;
+  type: ReportType;
+  dateCreated: string;
+  lastUpdated: string;
+  status: 'draft' | 'published' | 'archived';
+  createdBy: string;
+  downloadUrl?: string;
+};
+
+// Hesabat növü
+export type ReportType = 'column' | 'category' | 'school' | 'region' | 'sector' | 'completion' | 'custom';
 
 // Kateqoriya hesabat tipi
 export type CategoryReport = {
