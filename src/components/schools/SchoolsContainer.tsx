@@ -120,7 +120,7 @@ const SchoolsContainer: React.FC = () => {
             sortConfig={sortConfig}
             handleSort={handleSort}
             handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={openDeleteDialog}
+            handleDeleteDialogOpen={handleDeleteDialogOpen}
             handleAdminDialogOpen={handleAdminDialogOpen}
           />
           
