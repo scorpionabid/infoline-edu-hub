@@ -306,7 +306,7 @@ const DataEntry = () => {
                   disabled={!selectedFile || isUploading}
                   onClick={handleUpload}
                 >
-                  {isLoading ? t('uploading') : t('upload')}
+                  {isUploading ? t('uploading') : t('upload')}
                 </Button>
               </div>
             </DialogFooter>
