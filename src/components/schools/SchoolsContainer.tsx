@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -181,7 +180,7 @@ const SchoolsContainer: React.FC = () => {
     } catch (error) {
       console.error('Error adding school:', error);
     }
-  }, [formData, validateForm, addSchool, closeAddDialog]);
+  }, [formData, validateForm, addSchool, closeAddDialog, setIsOperationComplete]);
 
   // Handle Edit Dialog
   const handleEditDialogOpen = useCallback((school: School) => {
@@ -236,7 +235,7 @@ const SchoolsContainer: React.FC = () => {
     } catch (error) {
       console.error('Error updating school:', error);
     }
-  }, [formData, selectedSchool, validateForm, updateSchool, closeEditDialog]);
+  }, [formData, selectedSchool, validateForm, updateSchool, closeEditDialog, setIsOperationComplete]);
 
   // Handle Delete Dialog
   const handleDeleteConfirm = useCallback(async () => {
