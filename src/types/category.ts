@@ -7,11 +7,12 @@ export interface Category {
   description?: string;
   deadline?: string;
   status: CategoryStatus | string;
-  priority?: number; // optional olmalıdır
+  priority?: number;
   assignment?: 'all' | 'sectors';
   createdAt?: string;
   updatedAt?: string;
-  columnCount?: number; // column_count uyğun olaraq əlavə edildi
+  column_count?: number; // Supabase-dən gələn adı saxlayırıq
+  columnCount?: number; // Alternativ ad
   archived?: boolean;
 }
 
@@ -38,9 +39,10 @@ export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
     deadline: supabaseCategory.deadline,
     status: supabaseCategory.status,
     priority: supabaseCategory.priority,
-    assignment: supabaseCategory.assignment,
+    assignment: supabaseCategory.assignment as 'all' | 'sectors', // supabase assignment dəyərini düzgün tipə çeviririk
     createdAt: supabaseCategory.created_at,
     updatedAt: supabaseCategory.updated_at,
+    column_count: supabaseCategory.column_count,
     columnCount: supabaseCategory.column_count,
     archived: supabaseCategory.archived
   };
@@ -52,7 +54,7 @@ export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
   
   return {
     ...rest,
-    column_count: columnCount,
+    column_count: category.column_count || columnCount,
     // created_at və updated_at serverə göndərilmir, onları Supabase özü təyin edir
   };
 };

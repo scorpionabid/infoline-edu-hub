@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Category } from '@/types/supabase';
+import { Category, adaptSupabaseCategory } from '@/types/category';
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -21,7 +21,8 @@ export const useCategories = () => {
 
       if (error) throw error;
       
-      setCategories(data as Category[]);
+      // Adapter vasitəsi ilə məlumatları daha təhlükəsiz çeviririk
+      setCategories(data.map(category => adaptSupabaseCategory(category)));
     } catch (err: any) {
       console.error('Error fetching categories:', err);
       setError(err);
