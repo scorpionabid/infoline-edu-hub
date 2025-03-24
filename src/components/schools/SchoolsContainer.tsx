@@ -10,7 +10,7 @@ import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
-import { School } from '@/types/supabase'; // Supabase School tipini istifadə edirik
+import { School } from '@/types/supabase'; // Burada düzgün tip idxal edirik
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -46,7 +46,6 @@ const SchoolsContainer: React.FC = () => {
     selectedAdmin,
     openDeleteDialog,
     closeDeleteDialog,
-    openEditDialog,
     closeEditDialog,
     openAddDialog,
     closeAddDialog,
