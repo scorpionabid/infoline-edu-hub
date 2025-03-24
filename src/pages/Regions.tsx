@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, Role } from '@/context/AuthContext';
@@ -43,7 +44,8 @@ import {
   AlertCircle,
   Globe,
   User,
-  KeyRound
+  KeyRound,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -64,123 +66,39 @@ import {
   AccordionTrigger 
 } from "@/components/ui/accordion";
 import { UserFormData } from '@/types/user';
+import { useRegionsStore } from '@/hooks/useRegionsStore';
+import { Region } from '@/types/supabase';
 import { mockUsers } from '@/data/mockUsers';
-
-const mockRegions = [
-  { 
-    id: '1', 
-    name: 'Bakı', 
-    description: 'Azərbaycanın paytaxtı',
-    sectorCount: 9,
-    schoolCount: 293,
-    status: 'active',
-    createdAt: '2023-01-10',
-    completionRate: 87,
-    adminId: 'user-1',
-    adminEmail: 'baki.admin@infoline.edu'
-  },
-  { 
-    id: '2', 
-    name: 'Gəncə', 
-    description: 'Azərbaycanın ikinci böyük şəhəri',
-    sectorCount: 4,
-    schoolCount: 78,
-    status: 'active',
-    createdAt: '2023-01-11',
-    completionRate: 75,
-    adminId: 'user-2',
-    adminEmail: 'gence.admin@infoline.edu'
-  },
-  { 
-    id: '3', 
-    name: 'Sumqayıt', 
-    description: 'Bakıdan şimalda yerləşən sənaye şəhəri',
-    sectorCount: 3,
-    schoolCount: 56,
-    status: 'active',
-    createdAt: '2023-01-12',
-    completionRate: 90,
-    adminId: 'user-3',
-    adminEmail: 'sumqayit.admin@infoline.edu'
-  },
-  { 
-    id: '4', 
-    name: 'Mingəçevir', 
-    description: 'Kür çayının üzərində yerləşən şəhər',
-    sectorCount: 2,
-    schoolCount: 29,
-    status: 'active',
-    createdAt: '2023-01-13',
-    completionRate: 65,
-    adminId: 'user-4',
-    adminEmail: 'mingecevir.admin@infoline.edu'
-  },
-  { 
-    id: '5', 
-    name: 'Şəki', 
-    description: 'Azərbaycanın şimal-qərb hissəsindəki tarixi şəhər',
-    sectorCount: 2,
-    schoolCount: 34,
-    status: 'active',
-    createdAt: '2023-01-14',
-    completionRate: 72,
-    adminId: 'user-5',
-    adminEmail: 'seki.admin@infoline.edu'
-  },
-  { 
-    id: '6', 
-    name: 'Lənkəran', 
-    description: 'Cənub bölgəsində yerləşən şəhər',
-    sectorCount: 3,
-    schoolCount: 43,
-    status: 'active',
-    createdAt: '2023-01-15',
-    completionRate: 84,
-    adminId: 'user-6',
-    adminEmail: 'lenkeran.admin@infoline.edu'
-  },
-  { 
-    id: '7', 
-    name: 'Şirvan', 
-    description: 'Mərkəzi Aran bölgəsində yerləşən şəhər',
-    sectorCount: 1,
-    schoolCount: 21,
-    status: 'inactive',
-    createdAt: '2023-01-16',
-    completionRate: 38,
-    adminId: 'user-7',
-    adminEmail: 'sirvan.admin@infoline.edu'
-  },
-  { 
-    id: '8', 
-    name: 'Naxçıvan', 
-    description: 'Naxçıvan Muxtar Respublikasının mərkəzi',
-    sectorCount: 4,
-    schoolCount: 67,
-    status: 'active',
-    createdAt: '2023-01-17',
-    completionRate: 81,
-    adminId: 'user-8',
-    adminEmail: 'naxcivan.admin@infoline.edu'
-  },
-];
 
 const Regions = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  const [regions, setRegions] = useState(mockRegions);
-  const [searchTerm, setSearchTerm] = useState('');
+  const {
+    regions,
+    loading,
+    searchTerm,
+    selectedStatus,
+    sortConfig,
+    currentPage,
+    totalPages,
+    handleSearch,
+    handleStatusFilter,
+    handleSort,
+    handlePageChange,
+    resetFilters,
+    handleAddRegion,
+    handleUpdateRegion,
+    handleDeleteRegion
+  } = useRegionsStore();
+  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState(null);
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [selectedRegion, setSelectedRegion] = useState<any>(null);
+  const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
   
   const [regionFormData, setRegionFormData] = useState({
     name: '',
@@ -204,51 +122,6 @@ const Regions = () => {
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-  
-  const filteredRegions = regions.filter(region =>
-    region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    region.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    region.adminEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-  
-  const sortedRegions = React.useMemo(() => {
-    const sortableRegions = [...filteredRegions];
-    if (sortConfig.key) {
-      sortableRegions.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableRegions;
-  }, [filteredRegions, sortConfig]);
-  
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedRegions.slice(indexOfFirstItem, indexOfLastItem);
-  
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-  
-  const totalPages = Math.ceil(sortedRegions.length / itemsPerPage);
-  
   const handleAddDialogOpen = () => {
     setRegionFormData({
       name: '',
@@ -271,7 +144,7 @@ const Regions = () => {
     setIsAddDialogOpen(true);
   };
   
-  const handleViewAdmin = (region) => {
+  const handleViewAdmin = (region: any) => {
     setSelectedRegion(region);
     const admin = mockUsers.find(user => user.id === region.adminId);
     setSelectedAdmin(admin || { 
@@ -284,7 +157,7 @@ const Regions = () => {
     setIsUserDialogOpen(true);
   };
   
-  const handleRegionFormChange = (e) => {
+  const handleRegionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setRegionFormData(prev => ({ ...prev, [name]: value }));
     
@@ -302,68 +175,67 @@ const Regions = () => {
     setAdminFormData(data);
   };
   
-  const handleAddSubmit = () => {
-    const newRegionId = (regions.length + 1).toString();
-    const newAdminId = `user-${Date.now()}`;
-    
+  const handleAddSubmit = async () => {
+    // Supabase-ə region əlavə et
     const newRegion = {
-      id: newRegionId,
-      ...regionFormData,
-      sectorCount: 0,
-      schoolCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      completionRate: 0,
-      adminId: newAdminId,
-      adminEmail: adminFormData.email
+      name: regionFormData.name,
+      description: regionFormData.description,
+      status: regionFormData.status
     };
     
-    const newAdmin = {
-      ...adminFormData,
-      id: newAdminId,
-      regionId: newRegionId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const success = await handleAddRegion(newRegion);
     
-    setRegions([...regions, newRegion]);
-    mockUsers.push(newAdmin);
-    
-    setIsAddDialogOpen(false);
-    toast.success('Region və admin uğurla əlavə edildi');
+    if (success) {
+      // TODO: Gələcəkdə admin yaratma məntiqi Auth API ilə birləşdiriləcək
+      setIsAddDialogOpen(false);
+      toast.success('Region və admin uğurla əlavə edildi');
+    }
   };
   
-  const handleEditDialogOpen = (region) => {
+  const handleEditDialogOpen = (region: any) => {
     setSelectedRegion(region);
     setRegionFormData({
       name: region.name,
-      description: region.description,
+      description: region.description || '',
       status: region.status
     });
     setIsEditDialogOpen(true);
   };
   
-  const handleEditSubmit = () => {
-    const updatedRegions = regions.map(region => 
-      region.id === selectedRegion.id ? { ...region, ...regionFormData } : region
-    );
-    setRegions(updatedRegions);
-    setIsEditDialogOpen(false);
-    toast.success('Region uğurla yeniləndi');
+  const handleEditSubmit = async () => {
+    if (!selectedRegion) return;
+    
+    const updates = {
+      name: regionFormData.name,
+      description: regionFormData.description,
+      status: regionFormData.status
+    };
+    
+    const success = await handleUpdateRegion(selectedRegion.id, updates);
+    
+    if (success) {
+      setIsEditDialogOpen(false);
+      toast.success('Region uğurla yeniləndi');
+    }
   };
   
-  const handleDeleteDialogOpen = (region) => {
+  const handleDeleteDialogOpen = (region: any) => {
     setSelectedRegion(region);
     setIsDeleteDialogOpen(true);
   };
   
-  const handleDeleteConfirm = () => {
-    const updatedRegions = regions.filter(region => region.id !== selectedRegion.id);
-    setRegions(updatedRegions);
-    setIsDeleteDialogOpen(false);
-    toast.success('Region uğurla silindi');
+  const handleDeleteConfirm = async () => {
+    if (!selectedRegion) return;
+    
+    const success = await handleDeleteRegion(selectedRegion.id);
+    
+    if (success) {
+      setIsDeleteDialogOpen(false);
+      toast.success('Region uğurla silindi');
+    }
   };
   
-  const renderCompletionRateBadge = (rate) => {
+  const renderCompletionRateBadge = (rate: number) => {
     if (rate >= 80) {
       return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{rate}%</Badge>;
     } else if (rate >= 60) {
@@ -373,7 +245,7 @@ const Regions = () => {
     }
   };
   
-  const renderStatusBadge = (status) => {
+  const renderStatusBadge = (status: string) => {
     if (status === 'active') {
       return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
     } else {
@@ -421,8 +293,22 @@ const Regions = () => {
                   placeholder="Regionları axtar..."
                   className="pl-8"
                   value={searchTerm}
-                  onChange={handleSearch}
+                  onChange={(e) => handleSearch(e.target.value)}
                 />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  className="p-2 border rounded-md"
+                  value={selectedStatus || ''}
+                  onChange={(e) => handleStatusFilter(e.target.value || null)}
+                >
+                  <option value="">Bütün statuslar</option>
+                  <option value="active">Aktiv</option>
+                  <option value="inactive">Deaktiv</option>
+                </select>
+                <Button variant="outline" onClick={resetFilters}>
+                  Filtri sıfırla
+                </Button>
               </div>
             </div>
             
@@ -446,10 +332,19 @@ const Regions = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map(region => (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center h-32">
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                          <Loader2 className="h-8 w-8 mb-2 animate-spin" />
+                          <p>Məlumatlar yüklənir...</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : regions.length > 0 ? (
+                    regions.map(region => (
                       <TableRow key={region.id}>
-                        <TableCell className="font-medium">{region.id}</TableCell>
+                        <TableCell className="font-medium">{region.id.substring(0, 4)}...</TableCell>
                         <TableCell>{region.name}</TableCell>
                         <TableCell className="hidden md:table-cell">
                           <div className="flex items-center gap-1">
@@ -525,7 +420,7 @@ const Regions = () => {
               </Table>
             </div>
             
-            {sortedRegions.length > itemsPerPage && (
+            {!loading && totalPages > 1 && (
               <div className="mt-4">
                 <Pagination>
                   <PaginationContent>
