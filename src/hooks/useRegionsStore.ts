@@ -41,11 +41,14 @@ export const useRegionsStore = () => {
   const fetchRegionStats = useCallback(async () => {
     try {
       // Hər region üçün məktəb sayını əldə etmək
-      // Düzgün sorğu: qruplaşdırma üçün count sorğusunu select daxilində vermək
+      // Qruplaşdırma və say funksiyasını birbaşa SQL sorğusu şəklində select daxilində istifadə edirik
       const { data: schoolCountsData, error: schoolError } = await supabase
         .from('schools')
-        .select('region_id, count(*)')
-        .group('region_id')
+        .select('region_id, count')
+        .select(`
+          region_id,
+          count(*)
+        `);
       
       if (schoolError) throw schoolError;
       
