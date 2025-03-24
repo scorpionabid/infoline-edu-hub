@@ -140,7 +140,8 @@ const SchoolsContainer: React.FC = () => {
         status: formData.status,
         type: formData.type || null,
         language: formData.language || null,
-        admin_email: formData.adminEmail || null
+        admin_email: formData.adminEmail || null,
+        logo: null
       };
       
       await addSchool(newSchool);

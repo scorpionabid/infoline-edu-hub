@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -9,15 +8,12 @@ export const useSchools = () => {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
 
-  const addSchool = useCallback(async (newSchoolData: Omit<School, 'id' | 'created_at' | 'updated_at' | 'completion_rate' | 'logo'>) => {
+  const addSchool = useCallback(async (newSchoolData: Omit<School, 'id' | 'created_at' | 'updated_at' | 'completion_rate'>) => {
     setLoading(true);
     try {
-      // Logo varsayılan null olaraq əlavə edilir
-      const schoolWithLogo = { ...newSchoolData, logo: null };
-      
       const { data, error } = await supabase
         .from('schools')
-        .insert([schoolWithLogo])
+        .insert([newSchoolData])
         .select()
         .single();
 
@@ -98,4 +94,3 @@ export const useSchools = () => {
     deleteSchool
   };
 };
-
