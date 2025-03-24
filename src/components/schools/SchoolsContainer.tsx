@@ -254,7 +254,7 @@ const SchoolsContainer: React.FC = () => {
 
   // Handle Admin Dialog
   const handleAdminDialogOpen = useCallback((school: School) => {
-    openAdminDialog(school);
+    openAdminDialog(convertToSchoolType(school));
   }, [openAdminDialog]);
 
   const handleAdminUpdate = useCallback(() => {
@@ -266,7 +266,7 @@ const SchoolsContainer: React.FC = () => {
   const handleResetPassword = useCallback((newPassword: string) => {
     if (!selectedAdmin) return;
     
-    const adminEmail = selectedAdmin.admin_email;
+    const adminEmail = selectedAdmin.adminEmail;
     
     toast.success(`${adminEmail} üçün yeni parol təyin edildi`, {
       description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
