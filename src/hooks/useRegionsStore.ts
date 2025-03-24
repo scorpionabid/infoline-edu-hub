@@ -41,16 +41,18 @@ export const useRegionsStore = () => {
   const fetchRegionStats = useCallback(async () => {
     try {
       // Hər region üçün məktəb sayını əldə etmək
-      const { data: schoolCountsData, error: schoolError } = await supabase
+      const { data: schools, error: schoolError } = await supabase
         .from('schools')
-        .select('region_id, count(*)')
-        .order('region_id');
+        .select('*');
       
       if (schoolError) throw schoolError;
       
+      // Məktəbləri regionlara görə qruplaşdırırıq
       const schoolCountsMap: Record<string, number> = {};
-      schoolCountsData?.forEach(item => {
-        schoolCountsMap[item.region_id] = parseInt(item.count);
+      schools?.forEach(school => {
+        if (school.region_id) {
+          schoolCountsMap[school.region_id] = (schoolCountsMap[school.region_id] || 0) + 1;
+        }
       });
       setSchoolCounts(schoolCountsMap);
       
