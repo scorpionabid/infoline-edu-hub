@@ -31,7 +31,6 @@ interface MappedSchool {
   adminEmail: string;
 }
 
-// Supabase Məktəb tipindən mock Məktəb tipinə çevirmək üçün yardımçı funksiya
 const mapToMockSchool = (school: School): MappedSchool => {
   return {
     id: school.id,
@@ -51,7 +50,6 @@ const mapToMockSchool = (school: School): MappedSchool => {
   };
 };
 
-// Çevrilmiş məktəb tipini School tipinə (data/schoolsData.ts) çevirmək üçün funksiya
 const convertToSchoolType = (school: School): MockSchool => {
   return {
     id: school.id,
@@ -69,8 +67,8 @@ const convertToSchoolType = (school: School): MockSchool => {
     language: school.language || '',
     createdAt: school.created_at,
     completionRate: school.completion_rate,
-    region: '',  // Bu məlumatlar yaradılanda əlavə olunacaq
-    sector: '',  // Bu məlumatlar yaradılanda əlavə olunacaq
+    region: '',
+    sector: '',
     logo: school.logo || '',
     adminEmail: school.admin_email || ''
   };
@@ -80,7 +78,6 @@ const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
   const [isOperationComplete, setIsOperationComplete] = useState(false);
   
-  // Supabase məlumatları və filtrlər
   const {
     currentItems,
     searchTerm,
@@ -102,10 +99,8 @@ const SchoolsContainer: React.FC = () => {
     fetchSchools
   } = useSupabaseSchools();
   
-  // CRUD əməliyyatları üçün hook
   const { addSchool, updateSchool, deleteSchool } = useSchools();
   
-  // Form və dialoglar
   const {
     formData,
     currentTab,
@@ -133,7 +128,6 @@ const SchoolsContainer: React.FC = () => {
     closeAdminDialog
   } = useSchoolDialogs();
 
-  // Məlumatların yenilənməsini təmin etmək üçün effect
   useEffect(() => {
     if (isOperationComplete) {
       fetchSchools();
@@ -141,7 +135,6 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [isOperationComplete, fetchSchools]);
 
-  // Handle Add Dialog
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
     openAddDialog();
@@ -151,7 +144,6 @@ const SchoolsContainer: React.FC = () => {
     if (!validateForm()) return;
     
     try {
-      // Supabase üçün məlumatları hazırlayaq
       const newSchool = {
         name: formData.name,
         principal_name: formData.principalName || null,
@@ -182,7 +174,6 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [formData, validateForm, addSchool, closeAddDialog, setIsOperationComplete]);
 
-  // Handle Edit Dialog
   const handleEditDialogOpen = useCallback((school: School) => {
     const mappedSchool = mapToMockSchool(school);
     
@@ -200,7 +191,7 @@ const SchoolsContainer: React.FC = () => {
       type: mappedSchool.type || '',
       language: mappedSchool.language || '',
       adminEmail: mappedSchool.adminEmail || '',
-      adminFullName: '', // Bu məlumat mövcud deyil
+      adminFullName: '',
       adminPassword: '',
       adminStatus: 'active'
     });
@@ -211,7 +202,6 @@ const SchoolsContainer: React.FC = () => {
     if (!validateForm() || !selectedSchool) return;
     
     try {
-      // Supabase üçün məlumatları hazırlayaq
       const updatedSchool = {
         name: formData.name,
         principal_name: formData.principalName || null,
@@ -237,7 +227,6 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [formData, selectedSchool, validateForm, updateSchool, closeEditDialog, setIsOperationComplete]);
 
-  // Handle Delete Dialog
   const handleDeleteConfirm = useCallback(async () => {
     if (!selectedSchool) return;
     
@@ -251,7 +240,6 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [selectedSchool, deleteSchool, closeDeleteDialog]);
 
-  // Handle Admin Dialog
   const handleAdminDialogOpen = useCallback((school: School) => {
     openAdminDialog(convertToSchoolType(school));
   }, [openAdminDialog]);
@@ -275,7 +263,6 @@ const SchoolsContainer: React.FC = () => {
     setIsOperationComplete(true);
   }, [selectedAdmin, closeAdminDialog]);
 
-  // Excel operations
   const handleExport = useCallback(() => {
     toast.success("Excel faylı yüklənir...");
     fetchSchools();
@@ -286,7 +273,6 @@ const SchoolsContainer: React.FC = () => {
     fetchSchools();
   }, [fetchSchools]);
 
-  // Sektorları uyğun tipə çevirmək
   const mappedSectors = sectors.map(sector => ({
     id: sector.id,
     name: sector.name,
