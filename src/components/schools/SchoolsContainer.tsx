@@ -2,32 +2,33 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-import { mockRegions, mockSectors, School } from '@/data/schoolsData';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
 import SchoolPagination from './SchoolPagination';
 import SchoolHeader from './SchoolHeader';
 import { DeleteDialog, EditDialog, AddDialog, AdminDialog } from './SchoolDialogs';
-import { useSchoolsData } from '@/hooks/useSchoolsData';
+import { useSupabaseSchools } from '@/hooks/useSupabaseSchools';
 import { useSchoolForm } from '@/hooks/useSchoolForm';
 import { useSchoolDialogs } from '@/hooks/useSchoolDialogs';
-import { toast } from '@/hooks/use-toast';
+import { useSchools } from '@/hooks/useSchools';
+import { toast } from 'sonner';
+import { School } from '@/types/supabase';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
   const [isOperationComplete, setIsOperationComplete] = useState(false);
   
-  // Custom hooks
+  // Supabase məlumatları və filtrlər
   const {
-    schools,
+    currentItems,
     searchTerm,
     selectedRegion,
     selectedSector,
     selectedStatus,
-    filteredSectors,
+    sectors,
+    regions,
     sortConfig,
     currentPage,
-    currentItems,
     totalPages,
     handleSearch,
     handleRegionFilter,
@@ -36,12 +37,13 @@ const SchoolsContainer: React.FC = () => {
     handleSort,
     handlePageChange,
     resetFilters,
-    handleAddSchool,
-    handleUpdateSchool,
-    handleDeleteSchool,
-    refreshData
-  } = useSchoolsData();
+    fetchSchools
+  } = useSupabaseSchools();
   
+  // CRUD əməliyyatları üçün hook
+  const { addSchool, updateSchool, deleteSchool } = useSchools();
+  
+  // Form və dialoglar
   const {
     formData,
     currentTab,
@@ -72,10 +74,10 @@ const SchoolsContainer: React.FC = () => {
   // Məlumatların yenilənməsini təmin etmək üçün effect
   useEffect(() => {
     if (isOperationComplete) {
-      refreshData();
+      fetchSchools();
       setIsOperationComplete(false);
     }
-  }, [isOperationComplete, refreshData]);
+  }, [isOperationComplete, fetchSchools]);
 
   // Handle Add Dialog
   const handleAddDialogOpen = useCallback(() => {
@@ -83,80 +85,106 @@ const SchoolsContainer: React.FC = () => {
     openAddDialog();
   }, [resetForm, openAddDialog]);
 
-  const handleAddSubmit = useCallback(() => {
+  const handleAddSubmit = useCallback(async () => {
     if (!validateForm()) return;
     
-    const newSchool: School = {
-      id: (schools.length + 1).toString(),
-      ...formData,
-      studentCount: Number(formData.studentCount) || 0,
-      teacherCount: Number(formData.teacherCount) || 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      completionRate: 0,
-      region: mockRegions.find(r => r.id === formData.regionId)?.name || '',
-      sector: mockSectors.find(s => s.id === formData.sectorId)?.name || '',
-      logo: '',
-      adminEmail: formData.adminEmail || ''
-    };
-    
-    closeAddDialog();
-    handleAddSchool(newSchool);
-    
-    if (formData.adminEmail) {
-      toast({
-        title: "Məktəb admini uğurla yaradıldı",
-        variant: "default",
-      });
+    try {
+      // Supabase üçün məlumatları hazırlayaq
+      const newSchool = {
+        name: formData.name,
+        principal_name: formData.principalName || null,
+        region_id: formData.regionId,
+        sector_id: formData.sectorId,
+        address: formData.address || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        student_count: Number(formData.studentCount) || null,
+        teacher_count: Number(formData.teacherCount) || null,
+        status: formData.status,
+        type: formData.type || null,
+        language: formData.language || null,
+        admin_email: formData.adminEmail || null
+      };
+      
+      await addSchool(newSchool);
+      
+      closeAddDialog();
+      setIsOperationComplete(true);
+      
+      if (formData.adminEmail) {
+        toast.success("Məktəb admini uğurla yaradıldı");
+      }
+    } catch (error) {
+      console.error('Error adding school:', error);
     }
-    
-    setIsOperationComplete(true);
-    // Daha uzun gecikmə ilə məlumatları yeniləyək
-    setTimeout(() => {
-      refreshData();
-    }, 300);
-  }, [formData, schools.length, validateForm, handleAddSchool, closeAddDialog, refreshData]);
+  }, [formData, validateForm, addSchool, closeAddDialog]);
 
   // Handle Edit Dialog
   const handleEditDialogOpen = useCallback((school: School) => {
-    setFormDataFromSchool(school);
+    setFormDataFromSchool({
+      name: school.name,
+      principalName: school.principal_name || '',
+      regionId: school.region_id,
+      sectorId: school.sector_id,
+      address: school.address || '',
+      email: school.email || '',
+      phone: school.phone || '',
+      studentCount: school.student_count?.toString() || '',
+      teacherCount: school.teacher_count?.toString() || '',
+      status: school.status || 'active',
+      type: school.type || '',
+      language: school.language || '',
+      adminEmail: school.admin_email || '',
+      adminFullName: '', // Bu məlumat mövcud deyil
+      adminPassword: '',
+      adminStatus: 'active'
+    });
     openEditDialog(school);
   }, [setFormDataFromSchool, openEditDialog]);
 
-  const handleEditSubmit = useCallback(() => {
+  const handleEditSubmit = useCallback(async () => {
     if (!validateForm() || !selectedSchool) return;
     
-    const updatedSchool: School = { 
-      ...selectedSchool, 
-      ...formData,
-      studentCount: Number(formData.studentCount) || 0,
-      teacherCount: Number(formData.teacherCount) || 0,
-      region: mockRegions.find(r => r.id === formData.regionId)?.name || '',
-      sector: mockSectors.find(s => s.id === formData.sectorId)?.name || ''
-    };
-    
-    closeEditDialog();
-    handleUpdateSchool(updatedSchool);
-    
-    setIsOperationComplete(true);
-    // Daha uzun gecikmə ilə məlumatları yeniləyək
-    setTimeout(() => {
-      refreshData();
-    }, 300);
-  }, [formData, selectedSchool, validateForm, handleUpdateSchool, closeEditDialog, refreshData]);
+    try {
+      // Supabase üçün məlumatları hazırlayaq
+      const updatedSchool = {
+        name: formData.name,
+        principal_name: formData.principalName || null,
+        region_id: formData.regionId,
+        sector_id: formData.sectorId,
+        address: formData.address || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        student_count: Number(formData.studentCount) || null,
+        teacher_count: Number(formData.teacherCount) || null, 
+        status: formData.status,
+        type: formData.type || null,
+        language: formData.language || null,
+        admin_email: formData.adminEmail || null
+      };
+      
+      await updateSchool(selectedSchool.id, updatedSchool);
+      
+      closeEditDialog();
+      setIsOperationComplete(true);
+    } catch (error) {
+      console.error('Error updating school:', error);
+    }
+  }, [formData, selectedSchool, validateForm, updateSchool, closeEditDialog]);
 
   // Handle Delete Dialog
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!selectedSchool) return;
     
-    closeDeleteDialog();
-    handleDeleteSchool(selectedSchool.id);
-    
-    setIsOperationComplete(true);
-    // Daha uzun gecikmə ilə məlumatları yeniləyək
-    setTimeout(() => {
-      refreshData();
-    }, 300);
-  }, [selectedSchool, handleDeleteSchool, closeDeleteDialog, refreshData]);
+    try {
+      await deleteSchool(selectedSchool.id);
+      
+      closeDeleteDialog();
+      setIsOperationComplete(true);
+    } catch (error) {
+      console.error('Error deleting school:', error);
+    }
+  }, [selectedSchool, deleteSchool, closeDeleteDialog]);
 
   // Handle Admin Dialog
   const handleAdminDialogOpen = useCallback((school: School) => {
@@ -164,55 +192,34 @@ const SchoolsContainer: React.FC = () => {
   }, [openAdminDialog]);
 
   const handleAdminUpdate = useCallback(() => {
-    toast({
-      title: "Admin məlumatları yeniləndi",
-      variant: "default",
-    });
+    toast.success("Admin məlumatları yeniləndi");
     closeAdminDialog();
-    
     setIsOperationComplete(true);
-    // Daha uzun gecikmə ilə məlumatları yeniləyək
-    setTimeout(() => {
-      refreshData();
-    }, 300);
-  }, [closeAdminDialog, refreshData]);
+  }, [closeAdminDialog]);
 
   const handleResetPassword = useCallback((newPassword: string) => {
     if (!selectedAdmin) return;
     
-    const adminEmail = selectedAdmin.adminEmail;
+    const adminEmail = selectedAdmin.admin_email;
     
-    toast({
-      title: `${adminEmail} üçün yeni parol təyin edildi`,
-      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək.",
-      variant: "default",
+    toast.success(`${adminEmail} üçün yeni parol təyin edildi`, {
+      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
     });
     
     closeAdminDialog();
-    
     setIsOperationComplete(true);
-    // Daha uzun gecikmə ilə məlumatları yeniləyək
-    setTimeout(() => {
-      refreshData();
-    }, 300);
-  }, [selectedAdmin, closeAdminDialog, refreshData]);
+  }, [selectedAdmin, closeAdminDialog]);
 
   // Excel operations
   const handleExport = useCallback(() => {
-    toast({
-      title: "Excel faylı yüklənir...",
-      variant: "default",
-    });
-    refreshData();
-  }, [refreshData]);
+    toast.success("Excel faylı yüklənir...");
+    fetchSchools();
+  }, [fetchSchools]);
 
   const handleImport = useCallback(() => {
-    toast({
-      title: "Excel faylından məlumatlar yükləndi",
-      variant: "default",
-    });
-    refreshData();
-  }, [refreshData]);
+    toast.success("Excel faylından məlumatlar yükləndi");
+    fetchSchools();
+  }, [fetchSchools]);
 
   return (
     <div className="space-y-6">
@@ -230,7 +237,8 @@ const SchoolsContainer: React.FC = () => {
             selectedRegion={selectedRegion}
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
-            filteredSectors={filteredSectors}
+            filteredSectors={sectors}
+            regions={regions}
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}
@@ -273,7 +281,7 @@ const SchoolsContainer: React.FC = () => {
         handleFormChange={handleFormChange} 
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
-        filteredSectors={filteredSectors}
+        filteredSectors={sectors}
       />
       
       <EditDialog 
@@ -282,7 +290,7 @@ const SchoolsContainer: React.FC = () => {
         onSubmit={handleEditSubmit} 
         formData={formData} 
         handleFormChange={handleFormChange} 
-        filteredSectors={filteredSectors}
+        filteredSectors={sectors}
       />
       
       <AdminDialog 

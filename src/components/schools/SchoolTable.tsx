@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Table, 
@@ -33,13 +33,10 @@ import {
   XCircle,
   Mail,
 } from 'lucide-react';
-import { 
-  getSchoolTypeLabel, 
-  getLanguageLabel, 
-  getSchoolInitial,
-  School,
-} from '@/data/schoolsData';
-import { SortConfig } from '@/hooks/useSchoolsData';
+import { SortConfig } from '@/hooks/useSupabaseSchools';
+import { School } from '@/types/supabase';
+import { useRegions } from '@/hooks/useRegions';
+import { useSectors } from '@/hooks/useSectors';
 
 interface SchoolTableProps {
   currentItems: School[];
@@ -63,20 +60,69 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
   handleAdminDialogOpen
 }) => {
   const navigate = useNavigate();
+  const { regions } = useRegions();
+  const { sectors } = useSectors();
+
+  // Məktəb şəklinə adın ilk hərfini qoyuruq
+  const getSchoolInitial = (name: string) => {
+    return name && name.length > 0 ? name.charAt(0).toUpperCase() : 'M';
+  };
+
+  // Məktəb növünün etiketini əldə edirik
+  const getSchoolTypeLabel = (type: string | null) => {
+    if (!type) return 'Məlum deyil';
+    
+    const types: {[key: string]: string} = {
+      'full_secondary': 'Tam orta',
+      'general_secondary': 'Ümumi orta',
+      'primary': 'İbtidai',
+      'lyceum': 'Lisey',
+      'gymnasium': 'Gimnaziya'
+    };
+    
+    return types[type] || type;
+  };
+
+  // Təhsil dilinin etiketini əldə edirik
+  const getLanguageLabel = (language: string | null) => {
+    if (!language) return 'Məlum deyil';
+    
+    const languages: {[key: string]: string} = {
+      'az': 'Azərbaycan',
+      'ru': 'Rus',
+      'en': 'İngilis',
+      'tr': 'Türk'
+    };
+    
+    return languages[language] || language;
+  };
+
+  // Region və Sektor adlarını İD-yə görə əldə edirik
+  const getRegionName = (regionId: string) => {
+    const region = regions.find(r => r.id === regionId);
+    return region ? region.name : 'Məlum deyil';
+  };
+  
+  const getSectorName = (sectorId: string) => {
+    const sector = sectors.find(s => s.id === sectorId);
+    return sector ? sector.name : 'Məlum deyil';
+  };
 
   // Tamamlanma faizi badge
-  const renderCompletionRateBadge = (rate: number) => {
-    if (rate >= 80) {
-      return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{rate}%</Badge>;
-    } else if (rate >= 60) {
-      return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">{rate}%</Badge>;
+  const renderCompletionRateBadge = (rate: number | null) => {
+    const completionRate = rate || 0;
+    
+    if (completionRate >= 80) {
+      return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{completionRate}%</Badge>;
+    } else if (completionRate >= 60) {
+      return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">{completionRate}%</Badge>;
     } else {
-      return <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{rate}%</Badge>;
+      return <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{completionRate}%</Badge>;
     }
   };
   
   // Status badge
-  const renderStatusBadge = (status: string) => {
+  const renderStatusBadge = (status: string | null) => {
     if (status === 'active') {
       return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
     } else {
@@ -119,7 +165,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </div>
             </TableHead>
-            <TableHead onClick={() => handleSort('region')} className="cursor-pointer hidden md:table-cell">
+            <TableHead onClick={() => handleSort('region_id')} className="cursor-pointer hidden md:table-cell">
               <div className="flex items-center">
                 Region/Sektor
                 <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -153,17 +199,17 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                   <div className="text-sm text-muted-foreground truncate max-w-[200px]">{school.address}</div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <div>{school.region}</div>
-                  <div className="text-sm text-muted-foreground">{school.sector}</div>
+                  <div>{getRegionName(school.region_id)}</div>
+                  <div className="text-sm text-muted-foreground">{getSectorName(school.sector_id)}</div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
                   <div className="flex items-center gap-1">
                     <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    {school.studentCount}
+                    {school.student_count || '—'}
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    {school.teacherCount}
+                    {school.teacher_count || '—'}
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
@@ -174,20 +220,20 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {school.adminEmail ? (
+                  {school.admin_email ? (
                     <button 
                       className="text-blue-500 hover:underline flex items-center gap-1 cursor-pointer"
                       onClick={() => handleAdminDialogOpen(school)}
                     >
                       <Mail className="h-3 w-3" />
-                      {school.adminEmail}
+                      {school.admin_email}
                     </button>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {renderCompletionRateBadge(school.completionRate)}
+                  {renderCompletionRateBadge(school.completion_rate)}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {renderStatusBadge(school.status)}

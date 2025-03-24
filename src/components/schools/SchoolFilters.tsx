@@ -3,14 +3,15 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { mockRegions } from '@/data/schoolsData';
+import { Region, Sector } from '@/types/supabase';
 
 interface SchoolFiltersProps {
   searchTerm: string;
   selectedRegion: string;
   selectedSector: string;
   selectedStatus: string;
-  filteredSectors: { id: string; regionId: string; name: string; }[];
+  filteredSectors: Sector[];
+  regions: Region[];
   handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleSectorFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -24,6 +25,7 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
   selectedSector,
   selectedStatus,
   filteredSectors,
+  regions,
   handleSearch,
   handleRegionFilter,
   handleSectorFilter,
@@ -49,7 +51,7 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
           className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
         >
           <option value="">Bütün regionlar</option>
-          {mockRegions.map(region => (
+          {regions.map(region => (
             <option key={region.id} value={region.id}>{region.name}</option>
           ))}
         </select>
