@@ -21,6 +21,8 @@ export const useSchoolOperations = (
 
   const handleAddSubmit = useCallback(async (formData: SchoolFormData) => {
     try {
+      console.log("Məktəb əlavə edilir:", formData);
+      
       const newSchool = {
         name: formData.name,
         principal_name: formData.principalName || null,
@@ -38,16 +40,26 @@ export const useSchoolOperations = (
         logo: null
       };
       
-      await addSchool(newSchool);
+      const result = await addSchool(newSchool);
+      console.log("Əlavə edilən məktəb:", result);
+      
+      toast.success("Məktəb uğurla əlavə edildi", {
+        description: `${formData.name} məktəbi sistemə əlavə olundu`
+      });
       
       onCloseDialog('add');
       onSuccess();
       
       if (formData.adminEmail) {
-        toast.success("Məktəb admini uğurla yaradıldı");
+        toast.success("Məktəb admini uğurla yaradıldı", {
+          description: `${formData.adminEmail} e-poçt ünvanı ilə admin yaradıldı`
+        });
       }
     } catch (error) {
-      console.error('Error adding school:', error);
+      console.error('Məktəb əlavə edilərkən xəta baş verdi:', error);
+      toast.error("Məktəb əlavə edilərkən xəta", {
+        description: "Məktəb əlavə edilərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
     }
   }, [addSchool, onCloseDialog, onSuccess]);
 
@@ -55,6 +67,8 @@ export const useSchoolOperations = (
     if (!selectedSchool) return;
     
     try {
+      console.log("Məktəb yenilənir:", formData);
+      
       const updatedSchool = {
         name: formData.name,
         principal_name: formData.principalName || null,
@@ -71,12 +85,20 @@ export const useSchoolOperations = (
         admin_email: formData.adminEmail || null
       };
       
-      await updateSchool(selectedSchool.id, updatedSchool);
+      const result = await updateSchool(selectedSchool.id, updatedSchool);
+      console.log("Yenilənən məktəb:", result);
+      
+      toast.success("Məktəb uğurla yeniləndi", {
+        description: `${formData.name} məktəbinin məlumatları yeniləndi`
+      });
       
       onCloseDialog('edit');
       onSuccess();
     } catch (error) {
-      console.error('Error updating school:', error);
+      console.error('Məktəb yenilənərkən xəta baş verdi:', error);
+      toast.error("Məktəb yenilənərkən xəta", {
+        description: "Məktəb yenilənərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
     }
   }, [updateSchool, onCloseDialog, onSuccess]);
 
@@ -84,12 +106,21 @@ export const useSchoolOperations = (
     if (!selectedSchool) return;
     
     try {
+      console.log("Məktəb silinir:", selectedSchool.id);
+      
       await deleteSchool(selectedSchool.id);
+      
+      toast.success("Məktəb uğurla silindi", {
+        description: `${selectedSchool.name} məktəbi sistemdən silindi`
+      });
       
       onCloseDialog('delete');
       onSuccess();
     } catch (error) {
-      console.error('Error deleting school:', error);
+      console.error('Məktəb silinərkən xəta baş verdi:', error);
+      toast.error("Məktəb silinərkən xəta", {
+        description: "Məktəb silinərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
     }
   }, [deleteSchool, onCloseDialog, onSuccess]);
 

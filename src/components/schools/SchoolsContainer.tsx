@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import SchoolFilters from './SchoolFilters';
@@ -9,8 +9,6 @@ import SchoolHeader from './SchoolHeader';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
-import { toast } from 'sonner';
-import { School } from '@/types/supabase';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -46,7 +44,6 @@ const SchoolsContainer: React.FC = () => {
     selectedAdmin,
     closeDeleteDialog,
     closeEditDialog,
-    openAddDialog,
     closeAddDialog,
     closeAdminDialog,
     handleAddDialogOpen,
@@ -71,29 +68,34 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
-  const handleExport = () => {
-    toast.success("Excel faylı yüklənir...");
-    fetchSchools();
-  };
+  // İstifadəçinin regionuna əsasən sektorları filtirləyirik
+  const filteredSectors = useMemo(() => {
+    let sectorsList = sectors.map(sector => ({
+      id: sector.id,
+      name: sector.name,
+      regionId: sector.region_id
+    }));
+    
+    // Əgər regionadmin və ya schooladmin-dirsə, yalnız öz regionuna aid sektorları göstər
+    if (user && (user.role === 'regionadmin' || user.role === 'schooladmin') && user.regionId) {
+      sectorsList = sectorsList.filter(sector => sector.regionId === user.regionId);
+    }
+    
+    return sectorsList;
+  }, [sectors, user]);
 
-  const handleImport = () => {
-    toast.success("Excel faylından məlumatlar yükləndi");
-    fetchSchools();
-  };
-
-  const mappedSectors = sectors.map(sector => ({
-    id: sector.id,
-    name: sector.name,
-    regionId: sector.region_id
-  }));
+  // Avtomatik olaraq istifadəçinin regionuna aid sektorlarla filtrələyirik
+  useEffect(() => {
+    if (user && user.regionId && selectedRegion !== user.regionId) {
+      handleRegionFilter(user.regionId);
+    }
+  }, [user, selectedRegion, handleRegionFilter]);
 
   return (
     <div className="space-y-6">
       <SchoolHeader 
         userRole={user?.role} 
         onAddClick={handleAddDialogOpen}
-        onExportClick={handleExport}
-        onImportClick={handleImport}
       />
       
       <Card>
@@ -103,31 +105,32 @@ const SchoolsContainer: React.FC = () => {
             selectedRegion={selectedRegion}
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
-            filteredSectors={mappedSectors}
+            filteredSectors={filteredSectors}
             regions={regions}
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}
             handleStatusFilter={handleStatusFilter}
             resetFilters={resetFilters}
+            isSuperAdmin={user?.role === 'superadmin'}
           />
           
-          <SchoolTable
-            currentItems={currentItems}
-            userRole={user?.role}
-            searchTerm={searchTerm}
+          <SchoolTable 
+            schools={currentItems}
+            loading={false}
             sortConfig={sortConfig}
             handleSort={handleSort}
-            handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={handleDeleteDialogOpen}
-            handleAdminDialogOpen={handleAdminDialogOpen}
+            handleEditClick={handleEditDialogOpen}
+            handleDeleteClick={handleDeleteDialogOpen}
+            handleAdminClick={handleAdminDialogOpen}
+            userRole={user?.role}
           />
           
           {totalPages > 1 && (
             <SchoolPagination 
-              currentPage={currentPage} 
-              totalPages={totalPages} 
-              onPageChange={handlePageChange} 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              handlePageChange={handlePageChange}
             />
           )}
         </CardContent>
@@ -153,7 +156,7 @@ const SchoolsContainer: React.FC = () => {
         handleFormChange={handleFormChange}
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        filteredSectors={mappedSectors}
+        filteredSectors={filteredSectors}
       />
     </div>
   );

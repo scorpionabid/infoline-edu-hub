@@ -1,9 +1,10 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { SchoolFormData } from '@/types/school-form';
 import { toast } from 'sonner';
 import { School as SupabaseSchool } from '@/types/supabase';
 import { mapToMockSchool } from './schoolTypeConverters';
+import { useAuth } from '@/context/AuthContext';
 
 // Initial form data
 export const getInitialFormState = (): SchoolFormData => ({
@@ -36,8 +37,16 @@ interface UseSchoolFormHandlerReturn {
 }
 
 export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<SchoolFormData>(getInitialFormState());
   const [currentTab, setCurrentTab] = useState('school');
+
+  // Avtomatik olaraq istifadəçinin regionunu təyin et
+  useEffect(() => {
+    if (user && user.regionId) {
+      setFormData(prev => ({ ...prev, regionId: user.regionId }));
+    }
+  }, [user]);
 
   const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -72,23 +81,36 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
   }, []);
 
   const resetForm = useCallback(() => {
-    setFormData(getInitialFormState());
+    const initialState = getInitialFormState();
+    // İstifadəçinin regionunu saxla
+    if (user && user.regionId) {
+      initialState.regionId = user.regionId;
+    }
+    setFormData(initialState);
     setCurrentTab('school');
-  }, []);
+  }, [user]);
 
   const validateForm = useCallback(() => {
-    if (!formData.name || !formData.regionId || !formData.sectorId) {
-      toast.error('Zəruri sahələri doldurun: Məktəb adı, Region və Sektor');
+    if (!formData.name || !formData.sectorId) {
+      toast.error('Zəruri sahələri doldurun: Məktəb adı və Sektor');
       return false;
     }
     
-    if (currentTab === 'admin' && (!formData.adminEmail || !formData.adminFullName || !formData.adminPassword)) {
-      toast.error('Zəruri admin məlumatlarını doldurun: Ad Soyad, Email və Parol');
+    if (currentTab === 'admin' && formData.adminEmail && (!formData.adminFullName || !formData.adminPassword)) {
+      toast.error('Admin e-poçtu daxil edildiyi halda, Admin adı və şifrəsi də doldurulmalıdır');
       return false;
     }
     
     return true;
   }, [formData, currentTab]);
+
+  // Component unmount olduqdan sonra formanı sıfırla
+  useEffect(() => {
+    return () => {
+      setFormData(getInitialFormState());
+      setCurrentTab('school');
+    };
+  }, []);
 
   return {
     formData,

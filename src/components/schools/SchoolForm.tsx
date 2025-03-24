@@ -3,7 +3,8 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SchoolFormData, mockRegions, mockSectors } from '@/data/schoolsData';
+import { SchoolFormData } from '@/types/school-form';
+import { useAuth } from '@/context/AuthContext';
 
 interface SchoolFormProps {
   formData: SchoolFormData;
@@ -22,6 +23,8 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
   filteredSectors,
   isEdit = false
 }) => {
+  const { user } = useAuth();
+  
   return (
     <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
@@ -53,7 +56,8 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          {/* Region seçimi istifadəçinin regionu əsasında avtomatik doldurulacaq */}
+          {isEdit || user?.role === 'superadmin' ? (
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="regionId">Region *</Label>
               <select
@@ -64,27 +68,28 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
               >
                 <option value="">Seçin</option>
-                {mockRegions.map(region => (
-                  <option key={region.id} value={region.id}>{region.name}</option>
-                ))}
+                {/* Mockup data instead of actual regions */}
+                <option value="baki">Bakı</option>
+                <option value="sumqayit">Sumqayıt</option>
+                <option value="gence">Gəncə</option>
               </select>
             </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="sectorId">Sektor *</Label>
-              <select
-                id="sectorId"
-                name="sectorId"
-                value={formData.sectorId}
-                onChange={handleFormChange}
-                disabled={!formData.regionId}
-                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
-              >
-                <option value="">Seçin</option>
-                {formData.regionId ? filteredSectors.map(sector => (
-                  <option key={sector.id} value={sector.id}>{sector.name}</option>
-                )) : null}
-              </select>
-            </div>
+          ) : null}
+          
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="sectorId">Sektor *</Label>
+            <select
+              id="sectorId"
+              name="sectorId"
+              value={formData.sectorId}
+              onChange={handleFormChange}
+              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+            >
+              <option value="">Seçin</option>
+              {filteredSectors.map(sector => (
+                <option key={sector.id} value={sector.id}>{sector.name}</option>
+              ))}
+            </select>
           </div>
           
           <div className="flex flex-col space-y-1.5">
