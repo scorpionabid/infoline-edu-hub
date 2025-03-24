@@ -48,13 +48,11 @@ export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
 
 // Category tipini Supabase Category tipinə çevirmək üçün adapter
 export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
+  const { columnCount, createdAt, updatedAt, ...rest } = category;
+  
   return {
-    name: category.name,
-    description: category.description,
-    deadline: category.deadline,
-    status: category.status,
-    priority: category.priority || 0, // default dəyər təyin edirik
-    assignment: category.assignment,
-    archived: category.archived
+    ...rest,
+    column_count: columnCount,
+    // created_at və updated_at serverə göndərilmir, onları Supabase özü təyin edir
   };
 };
