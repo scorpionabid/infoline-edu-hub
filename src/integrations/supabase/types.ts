@@ -11,7 +11,9 @@ export type Database = {
     Tables: {
       categories: {
         Row: {
+          archived: boolean | null
           assignment: string | null
+          column_count: number | null
           created_at: string
           deadline: string | null
           description: string | null
@@ -22,7 +24,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean | null
           assignment?: string | null
+          column_count?: number | null
           created_at?: string
           deadline?: string | null
           description?: string | null
@@ -33,7 +37,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean | null
           assignment?: string | null
+          column_count?: number | null
           created_at?: string
           deadline?: string | null
           description?: string | null
@@ -47,7 +53,7 @@ export type Database = {
       }
       columns: {
         Row: {
-          category_id: string
+          category_id: string | null
           created_at: string
           default_value: string | null
           help_text: string | null
@@ -63,7 +69,7 @@ export type Database = {
           validation: Json | null
         }
         Insert: {
-          category_id: string
+          category_id?: string | null
           created_at?: string
           default_value?: string | null
           help_text?: string | null
@@ -79,7 +85,7 @@ export type Database = {
           validation?: Json | null
         }
         Update: {
-          category_id?: string
+          category_id?: string | null
           created_at?: string
           default_value?: string | null
           help_text?: string | null

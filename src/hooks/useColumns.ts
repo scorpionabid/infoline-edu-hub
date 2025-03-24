@@ -50,6 +50,12 @@ export const useColumns = (categoryId?: string) => {
       if (error) throw error;
       
       setColumns(prev => [...prev, data as Column]);
+      
+      // Kateqoriyadakı sütun sayını yeniləyirik
+      if (column.category_id) {
+        await updateCategoryColumnCount(column.category_id);
+      }
+      
       toast.success(t('columnAdded'), {
         description: t('columnAddedDesc')
       });
@@ -95,6 +101,10 @@ export const useColumns = (categoryId?: string) => {
 
   const deleteColumn = async (id: string) => {
     try {
+      // Əvvəlcə silinən sütunun kategoriya ID-sini almaq lazımdır
+      const column = columns.find(c => c.id === id);
+      const categoryId = column?.category_id;
+      
       const { error } = await supabase
         .from('columns')
         .delete()
@@ -103,6 +113,11 @@ export const useColumns = (categoryId?: string) => {
       if (error) throw error;
       
       setColumns(prev => prev.filter(column => column.id !== id));
+      
+      // Kateqoriyadakı sütun sayını yeniləyirik
+      if (categoryId) {
+        await updateCategoryColumnCount(categoryId);
+      }
       
       toast.success(t('columnDeleted'), {
         description: t('columnDeletedDesc')
@@ -113,6 +128,30 @@ export const useColumns = (categoryId?: string) => {
         description: t('couldNotDeleteColumn')
       });
       throw err;
+    }
+  };
+
+  // Kateqoriyada sütun sayını yeniləmək
+  const updateCategoryColumnCount = async (categoryId: string) => {
+    try {
+      // Kateqoriyadakı sütun sayını hesablayırıq
+      const { count, error: countError } = await supabase
+        .from('columns')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', categoryId);
+      
+      if (countError) throw countError;
+      
+      // Kateqoriyanı yeniləyirik
+      const { error: updateError } = await supabase
+        .from('categories')
+        .update({ column_count: count || 0 })
+        .eq('id', categoryId);
+      
+      if (updateError) throw updateError;
+      
+    } catch (err) {
+      console.error('Error updating category column count:', err);
     }
   };
 

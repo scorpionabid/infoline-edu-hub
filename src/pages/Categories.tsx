@@ -31,7 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, FilePlus, Edit, Trash2, Calendar, Search, Eye } from 'lucide-react';
+import { Plus, FilePlus, Edit, Trash2, Calendar, Search, Eye, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,93 +43,139 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-// Kateqoriya interfeysi
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  assignment: 'all' | 'sectors';
-  deadline: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  columnsCount: number;
-}
-
-// Demo kateqoriya datası
-const DEMO_CATEGORIES: Category[] = [
-  {
-    id: 'cat1',
-    name: 'Ümumi məlumatlar',
-    description: 'Məktəb haqqında ümumi məlumatlar',
-    assignment: 'all',
-    deadline: '2023-12-31',
-    status: 'active',
-    createdAt: '2023-01-01',
-    columnsCount: 8
-  },
-  {
-    id: 'cat2',
-    name: 'Müəllim heyəti',
-    description: 'Müəllimlər haqqında statistik məlumatlar',
-    assignment: 'all',
-    deadline: '2023-12-31',
-    status: 'active',
-    createdAt: '2023-01-05',
-    columnsCount: 12
-  },
-  {
-    id: 'cat3',
-    name: 'Şagird kontingenti',
-    description: 'Şagirdlər haqqında statistik məlumatlar',
-    assignment: 'all',
-    deadline: '2023-12-31',
-    status: 'active',
-    createdAt: '2023-01-10',
-    columnsCount: 10
-  },
-  {
-    id: 'cat4',
-    name: 'Maddi-texniki baza',
-    description: 'Məktəbin maddi-texniki bazası haqqında məlumatlar',
-    assignment: 'sectors',
-    deadline: '2023-12-15',
-    status: 'active',
-    createdAt: '2023-01-15',
-    columnsCount: 15
-  },
-  {
-    id: 'cat5',
-    name: 'Tədris planı',
-    description: 'Tədris planı və tədris yükü haqqında məlumatlar',
-    assignment: 'sectors',
-    deadline: '2023-11-30',
-    status: 'inactive',
-    createdAt: '2023-01-20',
-    columnsCount: 6
-  }
-];
+import { format } from 'date-fns';
+import { useCategories } from '@/hooks/useCategories';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Category } from '@/types/supabase';
 
 const Categories = () => {
   const { t } = useLanguageSafe();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: '',
+    assignment: 'all',
+    deadline: '',
+    status: 'active'
+  });
+  
+  // Kategoriya hook-nu istifadə edirik
+  const { 
+    categories, 
+    loading, 
+    error, 
+    addCategory, 
+    updateCategory, 
+    deleteCategory,
+    fetchCategories
+  } = useCategories();
   
   // Filter kateqoriyaları
-  const filteredCategories = DEMO_CATEGORIES.filter(category => 
+  const filteredCategories = categories.filter(category => 
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
-  // Yeni kateqoriya əlavə etmə
-  const handleAddCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAddDialogOpen(false);
-    
-    toast.success(t('categoryAdded'), {
-      description: t('categoryAddedDesc')
+  // Form dəyişmək
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCategoryForm(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Seçim dəyişilməsi
+  const handleSelectChange = (name: string, value: string) => {
+    setCategoryForm(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Kateqoriya redaktə etmək üçün formu doldurur
+  const handleEditCategory = (category: Category) => {
+    setSelectedCategoryId(category.id);
+    setCategoryForm({
+      name: category.name,
+      description: category.description || '',
+      assignment: category.assignment || 'all',
+      deadline: category.deadline ? new Date(category.deadline).toISOString().split('T')[0] : '',
+      status: category.status || 'active'
     });
+    setIsAddDialogOpen(true);
+  };
+  
+  // Silmək üçün kateqoriyanı seçirik
+  const handleDeleteClick = (id: string) => {
+    setSelectedCategoryId(id);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Silinməni təsdiqləyirik
+  const confirmDelete = async () => {
+    if (selectedCategoryId) {
+      try {
+        await deleteCategory(selectedCategoryId);
+        setIsDeleteDialogOpen(false);
+        setSelectedCategoryId(null);
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
+    }
+  };
+  
+  // Yeni kateqoriya əlavə etmə və ya redaktə
+  const handleSubmitCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const categoryData = {
+        name: categoryForm.name,
+        description: categoryForm.description || null,
+        assignment: categoryForm.assignment as 'all' | 'sectors',
+        deadline: categoryForm.deadline ? new Date(categoryForm.deadline).toISOString() : null,
+        status: categoryForm.status
+      };
+      
+      if (selectedCategoryId) {
+        // Redaktə
+        await updateCategory(selectedCategoryId, categoryData);
+      } else {
+        // Yeni əlavə
+        await addCategory(categoryData);
+      }
+      
+      // Formu sıfırlayaq
+      setCategoryForm({
+        name: '',
+        description: '',
+        assignment: 'all',
+        deadline: '',
+        status: 'active'
+      });
+      
+      setIsAddDialogOpen(false);
+      setSelectedCategoryId(null);
+    } catch (error) {
+      console.error('Error with category operation:', error);
+    }
+  };
+  
+  // Dialog bağlandıqda formu sıfırlayaq
+  const handleDialogClose = () => {
+    setCategoryForm({
+      name: '',
+      description: '',
+      assignment: 'all',
+      deadline: '',
+      status: 'active'
+    });
+    setSelectedCategoryId(null);
+  };
+  
+  // Kateqoriya detaylarına baxmaq
+  const handleViewCategory = (id: string) => {
+    // Kateqoriya detallarını göstərmək və ya sütunlar səhifəsinə yönləndirmək üçün
+    window.location.href = `/columns?category=${id}`;
   };
   
   return (
@@ -145,7 +191,10 @@ const Categories = () => {
               <p className="text-muted-foreground mt-1">{t('categoriesDescription')}</p>
             </div>
             
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (!open) handleDialogClose();
+            }}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
                   <Plus size={16} />
@@ -154,25 +203,42 @@ const Categories = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[525px]">
                 <DialogHeader>
-                  <DialogTitle>{t('addCategory')}</DialogTitle>
+                  <DialogTitle>
+                    {selectedCategoryId ? t('editCategory') : t('addCategory')}
+                  </DialogTitle>
                   <DialogDescription>
-                    {t('addCategoryDescription')}
+                    {selectedCategoryId ? t('editCategoryDescription') : t('addCategoryDescription')}
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleAddCategory}>
+                <form onSubmit={handleSubmitCategory}>
                   <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">{t('categoryName')}</Label>
-                      <Input id="name" required />
+                      <Input 
+                        id="name" 
+                        name="name" 
+                        value={categoryForm.name} 
+                        onChange={handleFormChange} 
+                        required 
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="description">{t('categoryDescription')}</Label>
-                      <Textarea id="description" rows={3} />
+                      <Textarea 
+                        id="description" 
+                        name="description"
+                        value={categoryForm.description} 
+                        onChange={handleFormChange} 
+                        rows={3} 
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="assignment">{t('assignment')}</Label>
-                        <Select defaultValue="all">
+                        <Select 
+                          value={categoryForm.assignment} 
+                          onValueChange={(value) => handleSelectChange('assignment', value)}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder={t('selectAssignment')} />
                           </SelectTrigger>
@@ -184,12 +250,35 @@ const Categories = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="deadline">{t('deadline')}</Label>
-                        <Input id="deadline" type="date" />
+                        <Input 
+                          id="deadline" 
+                          name="deadline"
+                          type="date" 
+                          value={categoryForm.deadline}
+                          onChange={handleFormChange}
+                        />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">{t('status')}</Label>
+                      <Select 
+                        value={categoryForm.status}
+                        onValueChange={(value) => handleSelectChange('status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectStatus')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">{t('active')}</SelectItem>
+                          <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit">{t('saveCategory')}</Button>
+                    <Button type="submit">
+                      {selectedCategoryId ? t('saveChanges') : t('saveCategory')}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -203,9 +292,14 @@ const Categories = () => {
                   <CardTitle>{t('filterCategories')}</CardTitle>
                   <CardDescription>{t('filterCategoriesDescription')}</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" className="gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="gap-1" 
+                  onClick={() => fetchCategories()}
+                >
                   <FilePlus className="h-4 w-4" />
-                  {t('importFromExcel')}
+                  {t('refresh')}
                 </Button>
               </div>
             </CardHeader>
@@ -234,64 +328,91 @@ const Categories = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('categoryName')}</TableHead>
-                    <TableHead>{t('assignment')}</TableHead>
-                    <TableHead>{t('deadline')}</TableHead>
-                    <TableHead className="text-center">{t('columnsCount')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead className="text-right">{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCategories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium">
-                        {category.name}
-                        <div className="text-xs text-muted-foreground mt-1">{category.description}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {category.assignment === 'all' ? t('allSchools') : t('onlySectors')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {new Date(category.deadline).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">{category.columnsCount}</TableCell>
-                      <TableCell>
-                        <div className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          category.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {category.status === 'active' ? t('active') : t('inactive')}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="icon" variant="ghost">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-destructive">
+                  {t('errorLoadingCategories')}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('categoryName')}</TableHead>
+                      <TableHead>{t('assignment')}</TableHead>
+                      <TableHead>{t('deadline')}</TableHead>
+                      <TableHead className="text-center">{t('columnsCount')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead className="text-right">{t('actions')}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCategories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell className="font-medium">
+                          {category.name}
+                          <div className="text-xs text-muted-foreground mt-1">{category.description}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {category.assignment === 'all' ? t('allSchools') : t('onlySectors')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {category.deadline ? (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {format(new Date(category.deadline), 'dd.MM.yyyy')}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">{category.column_count || 0}</TableCell>
+                        <TableCell>
+                          <div className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            category.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {category.status === 'active' ? t('active') : t('inactive')}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              size="icon" 
+                              variant="ghost"
+                              onClick={() => handleViewCategory(category.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost"
+                              onClick={() => handleEditCategory(category)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="text-destructive"
+                              onClick={() => handleDeleteClick(category.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
               
-              {filteredCategories.length === 0 && (
+              {!loading && filteredCategories.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   {t('noCategoriesFound')}
                 </div>
@@ -300,6 +421,27 @@ const Categories = () => {
           </Card>
         </div>
       </SidebarLayout>
+      
+      {/* Silmə təsdiqi dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteCategoryConfirmation')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteCategoryWarning')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

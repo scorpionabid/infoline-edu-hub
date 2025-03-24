@@ -5,6 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Column, ColumnType, ColumnOption } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // Form sxemasını yaratmaq üçün funksiya
 export const createFormSchema = (t: (key: string) => string) => {
@@ -162,32 +163,62 @@ export const useColumnForm = (
     try {
       if (!onAddColumn) return false;
       
-      // Column tipindən bütün tələb olunan sahələrin mövcud olmasını və düzgün tiplənməsini təmin etmək
-      const columnData: Omit<Column, "id"> = {
-        name: values.name, 
-        categoryId: values.categoryId,
-        type: values.type as ColumnType,
-        isRequired: values.isRequired,
-        validation: values.validationRules ? {
-          ...values.validationRules,
-          // Date obyektləri string-ə çevirmək
-          minDate: values.validationRules.minDate,
-          maxDate: values.validationRules.maxDate
-        } : undefined,
-        defaultValue: values.defaultValue || undefined,
-        placeholder: values.placeholder || undefined,
-        helpText: values.helpText || undefined,
-        deadline: values.deadline ? values.deadline.toISOString() : undefined,
-        order: values.order,
-        parentColumnId: values.parentColumnId || undefined,
+      // Supabase formatına uyğun məlumat hazırlayırıq
+      const supabaseColumnData = {
+        name: values.name,
+        category_id: values.categoryId,
+        type: values.type,
+        is_required: values.isRequired,
+        validation: values.validationRules || null,
+        default_value: values.defaultValue || null,
+        placeholder: values.placeholder || null,
+        help_text: values.helpText || null,
+        order_index: values.order,
         status: values.status,
-        // Seçimlər yalnız seçim növü sahəsi dəstəkləyirsə əlavə edirik
-        options: ["select", "checkbox", "radio"].includes(values.type) 
-          ? options
-          : undefined,
+        options: ["select", "checkbox", "radio"].includes(values.type) ? options : null
       };
-
-      return await onAddColumn(columnData);
+      
+      // Əgər redaktə rejimindəyiksə
+      if (isEditMode && editColumn?.id) {
+        const { error } = await supabase
+          .from('columns')
+          .update(supabaseColumnData)
+          .eq('id', editColumn.id);
+          
+        if (error) throw error;
+        
+        return true;
+      } else {
+        // Yeni sütun əlavə etmə
+        const { error } = await supabase
+          .from('columns')
+          .insert([supabaseColumnData]);
+          
+        if (error) throw error;
+        
+        // Kateqoriyadakı sütun sayını yeniləyirik
+        const { error: updateError } = await supabase
+          .from('categories')
+          .select('column_count')
+          .eq('id', values.categoryId)
+          .single();
+        
+        if (!updateError) {
+          const { count, error: countError } = await supabase
+            .from('columns')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', values.categoryId);
+          
+          if (!countError) {
+            await supabase
+              .from('categories')
+              .update({ column_count: count || 0 })
+              .eq('id', values.categoryId);
+          }
+        }
+        
+        return true;
+      }
     } catch (error) {
       console.error("Form təqdim edilərkən xəta:", error);
       return false;

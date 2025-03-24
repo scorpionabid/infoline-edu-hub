@@ -1,124 +1,61 @@
 
-import { ColumnType } from './column';
+// Kateqoriya üçün sütun tipi
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea' | 'email' | 'phone' | 'boolean';
 
-export interface SchoolColumnData {
-  schoolId: string;
-  schoolName: string;
-  region?: string;
-  sector?: string;
-  status?: "Gözləmədə" | "Təsdiqləndi" | "Rədd edildi";
-  rejectionReason?: string;
-  columnData: {
-    columnId: string;
-    value: string | number | boolean | null;
-  }[];
-}
-
-export interface CategoryColumn {
+// Cədvəl analizləri üçün sütun tipi
+export type CategoryColumn = {
   id: string;
   categoryId: string;
   name: string;
   type: ColumnType;
   order: number;
-  status: "active" | "inactive";
-  isRequired: boolean;
-}
+  status: 'active' | 'inactive';
+  isRequired?: boolean;
+};
 
-export interface ExportOptions {
-  customFileName?: string;
-  includeHeaders?: boolean;
-  sheetName?: string;
-  excludeColumns?: string[];
-  includeTimestamp?: boolean;
-  includeSchoolInfo?: boolean;
-  format?: string;
-  filterColumns?: string[];
-}
+// Sütun məlumatı tipi
+export type ColumnData = {
+  columnId: string;
+  value: any;
+};
 
-// Hesabat tipini genişləndirək
-export type ReportType = 'standard' | 'custom' | 'statistics' | 'completion' | 'comparison' | 'timeline' | 'performance';
+// Məktəb məlumatları ilə sütun məlumatları
+export type SchoolColumnData = {
+  schoolId: string;
+  schoolName: string;
+  region?: string;
+  sector?: string;
+  status: string;
+  rejectionReason?: string;
+  columnData: ColumnData[];
+};
 
-// ReportData tipini əlavə edək
-export interface ReportData {
-  name: string;
-  value: number;
-  category: string;
-  comparisonValue?: number;
-  date?: string; // Vaxt seriyalı analizlər üçün
-  segmentKey?: string; // Seqmentasiya üçün (məs. region, yaş qrupu və s.)
-  metadata?: Record<string, any>; // Əlavə metadata
-}
+// Excel ixracı üçün parametrlər
+export type ExportOptions = {
+  fileName?: string;
+  includeEmptyColumns?: boolean;
+  includeRejected?: boolean;
+  includeHiddenColumns?: boolean;
+  includeStatus?: boolean;
+};
 
-// Vaxt seriyası məlumatları üçün tip
-export interface TimelineData {
-  date: string;
-  value: number;
-  category: string;
-  label?: string;
-}
-
-// Performans göstəriciləri üçün tip
-export interface PerformanceData {
-  metricName: string;
-  value: number;
-  benchmark?: number;
-  trend?: 'up' | 'down' | 'stable';
-  previousValue?: number;
-  percentChange?: number;
-}
-
-// Sorğu filtrləri üçün genişləndirilmiş tip
-export interface ReportFilters {
-  regions?: string[];
-  sectors?: string[];
-  schools?: string[];
-  dateRange?: {
-    startDate: string;
-    endDate: string;
-  };
-  categories?: string[];
-  columns?: string[];
-  statuses?: string[];
-  threshold?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  searchTerm?: string;
-  pageSize?: number;
-  page?: number;
-  groupBy?: 'region' | 'sector' | 'school' | 'category' | 'status';
-  compareWith?: 'previousPeriod' | 'sameTimePreviousYear' | 'benchmark';
-}
-
-export interface Report {
+// Kateqoriya hesabat tipi
+export type CategoryReport = {
   id: string;
   name: string;
-  title?: string;
-  description?: string;
-  createdAt: string;
-  created?: string; // Geriyə uyğunluq üçün
-  updatedAt?: string;
-  createdBy: string;
-  type: ReportType;
-  categoryId?: string;
-  columns?: CategoryColumn[];
-  filters?: ReportFilters;
-  exportOptions?: ExportOptions;
-  data?: ReportData[]; // Əsas data
-  timelineData?: TimelineData[]; // Vaxt seriyası məlumatları
-  performanceData?: PerformanceData[]; // Performans göstəriciləri
-  summary?: string; // Qısa xülasə
-  insights?: string[]; // Təhlillər
-  recommendations?: string[]; // Tövsiyələr
-  visualization?: 'table' | 'bar' | 'line' | 'pie' | 'radar' | 'heatmap' | 'mixed';
-  autoRefresh?: boolean;
-  schedule?: {
-    isScheduled: boolean;
-    frequency: 'daily' | 'weekly' | 'monthly';
-    recipients: string[];
-  };
-  dashboardDisplay?: {
-    isVisible: boolean;
-    position?: 'top' | 'middle' | 'bottom';
-    size?: 'small' | 'medium' | 'large';
-  };
-}
+  totalSchools: number;
+  completedSchools: number;
+  pendingSchools: number;
+  rejectedSchools: number;
+  completionRate: number;
+  deadlineDays?: number;
+  deadline?: string;
+  status: 'active' | 'inactive' | 'pending' | 'completed' | 'overdue';
+};
+
+// Status filtri üçün parametrlər
+export type StatusFilterOptions = {
+  pending?: boolean;
+  approved?: boolean;
+  rejected?: boolean;
+};
