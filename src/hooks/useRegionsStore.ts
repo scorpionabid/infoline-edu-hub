@@ -12,6 +12,15 @@ export type SortConfig = {
   direction: 'asc' | 'desc' | null;
 };
 
+// Əlavə edilmiş sahələrlə genişləndirilmiş Region tipi
+export type EnhancedRegion = Region & {
+  schoolCount?: number;
+  sectorCount?: number;
+  completionRate?: number;
+  adminId?: string;
+  adminEmail?: string;
+};
+
 export const useRegionsStore = () => {
   const { t } = useLanguage();
   const { regions, loading, fetchRegions, addRegion, updateRegion, deleteRegion } = useRegions();
@@ -35,8 +44,8 @@ export const useRegionsStore = () => {
       // Hər region üçün məktəb sayını əldə etmək
       const { data: schoolCountsData, error: schoolError } = await supabase
         .from('schools')
-        .select('region_id, count')
-        .groupby('region_id');
+        .select('region_id, count(*)')
+        .group('region_id');
       
       if (schoolError) throw schoolError;
       
@@ -111,28 +120,28 @@ export const useRegionsStore = () => {
   const sortedRegions = [...filteredRegions].sort((a, b) => {
     if (!sortConfig.key) return 0;
     
-    const key = sortConfig.key as keyof Region;
-    
-    // Əgər statistika sahəsidirsə
-    if (key === 'schoolCount') {
+    // Statistika sahələri üçün xüsusi hallar
+    if (sortConfig.key === 'schoolCount') {
       return sortConfig.direction === 'asc' 
         ? (schoolCounts[a.id] || 0) - (schoolCounts[b.id] || 0)
         : (schoolCounts[b.id] || 0) - (schoolCounts[a.id] || 0);
     }
     
-    if (key === 'sectorCount') {
+    if (sortConfig.key === 'sectorCount') {
       return sortConfig.direction === 'asc' 
         ? (sectorCounts[a.id] || 0) - (sectorCounts[b.id] || 0)
         : (sectorCounts[b.id] || 0) - (sectorCounts[a.id] || 0);
     }
     
-    if (key === 'completionRate') {
+    if (sortConfig.key === 'completionRate') {
       return sortConfig.direction === 'asc' 
         ? (completionRates[a.id] || 0) - (completionRates[b.id] || 0)
         : (completionRates[b.id] || 0) - (completionRates[a.id] || 0);
     }
     
     // Adi sahələr üçün
+    const key = sortConfig.key as keyof Region;
+    
     const aValue = a[key] || '';
     const bValue = b[key] || '';
     
