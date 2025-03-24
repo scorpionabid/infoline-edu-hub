@@ -10,7 +10,11 @@ interface SchoolFiltersProps {
   selectedRegion: string;
   selectedSector: string;
   selectedStatus: string;
-  filteredSectors: Sector[];
+  filteredSectors: {
+    id: string;
+    name: string;
+    regionId: string;
+  }[];
   regions: Region[];
   handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;

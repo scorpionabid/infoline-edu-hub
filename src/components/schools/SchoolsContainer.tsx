@@ -14,6 +14,43 @@ import { useSchools } from '@/hooks/useSchools';
 import { toast } from 'sonner';
 import { School } from '@/types/supabase';
 
+interface MappedSchool {
+  id: string;
+  name: string;
+  principalName: string;
+  address: string;
+  regionId: string;
+  sectorId: string;
+  phone: string;
+  email: string;
+  studentCount: number;
+  teacherCount: number;
+  status: string;
+  type: string;
+  language: string;
+  adminEmail: string;
+}
+
+// Supabase Məktəb tipindən mock Məktəb tipinə çevirmək üçün yardımçı funksiya
+const mapToMockSchool = (school: School): MappedSchool => {
+  return {
+    id: school.id,
+    name: school.name,
+    principalName: school.principal_name || '',
+    address: school.address || '',
+    regionId: school.region_id,
+    sectorId: school.sector_id,
+    phone: school.phone || '',
+    email: school.email || '',
+    studentCount: school.student_count || 0,
+    teacherCount: school.teacher_count || 0,
+    status: school.status || 'active',
+    type: school.type || '',
+    language: school.language || '',
+    adminEmail: school.admin_email || ''
+  };
+};
+
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
   const [isOperationComplete, setIsOperationComplete] = useState(false);
@@ -98,8 +135,8 @@ const SchoolsContainer: React.FC = () => {
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: Number(formData.studentCount) || null,
-        teacher_count: Number(formData.teacherCount) || null,
+        student_count: formData.studentCount ? Number(formData.studentCount) : null,
+        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
         type: formData.type || null,
         language: formData.language || null,
@@ -121,20 +158,22 @@ const SchoolsContainer: React.FC = () => {
 
   // Handle Edit Dialog
   const handleEditDialogOpen = useCallback((school: School) => {
+    const mappedSchool = mapToMockSchool(school);
+    
     setFormDataFromSchool({
-      name: school.name,
-      principalName: school.principal_name || '',
-      regionId: school.region_id,
-      sectorId: school.sector_id,
-      address: school.address || '',
-      email: school.email || '',
-      phone: school.phone || '',
-      studentCount: school.student_count?.toString() || '',
-      teacherCount: school.teacher_count?.toString() || '',
-      status: school.status || 'active',
-      type: school.type || '',
-      language: school.language || '',
-      adminEmail: school.admin_email || '',
+      name: mappedSchool.name,
+      principalName: mappedSchool.principalName || '',
+      regionId: mappedSchool.regionId,
+      sectorId: mappedSchool.sectorId,
+      address: mappedSchool.address || '',
+      email: mappedSchool.email || '',
+      phone: mappedSchool.phone || '',
+      studentCount: mappedSchool.studentCount?.toString() || '',
+      teacherCount: mappedSchool.teacherCount?.toString() || '',
+      status: mappedSchool.status || 'active',
+      type: mappedSchool.type || '',
+      language: mappedSchool.language || '',
+      adminEmail: mappedSchool.adminEmail || '',
       adminFullName: '', // Bu məlumat mövcud deyil
       adminPassword: '',
       adminStatus: 'active'
@@ -155,8 +194,8 @@ const SchoolsContainer: React.FC = () => {
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: Number(formData.studentCount) || null,
-        teacher_count: Number(formData.teacherCount) || null, 
+        student_count: formData.studentCount ? Number(formData.studentCount) : null,
+        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
         type: formData.type || null,
         language: formData.language || null,
@@ -221,6 +260,13 @@ const SchoolsContainer: React.FC = () => {
     fetchSchools();
   }, [fetchSchools]);
 
+  // Sektorları uyğun tipə çevirmək
+  const mappedSectors = sectors.map(sector => ({
+    id: sector.id,
+    name: sector.name,
+    regionId: sector.region_id
+  }));
+
   return (
     <div className="space-y-6">
       <SchoolHeader 
@@ -237,7 +283,7 @@ const SchoolsContainer: React.FC = () => {
             selectedRegion={selectedRegion}
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
-            filteredSectors={sectors}
+            filteredSectors={mappedSectors}
             regions={regions}
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
@@ -281,7 +327,7 @@ const SchoolsContainer: React.FC = () => {
         handleFormChange={handleFormChange} 
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
-        filteredSectors={sectors}
+        filteredSectors={mappedSectors}
       />
       
       <EditDialog 
@@ -290,7 +336,7 @@ const SchoolsContainer: React.FC = () => {
         onSubmit={handleEditSubmit} 
         formData={formData} 
         handleFormChange={handleFormChange} 
-        filteredSectors={sectors}
+        filteredSectors={mappedSectors}
       />
       
       <AdminDialog 
