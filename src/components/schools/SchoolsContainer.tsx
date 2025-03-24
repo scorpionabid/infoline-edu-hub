@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -257,7 +256,7 @@ const SchoolsContainer: React.FC = () => {
     const adminEmail = selectedAdmin.adminEmail;
     
     toast.success(`${adminEmail} üçün yeni parol təyin edildi`, {
-      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
+      description: "Admin növb��ti daxil olduqda bu parolu istifadə edəcək."
     });
     
     closeAdminDialog();
