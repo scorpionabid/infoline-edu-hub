@@ -10,7 +10,7 @@ import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
-import { School } from '@/types/supabase'; // Burada düzgün tip idxal edirik
+import { School } from '@/types/supabase';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -120,7 +120,7 @@ const SchoolsContainer: React.FC = () => {
             sortConfig={sortConfig}
             handleSort={handleSort}
             handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={openDeleteDialog}
+            handleDeleteDialogOpen={openDeleteDialog as (school: School) => void}
             handleAdminDialogOpen={handleAdminDialogOpen}
           />
           
