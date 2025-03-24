@@ -10,6 +10,7 @@ import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
+import { School } from '@/types/supabase'; // Düzgün tip idxalı
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();

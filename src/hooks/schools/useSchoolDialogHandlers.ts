@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { School } from '@/data/schoolsData';
 import { toast } from 'sonner';
@@ -87,7 +86,6 @@ export const useSchoolDialogHandlers = () => {
     validateForm
   } = useSchoolForm();
 
-  // Dialog control functions
   const openDeleteDialog = useCallback((school: School) => {
     setSelectedSchool(school);
     setIsDeleteDialogOpen(true);
@@ -132,7 +130,6 @@ export const useSchoolDialogHandlers = () => {
     }, 300);
   }, []);
 
-  // Action handlers
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
     openAddDialog();
