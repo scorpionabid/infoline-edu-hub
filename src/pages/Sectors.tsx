@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, Role } from '@/context/AuthContext';
@@ -65,127 +66,43 @@ import {
 } from "@/components/ui/accordion";
 import { UserFormData } from '@/types/user';
 import { mockUsers } from '@/data/mockUsers';
-
-const mockSectors = [
-  { 
-    id: '1', 
-    name: 'Yasamal', 
-    description: 'Bakının mərkəzi rayonlarından biri',
-    regionId: '1',
-    schoolCount: 45,
-    status: 'active',
-    createdAt: '2023-01-10',
-    completionRate: 87,
-    adminId: 'user-1',
-    adminEmail: 'yasamal.admin@infoline.edu'
-  },
-  { 
-    id: '2', 
-    name: 'Nəsimi', 
-    description: 'Şəhərin tarixi və mədəni hissəsi',
-    regionId: '1',
-    schoolCount: 38,
-    status: 'active',
-    createdAt: '2023-01-11',
-    completionRate: 75,
-    adminId: 'user-2',
-    adminEmail: 'nasimi.admin@infoline.edu'
-  },
-  { 
-    id: '3', 
-    name: 'Səbail', 
-    description: 'Dənizkənarı bulvarı ilə məşhurdur',
-    regionId: '1',
-    schoolCount: 52,
-    status: 'active',
-    createdAt: '2023-01-12',
-    completionRate: 90,
-    adminId: 'user-3',
-    adminEmail: 'sabail.admin@infoline.edu'
-  },
-  { 
-    id: '4', 
-    name: 'Binəqədi', 
-    description: 'Şəhərin böyük yaşayış massivlərindən biri',
-    regionId: '1',
-    schoolCount: 61,
-    status: 'active',
-    createdAt: '2023-01-13',
-    completionRate: 65,
-    adminId: 'user-4',
-    adminEmail: 'bineqedi.admin@infoline.edu'
-  },
-  { 
-    id: '5', 
-    name: 'Xətai', 
-    description: 'Sənaye və ticarət mərkəzi',
-    regionId: '1',
-    schoolCount: 29,
-    status: 'active',
-    createdAt: '2023-01-14',
-    completionRate: 72,
-    adminId: 'user-5',
-    adminEmail: 'xetai.admin@infoline.edu'
-  },
-  { 
-    id: '6', 
-    name: 'Nizami', 
-    description: 'Geniş parkları və meydanları ilə tanınır',
-    regionId: '1',
-    schoolCount: 33,
-    status: 'active',
-    createdAt: '2023-01-15',
-    completionRate: 84,
-    adminId: 'user-6',
-    adminEmail: 'nizami.admin@infoline.edu'
-  },
-  { 
-    id: '7', 
-    name: 'Suraxanı', 
-    description: 'Neft sənayesi ilə əlaqəli rayon',
-    regionId: '1',
-    schoolCount: 22,
-    status: 'inactive',
-    createdAt: '2023-01-16',
-    completionRate: 38,
-    adminId: 'user-7',
-    adminEmail: 'suraxani.admin@infoline.edu'
-  },
-  { 
-    id: '8', 
-    name: 'Xəzər', 
-    description: 'Dənizə yaxın əraziləri əhatə edir',
-    regionId: '1',
-    schoolCount: 41,
-    status: 'active',
-    createdAt: '2023-01-17',
-    completionRate: 81,
-    adminId: 'user-8',
-    adminEmail: 'xezer.admin@infoline.edu'
-  },
-];
+import { useSectorsStore } from '@/hooks/useSectorsStore';
 
 const Sectors = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  const [sectors, setSectors] = useState(mockSectors);
-  const [searchTerm, setSearchTerm] = useState('');
+  const {
+    sectors,
+    loading,
+    searchTerm,
+    selectedStatus,
+    sortConfig,
+    currentPage,
+    totalPages,
+    handleSearch,
+    handleStatusFilter,
+    handleSort,
+    handlePageChange,
+    resetFilters,
+    handleAddSector,
+    handleUpdateSector,
+    handleDeleteSector
+  } = useSectorsStore();
+  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState(null);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
   
   const [sectorFormData, setSectorFormData] = useState({
     name: '',
     description: '',
-    status: 'active'
+    status: 'active',
+    region_id: ''
   });
   
   const [adminFormData, setAdminFormData] = useState<UserFormData>({
@@ -205,56 +122,12 @@ const Sectors = () => {
   const [passwordError, setPasswordError] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-  
-  const filteredSectors = sectors.filter(sector =>
-    sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sector.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sector.adminEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-  
-  const sortedSectors = React.useMemo(() => {
-    const sortableSectors = [...filteredSectors];
-    if (sortConfig.key) {
-      sortableSectors.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableSectors;
-  }, [filteredSectors, sortConfig]);
-  
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedSectors.slice(indexOfFirstItem, indexOfLastItem);
-  
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-  
-  const totalPages = Math.ceil(sortedSectors.length / itemsPerPage);
-  
   const handleAddDialogOpen = () => {
     setSectorFormData({
       name: '',
       description: '',
-      status: 'active'
+      status: 'active',
+      region_id: ''
     });
     
     setAdminFormData({
@@ -303,55 +176,62 @@ const Sectors = () => {
     setAdminFormData(data);
   };
   
-  const handleAddSubmit = () => {
-    const newSectorId = (sectors.length + 1).toString();
-    const newAdminId = `user-${Date.now()}`;
-    
-    const newSector = {
-      id: newSectorId,
-      ...sectorFormData,
-      regionId: selectedRegion,
-      schoolCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      completionRate: 0,
-      adminId: newAdminId,
-      adminEmail: adminFormData.email
+  const handleAddSubmit = async () => {
+    // Sektor əlavə edilməsi üçün formadan verilənləri alırıq
+    const sectorDataToAdd = {
+      name: sectorFormData.name,
+      description: sectorFormData.description,
+      region_id: selectedRegion,
+      status: sectorFormData.status as 'active' | 'inactive'
     };
     
-    const newAdmin = {
-      ...adminFormData,
-      id: newAdminId,
-      regionId: selectedRegion,
-      sectorId: newSectorId,
-      createdAt: new Date().toISOString(), // Date -> string olarak değiştirildi
-      updatedAt: new Date().toISOString()  // Date -> string olarak değiştirildi
-    };
+    // Supabase üzərindən sektoru əlavə edirik
+    const success = await handleAddSector(sectorDataToAdd);
     
-    setSectors([...sectors, newSector]);
-    mockUsers.push(newAdmin);
-    
-    setIsAddDialogOpen(false);
-    toast.success('Sektor və admin uğurla əlavə edildi');
+    if (success) {
+      // TODO: Gələcəkdə, supabase auth ilə admin yaratmaq əlavə edilə bilər
+      // Hələlik mock data ilə işləyirik
+      const newAdminId = `user-${Date.now()}`;
+      const newAdmin = {
+        ...adminFormData,
+        id: newAdminId,
+        regionId: selectedRegion,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      mockUsers.push(newAdmin);
+      
+      setIsAddDialogOpen(false);
+      toast.success('Sektor və admin uğurla əlavə edildi');
+    }
   };
   
   const handleEditDialogOpen = (sector) => {
     setSelectedSector(sector);
     setSectorFormData({
       name: sector.name,
-      description: sector.description,
-      status: sector.status
+      description: sector.description || '',
+      status: sector.status,
+      region_id: sector.region_id
     });
-    setSelectedRegion(sector.regionId);
+    setSelectedRegion(sector.region_id);
     setIsEditDialogOpen(true);
   };
   
-  const handleEditSubmit = () => {
-    const updatedSectors = sectors.map(sector => 
-      sector.id === selectedSector.id ? { ...sector, ...sectorFormData, regionId: selectedRegion } : sector
-    );
-    setSectors(updatedSectors);
-    setIsEditDialogOpen(false);
-    toast.success('Sektor uğurla yeniləndi');
+  const handleEditSubmit = async () => {
+    if (!selectedSector) return;
+    
+    const sectorUpdates = {
+      name: sectorFormData.name,
+      description: sectorFormData.description,
+      status: sectorFormData.status,
+      region_id: selectedRegion
+    };
+    
+    const success = await handleUpdateSector(selectedSector.id, sectorUpdates);
+    if (success) {
+      setIsEditDialogOpen(false);
+    }
   };
   
   const handleDeleteDialogOpen = (sector) => {
@@ -359,11 +239,13 @@ const Sectors = () => {
     setIsDeleteDialogOpen(true);
   };
   
-  const handleDeleteConfirm = () => {
-    const updatedSectors = sectors.filter(sector => sector.id !== selectedSector.id);
-    setSectors(updatedSectors);
-    setIsDeleteDialogOpen(false);
-    toast.success('Sektor uğurla silindi');
+  const handleDeleteConfirm = async () => {
+    if (!selectedSector) return;
+    
+    const success = await handleDeleteSector(selectedSector.id);
+    if (success) {
+      setIsDeleteDialogOpen(false);
+    }
   };
   
   const renderCompletionRateBadge = (rate) => {
@@ -430,7 +312,7 @@ const Sectors = () => {
                   placeholder="Sektorları axtar..."
                   className="pl-8"
                   value={searchTerm}
-                  onChange={handleSearch}
+                  onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
             </div>
@@ -446,22 +328,40 @@ const Sectors = () => {
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </div>
                     </TableHead>
-                    <TableHead className="hidden md:table-cell">Region</TableHead>
+                    <TableHead className="hidden md:table-cell" onClick={() => handleSort('regionName')}>
+                      <div className="flex items-center">
+                        Region
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </div>
+                    </TableHead>
                     <TableHead className="hidden md:table-cell">Məktəblər</TableHead>
                     <TableHead className="hidden md:table-cell">Admin</TableHead>
                     <TableHead className="hidden md:table-cell">Tamamlanma</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
+                    <TableHead className="hidden md:table-cell" onClick={() => handleSort('status')}>
+                      <div className="flex items-center">
+                        Status
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">Əməliyyatlar</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map(sector => (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center h-24">
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                          <p>Məlumatlar yüklənir...</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : sectors.length > 0 ? (
+                    sectors.map(sector => (
                       <TableRow key={sector.id}>
-                        <TableCell className="font-medium">{sector.id}</TableCell>
+                        <TableCell className="font-medium">{sector.id.substring(0, 4)}...</TableCell>
                         <TableCell>{sector.name}</TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {regions.find(region => region.id === sector.regionId)?.name}
+                          {sector.regionName}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <div className="flex items-center gap-1">
@@ -531,7 +431,7 @@ const Sectors = () => {
               </Table>
             </div>
             
-            {sortedSectors.length > itemsPerPage && (
+            {totalPages > 1 && (
               <div className="mt-4">
                 <Pagination>
                   <PaginationContent>
