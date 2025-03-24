@@ -13,6 +13,7 @@ import { useSchoolDialogs } from '@/hooks/useSchoolDialogs';
 import { useSchools } from '@/hooks/useSchools';
 import { toast } from 'sonner';
 import { School } from '@/types/supabase';
+import { School as MockSchool } from '@/data/schoolsData';
 
 interface MappedSchool {
   id: string;
@@ -47,6 +48,31 @@ const mapToMockSchool = (school: School): MappedSchool => {
     status: school.status || 'active',
     type: school.type || '',
     language: school.language || '',
+    adminEmail: school.admin_email || ''
+  };
+};
+
+// Çevrilmiş məktəb tipini School tipinə (data/schoolsData.ts) çevirmək üçün funksiya
+const convertToSchoolType = (school: School): MockSchool => {
+  return {
+    id: school.id,
+    name: school.name,
+    principalName: school.principal_name || '',
+    address: school.address || '',
+    regionId: school.region_id,
+    sectorId: school.sector_id,
+    phone: school.phone || '',
+    email: school.email || '',
+    studentCount: school.student_count || 0,
+    teacherCount: school.teacher_count || 0,
+    status: school.status || 'active',
+    type: school.type || '',
+    language: school.language || '',
+    createdAt: school.created_at,
+    completionRate: school.completion_rate,
+    region: '',  // Bu məlumatlar yaradılanda əlavə olunacaq
+    sector: '',  // Bu məlumatlar yaradılanda əlavə olunacaq
+    logo: school.logo || '',
     adminEmail: school.admin_email || ''
   };
 };
@@ -179,7 +205,7 @@ const SchoolsContainer: React.FC = () => {
       adminPassword: '',
       adminStatus: 'active'
     });
-    openEditDialog(school);
+    openEditDialog(convertToSchoolType(school));
   }, [setFormDataFromSchool, openEditDialog]);
 
   const handleEditSubmit = useCallback(async () => {
