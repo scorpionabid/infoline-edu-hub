@@ -127,11 +127,12 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
   // Məktəb üçün bütün datanın təsdiq statusunu əldə etmək
   const getApprovalStatus = async (schoolId: string, categoryId?: string) => {
     try {
+      // Əvvəlki group metodu əvəzinə ayrı-ayrı sorğular edək
+      // və nəticələri birləşdirək
       let query = supabase
         .from('data_entries')
-        .select('status, count(*)')
-        .eq('school_id', schoolId)
-        .group('status');
+        .select('status, id')
+        .eq('school_id', schoolId);
       
       if (categoryId) {
         query = query.eq('category_id', categoryId);
@@ -149,13 +150,16 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         total: 0
       };
       
-      data.forEach((item: any) => {
-        const status = item.status as keyof typeof statusCounts;
-        if (status in statusCounts) {
-          statusCounts[status] = parseInt(item.count);
-          statusCounts.total += parseInt(item.count);
-        }
-      });
+      // Əl ilə sayma əməliyyatı
+      if (data && data.length > 0) {
+        data.forEach((item: any) => {
+          const status = item.status as keyof typeof statusCounts;
+          if (status in statusCounts) {
+            statusCounts[status] += 1;
+            statusCounts.total += 1;
+          }
+        });
+      }
       
       return statusCounts;
     } catch (err) {
