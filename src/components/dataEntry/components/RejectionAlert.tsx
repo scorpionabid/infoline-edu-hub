@@ -1,28 +1,27 @@
 
 import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { XCircle } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface RejectionAlertProps {
   errorMessage: string;
-  isRejected?: boolean;
 }
 
-const RejectionAlert: React.FC<RejectionAlertProps> = ({ 
-  errorMessage, 
-  isRejected = false 
-}) => {
+const RejectionAlert: React.FC<RejectionAlertProps> = ({ errorMessage }) => {
   const { t } = useLanguage();
   
-  if (!isRejected && !errorMessage) return null;
+  if (!errorMessage) return null;
   
   return (
     <Alert className="mb-4 bg-red-50 border-red-100 text-red-800">
       <XCircle className="h-4 w-4" />
       <AlertTitle>{t('categoryRejected')}</AlertTitle>
-      <AlertDescription>
-        {errorMessage || t('fixErrorsAndResubmit')}
+      <AlertDescription className="space-y-2">
+        <p>{t('fixErrorsAndResubmit')}</p>
+        <div className="mt-2 p-2 bg-red-100 rounded text-sm">
+          <strong>{t('rejectionReason')}:</strong> {errorMessage}
+        </div>
       </AlertDescription>
     </Alert>
   );

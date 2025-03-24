@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DataEntryForm from '@/components/dataEntry/DataEntryForm';
@@ -18,8 +19,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Category } from '@/types/category';
-import { Column } from '@/types/column';
+import { useDataEntries } from '@/hooks/useDataEntries';
 
 const DataEntry = () => {
   const location = useLocation();
@@ -30,73 +30,39 @@ const DataEntry = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const { getApprovalStatus } = useDataEntries();
+  const [formStatistics, setFormStatistics] = useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    dueSoon: 0,
+    overdue: 0
+  });
   
-  const demoCategories: Category[] = [
-    {
-      id: "cat1",
-      name: "Ümumi məlumatlar",
-      description: "Məktəb haqqında ümumi məlumatlar",
-      deadline: "2023-12-31",
-      status: "active",
-      priority: 1,
-      assignment: "all",
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-    },
-    {
-      id: "cat2",
-      name: "Müəllim heyəti",
-      description: "Müəllimlər haqqında statistik məlumatlar",
-      deadline: "2023-12-31",
-      status: "active",
-      priority: 2,
-      assignment: "all",
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
+  // Məlumatların statistikasını əldə edirik
+  const fetchStats = async () => {
+    try {
+      // Məktəb ID-sini current istifadəçidən götürmək lazımdır
+      const schoolId = 'current-school-id'; // Bu ID faktiki olaraq auth kontekstindən götürülməlidir
+      const status = await getApprovalStatus(schoolId);
+      
+      // Burada status datasını formStatistics formatına çeviririk
+      // Bu hissə real data ilə işlədilməlidir
+      setFormStatistics({
+        pending: status.pending || 0,
+        approved: status.approved || 0,
+        rejected: status.rejected || 0,
+        dueSoon: 2, // Bu məlumatlar faktiki olaraq deadline-lara baxaraq hesablanmalıdır
+        overdue: 1  // Bu məlumatlar faktiki olaraq deadline-lara baxaraq hesablanmalıdır
+      });
+    } catch (err) {
+      console.error('Error fetching statistics:', err);
     }
-  ];
-  
-  const demoColumns: Column[] = [
-    {
-      id: "col1",
-      categoryId: "cat1",
-      name: "Məktəbin adı",
-      type: "text",
-      isRequired: true,
-      placeholder: "Məktəbin tam adını daxil edin",
-      helpText: "Rəsmi sənədlərdəki adı qeyd edin",
-      order: 1,
-      status: "active"
-    },
-    {
-      id: "col2",
-      categoryId: "cat1",
-      name: "Şagird sayı",
-      type: "number",
-      isRequired: true,
-      placeholder: "Ümumi şagird sayını daxil edin",
-      order: 2,
-      status: "active"
-    },
-    {
-      id: "col3",
-      categoryId: "cat2",
-      name: "Müəllim sayı",
-      type: "number",
-      isRequired: true,
-      placeholder: "Ümumi müəllim sayını daxil edin",
-      order: 1,
-      status: "active"
-    }
-  ];
-  
-  const formStatistics = {
-    pending: 3,
-    approved: 5,
-    rejected: 1,
-    dueSoon: 2,
-    overdue: 1
   };
+  
+  useEffect(() => {
+    fetchStats();
+  }, []);
   
   const queryParams = new URLSearchParams(location.search);
   const categoryId = queryParams.get('categoryId');
@@ -144,6 +110,7 @@ const DataEntry = () => {
   }, [legacyToast, showAlert, t, navigate, location.pathname, queryParams]);
 
   const handleDownloadTemplate = () => {
+    // Bu məntiq DataEntryForm-a köçürülüb
     toast.success(t('excelTemplateDownloaded'), {
       description: t('excelTemplateDownloadedDesc')
     });
@@ -175,6 +142,9 @@ const DataEntry = () => {
 
     setIsUploading(true);
 
+    // Burada faktiki yükləmə əməliyyatı edilər
+    // dataEntryForm-da uploadExcelData funksiyasını çağırmaq lazımdır
+    
     setTimeout(() => {
       setIsUploading(false);
       setUploadDialogOpen(false);
@@ -182,6 +152,7 @@ const DataEntry = () => {
       toast.success(t('uploadSuccess'), {
         description: t('dataUploadedSuccessfully')
       });
+      fetchStats(); // Statistikanı yeniləmək
     }, 2000);
   };
 
@@ -200,6 +171,11 @@ const DataEntry = () => {
       pathname: location.pathname, 
       search: newParams.toString() 
     }, { replace: true });
+  };
+
+  const handleDataChanged = () => {
+    // Məlumatlar dəyişdikdə statistikanı yeniləyirik
+    fetchStats();
   };
 
   return (
@@ -263,13 +239,9 @@ const DataEntry = () => {
           )}
           
           <DataEntryForm 
-            selectedCategory={categoryId}
-            categories={demoCategories}
-            columns={demoColumns}
-            onCategoryChange={(id) => console.log("Category changed:", id)}
-            onDataChanged={() => {
-              console.log("Data changed, stats would be updated");
-            }}
+            initialCategoryId={categoryId}
+            statusFilter={selectedStatus}
+            onDataChanged={handleDataChanged}
           />
         </div>
         
@@ -334,7 +306,7 @@ const DataEntry = () => {
                   disabled={!selectedFile || isUploading}
                   onClick={handleUpload}
                 >
-                  {isUploading ? t('uploading') : t('upload')}
+                  {isLoading ? t('uploading') : t('upload')}
                 </Button>
               </div>
             </DialogFooter>
