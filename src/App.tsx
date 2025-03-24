@@ -5,20 +5,34 @@ import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { Toaster } from './components/ui/toaster';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './App.css';
 
 function App() {
   const router = createBrowserRouter(AppRoutes);
+  
+  // React Query üçün yeni QueryClient yaradaq
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5, // 5 dəqiqə
+      },
+    },
+  });
 
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <RouterProvider router={router} />
-          <Toaster />
-        </NotificationProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </NotificationProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
   );
 }
 
