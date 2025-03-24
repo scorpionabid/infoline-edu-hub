@@ -326,7 +326,7 @@ const SchoolsContainer: React.FC = () => {
             sortConfig={sortConfig}
             handleSort={handleSort}
             handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={openDeleteDialog}
+            handleDeleteDialogOpen={(school: School) => openDeleteDialog(convertToSchoolType(school))}
             handleAdminDialogOpen={handleAdminDialogOpen}
           />
           
