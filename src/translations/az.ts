@@ -86,6 +86,25 @@ const az = {
   columnDeleted: "Sütun silindi",
   columnDeletedDesc: "Sütun uğurla silindi",
   couldNotDeleteColumn: "Sütun silinə bilmədi",
+  
+  // Məlumat daxil etmə
+  dataEntrySaved: "Məlumat saxlanıldı",
+  dataEntrySavedDesc: "Məlumatlarınız uğurla saxlanıldı",
+  couldNotSaveData: "Məlumatlar saxlanıla bilmədi",
+  dataEntryUpdated: "Məlumat yeniləndi",
+  dataEntryUpdatedDesc: "Məlumatlarınız uğurla yeniləndi",
+  couldNotUpdateData: "Məlumatlar yenilənə bilmədi",
+  dataEntryDeleted: "Məlumat silindi",
+  dataEntryDeletedDesc: "Məlumatlarınız uğurla silindi",
+  couldNotDeleteData: "Məlumatlar silinə bilmədi",
+  
+  // Təsdiq statusları
+  pending: "Gözləyir",
+  approved: "Təsdiqlənib",
+  rejected: "Rədd edilib",
+  submissionSuccess: "Təqdim edildi",
+  submissionDescription: "Məlumatlarınız təsdiq üçün göndərildi",
+  changesAutoSaved: "Dəyişikliklər avtomatik saxlanıldı",
 };
 
 export default az;

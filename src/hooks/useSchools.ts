@@ -5,13 +5,8 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { School } from '@/types/supabase';
 
-type SchoolWithNames = School & {
-  region_name?: string;
-  sector_name?: string;
-};
-
-export const useSchools = (sectorId?: string) => {
-  const [schools, setSchools] = useState<SchoolWithNames[]>([]);
+export const useSchools = (regionId?: string, sectorId?: string) => {
+  const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
@@ -21,12 +16,12 @@ export const useSchools = (sectorId?: string) => {
     try {
       let query = supabase
         .from('schools')
-        .select(`
-          *,
-          regions:region_id (name),
-          sectors:sector_id (name)
-        `)
+        .select('*')
         .order('name');
+      
+      if (regionId) {
+        query = query.eq('region_id', regionId);
+      }
       
       if (sectorId) {
         query = query.eq('sector_id', sectorId);
@@ -36,14 +31,7 @@ export const useSchools = (sectorId?: string) => {
 
       if (error) throw error;
       
-      // Process the nested data to a flat structure
-      const processedData = data?.map(item => ({
-        ...item,
-        region_name: item.regions?.name,
-        sector_name: item.sectors?.name
-      }));
-      
-      setSchools(processedData as SchoolWithNames[]);
+      setSchools(data as School[]);
     } catch (err: any) {
       console.error('Error fetching schools:', err);
       setError(err);
@@ -65,8 +53,7 @@ export const useSchools = (sectorId?: string) => {
 
       if (error) throw error;
       
-      await fetchSchools(); // Refresh all schools to get the joined data
-      
+      setSchools(prev => [...prev, data as School]);
       toast.success(t('schoolAdded'), {
         description: t('schoolAddedDesc')
       });
@@ -92,7 +79,9 @@ export const useSchools = (sectorId?: string) => {
 
       if (error) throw error;
       
-      await fetchSchools(); // Refresh all schools to get the joined data
+      setSchools(prev => prev.map(school => 
+        school.id === id ? { ...school, ...data } as School : school
+      ));
       
       toast.success(t('schoolUpdated'), {
         description: t('schoolUpdatedDesc')
@@ -133,7 +122,7 @@ export const useSchools = (sectorId?: string) => {
 
   useEffect(() => {
     fetchSchools();
-  }, [sectorId]);
+  }, [regionId, sectorId]);
 
   return {
     schools,
