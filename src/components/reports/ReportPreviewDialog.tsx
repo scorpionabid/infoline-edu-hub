@@ -84,38 +84,42 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
           
           <TabsContent value="chart" className="pt-4">
             <div className="h-96 w-full">
-              {report.data && <ReportChart reportType={report.type as any} data={report.data} />}
+              {report.data && <ReportChart reportType={report.type} data={report.data} />}
             </div>
           </TabsContent>
           
           <TabsContent value="data" className="pt-4">
             <div className="border rounded-md">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted">
-                    <th className="p-2 text-left">{t('name')}</th>
-                    <th className="p-2 text-left">{t('value')}</th>
-                    <th className="p-2 text-left">{t('category')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.data?.map((item, index) => (
-                    <tr key={index} className="border-t">
-                      <td className="p-2">{item.name}</td>
-                      <td className="p-2">{item.value}</td>
-                      <td className="p-2">{item.category}</td>
+              {report.data && report.data.length > 0 ? (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="p-2 text-left">{t('name')}</th>
+                      <th className="p-2 text-left">{t('value')}</th>
+                      <th className="p-2 text-left">{t('category')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {report.data.map((item, index) => (
+                      <tr key={index} className="border-t">
+                        <td className="p-2">{item.name}</td>
+                        <td className="p-2">{item.value}</td>
+                        <td className="p-2">{item.category}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-4 text-center text-muted-foreground">{t('noDataAvailable')}</div>
+              )}
             </div>
           </TabsContent>
           
           <TabsContent value="summary" className="pt-4">
             <div className="prose dark:prose-invert max-w-none">
-              <p>{report.summary}</p>
+              {report.summary ? <p>{report.summary}</p> : <p>{t('noSummaryAvailable')}</p>}
               
-              {report.insights && (
+              {report.insights && report.insights.length > 0 && (
                 <>
                   <h4>{t('keyInsights')}</h4>
                   <ul>
@@ -126,7 +130,7 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
                 </>
               )}
               
-              {report.recommendations && (
+              {report.recommendations && report.recommendations.length > 0 && (
                 <>
                   <h4>{t('recommendations')}</h4>
                   <ul>

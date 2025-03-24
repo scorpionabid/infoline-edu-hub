@@ -51,7 +51,7 @@ const ReportList: React.FC = () => {
           <Card key={report.id} className="overflow-hidden">
             <CardContent className="p-0">
               <div className="h-32 bg-muted flex items-center justify-center relative overflow-hidden">
-                {getReportIcon(report.type as ReportType)}
+                {getReportIcon(report.type)}
                 <div className="absolute top-2 right-2">
                   <Badge
                     variant={
@@ -73,7 +73,7 @@ const ReportList: React.FC = () => {
                 </p>
                 <div className="flex items-center text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3 mr-1" />
-                  {new Date(report.createdAt || report.created || '').toLocaleDateString()}
+                  {new Date(report.createdAt || report.created || report.dateCreated || '').toLocaleDateString()}
                 </div>
               </div>
             </CardContent>

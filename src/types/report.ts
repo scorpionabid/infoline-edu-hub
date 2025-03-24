@@ -37,24 +37,31 @@ export type ExportOptions = {
   includeRejected?: boolean;
   includeHiddenColumns?: boolean;
   includeStatus?: boolean;
-  customFileName?: string; // Əlavə edildi
+  customFileName?: string; // Excel ixracı üçün əlavə edildi
 };
+
+// Hesabat növü
+export type ReportType = 'column' | 'category' | 'school' | 'region' | 'sector' | 'completion' | 'custom' | 'statistics' | 'comparison';
 
 // Hesabat tipi
 export type Report = {
   id: string;
   name: string;
+  title?: string; // ReportList və digər komponentlərdə istifadə olunur
   description: string;
   type: ReportType;
-  dateCreated: string;
-  lastUpdated: string;
+  dateCreated?: string;
+  createdAt?: string; // Yaradılma tarixi (alternativ)
+  created?: string; // Yaradılma tarixi (alternativ)
+  lastUpdated?: string;
   status: 'draft' | 'published' | 'archived';
   createdBy: string;
   downloadUrl?: string;
+  data?: any[]; // Hesabat üçün məlumatlar massivi
+  summary?: string; // Hesabat xülasəsi
+  insights?: string[]; // Hesabat təhlilləri
+  recommendations?: string[]; // Tövsiyələr
 };
-
-// Hesabat növü
-export type ReportType = 'column' | 'category' | 'school' | 'region' | 'sector' | 'completion' | 'custom';
 
 // Kateqoriya hesabat tipi
 export type CategoryReport = {

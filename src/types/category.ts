@@ -7,11 +7,11 @@ export interface Category {
   description?: string;
   deadline?: string;
   status: CategoryStatus | string;
-  priority?: number;
+  priority?: number; // optional olmalıdır
   assignment?: 'all' | 'sectors';
   createdAt?: string;
   updatedAt?: string;
-  columnCount?: number;
+  columnCount?: number; // column_count uyğun olaraq əlavə edildi
   archived?: boolean;
 }
 
@@ -53,7 +53,7 @@ export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
     description: category.description,
     deadline: category.deadline,
     status: category.status,
-    priority: category.priority,
+    priority: category.priority || 0, // default dəyər təyin edirik
     assignment: category.assignment,
     archived: category.archived
   };

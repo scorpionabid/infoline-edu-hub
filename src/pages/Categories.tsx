@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Helmet } from 'react-helmet';
@@ -63,7 +62,6 @@ const Categories = () => {
     status: 'active'
   });
   
-  // Kategoriya hook-nu istifadə edirik
   const { 
     categories, 
     loading, 
@@ -74,24 +72,20 @@ const Categories = () => {
     fetchCategories
   } = useCategories();
   
-  // Filter kateqoriyaları
   const filteredCategories = categories.filter(category => 
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
-  // Form dəyişmək
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCategoryForm(prev => ({ ...prev, [name]: value }));
   };
   
-  // Seçim dəyişilməsi
   const handleSelectChange = (name: string, value: string) => {
     setCategoryForm(prev => ({ ...prev, [name]: value }));
   };
   
-  // Kateqoriya redaktə etmək üçün formu doldurur
   const handleEditCategory = (category: Category) => {
     setSelectedCategoryId(category.id);
     setCategoryForm({
@@ -104,13 +98,11 @@ const Categories = () => {
     setIsAddDialogOpen(true);
   };
   
-  // Silmək üçün kateqoriyanı seçirik
   const handleDeleteClick = (id: string) => {
     setSelectedCategoryId(id);
     setIsDeleteDialogOpen(true);
   };
   
-  // Silinməni təsdiqləyirik
   const confirmDelete = async () => {
     if (selectedCategoryId) {
       try {
@@ -123,7 +115,6 @@ const Categories = () => {
     }
   };
   
-  // Yeni kateqoriya əlavə etmə və ya redaktə
   const handleSubmitCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -133,18 +124,16 @@ const Categories = () => {
         description: categoryForm.description || null,
         assignment: categoryForm.assignment as 'all' | 'sectors',
         deadline: categoryForm.deadline ? new Date(categoryForm.deadline).toISOString() : null,
-        status: categoryForm.status
+        status: categoryForm.status,
+        priority: 0
       };
       
       if (selectedCategoryId) {
-        // Redaktə
         await updateCategory(selectedCategoryId, categoryData);
       } else {
-        // Yeni əlavə
         await addCategory(categoryData);
       }
       
-      // Formu sıfırlayaq
       setCategoryForm({
         name: '',
         description: '',
@@ -160,7 +149,6 @@ const Categories = () => {
     }
   };
   
-  // Dialog bağlandıqda formu sıfırlayaq
   const handleDialogClose = () => {
     setCategoryForm({
       name: '',
@@ -172,9 +160,7 @@ const Categories = () => {
     setSelectedCategoryId(null);
   };
   
-  // Kateqoriya detaylarına baxmaq
   const handleViewCategory = (id: string) => {
-    // Kateqoriya detallarını göstərmək və ya sütunlar səhifəsinə yönləndirmək üçün
     window.location.href = `/columns?category=${id}`;
   };
   
@@ -315,7 +301,6 @@ const Categories = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                {/* Burada əlavə filtrlər əlavə oluna bilər */}
               </div>
             </CardContent>
           </Card>
@@ -370,7 +355,7 @@ const Categories = () => {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center">{category.column_count || 0}</TableCell>
+                        <TableCell className="text-center">{category.columnCount || 0}</TableCell>
                         <TableCell>
                           <div className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                             category.status === 'active'
@@ -422,7 +407,6 @@ const Categories = () => {
         </div>
       </SidebarLayout>
       
-      {/* Silmə təsdiqi dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
