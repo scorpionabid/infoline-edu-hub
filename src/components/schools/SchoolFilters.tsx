@@ -3,7 +3,7 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Region, Sector } from '@/types/supabase';
+import { Region } from '@/types/supabase';
 
 interface SchoolFiltersProps {
   searchTerm: string;

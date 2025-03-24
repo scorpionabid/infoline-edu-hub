@@ -9,6 +9,8 @@ import SchoolHeader from './SchoolHeader';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
+import { toast } from 'sonner';
+import { FileDown, FileUp } from 'lucide-react';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -87,15 +89,26 @@ const SchoolsContainer: React.FC = () => {
   // Avtomatik olaraq istifadəçinin regionuna aid sektorlarla filtrələyirik
   useEffect(() => {
     if (user && user.regionId && selectedRegion !== user.regionId) {
-      handleRegionFilter(user.regionId);
+      handleRegionFilter({ target: { value: user.regionId } } as React.ChangeEvent<HTMLSelectElement>);
     }
   }, [user, selectedRegion, handleRegionFilter]);
+
+  // Export və import funksiyaları (hələlik mock)
+  const handleExportClick = () => {
+    toast.success("Excel faylı kimi eksport edildi");
+  };
+
+  const handleImportClick = () => {
+    toast.success("Excel faylından import edildi");
+  };
 
   return (
     <div className="space-y-6">
       <SchoolHeader 
         userRole={user?.role} 
         onAddClick={handleAddDialogOpen}
+        onExportClick={handleExportClick}
+        onImportClick={handleImportClick}
       />
       
       <Card>
@@ -112,17 +125,16 @@ const SchoolsContainer: React.FC = () => {
             handleSectorFilter={handleSectorFilter}
             handleStatusFilter={handleStatusFilter}
             resetFilters={resetFilters}
-            isSuperAdmin={user?.role === 'superadmin'}
           />
           
           <SchoolTable 
-            schools={currentItems}
-            loading={false}
+            currentItems={currentItems}
+            searchTerm={searchTerm}
             sortConfig={sortConfig}
             handleSort={handleSort}
-            handleEditClick={handleEditDialogOpen}
-            handleDeleteClick={handleDeleteDialogOpen}
-            handleAdminClick={handleAdminDialogOpen}
+            handleEditDialogOpen={handleEditDialogOpen}
+            handleDeleteDialogOpen={handleDeleteDialogOpen}
+            handleAdminDialogOpen={handleAdminDialogOpen}
             userRole={user?.role}
           />
           
@@ -130,7 +142,7 @@ const SchoolsContainer: React.FC = () => {
             <SchoolPagination 
               currentPage={currentPage}
               totalPages={totalPages}
-              handlePageChange={handlePageChange}
+              onPageChange={handlePageChange}
             />
           )}
         </CardContent>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -63,12 +62,10 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
   const { regions } = useRegions();
   const { sectors } = useSectors();
 
-  // Məktəb şəklinə adın ilk hərfini qoyuruq
   const getSchoolInitial = (name: string) => {
     return name && name.length > 0 ? name.charAt(0).toUpperCase() : 'M';
   };
 
-  // Məktəb növünün etiketini əldə edirik
   const getSchoolTypeLabel = (type: string | null) => {
     if (!type) return 'Məlum deyil';
     
@@ -83,7 +80,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     return types[type] || type;
   };
 
-  // Təhsil dilinin etiketini əldə edirik
   const getLanguageLabel = (language: string | null) => {
     if (!language) return 'Məlum deyil';
     
@@ -97,7 +93,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     return languages[language] || language;
   };
 
-  // Region və Sektor adlarını İD-yə görə əldə edirik
   const getRegionName = (regionId: string) => {
     const region = regions.find(r => r.id === regionId);
     return region ? region.name : 'Məlum deyil';
@@ -108,7 +103,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     return sector ? sector.name : 'Məlum deyil';
   };
 
-  // Tamamlanma faizi badge
   const renderCompletionRateBadge = (rate: number | null) => {
     const completionRate = rate || 0;
     
@@ -121,7 +115,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     }
   };
   
-  // Status badge
   const renderStatusBadge = (status: string | null) => {
     if (status === 'active') {
       return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
@@ -130,7 +123,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     }
   };
 
-  // Dropdown menyu tıklama işləyicisi
   const handleDropdownAction = (action: string, school: School) => {
     switch (action) {
       case 'view':
