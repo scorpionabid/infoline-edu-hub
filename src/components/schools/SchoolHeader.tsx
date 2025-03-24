@@ -1,11 +1,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, FileDown, FileUp } from 'lucide-react';
+import { PlusCircle, FileDown, FileUp } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { Badge } from '@/components/ui/badge';
+import { type Role } from '@/types/auth';
 
-interface SchoolHeaderProps {
-  userRole?: string;
+export interface SchoolHeaderProps {
+  userRole?: Role;
   onAddClick: () => void;
   onExportClick: () => void;
   onImportClick: () => void;
@@ -18,29 +20,42 @@ const SchoolHeader: React.FC<SchoolHeaderProps> = ({
   onImportClick
 }) => {
   const { t } = useLanguage();
+  const canManageSchools = userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin';
 
   return (
-    <div className="flex flex-col md:flex-row justify-between gap-4">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('schools')}</h1>
         <p className="text-muted-foreground">{t('schoolsDescription')}</p>
       </div>
-      
-      <div className="flex flex-col sm:flex-row gap-2">
-        {(userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin') && (
-          <Button onClick={onAddClick} className="gap-1">
-            <Plus className="h-4 w-4" />
-            {t('addSchool')}
+      <div className="flex flex-wrap gap-2">
+        {canManageSchools && (
+          <Button onClick={onAddClick} className="flex items-center gap-1">
+            <PlusCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('addSchool')}</span>
+            <span className="sm:hidden">{t('add')}</span>
           </Button>
         )}
-        <Button variant="outline" onClick={onExportClick} className="gap-1">
+        <Button 
+          variant="outline" 
+          onClick={onExportClick}
+          className="flex items-center gap-1"
+        >
           <FileDown className="h-4 w-4" />
-          {t('exportToExcel')}
+          <span className="hidden sm:inline">{t('exportToExcel')}</span>
+          <span className="sm:hidden">{t('export')}</span>
         </Button>
-        <Button variant="outline" onClick={onImportClick} className="gap-1">
-          <FileUp className="h-4 w-4" />
-          {t('importFromExcel')}
-        </Button>
+        {canManageSchools && (
+          <Button 
+            variant="outline" 
+            onClick={onImportClick}
+            className="flex items-center gap-1"
+          >
+            <FileUp className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('importFromExcel')}</span>
+            <span className="sm:hidden">{t('import')}</span>
+          </Button>
+        )}
       </div>
     </div>
   );

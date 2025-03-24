@@ -11,6 +11,8 @@ import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers
 import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
 import { FileDown, FileUp } from 'lucide-react';
+import { useImportExport } from '@/hooks/schools/useImportExport';
+import ImportDialog from './ImportDialog';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -34,7 +36,8 @@ const SchoolsContainer: React.FC = () => {
     resetFilters,
     fetchSchools,
     isOperationComplete,
-    setIsOperationComplete
+    setIsOperationComplete,
+    schools
   } = useSchoolsStore();
 
   const {
@@ -62,6 +65,13 @@ const SchoolsContainer: React.FC = () => {
     setCurrentTab,
     handleFormChange
   } = useSchoolDialogHandlers();
+
+  const {
+    isImportDialogOpen,
+    setIsImportDialogOpen,
+    handleExportToExcel,
+    handleImportSchools
+  } = useImportExport(() => setIsOperationComplete(true));
 
   useEffect(() => {
     if (isOperationComplete) {
@@ -93,13 +103,13 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [user, selectedRegion, handleRegionFilter]);
 
-  // Export və import funksiyaları (hələlik mock)
+  // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
-    toast.success("Excel faylı kimi eksport edildi");
+    handleExportToExcel(schools);
   };
 
   const handleImportClick = () => {
-    toast.success("Excel faylından import edildi");
+    setIsImportDialogOpen(true);
   };
 
   return (
@@ -169,6 +179,13 @@ const SchoolsContainer: React.FC = () => {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         filteredSectors={filteredSectors}
+      />
+      
+      {/* Import Dialog */}
+      <ImportDialog 
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImport={handleImportSchools}
       />
     </div>
   );
