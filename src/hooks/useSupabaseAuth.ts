@@ -70,7 +70,7 @@ export const useSupabaseAuth = () => {
         status: 'active' as 'active' | 'inactive' | 'blocked',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        ...profileData
+        ...(profileData || {})
       };
       
       // Rol məlumatlarını əldə et

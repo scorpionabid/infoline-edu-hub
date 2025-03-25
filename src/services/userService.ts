@@ -84,25 +84,29 @@ export const getUsers = async (
       emails[userId] = mockEmail;
     }
     
+    // Default profil məlumatları
+    const defaultProfile = {
+      full_name: '',
+      avatar: null,
+      phone: null,
+      position: null,
+      language: 'az',
+      last_login: null,
+      status: 'active' as 'active' | 'inactive' | 'blocked',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
     // Tam istifadəçi məlumatlarını birləşdiririk
     const formattedUsers: FullUserData[] = data.map(item => {
-      // Default profil məlumatları
-      const defaultProfile = {
-        full_name: '',
-        avatar: null,
-        phone: null,
-        position: null,
-        language: 'az',
-        last_login: null,
-        status: 'active' as 'active' | 'inactive' | 'blocked',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
       // Supabase-dən gələn profil məlumatları
+      // Burada profiles bir obyekt olmalıdır, əgər deyilsə, boş bir obyekt istifadə edirik
+      const profileData = item.profiles && typeof item.profiles === 'object' ? item.profiles : {};
+      
+      // Profil məlumatlarını defaultProfile ilə birləşdiririk
       const profile = {
         ...defaultProfile,
-        ...(item.profiles || {})
+        ...profileData
       };
       
       // Status dəyərini düzgün tipə çevirək
@@ -191,7 +195,7 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       status: 'active' as 'active' | 'inactive' | 'blocked',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      ...profileData
+      ...(profileData || {})
     };
     
     // Mock email - həqiqi layihədə server-side edge function ilə əldə ediləcək
