@@ -36,10 +36,7 @@ const Login = () => {
   // Xəta olduqda və istifadəçi form-a dəyişiklik etdikdə xətanı təmizləyək
   useEffect(() => {
     if (error) {
-      const inputChangeHandler = () => clearError();
-      return () => {
-        clearError();
-      };
+      clearError();
     }
   }, [email, password, error, clearError]);
 
@@ -70,8 +67,7 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      // Xətaları context vasitəsilə idarə edirik, burada əlavə 
-      // errorMessage state-ni istifadə etməyə ehtiyac yoxdur
+      // Xətaları context vasitəsilə idarə edirik
     } finally {
       setLoginInProgress(false);
     }
@@ -99,21 +95,24 @@ const Login = () => {
         })
       });
       
+      const responseData = await response.json();
+      console.log('Direct login cavabı:', responseData);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Direct login xətası:', errorData);
-        throw new Error(errorData.error || 'Birbaşa login uğursuz oldu');
+        throw new Error(responseData.error || 'Birbaşa login uğursuz oldu');
       }
       
-      const data = await response.json();
-      console.log('Direct login cavabı:', data);
-      
-      if (data.session) {
+      if (responseData.session) {
         // Sessiyanı manual olaraq təyin edək
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: responseData.session.access_token,
+          refresh_token: responseData.session.refresh_token
         });
+        
+        if (sessionError) {
+          console.error("Sessiya təyin etmə xətası:", sessionError);
+          throw sessionError;
+        }
         
         toast.success('Birbaşa login uğurlu oldu');
         navigate('/dashboard');

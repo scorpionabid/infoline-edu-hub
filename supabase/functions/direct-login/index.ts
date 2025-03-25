@@ -33,7 +33,10 @@ serve(async (req) => {
 
     // Login məlumatlarını alıb
     const requestData = await req.json()
-    console.log("Alınan istək məlumatları:", JSON.stringify(requestData, null, 2))
+    console.log("Alınan istək məlumatları:", JSON.stringify({
+      email: requestData.email,
+      hasPassword: !!requestData.password
+    }, null, 2))
     
     const email = requestData.email
     const password = requestData.password
@@ -67,10 +70,25 @@ serve(async (req) => {
 
     if (error) {
       console.error('Login xətası:', error)
+      
+      // Daha detallı xəta məlumatları qeyd edək
+      const statusCode = error.status || 400
+      let errorMessage = error.message || 'Bilinməyən xəta'
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Yanlış login məlumatları'
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Email təsdiqlənməyib'
+      }
+      
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ 
+          error: errorMessage,
+          status: statusCode,
+          details: error
+        }),
         { 
-          status: 400, 
+          status: statusCode, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
@@ -104,7 +122,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Serverdə xəta:', error)
     return new Response(
-      JSON.stringify({ error: error.message || 'Serverdə xəta baş verdi' }),
+      JSON.stringify({ 
+        error: error.message || 'Serverdə xəta baş verdi',
+        details: JSON.stringify(error)
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

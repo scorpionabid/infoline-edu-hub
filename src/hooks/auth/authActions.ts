@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
@@ -10,13 +9,8 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     
     console.log(`Giriş edilir: ${email}`);
     
-    // Sessiya əldə edək
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionData && sessionData.session) {
-      console.log('Mövcud sessiya var, əvvəlcə çıxış edirik');
-      await supabase.auth.signOut();
-    }
+    // Mövcud sessiyaları təmizləyək
+    await supabase.auth.signOut();
     
     // Login cəhdi edək
     const { data, error } = await supabase.auth.signInWithPassword({
