@@ -13,14 +13,23 @@ export const useSupabaseAuth = () => {
   useEffect(() => {
     // İlkin sessiya məlumatını əldə et
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      
-      if (session?.user) {
-        await fetchUserData(session.user.id);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Sessiya əldə edərkən xəta:', error);
+        }
+        
+        setSession(session);
+        
+        if (session?.user) {
+          await fetchUserData(session.user.id);
+        }
+      } catch (error) {
+        console.error('Auth inisializasiya xətası:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     // Auth state-ə qulaq asaq
@@ -80,12 +89,18 @@ export const useSupabaseAuth = () => {
         .eq('user_id', userId)
         .single();
       
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.warn('Rol məlumatlarını əldə edərkən xəta:', roleError);
+        throw roleError;
+      }
       
       // Auth istifadəçi məlumatlarını əldə et
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      if (userError) throw userError;
+      if (userError) {
+        console.warn('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
+        throw userError;
+      }
       
       // Status dəyərini düzgün tipə çevirək
       const statusValue = profile.status || 'active';
@@ -141,18 +156,27 @@ export const useSupabaseAuth = () => {
     try {
       setLoading(true);
       
+      console.log(`Giriş edilir: ${email}`);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Giriş xətası:', error);
+        throw error;
+      }
+      
+      console.log('Giriş uğurlu:', data);
       
       // Update last login
-      await supabase
-        .from('profiles')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', data.user.id);
+      if (data.user) {
+        await supabase
+          .from('profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
+      }
       
       return data;
     } catch (error: any) {
@@ -164,6 +188,8 @@ export const useSupabaseAuth = () => {
           errorMessage = 'Yanlış e-poçt və ya şifrə';
         } else if (error.message.includes('Email not confirmed')) {
           errorMessage = 'E-poçt ünvanınız təsdiqlənməyib';
+        } else if (error.message.includes('Database error')) {
+          errorMessage = 'Verilənlər bazası xətası. Zəhmət olmasa administratora müraciət edin.';
         }
       }
       

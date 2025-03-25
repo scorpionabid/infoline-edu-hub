@@ -45,11 +45,37 @@ const Login = () => {
     setLoginInProgress(true);
     
     try {
-      const success = await login(email, password);
+      console.log('Login prosesi başladı');
       
-      if (success) {
-        // useEffect yönləndirəcək
+      // Supabase ilə birbaşa giriş edərək xətanı daha yaxşı idarə etmək
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error('Supabase giriş xətası:', error);
+        
+        let errorMessage = 'Giriş zamanı xəta baş verdi';
+        
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Yanlış e-poçt və ya şifrə';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'E-poçt ünvanınız təsdiqlənməyib';
+        } else if (error.message.includes('Database error')) {
+          errorMessage = 'Verilənlər bazası xətası. Supabase tərəfində problem ola bilər.';
+        }
+        
+        toast.error('Giriş uğursuz oldu', {
+          description: errorMessage
+        });
+        return;
       }
+      
+      console.log('Supabase giriş uğurlu', data);
+      toast.success('Giriş uğurlu oldu');
+      
+      // useEffect yönləndirəcək
     } catch (error) {
       console.error('Login error:', error);
       toast.error(t('loginFailed'), {
