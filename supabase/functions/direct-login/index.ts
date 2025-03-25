@@ -23,7 +23,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY tapılmadı")
       return new Response(
-        JSON.stringify({ error: 'Server konfiqurasiyonu səhvdir' }),
+        JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -110,6 +110,65 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
+    }
+
+    // Əgər istifadəçinin rolu yoxdursa, avtomatik yaradaq
+    try {
+      // user_roles cədvəlindən yoxlayaq
+      const { data: roleData, error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .single();
+        
+      if (roleError || !roleData) {
+        // Rolu yoxdur, yaradaq - default olaraq superadmin@infoline.az üçün superadmin, digərləri üçün schooladmin
+        const defaultRole = email === 'superadmin@infoline.az' ? 'superadmin' : 'schooladmin';
+        
+        await supabaseAdmin
+          .from('user_roles')
+          .upsert({
+            user_id: data.user.id,
+            role: defaultRole,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        console.log(`${email} üçün '${defaultRole}' rolu yaradıldı`);
+      }
+      
+      // Profili yoxlayaq və lazım olarsa yeniləyək
+      const { data: profileData, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+        
+      if (profileError) {
+        // Profil yoxdur, yaradaq
+        await supabaseAdmin
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            full_name: email.split('@')[0] || 'İstifadəçi',
+            language: 'az',
+            status: 'active',
+            last_login: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        console.log(`${email} üçün profil yaradıldı`);
+      } else {
+        // Profil var, last_login yeniləyək
+        await supabaseAdmin
+          .from('profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
+      }
+    } catch (dbError) {
+      console.error('İstifadəçi rolunu/profilini yoxlama/yaratma xətası:', dbError);
+      // Bu xətanı qeyd edirik, lakin login prosesini davam etdiririk
     }
 
     // Uğurlu nəticə və sessiya

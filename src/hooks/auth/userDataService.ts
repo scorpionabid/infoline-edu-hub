@@ -77,19 +77,21 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .eq('user_id', userId)
       .single();
     
-    // Əgər user_roles-da tapılmadısa, diğər üsullarla davam edək
+    // Əgər user_roles-da tapılmadısa, digər üsullarla davam edək
     if (roleError || !roleData) {
       console.log('user_roles cədvəlində rol tapılmadı, yeni rol yaradılır...');
       
       // Default məlumatlarla rol yaradaq
       const defaultRole: UserRole = 'schooladmin';
+      const email = (await supabase.auth.getUser()).data?.user?.email;
+      const isSuperAdmin = email === 'superadmin@infoline.az';
       
-      // Yeni rol yarat
+      // Yeni rol yarat - superadmin@infoline.az üçün superadmin, digərləri üçün schooladmin
       const { data: newRoleData, error: createRoleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: defaultRole,
+          role: isSuperAdmin ? 'superadmin' : defaultRole,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

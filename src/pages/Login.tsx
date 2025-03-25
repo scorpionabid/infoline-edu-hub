@@ -80,7 +80,7 @@ const Login = () => {
     }
   };
 
-  // Manual login attempt
+  // Birbaşa login cəhdi
   const handleDirectLogin = async () => {
     setLoginInProgress(true);
     clearError();
@@ -99,7 +99,6 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`,
         },
         body: JSON.stringify({
           email: email || 'superadmin@infoline.az',
@@ -127,7 +126,11 @@ const Login = () => {
         }
         
         toast.success('Birbaşa login uğurlu oldu');
-        navigate('/dashboard');
+        
+        // setSession çağrışından sonra bir qədər gözləyək ki, onAuthStateChange tetiklənsin
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
       } else {
         throw new Error('Sessiya qaytarılmadı');
       }
