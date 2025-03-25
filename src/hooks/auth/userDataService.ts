@@ -7,51 +7,50 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
   try {
     console.log(`Profil məlumatlarını alarikən, istifadəçi ID: ${userId}`);
     
+    // Auth istifadəçi məlumatlarını ilk olaraq əldə edək (email üçün)
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Auth məlumatlarını əldə edərkən xəta:', authError);
+      throw authError;
+    }
+    
+    const userEmail = authData?.user?.email || '';
+    console.log(`İstifadəçi email: ${userEmail}`);
+    
     // Profil məlumatlarını əldə et
     let { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle(); // single() əvəzinə maybeSingle() istifadə edirik
     
-    if (profileError) {
-      console.warn('Profil məlumatlarını əldə edərkən xəta:', profileError);
+    // Profil tapılmadı və ya xəta varsa
+    if (profileError || !profileData) {
+      console.warn('Profil məlumatlarını əldə edərkən xəta və ya profil tapılmadı:', profileError);
       
-      // Profil tapılmadı - avtomatik yaradaq
-      if (profileError.code === 'PGRST116') {
-        console.log('Profil tapılmadı, yenisini yaradırıq');
-        
-        // Auth istifadəçi məlumatlarını əldə et
-        const { data: authData } = await supabase.auth.getUser();
-        
-        // İstifadəçi email-i və ya default ad
-        const email = authData?.user?.email || '';
-        const defaultName = email.split('@')[0] || 'İstifadəçi';
-        
-        // Yeni profil yarat
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: defaultName,
-            language: 'az',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select('*')
-          .single();
-        
-        if (createError) {
-          console.error('Profil yaradarkən xəta:', createError);
-          throw createError;
-        }
-        
-        profileData = newProfile;
-      } else {
-        // Başqa xəta baş verdi
-        throw profileError;
+      console.log('Profil yoxdur, yenisini yaradırıq');
+      
+      // Yeni profil yarat
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: userEmail.split('@')[0] || 'İstifadəçi',
+          language: 'az',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('*')
+        .single();
+      
+      if (createError) {
+        console.error('Profil yaradarkən xəta:', createError);
+        throw createError;
       }
+      
+      profileData = newProfile;
     }
     
     // Default profil məlumatları
@@ -75,15 +74,11 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle(); // single() əvəzinə maybeSingle() istifadə edirik
     
     // Əgər user_roles-da tapılmadısa, bir rol yaradaq
     if (roleError || !roleData) {
       console.log('user_roles cədvəlində rol tapılmadı, yeni rol yaradılır...');
-      
-      // Auth istifadəçi məlumatlarını əldə et
-      const { data: authData } = await supabase.auth.getUser();
-      const userEmail = authData?.user?.email || '';
       
       // Superadmin üçün xüsusi yoxlama
       const isSuperAdmin = userEmail === 'superadmin@infoline.az';
@@ -115,10 +110,6 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
     const normalizedRole = normalizeRole(roleData.role);
-    
-    // Auth istifadəçi məlumatlarını əldə et (email üçün)
-    const { data: authData } = await supabase.auth.getUser();
-    const userEmail = authData?.user?.email || '';
     
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {

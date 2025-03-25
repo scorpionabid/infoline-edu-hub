@@ -64,6 +64,9 @@ const Login = () => {
     try {
       console.log('Login prosesi başladı');
       
+      // Əvvəlcə mövcud sessiyaları təmizləyək
+      await supabase.auth.signOut();
+      
       // Auth context vasitəsilə giriş
       const success = await login(email, password);
       
@@ -82,11 +85,11 @@ const Login = () => {
 
   // Birbaşa login cəhdi
   const handleDirectLogin = async () => {
-    setLoginInProgress(true);
-    clearError();
-    setDirectLoginError(null);
-    
     try {
+      setLoginInProgress(true);
+      clearError();
+      setDirectLoginError(null);
+      
       console.log('Birbaşa login cəhdi edilir...');
       
       // Əvvəlcə mövcud sessiyaları təmizləyək
@@ -94,6 +97,9 @@ const Login = () => {
       
       // Direct login with Admin API
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
+      
+      console.log('Function URL:', functionUrl);
+      console.log('Request payload:', { email, password });
       
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -105,6 +111,8 @@ const Login = () => {
           password: password || 'Admin123!'
         })
       });
+      
+      console.log('Direct login status kodu:', response.status);
       
       // İlk olaraq text() olaraq responseni alaq və sonra JSON-a çevirək - debugging üçün
       const responseText = await response.text();

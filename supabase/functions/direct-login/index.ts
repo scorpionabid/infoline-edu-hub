@@ -31,10 +31,6 @@ serve(async (req) => {
       )
     }
 
-    // Əgər authorization header varsa, onu əldə edək
-    const authHeader = req.headers.get('authorization')
-    console.log("Authorization header:", authHeader ? 'Mövcuddur' : 'Yoxdur')
-    
     // Login məlumatlarını alaq
     const requestData = await req.json()
     console.log("Alınan istək məlumatları:", JSON.stringify({
@@ -58,7 +54,7 @@ serve(async (req) => {
 
     console.log(`${email} üçün giriş cəhdi edilir`)
 
-    // Admin client yaradaq
+    // Admin client yaradaq - burada 401 xətası aradan qaldırılır (header istəmirik)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -83,6 +79,8 @@ serve(async (req) => {
         errorMessage = 'Yanlış login məlumatları'
       } else if (error.message?.includes('Email not confirmed')) {
         errorMessage = 'Email təsdiqlənməyib'
+      } else if (error.message?.includes('Database error')) {
+        errorMessage = 'Verilənlər bazası xətası, Supabase konfiqurasiyası yoxlayın'
       }
       
       return new Response(
@@ -113,7 +111,12 @@ serve(async (req) => {
     }
 
     // Yoxla və əgər lazımdırsa, istifadəçi üçün profil və rol yarat
-    await setupUserProfileAndRole(supabaseAdmin, data.user.id, email);
+    try {
+      await setupUserProfileAndRole(supabaseAdmin, data.user.id, email);
+    } catch (profileError) {
+      console.error("Profil/rol yaratma əməliyyatı uğursuz oldu amma giriş müvəffəqiyyətli idi:", profileError);
+      // Xətanı ignorə edək, ancaq log edək. Giriş müvəffəqiyyətli olduğu üçün davam edə bilərik.
+    }
 
     // Uğurlu nəticə və sessiya
     return new Response(
@@ -144,18 +147,27 @@ serve(async (req) => {
 // İstifadəçi profili və rolunu yaradır
 async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
   try {
-    // Profili yoxlayaq
-    const { data: profileData, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-      
+    // NULL xətasını həll etmək üçün profile olması yoxlanılır
+    let profileExists = false;
+    
+    try {
+      const { data: profileData } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle(); // single() əvəzinə maybeSingle() istifadə edirik
+        
+      profileExists = !!profileData;
+    } catch (checkError) {
+      console.error("Profil yoxlama xətası:", checkError);
+      profileExists = false;
+    }
+    
     // Profil yoxdursa, yaradaq
-    if (profileError) {
+    if (!profileExists) {
       console.log(`${userId} ID-li istifadəçi üçün profil yaradılır...`);
       
-      await supabaseAdmin
+      const { error: insertError } = await supabaseAdmin
         .from('profiles')
         .insert({
           id: userId,
@@ -166,33 +178,53 @@ async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+      
+      if (insertError) {
+        throw insertError;
+      }
         
       console.log(`${email} üçün profil yaradıldı`);
     } else {
       // Profil var, last_login yeniləyək
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from('profiles')
-        .update({ last_login: new Date().toISOString() })
+        .update({ 
+          last_login: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
       
-      console.log(`${email} üçün profil yeniləndi`);
+      if (updateError) {
+        throw updateError;
+      }
+      
+      console.log(`${email} üçün son giriş tarixi yeniləndi`);
     }
     
-    // Rolu yoxlayaq
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-      
+    // Rol yoxlanılır
+    let roleExists = false;
+    
+    try {
+      const { data: roleData } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle(); // single() əvəzinə maybeSingle() istifadə edirik
+        
+      roleExists = !!roleData;
+    } catch (checkError) {
+      console.error("Rol yoxlama xətası:", checkError);
+      roleExists = false;
+    }
+    
     // Rol yoxdursa, yaradaq
-    if (roleError) {
+    if (!roleExists) {
       console.log(`${userId} ID-li istifadəçi üçün rol yaradılır...`);
       
       // Default olaraq superadmin@infoline.az üçün superadmin, digərləri üçün schooladmin
       const defaultRole = email === 'superadmin@infoline.az' ? 'superadmin' : 'schooladmin';
       
-      await supabaseAdmin
+      const { error: insertError } = await supabaseAdmin
         .from('user_roles')
         .insert({
           user_id: userId,
@@ -200,10 +232,14 @@ async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+      
+      if (insertError) {
+        throw insertError;
+      }
         
       console.log(`${email} üçün '${defaultRole}' rolu yaradıldı`);
     } else {
-      console.log(`${email} üçün rol artıq mövcuddur: ${roleData.role}`);
+      console.log(`${email} üçün rol artıq mövcuddur`);
     }
   } catch (dbError) {
     console.error('İstifadəçi profili/rolunu yoxlama və ya yaratma xətası:', dbError);
