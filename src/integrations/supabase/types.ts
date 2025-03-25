@@ -334,7 +334,16 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      column_type:
+        | "text"
+        | "number"
+        | "date"
+        | "select"
+        | "checkbox"
+        | "radio"
+        | "file"
+        | "image"
+      data_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never

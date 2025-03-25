@@ -20,12 +20,14 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDataEntries } from '@/hooks/useDataEntries';
+import { useAuth } from '@/context/AuthContext';
 
 const DataEntry = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast: legacyToast } = useToast();
   const { t } = useLanguageSafe();
+  const { user } = useAuth();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -42,12 +44,16 @@ const DataEntry = () => {
   // Məlumatların statistikasını əldə edirik
   const fetchStats = async () => {
     try {
-      // Məktəb ID-sini current istifadəçidən götürmək lazımdır
-      const schoolId = 'current-school-id'; // Bu ID faktiki olaraq auth kontekstindən götürülməlidir
-      const status = await getApprovalStatus(schoolId);
+      if (!user?.schoolId) {
+        toast.error(t('errorOccurred'), {
+          description: t('notAuthenticated')
+        });
+        return;
+      }
       
-      // Burada status datasını formStatistics formatına çeviririk
-      // Bu hissə real data ilə işlədilməlidir
+      const status = await getApprovalStatus(user.schoolId);
+      
+      // Statusu formStatistics formatına çeviririk
       setFormStatistics({
         pending: status.pending || 0,
         approved: status.approved || 0,
@@ -57,12 +63,17 @@ const DataEntry = () => {
       });
     } catch (err) {
       console.error('Error fetching statistics:', err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotLoadStatistics')
+      });
     }
   };
   
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (user?.schoolId) {
+      fetchStats();
+    }
+  }, [user]);
   
   const queryParams = new URLSearchParams(location.search);
   const categoryId = queryParams.get('categoryId');
@@ -177,6 +188,20 @@ const DataEntry = () => {
     // Məlumatlar dəyişdikdə statistikanı yeniləyirik
     fetchStats();
   };
+
+  // Əgər istifadəçi login olmayıbsa, login səhifəsinə yönləndirək
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { replace: true });
+      toast.error(t('notAuthenticated'), {
+        description: t('pleaseLoginToAccessData')
+      });
+    }
+  }, [user, navigate, t]);
+
+  if (!user) {
+    return null; // İstifadəçi login olmayıbsa, heç nə göstərmirik
+  }
 
   return (
     <>

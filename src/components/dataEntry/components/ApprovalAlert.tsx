@@ -6,9 +6,15 @@ import { CheckCircle } from 'lucide-react';
 
 interface ApprovalAlertProps {
   isApproved: boolean;
+  approvedBy?: string;
+  approvedAt?: Date | string;
 }
 
-const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved }) => {
+const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ 
+  isApproved, 
+  approvedBy, 
+  approvedAt 
+}) => {
   const { t } = useLanguage();
   
   if (!isApproved) return null;
@@ -18,7 +24,21 @@ const ApprovalAlert: React.FC<ApprovalAlertProps> = ({ isApproved }) => {
       <CheckCircle className="h-4 w-4" />
       <AlertTitle>{t('categoryApproved')}</AlertTitle>
       <AlertDescription>
-        {t('categoryApprovedDesc')}
+        <p>{t('categoryApprovedDesc')}</p>
+        {approvedBy && (
+          <div className="mt-2 text-sm">
+            <span className="font-medium">{t('approvedBy')}:</span> {approvedBy}
+          </div>
+        )}
+        {approvedAt && (
+          <div className="text-sm">
+            <span className="font-medium">{t('approvedAt')}:</span> {
+              approvedAt instanceof Date 
+                ? approvedAt.toLocaleString() 
+                : new Date(approvedAt).toLocaleString()
+            }
+          </div>
+        )}
       </AlertDescription>
     </Alert>
   );

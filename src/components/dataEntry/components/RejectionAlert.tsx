@@ -6,9 +6,15 @@ import { XCircle } from 'lucide-react';
 
 interface RejectionAlertProps {
   errorMessage: string;
+  rejectedBy?: string;
+  rejectedAt?: Date | string;
 }
 
-const RejectionAlert: React.FC<RejectionAlertProps> = ({ errorMessage }) => {
+const RejectionAlert: React.FC<RejectionAlertProps> = ({ 
+  errorMessage,
+  rejectedBy,
+  rejectedAt 
+}) => {
   const { t } = useLanguage();
   
   if (!errorMessage) return null;
@@ -22,6 +28,20 @@ const RejectionAlert: React.FC<RejectionAlertProps> = ({ errorMessage }) => {
         <div className="mt-2 p-2 bg-red-100 rounded text-sm">
           <strong>{t('rejectionReason')}:</strong> {errorMessage}
         </div>
+        {rejectedBy && (
+          <div className="text-sm">
+            <span className="font-medium">{t('rejectedBy')}:</span> {rejectedBy}
+          </div>
+        )}
+        {rejectedAt && (
+          <div className="text-sm">
+            <span className="font-medium">{t('rejectedAt')}:</span> {
+              rejectedAt instanceof Date 
+                ? rejectedAt.toLocaleString() 
+                : new Date(rejectedAt).toLocaleString()
+            }
+          </div>
+        )}
       </AlertDescription>
     </Alert>
   );

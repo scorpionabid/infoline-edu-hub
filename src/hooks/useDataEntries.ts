@@ -1,17 +1,19 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { DataEntry } from '@/types/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
   const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
+  const { user } = useAuth();
 
-  const fetchDataEntries = async () => {
+  const fetchDataEntries = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase
@@ -21,6 +23,9 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       
       if (schoolId) {
         query = query.eq('school_id', schoolId);
+      } else if (user?.schoolId) {
+        // Əgər schoolId verilməyibsə, cari istifadəçinin məktəbinin məlumatlarını göstərək
+        query = query.eq('school_id', user.schoolId);
       }
       
       if (categoryId) {
@@ -45,13 +50,21 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     } finally {
       setLoading(false);
     }
-  };
+  }, [schoolId, categoryId, columnId, user, t]);
 
   const addDataEntry = async (dataEntry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Əgər user.schoolId varsa və dataEntry.school_id yoxdursa, əlavə edək
+      const entryWithSchoolId = {
+        ...dataEntry,
+        school_id: dataEntry.school_id || user?.schoolId,
+        created_by: user?.id,
+        status: 'pending'  // Yeni əlavə edilən məlumatlar həmişə pending statusunda olur
+      };
+
       const { data, error } = await supabase
         .from('data_entries')
-        .insert([dataEntry])
+        .insert([entryWithSchoolId])
         .select()
         .single();
 
@@ -124,14 +137,79 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
+  // Məlumatların təsdiq statusunu dəyişmək üçün metod
+  const approveDataEntry = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update({ status: 'approved' })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setDataEntries(prev => prev.map(entry => 
+        entry.id === id ? { ...entry, ...data } as DataEntry : entry
+      ));
+      
+      toast.success(t('dataEntryApproved'), {
+        description: t('dataEntryApprovedDesc')
+      });
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error approving data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotApproveData')
+      });
+      throw err;
+    }
+  };
+
+  // Məlumatların rədd edilməsi üçün metod
+  const rejectDataEntry = async (id: string, rejectionReason: string) => {
+    try {
+      if (!rejectionReason) {
+        throw new Error('Rejection reason is required');
+      }
+
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update({ 
+          status: 'rejected',
+          rejection_reason: rejectionReason
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setDataEntries(prev => prev.map(entry => 
+        entry.id === id ? { ...entry, ...data } as DataEntry : entry
+      ));
+      
+      toast.success(t('dataEntryRejected'), {
+        description: t('dataEntryRejectedDesc')
+      });
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error rejecting data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: err.message || t('couldNotRejectData')
+      });
+      throw err;
+    }
+  };
+
   // Məktəb üçün bütün datanın təsdiq statusunu əldə etmək
   const getApprovalStatus = async (schoolId: string, categoryId?: string) => {
     try {
-      // Əvvəlki group metodu əvəzinə ayrı-ayrı sorğular edək
-      // və nəticələri birləşdirək
       let query = supabase
         .from('data_entries')
-        .select('status, id')
+        .select('status')
         .eq('school_id', schoolId);
       
       if (categoryId) {
@@ -168,9 +246,42 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
+  // Bir kateqoriya daxilində bütün məlumatları göndərmək üçün metod
+  const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
+    try {
+      // Verify we have the required ids
+      if (!categoryId || !schoolId) {
+        throw new Error('Category ID and School ID are required');
+      }
+
+      const { data, error } = await supabase.rpc('submit_category_for_approval', {
+        p_category_id: categoryId,
+        p_school_id: schoolId
+      });
+
+      if (error) throw error;
+      
+      // Yeniləmək üçün data entries-i yenidən yükləyirik
+      await fetchDataEntries();
+      
+      toast.success(t('categorySubmitted'), {
+        description: t('categorySubmittedDesc')
+      });
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error submitting category for approval:', err);
+      toast.error(t('errorOccurred'), {
+        description: err.message || t('couldNotSubmitCategory')
+      });
+      throw err;
+    }
+  };
+
+  // Hook yüklənən zaman data-nı yükləyək
   useEffect(() => {
     fetchDataEntries();
-  }, [schoolId, categoryId, columnId]);
+  }, [fetchDataEntries]);
 
   return {
     dataEntries,
@@ -180,6 +291,9 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     addDataEntry,
     updateDataEntry,
     deleteDataEntry,
-    getApprovalStatus
+    getApprovalStatus,
+    approveDataEntry,
+    rejectDataEntry,
+    submitCategoryForApproval
   };
 };

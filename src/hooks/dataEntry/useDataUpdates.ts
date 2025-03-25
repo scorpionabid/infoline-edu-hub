@@ -2,8 +2,10 @@
 import { useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { CategoryEntryData, DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
@@ -29,9 +31,10 @@ export const useDataUpdates = ({
   saveForm
 }: UseDataUpdatesProps) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   
   // Excel əməliyyatları üçün updateFormData funksiyası
-  const updateFormDataFromExcel = useCallback((excelData: Record<string, any>, categoryId?: string) => {
+  const updateFormDataFromExcel = useCallback(async (excelData: Record<string, any>, categoryId?: string) => {
     console.log("Excel məlumatları alındı:", excelData);
     
     const newEntries = [...formData.entries];
@@ -103,11 +106,64 @@ export const useDataUpdates = ({
     
     initializeForm(newEntries, formData.status);
     
+    // Həmçinin Excel məlumatlarını serverdə də saxlayaq
+    if (user?.schoolId && categoryId) {
+      try {
+        for (const [columnId, value] of Object.entries(excelData)) {
+          // Bu sütün və məktəb üçün mövcud məlumat olub-olmadığını yoxlayaq
+          const { data: existingData, error: fetchError } = await supabase
+            .from('data_entries')
+            .select('id, status')
+            .eq('school_id', user.schoolId)
+            .eq('category_id', categoryId)
+            .eq('column_id', columnId)
+            .maybeSingle();
+
+          if (fetchError) throw fetchError;
+
+          // Əgər artıq məlumat varsa və təsdiqlənməyibsə, update edək
+          if (existingData) {
+            if (existingData.status === 'approved') {
+              // Təsdiqlənmiş məlumatları atlayırıq
+              continue;
+            }
+
+            const { error: updateError } = await supabase
+              .from('data_entries')
+              .update({ value, updated_at: new Date().toISOString() })
+              .eq('id', existingData.id);
+
+            if (updateError) throw updateError;
+          } 
+          // Əgər məlumat yoxdursa, əlavə edək
+          else {
+            const { error: insertError } = await supabase
+              .from('data_entries')
+              .insert([{
+                school_id: user.schoolId,
+                category_id: categoryId,
+                column_id: columnId,
+                value,
+                status: 'pending',
+                created_by: user.id
+              }]);
+
+            if (insertError) throw insertError;
+          }
+        }
+      } catch (err) {
+        console.error('Error saving Excel data to server:', err);
+        toast.error(t('errorOccurred'), {
+          description: t('someDataMayNotBeSaved')
+        });
+      }
+    }
+    
     // Excel yüklənib bitdikdən sonra formanı validasiya etmək
     setTimeout(() => {
       validateForm();
     }, 500);
-  }, [categories, formData, initializeForm, validateForm]);
+  }, [categories, formData, initializeForm, validateForm, user, t]);
 
   // Kateqoriya dəyişmək - təkmilləşdirilmiş funksiya
   const changeCategory = useCallback((index: number) => {
@@ -131,10 +187,8 @@ export const useDataUpdates = ({
       }
       
       // Yeni kateqoriyaya keçdiyimizi bildirək
-      toast({
-        title: t('categoryChanged'),
-        description: categories[index].name,
-        variant: "default",
+      toast.success(t('categoryChanged'), {
+        description: categories[index].name
       });
       
       // Kateqoriya dəyişən kimi formanın üstünə scroll etmək
@@ -142,42 +196,8 @@ export const useDataUpdates = ({
     }
   }, [categories, setCurrentCategoryIndex, saveForm, t, formData.entries]);
 
-  // Təsdiq üçün göndərmək
-  const submitForApproval = useCallback(() => {
-    // İlk olaraq məlumatları saxlayaq
-    saveForm();
-    
-    const success = submitForm(validateForm);
-    
-    if (!success && errors.length > 0) {
-      // Xəta olan ilk kateqoriyaya keçid
-      const firstErrorIndex = categories.findIndex(cat => 
-        cat.columns.some(col => errors.some(err => err.columnId === col.id))
-      );
-      
-      if (firstErrorIndex !== -1) {
-        setCurrentCategoryIndex(firstErrorIndex);
-        
-        // Xəta bildirisini göstərək
-        toast({
-          title: t('error'),
-          description: t('pleaseCorrectErrors'),
-          variant: "destructive",
-        });
-      }
-    } else if (success) {
-      // Təsdiq üçün göndərildi bildirişi
-      toast({
-        title: t('success'),
-        description: t('dataSentForApproval'),
-        variant: "default",
-      });
-    }
-  }, [submitForm, validateForm, errors, categories, setCurrentCategoryIndex, saveForm, t]);
-
   return {
     updateFormDataFromExcel,
-    changeCategory,
-    submitForApproval
+    changeCategory
   };
 };
