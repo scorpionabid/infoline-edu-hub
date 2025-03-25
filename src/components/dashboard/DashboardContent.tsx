@@ -33,21 +33,21 @@ interface DashboardContentProps {
 
 // Notification formatını uyğunlaşdırma funksiyası
 const adaptNotifications = (notifications: Notification[]): DashboardNotification[] => {
-  return notifications.map(notification => ({
+  return notifications?.map(notification => ({
     id: notification.id,
     type: notification.type,
     title: notification.title,
     message: notification.message,
     time: notification.createdAt
-  }));
+  })) || [];
 };
 
 // FormItem-ləri Form formatına çevirmək üçün helper funksiya
 const adaptFormItems = (formItems: FormItem[]) => {
-  return formItems.map(item => ({
+  return formItems?.map(item => ({
     ...item,
     status: item.status as FormStatus // FormStatus tipinə explicit çeviririk
-  }));
+  })) || [];
 };
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -99,9 +99,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       case 'regionadmin': {
         const regionAdminData = dashboardData as RegionAdminDashboardData;
         const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
+        // RegionAdminDashboard-a ötürülən data-nın tam olduğundan əmin olaq
         const preparedData = {
           ...regionAdminData,
-          notifications: adaptedNotifications
+          notifications: adaptedNotifications,
+          categories: regionAdminData.categories || [],
+          sectorCompletions: regionAdminData.sectorCompletions || []
         };
         return <RegionAdminDashboard data={preparedData} />;
       }

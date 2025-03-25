@@ -23,12 +23,12 @@ interface RegionAdminDashboardProps {
     approvedSchools: number;
     rejectedSchools: number;
     notifications: Notification[];
-    categories: {
+    categories?: {
       name: string;
       completionRate: number;
       color: string;
     }[];
-    sectorCompletions: {
+    sectorCompletions?: {
       name: string;
       completionRate: number;
     }[];
@@ -38,6 +38,10 @@ interface RegionAdminDashboardProps {
 const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  
+  // Massivlərin undefined olmamasını təmin edirik
+  const categories = data.categories || [];
+  const sectorCompletions = data.sectorCompletions || [];
   
   return (
     <div className="space-y-6">
@@ -117,7 +121,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data.categories.map((category, index) => (
+              {categories.map((category, index) => (
                 <div key={index} className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{category.name}</span>
@@ -126,6 +130,11 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
                   <Progress value={category.completionRate} className={`h-2 ${category.color}`} />
                 </div>
               ))}
+              {categories.length === 0 && (
+                <div className="py-4 text-center text-muted-foreground">
+                  {t('noCategoriesFound')}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -148,7 +157,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data.sectorCompletions.map((sector, index) => (
+              {sectorCompletions.map((sector, index) => (
                 <div key={index} className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{sector.name}</span>
@@ -157,6 +166,11 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
                   <Progress value={sector.completionRate} className="h-2" />
                 </div>
               ))}
+              {sectorCompletions.length === 0 && (
+                <div className="py-4 text-center text-muted-foreground">
+                  {t('noSectorsFound')}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
