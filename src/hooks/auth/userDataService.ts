@@ -19,7 +19,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     console.log(`İstifadəçi email: ${userEmail}`);
     
     // Profil məlumatlarını əldə et
-    const { data: profileData, error: profileError } = await supabase
+    let { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
