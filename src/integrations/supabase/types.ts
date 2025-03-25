@@ -180,6 +180,84 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          priority: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          priority?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          priority?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          full_name: string
+          id: string
+          language: string | null
+          last_login: string | null
+          phone: string | null
+          position: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          full_name: string
+          id: string
+          language?: string | null
+          last_login?: string | null
+          phone?: string | null
+          position?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          language?: string | null
+          last_login?: string | null
+          phone?: string | null
+          position?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       regions: {
         Row: {
           created_at: string
@@ -323,17 +401,94 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          region_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          school_id: string | null
+          sector_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          region_id?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          school_id?: string | null
+          sector_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          region_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          school_id?: string | null
+          sector_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_access_to_region: {
+        Args: {
+          _user_id: string
+          _region_id: string
+        }
+        Returns: boolean
+      }
+      has_access_to_sector: {
+        Args: {
+          _user_id: string
+          _sector_id: string
+        }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
       uuid_generate_v4: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
     }
     Enums: {
+      app_role: "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin"
       column_type:
         | "text"
         | "number"

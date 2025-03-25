@@ -1,88 +1,115 @@
 
-// Supabase ilə işləmək üçün tiplər
-// Bu tipləri Supabase client-i ilə istifadə edəcəyik
+// Supabase üçün tip tərifləri
 
-export type Region = {
-  id: string;
-  name: string;
-  description: string | null;
+// Profil interfeysi
+export interface Profile {
+  id: string; // auth.users cədvəlindəki id ilə eynidir
+  full_name: string;
+  avatar?: string;
+  phone?: string;
+  position?: string;
+  language: string;
+  last_login?: string;
   created_at: string;
   updated_at: string;
-  status: string;
+  status: 'active' | 'inactive' | 'blocked';
 }
 
-export type Sector = {
-  id: string;
-  region_id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-  status: string;
-}
+// İstifadəçi rolu
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
-export type School = {
+// İstifadəçi rolu cədvəli interfeysi
+export interface UserRoleData {
   id: string;
-  name: string;
-  principal_name: string | null;
-  address: string | null;
-  region_id: string;
-  sector_id: string;
-  phone: string | null;
-  email: string | null;
-  student_count: number | null;
-  teacher_count: number | null;
-  status: string;
-  type: string | null;
-  language: string | null;
-  created_at: string;
-  updated_at: string;
-  completion_rate: number;
-  logo: string | null;
-  admin_email: string | null;
-}
-
-export type Category = {
-  id: string;
-  name: string;
-  description: string | null;
-  assignment: string;
-  deadline: string | null;
-  status: string;
-  priority: number | null;
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   created_at: string;
   updated_at: string;
 }
 
-export type Column = {
+// Bildiriş interfeysi
+export interface Notification {
   id: string;
-  category_id: string;
-  name: string;
+  user_id: string;
   type: string;
-  is_required: boolean;
-  placeholder: string | null;
-  help_text: string | null;
-  order_index: number | null;
-  status: string;
-  validation: any | null;
-  default_value: string | null;
-  options: any | null;
+  title: string;
+  message?: string;
+  related_entity_id?: string;
+  related_entity_type?: string;
+  is_read: boolean;
+  priority: string;
   created_at: string;
-  updated_at: string;
 }
 
-export type DataEntry = {
+// Auth ilə bağlı tiplər
+export interface AuthSession {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  user: AuthUser;
+}
+
+export interface AuthUser {
   id: string;
-  school_id: string;
-  category_id: string;
-  column_id: string;
-  value: string | null;
-  status: string;
+  email: string;
+  aud: string;
+  role: string;
+  app_metadata: {
+    provider?: string;
+  };
+  user_metadata: Record<string, any>;
+}
+
+// İstifadəçi yaratmaq üçün data formatı
+export interface CreateUserData {
+  email: string;
+  password: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+}
+
+// İstifadəçi məlumatlarını yeniləmək üçün data formatı
+export interface UpdateUserData {
+  full_name?: string;
+  email?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  password?: string;
+}
+
+// İstifadəçi tam məlumatları (profil + rol)
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language: string;
+  avatar?: string;
+  status: 'active' | 'inactive' | 'blocked';
+  last_login?: string;
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  approved_by: string | null;
-  approved_at: string | null;
-  rejected_by: string | null;
-  rejection_reason: string | null;
 }

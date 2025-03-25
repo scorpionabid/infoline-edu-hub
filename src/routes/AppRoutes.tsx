@@ -4,6 +4,10 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth, useRole } from "@/context/AuthContext";
 
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import RegisterSuccess from "@/pages/RegisterSuccess";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import Sectors from "@/pages/Sectors";
 import Regions from "@/pages/Regions";
@@ -25,17 +29,19 @@ interface ProtectedRouteProps {
 // Protected Route Component
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
   
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="loader"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Authenticate olmayan istifadəçiləri login səhifəsinə yönləndir və cari yolu saxla
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   // Əgər allowedRoles varsa və istifadəçinin rolu bu siyahıda deyilsə
@@ -48,21 +54,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
 interface PublicRouteProps {
   children: React.ReactNode;
+  restricted?: boolean;
 }
 
 // Public Route Component (redirects to dashboard if already logged in)
-const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
+const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="loader"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
   
-  if (isAuthenticated) {
+  // Əgər istifadəçi daxil olubsa və route məhdudlaşdırılıbsa (məs. login səhifəsi), dashboard-a yönləndir
+  if (isAuthenticated && restricted) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -74,8 +82,40 @@ const AppRoutes = [
   {
     path: "/login",
     element: (
-      <PublicRoute>
+      <PublicRoute restricted>
         <Login />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/register",
+    element: (
+      <PublicRoute restricted>
+        <Register />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/register-success",
+    element: (
+      <PublicRoute restricted>
+        <RegisterSuccess />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute restricted>
+        <ForgotPassword />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: (
+      <PublicRoute>
+        <ResetPassword />
       </PublicRoute>
     ),
   },

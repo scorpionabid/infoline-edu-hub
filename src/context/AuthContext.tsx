@@ -1,32 +1,15 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 
 // User roles
 export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
-// User interface
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  avatar?: string;
-  lastLogin?: Date;
-  twoFactorEnabled?: boolean;
-  notificationSettings?: {
-    email: boolean;
-    system: boolean;
-  };
-  phone?: string;  // Əlavə edildi
-  position?: string; // Əlavə edildi
-}
-
 // Auth state interface
 interface AuthState {
-  user: User | null;
+  user: FullUserData | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -35,49 +18,11 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
 }
 
 // Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Sample users for demo purposes (in a real app, this would come from an API)
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    name: 'Super Admin',
-    email: 'superadmin@infoline.edu',
-    role: 'superadmin',
-    avatar: '',
-  },
-  {
-    id: '2',
-    name: 'Baku Region Admin',
-    email: 'regionadmin@infoline.edu',
-    role: 'regionadmin',
-    regionId: '1',
-    avatar: '',
-  },
-  {
-    id: '3',
-    name: 'Yasamal Sector Admin',
-    email: 'sectoradmin@infoline.edu',
-    role: 'sectoradmin',
-    regionId: '1',
-    sectorId: '1',
-    avatar: '',
-  },
-  {
-    id: '4',
-    name: 'School 45 Admin',
-    email: 'schooladmin@infoline.edu',
-    role: 'schooladmin',
-    regionId: '1',
-    sectorId: '1',
-    schoolId: '1',
-    avatar: '',
-  },
-];
 
 // Context provider
 interface AuthProviderProps {
@@ -85,83 +30,30 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    isLoading: true,
-  });
+  const {
+    user,
+    loading,
+    signIn,
+    signOut,
+    updateProfile,
+  } = useSupabaseAuth();
 
-  // Check for existing session on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // In a real app, we would validate the token with the backend
-        const savedUser = localStorage.getItem('infoline-user');
-        
-        if (savedUser) {
-          const user = JSON.parse(savedUser) as User;
-          setState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } else {
-          setState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-      }
-    };
-
-    checkAuth();
-  }, []);
+  // Derive auth state from Supabase user
+  const authState: AuthState = {
+    user,
+    isAuthenticated: !!user,
+    isLoading: loading,
+  };
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // In a real app, we would make an API call to validate credentials
-      const user = MOCK_USERS.find(u => u.email === email);
-      
-      if (user && password === '123456') { // Demo password
-        // Update user with current login time
-        const updatedUser = {
-          ...user,
-          lastLogin: new Date()
-        };
-        
-        // Save to localStorage (in a real app, we would store a token)
-        localStorage.setItem('infoline-user', JSON.stringify(updatedUser));
-        
-        setState({
-          user: updatedUser,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        
-        toast.success('Login successful', {
-          description: `Welcome back, ${updatedUser.name}!`
-        });
-        
-        return true;
-      } else {
-        toast.error('Login failed', {
-          description: 'Invalid email or password'
-        });
-        return false;
-      }
+      const data = await signIn(email, password);
+      return !!data;
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed', {
-        description: 'An unexpected error occurred'
+      toast.error('Giriş zamanı xəta baş verdi', {
+        description: 'Zəhmət olmasa bir az sonra yenidən cəhd edin'
       });
       return false;
     }
@@ -169,31 +61,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('infoline-user');
-    setState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-    toast.info('Logged out successfully');
+    signOut();
+    toast.info('Uğurla sistemdən çıxış edildi');
   };
 
   // Update user function
-  const updateUser = (userData: Partial<User>) => {
-    if (state.user) {
-      const updatedUser = { ...state.user, ...userData };
-      localStorage.setItem('infoline-user', JSON.stringify(updatedUser));
-      setState({
-        ...state,
-        user: updatedUser,
+  const updateUser = async (userData: Partial<FullUserData>): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      // Convert FullUserData to Profile format
+      const profileUpdates = {
+        full_name: userData.full_name,
+        phone: userData.phone,
+        position: userData.position,
+        language: userData.language,
+        avatar: userData.avatar,
+        status: userData.status,
+      };
+      
+      // Remove undefined values
+      Object.keys(profileUpdates).forEach(key => {
+        if (profileUpdates[key as keyof typeof profileUpdates] === undefined) {
+          delete profileUpdates[key as keyof typeof profileUpdates];
+        }
       });
+      
+      const success = await updateProfile(profileUpdates);
+      return success;
+    } catch (error) {
+      console.error('Update user error:', error);
+      return false;
     }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        ...state,
+        ...authState,
         login,
         logout,
         updateUser,
@@ -220,7 +125,7 @@ export const useRole = (role: Role | Role[]) => {
   if (!user) return false;
   
   if (Array.isArray(role)) {
-    return role.includes(user.role);
+    return role.includes(user.role as Role);
   }
   
   return user.role === role;

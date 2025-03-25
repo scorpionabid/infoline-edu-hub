@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Table, 
   TableBody, 
@@ -17,7 +17,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { User, UserFilter } from '@/types/user';
+import { User } from '@/types/user';
+import { FullUserData, UserRole } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/card';
 import { useRole, Role } from '@/context/AuthContext';
@@ -29,15 +30,12 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EditUserDialog from './EditUserDialog';
 import DeleteUserDialog from './DeleteUserDialog';
 import UserDetailsDialog from './UserDetailsDialog';
 import { format } from 'date-fns';
-
-// Mock data
-import { mockUsers } from '@/data/mockUsers';
+import { useUserList } from '@/hooks/useUserList';
 
 interface UserListProps {
   currentUserRole?: Role;
@@ -48,75 +46,30 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
   const { t } = useLanguage();
   const isSuperAdmin = useRole('superadmin');
   
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [filter, setFilter] = useState<UserFilter>({});
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const {
+    users,
+    loading,
+    filter,
+    currentPage,
+    totalPages,
+    selectedUser,
+    isEditDialogOpen,
+    isDeleteDialogOpen,
+    isDetailsDialogOpen,
+    updateFilter,
+    resetFilter,
+    handlePageChange,
+    handleEditUser,
+    handleDeleteUser,
+    handleViewDetails,
+    handleUpdateUserConfirm,
+    handleDeleteUserConfirm,
+    setIsEditDialogOpen,
+    setIsDeleteDialogOpen,
+    setIsDetailsDialogOpen,
+  } = useUserList();
 
-  // Filter users based on current filter
-  const filteredUsers = React.useMemo(() => {
-    let result = [...users];
-    
-    // Filter by role if specified
-    if (filter.role) {
-      result = result.filter(user => user.role === filter.role);
-    }
-    
-    // Filter by status if specified
-    if (filter.status) {
-      result = result.filter(user => user.status === filter.status);
-    }
-    
-    // Filter by regionId (for region admins)
-    if (!isSuperAdmin && currentUserRegionId) {
-      result = result.filter(user => user.regionId === currentUserRegionId);
-    }
-    
-    // Filter by search term if specified
-    if (filter.search) {
-      const searchTerm = filter.search.toLowerCase();
-      result = result.filter(user => 
-        user.name.toLowerCase().includes(searchTerm) || 
-        user.email.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    return result;
-  }, [users, filter, isSuperAdmin, currentUserRegionId]);
-
-  // Handle user update
-  const handleUserUpdate = (updatedUser: User) => {
-    setUsers(prev => prev.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    ));
-    toast.success(t('userUpdated'), {
-      description: t('userUpdatedDesc')
-    });
-  };
-
-  // Handle user deletion
-  const handleUserDelete = (userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
-    toast.success(t('userDeleted'), {
-      description: t('userDeletedDesc')
-    });
-  };
-
-  // Reset all filters
-  const handleResetFilters = () => {
-    setFilter({});
-  };
-
-  // Determine if user is editable by current user
-  const canEditUser = (user: User) => {
-    if (isSuperAdmin) return true;
-    if (currentUserRole === 'regionadmin' && currentUserRegionId === user.regionId) return true;
-    return false;
-  };
-
-  const getRoleBadgeStyle = (role: Role) => {
+  const getRoleBadgeStyle = (role: UserRole) => {
     switch (role) {
       case 'superadmin':
         return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
@@ -144,6 +97,22 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
     }
   };
 
+  // Determine if user is editable by current user
+  const canEditUser = (user: FullUserData) => {
+    if (isSuperAdmin) return true;
+    if (currentUserRole === 'regionadmin' && currentUserRegionId === user.region_id) return true;
+    return false;
+  };
+
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return t('never');
+    try {
+      return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
+    } catch (error) {
+      return t('invalidDate');
+    }
+  };
+
   return (
     <Card className="p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -153,7 +122,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
             <Input
               placeholder={t('searchUsers')}
               value={filter.search || ''}
-              onChange={(e) => setFilter({ ...filter, search: e.target.value })}
+              onChange={(e) => updateFilter({ search: e.target.value })}
               className="w-full pl-9"
             />
           </div>
@@ -162,7 +131,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select
             value={filter.role || "all"}
-            onValueChange={(value) => setFilter({ ...filter, role: value !== "all" ? value as Role : undefined })}
+            onValueChange={(value) => updateFilter({ role: value !== "all" ? value as UserRole : undefined })}
           >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder={t('selectRole')} />
@@ -178,7 +147,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           
           <Select
             value={filter.status || "all"}
-            onValueChange={(value) => setFilter({ ...filter, status: value !== "all" ? value as 'active' | 'inactive' | 'blocked' : undefined })}
+            onValueChange={(value) => updateFilter({ status: value !== "all" ? value : undefined })}
           >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder={t('selectStatus')} />
@@ -194,7 +163,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           <Button 
             variant="outline" 
             size="icon"
-            onClick={handleResetFilters}
+            onClick={resetFilter}
             disabled={!filter.role && !filter.status && !filter.search}
           >
             <FilterX className="h-4 w-4" />
@@ -215,24 +184,33 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.length === 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                    <span className="ml-2">{t('loading')}</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : users.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
                   {t('noUsersFound')}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredUsers.map((user) => (
+              users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Avatar className="size-8">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarImage src={user.avatar} alt={user.full_name} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="font-medium">{user.name}</div>
+                      <div className="font-medium">{user.full_name}</div>
                     </div>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -247,7 +225,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {user.lastLogin ? format(new Date(user.lastLogin), 'dd/MM/yyyy HH:mm') : t('never')}
+                    {formatDate(user.last_login)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -258,38 +236,29 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowDetailsDialog(true);
-                          }}
+                          onClick={() => handleViewDetails(user)}
                         >
-                          <UserCog className="mr-2 h-4 w-4" />
+                          <UserCog className="h-4 w-4 mr-2" />
                           {t('viewDetails')}
                         </DropdownMenuItem>
                         
                         {canEditUser(user) && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowEditDialog(true);
-                            }}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            {t('edit')}
-                          </DropdownMenuItem>
-                        )}
-                        
-                        {canEditUser(user) && user.id !== 'superadmin-1' && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowDeleteDialog(true);
-                            }}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {t('delete')}
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              {t('edit')}
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDeleteUser(user)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t('delete')}
+                            </DropdownMenuItem>
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -300,28 +269,52 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1 || loading}
+          >
+            {t('previous')}
+          </Button>
+          <div className="text-sm">
+            {t('page')} {currentPage} {t('of')} {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages || loading}
+          >
+            {t('next')}
+          </Button>
+        </div>
+      )}
       
-      {/* Dialog components */}
+      {/* Dialog Components */}
       {selectedUser && (
         <>
-          <EditUserDialog
-            open={showEditDialog}
-            onOpenChange={setShowEditDialog}
-            user={selectedUser}
-            onSave={handleUserUpdate}
-          />
-          
-          <DeleteUserDialog 
-            open={showDeleteDialog}
-            onOpenChange={setShowDeleteDialog}
-            user={selectedUser}
-            onDelete={handleUserDelete}
-          />
-          
           <UserDetailsDialog
-            open={showDetailsDialog}
-            onOpenChange={setShowDetailsDialog}
+            open={isDetailsDialogOpen}
+            onOpenChange={setIsDetailsDialogOpen}
             user={selectedUser}
+          />
+          
+          <EditUserDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            user={selectedUser}
+            onSave={handleUpdateUserConfirm}
+          />
+          
+          <DeleteUserDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            user={selectedUser}
+            onDelete={handleDeleteUserConfirm}
           />
         </>
       )}
