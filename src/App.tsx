@@ -1,5 +1,5 @@
 
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from './routes/AppRoutes';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
@@ -9,8 +9,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './App.css';
 
 function App() {
-  const router = createBrowserRouter(AppRoutes);
-  
   // React Query üçün yeni QueryClient yaradaq
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -27,8 +25,10 @@ function App() {
       <LanguageProvider>
         <AuthProvider>
           <NotificationProvider>
-            <RouterProvider router={router} />
-            <Toaster />
+            <BrowserRouter>
+              <AppRoutes />
+              <Toaster />
+            </BrowserRouter>
           </NotificationProvider>
         </AuthProvider>
       </LanguageProvider>

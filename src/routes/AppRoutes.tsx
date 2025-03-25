@@ -77,144 +77,146 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
   return <>{children}</>;
 };
 
-// Route konfigurasyonları
-const AppRoutes = [
-  {
-    path: "/login",
-    element: (
-      <PublicRoute restricted>
-        <Login />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/register",
-    element: (
-      <PublicRoute restricted>
-        <Register />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/register-success",
-    element: (
-      <PublicRoute restricted>
-        <RegisterSuccess />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/forgot-password",
-    element: (
-      <PublicRoute restricted>
-        <ForgotPassword />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/reset-password",
-    element: (
-      <PublicRoute>
-        <ResetPassword />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sectors",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Sectors />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/regions",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin']}>
-        <Regions />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/schools",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-        <Schools />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/categories",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Categories />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/columns",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Columns />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/users",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Users />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/reports",
-    element: (
-      <ProtectedRoute>
-        <Reports />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/settings",
-    element: (
-      <ProtectedRoute>
-        <Settings />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/data-entry",
-    element: (
-      <ProtectedRoute>
-        <DataEntry />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/",
-    element: <Navigate to="/dashboard" replace />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-];
+// Route konfigurasyonları, bu array deyil, birbaşa Routes komponenti qaytarılacaq
+const AppRoutes = () => (
+  <Routes>
+    <Route 
+      path="/login" 
+      element={
+        <PublicRoute restricted>
+          <Login />
+        </PublicRoute>
+      }
+    />
+    <Route 
+      path="/register" 
+      element={
+        <PublicRoute restricted>
+          <Register />
+        </PublicRoute>
+      }
+    />
+    <Route 
+      path="/register-success" 
+      element={
+        <PublicRoute restricted>
+          <RegisterSuccess />
+        </PublicRoute>
+      }
+    />
+    <Route 
+      path="/forgot-password" 
+      element={
+        <PublicRoute restricted>
+          <ForgotPassword />
+        </PublicRoute>
+      }
+    />
+    <Route 
+      path="/reset-password" 
+      element={
+        <PublicRoute>
+          <ResetPassword />
+        </PublicRoute>
+      }
+    />
+    <Route 
+      path="/dashboard" 
+      element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/sectors" 
+      element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Sectors />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/regions" 
+      element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <Regions />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/schools" 
+      element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
+          <Schools />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/categories" 
+      element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Categories />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/columns" 
+      element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Columns />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/users" 
+      element={
+        <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+          <Users />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/reports" 
+      element={
+        <ProtectedRoute>
+          <Reports />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/settings" 
+      element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/profile" 
+      element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/data-entry" 
+      element={
+        <ProtectedRoute>
+          <DataEntry />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/" 
+      element={<Navigate to="/dashboard" replace />}
+    />
+    <Route 
+      path="*" 
+      element={<NotFound />}
+    />
+  </Routes>
+);
 
 export { AppRoutes, ProtectedRoute, PublicRoute };
