@@ -83,10 +83,10 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       
       // Auth istifadəçi məlumatlarını əldə et
       const { data: authData } = await supabase.auth.getUser();
-      const email = authData?.user?.email || '';
+      const userEmail = authData?.user?.email || '';
       
       // Superadmin üçün xüsusi yoxlama
-      const isSuperAdmin = email === 'superadmin@infoline.az';
+      const isSuperAdmin = userEmail === 'superadmin@infoline.az';
       const defaultRole: UserRole = isSuperAdmin ? 'superadmin' : 'schooladmin';
       
       // Yeni rol yarat
@@ -116,10 +116,14 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
     const normalizedRole = normalizeRole(roleData.role);
     
+    // Auth istifadəçi məlumatlarını əldə et (email üçün)
+    const { data: authData } = await supabase.auth.getUser();
+    const userEmail = authData?.user?.email || '';
+    
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {
       id: userId,
-      email: email || '',
+      email: userEmail,
       full_name: profile.full_name,
       role: normalizedRole as UserRole,
       region_id: roleData.region_id,
