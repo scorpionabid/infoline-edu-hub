@@ -24,6 +24,9 @@ export interface ValidationRules {
   };
   format?: string;
   regex?: string;
+  // Retrokompatibilitet üçün
+  min?: number; // minValue yerinə
+  max?: number; // maxValue yerinə
   customValidator?: (value: any) => { valid: boolean; message?: string };
 }
 
@@ -43,6 +46,8 @@ export interface Column {
   validation?: Json; // From Supabase
   parentColumnId?: string;
   dependencies?: string[];
+  dependsOn?: any; // Asılılıqlar üçün lazım
+  multiline?: boolean; // Textarea üçün
 }
 
 export interface CategoryWithColumns {
@@ -58,7 +63,28 @@ export interface CategoryWithColumns {
   columns: Column[];
 }
 
-export function adaptColumnToSupabase(column: Column) {
+/**
+ * Supabase formatında gələn sütunu uyğunlaşdırmaq üçün funksiya 
+ */
+export function adaptSupabaseColumn(column: any): Column {
+  return {
+    id: column.id,
+    categoryId: column.category_id,
+    name: column.name,
+    type: column.type as ColumnType,
+    isRequired: column.is_required,
+    placeholder: column.placeholder || '',
+    helpText: column.help_text || '',
+    options: column.options,
+    order: column.order_index || 0,
+    status: column.status === 'active' ? 'active' : 'inactive',
+    defaultValue: column.default_value || '',
+    validationRules: column.validation || {},
+    validation: column.validation
+  };
+}
+
+export function adaptColumnToSupabase(column: Partial<Column>) {
   return {
     id: column.id,
     category_id: column.categoryId,
@@ -67,7 +93,7 @@ export function adaptColumnToSupabase(column: Column) {
     is_required: column.isRequired,
     placeholder: column.placeholder || null,
     help_text: column.helpText || null,
-    options: ["select", "checkbox", "radio"].includes(column.type) ? column.options : null,
+    options: ["select", "checkbox", "radio"].includes(column.type as string) ? column.options : null,
     order_index: column.order,
     status: column.status,
     default_value: column.defaultValue || null,

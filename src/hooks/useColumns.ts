@@ -41,7 +41,7 @@ export const useColumns = (categoryId?: string) => {
 
   const addColumn = async (column: Omit<Column, "id">) => {
     try {
-      const supabaseColumn = adaptColumnToSupabase(column);
+      const supabaseColumn = adaptColumnToSupabase(column as Partial<Column>);
       
       const { data, error } = await supabase
         .from('columns')
