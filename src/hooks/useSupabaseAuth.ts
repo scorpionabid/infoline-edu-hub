@@ -54,7 +54,13 @@ export const useSupabaseAuth = () => {
         .eq('id', userId)
         .single();
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.warn('Profil məlumatlarını əldə edərkən xəta:', profileError);
+        // Xəta olsa da davam edirik, amma boş profil məlumatları istifadə edirik
+      }
+      
+      // Əgər profileData null və ya undefined isə, boş obyekt istifadə edirik
+      const profile = profileData || {};
       
       // Rol məlumatlarını əldə et
       const { data: roleData, error: roleError } = await supabase
@@ -66,45 +72,48 @@ export const useSupabaseAuth = () => {
       if (roleError) throw roleError;
       
       // Auth istifadəçi məlumatlarını əldə et
-      const { data: userData, error: userError } = await supabase.auth.getUser(userId);
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError) throw userError;
       
       // Status dəyərini düzgün tipə çevirək
-      const statusValue = profileData.status || 'active';
+      const statusValue = profile.status || 'active';
       const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
         ? statusValue as 'active' | 'inactive' | 'blocked'
         : 'active' as 'active' | 'inactive' | 'blocked';
+      
+      const created_at = profile.created_at || new Date().toISOString();
+      const updated_at = profile.updated_at || new Date().toISOString();
       
       // Tam istifadəçi datası
       const fullUserData: FullUserData = {
         id: userId,
         email: userData.user.email || '',
-        full_name: profileData.full_name,
+        full_name: profile.full_name || '',
         role: roleData.role,
         region_id: roleData.region_id,
         sector_id: roleData.sector_id,
         school_id: roleData.school_id,
-        phone: profileData.phone,
-        position: profileData.position,
-        language: profileData.language || 'az',
-        avatar: profileData.avatar,
+        phone: profile.phone,
+        position: profile.position,
+        language: profile.language || 'az',
+        avatar: profile.avatar,
         status: typedStatus,
-        last_login: profileData.last_login,
-        created_at: profileData.created_at,
-        updated_at: profileData.updated_at,
+        last_login: profile.last_login,
+        created_at,
+        updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profileData.full_name,
+        name: profile.full_name || '',
         regionId: roleData.region_id,
         sectorId: roleData.sector_id,
         schoolId: roleData.school_id,
-        lastLogin: profileData.last_login,
-        createdAt: profileData.created_at,
-        updatedAt: profileData.updated_at,
+        lastLogin: profile.last_login,
+        createdAt: created_at,
+        updatedAt: updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri
-        twoFactorEnabled: false, // Supabase-də saxlanılmır, tətbiq səviyyəsindədir
+        twoFactorEnabled: false,
         notificationSettings: {
           email: true,
           system: true

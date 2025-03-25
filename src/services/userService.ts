@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CreateUserData, 
@@ -86,39 +87,42 @@ export const getUsers = async (
     
     // Tam istifadəçi məlumatlarını birləşdiririk
     const formattedUsers: FullUserData[] = data.map(item => {
-      const profile = item.profiles;
+      const profile = item.profiles || {}; // Default boş obyekt təqdim edirik
       
       // Status dəyərini düzgün tipə çevirək
-      const statusValue = profile?.status || 'active';
+      const statusValue = profile.status || 'active';
       const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
         ? statusValue as 'active' | 'inactive' | 'blocked'
         : 'active' as 'active' | 'inactive' | 'blocked';
       
+      const created_at = profile.created_at || new Date().toISOString();
+      const updated_at = profile.updated_at || new Date().toISOString();
+      
       return {
         id: item.user_id,
         email: emails[item.user_id] || '',
-        full_name: profile?.full_name || '',
+        full_name: profile.full_name || '',
         role: item.role,
         region_id: item.region_id,
         sector_id: item.sector_id,
         school_id: item.school_id,
-        phone: profile?.phone,
-        position: profile?.position,
-        language: profile?.language || 'az',
-        avatar: profile?.avatar,
+        phone: profile.phone,
+        position: profile.position,
+        language: profile.language || 'az',
+        avatar: profile.avatar,
         status: typedStatus,
-        last_login: profile?.last_login,
-        created_at: profile?.created_at || new Date().toISOString(),
-        updated_at: profile?.updated_at || new Date().toISOString(),
+        last_login: profile.last_login,
+        created_at,
+        updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profile?.full_name || '',
+        name: profile.full_name || '',
         regionId: item.region_id,
         sectorId: item.sector_id,
         schoolId: item.school_id,
-        lastLogin: profile?.last_login,
-        createdAt: profile?.created_at || new Date().toISOString(),
-        updatedAt: profile?.updated_at || new Date().toISOString(),
+        lastLogin: profile.last_login,
+        createdAt: created_at,
+        updatedAt: updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri
         twoFactorEnabled: false,
@@ -158,43 +162,52 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       .eq('id', userId)
       .single();
     
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.warn('Profil məlumatlarını əldə edərkən xəta:', profileError);
+      // Xəta olsa da davam edirik, amma boş profil məlumatları istifadə edirik
+    }
+    
+    // Əgər profileData null və ya undefined isə, boş obyekt istifadə edirik
+    const profile = profileData || {};
     
     // Mock email - həqiqi layihədə server-side edge function ilə əldə ediləcək
     const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
     
     // Status dəyərini düzgün tipə çevirək
-    const statusValue = profileData.status || 'active';
+    const statusValue = profile.status || 'active';
     const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
       ? statusValue as 'active' | 'inactive' | 'blocked'
       : 'active' as 'active' | 'inactive' | 'blocked';
+    
+    const created_at = profile.created_at || new Date().toISOString();
+    const updated_at = profile.updated_at || new Date().toISOString();
     
     // Tam istifadəçi məlumatlarını birləşdiririk
     const fullUserData: FullUserData = {
       id: userId,
       email: mockEmail,
-      full_name: profileData.full_name,
+      full_name: profile.full_name || '',
       role: roleData.role,
       region_id: roleData.region_id,
       sector_id: roleData.sector_id,
       school_id: roleData.school_id,
-      phone: profileData.phone,
-      position: profileData.position,
-      language: profileData.language || 'az',
-      avatar: profileData.avatar,
+      phone: profile.phone,
+      position: profile.position,
+      language: profile.language || 'az',
+      avatar: profile.avatar,
       status: typedStatus,
-      last_login: profileData.last_login,
-      created_at: profileData.created_at,
-      updated_at: profileData.updated_at,
+      last_login: profile.last_login,
+      created_at,
+      updated_at,
       
       // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-      name: profileData.full_name,
+      name: profile.full_name || '',
       regionId: roleData.region_id,
       sectorId: roleData.sector_id,
       schoolId: roleData.school_id,
-      lastLogin: profileData.last_login,
-      createdAt: profileData.created_at,
-      updatedAt: profileData.updated_at,
+      lastLogin: profile.last_login,
+      createdAt: created_at,
+      updatedAt: updated_at,
       
       // Əlavə tətbiq xüsusiyyətləri
       twoFactorEnabled: false,
