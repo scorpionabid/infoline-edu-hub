@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
@@ -30,39 +29,8 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
       throw new Error('İstifadəçi məlumatları əldə edilmədi');
     }
     
-    // Last login yeniləyək
-    try {
-      // Profilin olub-olmadığını yoxlayaq
-      const { data: profileData, error: profileCheckError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', data.user.id)
-        .single();
-      
-      if (profileCheckError && profileCheckError.code === 'PGRST116') {
-        // Profil tapılmadı, yenisini yaradaq
-        await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            full_name: data.user.email?.split('@')[0] || 'İstifadəçi',
-            language: 'az',
-            status: 'active',
-            last_login: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-      } else {
-        // Profil var, last_login yeniləyək
-        await supabase
-          .from('profiles')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', data.user.id);
-      }
-    } catch (updateError) {
-      console.warn('Last login yeniləmə xətası:', updateError);
-      // Bu xətanı ignore edək və davam edək
-    }
+    // İstifadəçi profili və rolunu yaratmaq/yeniləmək
+    await setupUserProfileAndRole(data.user.id, email);
     
     return data;
   } catch (error: any) {
@@ -91,6 +59,77 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     setLoading(false);
   }
 };
+
+// İstifadəçi profili və rolunu yaratmaq/yeniləmək üçün funksiya
+async function setupUserProfileAndRole(userId: string, email: string) {
+  try {
+    console.log(`İstifadəçi profili və rolu yoxlanılır/yaradılır: ${userId}`);
+    
+    // Profil yoxlanılır
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    // Profil yoxdursa, yaradaq
+    if (profileError && profileError.code === 'PGRST116') {
+      console.log('Profil tapılmadı, yenisi yaradılır...');
+      
+      await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: email.split('@')[0] || 'İstifadəçi',
+          language: 'az',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      console.log(`${email} üçün profil yaradıldı`);
+    } else {
+      // Profil var, last_login yeniləyək
+      await supabase
+        .from('profiles')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', userId);
+        
+      console.log(`${email} üçün son giriş tarixi yeniləndi`);
+    }
+    
+    // Rol yoxlanılır
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+    
+    // Rol yoxdursa, yaradaq
+    if (roleError && roleError.code === 'PGRST116') {
+      console.log('Rol tapılmadı, yenisi yaradılır...');
+      
+      // Default olaraq superadmin@infoline.az üçün superadmin, digərləri üçün schooladmin
+      const defaultRole: UserRole = email === 'superadmin@infoline.az' ? 'superadmin' : 'schooladmin';
+      
+      await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: defaultRole,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      console.log(`${email} üçün '${defaultRole}' rolu yaradıldı`);
+    } else {
+      console.log(`${email} üçün rol artıq mövcuddur: ${roleData?.role || 'bilinməyən'}`);
+    }
+  } catch (dbError: any) {
+    console.error('İstifadəçi profili/rolunu yoxlama və ya yaratma xətası:', dbError);
+    // Bu xətanı ignore edək və davam edək, çünki bu kritik bir xəta deyil
+  }
+}
 
 // Çıxış funksiyası
 export const signOut = async (setLoading: (loading: boolean) => void, setUser: (user: FullUserData | null) => void, setSession: (session: any | null) => void) => {

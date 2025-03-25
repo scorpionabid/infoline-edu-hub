@@ -30,12 +30,41 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   
   // Sessiya dəyişikliklərinə qulaq asaq və yeniləyək
   useEffect(() => {
+    let isSubscribed = true;
+    
     // İlkin yükləmə
     const initializeAuth = async () => {
       try {
         console.log('Auth inisializasiya başladı');
         
-        // Mövcud sessiyanı yoxlayaq
+        // Auth state dəyişikliklərinə abunə olaq
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          console.log('Auth state dəyişdi:', event);
+          
+          if (!isSubscribed) return;
+          
+          if (newSession) {
+            setSession(newSession);
+            
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              try {
+                setLoading(true);
+                const userData = await fetchUserData(newSession.user.id);
+                setUser(userData);
+              } catch (userError) {
+                console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+                setUser(null);
+              } finally {
+                setLoading(false);
+              }
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setSession(null);
+          }
+        });
+        
+        // SONRA mövcud sessiyanı yoxlayaq
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -45,55 +74,42 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         }
         
         console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
-        setSession(currentSession);
         
-        // Əgər sessiya varsa, istifadəçi məlumatlarını əldə edək
-        if (currentSession?.user) {
+        if (currentSession) {
+          setSession(currentSession);
+          
           try {
             const userData = await fetchUserData(currentSession.user.id);
-            setUser(userData);
+            if (isSubscribed) {
+              setUser(userData);
+            }
           } catch (userError) {
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            // Sessiya var amma user data yoxdur - silək
-            if (currentSession) {
-              await supabase.auth.signOut();
-              setSession(null);
+            // Sessiya var amma user data yoxdur - məlumatları təmizləyək
+            if (isSubscribed) {
+              setUser(null);
             }
           }
         }
         
         setLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('Auth inisializasiya xətası:', error);
-        setLoading(false);
+        if (isSubscribed) {
+          setLoading(false);
+        }
       }
     };
     
-    // Auth state dəyişikliklərinə abunə olaq
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('Auth state dəyişdi:', event);
-      setSession(newSession);
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (newSession?.user) {
-          try {
-            const userData = await fetchUserData(newSession.user.id);
-            setUser(userData);
-          } catch (userError) {
-            console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-          }
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-    
-    // İnisializasiya edək
     initializeAuth();
     
     // Cleanup
     return () => {
-      subscription.unsubscribe();
+      isSubscribed = false;
     };
   }, [setLoading, setSession, setUser]);
   

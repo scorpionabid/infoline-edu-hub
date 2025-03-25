@@ -106,7 +106,18 @@ const Login = () => {
         })
       });
       
-      const responseData = await response.json();
+      // İlk olaraq text() olaraq responseni alaq və sonra JSON-a çevirək - debugging üçün
+      const responseText = await response.text();
+      console.log('Direct login xam cavabı:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.error('JSON parse xətası:', e);
+        throw new Error('Server cavabı düzgün format deyil');
+      }
+      
       console.log('Direct login cavabı:', responseData);
       
       if (!response.ok) {
@@ -130,7 +141,7 @@ const Login = () => {
         // setSession çağrışından sonra bir qədər gözləyək ki, onAuthStateChange tetiklənsin
         setTimeout(() => {
           navigate('/dashboard');
-        }, 500);
+        }, 1000);
       } else {
         throw new Error('Sessiya qaytarılmadı');
       }

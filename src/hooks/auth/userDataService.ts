@@ -70,28 +70,31 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     
     console.log('Rol məlumatları alınır...');
     
-    // İlk öncə user_roles cədvəlindən rol məlumatlarını əldə etməyə çalışaq
+    // user_roles cədvəlindən rol məlumatlarını əldə edək
     let { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
       .single();
     
-    // Əgər user_roles-da tapılmadısa, digər üsullarla davam edək
+    // Əgər user_roles-da tapılmadısa, bir rol yaradaq
     if (roleError || !roleData) {
       console.log('user_roles cədvəlində rol tapılmadı, yeni rol yaradılır...');
       
-      // Default məlumatlarla rol yaradaq
-      const defaultRole: UserRole = 'schooladmin';
-      const email = (await supabase.auth.getUser()).data?.user?.email;
-      const isSuperAdmin = email === 'superadmin@infoline.az';
+      // Auth istifadəçi məlumatlarını əldə et
+      const { data: authData } = await supabase.auth.getUser();
+      const email = authData?.user?.email || '';
       
-      // Yeni rol yarat - superadmin@infoline.az üçün superadmin, digərləri üçün schooladmin
+      // Superadmin üçün xüsusi yoxlama
+      const isSuperAdmin = email === 'superadmin@infoline.az';
+      const defaultRole: UserRole = isSuperAdmin ? 'superadmin' : 'schooladmin';
+      
+      // Yeni rol yarat
       const { data: newRoleData, error: createRoleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: isSuperAdmin ? 'superadmin' : defaultRole,
+          role: defaultRole,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -110,21 +113,13 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       throw new Error('İstifadəçi üçün rol məlumatları tapılmadı');
     }
     
-    // Auth istifadəçi məlumatlarını əldə et
-    const { data: authData, error: userError } = await supabase.auth.getUser();
-    
-    if (userError) {
-      console.warn('Auth istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-      throw userError;
-    }
-    
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
     const normalizedRole = normalizeRole(roleData.role);
     
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {
       id: userId,
-      email: authData.user?.email || '',
+      email: email || '',
       full_name: profile.full_name,
       role: normalizedRole as UserRole,
       region_id: roleData.region_id,
