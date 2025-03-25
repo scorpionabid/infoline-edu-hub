@@ -1,8 +1,8 @@
 
-import { useForm as useFormHook } from './form';
+import { useForm as useHookForm } from 'react-hook-form';
 
 /**
- * useForm hook-u artıq hooks/form qovluğuna köçürülmüşdür.
+ * useForm hook-u artıq react-hook-form-dan birbaşa istifadə edir.
  * Bu fayl geriyə uyğunluq üçün saxlanılmışdır.
  */
-export const useForm = useFormHook;
+export const useForm = useHookForm;

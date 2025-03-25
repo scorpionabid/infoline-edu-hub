@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { UserFormData } from '@/types/user';
-import { useForm } from "@/components/ui/form";
+import { useForm as useHookForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -41,7 +41,7 @@ export const useUserForm = ({ initialData, onFormChange, passwordRequired }: Use
   });
 
   // Form hook istifadə et
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useHookForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData.name || '',
