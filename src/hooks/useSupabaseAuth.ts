@@ -104,7 +104,8 @@ export const useSupabaseAuth = () => {
         position: profileData?.position || null,
         language: profileData?.language || 'az',
         last_login: profileData?.last_login || null,
-        status: profileData?.status || 'active',
+        // Burada status tipini uyğun tipə çeviririk
+        status: (profileData?.status as 'active' | 'inactive' | 'blocked') || 'active',
         created_at: profileData?.created_at || new Date().toISOString(),
         updated_at: profileData?.updated_at || new Date().toISOString()
       };
