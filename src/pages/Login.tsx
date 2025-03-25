@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeToggle from '@/components/ThemeToggle';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -30,14 +31,6 @@ const Login = () => {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, location]);
-  
-  // Demo credentials
-  const demoCredentials = [
-    { role: 'SuperAdmin', email: 'superadmin@infoline.edu' },
-    { role: 'Region Admin', email: 'regionadmin@infoline.edu' },
-    { role: 'Sector Admin', email: 'sectoradmin@infoline.edu' },
-    { role: 'School Admin', email: 'schooladmin@infoline.edu' },
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,10 +59,37 @@ const Login = () => {
       setLoginInProgress(false);
     }
   };
-  
-  const setDemoUser = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('123456'); // Demo password
+
+  // SuperAdmin yaratma funksiyası
+  const createSuperAdmin = async () => {
+    try {
+      const response = await fetch(`${supabase.functions.url}/create-superadmin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success('SuperAdmin hesabı yaradıldı', {
+          description: 'Email: superadmin@infoline.az, Şifrə: Admin123!'
+        });
+        
+        // Avtomatik doldurma
+        setEmail('superadmin@infoline.az');
+        setPassword('Admin123!');
+      } else {
+        toast.error('SuperAdmin yaradılmadı', {
+          description: data.error || data.message || 'Bilinməyən xəta'
+        });
+      }
+    } catch (error) {
+      console.error('SuperAdmin yaratma xətası:', error);
+      toast.error('SuperAdmin yaratma zamanı xəta baş verdi');
+    }
   };
 
   // Yüklənmə zamanı göstəriləcək
@@ -166,30 +186,14 @@ const Login = () => {
           </Button>
         </form>
         
-        <div className="mt-8">
-          <p className="text-sm text-center text-muted-foreground mb-2">Demo Accounts (Password: 123456)</p>
-          <div className="grid grid-cols-2 gap-2">
-            {demoCredentials.map((demo) => (
-              <Button
-                key={demo.email}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => setDemoUser(demo.email)}
-              >
-                {demo.role}
-              </Button>
-            ))}
-          </div>
-        </div>
-        
         <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            {t('dontHaveAccount')}{' '}
-            <Button variant="link" className="p-0" onClick={() => navigate('/register')}>
-              {t('register')}
-            </Button>
-          </p>
+          <Button 
+            variant="outline" 
+            className="text-sm" 
+            onClick={createSuperAdmin}
+          >
+            SuperAdmin Hesabı Yarat
+          </Button>
         </div>
       </motion.div>
     </div>
