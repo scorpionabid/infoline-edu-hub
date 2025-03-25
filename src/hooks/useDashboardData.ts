@@ -7,21 +7,23 @@ import { useCategories } from './useCategories';
 import { useDataEntries } from './useDataEntries';
 import { School } from '@/types/school';
 import { useSchools } from './useSchools';
-import { Notification } from '@/types/notification';
+import { Notification, NotificationType } from '@/types/notification';
 
 export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'dueSoon' | 'overdue';
+
+export interface FormItem {
+  id: string;
+  title: string;
+  category: string;
+  status: FormStatus;
+  completionPercentage: number;
+  deadline?: string;
+}
 
 export interface DashboardData {
   totalSchools: number;
   activeSchools: number;
-  pendingForms: {
-    id: string;
-    title: string;
-    category: string;
-    status: FormStatus;
-    completionPercentage: number;
-    deadline?: string;
-  }[];
+  pendingForms: FormItem[];
   upcomingDeadlines: {
     category: string;
     date: string;
@@ -116,20 +118,13 @@ export interface SchoolAdminDashboardData extends DashboardData {
   categories?: number;
   totalForms?: number;
   completedForms?: number;
-  pendingForms?: number;
+  // pendingForms is now inherited from DashboardData as FormItem[]
   rejectedForms?: number;
   dueDates?: Array<{
     category: string;
     date: string;
   }>;
-  recentForms?: Array<{
-    id: string;
-    title: string;
-    category: string;
-    status: FormStatus;
-    completionPercentage: number;
-    deadline?: string;
-  }>;
+  recentForms?: Array<FormItem>;
 }
 
 export const useDashboardData = () => {
@@ -178,23 +173,27 @@ export const useDashboardData = () => {
     { id: "3", name: "28 May", region_id: "3" }
   ];
 
-  // Mock bildirişlər
+  // Mock bildirişlər - tipini NotificationType ilə uyğunlaşdırırıq
   const mockNotifications: Notification[] = [
     {
       id: "1",
+      type: "newCategory" as NotificationType,
       title: "Yeni kateqoriya yaradıldı",
       message: "Tədris məlumatları kateqoriyası yaradıldı",
-      time: new Date().toISOString(),
-      read: false,
-      type: "info"
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      userId: "1",
+      priority: "normal"
     },
     {
       id: "2",
+      type: "deadline" as NotificationType,
       title: "Məlumat tələb olunur",
       message: "Maliyyə məlumatlarını doldurmağınız xahiş olunur",
-      time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      read: true,
-      type: "warning"
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      isRead: true,
+      userId: "1",
+      priority: "high"
     }
   ];
 
@@ -218,7 +217,7 @@ export const useDashboardData = () => {
       const activeSchools = mockSchools.filter(school => school.status === 'active').length;
 
       // Gözləmədə olan formalar
-      let pendingForms = categories.map(category => {
+      let pendingFormItems = categories.map(category => {
         return {
           id: category.id,
           title: category.name,
@@ -289,7 +288,7 @@ export const useDashboardData = () => {
       setDashboardData({
         totalSchools,
         activeSchools,
-        pendingForms,
+        pendingForms: pendingFormItems,
         upcomingDeadlines,
         regionalStats,
         sectorStats
@@ -318,7 +317,8 @@ export const useDashboardData = () => {
             pending: 8,
             rejected: 5,
             notStarted: 3
-          }
+          },
+          pendingForms: pendingFormItems
         };
         setDashboardData(superAdminData);
       } else if (userRole === 'regionadmin') {
@@ -345,7 +345,8 @@ export const useDashboardData = () => {
             { name: "Binəqədi", completionRate: 65 },
             { name: "Yasamal", completionRate: 75 },
             { name: "Sabunçu", completionRate: 60 }
-          ]
+          ],
+          pendingForms: pendingFormItems
         };
         setDashboardData(regionAdminData);
       } else if (userRole === 'sectoradmin') {
@@ -359,10 +360,28 @@ export const useDashboardData = () => {
           pendingSchools: 3,
           approvedSchools: 12,
           rejectedSchools: 2,
-          notifications: mockNotifications
+          notifications: mockNotifications,
+          pendingForms: pendingFormItems
         };
         setDashboardData(sectorAdminData);
       } else if (userRole === 'schooladmin') {
+        const recentFormItems: FormItem[] = [
+          {
+            id: "form-1",
+            title: "Tədris planı",
+            category: "Tədris",
+            status: 'pending',
+            completionPercentage: 75
+          },
+          {
+            id: "form-2",
+            title: "Müəllim məlumatları",
+            category: "Kadr",
+            status: 'approved',
+            completionPercentage: 100
+          }
+        ];
+        
         const schoolAdminData: SchoolAdminDashboardData = {
           ...dashboardData,
           schoolName: "Şəhər Məktəbi #1",
@@ -380,28 +399,13 @@ export const useDashboardData = () => {
           categories: 5,
           totalForms: 15,
           completedForms: 10,
-          pendingForms: 3,
           rejectedForms: 2,
+          pendingForms: pendingFormItems,
           dueDates: [
             { category: "Tədris planı", date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() },
             { category: "Maliyyə hesabatı", date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }
           ],
-          recentForms: [
-            {
-              id: "form-1",
-              title: "Tədris planı",
-              category: "Tədris",
-              status: 'pending',
-              completionPercentage: 75
-            },
-            {
-              id: "form-2",
-              title: "Müəllim məlumatları",
-              category: "Kadr",
-              status: 'approved',
-              completionPercentage: 100
-            }
-          ]
+          recentForms: recentFormItems
         };
         setDashboardData(schoolAdminData);
       }

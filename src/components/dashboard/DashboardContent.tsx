@@ -15,6 +15,8 @@ import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
+import { Notification as DashboardNotification } from './NotificationsCard';
+import { Notification } from '@/types/notification';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -26,6 +28,17 @@ interface DashboardContentProps {
   };
   isLoading: boolean;
 }
+
+// Notification formatını uyğunlaşdırma funksiyası
+const adaptNotifications = (notifications: Notification[]): DashboardNotification[] => {
+  return notifications.map(notification => ({
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    time: notification.createdAt
+  }));
+};
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
   userRole,
@@ -66,21 +79,41 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     switch (userRole) {
       case 'superadmin': {
         const superAdminData = dashboardData as SuperAdminDashboardData;
-        return <SuperAdminDashboard data={superAdminData} />;
+        const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
+        const preparedData = {
+          ...superAdminData,
+          notifications: adaptedNotifications
+        };
+        return <SuperAdminDashboard data={preparedData} />;
       }
       case 'regionadmin': {
         const regionAdminData = dashboardData as RegionAdminDashboardData;
-        return <RegionAdminDashboard data={regionAdminData} />;
+        const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
+        const preparedData = {
+          ...regionAdminData,
+          notifications: adaptedNotifications
+        };
+        return <RegionAdminDashboard data={preparedData} />;
       }
       case 'sectoradmin': {
         const sectorAdminData = dashboardData as SectorAdminDashboardData;
-        return <SectorAdminDashboard data={sectorAdminData} />;
+        const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
+        const preparedData = {
+          ...sectorAdminData,
+          notifications: adaptedNotifications
+        };
+        return <SectorAdminDashboard data={preparedData} />;
       }
       case 'schooladmin': {
         const schoolAdminData = dashboardData as SchoolAdminDashboardData;
+        const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
+        const preparedData = {
+          ...schoolAdminData,
+          notifications: adaptedNotifications
+        };
         return (
           <SchoolAdminDashboard 
-            data={schoolAdminData}
+            data={preparedData}
             navigateToDataEntry={navigateToDataEntry}
             handleFormClick={handleFormClick}
           />
@@ -93,7 +126,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
   return (
     <div className="space-y-4">
-      {userRole === 'superadmin' && (
+      {userRole === 'superadmin' && chartData && (
         <DashboardTabs 
           activityData={chartData.activityData}
           regionSchoolsData={chartData.regionSchoolsData}

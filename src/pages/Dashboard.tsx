@@ -16,7 +16,11 @@ const Dashboard: React.FC = () => {
         <DashboardContent 
           userRole={userRole}
           dashboardData={dashboardData}
-          chartData={chartData}
+          chartData={chartData || {
+            activityData: [],
+            regionSchoolsData: [],
+            categoryCompletionData: []
+          }}
           isLoading={isLoading}
         />
       </div>

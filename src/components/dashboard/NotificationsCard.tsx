@@ -3,9 +3,10 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import NotificationItem from './NotificationItem';
 import { useLanguage } from '@/context/LanguageContext';
+import { Notification as TypedNotification } from '@/types/notification';
 
 export interface Notification {
-  id: number;
+  id: number | string;
   type: string;
   title: string;
   message: string;
@@ -16,8 +17,44 @@ interface NotificationsCardProps {
   notifications: Notification[];
 }
 
+// Notification tipi uyğunlaşdırma köməkçi funksiyası
+const adaptNotification = (notification: TypedNotification): Notification => {
+  return {
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    time: notification.createdAt,
+  };
+};
+
+// Əlavə olan adaptIfNeeded köməkçi funksiyası
+const adaptIfNeeded = (notification: any): Notification => {
+  // Əgər artıq uyğun formatdadırsa, birbaşa qaytarın
+  if (notification.time !== undefined) {
+    return notification as Notification;
+  }
+  
+  // TypedNotification formatında olduqda uyğunlaşdırın
+  if (notification.createdAt !== undefined) {
+    return adaptNotification(notification as TypedNotification);
+  }
+  
+  // Əgər heç bir şərt uyğun gəlmirsə, xəta vermək əvəzinə varsayılan dəyərlər təyin edin
+  return {
+    id: notification.id || 0,
+    type: notification.type || 'info',
+    title: notification.title || 'Bildiriş',
+    message: notification.message || '',
+    time: notification.createdAt || new Date().toISOString(),
+  };
+};
+
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
   const { t } = useLanguage();
+  
+  // Bildirişləri uyğunlaşdırın
+  const adaptedNotifications = notifications.map(notification => adaptIfNeeded(notification));
   
   return (
     <Card>
@@ -27,9 +64,15 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {notifications.map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} />
-          ))}
+          {adaptedNotifications.length > 0 ? (
+            adaptedNotifications.map((notification) => (
+              <NotificationItem key={notification.id} notification={notification} />
+            ))
+          ) : (
+            <div className="text-center text-muted-foreground py-4">
+              {t('noNotifications')}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
