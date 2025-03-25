@@ -30,15 +30,21 @@ const auth = {
   // Login səhifəsi
   login: "Daxil ol",
   loggingIn: "Daxil olunur...",
-  email: "E-poçt",
-  password: "Şifrə",
   missingCredentials: "Məlumatlar əksikdir",
   enterEmailAndPassword: "E-poçt və şifrə daxil edin",
   unexpectedError: "Gözlənilməz xəta baş verdi",
   // Theme
   light: "İşıqlı",
   dark: "Qaranlıq",
-  system: "Sistem"
+  system: "Sistem",
+  // Database errors
+  databaseError: "Verilənlər bazası xətası",
+  authError: "Giriş xətası",
+  userNotFound: "İstifadəçi tapılmadı",
+  invalidCredentials: "Yanlış e-poçt və ya şifrə",
+  emailNotConfirmed: "E-poçt ünvanı təsdiqlənməyib",
+  accessDenied: "Giriş qadağandır",
+  accountBlocked: "Hesabınız bloklanıb"
 };
 
 export default auth;
