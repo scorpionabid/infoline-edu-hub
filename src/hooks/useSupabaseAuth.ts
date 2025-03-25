@@ -9,53 +9,80 @@ export const useSupabaseAuth = () => {
   const [user, setUser] = useState<FullUserData | null>(null);
   const [session, setSession] = useState<any>(null);
   
-  // Session-da dəyişiklik olduqda yenilə
+  // Sessiya dəyişikliklərinə qulaq asaq və yeniləyək
   useEffect(() => {
-    // İlkin sessiya məlumatını əldə et
+    // İlkin yükləmə
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Auth inisializasiya başladı');
         
-        if (error) {
-          console.error('Sessiya əldə edərkən xəta:', error);
+        // Mövcud sessiyanı yoxlayaq
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Sessiya əldə etmə xətası:', sessionError);
+          setLoading(false);
+          return;
         }
         
-        setSession(session);
+        console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
+        setSession(currentSession);
         
-        if (session?.user) {
-          await fetchUserData(session.user.id);
+        // Əgər sessiya varsa, istifadəçi məlumatlarını əldə edək
+        if (currentSession?.user) {
+          try {
+            const userData = await fetchUserData(currentSession.user.id);
+            setUser(userData);
+          } catch (userError) {
+            console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
+            // Sessiya var amma user data yoxdur - silək
+            if (currentSession) {
+              await supabase.auth.signOut();
+              setSession(null);
+            }
+          }
         }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Auth inisializasiya xətası:', error);
-      } finally {
         setLoading(false);
       }
     };
     
-    // Auth state-ə qulaq asaq
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Auth state dəyişikliklərinə abunə olaq
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('Auth state dəyişdi:', event);
-      setSession(session);
+      setSession(newSession);
       
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      } else {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (newSession?.user) {
+          try {
+            const userData = await fetchUserData(newSession.user.id);
+            setUser(userData);
+          } catch (userError) {
+            console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+          }
+        }
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
-      
-      setLoading(false);
     });
     
+    // İnisializasiya edək
     initializeAuth();
     
+    // Cleanup
     return () => {
       subscription.unsubscribe();
     };
   }, []);
   
   // İstifadəçi məlumatlarını əldə et (profil və rol)
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string): Promise<FullUserData> => {
     try {
+      console.log(`Profil məlumatları alınır, istifadəçi ID: ${userId}`);
+      
       // Profil məlumatlarını əldə et
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -65,22 +92,24 @@ export const useSupabaseAuth = () => {
       
       if (profileError) {
         console.warn('Profil məlumatlarını əldə edərkən xəta:', profileError);
-        // Xəta olsa da davam edirik, amma boş profil məlumatları istifadə edirik
+        // Boş profil məlumatları ilə davam edək
       }
       
       // Default profil məlumatları
-      const profile = {
-        full_name: '',
-        avatar: null,
-        phone: null,
-        position: null,
-        language: 'az',
-        last_login: null,
-        status: 'active' as 'active' | 'inactive' | 'blocked',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        ...(profileData || {})
+      const profile: Profile = {
+        id: userId,
+        full_name: profileData?.full_name || '',
+        avatar: profileData?.avatar || null,
+        phone: profileData?.phone || null,
+        position: profileData?.position || null,
+        language: profileData?.language || 'az',
+        last_login: profileData?.last_login || null,
+        status: profileData?.status || 'active',
+        created_at: profileData?.created_at || new Date().toISOString(),
+        updated_at: profileData?.updated_at || new Date().toISOString()
       };
+      
+      console.log('Rol məlumatları alınır...');
       
       // Rol məlumatlarını əldə et
       const { data: roleData, error: roleError } = await supabase
@@ -91,29 +120,27 @@ export const useSupabaseAuth = () => {
       
       if (roleError) {
         console.warn('Rol məlumatlarını əldə edərkən xəta:', roleError);
-        throw roleError;
+        throw new Error(`Rol məlumatları əldə edilə bilmədi: ${roleError.message}`);
+      }
+      
+      if (!roleData) {
+        throw new Error('İstifadəçi üçün rol məlumatları tapılmadı');
       }
       
       // Auth istifadəçi məlumatlarını əldə et
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: authData, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
-        console.warn('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
+        console.warn('Auth istifadəçi məlumatlarını əldə edərkən xəta:', userError);
         throw userError;
       }
-      
-      // Status dəyərini düzgün tipə çevirək
-      const statusValue = profile.status || 'active';
-      const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-        ? statusValue as 'active' | 'inactive' | 'blocked'
-        : 'active' as 'active' | 'inactive' | 'blocked';
       
       // Tam istifadəçi datası
       const fullUserData: FullUserData = {
         id: userId,
-        email: userData.user.email || '',
+        email: authData.user?.email || '',
         full_name: profile.full_name,
-        role: roleData.role,
+        role: roleData.role as UserRole,
         region_id: roleData.region_id,
         sector_id: roleData.sector_id,
         school_id: roleData.school_id,
@@ -121,7 +148,7 @@ export const useSupabaseAuth = () => {
         position: profile.position,
         language: profile.language,
         avatar: profile.avatar,
-        status: typedStatus,
+        status: profile.status,
         last_login: profile.last_login,
         created_at: profile.created_at,
         updated_at: profile.updated_at,
@@ -143,11 +170,16 @@ export const useSupabaseAuth = () => {
         }
       };
       
-      setUser(fullUserData);
+      console.log('İstifadəçi məlumatları uğurla əldə edildi:', {
+        id: fullUserData.id,
+        email: fullUserData.email,
+        role: fullUserData.role
+      });
+      
       return fullUserData;
     } catch (error) {
       console.error('İstifadəçi məlumatlarını əldə edərkən xəta baş verdi:', error);
-      return null;
+      throw error;
     }
   };
   
@@ -158,6 +190,15 @@ export const useSupabaseAuth = () => {
       
       console.log(`Giriş edilir: ${email}`);
       
+      // Sessiya əldə edək
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionData && sessionData.session) {
+        console.log('Mövcud sessiya var, əvvəlcə çıxış edirik');
+        await supabase.auth.signOut();
+      }
+      
+      // Login cəhdi edək
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -168,19 +209,27 @@ export const useSupabaseAuth = () => {
         throw error;
       }
       
-      console.log('Giriş uğurlu:', data);
+      console.log('Giriş uğurludur, məlumatlar:', data ? 'Əldə edildi' : 'Yoxdur');
       
-      // Update last login
-      if (data.user) {
+      if (!data || !data.user) {
+        throw new Error('İstifadəçi məlumatları əldə edilmədi');
+      }
+      
+      // Last login yeniləyək
+      try {
         await supabase
           .from('profiles')
           .update({ last_login: new Date().toISOString() })
           .eq('id', data.user.id);
+      } catch (updateError) {
+        console.warn('Last login yeniləmə xətası:', updateError);
+        // Bu xətanı ignore edək və davam edək
       }
       
       return data;
     } catch (error: any) {
       console.error('Giriş zamanı xəta:', error);
+      
       let errorMessage = 'Giriş zamanı xəta baş verdi';
       
       if (error.message) {
@@ -190,6 +239,8 @@ export const useSupabaseAuth = () => {
           errorMessage = 'E-poçt ünvanınız təsdiqlənməyib';
         } else if (error.message.includes('Database error')) {
           errorMessage = 'Verilənlər bazası xətası. Zəhmət olmasa administratora müraciət edin.';
+        } else {
+          errorMessage = error.message;
         }
       }
       
@@ -197,8 +248,7 @@ export const useSupabaseAuth = () => {
         description: errorMessage
       });
       
-      setLoading(false);
-      return null;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -213,6 +263,8 @@ export const useSupabaseAuth = () => {
       
       setUser(null);
       setSession(null);
+      
+      toast.success('Sistemdən uğurla çıxış edildi');
     } catch (error: any) {
       console.error('Çıxış zamanı xəta:', error);
       toast.error('Çıxış uğursuz oldu', {
@@ -259,7 +311,7 @@ export const useSupabaseAuth = () => {
         description: errorMessage
       });
       
-      return null;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -287,7 +339,7 @@ export const useSupabaseAuth = () => {
         description: error.message
       });
       
-      return false;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -306,7 +358,8 @@ export const useSupabaseAuth = () => {
       if (error) throw error;
       
       // Yenilənmiş istifadəçi məlumatlarını əldə et
-      await fetchUserData(user.id);
+      const updatedUser = await fetchUserData(user.id);
+      setUser(updatedUser);
       
       toast.success('Profil yeniləndi', {
         description: 'Məlumatlarınız uğurla yeniləndi'
@@ -320,7 +373,7 @@ export const useSupabaseAuth = () => {
         description: error.message
       });
       
-      return false;
+      throw error;
     }
   };
   
@@ -345,10 +398,10 @@ export const useSupabaseAuth = () => {
         description: error.message
       });
       
-      return false;
+      throw error;
     }
   };
-  
+
   return {
     user,
     session,

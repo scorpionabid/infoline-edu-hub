@@ -19,10 +19,11 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('superadmin@infoline.az');
+  const [password, setPassword] = useState('Admin123!');
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   // Daxil olmuş istifadəçini yönləndirmə
   useEffect(() => {
@@ -34,6 +35,9 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Xəta mesajını sıfırlayaq
+    setErrorMessage('');
     
     if (!email || !password) {
       toast.error(t('missingCredentials'), {
@@ -47,7 +51,7 @@ const Login = () => {
     try {
       console.log('Login prosesi başladı');
       
-      // Supabase ilə birbaşa giriş edərək xətanı daha yaxşı idarə etmək
+      // Birbaşa Supabase client ilə giriş etməyə cəhd
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -56,30 +60,86 @@ const Login = () => {
       if (error) {
         console.error('Supabase giriş xətası:', error);
         
-        let errorMessage = 'Giriş zamanı xəta baş verdi';
+        let errorMsg = '';
         
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Yanlış e-poçt və ya şifrə';
+        if (error.status === 500) {
+          errorMsg = t('databaseError');
+        } else if (error.message.includes('Invalid login credentials')) {
+          errorMsg = t('invalidCredentials');
         } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'E-poçt ünvanınız təsdiqlənməyib';
-        } else if (error.message.includes('Database error')) {
-          errorMessage = 'Verilənlər bazası xətası. Supabase tərəfində problem ola bilər.';
+          errorMsg = t('emailNotConfirmed');
+        } else {
+          errorMsg = error.message;
         }
         
-        toast.error('Giriş uğursuz oldu', {
-          description: errorMessage
+        setErrorMessage(errorMsg);
+        
+        toast.error(t('authError'), {
+          description: errorMsg
         });
         return;
       }
       
-      console.log('Supabase giriş uğurlu', data);
-      toast.success('Giriş uğurlu oldu');
+      if (data && data.user) {
+        console.log('Supabase giriş uğurludur', data);
+        toast.success(t('loginSuccess'));
+      } else {
+        console.error('Login uğursuz oldu: İstifadəçi məlumatları əldə edilmədi');
+        setErrorMessage(t('userNotFound'));
+        toast.error(t('loginFailed'));
+      }
       
-      // useEffect yönləndirəcək
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      setErrorMessage(error.message || t('unexpectedError'));
       toast.error(t('loginFailed'), {
-        description: t('unexpectedError')
+        description: error.message || t('unexpectedError')
+      });
+    } finally {
+      setLoginInProgress(false);
+    }
+  };
+
+  // Manual login attempt
+  const handleDirectLogin = async () => {
+    setLoginInProgress(true);
+    setErrorMessage('');
+    
+    try {
+      // Direct login with Admin API
+      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
+      
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession() || ''}`
+        },
+        body: JSON.stringify({
+          email: 'superadmin@infoline.az',
+          password: 'Admin123!'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Direct login failed');
+      }
+      
+      const data = await response.json();
+      
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+        toast.success('Direct login successful');
+        navigate('/dashboard');
+      } else {
+        throw new Error('No session returned');
+      }
+    } catch (error: any) {
+      console.error('Direct login error:', error);
+      setErrorMessage(error.message || 'Unexpected error during direct login');
+      toast.error('Direct login failed', {
+        description: error.message || 'Unexpected error'
       });
     } finally {
       setLoginInProgress(false);
@@ -123,9 +183,15 @@ const Login = () => {
           <p className="text-muted-foreground mt-2">Məktəb Məlumatları Toplama Sistemi</p>
         </div>
         
+        {errorMessage && (
+          <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-4 text-sm">
+            {errorMessage}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email">{t('email')}</Label>
+            <Label htmlFor="email">{t('emailAddress')}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -179,6 +245,18 @@ const Login = () => {
             {loginInProgress ? t('loggingIn') : t('login')}
           </Button>
         </form>
+        
+        <div className="mt-6 pt-6 border-t border-border">
+          <h3 className="text-sm font-medium mb-2">Alternativ giriş üsulu</h3>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleDirectLogin}
+            disabled={loginInProgress}
+          >
+            Birbaşa Supabase ilə daxil ol
+          </Button>
+        </div>
         
         <div className="mt-4 text-center text-sm text-muted-foreground">
           <p>SuperAdmin: <span className="font-medium">superadmin@infoline.az</span></p>

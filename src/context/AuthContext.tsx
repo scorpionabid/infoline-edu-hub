@@ -48,13 +48,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log(`AuthContext: ${email} ilə giriş edilir...`);
       const data = await signIn(email, password);
-      return !!data;
+      
+      if (!data || !data.user) {
+        console.error('AuthContext: Giriş uğursuz oldu - istifadəçi məlumatları yoxdur');
+        return false;
+      }
+      
+      console.log('AuthContext: Giriş uğurlu oldu');
+      return true;
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Giriş zamanı xəta baş verdi', {
-        description: 'Zəhmət olmasa bir az sonra yenidən cəhd edin'
-      });
+      console.error('AuthContext: Login error:', error);
+      // Əlavə notification göstərmirik, əsas xəta signIn funksiyasında göstərilir
       return false;
     }
   };
@@ -62,7 +68,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = () => {
     signOut();
-    toast.info('Uğurla sistemdən çıxış edildi');
   };
 
   // Update user function
