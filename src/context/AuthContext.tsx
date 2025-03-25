@@ -17,7 +17,7 @@ interface AuthState {
 // Auth context interface
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
 }
 
@@ -66,8 +66,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
-    signOut();
+  const logout = async () => {
+    try {
+      await signOut();
+      console.log('AuthContext: İstifadəçi uğurla çıxış etdi');
+    } catch (error) {
+      console.error('AuthContext: Çıxış zamanı xəta:', error);
+      toast.error('Çıxış zamanı xəta baş verdi');
+    }
   };
 
   // Update user function
@@ -99,6 +105,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return false;
     }
   };
+
+  // Hər dəfə auth vəziyyəti dəyişdikdə log edək
+  useEffect(() => {
+    console.log('Auth vəziyyəti dəyişdi:', {
+      isAuthenticated: !!user,
+      isLoading: loading,
+      user: user ? { id: user.id, email: user.email, role: user.role } : null
+    });
+  }, [user, loading]);
 
   return (
     <AuthContext.Provider

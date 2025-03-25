@@ -14,11 +14,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Direct-login funksiyası çağırıldı")
+    
     // URL və key almaq
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY tapılmadı")
       return new Response(
         JSON.stringify({ error: 'Server konfiqurasyonu səhvdir' }),
         { 
@@ -29,9 +32,14 @@ serve(async (req) => {
     }
 
     // Login məlumatlarını alıb
-    const { email, password } = await req.json()
+    const requestData = await req.json()
+    console.log("Alınan istək məlumatları:", JSON.stringify(requestData, null, 2))
+    
+    const email = requestData.email
+    const password = requestData.password
     
     if (!email || !password) {
+      console.error("Email və ya şifrə təqdim edilməyib")
       return new Response(
         JSON.stringify({ error: 'Email və şifrə tələb olunur' }),
         { 
@@ -40,6 +48,8 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log(`${email} üçün giriş cəhdi edilir`)
 
     // Admin client yaradaq
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -66,8 +76,11 @@ serve(async (req) => {
       )
     }
 
+    console.log("Uğurla daxil olundu, istifadəçi ID:", data.user?.id)
+
     // User-ın olması və sessiya yaradılması
     if (!data.user || !data.session) {
+      console.error("İstifadəçi və ya sessiya yaradıla bilmədi")
       return new Response(
         JSON.stringify({ error: 'İstifadəçi və ya sessiya yaradıla bilmədi' }),
         { 

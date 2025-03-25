@@ -51,49 +51,33 @@ const Login = () => {
     try {
       console.log('Login prosesi başladı');
       
-      // Birbaşa Supabase client ilə giriş etməyə cəhd
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Auth context vasitəsilə giriş
+      const success = await login(email, password);
       
-      if (error) {
-        console.error('Supabase giriş xətası:', error);
-        
-        let errorMsg = '';
-        
-        if (error.status === 500) {
-          errorMsg = t('databaseError');
-        } else if (error.message.includes('Invalid login credentials')) {
-          errorMsg = t('invalidCredentials');
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMsg = t('emailNotConfirmed');
-        } else {
-          errorMsg = error.message;
-        }
-        
-        setErrorMessage(errorMsg);
-        
-        toast.error(t('authError'), {
-          description: errorMsg
-        });
-        return;
-      }
-      
-      if (data && data.user) {
-        console.log('Supabase giriş uğurludur', data);
+      if (success) {
         toast.success(t('loginSuccess'));
+        // Yönləndirilmə auth context-in useEffect-i tərəfindən ediləcək
       } else {
-        console.error('Login uğursuz oldu: İstifadəçi məlumatları əldə edilmədi');
-        setErrorMessage(t('userNotFound'));
-        toast.error(t('loginFailed'));
+        setErrorMessage(t('loginFailed'));
       }
-      
     } catch (error: any) {
       console.error('Login error:', error);
-      setErrorMessage(error.message || t('unexpectedError'));
+      
+      let errorMsg = error.message || t('unexpectedError');
+      
+      // Daha spesifik xəta mesajları
+      if (error.status === 500) {
+        errorMsg = t('databaseError');
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMsg = t('invalidCredentials');
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMsg = t('emailNotConfirmed');
+      }
+      
+      setErrorMessage(errorMsg);
+      
       toast.error(t('loginFailed'), {
-        description: error.message || t('unexpectedError')
+        description: errorMsg
       });
     } finally {
       setLoginInProgress(false);
@@ -106,6 +90,8 @@ const Login = () => {
     setErrorMessage('');
     
     try {
+      console.log('Birbaşa login cəhdi edilir...');
+      
       // Direct login with Admin API
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
       
@@ -113,33 +99,40 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession() || ''}`
         },
         body: JSON.stringify({
-          email: 'superadmin@infoline.az',
-          password: 'Admin123!'
+          email: email || 'superadmin@infoline.az',
+          password: password || 'Admin123!'
         })
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Direct login failed');
+        console.error('Direct login xətası:', errorData);
+        throw new Error(errorData.error || 'Birbaşa login uğursuz oldu');
       }
       
       const data = await response.json();
+      console.log('Direct login cavabı:', data);
       
       if (data.session) {
-        await supabase.auth.setSession(data.session);
-        toast.success('Direct login successful');
+        // Sessiyanı manual olaraq təyin edək
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        toast.success('Birbaşa login uğurlu oldu');
         navigate('/dashboard');
       } else {
-        throw new Error('No session returned');
+        throw new Error('Sessiya qaytarılmadı');
       }
     } catch (error: any) {
       console.error('Direct login error:', error);
-      setErrorMessage(error.message || 'Unexpected error during direct login');
-      toast.error('Direct login failed', {
-        description: error.message || 'Unexpected error'
+      setErrorMessage(error.message || 'Birbaşa login zamanı gözlənilməz xəta');
+      
+      toast.error('Birbaşa login uğursuz oldu', {
+        description: error.message || 'Gözlənilməz xəta'
       });
     } finally {
       setLoginInProgress(false);
