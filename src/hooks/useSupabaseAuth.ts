@@ -70,6 +70,12 @@ export const useSupabaseAuth = () => {
       
       if (userError) throw userError;
       
+      // Status dəyərini düzgün tipə çevirək
+      const statusValue = profileData.status || 'active';
+      const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
+        ? statusValue as 'active' | 'inactive' | 'blocked'
+        : 'active' as 'active' | 'inactive' | 'blocked';
+      
       // Tam istifadəçi datası
       const fullUserData: FullUserData = {
         id: userId,
@@ -83,7 +89,7 @@ export const useSupabaseAuth = () => {
         position: profileData.position,
         language: profileData.language || 'az',
         avatar: profileData.avatar,
-        status: profileData.status || 'active' as 'active' | 'inactive' | 'blocked',
+        status: typedStatus,
         last_login: profileData.last_login,
         created_at: profileData.created_at,
         updated_at: profileData.updated_at,

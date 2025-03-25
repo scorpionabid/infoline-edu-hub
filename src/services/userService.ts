@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CreateUserData, 
@@ -89,22 +88,44 @@ export const getUsers = async (
     const formattedUsers: FullUserData[] = data.map(item => {
       const profile = item.profiles;
       
+      // Status dəyərini düzgün tipə çevirək
+      const statusValue = profile?.status || 'active';
+      const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
+        ? statusValue as 'active' | 'inactive' | 'blocked'
+        : 'active' as 'active' | 'inactive' | 'blocked';
+      
       return {
         id: item.user_id,
         email: emails[item.user_id] || '',
-        full_name: profile.full_name,
+        full_name: profile?.full_name || '',
         role: item.role,
         region_id: item.region_id,
         sector_id: item.sector_id,
         school_id: item.school_id,
-        phone: profile.phone,
-        position: profile.position,
-        language: profile.language || 'az',
-        avatar: profile.avatar,
-        status: profile.status,
-        last_login: profile.last_login,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at
+        phone: profile?.phone,
+        position: profile?.position,
+        language: profile?.language || 'az',
+        avatar: profile?.avatar,
+        status: typedStatus,
+        last_login: profile?.last_login,
+        created_at: profile?.created_at || new Date().toISOString(),
+        updated_at: profile?.updated_at || new Date().toISOString(),
+        
+        // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+        name: profile?.full_name || '',
+        regionId: item.region_id,
+        sectorId: item.sector_id,
+        schoolId: item.school_id,
+        lastLogin: profile?.last_login,
+        createdAt: profile?.created_at || new Date().toISOString(),
+        updatedAt: profile?.updated_at || new Date().toISOString(),
+        
+        // Əlavə tətbiq xüsusiyyətləri
+        twoFactorEnabled: false,
+        notificationSettings: {
+          email: true,
+          system: true
+        }
       };
     });
     
@@ -142,6 +163,12 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
     // Mock email - həqiqi layihədə server-side edge function ilə əldə ediləcək
     const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
     
+    // Status dəyərini düzgün tipə çevirək
+    const statusValue = profileData.status || 'active';
+    const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
+      ? statusValue as 'active' | 'inactive' | 'blocked'
+      : 'active' as 'active' | 'inactive' | 'blocked';
+    
     // Tam istifadəçi məlumatlarını birləşdiririk
     const fullUserData: FullUserData = {
       id: userId,
@@ -155,10 +182,26 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       position: profileData.position,
       language: profileData.language || 'az',
       avatar: profileData.avatar,
-      status: profileData.status,
+      status: typedStatus,
       last_login: profileData.last_login,
       created_at: profileData.created_at,
-      updated_at: profileData.updated_at
+      updated_at: profileData.updated_at,
+      
+      // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+      name: profileData.full_name,
+      regionId: roleData.region_id,
+      sectorId: roleData.sector_id,
+      schoolId: roleData.school_id,
+      lastLogin: profileData.last_login,
+      createdAt: profileData.created_at,
+      updatedAt: profileData.updated_at,
+      
+      // Əlavə tətbiq xüsusiyyətləri
+      twoFactorEnabled: false,
+      notificationSettings: {
+        email: true,
+        system: true
+      }
     };
     
     return fullUserData;
@@ -188,7 +231,7 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
         position: userData.position,
         language: userData.language || 'az',
         avatar: userData.avatar,
-        status: userData.status || 'active'
+        status: (userData.status || 'active') as 'active' | 'inactive' | 'blocked'
       });
     
     if (profileError) throw profileError;
@@ -236,6 +279,14 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
     if (updates.language !== undefined) profileUpdates.language = updates.language;
     if (updates.avatar !== undefined) profileUpdates.avatar = updates.avatar;
     if (updates.status !== undefined) profileUpdates.status = updates.status;
+    
+    // Status dəyərini düzgün tipə çevirək, əgər varsa
+    if (updates.status !== undefined) {
+      const statusValue = updates.status;
+      updates.status = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
+        ? statusValue 
+        : 'active' as 'active' | 'inactive' | 'blocked';
+    }
     
     // Profil yenilə
     if (Object.keys(profileUpdates).length > 0) {
