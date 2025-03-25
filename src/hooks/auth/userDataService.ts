@@ -19,16 +19,20 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     console.log(`İstifadəçi email: ${userEmail}`);
     
     // Profil məlumatlarını əldə et
-    let { data: profileData, error: profileError } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle(); // single() əvəzinə maybeSingle() istifadə edirik
     
     // Profil tapılmadı və ya xəta varsa
-    if (profileError || !profileData) {
-      console.warn('Profil məlumatlarını əldə edərkən xəta və ya profil tapılmadı:', profileError);
-      
+    if (profileError) {
+      console.error('Profil məlumatlarını əldə edərkən xəta:', profileError);
+      throw profileError;
+    }
+    
+    // Profil tapılmadısa, yenisini yaradaq
+    if (!profileData) {
       console.log('Profil yoxdur, yenisini yaradırıq');
       
       // Yeni profil yarat
@@ -70,26 +74,36 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     console.log('Rol məlumatları alınır...');
     
     // user_roles cədvəlindən rol məlumatlarını əldə edək
-    let { data: roleData, error: roleError } = await supabase
+    const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle(); // single() əvəzinə maybeSingle() istifadə edirik
     
     // Əgər user_roles-da tapılmadısa, bir rol yaradaq
-    if (roleError || !roleData) {
+    if (roleError) {
+      console.error('Rol məlumatlarını əldə edərkən xəta:', roleError);
+      throw roleError;
+    }
+    
+    let userRole: UserRole = 'schooladmin'; // Default rol
+    let regionId: string | undefined = undefined;
+    let sectorId: string | undefined = undefined;
+    let schoolId: string | undefined = undefined;
+    
+    if (!roleData) {
       console.log('user_roles cədvəlində rol tapılmadı, yeni rol yaradılır...');
       
       // Superadmin üçün xüsusi yoxlama
       const isSuperAdmin = userEmail === 'superadmin@infoline.az';
-      const defaultRole: UserRole = isSuperAdmin ? 'superadmin' : 'schooladmin';
+      userRole = isSuperAdmin ? 'superadmin' : 'schooladmin';
       
       // Yeni rol yarat
       const { data: newRoleData, error: createRoleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: defaultRole,
+          role: userRole,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -101,25 +115,25 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
         throw new Error(`Rol məlumatları əldə edilə bilmədi: ${createRoleError.message}`);
       }
       
-      roleData = newRoleData;
+      // Rol məlumatlarını təyin et
+      userRole = normalizeRole(newRoleData.role);
+    } else {
+      // Mövcud rol məlumatlarını əldə et
+      userRole = normalizeRole(roleData.role);
+      regionId = roleData.region_id;
+      sectorId = roleData.sector_id;
+      schoolId = roleData.school_id;
     }
-    
-    if (!roleData) {
-      throw new Error('İstifadəçi üçün rol məlumatları tapılmadı');
-    }
-    
-    // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
-    const normalizedRole = normalizeRole(roleData.role);
     
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {
       id: userId,
       email: userEmail,
       full_name: profile.full_name,
-      role: normalizedRole as UserRole,
-      region_id: roleData.region_id,
-      sector_id: roleData.sector_id,
-      school_id: roleData.school_id,
+      role: userRole,
+      region_id: regionId,
+      sector_id: sectorId,
+      school_id: schoolId,
       phone: profile.phone,
       position: profile.position,
       language: profile.language,
@@ -131,9 +145,9 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       
       // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
       name: profile.full_name,
-      regionId: roleData.region_id,
-      sectorId: roleData.sector_id,
-      schoolId: roleData.school_id,
+      regionId: regionId,
+      sectorId: sectorId,
+      schoolId: schoolId,
       lastLogin: profile.last_login,
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,
@@ -160,7 +174,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
 };
 
 // Rol adını normalize et (kiçik hərflərə çevir, xüsusi simvolları təmizlə)
-const normalizeRole = (role: string): string => {
+const normalizeRole = (role: string): UserRole => {
   if (!role) return 'schooladmin'; // Default rol
   
   // Əvvəlcə string-ə çevir (əgər obyekt və ya başqa bir tip olarsa)
