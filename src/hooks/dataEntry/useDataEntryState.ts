@@ -51,11 +51,11 @@ export const useDataEntryState = (initialCategoryId?: string | null) => {
           return {
             id: category.id,
             name: category.name,
-            description: category.description,
+            description: category.description || '',
             deadline: category.deadline,
-            status: category.status,
-            priority: category.priority,
-            assignment: category.assignment,
+            status: category.status === 'active' ? 'active' : 'inactive',
+            priority: category.priority || 0,
+            assignment: category.assignment === 'sectors' ? 'sectors' : 'all',
             createdAt: category.created_at,
             columns: columnsData.map(column => ({
               id: column.id,
@@ -63,12 +63,12 @@ export const useDataEntryState = (initialCategoryId?: string | null) => {
               name: column.name,
               type: column.type,
               isRequired: column.is_required,
-              placeholder: column.placeholder,
-              helpText: column.help_text,
+              placeholder: column.placeholder || '',
+              helpText: column.help_text || '',
               options: column.options,
-              order: column.order_index,
-              status: column.status,
-              defaultValue: column.default_value,
+              order: column.order_index || 0,
+              status: column.status === 'active' ? 'active' : 'inactive',
+              defaultValue: column.default_value || '',
               validation: column.validation
             }))
           };
@@ -93,15 +93,15 @@ export const useDataEntryState = (initialCategoryId?: string | null) => {
               if (data && data.length > 0) {
                 // Əgər bütün məlumatlar approved isə, kateqoriya approved statusunu alır
                 if (data.every(item => item.status === 'approved')) {
-                  return { ...category, status: 'approved' };
+                  return { ...category, status: 'approved' as 'active' | 'inactive' };
                 }
                 // Əgər hər hansı məlumat rejected isə, kateqoriya rejected statusunu alır
                 else if (data.some(item => item.status === 'rejected')) {
-                  return { ...category, status: 'rejected' };
+                  return { ...category, status: 'rejected' as 'active' | 'inactive' };
                 }
                 // Əks halda, pending statusu verilir
                 else {
-                  return { ...category, status: 'pending' };
+                  return { ...category, status: 'pending' as 'active' | 'inactive' };
                 }
               }
 

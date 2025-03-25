@@ -254,10 +254,12 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         throw new Error('Category ID and School ID are required');
       }
 
-      const { data, error } = await supabase.rpc('submit_category_for_approval', {
-        p_category_id: categoryId,
-        p_school_id: schoolId
-      });
+      // Supabase RPC funksiyasını çağırmaq üçün düzgün sintaksis
+      const { data, error } = await supabase
+        .rpc('submit_category_for_approval', {
+          p_category_id: categoryId,
+          p_school_id: schoolId
+        });
 
       if (error) throw error;
       
