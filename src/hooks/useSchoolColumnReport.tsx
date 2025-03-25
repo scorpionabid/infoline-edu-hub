@@ -88,7 +88,7 @@ export interface SchoolColumnReport {
   getSelectedSchoolsData: () => SchoolColumnData[];
 }
 
-export const useSchoolColumnReport = (schoolId: string): SchoolColumnReport => {
+export const useSchoolColumnReport = (schoolId?: string): SchoolColumnReport => {
   const [school, setSchool] = useState<School>(mockSchool);
   const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(mockCategories[0]?.id || '');

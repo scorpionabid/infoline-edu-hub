@@ -95,7 +95,7 @@ const SchoolColumnTable: React.FC = () => {
     selectAllSchools,
     deselectAllSchools,
     getSelectedSchoolsData
-  } = useSchoolColumnReport();
+  } = useSchoolColumnReport("");
 
   const selectedCategory = React.useMemo(() => {
     return categories.find(cat => cat.id === selectedCategoryId);

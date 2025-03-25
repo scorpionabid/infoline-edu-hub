@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
+  DashboardData,
   SuperAdminDashboardData, 
   RegionAdminDashboardData,
   SectorAdminDashboardData,
