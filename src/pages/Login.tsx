@@ -24,11 +24,13 @@ const Login = () => {
   const [password, setPassword] = useState('Admin123!');
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
+  const [directLoginError, setDirectLoginError] = useState<string | null>(null);
   
   // Daxil olmuş istifadəçini yönləndirmə
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       const from = location.state?.from?.pathname || '/dashboard';
+      console.log(`İstifadəçi auth olundu, "${from}" səhifəsinə yönləndirilir`);
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, location]);
@@ -38,13 +40,17 @@ const Login = () => {
     if (error) {
       clearError();
     }
+    if (directLoginError) {
+      setDirectLoginError(null);
+    }
   }, [email, password, error, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Yeni girişdən əvvəl xətanı təmizləyək
+    // Yeni girişdən əvvəl xətaları təmizləyək
     clearError();
+    setDirectLoginError(null);
     
     if (!email || !password) {
       toast.error(t('missingCredentials'), {
@@ -62,6 +68,7 @@ const Login = () => {
       const success = await login(email, password);
       
       if (success) {
+        console.log('Login uğurlu oldu');
         toast.success(t('loginSuccess'));
         // Yönləndirilmə auth context-in useEffect-i tərəfindən ediləcək
       }
@@ -77,9 +84,13 @@ const Login = () => {
   const handleDirectLogin = async () => {
     setLoginInProgress(true);
     clearError();
+    setDirectLoginError(null);
     
     try {
       console.log('Birbaşa login cəhdi edilir...');
+      
+      // Əvvəlcə mövcud sessiyaları təmizləyək
+      await supabase.auth.signOut();
       
       // Direct login with Admin API
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
@@ -88,6 +99,7 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`,
         },
         body: JSON.stringify({
           email: email || 'superadmin@infoline.az',
@@ -121,6 +133,7 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Direct login error:', error);
+      setDirectLoginError(error.message || 'Gözlənilməz xəta');
       toast.error('Birbaşa login uğursuz oldu', {
         description: error.message || 'Gözlənilməz xəta'
       });
@@ -170,6 +183,13 @@ const Login = () => {
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4 mr-2" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {directLoginError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>{directLoginError}</AlertDescription>
           </Alert>
         )}
         

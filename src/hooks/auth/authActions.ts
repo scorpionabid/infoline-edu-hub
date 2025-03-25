@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
@@ -31,10 +32,33 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     
     // Last login yeniləyək
     try {
-      await supabase
+      // Profilin olub-olmadığını yoxlayaq
+      const { data: profileData, error: profileCheckError } = await supabase
         .from('profiles')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', data.user.id);
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profileCheckError && profileCheckError.code === 'PGRST116') {
+        // Profil tapılmadı, yenisini yaradaq
+        await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            full_name: data.user.email?.split('@')[0] || 'İstifadəçi',
+            language: 'az',
+            status: 'active',
+            last_login: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      } else {
+        // Profil var, last_login yeniləyək
+        await supabase
+          .from('profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
+      }
     } catch (updateError) {
       console.warn('Last login yeniləmə xətası:', updateError);
       // Bu xətanı ignore edək və davam edək
@@ -164,12 +188,34 @@ export const updateProfile = async (updates: Partial<Profile>, userId: string, f
   try {
     if (!userId) throw new Error('İstifadəçi daxil olmayıb');
     
-    const { error } = await supabase
+    // Profilin olub-olmadığını yoxlayaq
+    const { data: profileData, error: profileCheckError } = await supabase
       .from('profiles')
-      .update(updates)
-      .eq('id', userId);
+      .select('id')
+      .eq('id', userId)
+      .single();
     
-    if (error) throw error;
+    if (profileCheckError && profileCheckError.code === 'PGRST116') {
+      // Profil tapılmadı, yenisini yaradaq
+      await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: updates.full_name || 'İstifadəçi',
+          language: updates.language || 'az',
+          status: updates.status || 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+    } else {
+      // Profil var, yeniləyək
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      
+      if (error) throw error;
+    }
     
     // Yenilənmiş istifadəçi məlumatlarını əldə et
     const updatedUser = await fetchUserData(userId);

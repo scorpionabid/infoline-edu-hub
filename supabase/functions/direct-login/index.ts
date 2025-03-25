@@ -23,7 +23,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY tapılmadı")
       return new Response(
-        JSON.stringify({ error: 'Server konfiqurasyonu səhvdir' }),
+        JSON.stringify({ error: 'Server konfiqurasiyonu səhvdir' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -31,7 +31,11 @@ serve(async (req) => {
       )
     }
 
-    // Login məlumatlarını alıb
+    // Əgər authorization header varsa, onu əldə edək
+    const authHeader = req.headers.get('authorization')
+    console.log("Authorization header:", authHeader ? 'Mövcuddur' : 'Yoxdur')
+    
+    // Login məlumatlarını alaq
     const requestData = await req.json()
     console.log("Alınan istək məlumatları:", JSON.stringify({
       email: requestData.email,
