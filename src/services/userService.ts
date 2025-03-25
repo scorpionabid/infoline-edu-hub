@@ -79,7 +79,6 @@ export const getUsers = async (
     const emails: Record<string, string> = {};
     
     // Mock data üçün e-poçtları təyin edirik
-    // Həqiqi layihədə bu, server-side edge function ilə əldə ediləcək
     for (const userId of userIds) {
       const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
       emails[userId] = mockEmail;
@@ -87,7 +86,24 @@ export const getUsers = async (
     
     // Tam istifadəçi məlumatlarını birləşdiririk
     const formattedUsers: FullUserData[] = data.map(item => {
-      const profile = item.profiles || {}; // Default boş obyekt təqdim edirik
+      // Default profil məlumatları
+      const defaultProfile = {
+        full_name: '',
+        avatar: null,
+        phone: null,
+        position: null,
+        language: 'az',
+        last_login: null,
+        status: 'active' as 'active' | 'inactive' | 'blocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Supabase-dən gələn profil məlumatları
+      const profile = {
+        ...defaultProfile,
+        ...(item.profiles || {})
+      };
       
       // Status dəyərini düzgün tipə çevirək
       const statusValue = profile.status || 'active';
@@ -95,34 +111,31 @@ export const getUsers = async (
         ? statusValue as 'active' | 'inactive' | 'blocked'
         : 'active' as 'active' | 'inactive' | 'blocked';
       
-      const created_at = profile.created_at || new Date().toISOString();
-      const updated_at = profile.updated_at || new Date().toISOString();
-      
       return {
         id: item.user_id,
         email: emails[item.user_id] || '',
-        full_name: profile.full_name || '',
+        full_name: profile.full_name,
         role: item.role,
         region_id: item.region_id,
         sector_id: item.sector_id,
         school_id: item.school_id,
         phone: profile.phone,
         position: profile.position,
-        language: profile.language || 'az',
+        language: profile.language,
         avatar: profile.avatar,
         status: typedStatus,
         last_login: profile.last_login,
-        created_at,
-        updated_at,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profile.full_name || '',
+        name: profile.full_name,
         regionId: item.region_id,
         sectorId: item.sector_id,
         schoolId: item.school_id,
         lastLogin: profile.last_login,
-        createdAt: created_at,
-        updatedAt: updated_at,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri
         twoFactorEnabled: false,
@@ -167,8 +180,19 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       // Xəta olsa da davam edirik, amma boş profil məlumatları istifadə edirik
     }
     
-    // Əgər profileData null və ya undefined isə, boş obyekt istifadə edirik
-    const profile = profileData || {};
+    // Default profil məlumatları
+    const profile = {
+      full_name: '',
+      avatar: null,
+      phone: null,
+      position: null,
+      language: 'az',
+      last_login: null,
+      status: 'active' as 'active' | 'inactive' | 'blocked',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ...profileData
+    };
     
     // Mock email - həqiqi layihədə server-side edge function ilə əldə ediləcək
     const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
@@ -179,35 +203,32 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       ? statusValue as 'active' | 'inactive' | 'blocked'
       : 'active' as 'active' | 'inactive' | 'blocked';
     
-    const created_at = profile.created_at || new Date().toISOString();
-    const updated_at = profile.updated_at || new Date().toISOString();
-    
     // Tam istifadəçi məlumatlarını birləşdiririk
     const fullUserData: FullUserData = {
       id: userId,
       email: mockEmail,
-      full_name: profile.full_name || '',
+      full_name: profile.full_name,
       role: roleData.role,
       region_id: roleData.region_id,
       sector_id: roleData.sector_id,
       school_id: roleData.school_id,
       phone: profile.phone,
       position: profile.position,
-      language: profile.language || 'az',
+      language: profile.language,
       avatar: profile.avatar,
       status: typedStatus,
       last_login: profile.last_login,
-      created_at,
-      updated_at,
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
       
       // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-      name: profile.full_name || '',
+      name: profile.full_name,
       regionId: roleData.region_id,
       sectorId: roleData.sector_id,
       schoolId: roleData.school_id,
       lastLogin: profile.last_login,
-      createdAt: created_at,
-      updatedAt: updated_at,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
       
       // Əlavə tətbiq xüsusiyyətləri
       twoFactorEnabled: false,

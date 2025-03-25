@@ -59,8 +59,19 @@ export const useSupabaseAuth = () => {
         // Xəta olsa da davam edirik, amma boş profil məlumatları istifadə edirik
       }
       
-      // Əgər profileData null və ya undefined isə, boş obyekt istifadə edirik
-      const profile = profileData || {};
+      // Default profil məlumatları
+      const profile = {
+        full_name: '',
+        avatar: null,
+        phone: null,
+        position: null,
+        language: 'az',
+        last_login: null,
+        status: 'active' as 'active' | 'inactive' | 'blocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...profileData
+      };
       
       // Rol məlumatlarını əldə et
       const { data: roleData, error: roleError } = await supabase
@@ -82,35 +93,32 @@ export const useSupabaseAuth = () => {
         ? statusValue as 'active' | 'inactive' | 'blocked'
         : 'active' as 'active' | 'inactive' | 'blocked';
       
-      const created_at = profile.created_at || new Date().toISOString();
-      const updated_at = profile.updated_at || new Date().toISOString();
-      
       // Tam istifadəçi datası
       const fullUserData: FullUserData = {
         id: userId,
         email: userData.user.email || '',
-        full_name: profile.full_name || '',
+        full_name: profile.full_name,
         role: roleData.role,
         region_id: roleData.region_id,
         sector_id: roleData.sector_id,
         school_id: roleData.school_id,
         phone: profile.phone,
         position: profile.position,
-        language: profile.language || 'az',
+        language: profile.language,
         avatar: profile.avatar,
         status: typedStatus,
         last_login: profile.last_login,
-        created_at,
-        updated_at,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profile.full_name || '',
+        name: profile.full_name,
         regionId: roleData.region_id,
         sectorId: roleData.sector_id,
         schoolId: roleData.school_id,
         lastLogin: profile.last_login,
-        createdAt: created_at,
-        updatedAt: updated_at,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri
         twoFactorEnabled: false,
