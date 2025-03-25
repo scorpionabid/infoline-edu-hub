@@ -60,40 +60,6 @@ const Login = () => {
     }
   };
 
-  // SuperAdmin yaratma funksiyası
-  const createSuperAdmin = async () => {
-    try {
-      // Supabase functions.url yerinə birbaşa URL istifadə edirik
-      const supabaseUrl = "https://olbfnauhzpdskqnxtwav.supabase.co";
-      const response = await fetch(`${supabaseUrl}/functions/v1/create-superadmin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('SuperAdmin hesabı yaradıldı', {
-          description: 'Email: superadmin@infoline.az, Şifrə: Admin123!'
-        });
-        
-        // Avtomatik doldurma
-        setEmail('superadmin@infoline.az');
-        setPassword('Admin123!');
-      } else {
-        toast.error('SuperAdmin yaradılmadı', {
-          description: data.error || data.message || 'Bilinməyən xəta'
-        });
-      }
-    } catch (error) {
-      console.error('SuperAdmin yaratma xətası:', error);
-      toast.error('SuperAdmin yaratma zamanı xəta baş verdi');
-    }
-  };
-
   // Yüklənmə zamanı göstəriləcək
   if (isLoading) {
     return (
@@ -188,14 +154,9 @@ const Login = () => {
           </Button>
         </form>
         
-        <div className="mt-6 text-center">
-          <Button 
-            variant="outline" 
-            className="text-sm" 
-            onClick={createSuperAdmin}
-          >
-            SuperAdmin Hesabı Yarat
-          </Button>
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          <p>SuperAdmin: <span className="font-medium">superadmin@infoline.az</span></p>
+          <p>Şifrə: <span className="font-medium">Admin123!</span></p>
         </div>
       </motion.div>
     </div>
