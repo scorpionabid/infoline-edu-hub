@@ -18,6 +18,7 @@ import SchoolAdminDashboard from './SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
 import { Notification as DashboardNotification } from './NotificationsCard';
 import { Notification } from '@/types/notification';
+import { FormStatus } from '@/types/form';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -38,6 +39,14 @@ const adaptNotifications = (notifications: Notification[]): DashboardNotificatio
     title: notification.title,
     message: notification.message,
     time: notification.createdAt
+  }));
+};
+
+// FormItem-ləri Form formatına çevirmək üçün helper funksiya
+const adaptFormItems = (formItems: FormItem[]) => {
+  return formItems.map(item => ({
+    ...item,
+    status: item.status as FormStatus // FormStatus tipinə explicit çeviririk
   }));
 };
 
@@ -113,11 +122,17 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         const pendingFormsData = Array.isArray(schoolAdminData.pendingForms) 
           ? schoolAdminData.pendingForms 
           : [];
+
+        // recentForms-ları da uyğunlaşdırırıq
+        const recentFormsData = Array.isArray(schoolAdminData.recentForms) 
+          ? adaptFormItems(schoolAdminData.recentForms)
+          : [];
         
         const preparedData = {
           ...schoolAdminData,
           notifications: adaptedNotifications,
-          pendingForms: pendingFormsData // Əmin olaq ki, pendingForms düzgün formadadır
+          pendingForms: pendingFormsData,
+          recentForms: recentFormsData
         };
         
         return (

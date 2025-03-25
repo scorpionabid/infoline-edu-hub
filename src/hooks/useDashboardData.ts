@@ -7,8 +7,7 @@ import { useDataEntries } from './useDataEntries';
 import { School } from '@/types/school';
 import { useSchools } from './useSchools';
 import { Notification, NotificationType } from '@/types/notification';
-
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'dueSoon' | 'overdue';
+import { FormStatus } from '@/types/form';
 
 export interface FormItem {
   id: string;
@@ -117,7 +116,6 @@ export interface SchoolAdminDashboardData extends DashboardData {
   categories?: number;
   totalForms?: number;
   completedForms?: number;
-  // pendingForms is now inherited from DashboardData as FormItem[]
   rejectedForms?: number;
   dueDates?: Array<{
     category: string;
@@ -150,29 +148,25 @@ export const useDashboardData = () => {
   const { dataEntries } = useDataEntries();
   const schoolsData = useSchools();
   
-  // Məktəblərin mock məlumatlarını yaradırıq
   const mockSchools: School[] = [
     { id: "1", name: "Şəhər Məktəbi #1", regionId: "1", sectorId: "1", status: "active" },
     { id: "2", name: "Şəhər Məktəbi #2", regionId: "1", sectorId: "1", status: "active" },
     { id: "3", name: "Kənd Məktəbi #1", regionId: "2", sectorId: "2", status: "active" },
     { id: "4", name: "Kənd Məktəbi #2", regionId: "2", sectorId: "2", status: "inactive" }
   ];
-  
-  // Mock region məlumatları
+
   const mockRegions = [
     { id: "1", name: "Bakı" },
     { id: "2", name: "Abşeron" },
     { id: "3", name: "Sumqayıt" }
   ];
-  
-  // Mock sektor məlumatları
+
   const mockSectors = [
     { id: "1", name: "Nəsimi", region_id: "1" },
     { id: "2", name: "Xırdalan", region_id: "2" },
     { id: "3", name: "28 May", region_id: "3" }
   ];
 
-  // Mock bildirişlər - tipini NotificationType ilə uyğunlaşdırırıq
   const mockNotifications: Notification[] = [
     {
       id: "1",
@@ -204,18 +198,13 @@ export const useDashboardData = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // İstifadəçi rolunu təyin et
       if (user) {
         setUserRole(user.role);
       }
       
-      // Məktəblərin sayı
       const totalSchools = mockSchools.length;
-
-      // Aktiv məktəblərin sayı
       const activeSchools = mockSchools.filter(school => school.status === 'active').length;
 
-      // Gözləmədə olan formalar
       let pendingFormItems = categories.map(category => {
         return {
           id: category.id,
@@ -227,7 +216,6 @@ export const useDashboardData = () => {
         };
       });
 
-      // Yaxınlaşan son tarixlər
       let upcomingDeadlines = categories
         .filter(category => category.deadline)
         .slice(0, 5)
@@ -236,7 +224,6 @@ export const useDashboardData = () => {
           date: transformDeadlineToString(category.deadline)
         }));
 
-      // Regional statistikalar
       let regionalStats = mockRegions.map(region => {
         return {
           region: region.name,
@@ -246,7 +233,6 @@ export const useDashboardData = () => {
         };
       });
 
-      // Sektor statistikaları
       let sectorStats = mockSectors.map(sector => {
         return {
           sector: sector.name,
@@ -256,7 +242,6 @@ export const useDashboardData = () => {
         };
       });
 
-      // Chart məlumatları
       const activityData = [
         { name: t('approved'), value: 65 },
         { name: t('pending'), value: 25 },
@@ -283,7 +268,6 @@ export const useDashboardData = () => {
         categoryCompletionData
       });
 
-      // Əsas dashboardData məlumatlarını ayarlayırıq
       setDashboardData({
         totalSchools,
         activeSchools,
@@ -293,7 +277,6 @@ export const useDashboardData = () => {
         sectorStats
       });
 
-      // Rol tipinə görə əlavə məlumatlar yaradırıq
       if (userRole === 'superadmin') {
         const superAdminData: SuperAdminDashboardData = {
           ...dashboardData,
