@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -8,7 +7,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 
-// Form sxemasını yaratmaq üçün funksiya
 export const createFormSchema = (t: (key: string) => string) => {
   return z.object({
     name: z.string().min(1, { message: t("columnNameRequired") }),
@@ -61,10 +59,8 @@ export const useColumnForm = (
   const [newOption, setNewOption] = useState("");
   const isEditMode = !!editColumn;
 
-  // Form sxeması yaratmaq
   const formSchema = createFormSchema(t);
 
-  // Formu inisializasiya etmək
   const form = useForm<ColumnFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,7 +91,6 @@ export const useColumnForm = (
     },
   });
 
-  // Redaktə rejimində form dəyərlərini təyin etmək
   useEffect(() => {
     if (isEditMode && editColumn) {
       setSelectedType(editColumn.type as ColumnType);
@@ -113,11 +108,10 @@ export const useColumnForm = (
         categoryId: editColumn.categoryId,
         type: editColumn.type as ColumnType,
         isRequired: editColumn.isRequired,
-        validationRules: editColumn.validationRules || editColumn.validation,
+        validationRules: editColumn.validationRules as any || editColumn.validation as any || {},
         defaultValue: editColumn.defaultValue || "",
         placeholder: editColumn.placeholder || "",
         helpText: editColumn.helpText || "",
-        deadline: editColumn.deadline ? new Date(editColumn.deadline) : undefined,
         order: editColumn.order || 1,
         parentColumnId: editColumn.parentColumnId,
         status: editColumn.status as "active" | "inactive" || "active",
@@ -159,12 +153,10 @@ export const useColumnForm = (
     }
   }, [isEditMode, editColumn, form, categories]);
 
-  // Form təqdimatını emal etmək
   const onSubmit = async (values: ColumnFormData) => {
     try {
       if (!onAddColumn) return false;
       
-      // Supabase formatına uyğun məlumat hazırlayırıq
       const supabaseColumnData = {
         name: values.name,
         category_id: values.categoryId,
@@ -179,7 +171,6 @@ export const useColumnForm = (
         options: ["select", "checkbox", "radio"].includes(values.type) ? options as unknown as Json : null
       };
       
-      // Əgər redaktə rejimindəyiksə
       if (isEditMode && editColumn?.id) {
         const { error } = await supabase
           .from('columns')
@@ -190,14 +181,12 @@ export const useColumnForm = (
         
         return true;
       } else {
-        // Yeni sütun əlavə etmə
         const { error } = await supabase
           .from('columns')
           .insert([supabaseColumnData]);
           
         if (error) throw error;
         
-        // Kateqoriyadakı sütun sayını yeniləyirik
         const { error: updateError } = await supabase
           .from('categories')
           .select('column_count')
@@ -226,15 +215,12 @@ export const useColumnForm = (
     }
   };
 
-  // Tip dəyişikliyini emal etmək
   const handleTypeChange = (value: string) => {
-    // value dəyərini məcburi ColumnType-a çeviririk
     const typeValue = value as ColumnType;
     setSelectedType(typeValue);
     form.setValue("type", typeValue);
   };
 
-  // Yeni seçim əlavə etmək
   const addOption = () => {
     if (newOption.trim() !== "" && !options.some(opt => opt.value === newOption.trim())) {
       setOptions([...options, { label: newOption.trim(), value: newOption.trim() }]);
@@ -242,7 +228,6 @@ export const useColumnForm = (
     }
   };
 
-  // Seçimi silmək
   const removeOption = (optionValue: string) => {
     setOptions(options.filter((o) => o.value !== optionValue));
   };

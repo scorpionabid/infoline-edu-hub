@@ -42,12 +42,13 @@ export interface Column {
   order: number;
   status: 'active' | 'inactive';
   defaultValue?: string;
-  validationRules?: ValidationRules;
+  validationRules?: ValidationRules | Json;
   validation?: Json; // From Supabase
   parentColumnId?: string;
   dependencies?: string[];
   dependsOn?: any; // Asılılıqlar üçün lazım
   multiline?: boolean; // Textarea üçün
+  deadline?: string | Date; // Bəzi komponentlər deadline istifadə edir
 }
 
 export interface CategoryWithColumns {

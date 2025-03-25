@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -244,6 +245,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         throw new Error('Category ID and School ID are required');
       }
 
+      // Düzəltmə: "submit_category_for_approval" funksiya adından istifadə edərək doğru RPC çağırışı
       const { data, error } = await supabase.rpc('submit_category_for_approval', {
         p_category_id: categoryId,
         p_school_id: schoolId

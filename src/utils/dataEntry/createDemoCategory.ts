@@ -1,244 +1,81 @@
+import { CategoryWithColumns } from '@/types/column';
+import { generateId } from '@/utils/generateId';
+import { useLanguage } from '@/context/LanguageContext';
 
-import { CategoryWithColumns, Column } from '@/types/column';
-import { v4 as uuidv4 } from 'uuid';
-import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
-
-/**
- * Demo kateqoriya yaratmaq üçün funksiya
- * 
- * @returns Yaradılan demo kateqoriya
- */
-export const createDemoCategory = (): CategoryWithColumns => {
-  const categoryId = uuidv4();
-  
-  // Tələbə məlumatları kateqoriyasını yaradaq
-  return {
-    id: categoryId,
-    name: "Tələbə məlumatları",
-    description: "Məktəbdəki tələbələr haqqında əsas məlumatlar",
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 həftə sonra
-    status: "active",
-    assignment: "all", // Bütün məktəblərə aid
-    createdAt: new Date().toISOString(), // createdAt üçün cari tarixi string formatında istifadə edirik
-    columns: [
-      // Tələbə sayı sütunu
-      {
-        id: uuidv4(),
-        categoryId,
-        name: "Tələbə sayı",
-        type: "number",
-        isRequired: true,
-        placeholder: "Məktəbdəki cəmi tələbə sayını daxil edin",
-        helpText: "Bura ümumi say daxil edilməlidir, siniflər üzrə bölünməməlidir",
-        order: 1,
-        status: "active",
-        validation: {
-          minValue: 0,
-          maxValue: 5000
-        },
-        // validationRules əvəzinə validation istifadə edək
-        validationRules: {
-          min: 0,
-          max: 5000,
-          required: true
-        }
-      },
-      
-      // Qız tələbə sayı
-      {
-        id: uuidv4(),
-        categoryId,
-        name: "Qız tələbə sayı",
-        type: "number",
-        isRequired: true,
-        placeholder: "Məktəbdəki qız tələbələrin sayını daxil edin",
-        helpText: "Bura qız şagirdlərin ümumi sayı daxil edilməlidir",
-        order: 2,
-        status: "active",
-        validation: {
-          minValue: 0,
-          maxValue: 3000
-        },
-        // validationRules əvəzinə validation istifadə edək
-        validationRules: {
-          min: 0,
-          max: 3000,
-          required: true
-        }
-      },
-      
-      // Əlavə qeydlər
-      {
-        id: uuidv4(),
-        categoryId,
-        name: "Əlavə qeydlər",
-        type: "textarea",
-        isRequired: false,
-        placeholder: "Əlavə qeydləri buraya yazın",
-        helpText: "Tələbələrlə bağlı vacib qeydləri buraya əlavə edə bilərsiniz",
-        order: 3,
-        status: "active",
-        multiline: true // textarea üçün multiline xüsusiyyətini true edək
-      }
-    ]
-  };
-};
-
-/**
- * İkinci demo kateqoriya yaratmaq üçün funksiya - bu dəfə müəllim məlumatları
- * 
- * @returns Yaradılan demo kateqoriya
- */
-export const createTeachersDemoCategory = (): CategoryWithColumns => {
-  const categoryId = uuidv4();
-  
-  // Müəllim məlumatları kateqoriyasını yaradaq
-  return {
-    id: categoryId,
-    name: "Müəllim məlumatları",
-    description: "Məktəbdəki müəllimlər haqqında əsas məlumatlar",
-    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 gün sonra
-    status: "active",
-    assignment: "sectors", // Sektorlar üçün nəzərdə tutulmuş
-    createdAt: new Date().toISOString(), // createdAt üçün cari tarixi string formatında istifadə edirik
-    columns: [
-      // Müəllim sayı sütunu
-      {
-        id: uuidv4(),
-        categoryId,
-        name: "Müəllim sayı",
-        type: "number",
-        isRequired: true,
-        placeholder: "Məktəbdəki cəmi müəllim sayını daxil edin",
-        helpText: "Bura ümumi say daxil edilməlidir",
-        order: 1,
-        status: "active",
-        validation: {
-          minValue: 0,
-          maxValue: 1000
-        },
-        // validationRules əvəzinə validation istifadə edək
-        validationRules: {
-          min: 0,
-          max: 1000,
-          required: true
-        }
-      },
-      
-      // Ali təhsilli müəllim sayı
-      {
-        id: uuidv4(),
-        categoryId,
-        name: "Ali təhsilli müəllim sayı",
-        type: "number",
-        isRequired: true,
-        placeholder: "Ali təhsilli müəllimlərin sayını daxil edin",
-        helpText: "Yalnız ali təhsili olan müəllimlər daxil edilməlidir",
-        order: 2,
-        status: "active",
-        validation: {
-          minValue: 0,
-          maxValue: 1000
-        },
-        // validationRules əvəzinə validation istifadə edək
-        validationRules: {
-          min: 0,
-          max: 1000,
-          required: true
-        }
-      },
-      
-      // Əlavə qeydlər
-      {
-        id: uuidv4(),
-        categoryId,
-        name: "Əlavə qeydlər",
-        type: "textarea",
-        isRequired: false,
-        placeholder: "Əlavə qeydləri buraya yazın",
-        helpText: "Müəllimlərlə bağlı vacib qeydləri buraya əlavə edə bilərsiniz",
-        order: 3,
-        status: "active",
-        multiline: true // textarea üçün multiline xüsusiyyətini true edək
-      }
-    ]
-  };
-};
-
-/**
- * Yaradılmış demo kateqoriyalara id əlavə et
- * 
- * @param categories Mövcud kateqoriyalar
- * @returns Id ilə yaradılmış kateqoriyalar
- */
-export const addIdsToCategories = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
-  return categories.map((category) => {
-    // Əgər kateqoriyanın id-si artıq varsa, heç nə dəyişdirmirik
-    if (category.id) return category;
-    
-    // Əgər yoxdursa, id əlavə edirik
-    const categoryId = uuidv4();
-    
-    return {
-      ...category,
-      id: categoryId,
-      columns: category.columns.map((column) => ({
-        ...column,
-        id: column.id || uuidv4(),
-        categoryId: column.categoryId || categoryId
-      }))
-    };
-  });
-};
-
-/**
- * Çoxlu demo kateqoriyalar yaratmaq üçün funksiya
- */
 export const createDemoCategories = (): CategoryWithColumns[] => {
-  return [createDemoCategory(), createTeachersDemoCategory()];
-};
+  const { t } = useLanguage();
 
-/**
- * Kateqoriyalar üçün ilkin məlumatları yaratmaq
- */
-export const createInitialEntries = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
-  return categories.map(category => {
-    // Hər sütun üçün bir EntryValue yaradırıq
-    const values: EntryValue[] = category.columns.map(column => {
-      let defaultValue: any = '';
-      
-      if (column.defaultValue !== undefined) {
-        defaultValue = column.defaultValue;
-      } else {
-        switch (column.type) {
-          case 'number':
-            defaultValue = '';
-            break;
-          case 'checkbox':
-            defaultValue = false;
-            break;
-          case 'boolean':
-            defaultValue = false;
-            break;
-          default:
-            defaultValue = '';
-        }
-      }
-      
-      return {
-        columnId: column.id,
-        value: defaultValue,
-        status: 'pending'
-      };
-    });
-    
-    return {
-      categoryId: category.id || '',
-      status: 'draft',
-      values: values,
-      isCompleted: false,
-      isSubmitted: false,
-      completionPercentage: 0
-    };
-  });
+  const demoCategory1 = {
+    id: generateId(),
+    name: t('demoCategory1'),
+    description: t('demoCategory1Description'),
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    assignment: 'all' as const,
+    createdAt: new Date().toISOString(),
+    priority: 1,
+    columns: [
+      {
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory1Column1'),
+        type: 'number',
+        isRequired: true,
+        order: 1,
+        status: 'active',
+        helpText: t('demoCategory1Column1HelpText'),
+        validationRules: { minValue: 0, maxValue: 1000 },
+      },
+      {
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory1Column2'),
+        type: 'text',
+        isRequired: false,
+        order: 2,
+        status: 'active',
+        helpText: t('demoCategory1Column2HelpText'),
+      },
+    ]
+  };
+
+  const demoCategory2 = {
+    id: generateId(),
+    name: t('demoCategory2'),
+    description: t('demoCategory2Description'),
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    assignment: 'sectors' as const,
+    createdAt: new Date().toISOString(),
+    priority: 2,
+    columns: [
+      {
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory2Column1'),
+        type: 'number',
+        isRequired: true,
+        order: 1,
+        status: 'active',
+        helpText: t('demoCategory2Column1HelpText'),
+        validationRules: { minValue: 0, maxValue: 500 },
+      },
+      {
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory2Column2'),
+        type: 'select',
+        isRequired: true,
+        order: 2,
+        status: 'active',
+        helpText: t('demoCategory2Column2HelpText'),
+        options: [
+          { label: t('option1'), value: 'option1' },
+          { label: t('option2'), value: 'option2' },
+        ],
+      },
+    ]
+  };
+
+  return [demoCategory1, demoCategory2];
 };

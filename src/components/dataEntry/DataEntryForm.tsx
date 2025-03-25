@@ -138,7 +138,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const isCategoryDueSoon = () => {
     if (!currentCategory || !currentCategory.deadline) return false;
     
-    const deadline = new Date(currentCategory.deadline);
+    const deadline = new Date(String(currentCategory.deadline));
     const today = new Date();
     const diffDays = Math.floor((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -149,7 +149,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const isCategoryOverdue = () => {
     if (!currentCategory || !currentCategory.deadline) return false;
     
-    const deadline = new Date(currentCategory.deadline);
+    const deadline = new Date(String(currentCategory.deadline));
     const today = new Date();
     
     return deadline < today;

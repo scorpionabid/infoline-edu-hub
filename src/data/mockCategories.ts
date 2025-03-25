@@ -1,4 +1,3 @@
-
 import { CategoryWithColumns } from '@/types/column';
 
 // Mock kateqoriyalar və sütunlar
@@ -8,6 +7,10 @@ export const mockCategories: CategoryWithColumns[] = [
     name: "Ümumi məlumatlar",
     description: "Məktəbin əsas statistik göstəriciləri haqqında məlumatlar",
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 gün sonra
+    status: "active",
+    priority: 1,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
     columns: [
       { 
         id: "col1", 
@@ -59,6 +62,10 @@ export const mockCategories: CategoryWithColumns[] = [
     name: "Tədris məlumatları",
     description: "Məktəbin tədris fəaliyyəti ilə bağlı məlumatlar",
     deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 gün sonra
+    status: "active",
+    priority: 2,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
     columns: [
       { 
         id: "col5", 
@@ -100,6 +107,10 @@ export const mockCategories: CategoryWithColumns[] = [
     name: "İnfrastruktur",
     description: "Məktəb binası və infrastrukturu haqqında məlumatlar",
     deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 gün sonra
+    status: "active",
+    priority: 3,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
     columns: [
       { 
         id: "col8", 
@@ -162,6 +173,10 @@ export const mockCategories: CategoryWithColumns[] = [
     name: "Digər məlumatlar",
     description: "Əlavə məlumatlar və qeydlər",
     deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 gün sonra
+    status: "active",
+    priority: 4,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
     columns: [
       { 
         id: "col13", 
@@ -192,6 +207,10 @@ export const mockCategories: CategoryWithColumns[] = [
     name: "Yeni kateqoriya",
     description: "Bu kateqoriya yeni əlavə edilib və doldurulması tələb olunur",
     deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 gün sonra
+    status: "active",
+    priority: 5,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
     columns: [
       { 
         id: "col15", 

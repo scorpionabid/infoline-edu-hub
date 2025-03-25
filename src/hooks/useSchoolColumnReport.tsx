@@ -1,233 +1,76 @@
+import { useCallback, useEffect, useState } from 'react';
+import { School } from '@/types/school';
+import { CategoryWithColumns } from '@/types/column';
+import { useColumns } from './useColumns';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
-import { Column, CategoryWithColumns, ColumnType, ColumnOption } from '@/types/column';
-import { SchoolColumnData, ExportOptions } from '@/types/report';
-import { exportToExcel } from '@/utils/excelExport';
-import { mockSchools } from '@/data/schoolsData';
-import { useAuth } from '@/context/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-
-// API sorğusunu simulyasiya edən funksiya
-const fetchCategories = async (): Promise<CategoryWithColumns[]> => {
-  // API sorğusunu simulyasiya edək (əslində bu məlumatlar API-dən gələcək)
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Bu misalda işlətdiyimiz kateqoriyalar
-  return [
-    {
-      id: "cat1",
-      name: "Tədris məlumatları",
-      columns: [
-        { id: "col1", categoryId: "cat1", name: "Şagird sayı", type: "number", isRequired: true, order: 1, status: "active" },
-        { id: "col2", categoryId: "cat1", name: "Tədris dili", type: "text", isRequired: true, order: 2, status: "active" },
-        { id: "col3", categoryId: "cat1", name: "Tədris ili başlama tarixi", type: "date", isRequired: true, order: 3, status: "active" }
-      ]
-    },
-    {
-      id: "cat2",
-      name: "Müəllim məlumatları",
-      columns: [
-        { id: "col4", categoryId: "cat2", name: "Müəllim sayı", type: "number", isRequired: true, order: 1, status: "active" },
-        { id: "col5", categoryId: "cat2", name: "Ali təhsilli müəllim sayı", type: "number", isRequired: true, order: 2, status: "active" }
-      ]
-    },
-    {
-      id: "cat3",
-      name: "İnfrastruktur məlumatları",
-      columns: [
-        { id: "col6", categoryId: "cat3", name: "Kompüter sayı", type: "number", isRequired: true, order: 1, status: "active" },
-        { id: "col7", categoryId: "cat3", name: "Proyektor sayı", type: "number", isRequired: true, order: 2, status: "active" },
-        { id: "col8", categoryId: "cat3", name: "İnternet bağlantısı", type: "boolean", isRequired: true, order: 3, status: "active" }
-      ]
-    }
-  ];
+// Test/demo verilənləri
+const mockSchool: School = {
+  id: "school-1",
+  name: "Şəhər Məktəbi #123",
+  region_id: "region-1",
+  sector_id: "sector-1",
+  address: "Bakı şəhəri, Nəsimi rayonu",
+  status: "active",
 };
 
-// Kateqoriyaya uyğun cədvəl məlumatlarını əldə etmək üçün funksiya
-const fetchSchoolColumnData = async (categoryId: string, regionId?: string): Promise<SchoolColumnData[]> => {
-  // API sorğusunu simulyasiya edək
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Mövcud məktəbləri əldə edək
-  const schools = mockSchools;
-  
-  // Regiona görə məktəbləri filtirləyək
-  const filteredSchools = regionId 
-    ? schools.filter(school => school.regionId === regionId)
-    : schools;
-  
-  // Kateqoriyaya uyğun məlumatları generasiya edək
-  return filteredSchools.map(school => {
-    // Status dəyişkənini təsadüfi olaraq təyin edək (əsl API-də bu status verilənlər bazasından gələcək)
-    const statuses = ["Gözləmədə", "Təsdiqləndi", "Rədd edildi"];
-    const randomStatus = Math.random() < 0.6 ? "Gözləmədə" : (Math.random() < 0.8 ? "Təsdiqləndi" : "Rədd edildi");
-    
-    // Kateqoriyaya uyğun sütun məlumatlarını generasiya edək
-    let columnData = [];
-    
-    if (categoryId === "cat1") {
-      columnData = [
-        { columnId: "col1", value: school.studentCount },
-        { columnId: "col2", value: school.language === "az" ? "Azərbaycan" : (school.language === "ru" ? "Rus" : "Digər") },
-        { columnId: "col3", value: "2023-09-01" }
-      ];
-    } else if (categoryId === "cat2") {
-      columnData = [
-        { columnId: "col4", value: school.teacherCount },
-        { columnId: "col5", value: Math.floor(school.teacherCount * 0.8) } // Təxmini dəyər
-      ];
-    } else if (categoryId === "cat3") {
-      columnData = [
-        { columnId: "col6", value: Math.floor(Math.random() * 50) + 5 }, // 5-55 arası təsadüfi dəyər
-        { columnId: "col7", value: Math.floor(Math.random() * 10) + 1 }, // 1-10 arası təsadüfi dəyər
-        { columnId: "col8", value: Math.random() > 0.2 } // 80% ehtimalla true, 20% ehtimalla false
-      ];
-    }
-    
-    return {
-      schoolId: school.id,
-      schoolName: school.name,
-      region: school.region,
-      sector: school.sector,
-      status: randomStatus,
-      rejectionReason: randomStatus === "Rədd edildi" ? "Məlumatlar tam deyil" : undefined,
-      columnData
-    };
-  });
-};
+const mockCategories: CategoryWithColumns[] = [
+  {
+    id: "cat-1",
+    name: "Ümumi məlumatlar",
+    description: "Məktəb haqqında ümumi məlumatlar",
+    status: "active",
+    priority: 1,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { id: "col-1", categoryId: "cat-1", name: "Şagird sayı", type: "number", isRequired: true, order: 1, status: "active" },
+      { id: "col-2", categoryId: "cat-1", name: "Müəllim sayı", type: "number", isRequired: true, order: 2, status: "active" },
+      { id: "col-3", categoryId: "cat-1", name: "Otaq sayı", type: "number", isRequired: true, order: 3, status: "active" },
+    ]
+  },
+  {
+    id: "cat-2",
+    name: "Tədris statistikası",
+    description: "Tədris statistikası haqqında məlumatlar",
+    status: "active",
+    priority: 2,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { id: "col-4", categoryId: "cat-2", name: "Buraxılış faizi", type: "number", isRequired: true, order: 1, status: "active" },
+    ]
+  },
+  {
+    id: "cat-3",
+    name: "İnfrastruktur",
+    description: "İnfrastruktur haqqında məlumatlar",
+    status: "active",
+    priority: 3,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { id: "col-5", categoryId: "cat-3", name: "İdman zalı", type: "boolean", isRequired: true, order: 1, status: "active" },
+      { id: "col-6", categoryId: "cat-3", name: "Kitabxana", type: "boolean", isRequired: true, order: 2, status: "active" },
+    ]
+  }
+];
 
-export const useSchoolColumnReport = () => {
-  const { t } = useLanguage();
-  const { user } = useAuth();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+interface SchoolColumnReport {
+  school: School;
+  categories: CategoryWithColumns[];
+}
 
-  // Kateqoriyaları əldə etmək üçün React Query istifadə edək
-  const { 
-    data: categories = [], 
-    isLoading: isCategoriesLoading, 
-    error: categoriesError 
-  } = useQuery({
-    queryKey: ['reportCategories'],
-    queryFn: fetchCategories
-  });
+export const useSchoolColumnReport = (schoolId: string): SchoolColumnReport => {
+  const [school, setSchool] = useState<School>(mockSchool);
+  const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
+  const { columns } = useColumns();
 
-  // Əgər istifadəçi region admindirsə, onun regionID-nı əldə edək
-  const userRegionId = user?.role === 'regionadmin' ? user.regionId : undefined;
-
-  // Əgər kateqoriyalar yüklənibsə və seçilmiş kateqoriya yoxdursa, ilk kateqoriyanı seçək
   useEffect(() => {
-    if (categories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(categories[0].id);
-    }
-  }, [categories, selectedCategoryId]);
+    // Real verilənləri backenddən çəkmək üçün istifadə edilə bilər
+    // Məsələn:
+    // fetch(`/api/schools/${schoolId}`).then(res => res.json()).then(data => setSchool(data));
+    // fetch(`/api/schools/${schoolId}/categories`).then(res => res.json()).then(data => setCategories(data));
+  }, [schoolId]);
 
-  // Seçilmiş kateqoriyaya əsasən məktəblərin məlumatlarını əldə etmək
-  const {
-    data: schoolColumnData = [],
-    isLoading: isDataLoading,
-    refetch: refetchSchoolData
-  } = useQuery({
-    queryKey: ['reportSchoolData', selectedCategoryId, userRegionId],
-    queryFn: () => fetchSchoolColumnData(selectedCategoryId, userRegionId),
-    enabled: !!selectedCategoryId
-  });
-
-  // Sektorların siyahısını əldə et
-  const sectors = React.useMemo(() => {
-    const uniqueSectors = new Set<string>();
-    schoolColumnData.forEach(school => {
-      if (school.sector) {
-        uniqueSectors.add(school.sector);
-      }
-    });
-    return Array.from(uniqueSectors);
-  }, [schoolColumnData]);
-
-  // Məktəb seçimi funksiyaları
-  const toggleSchoolSelection = useCallback((schoolId: string) => {
-    setSelectedSchools(prevSelected => {
-      if (prevSelected.includes(schoolId)) {
-        return prevSelected.filter(id => id !== schoolId);
-      } else {
-        return [...prevSelected, schoolId];
-      }
-    });
-  }, []);
-
-  const selectAllSchools = useCallback(() => {
-    const allSchoolIds = schoolColumnData.map(school => school.schoolId);
-    setSelectedSchools(allSchoolIds);
-  }, [schoolColumnData]);
-
-  const deselectAllSchools = useCallback(() => {
-    setSelectedSchools([]);
-  }, []);
-
-  // Seçilmiş məktəblərin məlumatlarını əldə etmək
-  const getSelectedSchoolsData = useCallback(() => {
-    if (selectedSchools.length === 0) return schoolColumnData;
-    return schoolColumnData.filter(school => selectedSchools.includes(school.schoolId));
-  }, [schoolColumnData, selectedSchools]);
-
-  // Excel ixracı üçün funksiya
-  const exportData = useCallback((options: ExportOptions = {}) => {
-    try {
-      const dataToExport = getSelectedSchoolsData();
-      
-      if (dataToExport.length === 0) {
-        toast.error(t("noDataToExport"));
-        return;
-      }
-      
-      const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-      if (!selectedCategory) {
-        toast.error(t("categoryNotFound"));
-        return;
-      }
-
-      // Column tipini CategoryColumn tipinə düzgün çevirmək
-      // report.ts faylındakı CategoryColumn tipinə uyğunlaşdırmaq üçün dəyişiklik edirik
-      const typedColumns = selectedCategory.columns.map(column => ({
-        id: column.id,
-        categoryId: column.categoryId,
-        name: column.name,
-        type: column.type as ColumnType,
-        order: column.order ?? 0,
-        status: column.status ?? 'active',
-        isRequired: column.isRequired ?? true // bütün sütunlar üçün isRequired xüsusiyyətini məcburi edirik və default true dəyəri veririk
-      })) as import('@/types/report').CategoryColumn[];
-
-      const result = exportToExcel(dataToExport, typedColumns, options);
-      
-      if (result.success) {
-        toast.success(t("exportSuccess"));
-      } else {
-        toast.error(t("exportError"));
-      }
-    } catch (error) {
-      console.error("Error exporting data:", error);
-      toast.error(t("exportError"));
-    }
-  }, [categories, getSelectedSchoolsData, selectedCategoryId, t]);
-
-  return {
-    categories,
-    selectedCategoryId,
-    setSelectedCategoryId,
-    schoolColumnData,
-    sectors,
-    isCategoriesLoading,
-    isCategoriesError: !!categoriesError,
-    isDataLoading,
-    selectedSchools,
-    toggleSchoolSelection,
-    selectAllSchools,
-    deselectAllSchools,
-    getSelectedSchoolsData,
-    exportData,
-    refetchSchoolData
-  };
+  return { school, categories };
 };

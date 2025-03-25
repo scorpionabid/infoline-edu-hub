@@ -43,9 +43,16 @@ export const useColumns = (categoryId?: string) => {
     try {
       const supabaseColumn = adaptColumnToSupabase(column as Partial<Column>);
       
+      // JSON tipləri üçün uyğunlaşma
+      const sanitizedData = {
+        ...supabaseColumn,
+        options: supabaseColumn.options ? JSON.parse(JSON.stringify(supabaseColumn.options)) : null,
+        validation: supabaseColumn.validation ? JSON.parse(JSON.stringify(supabaseColumn.validation)) : null
+      };
+      
       const { data, error } = await supabase
         .from('columns')
-        .insert([supabaseColumn])
+        .insert([sanitizedData])
         .select()
         .single();
 
@@ -76,9 +83,16 @@ export const useColumns = (categoryId?: string) => {
     try {
       const supabaseUpdates = adaptColumnToSupabase(updates);
       
+      // JSON tipləri üçün uyğunlaşma
+      const sanitizedUpdates = {
+        ...supabaseUpdates,
+        options: supabaseUpdates.options ? JSON.parse(JSON.stringify(supabaseUpdates.options)) : null,
+        validation: supabaseUpdates.validation ? JSON.parse(JSON.stringify(supabaseUpdates.validation)) : null
+      };
+      
       const { data, error } = await supabase
         .from('columns')
-        .update(supabaseUpdates)
+        .update(sanitizedUpdates)
         .eq('id', id)
         .select()
         .single();
