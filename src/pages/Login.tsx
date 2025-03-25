@@ -63,7 +63,9 @@ const Login = () => {
   // SuperAdmin yaratma funksiyası
   const createSuperAdmin = async () => {
     try {
-      const response = await fetch(`${supabase.functions.url}/create-superadmin`, {
+      // Supabase functions.url yerinə birbaşa URL istifadə edirik
+      const supabaseUrl = "https://olbfnauhzpdskqnxtwav.supabase.co";
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-superadmin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
