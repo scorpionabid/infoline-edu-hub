@@ -77,32 +77,31 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .eq('user_id', userId)
       .single();
     
-    // Əgər user_roles-da tapılmadısa, roles cədvəlini yoxlayaq
+    // Əgər user_roles-da tapılmadısa, diğər üsullarla davam edək
     if (roleError || !roleData) {
-      console.log('user_roles cədvəlində rol tapılmadı, roles cədvəlində yoxlanılır...');
+      console.log('user_roles cədvəlində rol tapılmadı, yeni rol yaradılır...');
       
-      const { data: altRoleData, error: altRoleError } = await supabase
-        .from('roles')
+      // Default məlumatlarla rol yaradaq
+      const defaultRole: UserRole = 'schooladmin';
+      
+      // Yeni rol yarat
+      const { data: newRoleData, error: createRoleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: defaultRole,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .select('*')
-        .eq('user_id', userId)
         .single();
       
-      if (altRoleError) {
-        console.error('Hər iki rol cədvəlində məlumat tapılmadı:', altRoleError);
-        throw new Error(`Rol məlumatları əldə edilə bilmədi: ${altRoleError.message}`);
+      if (createRoleError) {
+        console.error('Rol yaradarkən xəta:', createRoleError);
+        throw new Error(`Rol məlumatları əldə edilə bilmədi: ${createRoleError.message}`);
       }
       
-      // Rol məlumatlarını normalize et - case-sensitive problemləri həll etmək üçün
-      roleData = {
-        id: altRoleData.id,
-        user_id: altRoleData.user_id,
-        role: normalizeRole(altRoleData.role), // Rolun adını normalize edirik
-        region_id: altRoleData.region_id,
-        sector_id: altRoleData.sector_id,
-        school_id: altRoleData.school_id,
-        created_at: altRoleData.created_at,
-        updated_at: altRoleData.updated_at
-      };
+      roleData = newRoleData;
     }
     
     if (!roleData) {
