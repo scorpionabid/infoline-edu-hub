@@ -112,6 +112,22 @@ export interface FullUserData {
   last_login?: string;
   created_at: string;
   updated_at: string;
+  
+  // App tərəfindən istifadə edilən alternatif adlar
+  name: string; // full_name ilə eyni
+  regionId?: string; // region_id ilə eyni
+  sectorId?: string; // sector_id ilə eyni 
+  schoolId?: string; // school_id ilə eyni
+  lastLogin?: string; // last_login ilə eyni
+  createdAt: string; // created_at ilə eyni
+  updatedAt: string; // updated_at ilə eyni
+  
+  // Əlavə tətbiq xüsusiyyətləri
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
 }
 
 // Digər interfeyslər üçün

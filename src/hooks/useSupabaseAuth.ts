@@ -83,10 +83,26 @@ export const useSupabaseAuth = () => {
         position: profileData.position,
         language: profileData.language || 'az',
         avatar: profileData.avatar,
-        status: profileData.status || 'active',
+        status: profileData.status || 'active' as 'active' | 'inactive' | 'blocked',
         last_login: profileData.last_login,
         created_at: profileData.created_at,
-        updated_at: profileData.updated_at
+        updated_at: profileData.updated_at,
+        
+        // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+        name: profileData.full_name,
+        regionId: roleData.region_id,
+        sectorId: roleData.sector_id,
+        schoolId: roleData.school_id,
+        lastLogin: profileData.last_login,
+        createdAt: profileData.created_at,
+        updatedAt: profileData.updated_at,
+        
+        // Əlavə tətbiq xüsusiyyətləri
+        twoFactorEnabled: false, // Supabase-də saxlanılmır, tətbiq səviyyəsindədir
+        notificationSettings: {
+          email: true,
+          system: true
+        }
       };
       
       setUser(fullUserData);
