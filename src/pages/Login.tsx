@@ -3,18 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeToggle from '@/components/ThemeToggle';
 import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,7 +24,6 @@ const Login = () => {
   const [password, setPassword] = useState('Admin123!');
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   
   // Daxil olmuş istifadəçini yönləndirmə
   useEffect(() => {
@@ -33,11 +33,21 @@ const Login = () => {
     }
   }, [isAuthenticated, isLoading, navigate, location]);
 
+  // Xəta olduqda və istifadəçi form-a dəyişiklik etdikdə xətanı təmizləyək
+  useEffect(() => {
+    if (error) {
+      const inputChangeHandler = () => clearError();
+      return () => {
+        clearError();
+      };
+    }
+  }, [email, password, error, clearError]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Xəta mesajını sıfırlayaq
-    setErrorMessage('');
+    // Yeni girişdən əvvəl xətanı təmizləyək
+    clearError();
     
     if (!email || !password) {
       toast.error(t('missingCredentials'), {
@@ -57,28 +67,11 @@ const Login = () => {
       if (success) {
         toast.success(t('loginSuccess'));
         // Yönləndirilmə auth context-in useEffect-i tərəfindən ediləcək
-      } else {
-        setErrorMessage(t('loginFailed'));
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      
-      let errorMsg = error.message || t('unexpectedError');
-      
-      // Daha spesifik xəta mesajları
-      if (error.status === 500) {
-        errorMsg = t('databaseError');
-      } else if (error.message?.includes('Invalid login credentials')) {
-        errorMsg = t('invalidCredentials');
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMsg = t('emailNotConfirmed');
-      }
-      
-      setErrorMessage(errorMsg);
-      
-      toast.error(t('loginFailed'), {
-        description: errorMsg
-      });
+      // Xətaları context vasitəsilə idarə edirik, burada əlavə 
+      // errorMessage state-ni istifadə etməyə ehtiyac yoxdur
     } finally {
       setLoginInProgress(false);
     }
@@ -87,7 +80,7 @@ const Login = () => {
   // Manual login attempt
   const handleDirectLogin = async () => {
     setLoginInProgress(true);
-    setErrorMessage('');
+    clearError();
     
     try {
       console.log('Birbaşa login cəhdi edilir...');
@@ -129,8 +122,6 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Direct login error:', error);
-      setErrorMessage(error.message || 'Birbaşa login zamanı gözlənilməz xəta');
-      
       toast.error('Birbaşa login uğursuz oldu', {
         description: error.message || 'Gözlənilməz xəta'
       });
@@ -176,10 +167,11 @@ const Login = () => {
           <p className="text-muted-foreground mt-2">Məktəb Məlumatları Toplama Sistemi</p>
         </div>
         
-        {errorMessage && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-4 text-sm">
-            {errorMessage}
-          </div>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
         
         <form onSubmit={handleSubmit} className="space-y-6">

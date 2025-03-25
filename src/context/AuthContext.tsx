@@ -12,6 +12,7 @@ interface AuthState {
   user: FullUserData | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null;
 }
 
 // Auth context interface
@@ -19,6 +20,7 @@ interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
+  clearError: () => void;
 }
 
 // Create the context
@@ -38,29 +40,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
   } = useSupabaseAuth();
 
+  const [error, setError] = useState<string | null>(null);
+
   // Derive auth state from Supabase user
   const authState: AuthState = {
     user,
     isAuthenticated: !!user,
     isLoading: loading,
+    error,
   };
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      setError(null);
       console.log(`AuthContext: ${email} ilə giriş edilir...`);
       const data = await signIn(email, password);
       
       if (!data || !data.user) {
         console.error('AuthContext: Giriş uğursuz oldu - istifadəçi məlumatları yoxdur');
+        setError('Giriş uğursuz oldu - istifadəçi məlumatları yoxdur');
         return false;
       }
       
       console.log('AuthContext: Giriş uğurlu oldu');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('AuthContext: Login error:', error);
-      // Əlavə notification göstərmirik, əsas xəta signIn funksiyasında göstərilir
+      
+      // Daha detallı xəta mesajlarını saxlayaq
+      if (error.status === 500) {
+        setError('Server xətası: verilənlər bazasında problem var');
+      } else if (error.status === 401) {
+        setError('Giriş icazəsi yoxdur: yanlış e-poçt və ya şifrə');
+      } else if (error.message?.includes('Invalid login credentials')) {
+        setError('Yanlış giriş məlumatları: e-poçt və ya şifrə səhvdir');
+      } else if (error.message?.includes('Email not confirmed')) {
+        setError('E-poçt təsdiqlənməyib');
+      } else {
+        setError(error.message || 'Bilinməyən giriş xətası');
+      }
+      
+      // toast bildirişi artıq signIn funksiyası daxilində göstərilir,
+      // burada təkrarlamağa ehtiyac yoxdur
       return false;
     }
   };
@@ -68,10 +90,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
+      setError(null);
       await signOut();
       console.log('AuthContext: İstifadəçi uğurla çıxış etdi');
-    } catch (error) {
+    } catch (error: any) {
       console.error('AuthContext: Çıxış zamanı xəta:', error);
+      setError(error.message || 'Çıxış zamanı xəta baş verdi');
       toast.error('Çıxış zamanı xəta baş verdi');
     }
   };
@@ -81,6 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     try {
+      setError(null);
       // Convert FullUserData to Profile format
       const profileUpdates = {
         full_name: userData.full_name,
@@ -100,10 +125,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const success = await updateProfile(profileUpdates);
       return success;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update user error:', error);
+      setError(error.message || 'İstifadəçi məlumatlarını yeniləmə zamanı xəta');
       return false;
     }
+  };
+
+  // Error təmizləmə funksiyası
+  const clearError = () => {
+    setError(null);
   };
 
   // Hər dəfə auth vəziyyəti dəyişdikdə log edək
@@ -111,9 +142,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('Auth vəziyyəti dəyişdi:', {
       isAuthenticated: !!user,
       isLoading: loading,
-      user: user ? { id: user.id, email: user.email, role: user.role } : null
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      error
     });
-  }, [user, loading]);
+  }, [user, loading, error]);
 
   return (
     <AuthContext.Provider
@@ -122,6 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         logout,
         updateUser,
+        clearError,
       }}
     >
       {children}
