@@ -7,10 +7,22 @@ import { Profile, UserRoleData, FullUserData, UserRole } from '@/types/supabase'
 export const useSupabaseAuth = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<FullUserData | null>(null);
-  const [session, setSession] = useState(supabase.auth.session());
+  const [session, setSession] = useState<any>(null);
   
   // Session-da dəyişiklik olduqda yenilə
   useEffect(() => {
+    // İlkin sessiya məlumatını əldə et
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      
+      if (session?.user) {
+        await fetchUserData(session.user.id);
+      }
+      
+      setLoading(false);
+    };
+    
     // Auth state-ə qulaq asaq
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state dəyişdi:', event);
@@ -24,18 +36,6 @@ export const useSupabaseAuth = () => {
       
       setLoading(false);
     });
-    
-    // Mövcud session-ı yoxlayaq
-    const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      }
-      
-      setLoading(false);
-    };
     
     initializeAuth();
     
@@ -66,7 +66,7 @@ export const useSupabaseAuth = () => {
       if (roleError) throw roleError;
       
       // Auth istifadəçi məlumatlarını əldə et
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+      const { data: userData, error: userError } = await supabase.auth.getUser(userId);
       
       if (userError) throw userError;
       
@@ -83,7 +83,7 @@ export const useSupabaseAuth = () => {
         position: profileData.position,
         language: profileData.language || 'az',
         avatar: profileData.avatar,
-        status: profileData.status,
+        status: profileData.status || 'active',
         last_login: profileData.last_login,
         created_at: profileData.created_at,
         updated_at: profileData.updated_at

@@ -113,3 +113,65 @@ export interface FullUserData {
   created_at: string;
   updated_at: string;
 }
+
+// Digər interfeyslər üçün
+
+// Məktəb interfeysi
+export interface School {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principal_name?: string;
+  admin_email?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
+  logo?: string;
+  region_id: string;
+  sector_id: string;
+  completion_rate?: number;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Region interfeysi
+export interface Region {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Sektor interfeysi
+export interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
+  description?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Data entry interfeysi
+export interface DataEntry {
+  id: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  value?: string;
+  status?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+}
