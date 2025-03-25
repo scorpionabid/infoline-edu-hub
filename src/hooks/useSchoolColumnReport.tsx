@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { School } from '@/types/school';
 import { CategoryWithColumns } from '@/types/column';
@@ -7,8 +8,8 @@ import { useColumns } from './useColumns';
 const mockSchool: School = {
   id: "school-1",
   name: "Şəhər Məktəbi #123",
-  region_id: "region-1",
-  sector_id: "sector-1",
+  regionId: "region-1",
+  sectorId: "sector-1",
   address: "Bakı şəhəri, Nəsimi rayonu",
   status: "active",
 };
@@ -55,14 +56,48 @@ const mockCategories: CategoryWithColumns[] = [
   }
 ];
 
-interface SchoolColumnReport {
+// Məktəb sütun məlumatları
+interface SchoolColumnData {
+  schoolId: string;
+  schoolName: string;
+  region?: string;
+  sector?: string;
+  status?: string;
+  rejectionReason?: string;
+  columnData: {
+    columnId: string;
+    value: any;
+    status?: string;
+  }[];
+}
+
+export interface SchoolColumnReport {
   school: School;
   categories: CategoryWithColumns[];
+  selectedCategoryId: string;
+  setSelectedCategoryId: (categoryId: string) => void;
+  schoolColumnData: SchoolColumnData[];
+  sectors: string[];
+  isCategoriesLoading: boolean;
+  isCategoriesError: boolean;
+  isDataLoading: boolean;
+  exportData: (options?: any) => void;
+  toggleSchoolSelection: (schoolId: string) => void;
+  selectAllSchools: () => void;
+  deselectAllSchools: () => void;
+  getSelectedSchoolsData: () => SchoolColumnData[];
 }
 
 export const useSchoolColumnReport = (schoolId: string): SchoolColumnReport => {
   const [school, setSchool] = useState<School>(mockSchool);
   const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(mockCategories[0]?.id || '');
+  const [schoolColumnData, setSchoolColumnData] = useState<SchoolColumnData[]>([]);
+  const [sectors, setSectors] = useState<string[]>(['Bakı şəhəri', 'Abşeron', 'Sumqayıt']);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState<boolean>(false);
+  const [isCategoriesError, setIsCategoriesError] = useState<boolean>(false);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const { columns } = useColumns();
 
   useEffect(() => {
@@ -70,7 +105,86 @@ export const useSchoolColumnReport = (schoolId: string): SchoolColumnReport => {
     // Məsələn:
     // fetch(`/api/schools/${schoolId}`).then(res => res.json()).then(data => setSchool(data));
     // fetch(`/api/schools/${schoolId}/categories`).then(res => res.json()).then(data => setCategories(data));
+    
+    // Demo məlumatlar
+    const mockSchoolData: SchoolColumnData[] = [
+      {
+        schoolId: "school-1",
+        schoolName: "Şəhər Məktəbi #123",
+        region: "Bakı",
+        sector: "Nəsimi",
+        status: "Gözləmədə",
+        columnData: [
+          { columnId: "col-1", value: 1200 },
+          { columnId: "col-2", value: 85 },
+          { columnId: "col-3", value: 42 },
+          { columnId: "col-4", value: 98 },
+          { columnId: "col-5", value: true },
+          { columnId: "col-6", value: true },
+        ]
+      },
+      {
+        schoolId: "school-2",
+        schoolName: "Kənd Məktəbi #45",
+        region: "Abşeron",
+        sector: "Xırdalan",
+        status: "Gözləmədə",
+        columnData: [
+          { columnId: "col-1", value: 450 },
+          { columnId: "col-2", value: 32 },
+          { columnId: "col-3", value: 18 },
+          { columnId: "col-4", value: 92 },
+          { columnId: "col-5", value: false },
+          { columnId: "col-6", value: true },
+        ]
+      }
+    ];
+    
+    setSchoolColumnData(mockSchoolData);
   }, [schoolId]);
 
-  return { school, categories };
+  const toggleSchoolSelection = (schoolId: string) => {
+    setSelectedSchools(prev => {
+      if (prev.includes(schoolId)) {
+        return prev.filter(id => id !== schoolId);
+      } else {
+        return [...prev, schoolId];
+      }
+    });
+  };
+
+  const selectAllSchools = () => {
+    const allSchoolIds = schoolColumnData.map(school => school.schoolId);
+    setSelectedSchools(allSchoolIds);
+  };
+
+  const deselectAllSchools = () => {
+    setSelectedSchools([]);
+  };
+
+  const getSelectedSchoolsData = () => {
+    return schoolColumnData.filter(school => selectedSchools.includes(school.schoolId));
+  };
+
+  const exportData = (options?: any) => {
+    console.log("Exporting data with options:", options);
+    // Excel ixracını həyata keçirə bilər
+  };
+
+  return { 
+    school, 
+    categories, 
+    selectedCategoryId, 
+    setSelectedCategoryId,
+    schoolColumnData,
+    sectors,
+    isCategoriesLoading,
+    isCategoriesError,
+    isDataLoading,
+    exportData,
+    toggleSchoolSelection,
+    selectAllSchools,
+    deselectAllSchools,
+    getSelectedSchoolsData
+  };
 };

@@ -265,7 +265,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 <CategoryHeader 
                   name={currentCategory.name}
                   description={currentCategory.description || ''}
-                  deadline={currentCategory.deadline}
+                  deadline={typeof currentCategory.deadline === 'string' ? currentCategory.deadline : currentCategory.deadline?.toISOString()}
                   completionPercentage={getCurrentCategoryCompletion()}
                   isSubmitted={formData.status === 'submitted'}
                 />

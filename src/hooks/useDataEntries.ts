@@ -245,13 +245,27 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         throw new Error('Category ID and School ID are required');
       }
 
-      // Düzəltmə: "submit_category_for_approval" funksiya adından istifadə edərək doğru RPC çağırışı
-      const { data, error } = await supabase.rpc('submit_category_for_approval', {
-        p_category_id: categoryId,
-        p_school_id: schoolId
-      });
+      // RPC çağırışı yerinə birbaşa sorğu edirik
+      const { data: entries, error: entriesError } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
 
-      if (error) throw error;
+      if (entriesError) throw entriesError;
+      
+      if (!entries || entries.length === 0) {
+        throw new Error('No data entries found for this category');
+      }
+      
+      // Bütün məlumatları 'pending' statusuna yeniləyirik
+      const { error: updateError } = await supabase
+        .from('data_entries')
+        .update({ status: 'pending' })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+        
+      if (updateError) throw updateError;
       
       await fetchDataEntries();
       
@@ -259,7 +273,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         description: t('categorySubmittedDesc')
       });
       
-      return data;
+      return { success: true };
     } catch (err: any) {
       console.error('Error submitting category for approval:', err);
       toast.error(t('errorOccurred'), {

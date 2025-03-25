@@ -34,13 +34,13 @@ export interface Column {
   id: string;
   categoryId: string;
   name: string;
-  type: ColumnType;
+  type: ColumnType | string; // Supabase-dən string şəklində gəldiyində uyğunlaşsın
   isRequired: boolean;
   placeholder?: string;
   helpText?: string;
   options?: ColumnOption[] | Json;
   order: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   defaultValue?: string;
   validationRules?: ValidationRules | Json;
   validation?: Json; // From Supabase

@@ -1,36 +1,40 @@
 
 import { CategoryWithColumns } from '@/types/column';
-import { createDemoCategory, createTeachersDemoCategory } from './createDemoCategory';
+import { createDemoCategories, createTeachersDemoCategory } from './createDemoCategory';
 
-/**
- * Kateqoriyaları deadline və əhəmiyyət dərəcəsinə görə sıralayır
- */
-export const sortCategories = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
+// Kateqoriyaları tarixin yeni olmasına görə sıralayır
+export const sortCategoriesByDate = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
   return [...categories].sort((a, b) => {
-    // Əvvəlcə deadline-a görə sıralama
-    if (a.deadline && b.deadline) {
-      const deadlineA = new Date(a.deadline);
-      const deadlineB = new Date(b.deadline);
-      return deadlineA.getTime() - deadlineB.getTime();
-    } else if (a.deadline) {
-      return -1; // a-nın deadline-ı var, öndə olmalıdır
-    } else if (b.deadline) {
-      return 1; // b-nin deadline-ı var, öndə olmalıdır
-    }
-    return 0;
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateB - dateA; // Ən yeni olandan başlayaraq
   });
 };
 
-/**
- * Mövcud kateqoriyaları demo kateqoriyalarla birləşdirir
- */
-export const combineWithDemoCategories = (existingCategories: CategoryWithColumns[]): CategoryWithColumns[] => {
-  const combinedCategories = [...existingCategories];
-  
-  // Əgər mövcud kateqoriyalar 2-dən azdırsa, demo kateqoriyaları əlavə edirik
-  if (existingCategories.length < 2) {
-    combinedCategories.push(createDemoCategory(), createTeachersDemoCategory());
-  }
-  
-  return combinedCategories;
+// Kateqoriyaları prioritetə görə sıralayır
+export const sortCategoriesByPriority = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
+  return [...categories].sort((a, b) => a.priority - b.priority);
+};
+
+// Status filtrinə görə kateqoriyaları filtrləyir
+export const filterCategoriesByStatus = (categories: CategoryWithColumns[], status: string): CategoryWithColumns[] => {
+  if (!status || status === 'all') return categories;
+  return categories.filter(cat => cat.status === status);
+};
+
+// Təyinata görə kateqoriyaları filtrləyir
+export const filterCategoriesByAssignment = (categories: CategoryWithColumns[], assignment: 'all' | 'sectors'): CategoryWithColumns[] => {
+  if (!assignment) return categories;
+  return categories.filter(cat => cat.assignment === assignment);
+};
+
+// Axtarış sorğusuna görə kateqoriyaları filtrləyir
+export const filterCategoriesBySearchQuery = (categories: CategoryWithColumns[], query: string): CategoryWithColumns[] => {
+  if (!query) return categories;
+  const lowercaseQuery = query.toLowerCase();
+  return categories.filter(
+    cat => 
+      cat.name.toLowerCase().includes(lowercaseQuery) || 
+      (cat.description && cat.description.toLowerCase().includes(lowercaseQuery))
+  );
 };
