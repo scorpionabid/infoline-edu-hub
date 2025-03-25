@@ -13,6 +13,7 @@ import { Form, FormStatus } from '@/types/form';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { FormItem } from '@/hooks/useDashboardData';
 
 interface SchoolAdminDashboardProps {
   data: {
@@ -28,7 +29,7 @@ interface SchoolAdminDashboardProps {
     categories?: number;
     totalForms?: number;
     completedForms?: number;
-    pendingForms?: number;
+    pendingForms: FormItem[]; // Burada tipi FormItem[] olaraq dəyişdiririk, number deyil
     rejectedForms?: number;
     dueDates?: Array<{
       category: string;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -407,7 +406,7 @@ export const useDashboardData = () => {
           ],
           recentForms: recentFormItems
         };
-        setDashboardData(schoolAdminData);
+        setDashboardData(schoolAdminData as any);
       }
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);

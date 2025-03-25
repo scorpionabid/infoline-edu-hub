@@ -8,7 +8,8 @@ import {
   SuperAdminDashboardData, 
   RegionAdminDashboardData,
   SectorAdminDashboardData,
-  SchoolAdminDashboardData 
+  SchoolAdminDashboardData,
+  FormItem
 } from '@/hooks/useDashboardData';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
@@ -107,10 +108,18 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       case 'schooladmin': {
         const schoolAdminData = dashboardData as SchoolAdminDashboardData;
         const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
+        
+        // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
+        const pendingFormsData = Array.isArray(schoolAdminData.pendingForms) 
+          ? schoolAdminData.pendingForms 
+          : [];
+        
         const preparedData = {
           ...schoolAdminData,
-          notifications: adaptedNotifications
+          notifications: adaptedNotifications,
+          pendingForms: pendingFormsData // Əmin olaq ki, pendingForms düzgün formadadır
         };
+        
         return (
           <SchoolAdminDashboard 
             data={preparedData}
