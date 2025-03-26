@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -88,8 +89,8 @@ const Login = () => {
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Direct login with Admin API - artıq supabaseKey-i birbaşa istifadə etmirik
-      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
+      // Direct login with Edge Function
+      const functionUrl = `${supabase.supabaseUrl}/functions/v1/direct-login`;
       
       console.log('Function URL:', functionUrl);
       console.log('Request payload:', { email, password });

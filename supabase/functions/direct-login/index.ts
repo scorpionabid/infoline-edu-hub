@@ -68,11 +68,16 @@ serve(async (req) => {
       console.log("SuperAdmin giriş istəyi aşkarlandı, xüsusi idarəetmə başladılır...")
       
       try {
-        // Admin istifadəçinin mövcud olub olmadığını yoxlayaq
-        const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(email)
+        // İstifadəçinin mövcud olub olmadığını daha təhlükəsiz yoxlayaq
+        const { data: userList, error: listError } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('full_name', 'superadmin')
+          .limit(1)
         
-        // Əgər istifadəçi yoxdursa, yaradaq
-        if (getUserError || !existingUser) {
+        const isSuperAdminExists = userList && userList.length > 0
+        
+        if (listError || !isSuperAdminExists) {
           console.log("SuperAdmin istifadəçisi mövcud deyil, yaradılır...")
           
           // İstifadəçi yaradılır
@@ -101,15 +106,23 @@ serve(async (req) => {
           await setupUserProfileAndRole(supabaseAdmin, newUser.user.id, email)
         } else {
           console.log("SuperAdmin istifadəçisi mövcuddur, rolları yoxlanılır...")
-          await setupUserProfileAndRole(supabaseAdmin, existingUser.user.id, email)
+          if (userList && userList.length > 0) {
+            await setupUserProfileAndRole(supabaseAdmin, userList[0].id, email)
+          }
         }
       } catch (adminError) {
         console.error("SuperAdmin yaratma/axtarma xətası:", adminError)
+        // Xətaya baxmayaraq davam edirik
       }
     }
 
     // Client üçün Supabase yaradaq
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true
+      }
+    })
 
     // Normal login prosesi
     const { data, error } = await supabaseClient.auth.signInWithPassword({
