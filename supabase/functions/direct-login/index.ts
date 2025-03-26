@@ -55,11 +55,12 @@ serve(async (req) => {
 
     console.log(`${email} üçün giriş cəhdi edilir`)
 
-    // Admin client yaradaq
+    // Admin client yaradaq - daha təhlükəsiz konfiqurasiya ilə
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        detectSessionInUrl: false
       }
     })
 
@@ -68,17 +69,38 @@ serve(async (req) => {
       console.log("SuperAdmin giriş istəyi aşkarlandı, xüsusi idarəetmə başladılır...")
       
       try {
-        // İstifadəçinin mövcud olub olmadığını daha təhlükəsiz yoxlayaq
-        const { data: userList, error: listError } = await supabaseAdmin
+        // İstifadəçinin mövcud olub olmadığını daha etibarlı yol ilə yoxlayaq
+        const { data: userList, error: userQueryError } = await supabaseAdmin
           .from('profiles')
           .select('id')
           .eq('full_name', 'superadmin')
           .limit(1)
+          
+        if (userQueryError) {
+          console.error("SuperAdmin yoxlama sorğusunda xəta:", userQueryError)
+        }
         
         const isSuperAdminExists = userList && userList.length > 0
         
-        if (listError || !isSuperAdminExists) {
+        if (!isSuperAdminExists) {
           console.log("SuperAdmin istifadəçisi mövcud deyil, yaradılır...")
+          
+          // Əvvəlcə eyni email ilə istifadəçi varsa silək (sadəcə SuperAdmin üçün)
+          try {
+            const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers({
+              filter: {
+                email: email
+              }
+            })
+            
+            if (existingUser && existingUser.users && existingUser.users.length > 0) {
+              console.log("Mövcud SuperAdmin hesabı tapıldı, silinir...")
+              await supabaseAdmin.auth.admin.deleteUser(existingUser.users[0].id)
+            }
+          } catch (deleteError) {
+            console.error("Mövcud hesabı silmə xətası:", deleteError)
+            // Xətanı ignore edək və davam edək
+          }
           
           // İstifadəçi yaradılır
           const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -116,11 +138,12 @@ serve(async (req) => {
       }
     }
 
-    // Client üçün Supabase yaradaq
+    // Client üçün Supabase yaradaq - daha etibarlı konfiqurasiya
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
-        persistSession: true
+        persistSession: true,
+        detectSessionInUrl: false
       }
     })
 
@@ -143,6 +166,8 @@ serve(async (req) => {
         errorMessage = 'Email təsdiqlənməyib'
       } else if (error.message?.includes('Database error')) {
         errorMessage = 'Verilənlər bazası xətası, Supabase konfiqurasiyası yoxlayın'
+      } else if (error.message?.includes('confirmation_token')) {
+        errorMessage = 'Giriş zamanı texniki xəta. Standart giriş metodu sınayın'
       }
       
       return new Response(
