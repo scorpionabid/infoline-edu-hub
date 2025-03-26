@@ -17,12 +17,12 @@ serve(async (req) => {
     console.log("Direct-login funksiyası çağırıldı")
     
     // URL və key almaq
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
     
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY tapılmadı")
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      console.error("SUPABASE konfiqurasiyası əksikdir")
       return new Response(
         JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
         { 
@@ -33,7 +33,20 @@ serve(async (req) => {
     }
 
     // Login məlumatlarını alaq
-    const requestData = await req.json()
+    let requestData
+    try {
+      requestData = await req.json()
+    } catch (error) {
+      console.error("Request JSON xətası:", error)
+      return new Response(
+        JSON.stringify({ error: 'Yanlış formatda istek' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+    
     console.log("Alınan istək məlumatları:", JSON.stringify({
       email: requestData.email,
       hasPassword: !!requestData.password
@@ -66,10 +79,10 @@ serve(async (req) => {
 
     // SuperAdmin üçün xüsusi yoxlama
     if (email === 'superadmin@infoline.az') {
-      console.log("SuperAdmin giriş istəyi aşkarlandı, xüsusi idarəetmə başladılır...")
+      console.log("SuperAdmin giriş istəyi aşkarlandı")
       
       try {
-        // İstifadəçinin mövcud olub olmadığını daha etibarlı yol ilə yoxlayaq
+        // İstifadəçinin mövcud olub olmadığını yoxlayaq
         const { data: userList, error: userQueryError } = await supabaseAdmin
           .from('profiles')
           .select('id')
@@ -87,22 +100,22 @@ serve(async (req) => {
           
           // Əvvəlcə eyni email ilə istifadəçi varsa silək (sadəcə SuperAdmin üçün)
           try {
-            const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers({
+            const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers({
               filter: {
                 email: email
               }
             })
             
-            if (existingUser && existingUser.users && existingUser.users.length > 0) {
+            if (existingUsers && existingUsers.users && existingUsers.users.length > 0) {
               console.log("Mövcud SuperAdmin hesabı tapıldı, silinir...")
-              await supabaseAdmin.auth.admin.deleteUser(existingUser.users[0].id)
+              await supabaseAdmin.auth.admin.deleteUser(existingUsers.users[0].id)
             }
           } catch (deleteError) {
             console.error("Mövcud hesabı silmə xətası:", deleteError)
             // Xətanı ignore edək və davam edək
           }
           
-          // İstifadəçi yaradılır - email_confirm true edilir və NULL dəyərlər problemini aradan qaldırmaq üçün
+          // İstifadəçi yaradılır
           const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
@@ -114,7 +127,7 @@ serve(async (req) => {
             console.error("SuperAdmin yaratma xətası:", createError)
             return new Response(
               JSON.stringify({ 
-                error: 'SuperAdmin yaratma zamanı xəta: ' + createError.message,
+                error: 'SuperAdmin yaratma zamanı xəta',
                 details: createError 
               }),
               { 
@@ -124,12 +137,9 @@ serve(async (req) => {
             )
           }
           
-          console.log("SuperAdmin yaradıldı, profil və rol təyin edilir...")
-          await setupUserProfileAndRole(supabaseAdmin, newUser.user.id, email)
-        } else {
-          console.log("SuperAdmin istifadəçisi mövcuddur, rolları yoxlanılır...")
-          if (userList && userList.length > 0) {
-            await setupUserProfileAndRole(supabaseAdmin, userList[0].id, email)
+          if (newUser && newUser.user) {
+            console.log("SuperAdmin yaradıldı, profil və rol təyin edilir...")
+            await setupSuperAdminProfile(supabaseAdmin, newUser.user.id, email)
           }
         }
       } catch (adminError) {
@@ -138,14 +148,8 @@ serve(async (req) => {
       }
     }
 
-    // Client üçün Supabase yaradaq - daha etibarlı konfiqurasiya
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false
-      }
-    })
+    // Client üçün Supabase yaradaq
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
     // Normal login prosesi
     try {
@@ -157,18 +161,18 @@ serve(async (req) => {
       if (error) {
         console.error('Login xətası:', error)
         
-        // Daha detallı xəta məlumatları qeyd edək
         const statusCode = error.status || 400
         let errorMessage = error.message || 'Bilinməyən xəta'
         
+        // Daha dəqiq xəta mesajları
         if (error.message?.includes('Invalid login credentials')) {
           errorMessage = 'Yanlış login məlumatları'
         } else if (error.message?.includes('Email not confirmed')) {
           errorMessage = 'Email təsdiqlənməyib'
         } else if (error.message?.includes('Database error')) {
-          errorMessage = 'Verilənlər bazası xətası, Supabase konfiqurasiyası yoxlayın'
+          errorMessage = 'Verilənlər bazası xətası'
         } else if (error.message?.includes('confirmation_token') || error.message?.includes('email_change') || error.message?.includes('null value')) {
-          errorMessage = 'Giriş zamanı texniki xəta. Supabase auth cədvəl strukturunda problem var. Standart giriş metodu sınayın'
+          errorMessage = 'Giriş zamanı texniki xəta'
         }
         
         return new Response(
@@ -186,7 +190,6 @@ serve(async (req) => {
 
       console.log("Uğurla daxil olundu, istifadəçi ID:", data.user?.id)
 
-      // User-ın olması və sessiya yaradılması
       if (!data.user || !data.session) {
         console.error("İstifadəçi və ya sessiya yaradıla bilmədi")
         return new Response(
@@ -198,7 +201,6 @@ serve(async (req) => {
         )
       }
 
-      // Uğurlu nəticə və sessiya
       return new Response(
         JSON.stringify({ 
           user: data.user,
@@ -211,10 +213,9 @@ serve(async (req) => {
       )
     } catch (authError) {
       console.error('Supabase auth işləyərkən ciddi xəta:', authError)
-      // Ümumiyyətlə SQL conversion xətasını daha yaxşı idarə etmək üçün
       return new Response(
         JSON.stringify({ 
-          error: 'Supabase auth xətası: NULL dəyərlərin işlənməsində problem',
+          error: 'Supabase auth xətası',
           details: authError
         }),
         { 
@@ -238,10 +239,10 @@ serve(async (req) => {
   }
 })
 
-// İstifadəçi profili və rolunu yaradır/yoxlayır/yeniləyir
-async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
+// SuperAdmin profilini yaradır/yoxlayır
+async function setupSuperAdminProfile(supabaseAdmin, userId, email) {
   try {
-    console.log(`İstifadəçi profili və rolu yoxlanılır/yaradılır: ${userId}`);
+    console.log(`SuperAdmin profili yoxlanılır/yaradılır: ${userId}`);
     
     // Profil yoxlanılır
     let profileExists = false;
@@ -267,7 +268,7 @@ async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
           .from('profiles')
           .insert({
             id: userId,
-            full_name: email.split('@')[0] || 'İstifadəçi',
+            full_name: 'superadmin',
             language: 'az',
             status: 'active',
             last_login: new Date().toISOString(),
@@ -283,40 +284,19 @@ async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
       } catch (insertError) {
         console.error("Profil yaratma xətası:", insertError);
       }
-    } else {
-      // Profil var, last_login yeniləyək
-      try {
-        const { error: updateError } = await supabaseAdmin
-          .from('profiles')
-          .update({ 
-            last_login: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', userId);
-        
-        if (updateError) {
-          console.error("Profil yeniləmə xətası:", updateError);
-        } else {
-          console.log(`${email} üçün son giriş tarixi yeniləndi`);
-        }
-      } catch (updateError) {
-        console.error("Profil yeniləmə xətası:", updateError);
-      }
     }
     
     // Rol yoxlanılır
     let roleExists = false;
-    let existingRole = null;
     
     try {
       const { data: roleData } = await supabaseAdmin
         .from('user_roles')
-        .select('role, region_id, sector_id, school_id')
+        .select('role')
         .eq('user_id', userId)
         .maybeSingle();
         
       roleExists = !!roleData;
-      existingRole = roleData;
     } catch (checkError) {
       console.error("Rol yoxlama xətası:", checkError);
     }
@@ -325,15 +305,12 @@ async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
     if (!roleExists) {
       console.log(`${userId} ID-li istifadəçi üçün rol yaradılır...`);
       
-      // Default olaraq superadmin@infoline.az üçün superadmin, digərləri üçün schooladmin
-      const defaultRole = email === 'superadmin@infoline.az' ? 'superadmin' : 'schooladmin';
-      
       try {
         const { error: insertError } = await supabaseAdmin
           .from('user_roles')
           .insert({
             user_id: userId,
-            role: defaultRole,
+            role: 'superadmin',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -341,34 +318,29 @@ async function setupUserProfileAndRole(supabaseAdmin, userId, email) {
         if (insertError) {
           console.error("Rol yaratma xətası:", insertError);
         } else {
-          console.log(`${email} üçün '${defaultRole}' rolu yaradıldı`);
+          console.log(`${email} üçün 'superadmin' rolu yaradıldı`);
         }
       } catch (insertError) {
         console.error("Rol yaratma xətası:", insertError);
       }
     } else {
-      // SuperAdmin üçün əlavə yoxlamalar
-      if (email === 'superadmin@infoline.az' && existingRole && existingRole.role !== 'superadmin') {
-        try {
-          // SuperAdmin üçün rol yenilənir
-          const { error: updateError } = await supabaseAdmin
-            .from('user_roles')
-            .update({ 
-              role: 'superadmin',
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', userId);
-          
-          if (updateError) {
-            console.error("SuperAdmin rol yeniləmə xətası:", updateError);
-          } else {
-            console.log(`${email} üçün rol 'superadmin' olaraq yeniləndi`);
-          }
-        } catch (updateError) {
-          console.error("SuperAdmin rol yeniləmə xətası:", updateError);
+      // Rolun superadmin olduğunu təmin edək
+      try {
+        const { error: updateError } = await supabaseAdmin
+          .from('user_roles')
+          .update({ 
+            role: 'superadmin',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+        
+        if (updateError) {
+          console.error("Rol yeniləmə xətası:", updateError);
+        } else {
+          console.log(`${email} üçün rol 'superadmin' olaraq yeniləndi`);
         }
-      } else {
-        console.log(`${email} üçün rol artıq mövcuddur: ${existingRole?.role || 'bilinməyən'}`);
+      } catch (updateError) {
+        console.error("Rol yeniləmə xətası:", updateError);
       }
     }
   } catch (dbError) {
