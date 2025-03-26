@@ -102,7 +102,7 @@ serve(async (req) => {
             // Xətanı ignore edək və davam edək
           }
           
-          // İstifadəçi yaradılır
+          // İstifadəçi yaradılır - email_confirm true edilir və NULL dəyərlər problemini aradan qaldırmaq üçün
           const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
@@ -148,66 +148,81 @@ serve(async (req) => {
     })
 
     // Normal login prosesi
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    })
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      })
 
-    if (error) {
-      console.error('Login xətası:', error)
-      
-      // Daha detallı xəta məlumatları qeyd edək
-      const statusCode = error.status || 400
-      let errorMessage = error.message || 'Bilinməyən xəta'
-      
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = 'Yanlış login məlumatları'
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = 'Email təsdiqlənməyib'
-      } else if (error.message?.includes('Database error')) {
-        errorMessage = 'Verilənlər bazası xətası, Supabase konfiqurasiyası yoxlayın'
-      } else if (error.message?.includes('confirmation_token')) {
-        errorMessage = 'Giriş zamanı texniki xəta. Standart giriş metodu sınayın'
+      if (error) {
+        console.error('Login xətası:', error)
+        
+        // Daha detallı xəta məlumatları qeyd edək
+        const statusCode = error.status || 400
+        let errorMessage = error.message || 'Bilinməyən xəta'
+        
+        if (error.message?.includes('Invalid login credentials')) {
+          errorMessage = 'Yanlış login məlumatları'
+        } else if (error.message?.includes('Email not confirmed')) {
+          errorMessage = 'Email təsdiqlənməyib'
+        } else if (error.message?.includes('Database error')) {
+          errorMessage = 'Verilənlər bazası xətası, Supabase konfiqurasiyası yoxlayın'
+        } else if (error.message?.includes('confirmation_token') || error.message?.includes('email_change') || error.message?.includes('null value')) {
+          errorMessage = 'Giriş zamanı texniki xəta. Supabase auth cədvəl strukturunda problem var. Standart giriş metodu sınayın'
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            error: errorMessage,
+            status: statusCode,
+            details: error
+          }),
+          { 
+            status: statusCode, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
-      
+
+      console.log("Uğurla daxil olundu, istifadəçi ID:", data.user?.id)
+
+      // User-ın olması və sessiya yaradılması
+      if (!data.user || !data.session) {
+        console.error("İstifadəçi və ya sessiya yaradıla bilmədi")
+        return new Response(
+          JSON.stringify({ error: 'İstifadəçi və ya sessiya yaradıla bilmədi' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      // Uğurlu nəticə və sessiya
       return new Response(
         JSON.stringify({ 
-          error: errorMessage,
-          status: statusCode,
-          details: error
+          user: data.user,
+          session: data.session
         }),
         { 
-          status: statusCode, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
-    }
-
-    console.log("Uğurla daxil olundu, istifadəçi ID:", data.user?.id)
-
-    // User-ın olması və sessiya yaradılması
-    if (!data.user || !data.session) {
-      console.error("İstifadəçi və ya sessiya yaradıla bilmədi")
+    } catch (authError) {
+      console.error('Supabase auth işləyərkən ciddi xəta:', authError)
+      // Ümumiyyətlə SQL conversion xətasını daha yaxşı idarə etmək üçün
       return new Response(
-        JSON.stringify({ error: 'İstifadəçi və ya sessiya yaradıla bilmədi' }),
+        JSON.stringify({ 
+          error: 'Supabase auth xətası: NULL dəyərlərin işlənməsində problem',
+          details: authError
+        }),
         { 
-          status: 400, 
+          status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
-
-    // Uğurlu nəticə və sessiya
-    return new Response(
-      JSON.stringify({ 
-        user: data.user,
-        session: data.session
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
   } catch (error) {
     console.error('Serverdə xəta:', error)
     return new Response(

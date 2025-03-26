@@ -89,7 +89,7 @@ const Login = () => {
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Sabit URL-dən istifadə edərək Edge Function-u çağıraq
+      // Edge Function URL-i (sabit mətn kimi verilir - supabase.supabaseUrl protected property-dir)
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
       
       console.log('Function URL:', functionUrl);
@@ -123,6 +123,23 @@ const Login = () => {
       console.log('Direct login cavabı:', responseData);
       
       if (!response.ok) {
+        // Email_change, confirmation_token və s. ilə bağlı xətalarla əlaqəli olub olmadığını yoxlayaq
+        if (responseData.details && (
+          responseData.details.message?.includes('email_change') || 
+          responseData.details.message?.includes('confirmation_token') ||
+          responseData.details.message?.includes('null value')
+        )) {
+          console.log("NULL dəyər problemi aşkarlandı, standart giriş metoduna keçilir");
+          // Standart login metodu ilə cəhd edək
+          const success = await login(email, password);
+          
+          if (success) {
+            console.log('Standart login uğurlu oldu');
+            toast.success(t('loginSuccess'));
+            return;
+          }
+        }
+        
         throw new Error(responseData.error || 'Birbaşa login uğursuz oldu');
       }
       
@@ -138,7 +155,7 @@ const Login = () => {
           throw sessionError;
         }
         
-        toast.success('Birbaşa login uğurlu oldu');
+        toast.success(t('loginSuccess'));
         
         // setSession çağrışından sonra bir qədər gözləyək ki, onAuthStateChange tetiklənsin
         setTimeout(() => {

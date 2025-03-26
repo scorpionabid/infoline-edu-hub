@@ -57,32 +57,33 @@ export async function fetchUserData(userId: string): Promise<FullUserData> {
       userStatus = profileData.status as 'active' | 'inactive' | 'blocked';
     }
     
+    // Bütün nullable sahələr üçün varsayılan dəyərlər təmin edək
     // profileData və roleData-nı birləşdirək
     const userData: FullUserData = {
       id: userId,
       email: user.email || '',
-      full_name: profileData.full_name,
-      role: roleData.role,
+      full_name: profileData.full_name || 'İstifadəçi', // varsayılan ad
+      role: roleData.role || 'schooladmin', // varsayılan rol
       region_id: roleData.region_id,
       sector_id: roleData.sector_id,
       school_id: roleData.school_id,
-      phone: profileData.phone,
-      position: profileData.position,
+      phone: profileData.phone || '',
+      position: profileData.position || '',
       language: profileData.language || 'az',
-      avatar: profileData.avatar,
+      avatar: profileData.avatar || '',
       status: userStatus,
-      last_login: profileData.last_login,
-      created_at: profileData.created_at,
-      updated_at: profileData.updated_at,
+      last_login: profileData.last_login || new Date().toISOString(),
+      created_at: profileData.created_at || new Date().toISOString(),
+      updated_at: profileData.updated_at || new Date().toISOString(),
       
       // App üçün alternativ adlar
-      name: profileData.full_name,
+      name: profileData.full_name || 'İstifadəçi',
       regionId: roleData.region_id,
       sectorId: roleData.sector_id,
       schoolId: roleData.school_id,
-      lastLogin: profileData.last_login,
-      createdAt: profileData.created_at,
-      updatedAt: profileData.updated_at,
+      lastLogin: profileData.last_login || new Date().toISOString(),
+      createdAt: profileData.created_at || new Date().toISOString(),
+      updatedAt: profileData.updated_at || new Date().toISOString(),
       
       // Default tətbiq xüsusiyyətləri
       twoFactorEnabled: false,
