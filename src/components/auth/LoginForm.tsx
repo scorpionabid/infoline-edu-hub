@@ -58,11 +58,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Birbaşa login cəhdi
-      const directLoginSuccess = await handleDirectLogin();
+      // Təhlükəsiz login cəhdi - yeni edge function vasitəsilə
+      const safeLoginSuccess = await handleSafeLogin();
       
-      // Əgər birbaşa login uğursuz olsa, normal login metodu ilə cəhd edək
-      if (!directLoginSuccess) {
+      // Əgər təhlükəsiz login uğursuz olsa, normal login metodu ilə cəhd edək
+      if (!safeLoginSuccess) {
         console.log('Normal login cəhdi edilir');
         const success = await login(email, password);
         
@@ -79,13 +79,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
     }
   };
 
-  // Birbaşa login cəhdi
-  const handleDirectLogin = async (): Promise<boolean> => {
+  // Təhlükəsiz login cəhdi - yeni edge function
+  const handleSafeLogin = async (): Promise<boolean> => {
     try {
-      console.log('Birbaşa login cəhdi edilir...');
+      console.log('Təhlükəsiz login cəhdi edilir...');
       
       // Edge Function URL-i
-      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
+      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/safe-login';
       
       console.log('Function URL:', functionUrl);
       
@@ -100,11 +100,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
         })
       });
       
-      console.log('Direct login status kodu:', response.status);
+      console.log('Safe login status kodu:', response.status);
       
       // İlk olaraq text() olaraq responseni alaq və sonra JSON-a çevirək - debugging üçün
       const responseText = await response.text();
-      console.log('Direct login xam cavabı:', responseText);
+      console.log('Safe login xam cavabı:', responseText);
       
       let responseData;
       try {
@@ -114,20 +114,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
         throw new Error('Server cavabı düzgün format deyil');
       }
       
-      console.log('Direct login cavabı:', responseData);
+      console.log('Safe login cavabı:', responseData);
       
       if (!response.ok) {
-        // Email_change, confirmation_token və s. ilə bağlı xətalarla əlaqəli olub olmadığını yoxlayaq
-        if (responseData.details && (
-          responseData.details.message?.includes('email_change') || 
-          responseData.details.message?.includes('confirmation_token') ||
-          responseData.details.message?.includes('null value')
-        )) {
-          console.log("NULL dəyər problemi aşkarlandı");
-          return false; // Normal login-ə keçid ediləcək
-        }
-        
-        throw new Error(responseData.error || 'Birbaşa login uğursuz oldu');
+        throw new Error(responseData.error || 'Təhlükəsiz login uğursuz oldu');
       }
       
       if (responseData.session) {
@@ -154,9 +144,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
         throw new Error('Sessiya qaytarılmadı');
       }
     } catch (error: any) {
-      console.error('Direct login error:', error);
+      console.error('Safe login error:', error);
       setDirectLoginError(error.message || 'Gözlənilməz xəta');
-      toast.error('Birbaşa login uğursuz oldu', {
+      toast.error('Təhlükəsiz login uğursuz oldu', {
         description: error.message || 'Gözlənilməz xəta'
       });
       
