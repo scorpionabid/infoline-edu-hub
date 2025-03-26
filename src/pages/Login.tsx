@@ -68,7 +68,18 @@ const Login = () => {
       await supabase.auth.signOut();
       
       // Birbaşa login cəhdi
-      await handleDirectLogin();
+      const directLoginSuccess = await handleDirectLogin();
+      
+      // Əgər birbaşa login uğursuz olsa, normal login metodu ilə cəhd edək
+      if (!directLoginSuccess) {
+        console.log('Normal login cəhdi edilir');
+        const success = await login(email, password);
+        
+        if (success) {
+          console.log('Normal login uğurlu oldu');
+          toast.success(t('loginSuccess'));
+        }
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       // Xətaları context vasitəsilə idarə edirik
@@ -78,22 +89,14 @@ const Login = () => {
   };
 
   // Birbaşa login cəhdi
-  const handleDirectLogin = async () => {
+  const handleDirectLogin = async (): Promise<boolean> => {
     try {
-      setLoginInProgress(true);
-      clearError();
-      setDirectLoginError(null);
-      
       console.log('Birbaşa login cəhdi edilir...');
       
-      // Əvvəlcə mövcud sessiyaları təmizləyək
-      await supabase.auth.signOut();
-      
-      // Edge Function URL-i (sabit mətn kimi verilir - supabase.supabaseUrl protected property-dir)
+      // Edge Function URL-i
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
       
       console.log('Function URL:', functionUrl);
-      console.log('Request payload:', { email, password });
       
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -129,15 +132,8 @@ const Login = () => {
           responseData.details.message?.includes('confirmation_token') ||
           responseData.details.message?.includes('null value')
         )) {
-          console.log("NULL dəyər problemi aşkarlandı, standart giriş metoduna keçilir");
-          // Standart login metodu ilə cəhd edək
-          const success = await login(email, password);
-          
-          if (success) {
-            console.log('Standart login uğurlu oldu');
-            toast.success(t('loginSuccess'));
-            return;
-          }
+          console.log("NULL dəyər problemi aşkarlandı");
+          return false; // Normal login-ə keçid ediləcək
         }
         
         throw new Error(responseData.error || 'Birbaşa login uğursuz oldu');
@@ -161,6 +157,8 @@ const Login = () => {
         setTimeout(() => {
           navigate('/dashboard');
         }, 1000);
+        
+        return true;
       } else {
         throw new Error('Sessiya qaytarılmadı');
       }
@@ -171,21 +169,7 @@ const Login = () => {
         description: error.message || 'Gözlənilməz xəta'
       });
       
-      // Normal giriş işə düşməsə, alternativ təqdim edilir
-      try {
-        console.log("Normal login cəhdi edilir...");
-        // Normal giriş metodu ilə cəhd edək
-        const success = await login(email, password);
-        
-        if (success) {
-          console.log('Login uğurlu oldu');
-          toast.success(t('loginSuccess'));
-        }
-      } catch (loginError: any) {
-        console.error("Normal login xətası:", loginError);
-      }
-    } finally {
-      setLoginInProgress(false);
+      return false;
     }
   };
 
