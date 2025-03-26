@@ -67,14 +67,8 @@ const Login = () => {
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Auth context vasitəsilə giriş
-      const success = await login(email, password);
-      
-      if (success) {
-        console.log('Login uğurlu oldu');
-        toast.success(t('loginSuccess'));
-        // Yönləndirilmə auth context-in useEffect-i tərəfindən ediləcək
-      }
+      // Birbaşa login cəhdi
+      await handleDirectLogin();
     } catch (error: any) {
       console.error('Login error:', error);
       // Xətaları context vasitəsilə idarə edirik
@@ -96,6 +90,7 @@ const Login = () => {
       await supabase.auth.signOut();
       
       // Direct login with Admin API
+      const anonKey = supabase.supabaseKey;
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
       
       console.log('Function URL:', functionUrl);
@@ -105,6 +100,7 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`
         },
         body: JSON.stringify({
           email: email || 'superadmin@infoline.az',
@@ -159,6 +155,20 @@ const Login = () => {
       toast.error('Birbaşa login uğursuz oldu', {
         description: error.message || 'Gözlənilməz xəta'
       });
+      
+      // Normal giriş işə düşməsə, alternativ təqdim edilir
+      try {
+        console.log("Normal login cəhdi edilir...");
+        // Normal giriş metodu ilə cəhd edək
+        const success = await login(email, password);
+        
+        if (success) {
+          console.log('Login uğurlu oldu');
+          toast.success(t('loginSuccess'));
+        }
+      } catch (loginError: any) {
+        console.error("Normal login xətası:", loginError);
+      }
     } finally {
       setLoginInProgress(false);
     }
@@ -271,18 +281,6 @@ const Login = () => {
             {loginInProgress ? t('loggingIn') : t('login')}
           </Button>
         </form>
-        
-        <div className="mt-6 pt-6 border-t border-border">
-          <h3 className="text-sm font-medium mb-2">Alternativ giriş üsulu</h3>
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleDirectLogin}
-            disabled={loginInProgress}
-          >
-            Birbaşa Supabase ilə daxil ol
-          </Button>
-        </div>
         
         <div className="mt-4 text-center text-sm text-muted-foreground">
           <p>SuperAdmin: <span className="font-medium">superadmin@infoline.az</span></p>
