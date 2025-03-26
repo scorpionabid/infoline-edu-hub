@@ -48,6 +48,15 @@ export async function fetchUserData(userId: string): Promise<FullUserData> {
       throw new Error('User role data not found');
     }
     
+    // Status dəyərinin tipini düzgün əhatə edək
+    // Varsayılan olaraq 'active' istifadə edək, əgər status dəyəri yoxdursa və ya düzgün tipdə deyilsə
+    let userStatus: 'active' | 'inactive' | 'blocked' = 'active';
+    
+    // Əgər profileData.status varsa və düzgün tipdədirsə, onu istifadə edək
+    if (profileData.status && ['active', 'inactive', 'blocked'].includes(profileData.status)) {
+      userStatus = profileData.status as 'active' | 'inactive' | 'blocked';
+    }
+    
     // profileData və roleData-nı birləşdirək
     const userData: FullUserData = {
       id: userId,
@@ -61,7 +70,7 @@ export async function fetchUserData(userId: string): Promise<FullUserData> {
       position: profileData.position,
       language: profileData.language || 'az',
       avatar: profileData.avatar,
-      status: profileData.status || 'active',
+      status: userStatus,
       last_login: profileData.last_login,
       created_at: profileData.created_at,
       updated_at: profileData.updated_at,
