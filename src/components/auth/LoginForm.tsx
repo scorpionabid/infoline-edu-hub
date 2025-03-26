@@ -85,7 +85,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
       console.log('Təhlükəsiz login cəhdi edilir...');
       
       // Edge Function URL-i
-      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/safe-login';
+      const functionUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}/functions/v1/safe-login`;
       
       console.log('Function URL:', functionUrl);
       
