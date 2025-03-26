@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -89,8 +88,8 @@ const Login = () => {
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Direct login with Edge Function
-      const functionUrl = `${supabase.supabaseUrl}/functions/v1/direct-login`;
+      // Sabit URL-dən istifadə edərək Edge Function-u çağıraq
+      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
       
       console.log('Function URL:', functionUrl);
       console.log('Request payload:', { email, password });
@@ -99,7 +98,6 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Bearer token olmadan sadəcə anonymous çağırırıq
         },
         body: JSON.stringify({
           email: email || 'superadmin@infoline.az',
