@@ -1,12 +1,12 @@
 
 project_id = "olbfnauhzpdskqnxtwav"
 
-[[edge_functions]]
+[[functions]]
 name = "safe-login"
 path = "supabase/functions/safe-login"
 verify_jwt = false
 
-[[edge_functions]]
+[[functions]]
 name = "direct-login"
 path = "supabase/functions/direct-login"
 verify_jwt = false
