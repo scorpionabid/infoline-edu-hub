@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -89,8 +88,7 @@ const Login = () => {
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Direct login with Admin API
-      const anonKey = supabase.supabaseKey;
+      // Direct login with Admin API - artıq supabaseKey-i birbaşa istifadə etmirik
       const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
       
       console.log('Function URL:', functionUrl);
@@ -100,7 +98,7 @@ const Login = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`
+          // Bearer token olmadan sadəcə anonymous çağırırıq
         },
         body: JSON.stringify({
           email: email || 'superadmin@infoline.az',
