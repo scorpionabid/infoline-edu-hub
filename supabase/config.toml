@@ -1,12 +1,8 @@
 
 project_id = "olbfnauhzpdskqnxtwav"
 
-[[functions]]
-name = "safe-login"
-path = "supabase/functions/safe-login"
+[functions.safe-login]
 verify_jwt = false
 
-[[functions]]
-name = "direct-login"
-path = "supabase/functions/direct-login"
+[functions.direct-login]
 verify_jwt = false
