@@ -122,4 +122,13 @@ export interface ChartData {
   categoryCompletionData: { name: string; completed: number }[];
 }
 
-export type { FormStatus };
+export type { 
+  FormItem, 
+  DashboardData, 
+  SuperAdminDashboardData, 
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData,
+  SchoolAdminDashboardData,
+  ChartData,
+  FormStatus
+};
