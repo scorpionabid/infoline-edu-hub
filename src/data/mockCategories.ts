@@ -1,7 +1,7 @@
 import { CategoryWithColumns } from '@/types/column';
 
 // Mock kateqoriyalar və sütunlar
-export const mockCategories: CategoryWithColumns[] = [
+export const categories: CategoryWithColumns[] = [
   {
     id: "cat1",
     name: "Ümumi məlumatlar",
