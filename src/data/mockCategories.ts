@@ -1,3 +1,4 @@
+
 import { CategoryWithColumns } from '@/types/column';
 
 // Mock kateqoriyalar və sütunlar
@@ -236,6 +237,9 @@ export const categories: CategoryWithColumns[] = [
     ]
   }
 ];
+
+// Əvvəlki versiya ilə uyğunluq üçün bu export əlavə edirik
+export const mockCategories = categories;
 
 // Sütun tipinə görə ilkin dəyər təyin etmək
 export const getDefaultValueByType = (type: string, defaultValue?: string) => {
