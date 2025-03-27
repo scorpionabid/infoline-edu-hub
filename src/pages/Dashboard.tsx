@@ -7,11 +7,13 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import { useDashboardData } from '@/hooks/dashboard/useDashboardData';
 import { ChartData } from '@/types/dashboard';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { dashboardData, isLoading, error, chartData, userRole } = useDashboardData();
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
+  const navigate = useNavigate();
   
   // Əgər 5 saniyədən çox yüklənmə davam edirsə, fallback data göstərək
   useEffect(() => {
@@ -24,6 +26,14 @@ const Dashboard: React.FC = () => {
     
     return () => clearTimeout(timer);
   }, [isLoading]);
+  
+  // Əgər istifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndirək
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log('İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir');
+      navigate('/login');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
   
   // Xəta olduqda bildiriş göstərək
   useEffect(() => {
@@ -41,14 +51,46 @@ const Dashboard: React.FC = () => {
     console.log('Dashboard data:', dashboardData ? 'mövcuddur' : 'yoxdur');
     console.log('Loading:', isLoading);
     console.log('Fallback:', fallbackLoaded);
-  }, [user, dashboardData, isLoading, fallbackLoaded]);
+    console.log('Auth loading:', authLoading);
+    console.log('İstifadəçi authenticated?', isAuthenticated);
+  }, [user, dashboardData, isLoading, fallbackLoaded, authLoading, isAuthenticated]);
   
   // Fallback data
   const emptyChartData: ChartData = {
-    activityData: [],
-    regionSchoolsData: [],
-    categoryCompletionData: []
+    activityData: [
+      { name: 'Yan', value: 20 },
+      { name: 'Fev', value: 45 },
+      { name: 'Mar', value: 28 }
+    ],
+    regionSchoolsData: [
+      { name: 'Bakı', value: 120 },
+      { name: 'Sumqayıt', value: 75 }
+    ],
+    categoryCompletionData: [
+      { name: 'Ümumi məlumat', completed: 78 },
+      { name: 'Müəllim heyəti', completed: 65 }
+    ]
   };
+  
+  // Auth yüklənməsi davam edirsə
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="mt-4 text-muted-foreground">İstifadəçi məlumatları yüklənir...</p>
+      </div>
+    );
+  }
+  
+  // İstifadəçi authenticated deyilsə, login component onsuz da yönləndirəcək
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="mt-4 text-muted-foreground">Login səhifəsinə yönləndirilir...</p>
+      </div>
+    );
+  }
   
   return (
     <SidebarLayout>

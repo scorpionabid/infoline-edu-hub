@@ -38,6 +38,18 @@ interface SuperAdminDashboardProps {
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   
+  // Əmin olaq ki, data mövcuddur
+  if (!data) {
+    console.error('SuperAdminDashboard: data yoxdur', data);
+    return (
+      <div className="p-4 border rounded-md">
+        <p className="text-center text-muted-foreground">Məlumatlar mövcud deyil</p>
+      </div>
+    );
+  }
+  
+  console.log("SuperAdminDashboard data:", data);
+  
   // Bura xüsusi DashboardTabs üçün data məlumatlarını hazırlayırıq
   const activityData = [
     { name: 'Yan', value: 20 },
@@ -65,6 +77,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { name: 'Tədris planı', completed: 91 },
   ];
   
+  // Notification verilərini kontrola keçirək
+  const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+  
   return (
     <div className="space-y-6">
       {/* Əsas statistika kartları */}
@@ -84,7 +99,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       />
       
       {/* Bildirişlər kartı */}
-      <NotificationsCard notifications={data.notifications} />
+      <NotificationsCard notifications={notifications} />
     </div>
   );
 };

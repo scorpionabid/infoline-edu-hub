@@ -19,6 +19,7 @@ import {
   getSchoolAdminData 
 } from './dashboardDataProviders';
 import { getChartData } from './mockDashboardData';
+import { mockCategories } from '@/data/mockCategories';
 
 export type { FormItem, DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData };
 
@@ -34,7 +35,7 @@ export const useDashboardData = () => {
   });
   
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -82,10 +83,17 @@ export const useDashboardData = () => {
   }, [t, user]);
   
   useEffect(() => {
-    // Səhifə yükləndikdə data-nı fetch edək
+    // İstifadəçi auth olduğunu yoxlayaq və səhifə yükləndikdə data-nı fetch edək
     console.log('useDashboardData hook işə düşdü');
-    fetchData();
-  }, [fetchData]);
+    console.log('İstifadəçi authenticated?', isAuthenticated);
+    
+    if (isAuthenticated) {
+      fetchData();
+    } else {
+      console.log('İstifadəçi autentifikasiya olmayıb, dashboard data yüklənmir');
+      setIsLoading(false);
+    }
+  }, [fetchData, isAuthenticated]);
   
   return { dashboardData, isLoading, error, chartData, userRole };
 };
