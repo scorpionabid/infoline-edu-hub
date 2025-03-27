@@ -1,7 +1,9 @@
+
 // Kategoriyalar haqqında test məlumatlar
+import { MockCategory } from '@/types/category';
 
 // Kategoriyaların siyahısı
-export const mockCategories = [
+export const mockCategories: MockCategory[] = [
   {
     id: 'cat-1',
     name: 'Ümumi məlumat',

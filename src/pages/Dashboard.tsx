@@ -15,6 +15,25 @@ const Dashboard: React.FC = () => {
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
   const navigate = useNavigate();
   
+  // Sistem vəziyyətinin diaqnostikası
+  useEffect(() => {
+    console.group('Dashboard komponent diaqnostikası');
+    console.log('Authentication vəziyyəti:', { isAuthenticated, authLoading, user: user ? `${user.email} (${user.role})` : 'yoxdur' });
+    console.log('Dashboard məlumat vəziyyəti:', { isLoading, error: error ? error.message : 'xəta yoxdur', dataLoaded: !!dashboardData });
+    console.log('userRole:', userRole);
+    console.log('Fallback vəziyyəti:', fallbackLoaded);
+    
+    if (dashboardData) {
+      console.log('Dashboard data tipləri:', {
+        pendingForms: Array.isArray(dashboardData.pendingForms) ? 'array' : typeof dashboardData.pendingForms,
+        pendingFormsCount: Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms.length : 'N/A',
+        upcomingDeadlines: Array.isArray(dashboardData.upcomingDeadlines) ? 'array' : typeof dashboardData.upcomingDeadlines,
+        deadlinesCount: Array.isArray(dashboardData.upcomingDeadlines) ? dashboardData.upcomingDeadlines.length : 'N/A'
+      });
+    }
+    console.groupEnd();
+  }, [user, isAuthenticated, authLoading, dashboardData, isLoading, error, fallbackLoaded, userRole]);
+  
   // Əgər 5 saniyədən çox yüklənmə davam edirsə, fallback data göstərək
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,21 +59,11 @@ const Dashboard: React.FC = () => {
     if (error) {
       console.error('Dashboard data error:', error);
       toast.error('Məlumatları yükləmək mümkün olmadı', {
-        description: 'Xahiş edirik bir az sonra yenidən cəhd edin',
+        description: `Xəta: ${error.message || 'Naməlum xəta'}`
       });
     }
   }, [error]);
 
-  // Console-a debug məlumatları yazdırırıq
-  useEffect(() => {
-    console.log('Dashboard render olunur. User:', user?.role);
-    console.log('Dashboard data:', dashboardData ? 'mövcuddur' : 'yoxdur');
-    console.log('Loading:', isLoading);
-    console.log('Fallback:', fallbackLoaded);
-    console.log('Auth loading:', authLoading);
-    console.log('İstifadəçi authenticated?', isAuthenticated);
-  }, [user, dashboardData, isLoading, fallbackLoaded, authLoading, isAuthenticated]);
-  
   // Fallback data
   const emptyChartData: ChartData = {
     activityData: [

@@ -1,5 +1,5 @@
-
 import { mockCategories } from '@/data/mockCategories';
+import { MockCategory } from '@/types/category';
 import { 
   DashboardData, 
   SuperAdminDashboardData, 
@@ -18,24 +18,55 @@ import {
 import { FormStatus } from '@/types/form';
 
 export function transformDeadlineToString(deadline: string | Date | undefined): string {
-  if (!deadline) return '';
-  return typeof deadline === 'string' ? deadline : deadline.toISOString();
+  if (!deadline) {
+    console.log('Deadline məlumatı təqdim edilməyib');
+    return '';
+  }
+  
+  try {
+    return typeof deadline === 'string' ? deadline : deadline.toISOString();
+  } catch (error) {
+    console.error('Deadline çevirmə xətası:', error);
+    return '';
+  }
 }
 
-export function createSafeFormItems(categoryList: any[]): FormItem[] {
+export function createSafeFormItems(categoryList: MockCategory[]): FormItem[] {
   if (!Array.isArray(categoryList)) {
     console.warn('Kateqoriyalar massiv deyil', categoryList);
     return [];
   }
   
+  if (categoryList.length === 0) {
+    console.warn('Kateqoriyalar massivi boşdur');
+    return [];
+  }
+  
+  console.log(`${categoryList.length} kateqoriya işlənir, ilk element:`, categoryList[0]);
+  
   return categoryList.map(category => {
+    if (!category) {
+      console.error('Kateqoriya undefined və ya null', category);
+      return {
+        id: `temp-${Math.random().toString(36).substr(2, 9)}`,
+        title: 'Xəta: namə\'lum kateqoriya',
+        category: 'Namə\'lum',
+        status: 'pending' as FormStatus,
+        completionPercentage: 0,
+        deadline: ''
+      };
+    }
+    
+    const deadline = category.deadline ? transformDeadlineToString(category.deadline) : '';
+    console.log(`Kateqoriya "${category.name}" üçün deadline: ${deadline}`);
+    
     return {
-      id: category?.id || `temp-${Math.random().toString(36).substr(2, 9)}`,
-      title: category?.name || 'Unnamed Category',
-      category: category?.name || 'Unnamed Category',
+      id: category.id || `temp-${Math.random().toString(36).substr(2, 9)}`,
+      title: category.name || 'Unnamed Category',
+      category: category.name || 'Unnamed Category',
       status: 'pending' as FormStatus,
       completionPercentage: Math.floor(Math.random() * 100),
-      deadline: category?.deadline ? transformDeadlineToString(category.deadline) : ''
+      deadline: deadline
     };
   });
 }
@@ -45,22 +76,49 @@ export function getBaseData(): DashboardData {
   const mockRegions = getMockRegions();
   const mockSectors = getMockSectors();
   
-  console.log('Categories in getBaseData:', mockCategories?.length || 'not available');
+  console.log('getBaseData çağırıldı');
+  console.log('mockCategories tipi:', typeof mockCategories);
+  console.log('mockCategories massiv?', Array.isArray(mockCategories));
+  console.log('mockCategories uzunluğu:', mockCategories?.length || 'mövcud deyil');
+  
+  if (Array.isArray(mockCategories) && mockCategories.length > 0) {
+    console.log('İlk kateqoriya nümunəsi:', mockCategories[0]);
+  } else {
+    console.error('mockCategories data problemi');
+  }
   
   const totalSchools = mockSchools.length;
   const activeSchools = mockSchools.filter(school => school.status === 'active').length;
   
   const pendingFormItems = createSafeFormItems(mockCategories);
   
-  let upcomingDeadlines = Array.isArray(mockCategories) 
-    ? mockCategories
-      .filter(category => category.deadline !== undefined)
-      .slice(0, 5)
-      .map(category => ({
-        category: category.name,
-        date: transformDeadlineToString(category.deadline)
-      }))
-    : [];
+  console.log('pendingFormItems yaradıldı:', pendingFormItems.length);
+  
+  let upcomingDeadlines: { category: string; date: string }[] = [];
+  
+  try {
+    upcomingDeadlines = Array.isArray(mockCategories) 
+      ? mockCategories
+        .filter(category => {
+          const hasDeadline = category.deadline !== undefined && category.deadline !== null && category.deadline !== '';
+          if (!hasDeadline) {
+            console.log(`Kateqoriya "${category.name}" deadline xüsusiyyətinə malik deyil`);
+          }
+          return hasDeadline;
+        })
+        .slice(0, 5)
+        .map(category => {
+          return {
+            category: category.name,
+            date: transformDeadlineToString(category.deadline)
+          };
+        })
+      : [];
+    
+    console.log('upcomingDeadlines yaradıldı:', upcomingDeadlines.length);
+  } catch (error) {
+    console.error('upcomingDeadlines yaradılması zamanı xəta:', error);
+  }
   
   let regionalStats = mockRegions.map(region => {
     return {
@@ -80,7 +138,7 @@ export function getBaseData(): DashboardData {
     };
   });
   
-  return {
+  const result: DashboardData = {
     totalSchools,
     activeSchools,
     pendingForms: pendingFormItems,
@@ -88,6 +146,9 @@ export function getBaseData(): DashboardData {
     regionalStats,
     sectorStats
   };
+  
+  console.log('getBaseData bitdi, nəticə hazırdır');
+  return result;
 }
 
 export function getSuperAdminData(): SuperAdminDashboardData {

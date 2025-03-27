@@ -1,4 +1,3 @@
-
 export type CategoryStatus = 'active' | 'inactive' | 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue';
 
 export interface Category {
@@ -58,3 +57,16 @@ export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
     // created_at və updated_at serverə göndərilmir, onları Supabase özü təyin edir
   };
 };
+
+// Mock kateqoriya tipi
+export interface MockCategory {
+  id: string;
+  name: string;
+  assignment: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  priority: number;
+  completionRate: number;
+  deadline: string;
+}

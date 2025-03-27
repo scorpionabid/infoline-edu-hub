@@ -23,6 +23,22 @@ import { mockCategories } from '@/data/mockCategories';
 
 export type { FormItem, DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData };
 
+// Xəta statusu tipi
+type ErrorStatus = {
+  code: string;
+  message: string;
+  details?: any;
+}
+
+// Məlumatların vəziyyəti və xətaları izləmək üçün helper funksiya
+function logStatus(status: string, data: any = null, error: any = null) {
+  console.group(`useDashboardData: ${status}`);
+  if (data) console.log('Data:', data);
+  if (error) console.error('Error:', error);
+  console.trace('Call stack:');
+  console.groupEnd();
+}
+
 export const useDashboardData = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,60 +53,100 @@ export const useDashboardData = () => {
   const { t } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   
+  // Mockdata kontrol funksiyası
+  const checkMockData = useCallback(() => {
+    console.group("Mock data yoxlaması");
+    console.log("mockCategories:", {
+      type: typeof mockCategories,
+      isArray: Array.isArray(mockCategories),
+      length: Array.isArray(mockCategories) ? mockCategories.length : "N/A",
+      sample: Array.isArray(mockCategories) && mockCategories.length > 0 ? mockCategories[0] : null
+    });
+    console.groupEnd();
+  }, []);
+  
   const fetchData = useCallback(async () => {
+    const startTime = performance.now();
+    logStatus('Məlumat yüklənməyə başladı', { user });
+    
     setIsLoading(true);
     try {
-      console.log('Dashboard data yüklənir...', user);
+      // İlk olaraq mock datanı yoxlayaq
+      checkMockData();
       
       // User rolunu təyin edək
       if (user) {
         setUserRole(user.role);
-        console.log('User role:', user.role);
+        logStatus('User rolu təyin edildi', { role: user.role });
       } else {
-        console.warn('User məlumatı mövcud deyil, default rol təyin edilir');
+        logStatus('User məlumatı mövcud deyil', null, new Error('Default rol təyin edilir'));
         setUserRole('schooladmin'); // Test üçün default rol təyin edirik
       }
       
       // Chart data-nı hazırlayırıq
-      const chartDataResult = getChartData(t);
-      setChartData(chartDataResult);
+      try {
+        const chartDataResult = getChartData(t);
+        setChartData(chartDataResult);
+        logStatus('Chart data hazırlandı', { chartDataLength: chartDataResult.activityData.length });
+      } catch (chartError) {
+        logStatus('Chart data xətası', null, chartError);
+      }
       
       // User-in rolundan asılı olaraq dashboard data-nı təyin edirik
       let dashboardResult: DashboardData;
       const currentRole = user?.role || 'schooladmin';
       
-      console.log('Fetching data for role:', currentRole);
+      logStatus('Role uyğun məlumat əldə edilir', { role: currentRole });
       
-      if (currentRole === 'superadmin') {
-        dashboardResult = getSuperAdminData();
-      } else if (currentRole === 'regionadmin') {
-        dashboardResult = getRegionAdminData();
-      } else if (currentRole === 'sectoradmin') {
-        dashboardResult = getSectorAdminData();
-      } else {
-        // Default olaraq schooladmin data-sını göstərək
-        dashboardResult = getSchoolAdminData();
+      // Try-catch blokları ilə hər bir data provideri əhatə edərək
+      // xətaların daha dəqiq təsvirini əldə edək
+      try {
+        if (currentRole === 'superadmin') {
+          dashboardResult = getSuperAdminData();
+        } else if (currentRole === 'regionadmin') {
+          dashboardResult = getRegionAdminData();
+        } else if (currentRole === 'sectoradmin') {
+          dashboardResult = getSectorAdminData();
+        } else {
+          // Default olaraq schooladmin data-sını göstərək
+          dashboardResult = getSchoolAdminData();
+        }
+        
+        logStatus('Dashboard data hazırlandı', { 
+          pendingFormsCount: dashboardResult.pendingForms.length,
+          deadlinesCount: dashboardResult.upcomingDeadlines.length
+        });
+        
+        setDashboardData(dashboardResult);
+      } catch (dashboardError: any) {
+        const errorStatus: ErrorStatus = {
+          code: 'DASHBOARD_DATA_ERROR',
+          message: dashboardError.message || 'Dashboard məlumatları əldə edilərkən xəta baş verdi',
+          details: dashboardError.stack
+        };
+        logStatus('Dashboard data xətası', null, errorStatus);
+        throw new Error(`Dashboard data xətası: ${errorStatus.message}`);
       }
       
-      console.log('Dashboard data hazırdır:', dashboardResult ? 'mövcuddur' : 'yoxdur');
-      setDashboardData(dashboardResult);
     } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err);
+      logStatus('Məlumat yüklənməsi xətası', null, err);
+      setError(err instanceof Error ? err : new Error(err?.message || 'Bilinməyən xəta'));
     } finally {
       setIsLoading(false);
+      const endTime = performance.now();
+      logStatus(`Məlumat yüklənməsi tamamlandı (${Math.round(endTime - startTime)}ms)`);
     }
-  }, [t, user]);
+  }, [t, user, checkMockData]);
   
   useEffect(() => {
     // İstifadəçi auth olduğunu yoxlayaq və səhifə yükləndikdə data-nı fetch edək
-    console.log('useDashboardData hook işə düşdü');
-    console.log('İstifadəçi authenticated?', isAuthenticated);
+    logStatus('useDashboardData hook işə düşdü');
+    logStatus('İstifadəçi authentication statusu', { isAuthenticated });
     
     if (isAuthenticated) {
       fetchData();
     } else {
-      console.log('İstifadəçi autentifikasiya olmayıb, dashboard data yüklənmir');
+      logStatus('İstifadəçi autentifikasiya olmayıb', null, { warning: 'Dashboard data yüklənmir' });
       setIsLoading(false);
     }
   }, [fetchData, isAuthenticated]);
