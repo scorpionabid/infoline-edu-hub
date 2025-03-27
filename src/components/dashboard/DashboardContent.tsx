@@ -131,11 +131,21 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           ? adaptFormItems(schoolAdminData.recentForms)
           : [];
         
+        // Əmin olaq ki, forms obyekti mövcuddur
+        const forms = schoolAdminData.forms || {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          dueSoon: 0,
+          overdue: 0
+        };
+        
         const preparedData = {
           ...schoolAdminData,
           notifications: adaptedNotifications,
           pendingForms: pendingFormsData,
-          recentForms: recentFormsData
+          recentForms: recentFormsData,
+          forms: forms
         };
         
         return (

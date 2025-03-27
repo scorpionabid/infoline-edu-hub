@@ -1,112 +1,138 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  AlertCircle, 
-  FileInput 
-} from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+  Card, 
+  CardContent, 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Check, Clock, XCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
-interface FormStatusCounts {
-  pending: number;
-  approved: number;
-  rejected: number;
-  dueSoon: number;
-  overdue: number;
-}
-
-interface FormStatusSectionProps {
-  forms: FormStatusCounts;
+interface FormStatusProps {
+  forms: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+  };
   navigateToDataEntry: (status: string | null) => void;
   activeStatus: string | null;
   compact?: boolean;
 }
 
-const FormStatusSection: React.FC<FormStatusSectionProps> = ({
-  forms,
-  navigateToDataEntry,
+const FormStatusSection: React.FC<FormStatusProps> = ({ 
+  forms, 
+  navigateToDataEntry, 
   activeStatus,
-  compact = false
+  compact = false 
 }) => {
   const { t } = useLanguage();
   
-  const statusItems = [
+  // Əmin olaq ki, forms obyekti mövcuddur və bütün lazımi xassələrə malikdir
+  const safeForm = {
+    pending: forms?.pending || 0,
+    approved: forms?.approved || 0,
+    rejected: forms?.rejected || 0,
+    dueSoon: forms?.dueSoon || 0,
+    overdue: forms?.overdue || 0
+  };
+  
+  const statuses = [
     {
-      id: 'pending',
+      key: 'pending',
       label: t('pending'),
-      count: forms.pending,
-      icon: <Clock className="h-4 w-4" />,
-      color: 'bg-yellow-100 text-yellow-700'
+      value: safeForm.pending,
+      icon: <Clock className="h-5 w-5" />,
+      color: 'bg-amber-100 text-amber-800 border-amber-200',
+      hoverColor: 'hover:bg-amber-200'
     },
     {
-      id: 'approved',
+      key: 'approved',
       label: t('approved'),
-      count: forms.approved,
-      icon: <CheckCircle2 className="h-4 w-4" />,
-      color: 'bg-green-100 text-green-700'
+      value: safeForm.approved,
+      icon: <Check className="h-5 w-5" />,
+      color: 'bg-green-100 text-green-800 border-green-200',
+      hoverColor: 'hover:bg-green-200'
     },
     {
-      id: 'rejected',
+      key: 'rejected',
       label: t('rejected'),
-      count: forms.rejected,
-      icon: <XCircle className="h-4 w-4" />,
-      color: 'bg-red-100 text-red-700'
+      value: safeForm.rejected,
+      icon: <XCircle className="h-5 w-5" />,
+      color: 'bg-red-100 text-red-800 border-red-200',
+      hoverColor: 'hover:bg-red-200'
     },
     {
-      id: 'dueSoon',
+      key: 'dueSoon',
       label: t('dueSoon'),
-      count: forms.dueSoon,
-      icon: <AlertTriangle className="h-4 w-4" />,
-      color: 'bg-orange-100 text-orange-700'
+      value: safeForm.dueSoon,
+      icon: <Clock className="h-5 w-5" />,
+      color: 'bg-blue-100 text-blue-800 border-blue-200',
+      hoverColor: 'hover:bg-blue-200'
     },
     {
-      id: 'overdue',
+      key: 'overdue',
       label: t('overdue'),
-      count: forms.overdue,
-      icon: <AlertCircle className="h-4 w-4" />,
-      color: 'bg-red-100 text-red-700'
+      value: safeForm.overdue,
+      icon: <AlertTriangle className="h-5 w-5" />,
+      color: 'bg-red-100 text-red-800 border-red-200',
+      hoverColor: 'hover:bg-red-200'
     }
   ];
   
   return (
-    <Card>
-      <CardContent className={cn("flex flex-wrap gap-2", compact ? "py-3" : "py-6")}>
-        {compact && (
-          <Button
-            variant={activeStatus === null ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={() => navigateToDataEntry(null)}
-          >
-            <FileInput className="h-4 w-4" />
-            {t('all')}
-          </Button>
-        )}
-        
-        {statusItems.map(item => (
-          <Button
-            key={item.id}
-            variant={activeStatus === item.id ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={() => navigateToDataEntry(item.id)}
-            disabled={item.count === 0}
-          >
-            <span className={cn("flex items-center gap-1 px-1 py-0.5 rounded", item.color)}>
-              {item.icon}
-              <span>{item.count}</span>
-            </span>
-            <span>{item.label}</span>
-          </Button>
-        ))}
-      </CardContent>
-    </Card>
+    <div className={cn("grid gap-4", 
+      compact ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+    )}>
+      {statuses.map((status) => (
+        <Card 
+          key={status.key}
+          className={cn(
+            "border", 
+            activeStatus === status.key ? "border-primary" : "border-border",
+            compact ? "p-2" : ""
+          )}
+        >
+          <CardContent className={cn(
+            "flex items-center justify-between p-4", 
+            compact ? "p-2" : ""
+          )}>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <div className={cn("p-1.5 rounded-full", status.color)}>
+                  {status.icon}
+                </div>
+                <span className={cn(
+                  "font-medium", 
+                  compact ? "text-sm" : ""
+                )}>
+                  {status.label}
+                </span>
+              </div>
+              <span className={cn(
+                "text-2xl font-bold mt-2",
+                compact ? "text-xl" : ""
+              )}>
+                {status.value}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size={compact ? "sm" : "default"}
+              className={cn(
+                "rounded-full", 
+                status.hoverColor
+              )}
+              onClick={() => navigateToDataEntry(status.key)}
+            >
+              {t('view')}
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
 
