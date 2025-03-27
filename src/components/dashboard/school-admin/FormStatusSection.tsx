@@ -36,7 +36,7 @@ const FormStatusSection: React.FC<FormStatusProps> = ({
 }) => {
   const { t } = useLanguage();
   
-  // Əmin olaq ki, forms obyekti mövcuddur
+  // Əmin olaq ki, forms obyekti mövcuddur və bütün lazımi xassələri var
   const safeForm = {
     pending: forms?.pending || 0,
     approved: forms?.approved || 0,

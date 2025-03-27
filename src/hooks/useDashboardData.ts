@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -231,7 +230,6 @@ export const useDashboardData = () => {
       const totalSchools = mockSchools.length;
       const activeSchools = mockSchools.filter(school => school.status === 'active').length;
 
-      // Daha təhlükəsiz bir şəkildə FormItem-lər yaradaq
       const createSafeFormItems = () => {
         if (!Array.isArray(categories)) {
           console.warn('Kateqoriyalar massiv deyil', categories);
@@ -317,7 +315,6 @@ export const useDashboardData = () => {
         sectorStats
       };
       
-      // Əsas mockup bildirişlər
       const mockNotifications: Notification[] = [
         {
           id: "1",
@@ -341,7 +338,6 @@ export const useDashboardData = () => {
         }
       ];
       
-      // Son formlar üçün mockup məlumatlar
       const mockRecentForms: FormItem[] = [
         {
           id: "form-1",
@@ -373,9 +369,7 @@ export const useDashboardData = () => {
         }
       ];
 
-      // İstifadəçi roluna əsasən dashboard məlumatlarını hazırlayırıq
       if (userRole === 'superadmin') {
-        // SuperAdmin üçün məlumatlar
         const superAdminData: SuperAdminDashboardData = {
           ...baseData,
           regions: mockRegions.length,
@@ -401,7 +395,6 @@ export const useDashboardData = () => {
         };
         setDashboardData(superAdminData);
       } else if (userRole === 'regionadmin') {
-        // RegionAdmin üçün məlumatlar
         const regionAdminData: RegionAdminDashboardData = {
           ...baseData,
           regionName: "Bakı",
@@ -429,7 +422,6 @@ export const useDashboardData = () => {
         };
         setDashboardData(regionAdminData);
       } else if (userRole === 'sectoradmin') {
-        // SectorAdmin üçün məlumatlar
         const sectorAdminData: SectorAdminDashboardData = {
           ...baseData,
           sectorName: "Nəsimi",
@@ -444,7 +436,6 @@ export const useDashboardData = () => {
         };
         setDashboardData(sectorAdminData);
       } else if (userRole === 'schooladmin') {
-        // SchoolAdmin üçün məlumatlar - məlumatların tam olduğundan əmin olaq
         const schoolAdminData: SchoolAdminDashboardData = {
           ...baseData,
           schoolName: "Şəhər Məktəbi #1",
@@ -470,12 +461,10 @@ export const useDashboardData = () => {
           recentForms: mockRecentForms
         };
         
-        // Məlumatların hazır olduğunu konsola çıxaraq
         console.log('School admin data is ready:', schoolAdminData);
         console.log('Forms data:', schoolAdminData.forms);
-        setDashboardData(schoolAdminData as any);
+        setDashboardData(schoolAdminData);
       } else {
-        // User role tanınmadıqda, əsas məlumatları istifadə et
         console.warn('User role unknown or not set:', userRole);
         setDashboardData(baseData);
       }

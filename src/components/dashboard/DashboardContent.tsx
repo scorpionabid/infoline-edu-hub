@@ -121,29 +121,31 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         // Əmin olaq ki, dashboardData mövcuddur
         if (!dashboardData) {
           console.error('School admin dashboard data is undefined');
-          // Boş bir veri strukturu təqdim edərək xətanın qarşısını alaq
+          // SchoolAdminDashboard props tipi ilə uyğun bir veri strukturu təqdim edək
+          const emptySchoolData: SchoolAdminDashboardData = {
+            totalSchools: 0,
+            activeSchools: 0,
+            schoolName: '',
+            sectorName: '',
+            regionName: '',
+            pendingForms: [],
+            upcomingDeadlines: [],
+            regionalStats: [],
+            sectorStats: [],
+            forms: {
+              pending: 0,
+              approved: 0,
+              rejected: 0,
+              dueSoon: 0,
+              overdue: 0
+            },
+            completionRate: 0,
+            notifications: []
+          };
+          
           return (
             <SchoolAdminDashboard 
-              data={{
-                schoolName: '',
-                sectorName: '',
-                regionName: '',
-                totalSchools: 0,
-                activeSchools: 0,
-                pendingForms: [],
-                upcomingDeadlines: [],
-                regionalStats: [],
-                sectorStats: [],
-                forms: {
-                  pending: 0,
-                  approved: 0,
-                  rejected: 0,
-                  dueSoon: 0,
-                  overdue: 0
-                },
-                completionRate: 0,
-                notifications: []
-              }}
+              data={emptySchoolData}
               navigateToDataEntry={navigateToDataEntry}
               handleFormClick={handleFormClick}
             />
@@ -174,6 +176,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         
         const preparedData = {
           ...schoolAdminData,
+          schoolName: schoolAdminData?.schoolName || '',
+          sectorName: schoolAdminData?.sectorName || '',
+          regionName: schoolAdminData?.regionName || '',
           notifications: adaptedNotifications,
           pendingForms: pendingFormsData,
           recentForms: recentFormsData,
