@@ -1,4 +1,5 @@
-import { mockCategories } from '@/data/mockCategories';
+
+import { mockCategories } from '@/data/mock/mockCategories';
 import { MockCategory } from '@/types/category';
 import { 
   DashboardData, 

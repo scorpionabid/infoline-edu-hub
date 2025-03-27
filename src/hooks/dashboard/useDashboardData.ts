@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
@@ -19,7 +18,7 @@ import {
   getSchoolAdminData 
 } from './dashboardDataProviders';
 import { getChartData } from './mockDashboardData';
-import { mockCategories } from '@/data/mockCategories';
+import { mockCategories } from '@/data/mock/mockCategories';
 
 export type { FormItem, DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData };
 
