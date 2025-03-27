@@ -58,7 +58,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Təhlükəsiz login cəhdi - yeni edge function vasitəsilə
+      // Təhlükəsiz login cəhdi - edge function vasitəsilə
+      // Əvvəlcə edge function üzərindən giriş cəhdi edəcəyik
       const safeLoginSuccess = await handleSafeLogin();
       
       // Əgər təhlükəsiz login uğursuz olsa, normal login metodu ilə cəhd edək
@@ -69,6 +70,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
         if (success) {
           console.log('Normal login uğurlu oldu');
           toast.success(t('loginSuccess'));
+          navigate('/dashboard');
         }
       }
     } catch (error: any) {
@@ -79,13 +81,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
     }
   };
 
-  // Təhlükəsiz login cəhdi - yeni edge function
+  // Təhlükəsiz login cəhdi - edge function
   const handleSafeLogin = async (): Promise<boolean> => {
     try {
       console.log('Təhlükəsiz login cəhdi edilir...');
       
-      // Edge Function URL-i
-      const functionUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}/functions/v1/safe-login`;
+      // Edge Function URL-i - Burada edge function üçün tam URL istifadə edirik
+      const functionUrl = `${window.location.origin}/functions/v1/safe-login`;
       
       console.log('Function URL:', functionUrl);
       
@@ -102,22 +104,32 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
       
       console.log('Safe login status kodu:', response.status);
       
+      // Əgər API response 200 OK deyilsə, normal login-ə keçid edək
+      if (!response.ok) {
+        console.error('Edge function uğursuz oldu, status:', response.status);
+        return false;
+      }
+      
       // İlk olaraq text() olaraq responseni alaq və sonra JSON-a çevirək - debugging üçün
       const responseText = await response.text();
-      console.log('Safe login xam cavabı:', responseText);
+      console.log('Safe login xam cavabını yoxlayırıq');
       
       let responseData;
       try {
+        // Text cavabı JSON olaraq parse edək
         responseData = JSON.parse(responseText);
       } catch (e) {
         console.error('JSON parse xətası:', e);
-        throw new Error('Server cavabı düzgün format deyil');
+        console.error('Alınan cavab:', responseText);
+        // JSON parse edilə bilmirsə, normal login-ə keçid edək
+        return false;
       }
       
       console.log('Safe login cavabı:', responseData);
       
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Təhlükəsiz login uğursuz oldu');
+      if (responseData.error) {
+        console.error('Edge function xətası:', responseData.error);
+        return false;
       }
       
       if (responseData.session) {
@@ -129,7 +141,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
         
         if (sessionError) {
           console.error("Sessiya təyin etmə xətası:", sessionError);
-          throw sessionError;
+          return false;
         }
         
         toast.success(t('loginSuccess'));
@@ -141,15 +153,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
         
         return true;
       } else {
-        throw new Error('Sessiya qaytarılmadı');
+        console.error('Sessiya qaytarılmadı');
+        return false;
       }
     } catch (error: any) {
       console.error('Safe login error:', error);
-      setDirectLoginError(error.message || 'Gözlənilməz xəta');
-      toast.error('Təhlükəsiz login uğursuz oldu', {
-        description: error.message || 'Gözlənilməz xəta'
-      });
-      
+      // Xəta olduqda, bunu bildirirk amma normal login cəhdini dayandırmırıq
       return false;
     }
   };
