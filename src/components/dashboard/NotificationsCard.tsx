@@ -30,6 +30,17 @@ const adaptNotification = (notification: TypedNotification): Notification => {
 
 // Əlavə olan adaptIfNeeded köməkçi funksiyası
 const adaptIfNeeded = (notification: any): Notification => {
+  // Əgər notification null və ya undefined isə, varsayılan dəyər qaytaraq
+  if (!notification) {
+    return {
+      id: 'default',
+      type: 'info',
+      title: 'Bildiriş',
+      message: '',
+      time: new Date().toISOString(),
+    };
+  }
+  
   // Əgər artıq uyğun formatdadırsa, birbaşa qaytarın
   if (notification.time !== undefined) {
     return notification as Notification;
@@ -42,7 +53,7 @@ const adaptIfNeeded = (notification: any): Notification => {
   
   // Əgər heç bir şərt uyğun gəlmirsə, xəta vermək əvəzinə varsayılan dəyərlər təyin edin
   return {
-    id: notification.id || 0,
+    id: notification.id || 'default',
     type: notification.type || 'info',
     title: notification.title || 'Bildiriş',
     message: notification.message || '',
@@ -50,11 +61,14 @@ const adaptIfNeeded = (notification: any): Notification => {
   };
 };
 
-const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
+const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications = [] }) => {
   const { t } = useLanguage();
   
+  // Əmin olaq ki, notifications null və ya undefined deyil
+  const safeNotifications = notifications || [];
+  
   // Bildirişləri uyğunlaşdırın
-  const adaptedNotifications = notifications.map(notification => adaptIfNeeded(notification));
+  const adaptedNotifications = safeNotifications.map(notification => adaptIfNeeded(notification));
   
   return (
     <Card>

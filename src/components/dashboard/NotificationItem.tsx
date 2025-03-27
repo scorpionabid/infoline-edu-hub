@@ -16,6 +16,12 @@ export interface NotificationItemProps {
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
   const { type, title, message, time } = notification;
   
+  // Notification null və ya undefined isə, boş bir komponent göstər
+  if (!notification) {
+    console.warn('Notification is null or undefined in NotificationItem');
+    return null;
+  }
+  
   const getIcon = () => {
     switch(type) {
       case 'newCategory':

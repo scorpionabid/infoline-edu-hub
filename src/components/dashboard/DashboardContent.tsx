@@ -33,21 +33,31 @@ interface DashboardContentProps {
 
 // Notification formatını uyğunlaşdırma funksiyası
 const adaptNotifications = (notifications: Notification[]): DashboardNotification[] => {
-  return notifications?.map(notification => ({
+  if (!notifications || !Array.isArray(notifications)) {
+    console.warn('Notifications is not an array:', notifications);
+    return [];
+  }
+  
+  return notifications.map(notification => ({
     id: notification.id,
     type: notification.type,
     title: notification.title,
     message: notification.message,
-    time: notification.createdAt
-  })) || [];
+    time: notification.createdAt // createdAt'ı time'a çeviririk
+  }));
 };
 
 // FormItem-ləri Form formatına çevirmək üçün helper funksiya
 const adaptFormItems = (formItems: FormItem[]) => {
-  return formItems?.map(item => ({
+  if (!formItems || !Array.isArray(formItems)) {
+    console.warn('FormItems is not an array:', formItems);
+    return [];
+  }
+  
+  return formItems.map(item => ({
     ...item,
-    status: item.status as FormStatus // FormStatus tipinə explicit çeviririk
-  })) || [];
+    status: item.status as FormStatus
+  }));
 };
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -99,7 +109,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       case 'regionadmin': {
         const regionAdminData = dashboardData as RegionAdminDashboardData;
         const adaptedNotifications = adaptNotifications(regionAdminData?.notifications || []);
-        // RegionAdminDashboard-a ötürülən data-nın tam olduğundan əmin olaq
         const preparedData = {
           ...regionAdminData,
           notifications: adaptedNotifications,
@@ -143,9 +152,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             notifications: []
           };
           
+          const adaptedNotifications = adaptNotifications(emptySchoolData.notifications);
+          
           return (
             <SchoolAdminDashboard 
-              data={emptySchoolData}
+              data={{
+                ...emptySchoolData,
+                notifications: adaptedNotifications
+              }}
               navigateToDataEntry={navigateToDataEntry}
               handleFormClick={handleFormClick}
             />
