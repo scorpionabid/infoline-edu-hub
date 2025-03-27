@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth, useRole } from "@/context/AuthContext";
@@ -20,6 +19,7 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
+import Index from "@/pages/Index";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -210,7 +210,11 @@ const AppRoutes = () => (
     />
     <Route 
       path="/" 
-      element={<Navigate to="/dashboard" replace />}
+      element={
+        <ProtectedRoute>
+          <Index />
+        </ProtectedRoute>
+      }
     />
     <Route 
       path="*" 

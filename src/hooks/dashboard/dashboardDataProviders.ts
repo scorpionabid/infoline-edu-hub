@@ -45,6 +45,8 @@ export function getBaseData(): DashboardData {
   const mockRegions = getMockRegions();
   const mockSectors = getMockSectors();
   
+  console.log('Categories in getBaseData:', categories?.length || 'not available');
+  
   const totalSchools = mockSchools.length;
   const activeSchools = mockSchools.filter(school => school.status === 'active').length;
   

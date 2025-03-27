@@ -23,7 +23,7 @@ import { getChartData } from './mockDashboardData';
 export type { FormItem, DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData };
 
 export const useDashboardData = () => {
-  const [dashboardData, setDashboardData] = useState<DashboardData>(getBaseData());
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [userRole, setUserRole] = useState<string | undefined>(undefined);
@@ -39,13 +39,14 @@ export const useDashboardData = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('Dashboard data yüklənir...');
+      console.log('Dashboard data yüklənir...', user);
       
+      // User rolunu təyin edək
       if (user) {
         setUserRole(user.role);
         console.log('User role:', user.role);
       } else {
-        console.warn('User məlumatı mövcud deyil');
+        console.warn('User məlumatı mövcud deyil, default rol təyin edilir');
         setUserRole('schooladmin'); // Test üçün default rol təyin edirik
       }
       
@@ -55,19 +56,22 @@ export const useDashboardData = () => {
       
       // User-in rolundan asılı olaraq dashboard data-nı təyin edirik
       let dashboardResult: DashboardData;
+      const currentRole = user?.role || 'schooladmin';
       
-      if (user?.role === 'superadmin') {
+      console.log('Fetching data for role:', currentRole);
+      
+      if (currentRole === 'superadmin') {
         dashboardResult = getSuperAdminData();
-      } else if (user?.role === 'regionadmin') {
+      } else if (currentRole === 'regionadmin') {
         dashboardResult = getRegionAdminData();
-      } else if (user?.role === 'sectoradmin') {
+      } else if (currentRole === 'sectoradmin') {
         dashboardResult = getSectorAdminData();
       } else {
         // Default olaraq schooladmin data-sını göstərək
         dashboardResult = getSchoolAdminData();
-        console.log('School admin data is ready');
       }
       
+      console.log('Dashboard data hazırdır:', dashboardResult ? 'mövcuddur' : 'yoxdur');
       setDashboardData(dashboardResult);
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
@@ -78,8 +82,10 @@ export const useDashboardData = () => {
   }, [t, user]);
   
   useEffect(() => {
+    // Səhifə yükləndikdə data-nı fetch edək
+    console.log('useDashboardData hook işə düşdü');
     fetchData();
   }, [fetchData]);
   
-  return { dashboardData, loading: isLoading, error, isLoading, chartData, userRole };
+  return { dashboardData, isLoading, error, chartData, userRole };
 };

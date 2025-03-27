@@ -38,6 +38,7 @@ interface SuperAdminDashboardProps {
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   
+  // Bura xüsusi DashboardTabs üçün data məlumatlarını hazırlayırıq
   const activityData = [
     { name: 'Yan', value: 20 },
     { name: 'Fev', value: 45 },

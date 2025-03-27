@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -15,7 +14,6 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
-import DashboardTabs from './DashboardTabs';
 import { Notification as DashboardNotification } from './NotificationsCard';
 import { Notification } from '@/types/notification';
 import { FormStatus } from '@/types/form';
@@ -69,6 +67,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  console.log('DashboardContent rendering for role:', userRole);
+  console.log('Dashboard data available:', !!dashboardData);
+
   // Məlumatlar null və ya undefined olduğunu yoxlayaq
   if (!dashboardData) {
     console.error('Dashboard data is undefined or null');
@@ -113,6 +114,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     try {
       switch (userRole) {
         case 'superadmin': {
+          console.log('Rendering SuperAdminDashboard');
           const superAdminData = dashboardData as SuperAdminDashboardData;
           const adaptedNotifications = adaptNotifications(superAdminData?.notifications || []);
           const preparedData = {
@@ -143,7 +145,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         }
         case 'schooladmin': 
         default: {
-          // Default olaraq school admin dashboard göstərək
+          console.log('Rendering SchoolAdminDashboard (default)');
           const schoolAdminData = dashboardData as SchoolAdminDashboardData;
           const adaptedNotifications = adaptNotifications(schoolAdminData?.notifications || []);
           
@@ -200,14 +202,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
   return (
     <div className="space-y-4">
-      {userRole === 'superadmin' && chartData && (
-        <DashboardTabs 
-          activityData={chartData.activityData}
-          regionSchoolsData={chartData.regionSchoolsData}
-          categoryCompletionData={chartData.categoryCompletionData}
-        />
-      )}
-      
       {renderDashboard()}
     </div>
   );
