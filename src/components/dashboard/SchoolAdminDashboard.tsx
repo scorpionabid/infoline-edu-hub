@@ -17,6 +17,9 @@ import { FormItem } from '@/hooks/useDashboardData';
 
 interface SchoolAdminDashboardProps {
   data: {
+    schoolName: string;
+    sectorName: string;
+    regionName: string;
     forms: {
       pending: number;
       approved: number;
@@ -29,7 +32,7 @@ interface SchoolAdminDashboardProps {
     categories?: number;
     totalForms?: number;
     completedForms?: number;
-    pendingForms: FormItem[]; // Burada tipi FormItem[] olaraq dəyişdiririk, number deyil
+    pendingForms: FormItem[]; 
     rejectedForms?: number;
     dueDates?: Array<{
       category: string;

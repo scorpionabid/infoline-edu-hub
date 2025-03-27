@@ -14,7 +14,7 @@ export interface Notification {
 }
 
 interface NotificationsCardProps {
-  notifications: Notification[];
+  notifications: Notification[] | TypedNotification[];
 }
 
 // Notification tipi uyğunlaşdırma köməkçi funksiyası

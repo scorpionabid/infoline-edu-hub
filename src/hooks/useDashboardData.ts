@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -436,6 +437,7 @@ export const useDashboardData = () => {
         };
         setDashboardData(sectorAdminData);
       } else if (userRole === 'schooladmin') {
+        // Əmin olaq ki, dashboardData mövcuddur
         const schoolAdminData: SchoolAdminDashboardData = {
           ...baseData,
           schoolName: "Şəhər Məktəbi #1",

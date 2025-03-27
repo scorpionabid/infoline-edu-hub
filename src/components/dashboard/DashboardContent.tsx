@@ -132,11 +132,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           console.error('School admin dashboard data is undefined');
           // SchoolAdminDashboard props tipi ilə uyğun bir veri strukturu təqdim edək
           const emptySchoolData: SchoolAdminDashboardData = {
-            totalSchools: 0,
-            activeSchools: 0,
             schoolName: '',
             sectorName: '',
             regionName: '',
+            totalSchools: 0,
+            activeSchools: 0,
             pendingForms: [],
             upcomingDeadlines: [],
             regionalStats: [],
