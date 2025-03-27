@@ -43,10 +43,10 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           
           if (!isSubscribed) return;
           
-          if (newSession) {
-            setSession(newSession);
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setSession(newSession);
+          
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (newSession?.user) {
               try {
                 setLoading(true);
                 const userData = await fetchUserData(newSession.user.id);
@@ -60,7 +60,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
             }
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
-            setSession(null);
           }
         });
         
