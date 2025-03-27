@@ -1,9 +1,8 @@
-
 import React from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import { useDashboardData } from '@/hooks/dashboard';
 
 const Dashboard: React.FC = () => {
   const { dashboardData, isLoading, chartData, userRole } = useDashboardData();

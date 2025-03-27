@@ -10,7 +10,7 @@ import {
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
   FormItem
-} from '@/hooks/useDashboardData';
+} from '@/hooks/dashboard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
