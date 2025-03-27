@@ -1,4 +1,3 @@
-
 import { CategoryWithColumns } from '@/types/column';
 
 // Mock kateqoriyalar və sütunlar

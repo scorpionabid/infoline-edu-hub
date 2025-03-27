@@ -69,6 +69,18 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  // Məlumatlar null və ya undefined olduğunu yoxlayaq
+  if (!dashboardData) {
+    console.error('Dashboard data is undefined or null');
+    return (
+      <div className="p-4 border rounded-md">
+        <p className="text-center text-muted-foreground">
+          {t('dashboardDataNotAvailable')}
+        </p>
+      </div>
+    );
+  }
+
   // Data entry səhifəsinə keçid
   const navigateToDataEntry = () => {
     navigate('/data-entry');
@@ -96,126 +108,93 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
-    switch (userRole) {
-      case 'superadmin': {
-        const superAdminData = dashboardData as SuperAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(superAdminData?.notifications || []);
-        const preparedData = {
-          ...superAdminData,
-          notifications: adaptedNotifications
-        };
-        return <SuperAdminDashboard data={preparedData} />;
-      }
-      case 'regionadmin': {
-        const regionAdminData = dashboardData as RegionAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(regionAdminData?.notifications || []);
-        const preparedData = {
-          ...regionAdminData,
-          notifications: adaptedNotifications,
-          categories: regionAdminData?.categories || [],
-          sectorCompletions: regionAdminData?.sectorCompletions || []
-        };
-        return <RegionAdminDashboard data={preparedData} />;
-      }
-      case 'sectoradmin': {
-        const sectorAdminData = dashboardData as SectorAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(sectorAdminData?.notifications || []);
-        const preparedData = {
-          ...sectorAdminData,
-          notifications: adaptedNotifications
-        };
-        return <SectorAdminDashboard data={preparedData} />;
-      }
-      case 'schooladmin': {
-        // Əmin olaq ki, dashboardData mövcuddur
-        if (!dashboardData) {
-          console.error('School admin dashboard data is undefined');
-          // SchoolAdminDashboard props tipi ilə uyğun bir veri strukturu təqdim edək
-          const emptySchoolData: SchoolAdminDashboardData = {
-            schoolName: '',
-            sectorName: '',
-            regionName: '',
-            totalSchools: 0,
-            activeSchools: 0,
-            pendingForms: [],
-            upcomingDeadlines: [],
-            regionalStats: [],
-            sectorStats: [],
-            forms: {
-              pending: 0,
-              approved: 0,
-              rejected: 0,
-              dueSoon: 0,
-              overdue: 0
-            },
-            completionRate: 0,
-            notifications: []
+    console.log('Rendering dashboard for role:', userRole);
+    
+    try {
+      switch (userRole) {
+        case 'superadmin': {
+          const superAdminData = dashboardData as SuperAdminDashboardData;
+          const adaptedNotifications = adaptNotifications(superAdminData?.notifications || []);
+          const preparedData = {
+            ...superAdminData,
+            notifications: adaptedNotifications
+          };
+          return <SuperAdminDashboard data={preparedData} />;
+        }
+        case 'regionadmin': {
+          const regionAdminData = dashboardData as RegionAdminDashboardData;
+          const adaptedNotifications = adaptNotifications(regionAdminData?.notifications || []);
+          const preparedData = {
+            ...regionAdminData,
+            notifications: adaptedNotifications,
+            categories: regionAdminData?.categories || [],
+            sectorCompletions: regionAdminData?.sectorCompletions || []
+          };
+          return <RegionAdminDashboard data={preparedData} />;
+        }
+        case 'sectoradmin': {
+          const sectorAdminData = dashboardData as SectorAdminDashboardData;
+          const adaptedNotifications = adaptNotifications(sectorAdminData?.notifications || []);
+          const preparedData = {
+            ...sectorAdminData,
+            notifications: adaptedNotifications
+          };
+          return <SectorAdminDashboard data={preparedData} />;
+        }
+        case 'schooladmin': 
+        default: {
+          // Default olaraq school admin dashboard göstərək
+          const schoolAdminData = dashboardData as SchoolAdminDashboardData;
+          const adaptedNotifications = adaptNotifications(schoolAdminData?.notifications || []);
+          
+          // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
+          const pendingFormsData = Array.isArray(schoolAdminData?.pendingForms) 
+            ? schoolAdminData.pendingForms 
+            : [];
+
+          // recentForms-ları da uyğunlaşdırırıq
+          const recentFormsData = Array.isArray(schoolAdminData?.recentForms) 
+            ? adaptFormItems(schoolAdminData.recentForms)
+            : [];
+          
+          // Əmin olaq ki, forms obyekti mövcuddur
+          const forms = schoolAdminData?.forms || {
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            dueSoon: 0,
+            overdue: 0
           };
           
-          const adaptedNotifications = adaptNotifications(emptySchoolData.notifications);
+          const preparedData = {
+            ...schoolAdminData,
+            schoolName: schoolAdminData?.schoolName || 'Məktəb',
+            sectorName: schoolAdminData?.sectorName || 'Sektor',
+            regionName: schoolAdminData?.regionName || 'Region',
+            notifications: adaptedNotifications,
+            pendingForms: pendingFormsData,
+            recentForms: recentFormsData,
+            forms: forms
+          };
           
           return (
             <SchoolAdminDashboard 
-              data={{
-                ...emptySchoolData,
-                notifications: adaptedNotifications
-              }}
+              data={preparedData}
               navigateToDataEntry={navigateToDataEntry}
               handleFormClick={handleFormClick}
             />
           );
         }
-        
-        const schoolAdminData = dashboardData as SchoolAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(schoolAdminData?.notifications || []);
-        
-        // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
-        const pendingFormsData = Array.isArray(schoolAdminData?.pendingForms) 
-          ? schoolAdminData.pendingForms 
-          : [];
-
-        // recentForms-ları da uyğunlaşdırırıq
-        const recentFormsData = Array.isArray(schoolAdminData?.recentForms) 
-          ? adaptFormItems(schoolAdminData.recentForms)
-          : [];
-        
-        // Əmin olaq ki, forms obyekti mövcuddur
-        const forms = schoolAdminData?.forms || {
-          pending: 0,
-          approved: 0,
-          rejected: 0,
-          dueSoon: 0,
-          overdue: 0
-        };
-        
-        const preparedData = {
-          ...schoolAdminData,
-          schoolName: schoolAdminData?.schoolName || '',
-          sectorName: schoolAdminData?.sectorName || '',
-          regionName: schoolAdminData?.regionName || '',
-          notifications: adaptedNotifications,
-          pendingForms: pendingFormsData,
-          recentForms: recentFormsData,
-          forms: forms
-        };
-        
-        return (
-          <SchoolAdminDashboard 
-            data={preparedData}
-            navigateToDataEntry={navigateToDataEntry}
-            handleFormClick={handleFormClick}
-          />
-        );
       }
-      default:
-        console.error('Unknown user role:', userRole);
-        return (
-          <div className="p-4 border rounded-md">
-            <p className="text-center text-muted-foreground">
-              {t('unknownUserRole')}
-            </p>
-          </div>
-        );
+    } catch (error) {
+      console.error('Error rendering dashboard:', error);
+      return (
+        <div className="p-4 border rounded-md">
+          <p className="text-center text-muted-foreground">
+            {t('dashboardRenderError')}
+          </p>
+        </div>
+      );
     }
   };
 

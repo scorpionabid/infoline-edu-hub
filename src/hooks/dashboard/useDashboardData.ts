@@ -40,41 +40,42 @@ export const useDashboardData = () => {
     setIsLoading(true);
     try {
       console.log('Dashboard data yüklənir...');
-      console.log('User:', user);
       
       if (user) {
         setUserRole(user.role);
         console.log('User role:', user.role);
       } else {
         console.warn('User məlumatı mövcud deyil');
+        setUserRole('schooladmin'); // Test üçün default rol təyin edirik
       }
       
       // Chart data-nı hazırlayırıq
-      setChartData(getChartData(t));
+      const chartDataResult = getChartData(t);
+      setChartData(chartDataResult);
       
       // User-in rolundan asılı olaraq dashboard data-nı təyin edirik
-      if (userRole === 'superadmin') {
-        setDashboardData(getSuperAdminData());
-      } else if (userRole === 'regionadmin') {
-        setDashboardData(getRegionAdminData());
-      } else if (userRole === 'sectoradmin') {
-        setDashboardData(getSectorAdminData());
-      } else if (userRole === 'schooladmin') {
-        const schoolAdminData = getSchoolAdminData();
-        console.log('School admin data is ready:', schoolAdminData);
-        console.log('Forms data:', schoolAdminData.forms);
-        setDashboardData(schoolAdminData);
+      let dashboardResult: DashboardData;
+      
+      if (user?.role === 'superadmin') {
+        dashboardResult = getSuperAdminData();
+      } else if (user?.role === 'regionadmin') {
+        dashboardResult = getRegionAdminData();
+      } else if (user?.role === 'sectoradmin') {
+        dashboardResult = getSectorAdminData();
       } else {
-        console.warn('User role unknown or not set:', userRole);
-        setDashboardData(getBaseData());
+        // Default olaraq schooladmin data-sını göstərək
+        dashboardResult = getSchoolAdminData();
+        console.log('School admin data is ready');
       }
+      
+      setDashboardData(dashboardResult);
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
       setError(err);
     } finally {
       setIsLoading(false);
     }
-  }, [t, user, userRole]);
+  }, [t, user]);
   
   useEffect(() => {
     fetchData();
