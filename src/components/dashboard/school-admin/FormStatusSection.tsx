@@ -23,14 +23,20 @@ interface FormStatusProps {
 }
 
 const FormStatusSection: React.FC<FormStatusProps> = ({ 
-  forms, 
-  navigateToDataEntry, 
-  activeStatus,
+  forms = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    dueSoon: 0,
+    overdue: 0
+  }, 
+  navigateToDataEntry = () => {}, 
+  activeStatus = null,
   compact = false 
 }) => {
   const { t } = useLanguage();
   
-  // Əmin olaq ki, forms obyekti mövcuddur və bütün lazımi xassələrə malikdir
+  // Əmin olaq ki, forms obyekti mövcuddur
   const safeForm = {
     pending: forms?.pending || 0,
     approved: forms?.approved || 0,

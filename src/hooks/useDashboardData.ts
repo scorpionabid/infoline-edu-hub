@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -198,31 +199,68 @@ export const useDashboardData = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log('Dashboard data yüklənir...');
+      console.log('User:', user);
+      
       if (user) {
         setUserRole(user.role);
+        console.log('User role:', user.role);
+      } else {
+        console.warn('User məlumatı mövcud deyil');
       }
+      
+      const mockSchools: School[] = [
+        { id: "1", name: "Şəhər Məktəbi #1", regionId: "1", sectorId: "1", status: "active" },
+        { id: "2", name: "Şəhər Məktəbi #2", regionId: "1", sectorId: "1", status: "active" },
+        { id: "3", name: "Kənd Məktəbi #1", regionId: "2", sectorId: "2", status: "active" },
+        { id: "4", name: "Kənd Məktəbi #2", regionId: "2", sectorId: "2", status: "inactive" }
+      ];
+
+      const mockRegions = [
+        { id: "1", name: "Bakı" },
+        { id: "2", name: "Abşeron" },
+        { id: "3", name: "Sumqayıt" }
+      ];
+
+      const mockSectors = [
+        { id: "1", name: "Nəsimi", region_id: "1" },
+        { id: "2", name: "Xırdalan", region_id: "2" },
+        { id: "3", name: "28 May", region_id: "3" }
+      ];
       
       const totalSchools = mockSchools.length;
       const activeSchools = mockSchools.filter(school => school.status === 'active').length;
 
-      let pendingFormItems = categories.map(category => {
-        return {
-          id: category.id,
-          title: category.name,
-          category: category.name,
-          status: 'pending' as FormStatus,
-          completionPercentage: Math.floor(Math.random() * 100),
-          deadline: transformDeadlineToString(category.deadline)
-        };
-      });
+      // Daha təhlükəsiz bir şəkildə FormItem-lər yaradaq
+      const createSafeFormItems = () => {
+        if (!Array.isArray(categories)) {
+          console.warn('Kateqoriyalar massiv deyil', categories);
+          return [];
+        }
+        
+        return categories.map(category => {
+          return {
+            id: category?.id || `temp-${Math.random().toString(36).substr(2, 9)}`,
+            title: category?.name || 'Unnamed Category',
+            category: category?.name || 'Unnamed Category',
+            status: 'pending' as FormStatus,
+            completionPercentage: Math.floor(Math.random() * 100),
+            deadline: transformDeadlineToString(category?.deadline)
+          };
+        });
+      };
+      
+      const pendingFormItems = createSafeFormItems();
 
-      let upcomingDeadlines = categories
-        .filter(category => category.deadline)
-        .slice(0, 5)
-        .map(category => ({
-          category: category.name,
-          date: transformDeadlineToString(category.deadline)
-        }));
+      let upcomingDeadlines = Array.isArray(categories) 
+        ? categories
+          .filter(category => category.deadline)
+          .slice(0, 5)
+          .map(category => ({
+            category: category.name,
+            date: transformDeadlineToString(category.deadline)
+          }))
+        : [];
 
       let regionalStats = mockRegions.map(region => {
         return {
@@ -255,12 +293,14 @@ export const useDashboardData = () => {
         };
       });
 
-      const categoryCompletionData = categories.slice(0, 5).map(category => {
-        return {
-          name: category.name,
-          completed: Math.floor(Math.random() * 100)
-        };
-      });
+      const categoryCompletionData = Array.isArray(categories) 
+        ? categories.slice(0, 5).map(category => {
+            return {
+              name: category.name,
+              completed: Math.floor(Math.random() * 100)
+            };
+          })
+        : [];
 
       setChartData({
         activityData,
@@ -268,18 +308,76 @@ export const useDashboardData = () => {
         categoryCompletionData
       });
 
-      setDashboardData({
+      const baseData = {
         totalSchools,
         activeSchools,
         pendingForms: pendingFormItems,
         upcomingDeadlines,
         regionalStats,
         sectorStats
-      });
+      };
+      
+      // Əsas mockup bildirişlər
+      const mockNotifications: Notification[] = [
+        {
+          id: "1",
+          type: "newCategory" as NotificationType,
+          title: "Yeni kateqoriya yaradıldı",
+          message: "Tədris məlumatları kateqoriyası yaradıldı",
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          userId: "1",
+          priority: "normal"
+        },
+        {
+          id: "2",
+          type: "deadline" as NotificationType,
+          title: "Məlumat tələb olunur",
+          message: "Maliyyə məlumatlarını doldurmağınız xahiş olunur",
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          isRead: true,
+          userId: "1",
+          priority: "high"
+        }
+      ];
+      
+      // Son formlar üçün mockup məlumatlar
+      const mockRecentForms: FormItem[] = [
+        {
+          id: "form-1",
+          title: "Tədris planı",
+          category: "Tədris",
+          status: 'pending',
+          completionPercentage: 75
+        },
+        {
+          id: "form-2",
+          title: "Müəllim məlumatları",
+          category: "Kadr",
+          status: 'approved',
+          completionPercentage: 100
+        },
+        {
+          id: "form-3",
+          title: "İnfrastruktur hesabatı",
+          category: "İnfrastruktur",
+          status: 'rejected',
+          completionPercentage: 50
+        },
+        {
+          id: "form-4",
+          title: "Maliyyə hesabatı",
+          category: "Maliyyə",
+          status: 'overdue',
+          completionPercentage: 30
+        }
+      ];
 
+      // İstifadəçi roluna əsasən dashboard məlumatlarını hazırlayırıq
       if (userRole === 'superadmin') {
+        // SuperAdmin üçün məlumatlar
         const superAdminData: SuperAdminDashboardData = {
-          ...dashboardData,
+          ...baseData,
           regions: mockRegions.length,
           sectors: mockSectors.length,
           schools: totalSchools,
@@ -299,13 +397,13 @@ export const useDashboardData = () => {
             pending: 8,
             rejected: 5,
             notStarted: 3
-          },
-          pendingForms: pendingFormItems
+          }
         };
         setDashboardData(superAdminData);
       } else if (userRole === 'regionadmin') {
+        // RegionAdmin üçün məlumatlar
         const regionAdminData: RegionAdminDashboardData = {
-          ...dashboardData,
+          ...baseData,
           regionName: "Bakı",
           sectors: 5,
           schools: 15,
@@ -327,13 +425,13 @@ export const useDashboardData = () => {
             { name: "Binəqədi", completionRate: 65 },
             { name: "Yasamal", completionRate: 75 },
             { name: "Sabunçu", completionRate: 60 }
-          ],
-          pendingForms: pendingFormItems
+          ]
         };
         setDashboardData(regionAdminData);
       } else if (userRole === 'sectoradmin') {
+        // SectorAdmin üçün məlumatlar
         const sectorAdminData: SectorAdminDashboardData = {
-          ...dashboardData,
+          ...baseData,
           sectorName: "Nəsimi",
           regionName: "Bakı",
           schools: 8,
@@ -342,30 +440,13 @@ export const useDashboardData = () => {
           pendingSchools: 3,
           approvedSchools: 12,
           rejectedSchools: 2,
-          notifications: mockNotifications,
-          pendingForms: pendingFormItems
+          notifications: mockNotifications
         };
         setDashboardData(sectorAdminData);
       } else if (userRole === 'schooladmin') {
-        const recentFormItems: FormItem[] = [
-          {
-            id: "form-1",
-            title: "Tədris planı",
-            category: "Tədris",
-            status: 'pending',
-            completionPercentage: 75
-          },
-          {
-            id: "form-2",
-            title: "Müəllim məlumatları",
-            category: "Kadr",
-            status: 'approved',
-            completionPercentage: 100
-          }
-        ];
-        
+        // SchoolAdmin üçün məlumatlar - məlumatların tam olduğundan əmin olaq
         const schoolAdminData: SchoolAdminDashboardData = {
-          ...dashboardData,
+          ...baseData,
           schoolName: "Şəhər Məktəbi #1",
           sectorName: "Nəsimi",
           regionName: "Bakı",
@@ -382,14 +463,21 @@ export const useDashboardData = () => {
           totalForms: 15,
           completedForms: 10,
           rejectedForms: 2,
-          pendingForms: pendingFormItems,
           dueDates: [
             { category: "Tədris planı", date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() },
             { category: "Maliyyə hesabatı", date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }
           ],
-          recentForms: recentFormItems
+          recentForms: mockRecentForms
         };
+        
+        // Məlumatların hazır olduğunu konsola çıxaraq
+        console.log('School admin data is ready:', schoolAdminData);
+        console.log('Forms data:', schoolAdminData.forms);
         setDashboardData(schoolAdminData as any);
+      } else {
+        // User role tanınmadıqda, əsas məlumatları istifadə et
+        console.warn('User role unknown or not set:', userRole);
+        setDashboardData(baseData);
       }
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
@@ -397,7 +485,7 @@ export const useDashboardData = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [t, user, categories, dataEntries, dashboardData, userRole]);
+  }, [t, user, categories, dataEntries, userRole]);
 
   useEffect(() => {
     fetchData();

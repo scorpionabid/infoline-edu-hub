@@ -89,7 +89,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     switch (userRole) {
       case 'superadmin': {
         const superAdminData = dashboardData as SuperAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
+        const adaptedNotifications = adaptNotifications(superAdminData?.notifications || []);
         const preparedData = {
           ...superAdminData,
           notifications: adaptedNotifications
@@ -98,19 +98,19 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       }
       case 'regionadmin': {
         const regionAdminData = dashboardData as RegionAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
+        const adaptedNotifications = adaptNotifications(regionAdminData?.notifications || []);
         // RegionAdminDashboard-a ötürülən data-nın tam olduğundan əmin olaq
         const preparedData = {
           ...regionAdminData,
           notifications: adaptedNotifications,
-          categories: regionAdminData.categories || [],
-          sectorCompletions: regionAdminData.sectorCompletions || []
+          categories: regionAdminData?.categories || [],
+          sectorCompletions: regionAdminData?.sectorCompletions || []
         };
         return <RegionAdminDashboard data={preparedData} />;
       }
       case 'sectoradmin': {
         const sectorAdminData = dashboardData as SectorAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
+        const adaptedNotifications = adaptNotifications(sectorAdminData?.notifications || []);
         const preparedData = {
           ...sectorAdminData,
           notifications: adaptedNotifications
@@ -118,21 +118,53 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         return <SectorAdminDashboard data={preparedData} />;
       }
       case 'schooladmin': {
+        // Əmin olaq ki, dashboardData mövcuddur
+        if (!dashboardData) {
+          console.error('School admin dashboard data is undefined');
+          // Boş bir veri strukturu təqdim edərək xətanın qarşısını alaq
+          return (
+            <SchoolAdminDashboard 
+              data={{
+                schoolName: '',
+                sectorName: '',
+                regionName: '',
+                totalSchools: 0,
+                activeSchools: 0,
+                pendingForms: [],
+                upcomingDeadlines: [],
+                regionalStats: [],
+                sectorStats: [],
+                forms: {
+                  pending: 0,
+                  approved: 0,
+                  rejected: 0,
+                  dueSoon: 0,
+                  overdue: 0
+                },
+                completionRate: 0,
+                notifications: []
+              }}
+              navigateToDataEntry={navigateToDataEntry}
+              handleFormClick={handleFormClick}
+            />
+          );
+        }
+        
         const schoolAdminData = dashboardData as SchoolAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
+        const adaptedNotifications = adaptNotifications(schoolAdminData?.notifications || []);
         
         // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
-        const pendingFormsData = Array.isArray(schoolAdminData.pendingForms) 
+        const pendingFormsData = Array.isArray(schoolAdminData?.pendingForms) 
           ? schoolAdminData.pendingForms 
           : [];
 
         // recentForms-ları da uyğunlaşdırırıq
-        const recentFormsData = Array.isArray(schoolAdminData.recentForms) 
+        const recentFormsData = Array.isArray(schoolAdminData?.recentForms) 
           ? adaptFormItems(schoolAdminData.recentForms)
           : [];
         
         // Əmin olaq ki, forms obyekti mövcuddur
-        const forms = schoolAdminData.forms || {
+        const forms = schoolAdminData?.forms || {
           pending: 0,
           approved: 0,
           rejected: 0,
@@ -157,7 +189,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         );
       }
       default:
-        return null;
+        console.error('Unknown user role:', userRole);
+        return (
+          <div className="p-4 border rounded-md">
+            <p className="text-center text-muted-foreground">
+              {t('unknownUserRole')}
+            </p>
+          </div>
+        );
     }
   };
 
