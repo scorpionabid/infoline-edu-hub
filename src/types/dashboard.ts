@@ -1,4 +1,3 @@
-
 import { Notification, NotificationType } from './notification';
 import { FormStatus } from './form';
 
@@ -122,3 +121,5 @@ export interface ChartData {
   regionSchoolsData: { name: string; value: number }[];
   categoryCompletionData: { name: string; completed: number }[];
 }
+
+export { FormStatus };
