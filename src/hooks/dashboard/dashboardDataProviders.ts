@@ -1,5 +1,5 @@
 
-import { categories } from '@/data/mockCategories';
+import { mockCategories } from '@/data/mockCategories';
 import { 
   DashboardData, 
   SuperAdminDashboardData, 
@@ -45,15 +45,15 @@ export function getBaseData(): DashboardData {
   const mockRegions = getMockRegions();
   const mockSectors = getMockSectors();
   
-  console.log('Categories in getBaseData:', categories?.length || 'not available');
+  console.log('Categories in getBaseData:', mockCategories?.length || 'not available');
   
   const totalSchools = mockSchools.length;
   const activeSchools = mockSchools.filter(school => school.status === 'active').length;
   
-  const pendingFormItems = createSafeFormItems(categories);
+  const pendingFormItems = createSafeFormItems(mockCategories);
   
-  let upcomingDeadlines = Array.isArray(categories) 
-    ? categories
+  let upcomingDeadlines = Array.isArray(mockCategories) 
+    ? mockCategories
       .filter(category => category.deadline)
       .slice(0, 5)
       .map(category => ({
