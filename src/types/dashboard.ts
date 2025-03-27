@@ -122,4 +122,4 @@ export interface ChartData {
   categoryCompletionData: { name: string; completed: number }[];
 }
 
-export { FormStatus };
+export type { FormStatus };
