@@ -35,7 +35,7 @@ export function createSafeFormItems(categoryList: any[]): FormItem[] {
       category: category?.name || 'Unnamed Category',
       status: 'pending' as FormStatus,
       completionPercentage: Math.floor(Math.random() * 100),
-      deadline: transformDeadlineToString(category?.deadline)
+      deadline: category?.deadline ? transformDeadlineToString(category.deadline) : ''
     };
   });
 }
@@ -54,7 +54,7 @@ export function getBaseData(): DashboardData {
   
   let upcomingDeadlines = Array.isArray(mockCategories) 
     ? mockCategories
-      .filter(category => category.deadline)
+      .filter(category => category.deadline !== undefined)
       .slice(0, 5)
       .map(category => ({
         category: category.name,
