@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
@@ -7,7 +6,8 @@ export async function fetchUserData(userId: string): Promise<FullUserData> {
   
   try {
     // profiles cədvəlindən istifadəçi məlumatlarını əldə edək
-    const { data: profileData, error: profileError } = await supabase
+    let profileData;
+    const { data: profileResult, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -19,7 +19,7 @@ export async function fetchUserData(userId: string): Promise<FullUserData> {
     }
     
     // Əgər profile tapılmadısa, xəta qaytaraq
-    if (!profileData) {
+    if (!profileResult) {
       console.error('No profile data found for userId:', userId);
       
       // Profil yaratmağa cəhd edək
@@ -63,6 +63,8 @@ export async function fetchUserData(userId: string): Promise<FullUserData> {
         console.error('Error creating profile:', createError);
         throw new Error('User profile data not found and could not be created');
       }
+    } else {
+      profileData = profileResult;
     }
     
     // user_roles cədvəlindən istifadəçi rolunu əldə etməyə çalışaq
