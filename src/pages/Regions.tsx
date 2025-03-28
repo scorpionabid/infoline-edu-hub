@@ -84,14 +84,14 @@ const Regions: React.FC = () => {
               />
             </div>
             <Select 
-              value={selectedStatus || ''} 
-              onValueChange={(value) => handleStatusFilter(value || null)}
+              value={selectedStatus || "all"} 
+              onValueChange={(value) => handleStatusFilter(value === "all" ? null : value)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder={t('allStatuses')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('allStatuses')}</SelectItem>
+                <SelectItem value="all">{t('allStatuses')}</SelectItem>
                 <SelectItem value="active">{t('active')}</SelectItem>
                 <SelectItem value="inactive">{t('inactive')}</SelectItem>
               </SelectContent>
