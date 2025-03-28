@@ -144,13 +144,14 @@ const ProfileSettings: React.FC = () => {
                 {t('position')}
               </Label>
               <Select 
-                value={position} 
+                value={position || "not_selected"} 
                 onValueChange={setPosition}
               >
                 <SelectTrigger id="position" className="col-span-3">
                   <SelectValue placeholder={t('selectPosition')} />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="not_selected">{t('selectPosition')}</SelectItem>
                   <SelectItem value="director">Direktor</SelectItem>
                   <SelectItem value="viceDirector">Direktor müavini</SelectItem>
                   <SelectItem value="teacher">Müəllim</SelectItem>
