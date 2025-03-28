@@ -1,40 +1,37 @@
-
 import { Notification } from './notification';
+import { FormStatus } from './form';
 
 export interface FormItem {
   id: string;
   title: string;
-  dueDate: string | Date;
-  status: 'pending' | 'approved' | 'rejected' | 'draft';
-  categoryId: string;
-  categoryName: string;
+  category: string;
+  status: FormStatus;
+  completionPercentage: number;
+  deadline?: string;
 }
 
-export interface ChartData {
-  activityData: Array<{
-    name: string;
-    value: number;
-  }>;
-  regionSchoolsData: Array<{
-    name: string;
-    value: number;
-  }>;
-  categoryCompletionData: Array<{
-    name: string;
-    completed: number;
-  }>;
-}
-
-// Baza dashboard tipləri
 export interface DashboardData {
   totalSchools: number;
-  totalForms: number;
+  activeSchools: number;
   pendingForms: FormItem[];
-  upcomingDeadlines: FormItem[];
-  chartData: ChartData;
+  upcomingDeadlines: {
+    category: string;
+    date: string;
+  }[];
+  regionalStats: {
+    region: string;
+    approved: number;
+    pending: number;
+    rejected: number;
+  }[];
+  sectorStats: {
+    sector: string;
+    approved: number;
+    pending: number;
+    rejected: number;
+  }[];
 }
 
-// SuperAdmin dashboard tipləri
 export interface SuperAdminDashboardData extends DashboardData {
   regions: number;
   sectors: number;
@@ -43,22 +40,16 @@ export interface SuperAdminDashboardData extends DashboardData {
   completionRate: number;
   pendingApprovals: number;
   notifications: Notification[];
-  pendingSchools?: number;
-  approvedSchools?: number;
-  rejectedSchools?: number;
-  activityData?: Array<{
+  activityData?: {
     id: string;
     action: string;
     actor: string;
     target: string;
     time: string;
-  }>;
-  statusData?: {
-    completed: number;
-    pending: number;
-    rejected: number;
-    notStarted: number;
-  };
+  }[];
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
   regionCompletionData?: Array<{
     name: string;
     completed: number;
@@ -71,47 +62,48 @@ export interface SuperAdminDashboardData extends DashboardData {
     name: string;
     completed: number;
   }>;
+  statusData?: {
+    completed: number;
+    pending: number;
+    rejected: number;
+    notStarted: number;
+  };
 }
 
-// RegionAdmin dashboard tipləri
 export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
   sectors: number;
   schools: number;
+  users: number;
   completionRate: number;
   pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
   notifications: Notification[];
-  categories: Array<{
-    id: string;
+  categories: {
     name: string;
-    itemCount: number;
     completionRate: number;
-  }>;
-  sectorCompletions: Array<{
-    sectorId: string;
-    sectorName: string;
+    color: string;
+  }[];
+  sectorCompletions: {
+    name: string;
     completionRate: number;
-  }>;
+  }[];
 }
 
-// SectorAdmin dashboard tipləri
 export interface SectorAdminDashboardData extends DashboardData {
   sectorName: string;
   regionName: string;
   schools: number;
-  pendingApprovals: number;
   completionRate: number;
-  approvedForms: number;
-  rejectedForms: number;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
   notifications: Notification[];
-  schoolCompletions: Array<{
-    schoolId: string;
-    schoolName: string;
-    completionRate: number;
-  }>;
 }
 
-// SchoolAdmin dashboard tipləri
 export interface SchoolAdminDashboardData extends DashboardData {
   schoolName: string;
   sectorName: string;
@@ -125,5 +117,21 @@ export interface SchoolAdminDashboardData extends DashboardData {
   };
   completionRate: number;
   notifications: Notification[];
-  recentForms: FormItem[];
+  categories?: number;
+  totalForms?: number;
+  completedForms?: number;
+  rejectedForms?: number;
+  dueDates?: Array<{
+    category: string;
+    date: string;
+  }>;
+  recentForms?: Array<FormItem>;
 }
+
+export interface ChartData {
+  activityData: { name: string; value: number }[];
+  regionSchoolsData: { name: string; value: number }[];
+  categoryCompletionData: { name: string; completed: number }[];
+}
+
+export type { FormStatus };
