@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   full_name?: string;
@@ -38,12 +39,15 @@ export interface FullUserData {
   language?: 'az' | 'en' | 'ru' | 'tr';
   avatar?: string;
   status?: 'active' | 'inactive' | 'blocked';
+  // Əlavə edildi - əlaqəli obyektlər
   school?: School | null;
-  schoolId?: string | null;
   sector?: Sector | null;
-  sectorId?: string | null;
   region?: Region | null;
+  // Əlavə edildi - id-lər
+  schoolId?: string | null;
+  sectorId?: string | null;
   regionId?: string | null;
+  // Əvvəlki id adları
   school_id?: string | null;
   sector_id?: string | null;
   region_id?: string | null;
