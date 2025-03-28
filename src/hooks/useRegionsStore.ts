@@ -72,6 +72,10 @@ export const useRegionsStore = () => {
       adminEmail: `${region.name.toLowerCase().replace(/\s+/g, '.')}@infoline.edu`, // Mock admin email
       adminId: `user-${region.id}`, // Mock admin ID
       completionRate: Math.floor(Math.random() * 100), // Mock completion rate
+      // Ensure status is always either 'active' or 'inactive'
+      status: (region.status === 'active' || region.status === 'inactive') 
+        ? region.status 
+        : 'inactive' as 'active' | 'inactive'
     }));
   }, [originalRegions]);
 
