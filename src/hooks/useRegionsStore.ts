@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Region } from '@/types/supabase';
 import { useRegions } from './useRegions';
@@ -108,15 +109,21 @@ export const useRegionsStore = () => {
       const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
       userRoles?.forEach(role => {
         if (role.region_id && role.user_id) {
-          // Bu sətir xətaya səbəb olur - tipləri düzgün yoxlamalıyıq
-          // Əgər role.auth_users bir xəta və ya null/undefined isə, təhlükəsiz bir e-poçt təyin edirik
-          const adminEmail = role.auth_users && typeof role.auth_users === 'object' && 'email' in role.auth_users 
-            ? role.auth_users.email as string 
-            : `${role.region_id}.admin@infoline.edu`;
+          // TypeScript null check - auth_users null olub-olmadığını yoxlayırıq
+          let adminEmail = `${role.region_id}.admin@infoline.edu`; // Default email
+          
+          // Əgər auth_users mövcuddursa və email property-si varsa, onu istifadə edirik
+          if (role.auth_users && typeof role.auth_users === 'object') {
+            // Burada 'as any' istifadə etməli olacağıq çünki TypeScript tipləri tam müəyyən edilməmiş ola bilər
+            const authUsers = role.auth_users as any;
+            if (authUsers.email) {
+              adminEmail = authUsers.email;
+            }
+          }
           
           tempRegionAdmins[role.region_id] = {
             id: role.user_id,
-            email: adminEmail || `${role.region_id}.admin@infoline.edu`
+            email: adminEmail
           };
         }
       });
