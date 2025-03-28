@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 // User roles
 export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
@@ -41,6 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   } = useSupabaseAuth();
 
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Derive auth state from Supabase user
   const authState: AuthState = {
@@ -92,11 +94,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       await signOut();
-      console.log('AuthContext: İstifadəçi uğurla çıxış etdi');
+      // Successful logout - navigate to login page
+      navigate('/login');
+      console.log('AuthContext: İstifadəçi uğurla çıxış etdi və login səhifəsinə yönləndirildi');
+      toast.success('Sistemdən uğurla çıxış edildi');
     } catch (error: any) {
       console.error('AuthContext: Çıxış zamanı xəta:', error);
       setError(error.message || 'Çıxış zamanı xəta baş verdi');
       toast.error('Çıxış zamanı xəta baş verdi');
+      // Even if there's an error, try to navigate to login
+      navigate('/login');
     }
   };
 

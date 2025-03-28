@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth, useRole } from "@/context/AuthContext";
@@ -46,6 +47,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   
   // Əgər allowedRoles varsa və istifadəçinin rolu bu siyahıda deyilsə
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    console.log(`İstifadəçi '${user.role}' roluna malikdir amma '${allowedRoles.join(', ')}' rolları tələb olunur`);
     return <Navigate to="/dashboard" replace />;
   }
   

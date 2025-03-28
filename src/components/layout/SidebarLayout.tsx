@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings, MapPin, Building } from 'lucide-react';
+import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings, MapPin, Building, Columns } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationControl from '../notifications/NotificationControl';
@@ -64,13 +64,17 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     setOpen(false);
   }, [pathname]);
   
-  const isSuperAdmin = user?.role === 'superadmin';
-  const isRegionAdmin = user?.role === 'regionadmin';
-  const isSectorAdmin = user?.role === 'sectoradmin';
+  // Rolu dəqiqləşdirək
+  const userRole = user?.role || '';
+  const isSuperAdmin = userRole === 'superadmin';
+  const isRegionAdmin = userRole === 'regionadmin';
+  const isSectorAdmin = userRole === 'sectoradmin';
   
-  const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  // Hər bir rola əsasən bölmələrə giriş icazələri
+  const canManageUsers = isSuperAdmin || isRegionAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageCategories = isSuperAdmin || isRegionAdmin;
+  const canManageColumns = isSuperAdmin || isRegionAdmin;
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   
@@ -106,6 +110,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       show: canManageCategories
     },
     {
+      href: "/columns",
+      icon: <Columns size={20} />,
+      label: t('columns'),
+      show: canManageColumns
+    },
+    {
       href: "/users",
       icon: <Users size={20} />,
       label: t('users'),
@@ -125,8 +135,13 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   ];
   
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // No need to navigate - the AuthContext should handle it
+    } catch (error) {
+      console.error('Çıxış zamanı xəta:', error);
+    }
   };
   
   const sidebarContent = (

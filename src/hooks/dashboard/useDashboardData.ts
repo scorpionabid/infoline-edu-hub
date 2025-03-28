@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
@@ -19,8 +20,6 @@ import {
 } from './dashboardDataProviders';
 import { getChartData } from './mockDashboardData';
 import { mockCategories } from '@/data/mock/mockCategories';
-
-export type { FormItem, DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData };
 
 // Xəta statusu tipi
 type ErrorStatus = {
@@ -74,11 +73,12 @@ export const useDashboardData = () => {
       checkMockData();
       
       // User rolunu təyin edək
-      if (user) {
+      if (user && user.role) {
+        // User role'u burada dəqiqləşdirək
         setUserRole(user.role);
         logStatus('User rolu təyin edildi', { role: user.role });
       } else {
-        logStatus('User məlumatı mövcud deyil', null, new Error('Default rol təyin edilir'));
+        logStatus('User məlumatı mövcud deyil və ya role yoxdur', { user }, new Error('Default rol təyin edilir'));
         setUserRole('schooladmin'); // Test üçün default rol təyin edirik
       }
       
@@ -152,3 +152,5 @@ export const useDashboardData = () => {
   
   return { dashboardData, isLoading, error, chartData, userRole };
 };
+
+export type { FormItem, DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData };
