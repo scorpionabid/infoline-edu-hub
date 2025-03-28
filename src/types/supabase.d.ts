@@ -39,11 +39,11 @@ export interface FullUserData {
   language?: 'az' | 'en' | 'ru' | 'tr';
   avatar?: string;
   status?: 'active' | 'inactive' | 'blocked';
-  // Əlavə edildi - əlaqəli obyektlər
+  // Əlaqəli obyektlər
   school?: School | null;
   sector?: Sector | null;
   region?: Region | null;
-  // Əlavə edildi - id-lər
+  // İd-lər
   schoolId?: string | null;
   sectorId?: string | null;
   regionId?: string | null;
