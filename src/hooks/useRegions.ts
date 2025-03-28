@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { Region } from '@/types/supabase';
+import { fetchRegions, addRegion, updateRegion, deleteRegion } from '@/services/regionService';
 
 export const useRegions = () => {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -11,17 +11,11 @@ export const useRegions = () => {
   const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
 
-  const fetchRegions = async () => {
+  const fetchRegionsData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('regions')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      
-      setRegions(data as Region[]);
+      const data = await fetchRegions();
+      setRegions(data);
     } catch (err: any) {
       console.error('Error fetching regions:', err);
       setError(err);
@@ -33,15 +27,9 @@ export const useRegions = () => {
     }
   };
 
-  const addRegion = async (region: Omit<Region, 'id' | 'created_at' | 'updated_at'>) => {
+  const addNewRegion = async (region: Omit<Region, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await supabase
-        .from('regions')
-        .insert([region])
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await addRegion(region);
       
       setRegions(prev => [...prev, data as Region]);
       toast.success(t('regionAdded'), {
@@ -58,16 +46,9 @@ export const useRegions = () => {
     }
   };
 
-  const updateRegion = async (id: string, updates: Partial<Region>) => {
+  const updateExistingRegion = async (id: string, updates: Partial<Region>) => {
     try {
-      const { data, error } = await supabase
-        .from('regions')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await updateRegion(id, updates);
       
       setRegions(prev => prev.map(region => 
         region.id === id ? { ...region, ...data } as Region : region
@@ -87,20 +68,17 @@ export const useRegions = () => {
     }
   };
 
-  const deleteRegion = async (id: string) => {
+  const deleteExistingRegion = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('regions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await deleteRegion(id);
       
       setRegions(prev => prev.filter(region => region.id !== id));
       
       toast.success(t('regionDeleted'), {
         description: t('regionDeletedDesc')
       });
+      
+      return true;
     } catch (err: any) {
       console.error('Error deleting region:', err);
       toast.error(t('errorOccurred'), {
@@ -111,16 +89,16 @@ export const useRegions = () => {
   };
 
   useEffect(() => {
-    fetchRegions();
+    fetchRegionsData();
   }, []);
 
   return {
     regions,
     loading,
     error,
-    fetchRegions,
-    addRegion,
-    updateRegion,
-    deleteRegion
+    fetchRegions: fetchRegionsData,
+    addRegion: addNewRegion,
+    updateRegion: updateExistingRegion,
+    deleteRegion: deleteExistingRegion
   };
 };

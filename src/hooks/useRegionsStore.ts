@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Region } from '@/types/supabase';
 import { useRegions } from './useRegions';
@@ -5,6 +6,7 @@ import { useSectors } from './useSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
+import { createRegion, deleteRegion, getRegionStats } from '@/services/regionService';
 
 export type SortConfig = {
   key: string | null;
@@ -20,9 +22,17 @@ export type EnhancedRegion = Region & {
   adminEmail?: string;
 };
 
+export interface RegionFormData {
+  name: string;
+  description?: string;
+  status?: string;
+  adminName?: string;
+  adminEmail?: string;
+}
+
 export const useRegionsStore = () => {
   const { t } = useLanguage();
-  const { regions, loading, fetchRegions, addRegion, updateRegion, deleteRegion } = useRegions();
+  const { regions, loading, fetchRegions, addRegion, updateRegion, deleteRegion: deleteExistingRegion } = useRegions();
   const { sectors } = useSectors();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,24 +75,59 @@ export const useRegionsStore = () => {
       });
       setSectorCounts(sectorCountsMap);
       
-      // TODO: Tamamlanma faizini hesablamaq (bu, verilənlər bazası strukturunuzdan asılı olacaq)
+      // Tamamlanma faizini hesablamaq (bu, verilənlər bazası strukturunuzdan asılı olacaq)
       // Hələlik sadə bir misal olaraq təsadüfi dəyərlər təyin edirik
       const tempCompletionRates: Record<string, number> = {};
       regions.forEach(region => {
-        tempCompletionRates[region.id] = Math.floor(Math.random() * 100);
+        // Məktəblərin tamamlanma faizlərini ortalamaq
+        const regionSchools = schools?.filter(school => school.region_id === region.id) || [];
+        const totalCompletionRate = regionSchools.reduce((total, school) => {
+          return total + (school.completion_rate || 0);
+        }, 0);
+        
+        const avgCompletionRate = regionSchools.length > 0
+          ? Math.round(totalCompletionRate / regionSchools.length)
+          : Math.floor(Math.random() * 100); // Əgər məktəb yoxdursa, təsadüfi dəyər
+          
+        tempCompletionRates[region.id] = avgCompletionRate;
       });
       setCompletionRates(tempCompletionRates);
       
       // Admin məlumatlarını əldə etmək
-      // TODO: Admin məlumatları üçün auth cədvəli ilə inteqrasiya
-      // Hələlik boş bir obyekt istifadə edirik
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          region_id,
+          auth_users:user_id (email)
+        `)
+        .eq('role', 'regionadmin');
+        
+      if (rolesError) throw rolesError;
+      
+      // Admin məlumatlarını regionlara görə qruplaşdırırıq
       const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
-      regions.forEach(region => {
-        tempRegionAdmins[region.id] = {
-          id: `admin-${region.id}`,
-          email: `${region.name.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`
-        };
+      userRoles?.forEach(role => {
+        if (role.region_id && role.user_id && role.auth_users) {
+          tempRegionAdmins[role.region_id] = {
+            id: role.user_id,
+            email: role.auth_users.email || `${role.region_id}.admin@infoline.edu`
+          };
+        }
       });
+      
+      // Əgər region üçün admin tapılmadısa, boş qalacaq
+      regions.forEach(region => {
+        if (!tempRegionAdmins[region.id]) {
+          // Region adına əsasən avtomatik email formatı
+          const regionNameLower = region.name.toLowerCase().replace(/\s+/g, '.');
+          tempRegionAdmins[region.id] = {
+            id: '',
+            email: `${regionNameLower}.admin@infoline.edu`
+          };
+        }
+      });
+      
       setRegionAdmins(tempRegionAdmins);
       
     } catch (error) {
@@ -191,17 +236,50 @@ export const useRegionsStore = () => {
     setCurrentPage(1);
   }, []);
 
-  // Region əməliyyatları
-  const handleAddRegion = useCallback(async (regionData: Omit<Region, 'id' | 'created_at' | 'updated_at'>) => {
+  // Region əməliyyatları - Admin ilə birlikdə
+  const handleAddRegion = useCallback(async (formData: RegionFormData) => {
     try {
-      await addRegion(regionData);
-      setIsOperationComplete(true);
-      return true;
+      console.log("Region əlavə edilir:", formData);
+      
+      // Edge function vasitəsilə region və admin yaratma
+      // Admin email formatı: {regionName.toLowerCase()}.admin@infoline.edu
+      const adminEmail = formData.adminEmail || 
+        `${formData.name.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
+      
+      const result = await createRegion({
+        name: formData.name,
+        description: formData.description,
+        status: formData.status || 'active',
+        adminName: formData.adminName || formData.name + ' Admin',
+        adminEmail
+      });
+      
+      console.log("Region yaratma nəticəsi:", result);
+      
+      if (result.success) {
+        toast.success(t('regionAdded'), {
+          description: t('regionAddedDesc')
+        });
+        
+        if (result.data.admin) {
+          toast.success(t('adminCreated'), {
+            description: t('adminCreatedDesc')
+          });
+        }
+        
+        setIsOperationComplete(true);
+        return true;
+      } else {
+        throw new Error(result.error || "Bilinməyən xəta");
+      }
     } catch (error) {
       console.error('Region əlavə edilərkən xəta baş verdi:', error);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotAddRegion')
+      });
       return false;
     }
-  }, [addRegion]);
+  }, [t]);
 
   const handleUpdateRegion = useCallback(async (id: string, updates: Partial<Region>) => {
     try {
@@ -216,14 +294,26 @@ export const useRegionsStore = () => {
 
   const handleDeleteRegion = useCallback(async (id: string) => {
     try {
-      await deleteRegion(id);
-      setIsOperationComplete(true);
-      return true;
+      // Edge function vasitəsilə region və bağlı admin/sektorları silmək
+      const result = await deleteRegion(id);
+      
+      if (result && result.success) {
+        toast.success(t('regionDeleted'), {
+          description: t('regionDeletedDesc')
+        });
+        setIsOperationComplete(true);
+        return true;
+      } else {
+        throw new Error(result.error || "Bilinməyən xəta");
+      }
     } catch (error) {
       console.error('Region silinərkən xəta baş verdi:', error);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotDeleteRegion')
+      });
       return false;
     }
-  }, [deleteRegion]);
+  }, [t]);
 
   // Regionlara aid statistika və admin məlumatlarını birləşdirmək
   const enhancedRegions = currentItems.map(region => ({

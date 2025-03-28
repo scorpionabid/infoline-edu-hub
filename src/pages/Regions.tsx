@@ -1,12 +1,5 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, Role } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
-import SidebarLayout from '@/components/layout/SidebarLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
   Table, 
   TableBody, 
@@ -14,67 +7,26 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { 
-  Map, 
-  School, 
-  Search, 
-  Plus, 
-  MoreHorizontal, 
-  Pencil, 
-  Trash2, 
-  Eye,
-  ArrowUpDown,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Globe,
-  User,
-  KeyRound,
-  Loader2
-} from 'lucide-react';
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRegionsStore, EnhancedRegion } from '@/hooks/useRegionsStore';
+import { useLanguage } from '@/context/LanguageContext';
+import { Eye, Trash2, Pencil, RefreshCw, PlusCircle, Search } from 'lucide-react';
+import AddRegionDialog from '@/components/regions/AddRegionDialog';
+import DeleteRegionDialog from '@/components/regions/DeleteRegionDialog';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationEllipsis, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from "@/components/ui/accordion";
-import { UserFormData } from '@/types/user';
-import { useRegionsStore } from '@/hooks/useRegionsStore';
-import { Region } from '@/types/supabase';
-import { mockUsers } from '@/data/mockUsers';
 
-const Regions = () => {
-  const { user } = useAuth();
+const Regions: React.FC = () => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  
   const {
     regions,
     loading,
@@ -89,639 +41,248 @@ const Regions = () => {
     handlePageChange,
     resetFilters,
     handleAddRegion,
-    handleUpdateRegion,
-    handleDeleteRegion
+    handleDeleteRegion,
+    fetchRegions
   } = useRegionsStore();
-  
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState<any>(null);
-  const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
-  
-  const [regionFormData, setRegionFormData] = useState({
-    name: '',
-    description: '',
-    status: 'active'
-  });
-  
-  const [adminFormData, setAdminFormData] = useState<UserFormData>({
-    name: '',
-    email: '',
-    password: '',
-    role: 'regionadmin' as Role,
-    status: 'active',
-    notificationSettings: {
-      email: true,
-      system: true
-    }
-  });
-  
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  
-  const handleAddDialogOpen = () => {
-    setRegionFormData({
-      name: '',
-      description: '',
-      status: 'active'
-    });
-    
-    setAdminFormData({
-      name: '',
-      email: '',
-      password: '',
-      role: 'regionadmin' as Role,
-      status: 'active',
-      notificationSettings: {
-        email: true,
-        system: true
-      }
-    });
-    
-    setIsAddDialogOpen(true);
-  };
-  
-  const handleViewAdmin = (region: any) => {
-    setSelectedRegion(region);
-    const admin = mockUsers.find(user => user.id === region.adminId);
-    setSelectedAdmin(admin || { 
-      id: region.adminId, 
-      name: 'Admin', 
-      email: region.adminEmail,
-      role: 'regionadmin' as Role,
-      status: 'active'
-    });
-    setIsUserDialogOpen(true);
-  };
-  
-  const handleRegionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setRegionFormData(prev => ({ ...prev, [name]: value }));
-    
-    if (name === 'name' && value) {
-      const suggestedEmail = `${value.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
-      setAdminFormData(prev => ({ 
-        ...prev, 
-        email: suggestedEmail,
-        name: `${value} Admin`
-      }));
-    }
-  };
-  
-  const handleAdminFormChange = (data: UserFormData) => {
-    setAdminFormData(data);
-  };
-  
-  const handleAddSubmit = async () => {
-    // Supabase-ə region əlavə et
-    const newRegion = {
-      name: regionFormData.name,
-      description: regionFormData.description,
-      status: regionFormData.status
-    };
-    
-    const success = await handleAddRegion(newRegion);
-    
-    if (success) {
-      // TODO: Gələcəkdə admin yaratma məntiqi Auth API ilə birləşdiriləcək
-      setIsAddDialogOpen(false);
-      toast.success('Region və admin uğurla əlavə edildi');
-    }
-  };
-  
-  const handleEditDialogOpen = (region: any) => {
-    setSelectedRegion(region);
-    setRegionFormData({
-      name: region.name,
-      description: region.description || '',
-      status: region.status
-    });
-    setIsEditDialogOpen(true);
-  };
-  
-  const handleEditSubmit = async () => {
-    if (!selectedRegion) return;
-    
-    const updates = {
-      name: regionFormData.name,
-      description: regionFormData.description,
-      status: regionFormData.status
-    };
-    
-    const success = await handleUpdateRegion(selectedRegion.id, updates);
-    
-    if (success) {
-      setIsEditDialogOpen(false);
-      toast.success('Region uğurla yeniləndi');
-    }
-  };
-  
-  const handleDeleteDialogOpen = (region: any) => {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
+
+  const handleRegionDelete = (region: EnhancedRegion) => {
     setSelectedRegion(region);
     setIsDeleteDialogOpen(true);
   };
-  
-  const handleDeleteConfirm = async () => {
-    if (!selectedRegion) return;
-    
-    const success = await handleDeleteRegion(selectedRegion.id);
-    
-    if (success) {
-      setIsDeleteDialogOpen(false);
-      toast.success('Region uğurla silindi');
-    }
-  };
-  
-  const renderCompletionRateBadge = (rate: number) => {
-    if (rate >= 80) {
-      return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{rate}%</Badge>;
-    } else if (rate >= 60) {
-      return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">{rate}%</Badge>;
-    } else {
-      return <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{rate}%</Badge>;
-    }
-  };
-  
-  const renderStatusBadge = (status: string) => {
-    if (status === 'active') {
-      return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
-    } else {
-      return <div className="flex items-center"><XCircle className="h-4 w-4 text-red-500 mr-1" /> Deaktiv</div>;
-    }
-  };
-  
-  const handleResetPassword = () => {
-    if (newPassword.length < 6) {
-      setPasswordError('Parol minimum 6 simvol olmalıdır');
-      return;
-    }
-    
-    toast.success(`${selectedAdmin?.email} üçün yeni parol təyin edildi`, {
-      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
-    });
-    
-    setShowPasswordReset(false);
-    setNewPassword('');
-    setIsUserDialogOpen(false);
-  };
-  
+
   return (
-    <SidebarLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('regions')}</h1>
-            <p className="text-muted-foreground">Regionları idarə et və izlə</p>
-          </div>
-          {user?.role === 'superadmin' && (
-            <Button onClick={handleAddDialogOpen} className="gap-1">
-              <Plus className="h-4 w-4" />
-              Region əlavə et
-            </Button>
-          )}
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t('regions')}</h1>
+          <p className="text-muted-foreground">{t('regionsDescription')}</p>
         </div>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 mb-6 items-start md:items-center justify-between">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Regionları axtar..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <select
-                  className="p-2 border rounded-md"
-                  value={selectedStatus || ''}
-                  onChange={(e) => handleStatusFilter(e.target.value || null)}
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> {t('addRegion')}
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>{t('manageRegions')}</CardTitle>
+          <CardDescription>{t('manageRegionsDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-4 space-x-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={t('searchRegions')}
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+            <Select 
+              value={selectedStatus || ''} 
+              onValueChange={(value) => handleStatusFilter(value || null)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('allStatuses')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t('allStatuses')}</SelectItem>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={resetFilters}
+              disabled={!searchTerm && !selectedStatus}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t('resetFilters')}
+            </Button>
+          </div>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[120px]">{t('id')}</TableHead>
+                  <TableHead 
+                    className="cursor-pointer" 
+                    onClick={() => handleSort('name')}
+                  >
+                    {t('name')} {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer" 
+                    onClick={() => handleSort('sectorCount')}
+                  >
+                    {t('sectors')} {sortConfig.key === 'sectorCount' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer"
+                    onClick={() => handleSort('schoolCount')}
+                  >
+                    {t('schools')} {sortConfig.key === 'schoolCount' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead>{t('admin')}</TableHead>
+                  <TableHead 
+                    className="cursor-pointer"
+                    onClick={() => handleSort('completionRate')}
+                  >
+                    {t('completion')} {sortConfig.key === 'completionRate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer"
+                    onClick={() => handleSort('status')}
+                  >
+                    {t('status')} {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead className="text-right">{t('actions')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-6 h-[200px]">
+                      <div className="flex flex-col items-center justify-center">
+                        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+                        <span className="text-muted-foreground">{t('loadingRegions')}</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : regions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-6 h-[200px]">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-muted-foreground mb-2">{t('noRegionsFound')}</span>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsAddDialogOpen(true)}
+                          className="mt-2"
+                        >
+                          <PlusCircle className="mr-2 h-4 w-4" /> {t('addRegion')}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  regions.map((region) => (
+                    <TableRow key={region.id}>
+                      <TableCell className="font-mono text-xs truncate">
+                        {region.id.split('-')[0]}...
+                      </TableCell>
+                      <TableCell className="font-medium">{region.name}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{region.sectorCount || 0}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{region.schoolCount || 0}</Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[180px] truncate">
+                        <a 
+                          href={`mailto:${region.adminEmail}`}
+                          className="text-blue-500 hover:underline text-sm"
+                        >
+                          {region.adminEmail}
+                        </a>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          className={
+                            region.completionRate >= 80 ? "bg-green-500" : 
+                            region.completionRate >= 50 ? "bg-amber-500" : 
+                            "bg-red-500"
+                          }
+                        >
+                          {region.completionRate}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={region.status === 'active' ? 'default' : 'secondary'}>
+                          {region.status === 'active' ? t('active') : t('inactive')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" size="icon" title={t('viewDetails')}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" title={t('edit')}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            title={t('delete')}
+                            onClick={() => handleRegionDelete(region)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-4">
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
                 >
-                  <option value="">Bütün statuslar</option>
-                  <option value="active">Aktiv</option>
-                  <option value="inactive">Deaktiv</option>
-                </select>
-                <Button variant="outline" onClick={resetFilters}>
-                  Filtri sıfırla
+                  {t('previous')}
+                </Button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  {t('next')}
                 </Button>
               </div>
-            </div>
-            
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
-                      <div className="flex items-center">
-                        Ad
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">Sektorlar</TableHead>
-                    <TableHead className="hidden md:table-cell">Məktəblər</TableHead>
-                    <TableHead className="hidden md:table-cell">Admin</TableHead>
-                    <TableHead className="hidden md:table-cell">Tamamlanma</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
-                    <TableHead className="text-right">Əməliyyatlar</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center h-32">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Loader2 className="h-8 w-8 mb-2 animate-spin" />
-                          <p>Məlumatlar yüklənir...</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : regions.length > 0 ? (
-                    regions.map(region => (
-                      <TableRow key={region.id}>
-                        <TableCell className="font-medium">{region.id.substring(0, 4)}...</TableCell>
-                        <TableCell>{region.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1">
-                            <Globe className="h-4 w-4 text-muted-foreground" />
-                            {region.sectorCount}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1">
-                            <School className="h-4 w-4 text-muted-foreground" />
-                            {region.schoolCount}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Button 
-                            variant="link" 
-                            className="p-0 h-auto text-blue-500 hover:text-blue-700 flex items-center gap-1"
-                            onClick={() => handleViewAdmin(region)}
-                          >
-                            <User className="h-4 w-4" />
-                            {region.adminEmail}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {renderCompletionRateBadge(region.completionRate)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {renderStatusBadge(region.status)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(`/regions/${region.id}`)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Bax
-                              </DropdownMenuItem>
-                              {user?.role === 'superadmin' && (
-                                <>
-                                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditDialogOpen(region)}>
-                                    <Pencil className="h-4 w-4 mr-2" />
-                                    Redaktə et
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => handleDeleteDialogOpen(region)}>
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Sil
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Map className="h-8 w-8 mb-2" />
-                          <p>Region tapılmadı</p>
-                          {searchTerm && (
-                            <p className="text-sm">Başqa axtarış termini sınayın</p>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {!loading && totalPages > 1 && (
-              <div className="mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} 
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          isActive={currentPage === page}
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)} 
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Region əlavə et</DialogTitle>
-            <DialogDescription>Yeni region əlavə etmək üçün məlumatları daxil edin.</DialogDescription>
-          </DialogHeader>
-          
-          <Accordion type="single" collapsible defaultValue="region" className="w-full">
-            <AccordionItem value="region">
-              <AccordionTrigger className="text-lg font-medium">
-                Region məlumatları
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-name">Ad</Label>
-                    <Input
-                      id="add-name"
-                      name="name"
-                      value={regionFormData.name}
-                      onChange={handleRegionFormChange}
-                      placeholder="Region adı"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-description">Təsvir</Label>
-                    <Input
-                      id="add-description"
-                      name="description"
-                      value={regionFormData.description}
-                      onChange={handleRegionFormChange}
-                      placeholder="Region haqqında qısa məlumat"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-status">Status</Label>
-                    <select
-                      id="add-status"
-                      name="status"
-                      value={regionFormData.status}
-                      onChange={handleRegionFormChange}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      <option value="active">Aktiv</option>
-                      <option value="inactive">Deaktiv</option>
-                    </select>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="admin">
-              <AccordionTrigger className="text-lg font-medium">
-                Admin məlumatları
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-name">Admin adı</Label>
-                    <Input
-                      id="admin-name"
-                      name="name"
-                      value={adminFormData.name}
-                      onChange={(e) => setAdminFormData({...adminFormData, name: e.target.value})}
-                      placeholder="Admin adı və soyadı"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Email</Label>
-                    <Input
-                      id="admin-email"
-                      name="email"
-                      type="email"
-                      value={adminFormData.email}
-                      onChange={(e) => setAdminFormData({...adminFormData, email: e.target.value})}
-                      placeholder="admin@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Şifrə</Label>
-                    <Input
-                      id="admin-password"
-                      name="password"
-                      type="password"
-                      value={adminFormData.password}
-                      onChange={(e) => setAdminFormData({...adminFormData, password: e.target.value})}
-                      placeholder="Şifrə (minimum 6 simvol)"
-                    />
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Ləğv et</Button>
-            <Button onClick={handleAddSubmit} 
-              disabled={
-                !regionFormData.name || 
-                !adminFormData.name || 
-                !adminFormData.email || 
-                !adminFormData.password || 
-                adminFormData.password.length < 6
-              }
-            >
-              Əlavə et
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Regionu redaktə et</DialogTitle>
-            <DialogDescription>Region məlumatlarını dəyişin.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Ad</Label>
-              <Input
-                id="edit-name"
-                name="name"
-                value={regionFormData.name}
-                onChange={handleRegionFormChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Təsvir</Label>
-              <Input
-                id="edit-description"
-                name="description"
-                value={regionFormData.description}
-                onChange={handleRegionFormChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <select
-                id="edit-status"
-                name="status"
-                value={regionFormData.status}
-                onChange={handleRegionFormChange}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="active">Aktiv</option>
-                <option value="inactive">Deaktiv</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Ləğv et</Button>
-            <Button onClick={handleEditSubmit}>Yadda saxla</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Silməyi təsdiqlə</DialogTitle>
-            <DialogDescription>
-              "{selectedRegion?.name}" regionunu silmək istədiyinizə əminsiniz?
-              Bu əməliyyat geri qaytarıla bilməz.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-4">
-            <AlertCircle className="h-16 w-16 text-destructive" />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Ləğv et</Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>Sil</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isUserDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setShowPasswordReset(false);
-          setNewPassword('');
-          setPasswordError('');
-        }
-        setIsUserDialogOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Admin məlumatları</DialogTitle>
-            <DialogDescription>
-              {selectedRegion?.name} regionunun admininə aid məlumatlar
-            </DialogDescription>
-          </DialogHeader>
-          {selectedAdmin && (
-            <div className="space-y-4 py-4">
-              {!showPasswordReset ? (
-                <>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Ad</Label>
-                    <p className="font-medium">{selectedAdmin.name}</p>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Email</Label>
-                    <p className="font-medium">{selectedAdmin.email}</p>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Rol</Label>
-                    <Badge variant="secondary" className="w-fit">Region admin</Badge>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Status</Label>
-                    <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                      {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                    </Badge>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col space-y-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="newPassword">Yeni parol</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        if (e.target.value.length < 6) {
-                          setPasswordError('Parol minimum 6 simvol olmalıdır');
-                        } else {
-                          setPasswordError('');
-                        }
-                      }}
-                      placeholder="Yeni parol daxil edin (minimum 6 simvol)"
-                      className={passwordError ? "border-red-500" : ""}
-                    />
-                    {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <p>Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.</p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
-          <DialogFooter>
-            {!showPasswordReset ? (
-              <>
-                <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
-                <Button onClick={() => setShowPasswordReset(true)}>
-                  <KeyRound className="h-4 w-4 mr-2" />
-                  Parolu dəyiş
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setShowPasswordReset(false)}>Ləğv et</Button>
-                <Button 
-                  onClick={handleResetPassword}
-                  disabled={newPassword.length < 6}
-                >
-                  Parolu dəyiş
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </SidebarLayout>
+        </CardContent>
+      </Card>
+
+      <AddRegionDialog 
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSubmit={handleAddRegion}
+      />
+
+      <DeleteRegionDialog 
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        region={selectedRegion}
+        onDelete={handleDeleteRegion}
+      />
+    </div>
   );
 };
 
