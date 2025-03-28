@@ -25,7 +25,7 @@ export interface Notification {
   userId?: string;
   isRead?: boolean;
   createdAt: string;
-  time?: string;
+  time: string; // Bu xüsusiyyəti məcburi edirik
   priority?: NotificationPriority;
   relatedEntityId?: string;
   relatedEntityType?: 'category' | 'column' | 'data' | 'user' | 'school';

@@ -5,7 +5,7 @@ export interface FormItem {
   id: string;
   title: string;
   category: string;
-  status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
+  status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty' | 'dueSoon';
   deadline?: string;
   completionPercentage: number;
 }

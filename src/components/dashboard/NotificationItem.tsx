@@ -1,15 +1,10 @@
 
 import React from 'react';
 import { Bell, FileText, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Notification } from '@/types/notification';
 
 export interface NotificationItemProps {
-  notification: {
-    id: number | string;
-    type: string;
-    title: string;
-    message: string;
-    time: string;
-  };
+  notification: Notification;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {

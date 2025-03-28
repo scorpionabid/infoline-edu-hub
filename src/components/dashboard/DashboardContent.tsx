@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -17,15 +16,7 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
-
-// Dashboard üçün bildiriş tipi
-interface DashboardNotification {
-  id: string | number;
-  type: string;
-  title: string;
-  message: string;
-  time: string;
-}
+import NotificationsCard from './NotificationsCard';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -50,7 +41,8 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
     type: notification.type,
     title: notification.title,
     message: notification.message,
-    createdAt: notification.time || notification.createdAt || new Date().toISOString(),
+    createdAt: notification.createdAt || new Date().toISOString(),
+    time: notification.time || notification.createdAt || new Date().toISOString(),
     isRead: notification.isRead || false,
     userId: notification.userId || '',
     priority: notification.priority || 'normal'
@@ -180,6 +172,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               dueSoon: 0,
               overdue: 0
             },
+            // Make sure required properties are present
+            schoolName: schoolAdminData.schoolName || "Unknown School",
+            sectorName: schoolAdminData.sectorName || "Unknown Sector",
+            regionName: schoolAdminData.regionName || "Unknown Region",
+            completionRate: schoolAdminData.completionRate || 0,
             // Adapt recentForms if present
             recentForms: schoolAdminData.recentForms || []
           };
