@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -15,15 +15,33 @@ const Dashboard: React.FC = () => {
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
   const navigate = useNavigate();
   
-  // Sistem vəziyyətinin diaqnostikası
+  // Sistem vəziyyətinin diaqnostikası, sadəcə bir dəfə və ya auth dəyişdikdə işləsin
   useEffect(() => {
     console.group('Dashboard komponent diaqnostikası');
-    console.log('Authentication vəziyyəti:', { isAuthenticated, authLoading, user: user ? `${user.email} (${user.role})` : 'yoxdur' });
-    console.log('Dashboard məlumat vəziyyəti:', { isLoading, error: error ? error.message : 'xəta yoxdur', dataLoaded: !!dashboardData });
-    console.log('userRole:', userRole);
-    console.log('Fallback vəziyyəti:', fallbackLoaded);
+    console.log('Authentication vəziyyəti:', { 
+      isAuthenticated, 
+      authLoading, 
+      user: user ? `${user.email} (${user.role})` : 'yoxdur' 
+    });
     
-    if (dashboardData) {
+    if (!isAuthenticated && !authLoading) {
+      console.log('İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir');
+    }
+    
+    console.groupEnd();
+  }, [user, isAuthenticated, authLoading]);
+  
+  // Əlavə diaqnostik log - yalnız məlumatlar yükləndikdə bir dəfə işləsin
+  useEffect(() => {
+    if (dashboardData && !isLoading) {
+      console.log('Dashboard məlumat vəziyyəti:', { 
+        isLoading, 
+        error: error ? error.message : 'xəta yoxdur', 
+        dataLoaded: !!dashboardData 
+      });
+      console.log('userRole:', userRole);
+      console.log('Fallback vəziyyəti:', fallbackLoaded);
+      
       console.log('Dashboard data tipləri:', {
         pendingForms: Array.isArray(dashboardData.pendingForms) ? 'array' : typeof dashboardData.pendingForms,
         pendingFormsCount: Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms.length : 'N/A',
@@ -31,30 +49,39 @@ const Dashboard: React.FC = () => {
         deadlinesCount: Array.isArray(dashboardData.upcomingDeadlines) ? dashboardData.upcomingDeadlines.length : 'N/A'
       });
     }
-    console.groupEnd();
-  }, [user, isAuthenticated, authLoading, dashboardData, isLoading, error, fallbackLoaded, userRole]);
+  }, [dashboardData, isLoading, error, fallbackLoaded, userRole]);
   
-  // Əgər 5 saniyədən çox yüklənmə davam edirsə, fallback data göstərək
+  // Fallback məlumat göstərmək üçün effekt
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isLoading) {
+    let timer: number | undefined;
+    
+    if (isLoading) {
+      timer = window.setTimeout(() => {
         console.log('5 saniyə keçdi, fallback data göstəriləcək');
         setFallbackLoaded(true);
-      }
-    }, 5000);
+      }, 5000);
+    }
     
-    return () => clearTimeout(timer);
+    return () => {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    };
   }, [isLoading]);
   
   // Əgər istifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndirək
+  // useCallback istifadə edərək funksiyaların yenidən yaradılmasının qarşısını alaq
+  const redirectToLogin = useCallback(() => {
+    navigate('/login');
+  }, [navigate]);
+  
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      console.log('İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir');
-      navigate('/login');
+      redirectToLogin();
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, redirectToLogin]);
   
-  // Xəta olduqda bildiriş göstərək
+  // Xəta olduqda bildiriş göstərək - sadəcə xəta dəyişdikdə
   useEffect(() => {
     if (error) {
       console.error('Dashboard data error:', error);

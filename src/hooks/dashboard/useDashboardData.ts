@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -33,7 +33,6 @@ function logStatus(status: string, data: any = null, error: any = null) {
   console.group(`useDashboardData: ${status}`);
   if (data) console.log('Data:', data);
   if (error) console.error('Error:', error);
-  console.trace('Call stack:');
   console.groupEnd();
 }
 
@@ -51,19 +50,26 @@ export const useDashboardData = () => {
   const { t } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   
+  // İstəyin bir dəfə işləməsini təmin etmək üçün ref
+  const dataFetchedRef = useRef(false);
+  
   // Mockdata kontrol funksiyası
   const checkMockData = useCallback(() => {
-    console.group("Mock data yoxlaması");
-    console.log("mockCategories:", {
-      type: typeof mockCategories,
-      isArray: Array.isArray(mockCategories),
-      length: Array.isArray(mockCategories) ? mockCategories.length : "N/A",
-      sample: Array.isArray(mockCategories) && mockCategories.length > 0 ? mockCategories[0] : null
-    });
-    console.groupEnd();
+    const mockDataValid = Array.isArray(mockCategories) && mockCategories.length > 0;
+    
+    if (!mockDataValid) {
+      console.warn("Mock kateqoriya məlumatları yüklənmədi və ya boşdur");
+    }
+    
+    return mockDataValid;
   }, []);
   
   const fetchData = useCallback(async () => {
+    // Əgər məlumatlar artıq yüklənibsə, təkrar etmə
+    if (dataFetchedRef.current && dashboardData) {
+      return;
+    }
+    
     const startTime = performance.now();
     logStatus('Məlumat yüklənməyə başladı', { user });
     
@@ -117,6 +123,8 @@ export const useDashboardData = () => {
         });
         
         setDashboardData(dashboardResult);
+        // Məlumatlar uğurla yükləndikdə ref-i təyin edirik
+        dataFetchedRef.current = true;
       } catch (dashboardError: any) {
         const errorStatus: ErrorStatus = {
           code: 'DASHBOARD_DATA_ERROR',
@@ -135,16 +143,13 @@ export const useDashboardData = () => {
       const endTime = performance.now();
       logStatus(`Məlumat yüklənməsi tamamlandı (${Math.round(endTime - startTime)}ms)`);
     }
-  }, [t, user, checkMockData]);
+  }, [t, user, checkMockData, dashboardData]);
   
   useEffect(() => {
     // İstifadəçi auth olduğunu yoxlayaq və səhifə yükləndikdə data-nı fetch edək
-    logStatus('useDashboardData hook işə düşdü');
-    logStatus('İstifadəçi authentication statusu', { isAuthenticated });
-    
-    if (isAuthenticated) {
+    if (isAuthenticated && !dataFetchedRef.current) {
       fetchData();
-    } else {
+    } else if (!isAuthenticated) {
       logStatus('İstifadəçi autentifikasiya olmayıb', null, { warning: 'Dashboard data yüklənmir' });
       setIsLoading(false);
     }

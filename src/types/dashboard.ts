@@ -1,138 +1,156 @@
 
-import { Notification, NotificationType } from './notification';
-import { FormStatus } from './form';
+// Dashboard vəziyyəti formatları
 
 export interface FormItem {
   id: string;
   title: string;
   category: string;
-  status: FormStatus;
-  completionPercentage: number;
+  status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due';
   deadline?: string;
+  completionPercentage: number;
 }
 
 export interface DashboardData {
-  totalSchools: number;
-  activeSchools: number;
+  totalSchools?: number;
+  activeSchools?: number;
   pendingForms: FormItem[];
-  upcomingDeadlines: {
+  upcomingDeadlines: Array<{
     category: string;
     date: string;
-  }[];
-  regionalStats: {
+  }>;
+  regionalStats?: Array<{
     region: string;
     approved: number;
     pending: number;
     rejected: number;
-  }[];
-  sectorStats: {
+  }>;
+  sectorStats?: Array<{
     sector: string;
     approved: number;
     pending: number;
     rejected: number;
-  }[];
+  }>;
+  notifications?: Array<{
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    time: string;
+  }>;
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
-  regions: number;
-  sectors: number;
-  schools: number;
-  users: number;
-  completionRate: number;
-  pendingApprovals: number;
-  notifications: Notification[];
-  activityData?: {
+  totalUsers?: number;
+  activeUsers?: number;
+  totalCategories?: number;
+  totalSectors?: number;
+  totalRegions?: number;
+  notifications: Array<{
     id: string;
-    action: string;
-    actor: string;
-    target: string;
+    type: string;
+    title: string;
+    message: string;
     time: string;
-  }[];
-  pendingSchools?: number;
-  approvedSchools?: number;
-  rejectedSchools?: number;
+  }>;
   regionCompletionData?: Array<{
-    name: string;
-    completed: number;
+    region: string;
+    completion: number;
   }>;
   sectorCompletionData?: Array<{
-    name: string;
-    completed: number;
+    sector: string;
+    completion: number;
   }>;
   categoryCompletionData?: Array<{
-    name: string;
-    completed: number;
+    category: string;
+    completion: number;
   }>;
-  statusData?: {
-    completed: number;
-    pending: number;
-    rejected: number;
-    notStarted: number;
-  };
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
-  regionName: string;
-  sectors: number;
-  schools: number;
-  users: number;
-  completionRate: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
-  notifications: Notification[];
-  categories: {
-    name: string;
-    completionRate: number;
-    color: string;
-  }[];
-  sectorCompletions: {
-    name: string;
-    completionRate: number;
-  }[];
+  regionName?: string;
+  totalSectors?: number;
+  totalSchools?: number;
+  completionRate?: number;
+  categories?: number;
+  notifications: Array<{
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    time: string;
+  }>;
+  sectorCompletions?: Array<{
+    sector: string;
+    completion: number;
+  }>;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
-  sectorName: string;
-  regionName: string;
-  schools: number;
-  completionRate: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
-  notifications: Notification[];
+  sectorName?: string;
+  regionName?: string;
+  totalSchools?: number;
+  completionRate?: number;
+  notifications: Array<{
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    time: string;
+  }>;
+  schoolCompletions?: Array<{
+    school: string;
+    completion: number;
+  }>;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
-  schoolName: string;
-  sectorName: string;
-  regionName: string;
-  forms: {
+  schoolName?: string;
+  sectorName?: string;
+  regionName?: string;
+  completionRate?: number;
+  forms?: {
     pending: number;
     approved: number;
     rejected: number;
     dueSoon: number;
     overdue: number;
   };
-  completionRate: number;
-  notifications: Notification[];
-  categories?: number;
   totalForms?: number;
   completedForms?: number;
+  pendingForms: FormItem[];
   rejectedForms?: number;
   dueDates?: Array<{
     category: string;
     date: string;
   }>;
-  recentForms?: Array<FormItem>;
+  recentForms?: Array<{
+    id: string;
+    title: string;
+    category: string;
+    status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
+    completionPercentage: number;
+    deadline?: string;
+  }>;
+  notifications: Array<{
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    time: string;
+  }>;
 }
 
 export interface ChartData {
-  activityData: { name: string; value: number }[];
-  regionSchoolsData: { name: string; value: number }[];
-  categoryCompletionData: { name: string; completed: number }[];
+  activityData: Array<{
+    name: string;
+    value: number;
+  }>;
+  regionSchoolsData: Array<{
+    name: string;
+    value: number;
+  }>;
+  categoryCompletionData: Array<{
+    name: string;
+    completed: number;
+  }>;
 }
-
-export type { FormStatus };

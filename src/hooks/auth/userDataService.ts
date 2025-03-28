@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
@@ -47,13 +48,36 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       if (authUser.user.email === 'superadmin@infoline.az') {
         console.log('superadmin@infoline.az üçün superadmin rolu təyin edilir');
         return {
-          ...profile,
           id: userId,
           email: authUser.user.email,
           role: 'superadmin',
+          full_name: profile.full_name || '',
+          name: profile.full_name || '', 
+          phone: profile.phone || '',
+          position: profile.position || '',
+          language: profile.language || 'az',
+          avatar: profile.avatar || '',
+          status: (profile.status || 'active') as 'active' | 'inactive' | 'blocked',
           school_id: null,
+          schoolId: null,
           sector_id: null,
-          region_id: null
+          sectorId: null,
+          region_id: null,
+          regionId: null,
+          school: null,
+          sector: null,
+          region: null,
+          last_login: profile.last_login,
+          lastLogin: profile.last_login,
+          created_at: profile.created_at,
+          createdAt: profile.created_at,
+          updated_at: profile.updated_at,
+          updatedAt: profile.updated_at,
+          twoFactorEnabled: false,
+          notificationSettings: {
+            email: true,
+            system: true
+          }
         };
       }
     }
