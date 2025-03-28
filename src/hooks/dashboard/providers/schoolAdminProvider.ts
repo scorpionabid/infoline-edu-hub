@@ -1,7 +1,7 @@
 
 import { getBaseData } from './baseProvider';
 import { getMockNotifications, getMockRecentForms } from '../mockDashboardData';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
 
 export function getSchoolAdminData(): SchoolAdminDashboardData {
   const baseData = getBaseData();
@@ -9,6 +9,8 @@ export function getSchoolAdminData(): SchoolAdminDashboardData {
     ...n, 
     time: n.createdAt || new Date().toISOString() 
   }));
+  
+  const recentForms = getMockRecentForms();
   
   return {
     ...baseData,
@@ -31,6 +33,6 @@ export function getSchoolAdminData(): SchoolAdminDashboardData {
       { category: "Tədris planı", date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() },
       { category: "Maliyyə hesabatı", date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }
     ],
-    recentForms: getMockRecentForms()
+    recentForms
   };
 }

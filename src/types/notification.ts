@@ -6,18 +6,25 @@ export type NotificationType =
   | 'approved' 
   | 'rejected' 
   | 'systemUpdate' 
-  | 'reminder';
+  | 'reminder'
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'formApproved'
+  | 'formRejected'
+  | 'dueDateReminder';
 
 export type NotificationPriority = 'normal' | 'high' | 'critical';
 
 export interface Notification {
   id: string;
-  type: string | NotificationType;
+  type: NotificationType;
   title: string;
   message: string;
   userId?: string;
   isRead?: boolean;
-  createdAt?: string;
+  createdAt: string;
   time?: string;
   priority?: NotificationPriority;
   relatedEntityId?: string;

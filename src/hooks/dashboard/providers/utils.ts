@@ -1,5 +1,5 @@
 
-import { FormItem } from '@/types/dashboard';
+import { FormItem, FormStatus } from '@/types/dashboard';
 import { mockCategories } from '@/data/mock/mockCategories';
 import { MockCategory } from '@/types/category';
 
@@ -39,7 +39,7 @@ export function createSafeFormItems(categoryList: MockCategory[]): FormItem[] {
         id: `temp-${Math.random().toString(36).substr(2, 9)}`,
         title: 'Xəta: namə\'lum kateqoriya',
         category: 'Namə\'lum',
-        status: 'pending' as 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty',
+        status: 'pending' as FormStatus,
         completionPercentage: 0,
         deadline: ''
       };
@@ -52,7 +52,7 @@ export function createSafeFormItems(categoryList: MockCategory[]): FormItem[] {
       id: category.id || `temp-${Math.random().toString(36).substr(2, 9)}`,
       title: category.name || 'Unnamed Category',
       category: category.name || 'Unnamed Category',
-      status: 'pending' as 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty',
+      status: 'pending' as FormStatus,
       completionPercentage: Math.floor(Math.random() * 100),
       deadline: deadline
     };

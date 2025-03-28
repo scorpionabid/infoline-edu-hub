@@ -38,25 +38,25 @@ export function getSuperAdminData(): SuperAdminDashboardData {
       notStarted: 3
     },
     regionCompletionData: [
-      { region: 'Bakı', completion: 85 },
-      { region: 'Sumqayıt', completion: 72 },
-      { region: 'Gəncə', completion: 65 },
-      { region: 'Quba', completion: 58 },
-      { region: 'Lənkəran', completion: 63 }
+      { name: 'Bakı', completed: 85 },
+      { name: 'Sumqayıt', completed: 72 },
+      { name: 'Gəncə', completed: 65 },
+      { name: 'Quba', completed: 58 },
+      { name: 'Lənkəran', completed: 63 }
     ],
     sectorCompletionData: [
-      { sector: 'Sektor A', completion: 92 },
-      { sector: 'Sektor B', completion: 78 },
-      { sector: 'Sektor C', completion: 56 },
-      { sector: 'Sektor D', completion: 81 },
-      { sector: 'Sektor E', completion: 69 }
+      { name: 'Sektor A', completed: 92 },
+      { name: 'Sektor B', completed: 78 },
+      { name: 'Sektor C', completed: 56 },
+      { name: 'Sektor D', completed: 81 },
+      { name: 'Sektor E', completed: 69 }
     ],
     categoryCompletionData: [
-      { category: 'Ümumi məlumat', completion: 95 },
-      { category: 'Təhsil prosesi', completion: 82 },
-      { category: 'Maddi-texniki baza', completion: 71 },
-      { category: 'Müəllim heyəti', completion: 88 },
-      { category: 'Şagird statistikası', completion: 79 }
+      { name: 'Ümumi məlumat', completed: 95 },
+      { name: 'Təhsil prosesi', completed: 82 },
+      { name: 'Maddi-texniki baza', completed: 71 },
+      { name: 'Müəllim heyəti', completed: 88 },
+      { name: 'Şagird statistikası', completed: 79 }
     ]
   };
 }

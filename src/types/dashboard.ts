@@ -10,7 +10,7 @@ export interface FormItem {
   completionPercentage: number;
 }
 
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty' | 'dueSoon';
 
 export interface DashboardData {
   totalSchools?: number;
@@ -40,18 +40,18 @@ export interface CompletionDataItem {
 }
 
 export interface RegionCompletionItem {
-  region: string;
-  completion: number;
+  name: string;      // Burada region yerinə name
+  completed: number; // Burada completion yerinə completed
 }
 
 export interface SectorCompletionItem {
-  sector: string;
-  completion: number;
+  name: string;      // Burada sector yerinə name
+  completed: number; // Burada completion yerinə completed
 }
 
 export interface CategoryCompletionItem {
-  category: string;
-  completion: number;
+  name: string;      // Burada category yerinə name
+  completed: number; // Burada completion yerinə completed
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
@@ -95,7 +95,7 @@ export interface SuperAdminDashboardData extends DashboardData {
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
-  regionName?: string;
+  regionName: string;  // optional deyil, required edildi
   sectors: number;
   schools: number;
   users: number;
@@ -125,8 +125,8 @@ export interface RegionAdminDashboardData extends DashboardData {
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
-  sectorName?: string;
-  regionName?: string;
+  sectorName: string;  // optional deyil, required edildi
+  regionName: string;  // optional deyil, required edildi
   schools: number;
   completionRate: number;
   pendingApprovals: number;
@@ -148,11 +148,11 @@ export interface SectorAdminDashboardData extends DashboardData {
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
-  schoolName?: string;
-  sectorName?: string;
-  regionName?: string;
+  schoolName: string;  // optional deyil, required edildi
+  sectorName: string;  // optional deyil, required edildi
+  regionName: string;  // optional deyil, required edildi
   completionRate: number;
-  forms?: {
+  forms: {
     pending: number;
     approved: number;
     rejected: number;
@@ -161,7 +161,6 @@ export interface SchoolAdminDashboardData extends DashboardData {
   };
   totalForms?: number;
   completedForms?: number;
-  pendingForms: FormItem[];
   rejectedForms?: number;
   dueDates?: Array<{
     category: string;

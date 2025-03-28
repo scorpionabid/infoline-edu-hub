@@ -27,8 +27,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const getIcon = (type: NotificationType) => {
-    switch (type) {
+  const getIcon = (type: string) => {
+    switch (type as NotificationType) {
       case 'newCategory':
         return <File className="h-5 w-5 text-blue-500" />;
       case 'deadline':
@@ -36,11 +36,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       case 'approvalRequest':
         return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
       case 'approved':
+      case 'formApproved':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'rejected':
+      case 'formRejected':
         return <XCircle className="h-5 w-5 text-red-500" />;
       case 'systemUpdate':
         return <Info className="h-5 w-5 text-purple-500" />;
+      case 'dueDateReminder':
+        return <Calendar className="h-5 w-5 text-amber-500" />;
       default:
         return <Bell className="h-5 w-5 text-gray-500" />;
     }
