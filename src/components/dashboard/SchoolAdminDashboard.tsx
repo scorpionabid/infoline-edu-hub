@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
 import NotificationsCard from './NotificationsCard';
 import FormStatusSection from './school-admin/FormStatusSection';
-import { Notification } from './NotificationsCard';
+import { Notification } from '@/types/notification';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import DataEntryProgress from '../dataEntry/DataEntryProgress';

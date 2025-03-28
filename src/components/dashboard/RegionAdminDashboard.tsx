@@ -6,7 +6,7 @@ import StatsCard from './StatsCard';
 import CompletionRateCard from './CompletionRateCard';
 import PendingApprovalsCard from './PendingApprovalsCard';
 import NotificationsCard from './NotificationsCard';
-import { Notification } from './NotificationsCard';
+import { Notification } from '@/types/notification';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';

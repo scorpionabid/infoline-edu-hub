@@ -72,6 +72,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   ) => {
     if (!user) return;
     
+    const createdAt = new Date().toISOString();
+    
     const newNotification: Notification = {
       id: uuidv4(),
       type,
@@ -79,7 +81,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       message,
       userId: user.id,
       isRead: false,
-      createdAt: new Date().toISOString(),
+      createdAt,
+      time: createdAt, // time xüsusiyyətini əlavə edirik
       priority,
       relatedEntityId,
       relatedEntityType

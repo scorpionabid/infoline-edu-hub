@@ -30,6 +30,7 @@ export const getMockNotifications = (): Notification[] => [
     title: "Yeni kateqoriya yaradıldı",
     message: "Tədris məlumatları kateqoriyası yaradıldı",
     createdAt: new Date().toISOString(),
+    time: new Date().toISOString(), // time xüsusiyyətini əlavə edirik
     isRead: false,
     userId: "1",
     priority: "normal"
@@ -40,6 +41,7 @@ export const getMockNotifications = (): Notification[] => [
     title: "Məlumat tələb olunur",
     message: "Maliyyə məlumatlarını doldurmağınız xahiş olunur",
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // time xüsusiyyətini əlavə edirik
     isRead: true,
     userId: "1",
     priority: "high"
