@@ -5,6 +5,10 @@ import { SectorAdminDashboardData } from '@/types/dashboard';
 
 export function getSectorAdminData(): SectorAdminDashboardData {
   const baseData = getBaseData();
+  const notifications = getMockNotifications().map(n => ({
+    ...n, 
+    time: n.createdAt || new Date().toISOString() 
+  }));
   
   return {
     ...baseData,
@@ -16,6 +20,6 @@ export function getSectorAdminData(): SectorAdminDashboardData {
     pendingSchools: 3,
     approvedSchools: 12,
     rejectedSchools: 2,
-    notifications: getMockNotifications()
+    notifications
   };
 }

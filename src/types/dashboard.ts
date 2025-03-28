@@ -5,10 +5,12 @@ export interface FormItem {
   id: string;
   title: string;
   category: string;
-  status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due';
+  status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
   deadline?: string;
   completionPercentage: number;
 }
+
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
 
 export interface DashboardData {
   totalSchools?: number;
@@ -30,16 +32,35 @@ export interface DashboardData {
     pending: number;
     rejected: number;
   }>;
-  notifications?: Array<{
-    id: string;
-    type: string;
-    title: string;
-    message: string;
-    time: string;
-  }>;
+}
+
+export interface CompletionDataItem {
+  name: string;
+  completed: number;
+}
+
+export interface RegionCompletionItem {
+  region: string;
+  completion: number;
+}
+
+export interface SectorCompletionItem {
+  sector: string;
+  completion: number;
+}
+
+export interface CategoryCompletionItem {
+  category: string;
+  completion: number;
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
   totalUsers?: number;
   activeUsers?: number;
   totalCategories?: number;
@@ -52,26 +73,39 @@ export interface SuperAdminDashboardData extends DashboardData {
     message: string;
     time: string;
   }>;
-  regionCompletionData?: Array<{
-    region: string;
-    completion: number;
+  regionCompletionData?: RegionCompletionItem[];
+  sectorCompletionData?: SectorCompletionItem[];
+  categoryCompletionData?: CategoryCompletionItem[];
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
+  activityData?: Array<{
+    id: string;
+    action: string;
+    actor: string;
+    target: string;
+    time: string;
   }>;
-  sectorCompletionData?: Array<{
-    sector: string;
-    completion: number;
-  }>;
-  categoryCompletionData?: Array<{
-    category: string;
-    completion: number;
-  }>;
+  statusData?: {
+    completed: number;
+    pending: number;
+    rejected: number;
+    notStarted: number;
+  };
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
   regionName?: string;
+  sectors: number;
+  schools: number;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
   totalSectors?: number;
   totalSchools?: number;
-  completionRate?: number;
-  categories?: number;
   notifications: Array<{
     id: string;
     type: string;
@@ -79,17 +113,27 @@ export interface RegionAdminDashboardData extends DashboardData {
     message: string;
     time: string;
   }>;
+  categories?: Array<{
+    name: string;
+    completionRate: number;
+    color: string;
+  }>;
   sectorCompletions?: Array<{
-    sector: string;
-    completion: number;
+    name: string;
+    completionRate: number;
   }>;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
   sectorName?: string;
   regionName?: string;
+  schools: number;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
   totalSchools?: number;
-  completionRate?: number;
   notifications: Array<{
     id: string;
     type: string;
@@ -107,7 +151,7 @@ export interface SchoolAdminDashboardData extends DashboardData {
   schoolName?: string;
   sectorName?: string;
   regionName?: string;
-  completionRate?: number;
+  completionRate: number;
   forms?: {
     pending: number;
     approved: number;
@@ -123,14 +167,7 @@ export interface SchoolAdminDashboardData extends DashboardData {
     category: string;
     date: string;
   }>;
-  recentForms?: Array<{
-    id: string;
-    title: string;
-    category: string;
-    status: 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
-    completionPercentage: number;
-    deadline?: string;
-  }>;
+  recentForms?: Array<FormItem>;
   notifications: Array<{
     id: string;
     type: string;

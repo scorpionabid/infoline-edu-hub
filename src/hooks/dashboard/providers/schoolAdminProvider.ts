@@ -5,6 +5,10 @@ import { SchoolAdminDashboardData } from '@/types/dashboard';
 
 export function getSchoolAdminData(): SchoolAdminDashboardData {
   const baseData = getBaseData();
+  const notifications = getMockNotifications().map(n => ({
+    ...n, 
+    time: n.createdAt || new Date().toISOString() 
+  }));
   
   return {
     ...baseData,
@@ -19,8 +23,7 @@ export function getSchoolAdminData(): SchoolAdminDashboardData {
       overdue: 0
     },
     completionRate: 80,
-    notifications: getMockNotifications(),
-    categories: 5,
+    notifications,
     totalForms: 15,
     completedForms: 10,
     rejectedForms: 2,

@@ -5,6 +5,10 @@ import { RegionAdminDashboardData } from '@/types/dashboard';
 
 export function getRegionAdminData(): RegionAdminDashboardData {
   const baseData = getBaseData();
+  const notifications = getMockNotifications().map(n => ({
+    ...n, 
+    time: n.createdAt || new Date().toISOString() 
+  }));
   
   return {
     ...baseData,
@@ -17,7 +21,7 @@ export function getRegionAdminData(): RegionAdminDashboardData {
     pendingSchools: 6,
     approvedSchools: 20,
     rejectedSchools: 3,
-    notifications: getMockNotifications(),
+    notifications,
     categories: [
       { name: "Tədris planı", completionRate: 85, color: "bg-blue-500" },
       { name: "Müəllim heyəti", completionRate: 70, color: "bg-green-500" },

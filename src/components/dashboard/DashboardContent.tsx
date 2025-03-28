@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,15 +9,23 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  FormItem
-} from '@/hooks/dashboard';
+  FormItem,
+  FormStatus
+} from '@/types/dashboard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
-import { Notification as DashboardNotification } from './NotificationsCard';
 import { Notification } from '@/types/notification';
-import { FormStatus } from '@/types/form';
+
+// Dashboard üçün bildiriş tipi
+interface DashboardNotification {
+  id: string | number;
+  type: string;
+  title: string;
+  message: string;
+  time: string;
+}
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -30,7 +39,7 @@ interface DashboardContentProps {
 }
 
 // Notification formatını uyğunlaşdırma funksiyası
-const adaptNotifications = (notifications: Notification[]): DashboardNotification[] => {
+const adaptNotifications = (notifications: any[]): DashboardNotification[] => {
   if (!notifications || !Array.isArray(notifications)) {
     console.warn('Notifications is not an array:', notifications);
     return [];
@@ -41,7 +50,7 @@ const adaptNotifications = (notifications: Notification[]): DashboardNotificatio
     type: notification.type,
     title: notification.title,
     message: notification.message,
-    time: notification.createdAt // createdAt'ı time'a çeviririk
+    time: notification.time || notification.createdAt || new Date().toISOString()
   }));
 };
 
@@ -116,72 +125,24 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         case 'superadmin': {
           console.log('Rendering SuperAdminDashboard');
           const superAdminData = dashboardData as SuperAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(superAdminData?.notifications || []);
-          const preparedData = {
-            ...superAdminData,
-            notifications: adaptedNotifications
-          };
-          return <SuperAdminDashboard data={preparedData} />;
+          return <SuperAdminDashboard data={superAdminData} />;
         }
         case 'regionadmin': {
           const regionAdminData = dashboardData as RegionAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(regionAdminData?.notifications || []);
-          const preparedData = {
-            ...regionAdminData,
-            notifications: adaptedNotifications,
-            categories: regionAdminData?.categories || [],
-            sectorCompletions: regionAdminData?.sectorCompletions || []
-          };
-          return <RegionAdminDashboard data={preparedData} />;
+          return <RegionAdminDashboard data={regionAdminData} />;
         }
         case 'sectoradmin': {
           const sectorAdminData = dashboardData as SectorAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(sectorAdminData?.notifications || []);
-          const preparedData = {
-            ...sectorAdminData,
-            notifications: adaptedNotifications
-          };
-          return <SectorAdminDashboard data={preparedData} />;
+          return <SectorAdminDashboard data={sectorAdminData} />;
         }
         case 'schooladmin': 
         default: {
           console.log('Rendering SchoolAdminDashboard (default)');
           const schoolAdminData = dashboardData as SchoolAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(schoolAdminData?.notifications || []);
-          
-          // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
-          const pendingFormsData = Array.isArray(schoolAdminData?.pendingForms) 
-            ? schoolAdminData.pendingForms 
-            : [];
-
-          // recentForms-ları da uyğunlaşdırırıq
-          const recentFormsData = Array.isArray(schoolAdminData?.recentForms) 
-            ? adaptFormItems(schoolAdminData.recentForms)
-            : [];
-          
-          // Əmin olaq ki, forms obyekti mövcuddur
-          const forms = schoolAdminData?.forms || {
-            pending: 0,
-            approved: 0,
-            rejected: 0,
-            dueSoon: 0,
-            overdue: 0
-          };
-          
-          const preparedData = {
-            ...schoolAdminData,
-            schoolName: schoolAdminData?.schoolName || 'Məktəb',
-            sectorName: schoolAdminData?.sectorName || 'Sektor',
-            regionName: schoolAdminData?.regionName || 'Region',
-            notifications: adaptedNotifications,
-            pendingForms: pendingFormsData,
-            recentForms: recentFormsData,
-            forms: forms
-          };
           
           return (
             <SchoolAdminDashboard 
-              data={preparedData}
+              data={schoolAdminData}
               navigateToDataEntry={navigateToDataEntry}
               handleFormClick={handleFormClick}
             />

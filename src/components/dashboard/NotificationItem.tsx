@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Bell, FileText, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { Notification } from '@/types/notification';
 
 export interface NotificationItemProps {
   notification: {

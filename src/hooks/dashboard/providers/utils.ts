@@ -1,7 +1,7 @@
-import { FormStatus } from '@/types/dashboard';
+
+import { FormItem } from '@/types/dashboard';
 import { mockCategories } from '@/data/mock/mockCategories';
 import { MockCategory } from '@/types/category';
-import { FormItem } from '@/types/dashboard';
 
 // Deadline-ı string formatına çevirmək üçün utility funksiyası
 export function transformDeadlineToString(deadline: string | Date | undefined): string {
@@ -39,7 +39,7 @@ export function createSafeFormItems(categoryList: MockCategory[]): FormItem[] {
         id: `temp-${Math.random().toString(36).substr(2, 9)}`,
         title: 'Xəta: namə\'lum kateqoriya',
         category: 'Namə\'lum',
-        status: 'pending' as FormStatus,
+        status: 'pending' as 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty',
         completionPercentage: 0,
         deadline: ''
       };
@@ -52,7 +52,7 @@ export function createSafeFormItems(categoryList: MockCategory[]): FormItem[] {
       id: category.id || `temp-${Math.random().toString(36).substr(2, 9)}`,
       title: category.name || 'Unnamed Category',
       category: category.name || 'Unnamed Category',
-      status: 'pending' as FormStatus,
+      status: 'pending' as 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty',
       completionPercentage: Math.floor(Math.random() * 100),
       deadline: deadline
     };
