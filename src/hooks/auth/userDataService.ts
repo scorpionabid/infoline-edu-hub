@@ -120,6 +120,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       email: authUser.user.email || '',
       role: role,
       full_name: profile.full_name || '',
+      name: profile.full_name || '', // name = full_name
       phone: profile.phone || '',
       position: profile.position || '',
       language: profile.language || 'az',
@@ -127,12 +128,24 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       status: typedStatus,
       school: schoolData,
       schoolId: userRole?.school_id || null,
+      school_id: userRole?.school_id || null,
       sector: sectorData,
       sectorId: userRole?.sector_id || null,
+      sector_id: userRole?.sector_id || null,
       region: regionData,
       regionId: userRole?.region_id || null,
+      region_id: userRole?.region_id || null,
+      last_login: profile.last_login,
+      lastLogin: profile.last_login,
       created_at: profile.created_at,
-      updated_at: profile.updated_at
+      createdAt: profile.created_at,
+      updated_at: profile.updated_at,
+      updatedAt: profile.updated_at,
+      twoFactorEnabled: false,
+      notificationSettings: {
+        email: true,
+        system: true
+      }
     };
     
     return fullUserData;

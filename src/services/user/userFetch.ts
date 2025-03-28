@@ -100,30 +100,29 @@ export const getUsers = async (
         ? statusValue as 'active' | 'inactive' | 'blocked'
         : 'active' as 'active' | 'inactive' | 'blocked';
       
+      // Tam istifadəçi məlumatlarını yaradırıq
       return {
         id: item.user_id,
         email: emails[item.user_id] || '',
         full_name: profile.full_name,
+        name: profile.full_name, // name = full_name
         role: item.role,
         region_id: item.region_id,
+        regionId: item.region_id,
         sector_id: item.sector_id,
+        sectorId: item.sector_id,
         school_id: item.school_id,
+        schoolId: item.school_id,
         phone: profile.phone,
         position: profile.position,
         language: profile.language,
         avatar: profile.avatar,
         status: typedStatus,
         last_login: profile.last_login,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-        
-        // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-        name: profile.full_name,
-        regionId: item.region_id,
-        sectorId: item.sector_id,
-        schoolId: item.school_id,
         lastLogin: profile.last_login,
+        created_at: profile.created_at,
         createdAt: profile.created_at,
+        updated_at: profile.updated_at,
         updatedAt: profile.updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri
@@ -197,26 +196,24 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       id: userId,
       email: mockEmail,
       full_name: profile.full_name,
+      name: profile.full_name,
       role: roleData.role,
       region_id: roleData.region_id,
+      regionId: roleData.region_id,
       sector_id: roleData.sector_id,
+      sectorId: roleData.sector_id,
       school_id: roleData.school_id,
+      schoolId: roleData.school_id,
       phone: profile.phone,
       position: profile.position,
       language: profile.language,
       avatar: profile.avatar,
       status: typedStatus,
       last_login: profile.last_login,
-      created_at: profile.created_at,
-      updated_at: profile.updated_at,
-      
-      // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-      name: profile.full_name,
-      regionId: roleData.region_id,
-      sectorId: roleData.sector_id,
-      schoolId: roleData.school_id,
       lastLogin: profile.last_login,
+      created_at: profile.created_at,
       createdAt: profile.created_at,
+      updated_at: profile.updated_at,
       updatedAt: profile.updated_at,
       
       // Əlavə tətbiq xüsusiyyətləri
