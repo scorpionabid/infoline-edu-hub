@@ -113,11 +113,23 @@ export interface FullUserData {
   created_at: string;
   updated_at: string;
   
+  // Əlaqəli obyektlər
+  school?: School | null;
+  sector?: Sector | null;
+  region?: Region | null;
+  
+  // İd-lər
+  schoolId?: string | null;
+  sectorId?: string | null;
+  regionId?: string | null;
+  
+  // Əvvəlki id adları
+  school_id?: string | null;
+  sector_id?: string | null;
+  region_id?: string | null;
+  
   // App tərəfindən istifadə edilən alternatif adlar
   name: string; // full_name ilə eyni
-  regionId?: string; // region_id ilə eyni
-  sectorId?: string; // sector_id ilə eyni 
-  schoolId?: string; // school_id ilə eyni
   lastLogin?: string; // last_login ilə eyni
   createdAt: string; // created_at ilə eyni
   updatedAt: string; // updated_at ilə eyni

@@ -51,6 +51,18 @@ export interface SuperAdminDashboardData extends DashboardData {
   pendingSchools?: number;
   approvedSchools?: number;
   rejectedSchools?: number;
+  regionCompletionData?: Array<{
+    name: string;
+    completed: number;
+  }>;
+  sectorCompletionData?: Array<{
+    name: string;
+    completed: number;
+  }>;
+  categoryCompletionData?: Array<{
+    name: string;
+    completed: number;
+  }>;
   statusData?: {
     completed: number;
     pending: number;
