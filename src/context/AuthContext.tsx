@@ -1,6 +1,5 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useSupabaseAuth } from '@/hooks/auth';  // hooks/auth/index.ts-dən import et
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -14,101 +13,87 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  session: any | null;  // session əlavə et
 }
 
-// Auth context interface
+// Auth context interface - əlavə funksiyaları daxil et
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
   clearError: () => void;
+  signup: (email: string, password: string, userData: Partial<FullUserData>) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<boolean>;
+  updatePassword: (password: string) => Promise<boolean>;
 }
 
-// Create the context
+// Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Context provider
+// Context provider props
 interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Context provider
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const {
     user,
     loading,
+    session,  // session əlavə et
     signIn,
     signOut,
     updateProfile,
+    signUp,  // əlavə funksiyalar
+    resetPassword,
+    updatePassword,
+    fetchUserData
   } = useSupabaseAuth();
 
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Derive auth state from Supabase user
+  // Derive auth state
   const authState: AuthState = {
     user,
     isAuthenticated: !!user,
     isLoading: loading,
     error,
+    session  // session əlavə et
   };
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setError(null);
-      console.log(`AuthContext: ${email} ilə giriş edilir...`);
       const data = await signIn(email, password);
-      
-      if (!data || !data.user) {
-        console.error('AuthContext: Giriş uğursuz oldu - istifadəçi məlumatları yoxdur');
-        setError('Giriş uğursuz oldu - istifadəçi məlumatları yoxdur');
-        return false;
-      }
-      
-      console.log('AuthContext: Giriş uğurlu oldu');
-      return true;
+      return !!data?.user;
     } catch (error: any) {
-      console.error('AuthContext: Login error:', error);
-      
-      // Daha detallı xəta mesajlarını saxlayaq
-      if (error.status === 500) {
-        setError('Server xətası: verilənlər bazasında problem var');
-      } else if (error.status === 401) {
-        setError('Giriş icazəsi yoxdur: yanlış e-poçt və ya şifrə');
-      } else if (error.message?.includes('Invalid login credentials')) {
-        setError('Yanlış giriş məlumatları: e-poçt və ya şifrə səhvdir');
-      } else if (error.message?.includes('Email not confirmed')) {
-        setError('E-poçt təsdiqlənməyib');
-      } else {
-        setError(error.message || 'Bilinməyən giriş xətası');
-      }
-      
+      setError(error.message || 'Bilinməyən giriş xətası');
       return false;
     }
   };
 
-  // Logout function - improved for proper session cleanup
+  // Signup function əlavə edək
+  const signup = async (email: string, password: string, userData: Partial<FullUserData>): Promise<boolean> => {
+    try {
+      setError(null);
+      const data = await signUp(email, password, userData);
+      return !!data?.user;
+    } catch (error: any) {
+      setError(error.message || 'Qeydiyyat xətası');
+      return false;
+    }
+  };
+
+  // Logout function
   const logout = async () => {
     try {
       setError(null);
-      
-      // Çıxış prosesindən əvvəl uğurlu bildiriş göstərək
-      toast.success('Sistemdən çıxış edilir...');
-      
-      // Supabase logout çağıraq - bu həm də state təmizləyəcək
       await signOut();
-      
-      // Successful logout - navigate to login page
-      setTimeout(() => {
-        navigate('/login');
-        console.log('AuthContext: İstifadəçi uğurla çıxış etdi və login səhifəsinə yönləndirildi');
-      }, 100);
+      navigate('/login');
     } catch (error: any) {
-      console.error('AuthContext: Çıxış zamanı xəta:', error);
-      setError(error.message || 'Çıxış zamanı xəta baş verdi');
-      toast.error('Çıxış zamanı xəta baş verdi');
-      
-      // Even if there's an error, try to navigate to login
+      setError(error.message || 'Çıxış xətası');
       navigate('/login');
     }
   };
@@ -119,7 +104,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       setError(null);
-      // Convert FullUserData to Profile format
       const profileUpdates = {
         full_name: userData.full_name,
         phone: userData.phone,
@@ -129,36 +113,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         status: userData.status,
       };
       
-      // Remove undefined values
+      // undefined dəyərləri təmizləyək
       Object.keys(profileUpdates).forEach(key => {
         if (profileUpdates[key as keyof typeof profileUpdates] === undefined) {
           delete profileUpdates[key as keyof typeof profileUpdates];
         }
       });
       
-      const success = await updateProfile(profileUpdates);
-      return success;
+      return await updateProfile(profileUpdates);
     } catch (error: any) {
-      console.error('Update user error:', error);
-      setError(error.message || 'İstifadəçi məlumatlarını yeniləmə zamanı xəta');
+      setError(error.message || 'Profil yeniləmə xətası');
       return false;
     }
   };
 
-  // Error təmizləmə funksiyası
+  // updatePassword-i wrap edək
+  const handleUpdatePassword = async (password: string): Promise<boolean> => {
+    try {
+      setError(null);
+      return await updatePassword(password);
+    } catch (error: any) {
+      setError(error.message || 'Şifrə yeniləmə xətası');
+      return false;
+    }
+  };
+
+  // resetPassword-i wrap edək
+  const handleResetPassword = async (email: string): Promise<boolean> => {
+    try {
+      setError(null);
+      return await resetPassword(email);
+    } catch (error: any) {
+      setError(error.message || 'Şifrə sıfırlama xətası');
+      return false;
+    }
+  };
+
+  // Clear error
   const clearError = () => {
     setError(null);
   };
-
-  // Hər dəfə auth vəziyyəti dəyişdikdə log edək
-  useEffect(() => {
-    console.log('Auth vəziyyəti dəyişdi:', {
-      isAuthenticated: !!user,
-      isLoading: loading,
-      user: user ? { id: user.id, email: user.email, role: user.role } : null,
-      error
-    });
-  }, [user, loading, error]);
 
   return (
     <AuthContext.Provider
@@ -168,6 +162,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout,
         updateUser,
         clearError,
+        signup,
+        resetPassword: handleResetPassword,
+        updatePassword: handleUpdatePassword
       }}
     >
       {children}
@@ -175,7 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 };
 
-// Custom hook to use the auth context
+// Custom hooks
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -184,7 +181,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Helper hook to check for specific role
 export const useRole = (role: Role | Role[]) => {
   const { user } = useAuth();
   

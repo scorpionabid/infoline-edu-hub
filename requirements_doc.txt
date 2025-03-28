@@ -1,0 +1,180 @@
+# İnfoLine - Məktəb Məlumatları Toplama Sistemi
+## Requirements Document v1.2
+
+### 1. SİSTEMİN ÜMUMİ TƏSVİRİ
+İnfoLine sistemi məktəblərdən müxtəlif statistik məlumatların toplanması üçün nəzərdə tutulmuş onlayn platformadır. Sistem üç fərqli istifadəçi qrupu - superadmin, sektor adminləri və məktəb adminləri üçün fərdiləşdirilmiş interfeys və funksionallıq təmin edir. Sistemin əsas məqsədi məlumat toplama prosesini avtomatlaşdırmaq, mərkəzləşdirmək və təkmilləşdirməkdir.
+
+### 2. İSTİFADƏÇİ ROLLARI VƏ MƏSULİYYƏTLƏRİ
+
+#### 2.1 SuperAdmin
+- Sistemin ümumi konfiqurasiyası və idarəedilməsi
+- Sektor və məktəb adminlərinin idarə olunması (əlavə etmə, silmə, redaktə etmə)
+- Məlumat kateqoriyaları və sütunların yaradılması, silinməsi və redaktəsi
+- Seçməli sütunlar üçün seçimlərin təyin edilməsi
+- Bütün məlumatların izlənməsi və idarə olunması
+- Məlumatların Excel formatında ixrac edilməsi
+- Məlumat daxil etmə üçün son tarixlərin təyin edilməsi
+- Bildiriş və xəbərdarlıq sisteminin tənzimlənməsi
+
+#### 2.2 Sektor Admini
+- Öz sektoruna aid məktəblərin və məktəb adminlərinin idarə edilməsi
+- Məktəb adminlərinin yaradılması, silinməsi və redaktəsi
+- Öz sektoruna aid məlumatların izlənməsi və idarə olunması
+- Sektora aid məlumatların Excel formatında ixrac edilməsi
+- Sektor daxilində məlumat daxil etmə son tarixlərinin izlənməsi
+
+#### 2.3 Məktəb Admini
+- Məktəbə aid məlumatların daxil edilməsi və redaktəsi
+- Seçməli sütunlar üzrə təyin olunmuş seçimlərdən uyğun olanın seçilməsi
+- Məlumat daxil etmə son tarixlərinin izlənməsi
+- Yeni kateqoriya, sütun və xatırlatma bildirişlərinin izlənməsi
+
+### 3. MƏLUMAT STRUKTURu
+
+#### 3.1 Kateqoriyalar
+- Superadmin tərəfindən yaradılır və idarə olunur
+- Hər bir kateqoriya məlumat qrupunu təmsil edir (məs. Şagird məlumatları, Müəllim məlumatları və s.)
+- Kateqoriyalar daxilində sütunlar təşkil olunur
+
+#### 3.2 Sütunlar
+- Hər bir sütun xüsusi bir məlumat sahəsini təmsil edir
+- Sütunlar kateqoriyaya bağlıdır
+- Sütunların tipi və xüsusiyyətləri superadmin tərəfindən təyin olunur
+  - Mətn, rəqəm, tarix, seçim tipli sütunlar yaradıla bilər
+  - Seçim tipli sütunlar üçün seçimlər əvvəlcədən müəyyən olunur
+
+### 4. MƏLUMAT TOPLAMA PROSESİ
+1. Superadmin kateqoriya və sütunları yaradır, tənzimləyir
+2. Superadmin seçim tipli sütunlar üçün seçimləri təyin edir
+3. Superadmin hər bir kateqoriya üzrə məlumat daxil etmə son tarixini müəyyən edir
+4. Sektor adminləri öz sektorlarına aid məktəblərin siyahısını və məktəb adminlərini idarə edir
+5. Məktəb adminləri müəyyən olunmuş tarixə qədər kateqoriya və sütunlar üzrə tələb olunan məlumatları daxil edirlər
+6. Sektor adminləri və superadmin toplanan məlumatları real-time olaraq izləyir və hesabatlar hazırlaya bilirlər
+
+### 5. BİLDİRİŞ VƏ XƏBƏRDARLIQ SİSTEMİ
+- Yeni kateqoriya və ya sütun yaradıldıqda məktəb adminlərinə bildiriş göndərilir
+- Məlumat daxil etmə son tarixinə yaxınlaşdıqda xəbərdarlıq bildirişləri göndərilir
+- Məlumat daxil edilməyən sütunlar üçün xatırlatma bildirişləri göndərilir
+
+### 6. AXTARIŞ, FİLTİRLƏMƏ VƏ HESABATLAMA
+- Toplanan məlumatlar üzrə çoxşərtli axtarış və filtirləmə aparıla bilər
+- Məlumatlar Excel formatında ixrac oluna bilər
+- Hesabatlar hazırlana və çap oluna bilər
+- Məlumatlar üzrə qrafiklər və vizuallar yaradıla bilər
+
+### 7. TƏHLÜKƏSİZLİK VƏ MÜHAFİZƏ
+- İstifadəçi girişi üçün güclü autentifikasiya mexanizmi tətbiq olunur
+- Şifrələr güclü hash alqoritmi ilə şifrlənir
+- Sistemə giriş üçün çoxfaktorlu autentifikasiya tətbiq oluna bilər
+- Rol-əsaslı girişə nəzarət (RBAC) tətbiq olunur
+- SQL injection, XSS və CSRF hücumlarının qarşısını almaq üçün təhlükəsizlik tədbirləri görülür
+- Sistem fəaliyyətlərinin audit yazıları saxlanılır
+
+### 8. ETİBARLILIQ VƏ ƏHATƏ
+- Sistem yüksək əhatəlilik üçün bulud infrastrukturu əsasında qurulur
+- Müntəzəm backup və bərpa prosedurları tətbiq olunur
+- Sistem müxtəlif region və sektorlar üzrə geniş miqyasda tətbiq oluna bilir
+
+### 9. SİSTEM ARXITEKTURASININ ÜMUMİ PRINSİPLƏRİ
+- Microservices arxitekturası
+- 
+- API-əsaslı kommunikasiya
+- Yüksək səviyyədə avtomatlaşdırma və inteqrasiya
+- Sürətli inkişaf və davamlı inteqrasiya (CI/CD) prosesləri
+
+### 10. API İNTEQRASİYA
+
+#### 10.1 Endpoint-lər və istifadə məqsədləri
+
+- `/api/v1/auth/login` - İstifadəçi girişi üçün istifadə olunur. Mobil tətbiq və ya üçüncü tərəf sistemlər bu endpoint vasitəsilə istifadəçilərin autentifikasiyasını həyata keçirə bilər.
+
+- `/api/v1/auth/register` - Yeni istifadəçi qeydiyyatı üçün nəzərdə tutulub. Xarici sistemlər bu endpoint-dən istifadə edərək sistemdə yeni istifadəçi yarada bilərlər. 
+
+- `/api/v1/auth/logout` - İstifadəçi çıxışı üçün istifadə olunur. İstifadəçi sistemdən çıxdıqda bu endpoint çağırılaraq sessiya sonlandırıla bilər.
+
+- `/api/v1/auth/user` - Cari istifadəçinin məlumatlarını əldə etmək üçün nəzərdə tutulub. Avtorizasiya tələb edən digər API sorğularında istifadəçi məlumatları bu endpoint vasitəsilə əldə edilə bilər.
+
+- `/api/v1/regions` - Regionların siyahısını əldə etmək, yeni region yaratmaq, mövcud regionu yeniləmək və silmək üçün istifadə olunur. Regionlar üzərində CRUD əməliyyatları bu endpoint-lər vasitəsilə icra oluna bilər.
+
+- `/api/v1/sectors` - Sektorların siyahısını əldə etmək, yeni sektor yaratmaq, mövcud sektoru yeniləmək və silmək üçün nəzərdə tutulub. Sektorlar üzərində lazımi əməliyyatlar bu endpoint-lər ilə yerinə yetirilir. Həmçinin `region_id` parametri ilə sektorları regiona görə filtirləmək mümkündür.
+
+- `/api/v1/schools` - Məktəblərin siyahısını əldə etmək, yeni məktəb yaratmaq, mövcud məktəbi yeniləmək və silmək üçün istifadə olunur. `sector_id` parametri ilə məktəbləri sektora görə filtirləmək olur.
+
+- `/api/v1/schools/{id}/admins` - Konkret bir məktəbə aid adminlərin siyahısını əldə etmək üçün nəzərdə tutulub.
+
+#### 10.2 Texniki qeydlər
+
+- API nöqtələri RESTful prinsiplərə uyğun olaraq təşkil edilib.
+- Autentifikasiya tələb edən endpoint-lər üçün JWT (JSON Web Token) autentifikasiya mexanizmi istifadə ediləcək.
+- API istifadəçiləri üçün təlimat və nümunə kodlar hazırlanmalıdır.
+- API versiyalanması nəzərə alınıb (`/api/v1/...`). Gələcək versiyalar üçün köhnə versiyalar dəstəklənməyə davam edəcək.
+- Xəta və istisna halları düzgün idarə olunmalı, uyğun status kodları və xəta mesajları qaytarılmalıdır.
+- Lazım olduqda query parametrləri və ya paginasiya ilə böyük həcmli data qaytarılması optimallaşdırılmalıdır.
+- API-lərin hərtərəfli test edilməsi üçün unit və inteqrasiya testləri yazılmalıdır. Testlər `tests` qovluğunda saxlanılmalıdır.
+
+Bu əlavələr API-lərin funksionallığını, istifadə məqsədlərini və texniki tələblərini əhatə edir. Yeni API nöqtələri və ya dəyişikliklər olduqca, bu bölmə müvafiq şəkildə yenilənməlidir.
+
+### 11. PERFORMANS VƏ MIQYASLANMA
+- Sistemin yüksək yüklənmə şəraitində stabil və sürətli işləməsi təmin edilməlidir
+- Lazım olduqda üfüqi və şaquli miqyaslanma tətbiq oluna bilməlidir
+- Sorğu optimallaşdırmaları və indexləmə üsulları tətbiq edilməlidir
+- Keşləmə mexanizmləri sistemin sürətini artırmaq üçün tətbiq oluna bilər
+- Sistem resurslarının düzgün idarə edilməsi üçün monitorinq və uyğunlaşma mexanizmləri qurulmalıdır
+
+### 12. PROQRAM TƏMINATI INKIŞAF METODOLOGIYASI
+- Çevik (Agile) metodologiya əsasında iterativ inkişaf modeli seçilə bilər
+- Məhsulun inkişaf prosesi müştəri ehtiyaclarına uyğun formalaşdırılmalıdır
+- Komanda üzvləri arasında sıx əməkdaşlıq və kommunikasiya təmin olunmalıdır
+- Davamlı inteqrasiya və davamlı çatdırılma (CI/CD) prosesləri qurulmalıdır
+- Kodun keyfiyyəti müntəzəm olaraq yoxlanılmalı, avtomatlaşdırılmış testlər və statik təhlillər aparılmalıdır
+
+## HƏRƏKƏT AXINI
+
+### SuperAdmin
+1. Sistemə giriş (login)
+2. İdarəetmə paneli (dashboard) 
+3. Sektor yaratma
+   - Yeni sektor əlavə etmə
+   - Sektor admini təyin etmə
+4. Kateqoriya yaratma
+   - Yeni kateqoriya əlavə etmə
+   kateqoriyanı redaktə etmə və ya silmə
+   - Kateqoriya üçün icazə verilmiş sektorları təyin etmə
+   kateqoriya əlavə edən zaman sektorlar və ya məktəblər üçün olduğunu seçmək lazımdır
+5. Sütun yaratma
+   - Kateqoriya seçmə
+   - Sütun adı və tipini daxil etmə
+   - Seçim tipli sütunlar üçün seçimləri təyin etmə
+   - Sütun üçün məcburilik və digər parametrləri seçmə
+6. Məlumat daxil etmə son tarixini təyin etmə
+7. Məlumatları real-vaxt rejimində izləmə
+8. Axtarış və filtirləmə
+9. Məlumatların ixracı və hesabatların hazırlanması
+
+### Sektor Admini
+1. Sistemə giriş (login)
+2. İdarəetmə paneli (dashboard)
+3. Sektora aid məktəblərin siyahısı
+4. Yeni məktəb əlavə etmə
+5. Məktəb adminlərinin idarə edilməsi
+   - Yeni məktəb admini əlavə etmə
+   - Mövcud məktəb adminlərini redaktə etmə və ya silmə
+6. Sektora aid məlumatların izlənməsi
+7. Axtarış və filtirləmə (sektora aid)
+8. Məlumatların ixracı və hesabatların hazırlanması (sektora aid)
+
+### Məktəb Admini
+1. Sistemə giriş (login)
+2. İdarəetmə paneli (dashboard)
+3. Məlumat daxil etm
+4. Məlumatların daxil edilməsi
+   - Kateqoriya seçimi
+   - Sütunların doldurulması
+   - Seçim tipli sütunlar üçün uyğun seçimin edilməsi
+5. Daxil edilmiş məlumatların təsdiqi və göndərilməsi
+6. Səhvən daxil edilmiş məlumatların redaktəsi
+7. Bildirişlərin izlənməsi
+   - Yeni kateqoriya və sütunlar haqqında bildirişlər
+   - Məlumat daxil etmə son tarixi haqqında xəbərdarlıqlar
+   - Məlumat daxil edilməmiş sütunlar haqqında xatırlatmalar
+8. Şəxsi profil məlumatlarının idarə edilməsi

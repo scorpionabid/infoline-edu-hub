@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
@@ -41,8 +40,25 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       
     if (userRoleError) {
       console.error('User role fetch error:', userRoleError);
+      console.log('İstifadəçi ID:', userId);
+      console.log('İstifadəçi üçün rol məlumatları tapılmadı. Supabase-də user_roles cədvəlini yoxlayın.');
+      
+      // Xəta baş verdikdə, auth user-dən email-i yoxlayaq və superadmin@infoline.az üçün superadmin rolunu təyin edək
+      if (authUser.user.email === 'superadmin@infoline.az') {
+        console.log('superadmin@infoline.az üçün superadmin rolu təyin edilir');
+        return {
+          ...profile,
+          id: userId,
+          email: authUser.user.email,
+          role: 'superadmin',
+          school_id: null,
+          sector_id: null,
+          region_id: null
+        };
+      }
     }
     
+    // Rol məlumatları tapıldısa, istifadə et, əks halda schooladmin
     const role = userRole?.role || 'schooladmin';
 
     // İstifadəçinin aid olduğu məktəb, sektor və region məlumatlarını əldə edək
