@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { FullUserData } from '@/types/supabase';
@@ -83,8 +82,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(error.message || 'Bilinməyən giriş xətası');
       }
       
-      // toast bildirişi artıq signIn funksiyası daxilində göstərilir,
-      // burada təkrarlamağa ehtiyac yoxdur
       return false;
     }
   };
@@ -93,15 +90,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setError(null);
+      // Öncə lokal state-i təmizləyək, sonra supabase logout edək
+      const userTemp = { ...user };
+      
+      // Çıxış prosesindən əvvəl uğurlu bildiriş göstərək
+      toast.success('Sistemdən uğurla çıxış edilir...');
+      
+      // Supabase logout çağırılmazdan əvvəl state təmizləmə
       await signOut();
+      
       // Successful logout - navigate to login page
       navigate('/login');
       console.log('AuthContext: İstifadəçi uğurla çıxış etdi və login səhifəsinə yönləndirildi');
-      toast.success('Sistemdən uğurla çıxış edildi');
     } catch (error: any) {
       console.error('AuthContext: Çıxış zamanı xəta:', error);
       setError(error.message || 'Çıxış zamanı xəta baş verdi');
       toast.error('Çıxış zamanı xəta baş verdi');
+      
       // Even if there's an error, try to navigate to login
       navigate('/login');
     }

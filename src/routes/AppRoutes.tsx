@@ -79,7 +79,7 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
   return <>{children}</>;
 };
 
-// Route konfigurasyonları, bu array deyil, birbaşa Routes komponenti qaytarılacaq
+// Route konfigurasyonları
 const AppRoutes = () => (
   <Routes>
     <Route 

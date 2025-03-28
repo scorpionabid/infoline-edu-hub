@@ -3,7 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings, MapPin, Building, Columns } from 'lucide-react';
+import { 
+  Menu, 
+  X, 
+  Home, 
+  FileInput, 
+  PieChart, 
+  Users, 
+  School, 
+  FolderKanban, 
+  Settings, 
+  MapPin, 
+  Building, 
+  Columns 
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationControl from '../notifications/NotificationControl';
@@ -66,74 +79,75 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   
   // Rolu dəqiqləşdirək
   const userRole = user?.role || '';
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
   
-  // Hər bir rola əsasən bölmələrə giriş icazələri
-  const canManageUsers = isSuperAdmin || isRegionAdmin;
-  const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin || isRegionAdmin;
-  const canManageColumns = isSuperAdmin || isRegionAdmin;
-  const canManageRegions = isSuperAdmin;
-  const canManageSectors = isSuperAdmin || isRegionAdmin;
-  
+  // Hər bir naviqasiya elementi üçün göstərilmə şərtlərini təyin edirik
   const navItems = [
     {
       href: "/dashboard",
       icon: <Home size={20} />,
       label: t('dashboard'),
-      show: true
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
     },
     {
       href: "/regions",
       icon: <MapPin size={20} />,
       label: t('regions'),
-      show: canManageRegions
+      roles: ['superadmin']
     },
     {
       href: "/sectors",
       icon: <Building size={20} />,
       label: t('sectors'),
-      show: canManageSectors
+      roles: ['superadmin', 'regionadmin']
     },
     {
       href: "/schools",
       icon: <School size={20} />,
       label: t('schools'),
-      show: canManageSchools
+      roles: ['superadmin', 'regionadmin', 'sectoradmin']
     },
     {
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: canManageCategories
+      roles: ['superadmin', 'regionadmin']
     },
     {
       href: "/columns",
       icon: <Columns size={20} />,
       label: t('columns'),
-      show: canManageColumns
+      roles: ['superadmin', 'regionadmin']
     },
     {
       href: "/users",
       icon: <Users size={20} />,
       label: t('users'),
-      show: canManageUsers
+      roles: ['superadmin', 'regionadmin']
     },
     {
       href: "/data-entry",
       icon: <FileInput size={20} />,
       label: t('dataEntry'),
-      show: true
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
     },
     {
       href: "/reports",
       icon: <PieChart size={20} />,
       label: t('reports'),
-      show: true
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
+    },
+    {
+      href: "/settings",
+      icon: <Settings size={20} />,
+      label: t('settings'),
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
     }
   ];
+  
+  // İstifadəçinin roluna əsasən filtrlənmiş naviqasiya elementləri
+  const filteredNavItems = navItems.filter(item => 
+    item.roles.includes(userRole)
+  );
   
   const handleLogout = async () => {
     try {
@@ -151,17 +165,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       </div>
       
       <div className="flex-1 px-3 py-2 space-y-1">
-        {navItems
-          .filter(item => item.show)
-          .map((item) => (
-            <NavItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              label={item.label}
-              isActive={pathname === item.href}
-            />
-          ))}
+        {filteredNavItems.map((item) => (
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            label={item.label}
+            isActive={pathname === item.href}
+          />
+        ))}
       </div>
       
       <div className="p-4 border-t">
