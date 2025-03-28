@@ -34,10 +34,10 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={data.schoolId || "default"}
+            value={data.schoolId || "none"}
             onValueChange={(value) => {
-              field.onChange(value === "default" ? undefined : value);
-              onFormChange('schoolId', value === "default" ? undefined : value);
+              field.onChange(value === "none" ? undefined : value);
+              onFormChange('schoolId', value === "none" ? undefined : value);
             }}
             disabled={filteredSchools.length === 0}
           >
@@ -47,7 +47,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="default">{t('selectSchool')}</SelectItem>
+              <SelectItem value="none">{t('selectSchool')}</SelectItem>
               {filteredSchools.map((school) => (
                 <SelectItem key={school.id} value={school.id}>
                   {school.name}

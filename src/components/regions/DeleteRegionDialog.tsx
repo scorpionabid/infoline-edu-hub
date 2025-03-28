@@ -57,12 +57,12 @@ const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({
             <div className="mt-2">
               {(region?.sectorCount || 0) > 0 && (
                 <div className="text-amber-500 font-medium mb-1">
-                  {t('deleteRegionSectorsWarning').replace('{count}', String(region?.sectorCount))}
+                  {t('deleteRegionSectorsWarning', { count: region?.sectorCount })}
                 </div>
               )}
               {(region?.schoolCount || 0) > 0 && (
                 <div className="text-amber-500 font-medium mb-1">
-                  {t('deleteRegionSchoolsWarning').replace('{count}', String(region?.schoolCount))}
+                  {t('deleteRegionSchoolsWarning', { count: region?.schoolCount })}
                 </div>
               )}
               <div className="text-destructive font-semibold mt-2">
