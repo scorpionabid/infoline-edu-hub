@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -35,6 +35,7 @@ const Regions: React.FC = () => {
     sortConfig,
     currentPage,
     totalPages,
+    isOperationComplete,
     handleSearch,
     handleStatusFilter,
     handleSort,
@@ -42,12 +43,25 @@ const Regions: React.FC = () => {
     resetFilters,
     handleAddRegion,
     handleDeleteRegion,
-    fetchRegions
+    fetchRegions,
+    setIsOperationComplete
   } = useRegionsStore();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
+
+  // Səhifə yükləndikdə və əməliyyat tamamlandıqda regionları yeniləmək
+  useEffect(() => {
+    fetchRegions();
+  }, [fetchRegions]);
+
+  useEffect(() => {
+    if (isOperationComplete) {
+      fetchRegions();
+      setIsOperationComplete(false);
+    }
+  }, [isOperationComplete, fetchRegions, setIsOperationComplete]);
 
   const handleRegionDelete = (region: EnhancedRegion) => {
     setSelectedRegion(region);
@@ -184,12 +198,16 @@ const Regions: React.FC = () => {
                         <Badge variant="outline">{region.schoolCount || 0}</Badge>
                       </TableCell>
                       <TableCell className="max-w-[180px] truncate">
-                        <a 
-                          href={`mailto:${region.adminEmail}`}
-                          className="text-blue-500 hover:underline text-sm"
-                        >
-                          {region.adminEmail}
-                        </a>
+                        {region.adminEmail ? (
+                          <a 
+                            href={`mailto:${region.adminEmail}`}
+                            className="text-blue-500 hover:underline text-sm"
+                          >
+                            {region.adminEmail}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Admin təyin edilməyib</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge 

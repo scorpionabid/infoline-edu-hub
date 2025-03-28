@@ -9,6 +9,7 @@ interface CreateRegionParams {
   status?: string;
   adminEmail?: string;
   adminName?: string;
+  adminPassword?: string;
 }
 
 // Regionları yükləmək üçün funksiya

@@ -28,6 +28,7 @@ export interface RegionFormData {
   status?: string;
   adminName?: string;
   adminEmail?: string;
+  adminPassword?: string;
 }
 
 export const useRegionsStore = () => {
@@ -258,12 +259,15 @@ export const useRegionsStore = () => {
       const adminEmail = formData.adminEmail || 
         `${formData.name.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
       
+      const adminPassword = formData.adminPassword || 'Password123';
+      
       const result = await createRegion({
         name: formData.name,
         description: formData.description,
         status: formData.status || 'active',
         adminName: formData.adminName || formData.name + ' Admin',
-        adminEmail
+        adminEmail,
+        adminPassword
       });
       
       console.log("Region yaratma nəticəsi:", result);

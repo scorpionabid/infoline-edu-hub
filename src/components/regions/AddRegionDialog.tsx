@@ -28,7 +28,8 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
     description: '',
     status: 'active',
     adminName: '',
-    adminEmail: ''
+    adminEmail: '',
+    adminPassword: 'Password123' // Default password
   });
   
   const handleChange = (field: keyof RegionFormData, value: string) => {
@@ -66,7 +67,8 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
           description: '',
           status: 'active',
           adminName: '',
-          adminEmail: ''
+          adminEmail: '',
+          adminPassword: 'Password123'
         });
         onOpenChange(false);
       }
@@ -170,8 +172,16 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
                   />
                 </div>
                 
-                <div className="col-span-4 text-sm text-muted-foreground">
-                  <p>{t('adminPasswordInfo')}</p>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="adminPassword" className="text-right">{t('password')} *</Label>
+                  <Input 
+                    id="adminPassword" 
+                    type="password"
+                    value={formData.adminPassword || 'Password123'} 
+                    onChange={(e) => handleChange('adminPassword', e.target.value)}
+                    className="col-span-3"
+                    placeholder={t('passwordPlaceholder')}
+                  />
                 </div>
               </div>
             )}

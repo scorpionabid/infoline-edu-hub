@@ -13,6 +13,7 @@ interface CreateRegionRequest {
   status?: string;
   adminEmail?: string;
   adminName?: string;
+  adminPassword?: string;
 }
 
 interface DeleteRegionRequest {
@@ -59,7 +60,7 @@ serve(async (req) => {
 
       // Regionun yaradılması
       if (action === 'create') {
-        const { name, description, status, adminEmail, adminName } = requestData as CreateRegionRequest;
+        const { name, description, status, adminEmail, adminName, adminPassword } = requestData as CreateRegionRequest;
         
         if (!name) {
           return new Response(
@@ -100,8 +101,10 @@ serve(async (req) => {
         
         // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
         if (adminEmail && adminName) {
-          // Admin Email formatı: {regionName.toLowerCase()}.admin@infoline.edu
-          const password = 'Password123'; // Standart parol
+          // İstifadəçinin təqdim etdiyi parol və ya default parol
+          const password = adminPassword || 'Password123';
+          
+          console.log(`Creating admin with email: ${adminEmail}, password: ${password.substring(0, 3)}*****`);
           
           // Supabase ilə yeni istifadəçi yaradırıq
           const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
