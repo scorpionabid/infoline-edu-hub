@@ -6,9 +6,7 @@ export interface Profile {
   position?: string;
   language?: 'az' | 'en' | 'ru' | 'tr';
   avatar?: string;
-  role?: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
   status?: 'active' | 'inactive' | 'blocked';
-  school_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
