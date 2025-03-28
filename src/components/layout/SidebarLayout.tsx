@@ -5,7 +5,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { 
   Menu, 
-  X, 
   Home, 
   FileInput, 
   PieChart, 
@@ -15,7 +14,8 @@ import {
   Settings, 
   MapPin, 
   Building, 
-  Columns 
+  Columns,
+  UserCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -122,7 +122,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       href: "/users",
       icon: <Users size={20} />,
       label: t('users'),
-      roles: ['superadmin', 'regionadmin']
+      roles: ['superadmin', 'regionadmin', 'sectoradmin']
     },
     {
       href: "/data-entry",
@@ -152,7 +152,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const handleLogout = async () => {
     try {
       await logout();
-      // No need to navigate - the AuthContext should handle it
+      // AuthContext logout funksiyası yönləndirməni özü edir
     } catch (error) {
       console.error('Çıxış zamanı xəta:', error);
     }
@@ -179,10 +179,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       <div className="p-4 border-t">
         <div className="flex items-center space-x-3 mb-3">
           <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-            {user?.name?.charAt(0).toUpperCase() || 'U'}
+            {user?.full_name?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
+            <p className="text-sm font-medium truncate">{user?.full_name || user?.email}</p>
             <p className="text-xs text-muted-foreground truncate">{t(user?.role || '')}</p>
           </div>
         </div>
@@ -190,7 +190,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         <div className="space-y-1">
           <NavItem
             href="/profile"
-            icon={<Settings size={20} />}
+            icon={<UserCircle size={20} />}
             label={t('profile')}
             isActive={pathname === '/profile'}
           />
@@ -241,7 +241,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             <Link to="/profile">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
               </Button>
             </Link>

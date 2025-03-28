@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { FullUserData } from '@/types/supabase';
@@ -86,22 +87,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Logout function
+  // Logout function - improved for proper session cleanup
   const logout = async () => {
     try {
       setError(null);
-      // Öncə lokal state-i təmizləyək, sonra supabase logout edək
-      const userTemp = { ...user };
       
       // Çıxış prosesindən əvvəl uğurlu bildiriş göstərək
-      toast.success('Sistemdən uğurla çıxış edilir...');
+      toast.success('Sistemdən çıxış edilir...');
       
-      // Supabase logout çağırılmazdan əvvəl state təmizləmə
+      // Supabase logout çağıraq - bu həm də state təmizləyəcək
       await signOut();
       
       // Successful logout - navigate to login page
-      navigate('/login');
-      console.log('AuthContext: İstifadəçi uğurla çıxış etdi və login səhifəsinə yönləndirildi');
+      setTimeout(() => {
+        navigate('/login');
+        console.log('AuthContext: İstifadəçi uğurla çıxış etdi və login səhifəsinə yönləndirildi');
+      }, 100);
     } catch (error: any) {
       console.error('AuthContext: Çıxış zamanı xəta:', error);
       setError(error.message || 'Çıxış zamanı xəta baş verdi');
