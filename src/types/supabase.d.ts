@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   full_name?: string;
@@ -45,6 +44,19 @@ export interface FullUserData {
   sectorId?: string | null;
   region?: Region | null;
   regionId?: string | null;
+  school_id?: string | null;
+  sector_id?: string | null;
+  region_id?: string | null;
   created_at?: string;
   updated_at?: string;
+  last_login?: string;
+  name?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastLogin?: string;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
 }
