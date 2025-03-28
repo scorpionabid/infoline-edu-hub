@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Region } from '@/types/supabase';
 import { useRegions } from './useRegions';
@@ -108,10 +107,16 @@ export const useRegionsStore = () => {
       // Admin məlumatlarını regionlara görə qruplaşdırırıq
       const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
       userRoles?.forEach(role => {
-        if (role.region_id && role.user_id && role.auth_users) {
+        if (role.region_id && role.user_id) {
+          // Bu sətir xətaya səbəb olur - tipləri düzgün yoxlamalıyıq
+          // Əgər role.auth_users bir xəta və ya null/undefined isə, təhlükəsiz bir e-poçt təyin edirik
+          const adminEmail = role.auth_users && typeof role.auth_users === 'object' && 'email' in role.auth_users 
+            ? role.auth_users.email as string 
+            : `${role.region_id}.admin@infoline.edu`;
+          
           tempRegionAdmins[role.region_id] = {
             id: role.user_id,
-            email: role.auth_users.email || `${role.region_id}.admin@infoline.edu`
+            email: adminEmail || `${role.region_id}.admin@infoline.edu`
           };
         }
       });
