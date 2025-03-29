@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { FileDown, FileUp } from 'lucide-react';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import ImportDialog from './ImportDialog';
+import { Region as RegionType } from '@/types/region'; // Region tipini region.ts-dən idxal edirik
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -129,7 +130,7 @@ const SchoolsContainer: React.FC = () => {
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
             filteredSectors={filteredSectors}
-            regions={regions}
+            regions={regions as RegionType[]} // Açıq şəkildə tipo çevirmə əlavə edirik
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}

@@ -18,11 +18,12 @@ import {
 } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useRegionsStore, EnhancedRegion } from '@/hooks/useRegionsStore';
+import { useRegionsStore } from '@/hooks/useRegionsStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { Eye, Trash2, Pencil, RefreshCw, PlusCircle, Search } from 'lucide-react';
 import AddRegionDialog from '@/components/regions/AddRegionDialog';
 import DeleteRegionDialog from '@/components/regions/DeleteRegionDialog';
+import { EnhancedRegion } from '@/types/region';
 
 // RegionHeader komponenti
 const RegionHeader = ({ t, onAddRegion }) => (

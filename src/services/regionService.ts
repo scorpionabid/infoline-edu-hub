@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -29,10 +28,11 @@ export const fetchRegions = async (): Promise<Region[]> => {
     
     console.log(`${data?.length || 0} region uğurla yükləndi`);
     
-    // created_at sahəsinin undefined olmamasını təmin edirik
+    // created_at və updated_at sahələrinin undefined olmamasını təmin edirik
     const formattedData = data.map(region => ({
       ...region,
-      created_at: region.created_at || new Date().toISOString()
+      created_at: region.created_at || new Date().toISOString(),
+      updated_at: region.updated_at || new Date().toISOString()
     }));
     
     return formattedData as Region[];

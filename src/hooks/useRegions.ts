@@ -18,10 +18,11 @@ export function useRegions() {
       // fetchRegions çağırırıq və nəticəni alırıq
       const regionsData = await fetchRegions();
       
-      // Əmin olaq ki, created_at sahəsi mövcuddur
+      // Əmin olaq ki, created_at və updated_at sahələri mövcuddur
       const validRegions = regionsData.map(region => ({
         ...region,
-        created_at: region.created_at || new Date().toISOString()
+        created_at: region.created_at || new Date().toISOString(),
+        updated_at: region.updated_at || new Date().toISOString()
       }));
       
       // State-i yeniləyirik

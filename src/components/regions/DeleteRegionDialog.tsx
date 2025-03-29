@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/context/LanguageContext';
-import { EnhancedRegion } from '@/hooks/useRegionsStore';
+import { EnhancedRegion } from '@/types/region';
 
 interface DeleteRegionDialogProps {
   open: boolean;

@@ -13,7 +13,7 @@ export interface Region {
   name: string;
   description?: string;
   created_at: string; // Burada created_at artıq optional deyil
-  updated_at?: string;
+  updated_at: string; // updated_at artıq optional deyil, məcburidir
   status: string;
   // Admin əlaqəli məlumatlar
   adminName?: string;
@@ -21,7 +21,7 @@ export interface Region {
   adminPassword?: string;
 }
 
-// EnhancedRegion tipini region.ts faylında təyin edirik
+// EnhancedRegion tipini region.ts faylında təyin edirik və ixrac edirik
 export interface EnhancedRegion extends Region {
   sectorCount: number;
   schoolCount: number;
