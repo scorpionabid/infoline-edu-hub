@@ -94,49 +94,87 @@ export const useRegionsStore = () => {
       });
       setCompletionRates(tempCompletionRates);
       
-      // Admin məlumatlarını əldə etmək - xəta qaynağı olan hissəni düzəldirik
-      // Region adminlərini birbaşa profiles cədvəlində axtarırıq
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name');
+      // Region adminlərini əldə etmək - profiles və user_roles cədvəllərindən birləşdiririk
+      const adminsQuery = `
+        SELECT ur.region_id, ur.user_id, p.full_name, p.id, a.email
+        FROM user_roles ur
+        JOIN profiles p ON ur.user_id = p.id
+        JOIN auth.users a ON ur.user_id = a.id
+        WHERE ur.role = 'regionadmin'
+      `;
       
-      if (profilesError) throw profilesError;
-      
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, region_id, role');
-      
-      if (rolesError) throw rolesError;
-      
-      // Admin məlumatlarını regionlara görə qruplaşdırırıq
-      const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
-      
-      // Rolları profillərlə birləşdiririk
-      userRoles?.forEach(role => {
-        if (role.region_id && role.role === 'regionadmin') {
-          const profile = profiles?.find(p => p.id === role.user_id);
-          
-          // Region üçün admin birləşdiririk
-          tempRegionAdmins[role.region_id] = {
-            id: role.user_id,
-            email: `${profile?.full_name || 'regionadmin'}@infoline.edu`
-          };
-        }
+      const { data: adminData, error: adminError } = await supabase.rpc('execute_sql', { 
+        query_text: adminsQuery 
       });
+      
+      if (adminError) {
+        console.error('Admin məlumatlarını əldə edərkən xəta:', adminError);
+        
+        // Alternative way: Get admins from user_roles only
+        const { data: userRoles, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, region_id')
+          .eq('role', 'regionadmin');
+        
+        if (userRolesError) {
+          console.error('User roles query error:', userRolesError);
+          throw userRolesError;
+        }
+        
+        // Get emails separately from profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name');
+          
+        if (profilesError) {
+          console.error('Profiles query error:', profilesError);
+          throw profilesError;
+        }
+        
+        // Merge data
+        const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
+        userRoles?.forEach(role => {
+          if (role.region_id) {
+            const profile = profiles?.find(p => p.id === role.user_id);
+            const profileName = profile?.full_name || 'Unknown';
+            const email = `${profileName.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
+            
+            tempRegionAdmins[role.region_id] = {
+              id: role.user_id,
+              email: email
+            };
+          }
+        });
+        
+        setRegionAdmins(tempRegionAdmins);
+      } else {
+        // Process the admin data we got from the SQL
+        const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
+        if (adminData && adminData.length > 0) {
+          adminData.forEach((admin: any) => {
+            if (admin.region_id) {
+              tempRegionAdmins[admin.region_id] = {
+                id: admin.user_id,
+                email: admin.email || `${admin.full_name.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`
+              };
+            }
+          });
+        }
+        
+        setRegionAdmins(tempRegionAdmins);
+      }
       
       // Əgər region üçün admin tapılmadısa, boş qalacaq
       regions.forEach(region => {
-        if (!tempRegionAdmins[region.id]) {
+        if (!regionAdmins[region.id]) {
           // Region adına əsasən avtomatik email formatı
           const regionNameLower = region.name.toLowerCase().replace(/\s+/g, '.');
-          tempRegionAdmins[region.id] = {
+          regionAdmins[region.id] = {
             id: '',
             email: `${regionNameLower}.admin@infoline.edu`
           };
         }
       });
-      
-      setRegionAdmins(tempRegionAdmins);
       
     } catch (error) {
       console.error("Region statistikalarını əldə edərkən xəta baş verdi:", error);
@@ -144,7 +182,7 @@ export const useRegionsStore = () => {
         description: 'Bölgə məlumatları yüklənərkən xəta baş verdi'
       });
     }
-  }, [regions, sectors, t]);
+  }, [regions, sectors, t, regionAdmins]);
 
   useEffect(() => {
     if (regions.length > 0) {

@@ -32,13 +32,18 @@ export const fetchRegions = async (): Promise<Region[]> => {
 // Regionu Supabase edge function istifadə edərək yaratmaq
 export const createRegion = async (regionData: CreateRegionParams): Promise<any> => {
   try {
+    console.log('Region data being sent to API:', regionData);
     const { data, error } = await supabase.functions.invoke('region-operations/create', {
       method: 'POST',
       body: regionData
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Invoke error:', error);
+      throw error;
+    }
     
+    console.log('API response:', data);
     return data;
   } catch (error) {
     console.error('Region yaratma xətası:', error);
@@ -103,34 +108,49 @@ export const deleteRegion = async (regionId: string): Promise<any> => {
 // Regionla bağlı statistikaları əldə etmək (məktəblər, sektorlar, istifadəçilər)
 export const getRegionStats = async (regionId: string): Promise<any> => {
   try {
-    // Regionla bağlı sektorları əldə etmək
+    // Region ilə bağlı sektorların sayı
     const { data: sectors, error: sectorsError } = await supabase
       .from('sectors')
-      .select('*')
+      .select('id')
       .eq('region_id', regionId);
       
     if (sectorsError) throw sectorsError;
     
-    // Regionla bağlı məktəbləri əldə etmək
+    // Region ilə bağlı məktəblərin sayı
     const { data: schools, error: schoolsError } = await supabase
       .from('schools')
-      .select('*')
+      .select('id')
       .eq('region_id', regionId);
       
     if (schoolsError) throw schoolsError;
     
-    // Regionla bağlı istifadəçiləri əldə etmək
-    const { data: users, error: usersError } = await supabase
+    // Region ilə bağlı adminlərin sayı
+    const { data: admins, error: adminsError } = await supabase
       .from('user_roles')
-      .select('*')
-      .eq('region_id', regionId);
+      .select('id')
+      .eq('region_id', regionId)
+      .eq('role', 'regionadmin');
       
-    if (usersError) throw usersError;
+    if (adminsError) throw adminsError;
+    
+    // Region ilə bağlı adminlərin məlumatları
+    const { data: adminData, error: adminDataError } = await supabase.rpc('execute_sql', { 
+      query_text: `
+        SELECT p.id, p.full_name, a.email 
+        FROM profiles p 
+        JOIN auth.users a ON p.id = a.id 
+        JOIN user_roles ur ON p.id = ur.user_id 
+        WHERE ur.region_id = '${regionId}' AND ur.role = 'regionadmin'
+      `
+    });
+    
+    if (adminDataError) throw adminDataError;
     
     return {
       sectorCount: sectors?.length || 0,
       schoolCount: schools?.length || 0,
-      userCount: users?.length || 0
+      adminCount: admins?.length || 0,
+      admins: adminData || []
     };
   } catch (error) {
     console.error('Region statistikalarını əldə etmə xətası:', error);

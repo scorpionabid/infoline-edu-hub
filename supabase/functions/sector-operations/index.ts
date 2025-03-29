@@ -7,17 +7,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface CreateRegionRequest {
+interface CreateSectorRequest {
   name: string;
   description?: string;
   status?: string;
+  regionId: string;
   adminEmail?: string;
   adminName?: string;
   adminPassword?: string;
 }
 
-interface DeleteRegionRequest {
-  regionId: string;
+interface DeleteSectorRequest {
+  sectorId: string;
 }
 
 serve(async (req) => {
@@ -52,19 +53,19 @@ serve(async (req) => {
     const url = new URL(req.url);
     const action = url.pathname.split('/').pop();
 
-    console.log(`Region operations function called with action: ${action}, method: ${method}`);
+    console.log(`Sector operations function called with action: ${action}, method: ${method}`);
 
     if (method === 'POST') {
       const requestData = await req.json();
       console.log('Request data:', requestData);
 
-      // Regionun yaradılması
+      // Sektorun yaradılması
       if (action === 'create') {
-        const { name, description, status, adminEmail, adminName, adminPassword } = requestData as CreateRegionRequest;
+        const { name, description, status, regionId, adminEmail, adminName, adminPassword } = requestData as CreateSectorRequest;
         
-        if (!name) {
+        if (!name || !regionId) {
           return new Response(
-            JSON.stringify({ error: 'Region adı tələb olunur' }),
+            JSON.stringify({ error: 'Sektor adı və Region ID tələb olunur' }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -72,23 +73,24 @@ serve(async (req) => {
           );
         }
         
-        // İlk öncə regionu yaradaq
-        const { data: regionData, error: regionError } = await supabaseAdmin
-          .from('regions')
+        // İlk öncə sektoru yaradaq
+        const { data: sectorData, error: sectorError } = await supabaseAdmin
+          .from('sectors')
           .insert([
             { 
               name, 
               description: description || null, 
-              status: status || 'active' 
+              status: status || 'active',
+              region_id: regionId
             }
           ])
           .select()
           .single();
         
-        if (regionError) {
-          console.error('Region yaradılması xətası:', regionError);
+        if (sectorError) {
+          console.error('Sektor yaradılması xətası:', sectorError);
           return new Response(
-            JSON.stringify({ error: 'Region yaradılması xətası', details: regionError }),
+            JSON.stringify({ error: 'Sektor yaradılması xətası', details: sectorError }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -96,7 +98,7 @@ serve(async (req) => {
           );
         }
         
-        const regionId = regionData.id;
+        const sectorId = sectorData.id;
         let adminId = null;
         
         // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
@@ -117,19 +119,20 @@ serve(async (req) => {
               email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
               user_metadata: {
                 full_name: adminName,
-                role: 'regionadmin',
-                region_id: regionId
+                role: 'sectoradmin',
+                region_id: regionId,
+                sector_id: sectorId
               }
             });
             
             if (userError) {
               console.error('Admin hesabı yaradılması xətası:', userError);
-              // Regionu yaratdıq, amma admin yarada bilmədik
+              // Sektoru yaratdıq, amma admin yarada bilmədik
               return new Response(
                 JSON.stringify({ 
                   success: true, 
-                  data: regionData, 
-                  warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
+                  data: sectorData, 
+                  warning: 'Sektor yaradıldı, lakin admin hesabı yaradıla bilmədi',
                   details: userError 
                 }),
                 { 
@@ -180,8 +183,9 @@ serve(async (req) => {
               .insert([
                 {
                   user_id: adminId,
-                  role: 'regionadmin',
-                  region_id: regionId
+                  role: 'sectoradmin',
+                  region_id: regionId,
+                  sector_id: sectorId
                 }
               ]);
             
@@ -189,15 +193,15 @@ serve(async (req) => {
               console.error('Rol əlavə edilməsi xətası:', roleError);
             }
             
-            console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
+            console.log(`Sector admin ${adminEmail} created for sector ${name} with id ${sectorId}`);
           } catch (err) {
             console.error('Admin yaradılması prosesində xəta:', err);
-            // Regionu yaratdıq, amma admin yarada bilmədik
+            // Sektoru yaratdıq, amma admin yarada bilmədik
             return new Response(
               JSON.stringify({ 
                 success: true, 
-                data: regionData, 
-                warning: 'Region yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
+                data: sectorData, 
+                warning: 'Sektor yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
                 details: err
               }),
               { 
@@ -212,7 +216,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             data: { 
-              region: regionData, 
+              sector: sectorData, 
               admin: adminId ? { id: adminId, email: adminEmail } : null
             } 
           }),
@@ -222,13 +226,13 @@ serve(async (req) => {
           }
         );
       } 
-      // Regionun silinməsi
+      // Sektorun silinməsi
       else if (action === 'delete') {
-        const { regionId } = requestData as DeleteRegionRequest;
+        const { sectorId } = requestData as DeleteSectorRequest;
         
-        if (!regionId) {
+        if (!sectorId) {
           return new Response(
-            JSON.stringify({ error: 'Region ID tələb olunur' }),
+            JSON.stringify({ error: 'Sektor ID tələb olunur' }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -236,24 +240,24 @@ serve(async (req) => {
           );
         }
         
-        // Regionla bağlı adminləri tapaq
+        // Sektorla bağlı adminləri tapaq
         const { data: roleData } = await supabaseAdmin
           .from('user_roles')
           .select('user_id')
-          .eq('region_id', regionId)
-          .eq('role', 'regionadmin');
+          .eq('sector_id', sectorId)
+          .eq('role', 'sectoradmin');
         
-        // Region ilə əlaqəli digər məlumatları silirik
+        // Sektor ilə əlaqəli digər məlumatları silirik
         // Avtomatik cascade delete işləyəcək, əgər foreign key məhdudiyyətləri varsa
         const { error: deleteError } = await supabaseAdmin
-          .from('regions')
+          .from('sectors')
           .delete()
-          .eq('id', regionId);
+          .eq('id', sectorId);
         
         if (deleteError) {
-          console.error('Region silmə xətası:', deleteError);
+          console.error('Sektor silmə xətası:', deleteError);
           return new Response(
-            JSON.stringify({ error: 'Region silinməsi xətası', details: deleteError }),
+            JSON.stringify({ error: 'Sektor silinməsi xətası', details: deleteError }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -279,7 +283,7 @@ serve(async (req) => {
         }
         
         return new Response(
-          JSON.stringify({ success: true, message: 'Region uğurla silindi' }),
+          JSON.stringify({ success: true, message: 'Sektor uğurla silindi' }),
           { 
             status: 200, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

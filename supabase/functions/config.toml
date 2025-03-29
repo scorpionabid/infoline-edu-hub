@@ -1,5 +1,2 @@
 
 project_id = "olbfnauhzpdskqnxtwav"
-
-[functions.region-operations]
-verify_jwt = false

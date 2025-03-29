@@ -7,17 +7,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface CreateRegionRequest {
+interface CreateSchoolRequest {
   name: string;
-  description?: string;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  regionId: string;
+  sectorId: string;
+  studentCount?: number;
+  teacherCount?: number;
   status?: string;
+  type?: string;
+  language?: string;
   adminEmail?: string;
   adminName?: string;
   adminPassword?: string;
 }
 
-interface DeleteRegionRequest {
-  regionId: string;
+interface DeleteSchoolRequest {
+  schoolId: string;
 }
 
 serve(async (req) => {
@@ -52,19 +61,23 @@ serve(async (req) => {
     const url = new URL(req.url);
     const action = url.pathname.split('/').pop();
 
-    console.log(`Region operations function called with action: ${action}, method: ${method}`);
+    console.log(`School operations function called with action: ${action}, method: ${method}`);
 
     if (method === 'POST') {
       const requestData = await req.json();
       console.log('Request data:', requestData);
 
-      // Regionun yaradılması
+      // Məktəbin yaradılması
       if (action === 'create') {
-        const { name, description, status, adminEmail, adminName, adminPassword } = requestData as CreateRegionRequest;
+        const { 
+          name, principalName, address, phone, email, regionId, sectorId,
+          studentCount, teacherCount, status, type, language,
+          adminEmail, adminName, adminPassword 
+        } = requestData as CreateSchoolRequest;
         
-        if (!name) {
+        if (!name || !regionId || !sectorId) {
           return new Response(
-            JSON.stringify({ error: 'Region adı tələb olunur' }),
+            JSON.stringify({ error: 'Məktəb adı, Region ID və Sektor ID tələb olunur' }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -72,23 +85,33 @@ serve(async (req) => {
           );
         }
         
-        // İlk öncə regionu yaradaq
-        const { data: regionData, error: regionError } = await supabaseAdmin
-          .from('regions')
+        // İlk öncə məktəbi yaradaq
+        const { data: schoolData, error: schoolError } = await supabaseAdmin
+          .from('schools')
           .insert([
             { 
               name, 
-              description: description || null, 
-              status: status || 'active' 
+              principal_name: principalName || null,
+              address: address || null,
+              phone: phone || null,
+              email: email || null,
+              region_id: regionId,
+              sector_id: sectorId,
+              student_count: studentCount || null,
+              teacher_count: teacherCount || null,
+              status: status || 'active',
+              type: type || null,
+              language: language || null,
+              admin_email: adminEmail || null
             }
           ])
           .select()
           .single();
         
-        if (regionError) {
-          console.error('Region yaradılması xətası:', regionError);
+        if (schoolError) {
+          console.error('Məktəb yaradılması xətası:', schoolError);
           return new Response(
-            JSON.stringify({ error: 'Region yaradılması xətası', details: regionError }),
+            JSON.stringify({ error: 'Məktəb yaradılması xətası', details: schoolError }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -96,7 +119,7 @@ serve(async (req) => {
           );
         }
         
-        const regionId = regionData.id;
+        const schoolId = schoolData.id;
         let adminId = null;
         
         // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
@@ -117,19 +140,21 @@ serve(async (req) => {
               email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
               user_metadata: {
                 full_name: adminName,
-                role: 'regionadmin',
-                region_id: regionId
+                role: 'schooladmin',
+                region_id: regionId,
+                sector_id: sectorId,
+                school_id: schoolId
               }
             });
             
             if (userError) {
               console.error('Admin hesabı yaradılması xətası:', userError);
-              // Regionu yaratdıq, amma admin yarada bilmədik
+              // Məktəbi yaratdıq, amma admin yarada bilmədik
               return new Response(
                 JSON.stringify({ 
                   success: true, 
-                  data: regionData, 
-                  warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
+                  data: schoolData, 
+                  warning: 'Məktəb yaradıldı, lakin admin hesabı yaradıla bilmədi',
                   details: userError 
                 }),
                 { 
@@ -141,11 +166,13 @@ serve(async (req) => {
             
             adminId = userData.user.id;
             
+            // Profil yaratma - zəruri deyil, avtomatik trigger tərəfindən yaradılacaq
+            // Lakin əmin olmaq üçün yoxlayaq və ya yaradaq
+            
             // Profilin yaradılmasını gözləyək - trigger yaradır, amma əmin olaq
             // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Profili yoxlayaq və ya yaradaq
             const { data: profileData, error: profileError } = await supabaseAdmin
               .from('profiles')
               .select('*')
@@ -180,8 +207,10 @@ serve(async (req) => {
               .insert([
                 {
                   user_id: adminId,
-                  role: 'regionadmin',
-                  region_id: regionId
+                  role: 'schooladmin',
+                  region_id: regionId,
+                  sector_id: sectorId,
+                  school_id: schoolId
                 }
               ]);
             
@@ -189,15 +218,25 @@ serve(async (req) => {
               console.error('Rol əlavə edilməsi xətası:', roleError);
             }
             
-            console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
+            // Əgər admin yaradıldısa, məktəbdə admin_email-i yeniləyək
+            const { error: updateSchoolError } = await supabaseAdmin
+              .from('schools')
+              .update({ admin_email: cleanEmail })
+              .eq('id', schoolId);
+            
+            if (updateSchoolError) {
+              console.error('Məktəb admin email yenilənməsi xətası:', updateSchoolError);
+            }
+            
+            console.log(`School admin ${adminEmail} created for school ${name} with id ${schoolId}`);
           } catch (err) {
             console.error('Admin yaradılması prosesində xəta:', err);
-            // Regionu yaratdıq, amma admin yarada bilmədik
+            // Məktəbi yaratdıq, amma admin yarada bilmədik
             return new Response(
               JSON.stringify({ 
                 success: true, 
-                data: regionData, 
-                warning: 'Region yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
+                data: schoolData, 
+                warning: 'Məktəb yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
                 details: err
               }),
               { 
@@ -212,7 +251,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             data: { 
-              region: regionData, 
+              school: schoolData, 
               admin: adminId ? { id: adminId, email: adminEmail } : null
             } 
           }),
@@ -222,13 +261,13 @@ serve(async (req) => {
           }
         );
       } 
-      // Regionun silinməsi
+      // Məktəbin silinməsi
       else if (action === 'delete') {
-        const { regionId } = requestData as DeleteRegionRequest;
+        const { schoolId } = requestData as DeleteSchoolRequest;
         
-        if (!regionId) {
+        if (!schoolId) {
           return new Response(
-            JSON.stringify({ error: 'Region ID tələb olunur' }),
+            JSON.stringify({ error: 'Məktəb ID tələb olunur' }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -236,24 +275,24 @@ serve(async (req) => {
           );
         }
         
-        // Regionla bağlı adminləri tapaq
+        // Məktəblə bağlı adminləri tapaq
         const { data: roleData } = await supabaseAdmin
           .from('user_roles')
           .select('user_id')
-          .eq('region_id', regionId)
-          .eq('role', 'regionadmin');
+          .eq('school_id', schoolId)
+          .eq('role', 'schooladmin');
         
-        // Region ilə əlaqəli digər məlumatları silirik
+        // Məktəb ilə əlaqəli digər məlumatları silirik
         // Avtomatik cascade delete işləyəcək, əgər foreign key məhdudiyyətləri varsa
         const { error: deleteError } = await supabaseAdmin
-          .from('regions')
+          .from('schools')
           .delete()
-          .eq('id', regionId);
+          .eq('id', schoolId);
         
         if (deleteError) {
-          console.error('Region silmə xətası:', deleteError);
+          console.error('Məktəb silmə xətası:', deleteError);
           return new Response(
-            JSON.stringify({ error: 'Region silinməsi xətası', details: deleteError }),
+            JSON.stringify({ error: 'Məktəb silinməsi xətası', details: deleteError }),
             { 
               status: 400, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -279,7 +318,7 @@ serve(async (req) => {
         }
         
         return new Response(
-          JSON.stringify({ success: true, message: 'Region uğurla silindi' }),
+          JSON.stringify({ success: true, message: 'Məktəb uğurla silindi' }),
           { 
             status: 200, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

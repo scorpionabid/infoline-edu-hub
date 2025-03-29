@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RegionFormData } from '@/hooks/useRegionsStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Eye, EyeOff } from 'lucide-react';
 
 interface AddRegionDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
   const [loading, setLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState('basic');
   const [createAdmin, setCreateAdmin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState<RegionFormData>({
     name: '',
@@ -81,6 +83,10 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
   
   const formIsValid = formData.name.trim() !== '' && 
                      (!createAdmin || (formData.adminEmail && formData.adminEmail.includes('@') && formData.adminPassword));
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -174,14 +180,23 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
                 
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="adminPassword" className="text-right">{t('password')} *</Label>
-                  <Input 
-                    id="adminPassword" 
-                    type="password"
-                    value={formData.adminPassword || ''} 
-                    onChange={(e) => handleChange('adminPassword', e.target.value)}
-                    className="col-span-3"
-                    placeholder={t('passwordPlaceholder')}
-                  />
+                  <div className="col-span-3 relative">
+                    <Input 
+                      id="adminPassword" 
+                      type={showPassword ? "text" : "password"}
+                      value={formData.adminPassword || ''} 
+                      onChange={(e) => handleChange('adminPassword', e.target.value)}
+                      className="pr-10"
+                      placeholder={t('passwordPlaceholder')}
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
