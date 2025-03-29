@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -58,108 +57,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
       // Əvvəlcə mövcud sessiyaları təmizləyək
       await supabase.auth.signOut();
       
-      // Təhlükəsiz login cəhdi - edge function vasitəsilə
-      // Əvvəlcə edge function üzərindən giriş cəhdi edəcəyik
-      const safeLoginSuccess = await handleSafeLogin();
+      // Birbaşa standart Supabase login metodunu istifadə edirik
+      console.log('Normal login cəhdi edilir');
+      const success = await login(email, password);
       
-      // Əgər təhlükəsiz login uğursuz olsa, normal login metodu ilə cəhd edək
-      if (!safeLoginSuccess) {
-        console.log('Normal login cəhdi edilir');
-        const success = await login(email, password);
-        
-        if (success) {
-          console.log('Normal login uğurlu oldu');
-          toast.success(t('loginSuccess'));
-          navigate('/dashboard');
-        }
+      if (success) {
+        console.log('Normal login uğurlu oldu');
+        toast.success(t('loginSuccess'));
+        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('Login error:', error);
       // Xətaları context vasitəsilə idarə edirik
     } finally {
       setLoginInProgress(false);
-    }
-  };
-
-  // Təhlükəsiz login cəhdi - edge function
-  const handleSafeLogin = async (): Promise<boolean> => {
-    try {
-      console.log('Təhlükəsiz login cəhdi edilir...');
-      
-      // Edge Function URL-i - Burada edge function üçün tam URL istifadə edirik
-      const functionUrl = `${window.location.origin}/functions/v1/safe-login`;
-      
-      console.log('Function URL:', functionUrl);
-      
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email || 'superadmin@infoline.az',
-          password: password || 'Admin123!'
-        })
-      });
-      
-      console.log('Safe login status kodu:', response.status);
-      
-      // Əgər API response 200 OK deyilsə, normal login-ə keçid edək
-      if (!response.ok) {
-        console.error('Edge function uğursuz oldu, status:', response.status);
-        return false;
-      }
-      
-      // İlk olaraq text() olaraq responseni alaq və sonra JSON-a çevirək - debugging üçün
-      const responseText = await response.text();
-      console.log('Safe login xam cavabını yoxlayırıq');
-      
-      let responseData;
-      try {
-        // Text cavabı JSON olaraq parse edək
-        responseData = JSON.parse(responseText);
-      } catch (e) {
-        console.error('JSON parse xətası:', e);
-        console.error('Alınan cavab:', responseText);
-        // JSON parse edilə bilmirsə, normal login-ə keçid edək
-        return false;
-      }
-      
-      console.log('Safe login cavabı:', responseData);
-      
-      if (responseData.error) {
-        console.error('Edge function xətası:', responseData.error);
-        return false;
-      }
-      
-      if (responseData.session) {
-        // Sessiyanı manual olaraq təyin edək
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: responseData.session.access_token,
-          refresh_token: responseData.session.refresh_token
-        });
-        
-        if (sessionError) {
-          console.error("Sessiya təyin etmə xətası:", sessionError);
-          return false;
-        }
-        
-        toast.success(t('loginSuccess'));
-        
-        // setSession çağrışından sonra bir qədər gözləyək ki, onAuthStateChange tetiklənsin
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
-        
-        return true;
-      } else {
-        console.error('Sessiya qaytarılmadı');
-        return false;
-      }
-    } catch (error: any) {
-      console.error('Safe login error:', error);
-      // Xəta olduqda, bunu bildirirk amma normal login cəhdini dayandırmırıq
-      return false;
     }
   };
 

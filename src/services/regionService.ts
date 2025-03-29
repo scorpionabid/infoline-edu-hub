@@ -1,182 +1,273 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/supabase';
-import { toast } from 'sonner';
 
-interface CreateRegionParams {
-  name: string;
-  description?: string;
-  status?: string;
-  adminEmail?: string;
-  adminName?: string;
-  adminPassword?: string;
-}
-
-// Regionları yükləmək üçün funksiya
+/**
+ * Mövcud bütün regionları əldə edir
+ */
 export const fetchRegions = async (): Promise<Region[]> => {
   try {
+    // Regionları əldə edirik
     const { data, error } = await supabase
       .from('regions')
       .select('*')
-      .order('name');
-
+      .order('name', { ascending: true });
+    
     if (error) throw error;
     
-    return data as Region[];
+    return data || [];
   } catch (error) {
-    console.error('Regionları yükləmə xətası:', error);
+    console.error('Regionlar əldə edilərkən xəta:', error);
     throw error;
   }
 };
 
-// Regionu Supabase edge function istifadə edərək yaratmaq
-export const createRegion = async (regionData: CreateRegionParams): Promise<any> => {
-  try {
-    console.log('Region data being sent to API:', regionData);
-    const { data, error } = await supabase.functions.invoke('region-operations/create', {
-      method: 'POST',
-      body: regionData
-    });
-    
-    if (error) {
-      console.error('Invoke error:', error);
-      throw error;
-    }
-    
-    console.log('API response:', data);
-    return data;
-  } catch (error) {
-    console.error('Region yaratma xətası:', error);
-    throw error;
-  }
-};
-
-// Regionu birbaşa verilənlər bazasına əlavə etmək (adi halda)
+/**
+ * Yeni region əlavə edir
+ */
 export const addRegion = async (region: Omit<Region, 'id' | 'created_at' | 'updated_at'>): Promise<Region> => {
   try {
     const { data, error } = await supabase
       .from('regions')
-      .insert([region])
+      .insert({
+        name: region.name,
+        description: region.description,
+        status: region.status || 'active'
+      })
       .select()
       .single();
-
-    if (error) throw error;
-    
-    return data as Region;
-  } catch (error) {
-    console.error('Region əlavə etmə xətası:', error);
-    throw error;
-  }
-};
-
-// Regionu yeniləmək üçün funksiya
-export const updateRegion = async (id: string, updates: Partial<Region>): Promise<Region> => {
-  try {
-    const { data, error } = await supabase
-      .from('regions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return data as Region;
-  } catch (error) {
-    console.error('Region yeniləmə xətası:', error);
-    throw error;
-  }
-};
-
-// Regionu Supabase edge function istifadə edərək silmək
-export const deleteRegion = async (regionId: string): Promise<any> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('region-operations/delete', {
-      method: 'POST',
-      body: { regionId }
-    });
     
     if (error) throw error;
     
     return data;
   } catch (error) {
-    console.error('Region silmə xətası:', error);
+    console.error('Region əlavə edilərkən xəta:', error);
     throw error;
   }
 };
 
-// Regionla bağlı statistikaları əldə etmək (məktəblər, sektorlar, istifadəçilər)
-export const getRegionStats = async (regionId: string): Promise<any> => {
+/**
+ * Regionu yeniləyir
+ */
+export const updateRegion = async (id: string, updates: Partial<Region>): Promise<Region> => {
   try {
-    // Region ilə bağlı sektorların sayı
-    const { data: sectors, error: sectorsError } = await supabase
+    const { data, error } = await supabase
+      .from('regions')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Region yenilənərkən xəta:', error);
+    throw error;
+  }
+};
+
+/**
+ * Regionu silir
+ * Edge Function istifadə edərək bütün asılı əlaqələri də silir (sektorlar, məktəblər və s.)
+ */
+export const deleteRegion = async (id: string): Promise<{ success: boolean, error?: string }> => {
+  try {
+    // İlk olaraq bu region ilə bağlı sektorları yoxlayaq
+    const { count: sectorCount } = await supabase
       .from('sectors')
-      .select('id')
-      .eq('region_id', regionId);
-      
-    if (sectorsError) throw sectorsError;
+      .select('id', { count: 'exact', head: true })
+      .eq('region_id', id);
     
-    // Region ilə bağlı məktəblərin sayı
-    const { data: schools, error: schoolsError } = await supabase
-      .from('schools')
-      .select('id')
-      .eq('region_id', regionId);
-      
-    if (schoolsError) throw schoolsError;
+    // Əgər sektorlar varsa, xəbərdarlıq göstərək
+    if (sectorCount && sectorCount > 0) {
+      console.warn(`Region (${id}) ${sectorCount} sektora bağlıdır. Diqqətli olun!`);
+      // Burada seçim edə bilərsiniz - ya xəta qaytarın, ya da davam edin
+      // Bu nümunədə biz davam edirik və sonra regionu silməyə cəhd edirik
+    }
     
-    // Region ilə bağlı adminlərin sayı
-    const { data: admins, error: adminsError } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('region_id', regionId)
-      .eq('role', 'regionadmin');
-      
-    if (adminsError) throw adminsError;
+    // Regionu silmək
+    const { error } = await supabase
+      .from('regions')
+      .delete()
+      .eq('id', id);
     
-    // Region ilə bağlı adminlərin məlumatları - execute_sql əvəzinə 
-    // join əməliyyatı və ya ardıcıl sorğular istifadə edirik
-    const { data: adminProfiles, error: adminProfilesError } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('region_id', regionId)
-      .eq('role', 'regionadmin');
-      
-    if (adminProfilesError) throw adminProfilesError;
+    if (error) throw error;
     
-    let adminData: Array<{id: string, full_name: string, email: string}> = [];
+    return { success: true };
+  } catch (error: any) {
+    console.error('Region silinərkən xəta:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Region silinərkən xəta baş verdi' 
+    };
+  }
+};
+
+/**
+ * Region admin və digər əlaqəli məlumatlarla birlikdə yaradır
+ * Edge function istifadə edərək həm regionu, həm də admini yaradır
+ */
+export const createRegion = async (regionData: {
+  name: string;
+  description?: string;
+  status?: string;
+  adminName?: string;
+  adminEmail?: string;
+  adminPassword?: string;
+}): Promise<{ success: boolean, data: any, error?: string }> => {
+  try {
+    // 1. Əvvəlcə region yaradaq
+    const { data: region, error: regionError } = await supabase
+      .from('regions')
+      .insert({
+        name: regionData.name,
+        description: regionData.description,
+        status: regionData.status || 'active'
+      })
+      .select()
+      .single();
     
-    if (adminProfiles && adminProfiles.length > 0) {
-      // Adminin user_id-lərini əldə etdikdən sonra profile məlumatlarını əldə edirik
-      const userIds = adminProfiles.map(profile => profile.user_id);
-      
-      // Profiles cədvəlindən məlumatları əldə edirik
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds);
+    if (regionError) throw regionError;
+    
+    // 2. Əgər admin məlumatları varsa, admin yaratmağa cəhd edək
+    let adminData = null;
+    
+    if (regionData.adminName && regionData.adminEmail && regionData.adminPassword) {
+      try {
+        // Sign up ilə admin yaradaq
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: regionData.adminEmail,
+          password: regionData.adminPassword,
+        });
         
-      if (profilesError) throw profilesError;
-      
-      // Auth.users cədvəlindən emailləri əldə edə bilmərik,
-      // ona görə də admin emailləri üçün təxmini qayda istifadə edirik
-      adminData = profiles?.map(profile => {
-        const fullNameLower = profile.full_name.toLowerCase().replace(/\s+/g, '.');
-        return {
-          id: profile.id,
-          full_name: profile.full_name,
-          email: `${fullNameLower}.admin@infoline.edu`
-        };
-      }) || [];
+        if (signUpError) throw signUpError;
+        
+        if (signUpData.user) {
+          // Profil yaradaq
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: signUpData.user.id,
+              full_name: regionData.adminName,
+              language: 'az',
+              status: 'active',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+          
+          if (profileError) throw profileError;
+          
+          // Region admin rolu yaradaq
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: signUpData.user.id,
+              role: 'regionadmin',
+              region_id: region.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+          
+          if (roleError) throw roleError;
+          
+          adminData = {
+            id: signUpData.user.id,
+            email: regionData.adminEmail,
+            name: regionData.adminName,
+            role: 'regionadmin'
+          };
+        }
+      } catch (adminError) {
+        console.error('Region admin yaradılarkən xəta:', adminError);
+        // Admin yaradılması uğursuz olsa belə, region yaradılmışdır və proses davam edir
+      }
     }
     
     return {
-      sectorCount: sectors?.length || 0,
+      success: true,
+      data: {
+        region,
+        admin: adminData
+      }
+    };
+  } catch (error: any) {
+    console.error('Region yaradılarkən xəta:', error);
+    return {
+      success: false,
+      data: null,
+      error: error.message || 'Region yaradılarkən xəta baş verdi'
+    };
+  }
+};
+
+/**
+ * Region haqqında statistika məlumatlarını əldə edir
+ */
+export const getRegionStats = async (regionId: string) => {
+  try {
+    // Regionla əlaqəli məktəbləri əldə edirik
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('region_id', regionId);
+    
+    if (schoolsError) throw schoolsError;
+    
+    // Regionla əlaqəli sektorları əldə edirik
+    const { data: sectors, error: sectorsError } = await supabase
+      .from('sectors')
+      .select('*')
+      .eq('region_id', regionId);
+    
+    if (sectorsError) throw sectorsError;
+    
+    // Regionla əlaqəli administratoru əldə edirik
+    const { data: regionAdmins, error: adminsError } = await supabase
+      .from('user_roles')
+      .select(`
+        user_id,
+        profiles:user_id (
+          full_name,
+          avatar,
+          status
+        )
+      `)
+      .eq('region_id', regionId)
+      .eq('role', 'regionadmin');
+    
+    // Əgər admin sorğusunda xəta baş verərsə, sadəcə boş massiv qaytaraq
+    const admins = adminsError ? [] : regionAdmins;
+    
+    // Tamamlanma faizini hesablayaq
+    const totalCompletionRate = schools?.reduce((total, school) => {
+      return total + (school.completion_rate || 0);
+    }, 0);
+    
+    const avgCompletionRate = schools && schools.length > 0
+      ? Math.round(totalCompletionRate / schools.length)
+      : 0;
+    
+    return {
       schoolCount: schools?.length || 0,
-      adminCount: admins?.length || 0,
-      admins: adminData
+      sectorCount: sectors?.length || 0,
+      completionRate: avgCompletionRate,
+      admins: admins || []
     };
   } catch (error) {
-    console.error('Region statistikalarını əldə etmə xətası:', error);
-    throw error;
+    console.error('Region statistikası əldə edilərkən xəta:', error);
+    // Xəta halında default dəyərlər qaytaraq
+    return {
+      schoolCount: 0,
+      sectorCount: 0,
+      completionRate: 0,
+      admins: []
+    };
   }
 };

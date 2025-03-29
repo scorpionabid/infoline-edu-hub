@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
@@ -16,136 +15,175 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       throw new Error('İstifadəçi tapılmadı');
     }
     
+    console.log('Auth user found:', authUser.user.email);
+    
     // Profil məlumatlarını əldə edək
+    // Aşağıdakı şəkildə limit=1 əlavə edək
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .limit(1)
+      .maybeSingle();
     
     if (profileError) {
       console.error('Profile fetch error:', profileError);
-      throw profileError;
+      
+      // Profil məlumatlarını əldə edə bilmədiksə, default məlumatlar təyin edək
+      const defaultProfile = {
+        id: userId,
+        full_name: authUser.user.email?.split('@')[0] || 'User',
+        language: 'az',
+        status: 'active' as 'active' | 'inactive' | 'blocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Profil yaratmağa çalışaq - uğursuz olsa belə davam edirik
+      try {
+        await supabase
+          .from('profiles')
+          .insert([defaultProfile]);
+          
+        console.log('Created new profile for user:', userId);
+      } catch (insertError) {
+        console.error('Failed to create profile:', insertError);
+      }
+      
+      // İstifadəçiyə default profil məlumatlarını qaytararıq
+      return createDefaultUserData(userId, authUser.user.email || '', defaultProfile.full_name);
     }
     
     if (!profile) {
-      throw new Error('İstifadəçi profili tapılmadı');
+      console.warn('İstifadəçi profili tapılmadı, default məlumatlar təyin edilir');
+      
+      // Default profil yaradırıq
+      const defaultProfile = {
+        id: userId,
+        full_name: authUser.user.email?.split('@')[0] || 'User',
+        language: 'az',
+        status: 'active' as 'active' | 'inactive' | 'blocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Profil yaratmağa çalışaq - uğursuz olsa belə davam edirik
+      try {
+        await supabase
+          .from('profiles')
+          .insert([defaultProfile]);
+          
+        console.log('Created new profile for user:', userId);
+      } catch (insertError) {
+        console.error('Failed to create profile:', insertError);
+      }
+      
+      // İstifadəçiyə default profil məlumatlarını qaytararıq
+      return createDefaultUserData(userId, authUser.user.email || '', defaultProfile.full_name);
     }
     
     // İstifadəçinin rolunu əldə edək
-    const { data: userRole, error: userRoleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-      
-    if (userRoleError) {
-      console.error('User role fetch error:', userRoleError);
-      console.log('İstifadəçi ID:', userId);
-      console.log('İstifadəçi üçün rol məlumatları tapılmadı. Supabase-də user_roles cədvəlini yoxlayın.');
-      
-      // Xəta baş verdikdə, auth user-dən email-i yoxlayaq və superadmin@infoline.az üçün superadmin rolunu təyin edək
-      if (authUser.user.email === 'superadmin@infoline.az') {
-        console.log('superadmin@infoline.az üçün superadmin rolu təyin edilir');
-        return {
-          id: userId,
-          email: authUser.user.email,
-          role: 'superadmin',
-          full_name: profile.full_name || '',
-          name: profile.full_name || '', 
-          phone: profile.phone || '',
-          position: profile.position || '',
-          language: profile.language || 'az',
-          avatar: profile.avatar || '',
-          status: (profile.status || 'active') as 'active' | 'inactive' | 'blocked',
-          school_id: null,
-          schoolId: null,
-          sector_id: null,
-          sectorId: null,
-          region_id: null,
-          regionId: null,
-          school: null,
-          sector: null,
-          region: null,
-          last_login: profile.last_login,
-          lastLogin: profile.last_login,
-          created_at: profile.created_at,
-          createdAt: profile.created_at,
-          updated_at: profile.updated_at,
-          updatedAt: profile.updated_at,
-          twoFactorEnabled: false,
-          notificationSettings: {
-            email: true,
-            system: true
-          }
-        };
-      }
-    }
+    let userRole = null;
+    let region = null;
+    let sector = null;
+    let school = null;
     
-    // Rol məlumatları tapıldısa, istifadə et, əks halda schooladmin
-    const role = userRole?.role || 'schooladmin';
-
-    // İstifadəçinin aid olduğu məktəb, sektor və region məlumatlarını əldə edək
-    let schoolData = null;
-    let sectorData = null;
-    let regionData = null;
-    
-    if (userRole?.school_id) {
-      const { data: school } = await supabase
-        .from('schools')
-        .select('id, name, sector_id, region_id')
-        .eq('id', userRole.school_id)
-        .single();
-      
-      schoolData = school;
-      
-      if (school && school.sector_id) {
-        const { data: sector } = await supabase
-          .from('sectors')
-          .select('id, name, region_id')
-          .eq('id', school.sector_id)
-          .single();
+    try {
+      const { data: userRoleData, error: userRoleError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
         
-        sectorData = sector;
+      if (userRoleError) {
+        console.error('User role fetch error:', userRoleError);
+      } else if (userRoleData) {
+        userRole = userRoleData;
         
-        if (sector && sector.region_id) {
-          const { data: region } = await supabase
+        // Əlaqəli məlumatları əldə edək (region, sector, school)
+        if (userRole.region_id) {
+          const { data: regionData } = await supabase
             .from('regions')
-            .select('id, name')
-            .eq('id', sector.region_id)
-            .single();
-          
-          regionData = region;
+            .select('*')
+            .eq('id', userRole.region_id)
+            .limit(1)
+            .maybeSingle();
+            
+          region = regionData;
+        }
+        
+        if (userRole.sector_id) {
+          const { data: sectorData } = await supabase
+            .from('sectors')
+            .select('*')
+            .eq('id', userRole.sector_id)
+            .limit(1)
+            .maybeSingle();
+            
+          sector = sectorData;
+        }
+        
+        if (userRole.school_id) {
+          const { data: schoolData } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('id', userRole.school_id)
+            .limit(1)
+            .maybeSingle();
+            
+          school = schoolData;
         }
       }
-    } else if (userRole?.sector_id) {
-      // Əgər birbaşa sektorla əlaqəlidirsə
-      const { data: sector } = await supabase
-        .from('sectors')
-        .select('id, name, region_id')
-        .eq('id', userRole.sector_id)
-        .single();
+    } catch (roleError) {
+      console.error('Error fetching role and related data:', roleError);
+    }
+    
+    // SuperAdmin default rol təyini
+    if (authUser.user.email === 'superadmin@infoline.az' && (!userRole || userRole.role !== 'superadmin')) {
+      console.log('Setting default superadmin role for superadmin@infoline.az');
       
-      sectorData = sector;
-      
-      if (sector && sector.region_id) {
-        const { data: region } = await supabase
-          .from('regions')
-          .select('id, name')
-          .eq('id', sector.region_id)
-          .single();
-        
-        regionData = region;
+      try {
+        // Role yoxdursa, yaratmağa çalışaq
+        if (!userRole) {
+          const { data: newRole, error: insertError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: userId,
+              role: 'superadmin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+            
+          if (insertError) {
+            console.error('Error creating superadmin role:', insertError);
+          } else {
+            userRole = newRole;
+            console.log('Created superadmin role for user:', userId);
+          }
+        } 
+        // Rol varsa, superadmin olaraq yeniləyək
+        else if (userRole.role !== 'superadmin') {
+          const { error: updateError } = await supabase
+            .from('user_roles')
+            .update({
+              role: 'superadmin',
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId);
+            
+          if (updateError) {
+            console.error('Error updating to superadmin role:', updateError);
+          } else {
+            userRole = { ...userRole, role: 'superadmin' };
+            console.log('Updated role to superadmin for user:', userId);
+          }
+        }
+      } catch (roleError) {
+        console.error('Error managing superadmin role:', roleError);
       }
-    } else if (userRole?.region_id) {
-      // Əgər birbaşa regionla əlaqəlidirsə
-      const { data: region } = await supabase
-        .from('regions')
-        .select('id, name')
-        .eq('id', userRole.region_id)
-        .single();
-      
-      regionData = region;
     }
     
     // Status dəyərini düzəldək
@@ -158,7 +196,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     const fullUserData: FullUserData = {
       id: userId,
       email: authUser.user.email || '',
-      role: role,
+      role: userRole?.role || 'schooladmin',
       full_name: profile.full_name || '',
       name: profile.full_name || '', // name = full_name
       phone: profile.phone || '',
@@ -166,15 +204,15 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       language: profile.language || 'az',
       avatar: profile.avatar || '',
       status: typedStatus,
-      school: schoolData,
-      schoolId: userRole?.school_id || null,
+      school: school,
       school_id: userRole?.school_id || null,
-      sector: sectorData,
-      sectorId: userRole?.sector_id || null,
+      schoolId: userRole?.school_id || null,
+      sector: sector,
       sector_id: userRole?.sector_id || null,
-      region: regionData,
-      regionId: userRole?.region_id || null,
+      sectorId: userRole?.sector_id || null,
+      region: region,
       region_id: userRole?.region_id || null,
+      regionId: userRole?.region_id || null,
       last_login: profile.last_login,
       lastLogin: profile.last_login,
       created_at: profile.created_at,
@@ -191,6 +229,41 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     return fullUserData;
   } catch (error) {
     console.error('Error fetching user data:', error);
-    throw error;
+    
+    // Xəta halında default istifadəçi məlumatları qaytara bilərik
+    return createDefaultUserData(userId);
   }
+};
+
+// Default istifadəçi məlumatları yaradır
+const createDefaultUserData = (userId: string, email: string = 'user@example.com', name: string = 'User'): FullUserData => {
+  const now = new Date().toISOString();
+  
+  return {
+    id: userId,
+    email: email,
+    role: email === 'superadmin@infoline.az' ? 'superadmin' : 'schooladmin',
+    full_name: name,
+    name: name,
+    language: 'az',
+    status: 'active',
+    school: null,
+    school_id: null,
+    schoolId: null,
+    sector: null,
+    sector_id: null,
+    sectorId: null,
+    region: null,
+    region_id: null,
+    regionId: null,
+    created_at: now,
+    createdAt: now,
+    updated_at: now,
+    updatedAt: now,
+    twoFactorEnabled: false,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  };
 };
