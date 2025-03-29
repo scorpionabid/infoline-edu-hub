@@ -14,10 +14,12 @@ interface CreateRegionRequest {
   adminEmail?: string;
   adminName?: string;
   adminPassword?: string;
+  action?: string;
 }
 
 interface DeleteRegionRequest {
   regionId: string;
+  action?: string;
 }
 
 serve(async (req) => {
@@ -48,157 +50,82 @@ serve(async (req) => {
       },
     });
 
-    const { path, method } = req;
-    const url = new URL(req.url);
-    const action = url.pathname.split('/').pop();
+    const requestData = await req.json();
+    console.log('Request data:', requestData);
+    const action = requestData.action;
 
-    console.log(`Region operations function called with action: ${action}, method: ${method}`);
-
-    if (method === 'POST') {
-      const requestData = await req.json();
-      console.log('Request data:', requestData);
-
-      // Regionun yaradılması
-      if (action === 'create') {
-        const { name, description, status, adminEmail, adminName, adminPassword } = requestData as CreateRegionRequest;
+    if (action === 'create') {
+      const { name, description, status, adminEmail, adminName, adminPassword } = requestData as CreateRegionRequest;
+      
+      if (!name) {
+        return new Response(
+          JSON.stringify({ error: 'Region adı tələb olunur' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      // İlk öncə regionu yaradaq
+      const { data: regionData, error: regionError } = await supabaseAdmin
+        .from('regions')
+        .insert([
+          { 
+            name, 
+            description: description || null, 
+            status: status || 'active' 
+          }
+        ])
+        .select()
+        .single();
+      
+      if (regionError) {
+        console.error('Region yaradılması xətası:', regionError);
+        return new Response(
+          JSON.stringify({ error: 'Region yaradılması xətası', details: regionError }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      const regionId = regionData.id;
+      let adminId = null;
+      
+      // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
+      if (adminEmail && adminName) {
+        // İstifadəçinin təqdim etdiyi parol və ya default parol
+        const password = adminPassword || 'Password123';
         
-        if (!name) {
-          return new Response(
-            JSON.stringify({ error: 'Region adı tələb olunur' }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
+        console.log(`Creating admin with email: ${adminEmail}, name: ${adminName}, password: ${password.substring(0, 3)}*****`);
         
-        // İlk öncə regionu yaradaq
-        const { data: regionData, error: regionError } = await supabaseAdmin
-          .from('regions')
-          .insert([
-            { 
-              name, 
-              description: description || null, 
-              status: status || 'active' 
-            }
-          ])
-          .select()
-          .single();
-        
-        if (regionError) {
-          console.error('Region yaradılması xətası:', regionError);
-          return new Response(
-            JSON.stringify({ error: 'Region yaradılması xətası', details: regionError }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-        
-        const regionId = regionData.id;
-        let adminId = null;
-        
-        // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
-        if (adminEmail && adminName) {
-          // İstifadəçinin təqdim etdiyi parol və ya default parol
-          const password = adminPassword || 'Password123';
+        try {
+          // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
+          const cleanEmail = adminEmail.trim().toLowerCase();
           
-          console.log(`Creating admin with email: ${adminEmail}, name: ${adminName}, password: ${password.substring(0, 3)}*****`);
+          // Supabase ilə yeni istifadəçi yaradırıq
+          const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+            email: cleanEmail,
+            password: password,
+            email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
+            user_metadata: {
+              full_name: adminName,
+              role: 'regionadmin',
+              region_id: regionId
+            }
+          });
           
-          try {
-            // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
-            const cleanEmail = adminEmail.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-            
-            // Supabase ilə yeni istifadəçi yaradırıq
-            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-              email: cleanEmail,
-              password: password,
-              email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
-              user_metadata: {
-                full_name: adminName,
-                role: 'regionadmin',
-                region_id: regionId
-              }
-            });
-            
-            if (userError) {
-              console.error('Admin hesabı yaradılması xətası:', userError);
-              // Regionu yaratdıq, amma admin yarada bilmədik
-              return new Response(
-                JSON.stringify({ 
-                  success: true, 
-                  data: regionData, 
-                  warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
-                  details: userError 
-                }),
-                { 
-                  status: 201, 
-                  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-                }
-              );
-            }
-            
-            adminId = userData.user.id;
-            
-            // Profilin yaradılmasını gözləyək - trigger yaradır, amma əmin olaq
-            // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Profili yoxlayaq və ya yaradaq
-            const { data: profileData, error: profileError } = await supabaseAdmin
-              .from('profiles')
-              .select('*')
-              .eq('id', adminId)
-              .single();
-              
-            if (profileError || !profileData) {
-              console.log('Profil avtomatik yaradılmayıb, manual yaradaq');
-              
-              // Profil yaratmağa cəhd edirik
-              const { error: createProfileError } = await supabaseAdmin
-                .from('profiles')
-                .insert([
-                  {
-                    id: adminId,
-                    full_name: adminName,
-                    language: 'az',
-                    status: 'active'
-                  }
-                ]);
-                
-              if (createProfileError) {
-                console.error('Profil yaradılması xətası:', createProfileError);
-              }
-            } else {
-              console.log('Profil tapıldı:', profileData);
-            }
-            
-            // İstifadəçi rolunu əlavə edirik
-            const { error: roleError } = await supabaseAdmin
-              .from('user_roles')
-              .insert([
-                {
-                  user_id: adminId,
-                  role: 'regionadmin',
-                  region_id: regionId
-                }
-              ]);
-            
-            if (roleError) {
-              console.error('Rol əlavə edilməsi xətası:', roleError);
-            }
-            
-            console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
-          } catch (err) {
-            console.error('Admin yaradılması prosesində xəta:', err);
+          if (userError) {
+            console.error('Admin hesabı yaradılması xətası:', userError);
             // Regionu yaratdıq, amma admin yarada bilmədik
             return new Response(
               JSON.stringify({ 
                 success: true, 
                 data: regionData, 
-                warning: 'Region yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
-                details: err
+                warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
+                details: userError 
               }),
               { 
                 status: 201, 
@@ -206,86 +133,152 @@ serve(async (req) => {
               }
             );
           }
-        }
-        
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            data: { 
-              region: regionData, 
-              admin: adminId ? { id: adminId, email: adminEmail } : null
-            } 
-          }),
-          { 
-            status: 201, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      } 
-      // Regionun silinməsi
-      else if (action === 'delete') {
-        const { regionId } = requestData as DeleteRegionRequest;
-        
-        if (!regionId) {
-          return new Response(
-            JSON.stringify({ error: 'Region ID tələb olunur' }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-        
-        // Regionla bağlı adminləri tapaq
-        const { data: roleData } = await supabaseAdmin
-          .from('user_roles')
-          .select('user_id')
-          .eq('region_id', regionId)
-          .eq('role', 'regionadmin');
-        
-        // Region ilə əlaqəli digər məlumatları silirik
-        // Avtomatik cascade delete işləyəcək, əgər foreign key məhdudiyyətləri varsa
-        const { error: deleteError } = await supabaseAdmin
-          .from('regions')
-          .delete()
-          .eq('id', regionId);
-        
-        if (deleteError) {
-          console.error('Region silmə xətası:', deleteError);
-          return new Response(
-            JSON.stringify({ error: 'Region silinməsi xətası', details: deleteError }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-        
-        // Admin hesablarını deaktiv edək (onları silmək əvəzinə)
-        if (roleData && roleData.length > 0) {
-          for (const role of roleData) {
-            try {
-              // İstifadəçini deaktiv edirik, amma silmirik
-              await supabaseAdmin
-                .from('profiles')
-                .update({ status: 'inactive' })
-                .eq('id', role.user_id);
+          
+          adminId = userData.user.id;
+          
+          // Profilin yaradılmasını gözləyək - trigger yaradır, amma əmin olaq
+          // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Profili yoxlayaq və ya yaradaq
+          const { data: profileData, error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('id', adminId)
+            .single();
+            
+          if (profileError || !profileData) {
+            console.log('Profil avtomatik yaradılmayıb, manual yaradaq');
+            
+            // Profil yaratmağa cəhd edirik
+            const { error: createProfileError } = await supabaseAdmin
+              .from('profiles')
+              .insert([
+                {
+                  id: adminId,
+                  full_name: adminName,
+                  language: 'az',
+                  status: 'active'
+                }
+              ]);
               
-              console.log(`Admin with id ${role.user_id} deactivated`);
-            } catch (err) {
-              console.error(`Admin deactivation error for ${role.user_id}:`, err);
+            if (createProfileError) {
+              console.error('Profil yaradılması xətası:', createProfileError);
             }
+          } else {
+            console.log('Profil tapıldı:', profileData);
           }
+          
+          // İstifadəçi rolunu əlavə edirik
+          const { error: roleError } = await supabaseAdmin
+            .from('user_roles')
+            .insert([
+              {
+                user_id: adminId,
+                role: 'regionadmin',
+                region_id: regionId
+              }
+            ]);
+          
+          if (roleError) {
+            console.error('Rol əlavə edilməsi xətası:', roleError);
+          }
+          
+          console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
+        } catch (err) {
+          console.error('Admin yaradılması prosesində xəta:', err);
+          // Regionu yaratdıq, amma admin yarada bilmədik
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: regionData, 
+              warning: 'Region yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
+              details: err
+            }),
+            { 
+              status: 201, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
         }
-        
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          data: { 
+            region: regionData, 
+            admin: adminId ? { id: adminId, email: adminEmail } : null
+          } 
+        }),
+        { 
+          status: 201, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    } 
+    else if (action === 'delete') {
+      const { regionId } = requestData as DeleteRegionRequest;
+      
+      if (!regionId) {
         return new Response(
-          JSON.stringify({ success: true, message: 'Region uğurla silindi' }),
+          JSON.stringify({ error: 'Region ID tələb olunur' }),
           { 
-            status: 200, 
+            status: 400, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
       }
+      
+      // Regionla bağlı adminləri tapaq
+      const { data: roleData } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id')
+        .eq('region_id', regionId)
+        .eq('role', 'regionadmin');
+      
+      // Region ilə əlaqəli digər məlumatları silirik
+      // Avtomatik cascade delete işləyəcək, əgər foreign key məhdudiyyətləri varsa
+      const { error: deleteError } = await supabaseAdmin
+        .from('regions')
+        .delete()
+        .eq('id', regionId);
+      
+      if (deleteError) {
+        console.error('Region silmə xətası:', deleteError);
+        return new Response(
+          JSON.stringify({ error: 'Region silinməsi xətası', details: deleteError }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      // Admin hesablarını deaktiv edək (onları silmək əvəzinə)
+      if (roleData && roleData.length > 0) {
+        for (const role of roleData) {
+          try {
+            // İstifadəçini deaktiv edirik, amma silmirik
+            await supabaseAdmin
+              .from('profiles')
+              .update({ status: 'inactive' })
+              .eq('id', role.user_id);
+            
+            console.log(`Admin with id ${role.user_id} deactivated`);
+          } catch (err) {
+            console.error(`Admin deactivation error for ${role.user_id}:`, err);
+          }
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, message: 'Region uğurla silindi' }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
     
     // Digər sorğu növlərinə cavab
