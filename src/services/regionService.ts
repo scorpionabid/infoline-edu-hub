@@ -28,7 +28,14 @@ export const fetchRegions = async (): Promise<Region[]> => {
     }
     
     console.log(`${data?.length || 0} region uğurla yükləndi`);
-    return data as Region[];
+    
+    // created_at sahəsinin undefined olmamasını təmin edirik
+    const formattedData = data.map(region => ({
+      ...region,
+      created_at: region.created_at || new Date().toISOString()
+    }));
+    
+    return formattedData as Region[];
   } catch (error) {
     console.error('Regionları yükləmə xətası:', error);
     throw error;
@@ -77,6 +84,11 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
         throw new Error(result?.error || 'Region yaradılması xətası');
       }
       
+      // Created_at sahəsinin undefined olmamasını təmin edirik
+      if (result.data.region && !result.data.region.created_at) {
+        result.data.region.created_at = new Date().toISOString();
+      }
+      
       return result.data.region;
     } else {
       // Sadə region yaratma - admin olmadan
@@ -93,6 +105,11 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
         .single();
 
       if (error) throw error;
+      
+      // Created_at sahəsinin undefined olmamasını təmin edirik
+      if (data && !data.created_at) {
+        data.created_at = new Date().toISOString();
+      }
       
       return data as Region;
     }
@@ -114,6 +131,11 @@ export const updateRegion = async (id: string, updates: Partial<Region>): Promis
 
     if (error) throw error;
     
+    // Created_at sahəsinin undefined olmamasını təmin edirik
+    if (data && !data.created_at) {
+      data.created_at = new Date().toISOString();
+    }
+    
     return data as Region;
   } catch (error) {
     console.error('Region yeniləmə xətası:', error);
@@ -124,7 +146,6 @@ export const updateRegion = async (id: string, updates: Partial<Region>): Promis
 // Regionu silmək
 export const deleteRegion = async (regionId: string): Promise<any> => {
   try {
-    // Edge function əvəzinə birbaşa verilənlər bazasında silmə əməliyyatı
     // Əvvəlcə regionla bağlı məktəb və sektorları yoxlayaq
     const { count: sectorsCount, error: sectorsError } = await supabase
       .from('sectors')

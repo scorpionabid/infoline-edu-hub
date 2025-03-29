@@ -1,17 +1,9 @@
 
 import { create } from 'zustand';
 import { toast } from 'sonner';
-import { Region } from '@/types/region';
+import { Region, RegionFormData, EnhancedRegion } from '@/types/region';
 import { addRegion, deleteRegion, fetchRegions, getRegionStats } from '@/services/regionService';
 import { useLanguage } from '@/context/LanguageContext';
-import { RegionFormData } from '@/types/region';
-
-export interface EnhancedRegion extends Region {
-  sectorCount: number;
-  schoolCount: number;
-  adminCount: number;
-  completionRate: number;
-}
 
 interface RegionsState {
   regions: EnhancedRegion[];
