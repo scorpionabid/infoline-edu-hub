@@ -1,9 +1,13 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Region, RegionFormData, EnhancedRegion } from '@/types/region';
 import { addRegion, deleteRegion, fetchRegions, getRegionStats } from '@/services/regionService';
-import { useLanguage } from '@/context/LanguageContext';
+
+// Tərcümə funksiyası tipini təyin edirik
+type TranslateFunction = (key: string) => string;
+
+// Boş tərcümə funksiyası - fallback üçün
+const emptyTranslate = (key: string) => key;
 
 interface RegionsState {
   regions: EnhancedRegion[];
@@ -29,9 +33,9 @@ interface RegionsState {
   handlePageChange: (page: number) => void;
 
   // CRUD əməliyyatları
-  fetchRegions: () => Promise<void>;
-  handleAddRegion: (formData: RegionFormData) => Promise<boolean>;
-  handleDeleteRegion: (regionId: string) => Promise<boolean>;
+  fetchRegions: (translateFunction?: TranslateFunction) => Promise<void>;
+  handleAddRegion: (formData: RegionFormData, translateFunction?: TranslateFunction) => Promise<boolean>;
+  handleDeleteRegion: (regionId: string, translateFunction?: TranslateFunction) => Promise<boolean>;
   setIsOperationComplete: (value: boolean) => void;
 }
 
@@ -93,8 +97,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   },
   
   // CRUD əməliyyatları
-  fetchRegions: async () => {
-    const { t } = useLanguage();
+  fetchRegions: async (translateFunction = emptyTranslate) => {
     set({ loading: true, error: null });
     
     try {
@@ -144,15 +147,13 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       console.error('Regionlar yüklənərkən xəta:', err);
       set({ error: err, loading: false });
       
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadRegions')
+      toast.error(translateFunction('errorOccurred'), {
+        description: translateFunction('couldNotLoadRegions')
       });
     }
   },
 
-  handleAddRegion: async (formData: RegionFormData) => {
-    const { t } = useLanguage();
-    
+  handleAddRegion: async (formData: RegionFormData, translateFunction = emptyTranslate) => {
     try {
       const regionData = await addRegion({
         name: formData.name,
@@ -165,25 +166,23 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       
       set({ isOperationComplete: true });
       
-      toast.success(t('regionAdded'), {
-        description: t('regionAddedDesc')
+      toast.success(translateFunction('regionAdded'), {
+        description: translateFunction('regionAddedDesc')
       });
       
       return true;
     } catch (err: any) {
       console.error('Region yaradılması xətası:', err);
       
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotAddRegion')
+      toast.error(translateFunction('errorOccurred'), {
+        description: translateFunction('couldNotAddRegion')
       });
       
       return false;
     }
   },
   
-  handleDeleteRegion: async (regionId: string) => {
-    const { t } = useLanguage();
-    
+  handleDeleteRegion: async (regionId: string, translateFunction = emptyTranslate) => {
     try {
       // Regionu sil
       const result = await deleteRegion(regionId);
@@ -191,8 +190,8 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       if (result.success) {
         set({ isOperationComplete: true });
         
-        toast.success(t('regionDeleted'), {
-          description: t('regionDeletedDesc')
+        toast.success(translateFunction('regionDeleted'), {
+          description: translateFunction('regionDeletedDesc')
         });
         
         return true;
@@ -202,8 +201,8 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
     } catch (err: any) {
       console.error('Region silinməsi xətası:', err);
       
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteRegion')
+      toast.error(translateFunction('errorOccurred'), {
+        description: translateFunction('couldNotDeleteRegion')
       });
       
       return false;

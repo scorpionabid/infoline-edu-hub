@@ -15,10 +15,10 @@ export const fetchRegions = async (): Promise<Region[]> => {
   try {
     console.log('Regionlar sorğusu göndərilir...');
     
-    // Sadə sorğu
+    // Daha müfəssəl sorğu
     const { data, error } = await supabase
       .from('regions')
-      .select('id, name, description, created_at, updated_at, status')
+      .select('*')  // Bütün sahələri seçirik
       .order('name');
 
     if (error) {
@@ -26,11 +26,20 @@ export const fetchRegions = async (): Promise<Region[]> => {
       throw error;
     }
     
-    console.log(`${data?.length || 0} region uğurla yükləndi`);
+    if (!data) {
+      console.warn('Regions sorğusu boş data qaytardı');
+      return [];
+    }
     
-    // created_at və updated_at sahələrinin undefined olmamasını təmin edirik
+    console.log(`${data.length} region uğurla yükləndi`);
+    
+    // Məlumatları formatlaşdırırıq və undefined olmamasını təmin edirik
     const formattedData = data.map(region => ({
       ...region,
+      id: region.id || '',
+      name: region.name || '',
+      description: region.description || '',
+      status: region.status || 'inactive',
       created_at: region.created_at || new Date().toISOString(),
       updated_at: region.updated_at || new Date().toISOString()
     }));
@@ -38,7 +47,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
     return formattedData as Region[];
   } catch (error) {
     console.error('Regionları yükləmə xətası:', error);
-    throw error;
+    return []; // Xəta zamanı boş array qaytarırıq
   }
 };
 
@@ -95,7 +104,9 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
       const region = {
         name: regionData.name,
         description: regionData.description,
-        status: regionData.status || 'active'
+        status: regionData.status || 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       const { data, error } = await supabase
@@ -106,8 +117,13 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
 
       if (error) throw error;
       
+      // Null check əlavə edirik
+      if (!data) {
+        throw new Error('Region yaradıldı, lakin qaytarılan data undefined idi');
+      }
+      
       // Created_at sahəsinin undefined olmamasını təmin edirik
-      if (data && !data.created_at) {
+      if (!data.created_at) {
         data.created_at = new Date().toISOString();
       }
       
@@ -119,34 +135,10 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
   }
 };
 
-// Regionu yeniləmək üçün funksiya
-export const updateRegion = async (id: string, updates: Partial<Region>): Promise<Region> => {
-  try {
-    const { data, error } = await supabase
-      .from('regions')
-      .update(updates)
-      .eq('id', id)
-      .select('*')
-      .single();
-
-    if (error) throw error;
-    
-    // Created_at sahəsinin undefined olmamasını təmin edirik
-    if (data && !data.created_at) {
-      data.created_at = new Date().toISOString();
-    }
-    
-    return data as Region;
-  } catch (error) {
-    console.error('Region yeniləmə xətası:', error);
-    throw error;
-  }
-};
-
 // Regionu silmək
 export const deleteRegion = async (regionId: string): Promise<any> => {
   try {
-    // Əvvəlcə regionla bağlı məktəb və sektorları yoxlayaq
+    // Regionla bağlı məktəb və sektorları yoxlayaq
     const { count: sectorsCount, error: sectorsError } = await supabase
       .from('sectors')
       .select('*', { count: 'exact', head: true })
@@ -178,7 +170,14 @@ export const getRegionStats = async (regionId: string): Promise<any> => {
       .select('*', { count: 'exact', head: true })
       .eq('region_id', regionId);
       
-    if (sectorsError) throw sectorsError;
+    if (sectorsError) {
+      console.error('Sektor statistikaları əldə edilərkən xəta:', sectorsError);
+      return {
+        sectorCount: 0,
+        schoolCount: 0,
+        adminCount: 0
+      };
+    }
     
     // Region ilə bağlı məktəblərin sayı
     const { count: schoolCount, error: schoolsError } = await supabase
@@ -186,7 +185,14 @@ export const getRegionStats = async (regionId: string): Promise<any> => {
       .select('*', { count: 'exact', head: true })
       .eq('region_id', regionId);
       
-    if (schoolsError) throw schoolsError;
+    if (schoolsError) {
+      console.error('Məktəb statistikaları əldə edilərkən xəta:', schoolsError);
+      return {
+        sectorCount: sectorCount || 0,
+        schoolCount: 0,
+        adminCount: 0
+      };
+    }
     
     // Region ilə bağlı adminlərin sayı
     const { count: adminCount, error: adminsError } = await supabase
@@ -195,7 +201,14 @@ export const getRegionStats = async (regionId: string): Promise<any> => {
       .eq('region_id', regionId)
       .eq('role', 'regionadmin');
       
-    if (adminsError) throw adminsError;
+    if (adminsError) {
+      console.error('Admin statistikaları əldə edilərkən xəta:', adminsError);
+      return {
+        sectorCount: sectorCount || 0,
+        schoolCount: schoolCount || 0,
+        adminCount: 0
+      };
+    }
     
     return {
       sectorCount: sectorCount || 0,
