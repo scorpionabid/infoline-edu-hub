@@ -94,37 +94,32 @@ export const useRegionsStore = () => {
       });
       setCompletionRates(tempCompletionRates);
       
-      // Admin məlumatlarını əldə etmək
+      // Admin məlumatlarını əldə etmək - xəta qaynağı olan hissəni düzəldirik
+      // Region adminlərini birbaşa profiles cədvəlində axtarırıq
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name');
+      
+      if (profilesError) throw profilesError;
+      
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          region_id,
-          auth_users:user_id (email)
-        `)
-        .eq('role', 'regionadmin');
-        
+        .select('user_id, region_id, role');
+      
       if (rolesError) throw rolesError;
       
       // Admin məlumatlarını regionlara görə qruplaşdırırıq
       const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
+      
+      // Rolları profillərlə birləşdiririk
       userRoles?.forEach(role => {
-        if (role.region_id && role.user_id) {
-          // TypeScript null check - auth_users null olub-olmadığını yoxlayırıq
-          let adminEmail = `${role.region_id}.admin@infoline.edu`; // Default email
+        if (role.region_id && role.role === 'regionadmin') {
+          const profile = profiles?.find(p => p.id === role.user_id);
           
-          // Əgər auth_users mövcuddursa və email property-si varsa, onu istifadə edirik
-          if (role.auth_users && typeof role.auth_users === 'object') {
-            // Burada 'as any' istifadə etməli olacağıq çünki TypeScript tipləri tam müəyyən edilməmiş ola bilər
-            const authUsers = role.auth_users as any;
-            if (authUsers.email) {
-              adminEmail = authUsers.email;
-            }
-          }
-          
+          // Region üçün admin birləşdiririk
           tempRegionAdmins[role.region_id] = {
             id: role.user_id,
-            email: adminEmail
+            email: `${profile?.full_name || 'regionadmin'}@infoline.edu`
           };
         }
       });
@@ -146,7 +141,7 @@ export const useRegionsStore = () => {
     } catch (error) {
       console.error("Region statistikalarını əldə edərkən xəta baş verdi:", error);
       toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadRegionStatistics')
+        description: 'Bölgə məlumatları yüklənərkən xəta baş verdi'
       });
     }
   }, [regions, sectors, t]);

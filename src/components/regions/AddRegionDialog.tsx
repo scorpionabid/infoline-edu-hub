@@ -80,7 +80,7 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
   };
   
   const formIsValid = formData.name.trim() !== '' && 
-                     (!createAdmin || (formData.adminEmail && formData.adminEmail.includes('@')));
+                     (!createAdmin || (formData.adminEmail && formData.adminEmail.includes('@') && formData.adminPassword));
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -177,7 +177,7 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
                   <Input 
                     id="adminPassword" 
                     type="password"
-                    value={formData.adminPassword || 'Password123'} 
+                    value={formData.adminPassword || ''} 
                     onChange={(e) => handleChange('adminPassword', e.target.value)}
                     className="col-span-3"
                     placeholder={t('passwordPlaceholder')}

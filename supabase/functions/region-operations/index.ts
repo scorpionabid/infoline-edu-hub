@@ -104,29 +104,96 @@ serve(async (req) => {
           // İstifadəçinin təqdim etdiyi parol və ya default parol
           const password = adminPassword || 'Password123';
           
-          console.log(`Creating admin with email: ${adminEmail}, password: ${password.substring(0, 3)}*****`);
+          console.log(`Creating admin with email: ${adminEmail}, name: ${adminName}, password: ${password.substring(0, 3)}*****`);
           
-          // Supabase ilə yeni istifadəçi yaradırıq
-          const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-            email: adminEmail,
-            password: password,
-            email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
-            user_metadata: {
-              full_name: adminName,
-              role: 'regionadmin',
-              region_id: regionId
+          try {
+            // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
+            const cleanEmail = adminEmail.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+            
+            // Supabase ilə yeni istifadəçi yaradırıq
+            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+              email: cleanEmail,
+              password: password,
+              email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
+              user_metadata: {
+                full_name: adminName,
+                role: 'regionadmin',
+                region_id: regionId
+              }
+            });
+            
+            if (userError) {
+              console.error('Admin hesabı yaradılması xətası:', userError);
+              // Regionu yaratdıq, amma admin yarada bilmədik
+              return new Response(
+                JSON.stringify({ 
+                  success: true, 
+                  data: regionData, 
+                  warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
+                  details: userError 
+                }),
+                { 
+                  status: 201, 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                }
+              );
             }
-          });
-          
-          if (userError) {
-            console.error('Admin hesabı yaradılması xətası:', userError);
+            
+            adminId = userData.user.id;
+            
+            // Profil yaratma - zəruri deyil, avtomatik trigger tərəfindən yaradılacaq
+            // Lakin əmin olmaq üçün yoxlayaq və ya yeniliyək
+            const { data: profileData, error: profileError } = await supabaseAdmin
+              .from('profiles')
+              .select('*')
+              .eq('id', adminId)
+              .single();
+              
+            if (profileError || !profileData) {
+              console.log('Profil avtomatik yaradılmayıb, manual yaradaq');
+              
+              // Profil yaratmağa cəhd edirik
+              const { error: createProfileError } = await supabaseAdmin
+                .from('profiles')
+                .insert([
+                  {
+                    id: adminId,
+                    full_name: adminName,
+                    language: 'az',
+                    status: 'active'
+                  }
+                ]);
+                
+              if (createProfileError) {
+                console.error('Profil yaradılması xətası:', createProfileError);
+              }
+            }
+            
+            // İstifadəçi rolunu əlavə edirik
+            const { error: roleError } = await supabaseAdmin
+              .from('user_roles')
+              .insert([
+                {
+                  user_id: adminId,
+                  role: 'regionadmin',
+                  region_id: regionId
+                }
+              ]);
+            
+            if (roleError) {
+              console.error('Rol əlavə edilməsi xətası:', roleError);
+            }
+            
+            console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
+          } catch (err) {
+            console.error('Admin yaradılması prosesində xəta:', err);
             // Regionu yaratdıq, amma admin yarada bilmədik
             return new Response(
               JSON.stringify({ 
                 success: true, 
                 data: regionData, 
-                warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
-                details: userError 
+                warning: 'Region yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
+                details: err
               }),
               { 
                 status: 201, 
@@ -134,25 +201,6 @@ serve(async (req) => {
               }
             );
           }
-          
-          adminId = userData.user.id;
-          
-          // İstifadəçi rolunu əlavə edirik
-          const { error: roleError } = await supabaseAdmin
-            .from('user_roles')
-            .insert([
-              {
-                user_id: adminId,
-                role: 'regionadmin',
-                region_id: regionId
-              }
-            ]);
-          
-          if (roleError) {
-            console.error('Rol əlavə edilməsi xətası:', roleError);
-          }
-          
-          console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
         }
         
         return new Response(
