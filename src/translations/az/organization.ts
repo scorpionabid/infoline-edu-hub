@@ -59,7 +59,15 @@ export default {
   adminNamePlaceholder: 'Admin adını daxil edin',
   adminEmail: 'Admin email',
   adminEmailPlaceholder: 'admin@infoline.edu',
+  adminPassword: 'Admin şifrəsi',
+  passwordMinLength: 'Şifrə ən az 6 simvoldan ibarət olmalıdır',
+  adminInfo: 'Admin məlumatları',
+  regionInfo: 'Region məlumatları',
   adminPasswordInfo: 'Admin hesabı "Password123" standart şifrəsi ilə yaradılır. İlk girişdən sonra şifrənin dəyişdirilməsi tövsiyə olunur.',
   adminCreated: 'Admin hesabı yaradıldı',
-  adminCreatedDesc: 'Region üçün admin hesabı uğurla yaradıldı'
+  adminCreatedDesc: 'Region üçün admin hesabı uğurla yaradıldı',
+  backToDashboard: 'Dashboarda qayıt',
+  back: 'Geri',
+  add: 'Əlavə et',
+  adding: 'Əlavə edilir...'
 };

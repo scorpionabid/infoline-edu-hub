@@ -20,16 +20,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useRegionsStore } from '@/hooks/useRegionsStore';
 import { useLanguage } from '@/context/LanguageContext';
-import { Eye, Trash2, Pencil, RefreshCw, PlusCircle, Search } from 'lucide-react';
+import { Eye, Trash2, Pencil, RefreshCw, PlusCircle, Search, Home } from 'lucide-react';
 import AddRegionDialog from '@/components/regions/AddRegionDialog';
 import DeleteRegionDialog from '@/components/regions/DeleteRegionDialog';
 import { EnhancedRegion } from '@/types/region';
+import { Link } from 'react-router-dom';
 
 // RegionHeader komponenti
 const RegionHeader = ({ t, onAddRegion }) => (
   <div className="flex justify-between items-center">
     <div>
-      <h1 className="text-3xl font-bold tracking-tight">{t('regions')}</h1>
+      <div className="flex items-center gap-2">
+        <Link to="/dashboard">
+          <Button variant="outline" size="icon" title={t('backToDashboard')}>
+            <Home className="h-4 w-4" />
+          </Button>
+        </Link>
+        <h1 className="text-3xl font-bold tracking-tight">{t('regions')}</h1>
+      </div>
       <p className="text-muted-foreground">{t('regionsDescription')}</p>
     </div>
     <Button onClick={onAddRegion}>
