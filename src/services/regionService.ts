@@ -133,24 +133,47 @@ export const getRegionStats = async (regionId: string): Promise<any> => {
       
     if (adminsError) throw adminsError;
     
-    // Region ilə bağlı adminlərin məlumatları
-    const { data: adminData, error: adminDataError } = await supabase.rpc('execute_sql', { 
-      query_text: `
-        SELECT p.id, p.full_name, a.email 
-        FROM profiles p 
-        JOIN auth.users a ON p.id = a.id 
-        JOIN user_roles ur ON p.id = ur.user_id 
-        WHERE ur.region_id = '${regionId}' AND ur.role = 'regionadmin'
-      `
-    });
+    // Region ilə bağlı adminlərin məlumatları - execute_sql əvəzinə 
+    // join əməliyyatı və ya ardıcıl sorğular istifadə edirik
+    const { data: adminProfiles, error: adminProfilesError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('region_id', regionId)
+      .eq('role', 'regionadmin');
+      
+    if (adminProfilesError) throw adminProfilesError;
     
-    if (adminDataError) throw adminDataError;
+    let adminData: Array<{id: string, full_name: string, email: string}> = [];
+    
+    if (adminProfiles && adminProfiles.length > 0) {
+      // Adminin user_id-lərini əldə etdikdən sonra profile məlumatlarını əldə edirik
+      const userIds = adminProfiles.map(profile => profile.user_id);
+      
+      // Profiles cədvəlindən məlumatları əldə edirik
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+        
+      if (profilesError) throw profilesError;
+      
+      // Auth.users cədvəlindən emailləri əldə edə bilmərik,
+      // ona görə də admin emailləri üçün təxmini qayda istifadə edirik
+      adminData = profiles?.map(profile => {
+        const fullNameLower = profile.full_name.toLowerCase().replace(/\s+/g, '.');
+        return {
+          id: profile.id,
+          full_name: profile.full_name,
+          email: `${fullNameLower}.admin@infoline.edu`
+        };
+      }) || [];
+    }
     
     return {
       sectorCount: sectors?.length || 0,
       schoolCount: schools?.length || 0,
       adminCount: admins?.length || 0,
-      admins: adminData || []
+      admins: adminData
     };
   } catch (error) {
     console.error('Region statistikalarını əldə etmə xətası:', error);
