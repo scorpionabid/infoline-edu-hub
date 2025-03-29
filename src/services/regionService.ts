@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Region } from '@/types/supabase';
+import { Region } from '@/types/region';
 
 interface CreateRegionParams {
   name: string;
@@ -11,12 +11,12 @@ interface CreateRegionParams {
   adminPassword?: string;
 }
 
-// Regionları yükləmək üçün funksiya - sorğunu optimizasiya edirik
+// Regionları yükləmək üçün funksiya
 export const fetchRegions = async (): Promise<Region[]> => {
   try {
     console.log('Regionlar sorğusu göndərilir...');
     
-    // Sadə sorğu - üçüncü tərəf parametrləri əlavə etmirik
+    // Sadə sorğu
     const { data, error } = await supabase
       .from('regions')
       .select('id, name, description, created_at, updated_at, status')
@@ -67,11 +67,11 @@ export const createRegion = async (regionData: CreateRegionParams): Promise<any>
 };
 
 // Regionu birbaşa verilənlər bazasına əlavə etmək (adi halda)
-export const addRegion = async (region: Omit<Region, 'id' | 'created_at' | 'updated_at'>): Promise<Region> => {
+export const addRegion = async (regionData: CreateRegionParams): Promise<Region> => {
   try {
-    if (region.adminEmail && region.adminName) {
+    if (regionData.adminEmail && regionData.adminName) {
       // Əgər admin məlumatları varsa, edge function istifadə edirik
-      const result = await createRegion(region as CreateRegionParams);
+      const result = await createRegion(regionData);
       
       if (!result || !result.success) {
         throw new Error(result?.error || 'Region yaradılması xətası');
@@ -80,6 +80,12 @@ export const addRegion = async (region: Omit<Region, 'id' | 'created_at' | 'upda
       return result.data.region;
     } else {
       // Sadə region yaratma - admin olmadan
+      const region = {
+        name: regionData.name,
+        description: regionData.description,
+        status: regionData.status || 'active'
+      };
+      
       const { data, error } = await supabase
         .from('regions')
         .insert([region])

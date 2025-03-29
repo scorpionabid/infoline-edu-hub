@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { toast } from 'sonner';
-import { Region } from '@/types/supabase';
+import { Region } from '@/types/region';
 import { addRegion, deleteRegion, fetchRegions, getRegionStats } from '@/services/regionService';
 import { useLanguage } from '@/context/LanguageContext';
 import { RegionFormData } from '@/types/region';
@@ -10,7 +10,6 @@ export interface EnhancedRegion extends Region {
   sectorCount: number;
   schoolCount: number;
   adminCount: number;
-  adminEmail?: string;
   completionRate: number;
 }
 

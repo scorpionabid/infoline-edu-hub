@@ -1,77 +1,77 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RegionFormData } from '@/hooks/useRegionsStore';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
+import { RegionFormData } from '@/types/region';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface AddRegionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: RegionFormData) => Promise<boolean>;
+  onSubmit: (formData: RegionFormData) => Promise<boolean>;
+  includeAdmin?: boolean;
 }
 
-const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, onSubmit }) => {
+const AddRegionDialog: React.FC<AddRegionDialogProps> = ({
+  open,
+  onOpenChange,
+  onSubmit,
+  includeAdmin = true,
+}) => {
   const { t } = useLanguage();
-  const [loading, setLoading] = useState(false);
-  const [currentTab, setCurrentTab] = useState('basic');
-  const [createAdmin, setCreateAdmin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  
   const [formData, setFormData] = useState<RegionFormData>({
     name: '',
     description: '',
     status: 'active',
     adminName: '',
     adminEmail: '',
-    adminPassword: 'Password123' // Default password
+    adminPassword: '',
   });
-  
-  const handleChange = (field: keyof RegionFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Region adı dəyişdikdə və admin yaratmaq aktivdirsə, avtomatik admin email yaratmaq
-    if (field === 'name' && createAdmin) {
-      const regionNameLower = value.toLowerCase().replace(/\s+/g, '.');
-      const adminEmail = `${regionNameLower}.admin@infoline.edu`;
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: value,
-        adminEmail,
-        adminName: prev.adminName || `${value} Admin` 
+  const [loading, setLoading] = useState(false);
+  const [currentTab, setCurrentTab] = useState('region');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Avtomatik olaraq email ünvanı yaradaq
+    if (name === 'name' && includeAdmin) {
+      const suggestedEmail = value
+        ? `${value.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`
+        : '';
+      
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        adminEmail: suggestedEmail,
+        adminName: value ? `${value} Admin` : '',
       }));
     }
   };
-  
+
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     
     try {
-      // Əgər admin yaratmaq seçilməyibsə, admin məlumatlarını təmizləyək
-      const submitData = createAdmin ? formData : {
-        name: formData.name,
-        description: formData.description,
-        status: formData.status
-      };
-      
-      const success = await onSubmit(submitData);
+      const success = await onSubmit(formData);
       
       if (success) {
-        setFormData({
-          name: '',
-          description: '',
-          status: 'active',
-          adminName: '',
-          adminEmail: '',
-          adminPassword: 'Password123'
-        });
+        resetForm();
         onOpenChange(false);
       }
     } catch (error) {
@@ -80,143 +80,193 @@ const AddRegionDialog: React.FC<AddRegionDialogProps> = ({ open, onOpenChange, o
       setLoading(false);
     }
   };
-  
-  const formIsValid = formData.name.trim() !== '' && 
-                     (!createAdmin || (formData.adminEmail && formData.adminEmail.includes('@') && formData.adminPassword));
-  
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      status: 'active',
+      adminName: '',
+      adminEmail: '',
+      adminPassword: '',
+    });
+    setCurrentTab('region');
   };
-  
+
+  const isRegionValid = formData.name.trim() !== '';
+  const isAdminValid = !includeAdmin || (
+    formData.adminName?.trim() !== '' &&
+    formData.adminEmail?.trim() !== '' &&
+    formData.adminPassword?.trim() !== '' &&
+    formData.adminPassword!.length >= 6
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) resetForm();
+      onOpenChange(isOpen);
+    }}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('addNewRegion')}</DialogTitle>
+          <DialogTitle>{t('addRegion')}</DialogTitle>
+          <DialogDescription>{t('addRegionDescription')}</DialogDescription>
         </DialogHeader>
         
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic">{t('basicInfo')}</TabsTrigger>
-            <TabsTrigger value="admin">{t('adminSettings')}</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="basic" className="space-y-4 mt-4">
-            <div className="grid gap-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">{t('name')} *</Label>
-                <Input 
-                  id="name" 
-                  value={formData.name} 
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  className="col-span-3"
-                  placeholder={t('regionNamePlaceholder')}
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">{t('description')}</Label>
-                <Textarea 
-                  id="description" 
-                  value={formData.description || ''} 
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  className="col-span-3"
-                  placeholder={t('regionDescPlaceholder')}
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">{t('status')}</Label>
-                <Select 
-                  value={formData.status || 'active'} 
-                  onValueChange={(value) => handleChange('status', value)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder={t('selectStatus')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">{t('active')}</SelectItem>
-                    <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="admin" className="space-y-4 mt-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <Switch 
-                id="create-admin" 
-                checked={createAdmin}
-                onCheckedChange={setCreateAdmin}
-              />
-              <Label htmlFor="create-admin">{t('createRegionAdmin')}</Label>
-            </div>
-            
-            {createAdmin && (
-              <div className="grid gap-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="adminName" className="text-right">{t('adminName')}</Label>
-                  <Input 
-                    id="adminName" 
-                    value={formData.adminName || ''} 
-                    onChange={(e) => handleChange('adminName', e.target.value)}
-                    className="col-span-3"
-                    placeholder={t('adminNamePlaceholder')}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="adminEmail" className="text-right">{t('adminEmail')} *</Label>
-                  <Input 
-                    id="adminEmail" 
-                    type="email"
-                    value={formData.adminEmail || ''} 
-                    onChange={(e) => handleChange('adminEmail', e.target.value)}
-                    className="col-span-3"
-                    placeholder={t('adminEmailPlaceholder')}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="adminPassword" className="text-right">{t('password')} *</Label>
-                  <div className="col-span-3 relative">
-                    <Input 
-                      id="adminPassword" 
-                      type={showPassword ? "text" : "password"}
-                      value={formData.adminPassword || ''} 
-                      onChange={(e) => handleChange('adminPassword', e.target.value)}
-                      className="pr-10"
-                      placeholder={t('passwordPlaceholder')}
-                    />
-                    <button
-                      type="button"
-                      onClick={togglePasswordVisibility}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
+        <div className="flex space-x-2 mb-4">
           <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
+            variant={currentTab === 'region' ? 'default' : 'outline'}
+            className="flex-1"
+            onClick={() => handleTabChange('region')}
+            type="button"
           >
-            {t('cancel')}
+            {t('regionInfo')}
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading || !formIsValid}
-          >
-            {loading ? t('creating') : t('createRegion')}
-          </Button>
+          {includeAdmin && (
+            <Button
+              variant={currentTab === 'admin' ? 'default' : 'outline'}
+              className="flex-1"
+              onClick={() => handleTabChange('admin')}
+              type="button"
+              disabled={!isRegionValid}
+            >
+              {t('adminInfo')}
+            </Button>
+          )}
+        </div>
+        
+        {currentTab === 'region' ? (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t('name')}</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder={t('regionNamePlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">{t('description')}</Label>
+              <Input
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder={t('regionDescriptionPlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">{t('status')}</Label>
+              <select 
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full p-2 rounded-md border border-input bg-background"
+              >
+                <option value="active">{t('active')}</option>
+                <option value="inactive">{t('inactive')}</option>
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="adminName">{t('adminName')}</Label>
+              <Input
+                id="adminName"
+                name="adminName"
+                value={formData.adminName}
+                onChange={handleChange}
+                placeholder={t('adminNamePlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="adminEmail">{t('adminEmail')}</Label>
+              <Input
+                id="adminEmail"
+                name="adminEmail"
+                value={formData.adminEmail}
+                onChange={handleChange}
+                placeholder="email@example.com"
+                type="email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="adminPassword">{t('adminPassword')}</Label>
+              <div className="relative">
+                <Input
+                  id="adminPassword"
+                  name="adminPassword"
+                  value={formData.adminPassword}
+                  onChange={handleChange}
+                  placeholder="******"
+                  type={showPassword ? "text" : "password"}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                  type="button"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {formData.adminPassword && formData.adminPassword.length < 6 && (
+                <p className="text-sm text-destructive">
+                  {t('passwordMinLength')}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="sm:justify-between">
+          <div className="flex gap-2">
+            {currentTab === 'admin' && includeAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => handleTabChange('region')}
+                type="button"
+              >
+                {t('back')}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              type="button"
+            >
+              {t('cancel')}
+            </Button>
+          </div>
+          {currentTab === 'region' ? (
+            includeAdmin ? (
+              <Button
+                disabled={!isRegionValid || loading}
+                onClick={() => handleTabChange('admin')}
+                type="button"
+              >
+                {t('next')}
+              </Button>
+            ) : (
+              <Button
+                disabled={!isRegionValid || loading}
+                onClick={handleSubmit}
+              >
+                {loading ? t('adding') : t('add')}
+              </Button>
+            )
+          ) : (
+            <Button
+              disabled={!isRegionValid || !isAdminValid || loading}
+              onClick={handleSubmit}
+            >
+              {loading ? t('adding') : t('add')}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
