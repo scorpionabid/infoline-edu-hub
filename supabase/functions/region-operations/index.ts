@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
 
@@ -179,6 +180,7 @@ serve(async (req) => {
                 {
                   id: adminId,
                   full_name: adminName,
+                  email: cleanEmail,  // Email sahəsini əlavə edirik
                   language: 'az',
                   status: 'active'
                 }
@@ -194,6 +196,7 @@ serve(async (req) => {
               .from('profiles')
               .update({
                 full_name: adminName,
+                email: cleanEmail,  // Email sahəsini əlavə edirik
                 updated_at: new Date().toISOString()
               })
               .eq('id', adminId);
@@ -373,7 +376,7 @@ serve(async (req) => {
         // İlk olaraq profiles cədvəlindən yoxlayaq
         const { data: profileData, error: profileError } = await supabaseAdmin
           .from('profiles')
-          .select('email')
+          .select('email, full_name')
           .eq('id', userId)
           .single();
         
@@ -382,7 +385,8 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: true, 
-              email: profileData.email
+              email: profileData.email,
+              name: profileData.full_name
             }),
             { 
               status: 200, 
@@ -410,7 +414,10 @@ serve(async (req) => {
         if (userData.user.email) {
           const { error: updateProfileError } = await supabaseAdmin
             .from('profiles')
-            .update({ email: userData.user.email })
+            .update({ 
+              email: userData.user.email,
+              full_name: userData.user.user_metadata?.full_name || userData.user.email
+            })
             .eq('id', userId);
           
           if (updateProfileError) {
@@ -424,6 +431,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             email: userData.user.email,
+            name: userData.user.user_metadata?.full_name || null,
             user_metadata: userData.user.user_metadata
           }),
           { 

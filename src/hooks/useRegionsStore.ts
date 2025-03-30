@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Region, RegionFormData, EnhancedRegion } from '@/types/region';
@@ -103,14 +104,16 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
         try {
           const stats = await getRegionStats(region.id);
           
-          const adminEmail = region.adminEmail || await fetchRegionAdminEmail(region.id);
+          // Burada artıq region.adminEmail mövcud olması lazımdır, 
+          // regionService.ts-dən əldə edilib
+          const adminEmail = region.adminEmail || null;
           
           enhancedRegions.push({
             ...region,
             sectorCount: stats.sectorCount || 0,
             schoolCount: stats.schoolCount || 0,
             adminCount: stats.adminCount || 0,
-            adminEmail: adminEmail || null,
+            adminEmail: adminEmail,
             completionRate: Math.floor(Math.random() * 100)
           });
         } catch (err) {

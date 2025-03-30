@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, 
@@ -239,7 +240,7 @@ const Regions: React.FC = () => {
             {region.adminEmail}
           </a>
         ) : (
-          <span className="text-gray-400 text-sm">Admin təyin edilməyib</span>
+          <span className="text-gray-400 text-sm">{t('adminNotAssigned')}</span>
         )}
       </TableCell>
       <TableCell>

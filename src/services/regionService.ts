@@ -58,14 +58,19 @@ export const fetchRegions = async (): Promise<Region[]> => {
       adminRoles.forEach(role => {
         adminMap.set(role.region_id, role.user_id);
       });
-      console.log('Admin rolları map edildi:', adminMap);
+      console.log('Admin rolları map edildi:', Object.fromEntries(adminMap));
     }
     
     // Profiles cədvəlindən istifadəçi məlumatlarını çək
+    let userIds = adminRoles?.map(role => role.user_id) || [];
+    if (userIds.length === 0) {
+      console.log('Heç bir region admini tapılmadı');
+    }
+    
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, email')
-      .in('id', adminRoles?.map(role => role.user_id) || []);
+      .select('id, email, full_name')
+      .in('id', userIds);
     
     if (profilesError) {
       console.error('Profiles sorğusunda xəta:', profilesError);
@@ -75,8 +80,11 @@ export const fetchRegions = async (): Promise<Region[]> => {
     const profileMap = new Map();
     if (profiles && profiles.length > 0) {
       profiles.forEach(profile => {
-        profileMap.set(profile.id, profile.email);
-        console.log('Əlavə edilən profil:', profile.id, profile.email);
+        profileMap.set(profile.id, { 
+          email: profile.email,
+          name: profile.full_name 
+        });
+        console.log('Əlavə edilən profil:', profile.id, profile.email || 'Email yoxdur');
       });
     }
     
@@ -88,11 +96,18 @@ export const fetchRegions = async (): Promise<Region[]> => {
         const userId = adminMap.get(region.id);
         if (userId) {
           // Əvvəlcə profiles cədvəlindən yoxla
-          let email = profileMap.get(userId);
+          let email = profileMap.get(userId)?.email;
           
           // Əgər profiles-də tapılmadısa, edge function ilə al
           if (!email) {
-            email = await fetchRegionAdminEmail(region.id);
+            try {
+              const emailData = await fetchRegionAdminEmail(region.id);
+              if (emailData) {
+                email = emailData;
+              }
+            } catch (emailErr) {
+              console.error(`${region.name} üçün admin email alınarkən xəta:`, emailErr);
+            }
           }
           
           if (email) {
