@@ -52,19 +52,19 @@ const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteRegion')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteRegionConfirmation', { name: region.name })}
+            {t('deleteRegionConfirmation')}
             {(region.sectorCount > 0 || region.schoolCount > 0) && (
               <div className="mt-2 text-destructive">
                 <p className="font-medium">{t('warning')}:</p>
                 <ul className="list-disc pl-5">
                   {region.sectorCount > 0 && (
                     <li>
-                      {t('deleteRegionSectorWarning', { count: region.sectorCount })}
+                      {t('deleteRegionSectorsWarning')}
                     </li>
                   )}
                   {region.schoolCount > 0 && (
                     <li>
-                      {t('deleteRegionSchoolWarning', { count: region.schoolCount })}
+                      {t('deleteRegionSchoolsWarning')}
                     </li>
                   )}
                 </ul>

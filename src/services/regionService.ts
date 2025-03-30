@@ -1,5 +1,4 @@
-
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
 interface CreateRegionParams {
@@ -32,7 +31,6 @@ export const fetchRegions = async (): Promise<Region[]> => {
     }
     
     // Supabase client konfiqurasiyasını yoxla
-    console.log('Supabase URL:', supabase.supabaseUrl);
     console.log('API headers:', {
       apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' // Təhlükəsizlik üçün truncate
     });
@@ -41,7 +39,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
     try {
       // RLS siyasətlərini bypass etmək üçün service_role istifadə et
       const response = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/regions?select=*`,
+        `${supabaseUrl}/rest/v1/regions?select=*`,
         {
           method: 'GET',
           headers: {

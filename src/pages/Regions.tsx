@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, 
@@ -26,6 +25,7 @@ import AddRegionDialog from '@/components/regions/AddRegionDialog';
 import DeleteRegionDialog from '@/components/regions/DeleteRegionDialog';
 import { EnhancedRegion } from '@/types/region';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 // RegionHeader komponenti
 const RegionHeader = ({ t, onAddRegion }) => (
