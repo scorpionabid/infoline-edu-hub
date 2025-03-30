@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, 
@@ -28,7 +27,6 @@ import { EnhancedRegion } from '@/types/region';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-// RegionHeader komponenti
 const RegionHeader = ({ t, onAddRegion }) => (
   <div className="flex justify-between items-center">
     <div>
@@ -48,7 +46,6 @@ const RegionHeader = ({ t, onAddRegion }) => (
   </div>
 );
 
-// Əsas komponent
 const Regions: React.FC = () => {
   const { t } = useLanguage();
   const {
@@ -75,24 +72,20 @@ const Regions: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
 
-  // useCallback ilə funksiyaları memoize edirik
   const fetchRegionsWithTranslation = useCallback(() => {
     fetchRegions(t);
   }, [fetchRegions, t]);
 
-  // Event handlers
   const handleRegionDelete = useCallback((region: EnhancedRegion) => {
     setSelectedRegion(region);
     setIsDeleteDialogOpen(true);
   }, []);
   
   const handleRegionView = useCallback((region: EnhancedRegion) => {
-    // Bu funksiyalığı gələcəkdə əlavə edin
     toast.info(t('viewingRegion'), { description: region.name });
   }, [t]);
 
   const handleRegionEdit = useCallback((region: EnhancedRegion) => {
-    // Bu funksiyalığı gələcəkdə əlavə edin
     toast.info(t('editingRegion'), { description: region.name });
   }, [t]);
   
@@ -100,21 +93,18 @@ const Regions: React.FC = () => {
     setIsAddDialogOpen(true);
   }, []);
 
-  // Handle add region with t function
   const handleAddRegion = useCallback(async (formData) => {
     console.log("Add Region Dialog-dan formData:", formData);
     return await storeHandleAddRegion(formData, t);
   }, [storeHandleAddRegion, t]);
 
-  // Handle delete region with t function
   const handleDeleteRegion = useCallback(async (regionId) => {
     return await storeHandleDeleteRegion(regionId, t);
   }, [storeHandleDeleteRegion, t]);
 
-  // Hooks
   useEffect(() => {
     fetchRegionsWithTranslation();
-  }, [fetchRegionsWithTranslation]); // Dependency array'ə memoized funksiyanı əlavə edirik
+  }, [fetchRegionsWithTranslation]);
 
   useEffect(() => {
     if (isOperationComplete) {
@@ -123,7 +113,6 @@ const Regions: React.FC = () => {
     }
   }, [isOperationComplete, fetchRegionsWithTranslation, setIsOperationComplete]);
 
-  // RegionFilters komponenti
   const RegionFilters = () => (
     <div className="flex justify-between items-center mb-4 space-x-4">
       <div className="relative flex-1">
@@ -160,7 +149,6 @@ const Regions: React.FC = () => {
     </div>
   );
 
-  // RegionTableHeader komponenti
   const RegionTableHeader = () => (
     <TableHeader>
       <TableRow>
@@ -201,7 +189,6 @@ const Regions: React.FC = () => {
     </TableHeader>
   );
 
-  // LoadingState komponenti
   const LoadingState = () => (
     <TableRow>
       <TableCell colSpan={8} className="text-center py-6 h-[200px]">
@@ -213,7 +200,6 @@ const Regions: React.FC = () => {
     </TableRow>
   );
 
-  // EmptyState komponenti
   const EmptyState = () => (
     <TableRow>
       <TableCell colSpan={8} className="text-center py-6 h-[200px]">
@@ -231,7 +217,6 @@ const Regions: React.FC = () => {
     </TableRow>
   );
 
-  // RegionTableRow komponenti
   const RegionTableRow = ({ region }: { region: EnhancedRegion }) => (
     <TableRow>
       <TableCell className="font-mono text-xs truncate">
@@ -249,6 +234,7 @@ const Regions: React.FC = () => {
           <a 
             href={`mailto:${region.adminEmail}`}
             className="text-blue-500 hover:underline text-sm"
+            title={region.adminEmail}
           >
             {region.adminEmail}
           </a>
@@ -304,7 +290,6 @@ const Regions: React.FC = () => {
     </TableRow>
   );
 
-  // Pagination komponenti
   const Pagination = () => (
     <div className="flex justify-center mt-4">
       <div className="flex space-x-2">

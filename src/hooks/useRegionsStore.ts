@@ -1,13 +1,10 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Region, RegionFormData, EnhancedRegion } from '@/types/region';
 import { addRegion, deleteRegion, fetchRegions, getRegionStats, fetchRegionAdminEmail } from '@/services/regionService';
 
-// Tərcümə funksiyası tipini təyin edirik
 type TranslateFunction = (key: string) => string;
 
-// Boş tərcümə funksiyası - fallback üçün
 const emptyTranslate = (key: string) => key;
 
 interface RegionsState {
@@ -26,14 +23,12 @@ interface RegionsState {
   totalPages: number;
   isOperationComplete: boolean;
 
-  // Filtirləmə və sıralama metodları
   handleSearch: (term: string) => void;
   handleStatusFilter: (status: string | null) => void;
   handleSort: (key: string) => void;
   resetFilters: () => void;
   handlePageChange: (page: number) => void;
 
-  // CRUD əməliyyatları
   fetchRegions: (translateFunction?: TranslateFunction) => Promise<void>;
   handleAddRegion: (formData: RegionFormData, translateFunction?: TranslateFunction) => Promise<boolean>;
   handleDeleteRegion: (regionId: string, translateFunction?: TranslateFunction) => Promise<boolean>;
@@ -56,7 +51,6 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   totalPages: 1,
   isOperationComplete: false,
   
-  // Axtarış və filtirləmə
   handleSearch: (term: string) => {
     set({ searchTerm: term, currentPage: 1 });
     const { regions, selectedStatus } = get();
@@ -97,24 +91,19 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
     set({ currentPage: page });
   },
   
-  // CRUD əməliyyatları
   fetchRegions: async (translateFunction = emptyTranslate) => {
     set({ loading: true, error: null });
     
     try {
-      // Regionları yüklə
       const regionsData = await fetchRegions();
       
-      // Əlavə məlumatlarla regionları genişləndir
       const enhancedRegions: EnhancedRegion[] = [];
       
       for (const region of regionsData) {
         try {
-          // Region statistikası
           const stats = await getRegionStats(region.id);
           
-          // Region admin email-i
-          const adminEmail = await fetchRegionAdminEmail(region.id);
+          const adminEmail = region.adminEmail || await fetchRegionAdminEmail(region.id);
           
           enhancedRegions.push({
             ...region,
@@ -122,7 +111,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
             schoolCount: stats.schoolCount || 0,
             adminCount: stats.adminCount || 0,
             adminEmail: adminEmail || null,
-            completionRate: Math.floor(Math.random() * 100) // fake data for now
+            completionRate: Math.floor(Math.random() * 100)
           });
         } catch (err) {
           console.error(`${region.name} üçün statistik məlumatları əldə edərkən xəta:`, err);
@@ -131,13 +120,12 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
             sectorCount: 0,
             schoolCount: 0,
             adminCount: 0,
-            adminEmail: null,
+            adminEmail: region.adminEmail || null,
             completionRate: 0
           });
         }
       }
       
-      // Sıralama və filtirləmə
       const { sortConfig, searchTerm, selectedStatus, pageSize } = get();
       const filtered = filterRegions(enhancedRegions, searchTerm, selectedStatus);
       const sorted = sortRegions(filtered, sortConfig);
@@ -192,7 +180,6 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   
   handleDeleteRegion: async (regionId: string, translateFunction = emptyTranslate) => {
     try {
-      // Regionu sil
       const result = await deleteRegion(regionId);
       
       if (result.success) {
@@ -222,7 +209,6 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
   }
 }));
 
-// Köməkçi funksiyalar
 const filterRegions = (
   regions: EnhancedRegion[], 
   searchTerm: string, 

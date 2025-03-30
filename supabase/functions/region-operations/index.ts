@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
 
@@ -358,7 +357,7 @@ serve(async (req) => {
       );
     } 
     else if (action === 'get-admin-email') {
-      const { userId } = requestData as GetAdminEmailRequest;
+      const { userId } = requestData;
       
       if (!userId) {
         return new Response(
@@ -371,6 +370,27 @@ serve(async (req) => {
       }
       
       try {
+        // İlk olaraq profiles cədvəlindən yoxlayaq
+        const { data: profileData, error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .single();
+        
+        if (!profileError && profileData && profileData.email) {
+          console.log('Profildən email tapıldı:', profileData.email);
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              email: profileData.email
+            }),
+            { 
+              status: 200, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
         // İstifadəçinin məlumatlarını əldə edirik
         const { data: userData, error: userError } = await supabaseAdmin
           .auth.admin.getUserById(userId);
@@ -384,6 +404,20 @@ serve(async (req) => {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
           );
+        }
+        
+        // Əgər email profiles-də yoxdursa, onu əlavə edək
+        if (userData.user.email) {
+          const { error: updateProfileError } = await supabaseAdmin
+            .from('profiles')
+            .update({ email: userData.user.email })
+            .eq('id', userId);
+          
+          if (updateProfileError) {
+            console.error('Profil email-i yenilənərkən xəta:', updateProfileError);
+          } else {
+            console.log('Profil email-i yeniləndi:', userData.user.email);
+          }
         }
         
         return new Response(

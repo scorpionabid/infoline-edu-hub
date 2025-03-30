@@ -1,3 +1,4 @@
+
 import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -23,17 +24,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
       console.error('Auth session xətası:', sessionError);
     }
     
-    const accessToken = sessionData?.session?.access_token;
-    if (!accessToken) {
-      console.warn('Access token tapılmadı!');
-    } else {
-      console.log('Token mövcuddur:', accessToken.substring(0, 15) + '...');
-    }
-    
-    // Birbaşa sorğu ilə regionları və admin məlumatlarını əldə edirik
-    console.log('Supabase ilə regions və admin məlumatları sorğusu göndərilir...');
-    
-    // Əvvəlcə regionları çək
+    // Birbaşa sorğu ilə regionları əldə edirik
     const { data: regions, error: regionsError } = await supabase
       .from('regions')
       .select('*')
@@ -67,12 +58,14 @@ export const fetchRegions = async (): Promise<Region[]> => {
       adminRoles.forEach(role => {
         adminMap.set(role.region_id, role.user_id);
       });
+      console.log('Admin rolları map edildi:', adminMap);
     }
     
     // Profiles cədvəlindən istifadəçi məlumatlarını çək
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, email');
+      .select('id, email')
+      .in('id', adminRoles?.map(role => role.user_id) || []);
     
     if (profilesError) {
       console.error('Profiles sorğusunda xəta:', profilesError);
@@ -83,13 +76,38 @@ export const fetchRegions = async (): Promise<Region[]> => {
     if (profiles && profiles.length > 0) {
       profiles.forEach(profile => {
         profileMap.set(profile.id, profile.email);
+        console.log('Əlavə edilən profil:', profile.id, profile.email);
       });
+    }
+    
+    // Hər bir region üçün admin email-i əldə etmək üçün edge function çağırırıq
+    const adminEmails = new Map<string, string>();
+    
+    for (const region of regions) {
+      try {
+        const userId = adminMap.get(region.id);
+        if (userId) {
+          // Əvvəlcə profiles cədvəlindən yoxla
+          let email = profileMap.get(userId);
+          
+          // Əgər profiles-də tapılmadısa, edge function ilə al
+          if (!email) {
+            email = await fetchRegionAdminEmail(region.id);
+          }
+          
+          if (email) {
+            adminEmails.set(region.id, email);
+            console.log(`${region.name} üçün admin email:`, email);
+          }
+        }
+      } catch (err) {
+        console.error(`${region.name} üçün admin email alınarkən xəta:`, err);
+      }
     }
     
     // Regionları admin emailləri ilə formatlaşdır
     const formattedRegions = regions.map(region => {
-      const adminId = adminMap.get(region.id);
-      const adminEmail = adminId ? profileMap.get(adminId) : null;
+      const adminEmail = adminEmails.get(region.id) || null;
       
       console.log(`${region.name} üçün admin email:`, adminEmail || 'Tapılmadı');
       
@@ -109,7 +127,6 @@ export const fetchRegions = async (): Promise<Region[]> => {
     return formattedRegions as Region[];
   } catch (error) {
     console.error('Regionları yükləmə xətası:', error);
-    // Boş massiv qaytar - test məlumatları olmadan
     return [];
   }
 };
@@ -321,6 +338,18 @@ export const fetchRegionAdminEmail = async (regionId: string): Promise<string | 
       return null;
     }
     
+    // Əvvəlcə profiles cədvəlindən email-i yoxlayaq
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', roles[0].user_id)
+      .single();
+      
+    if (!profileError && profile && profile.email) {
+      console.log('Profildən email tapıldı:', profile.email);
+      return profile.email;
+    }
+    
     // İlk admin user_id ilə auth.users cədvəlindən email ünvanını əldə etmək üçün
     // edge function istifadə edirik (çünki auth.users cədvəlinə birbaşa çıxışımız yoxdur)
     const { data, error } = await supabase.functions
@@ -336,6 +365,7 @@ export const fetchRegionAdminEmail = async (regionId: string): Promise<string | 
       return null;
     }
     
+    console.log('Edge function-dan email alındı:', data.email);
     return data.email;
   } catch (error) {
     console.error('Region admin emaili əldə etmə xətası:', error);
