@@ -65,9 +65,19 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
             }
           } catch (userError) {
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            // Sessiya var amma user data yoxdur - məlumatları təmizləyək
+            // Sessiya var amma user data yoxdur - minimal user obyekti yaradaq
             if (mounted) {
-              setUser(null);
+              // Minimal user obyekti yaradaq ki, isAuthenticated true olsun
+              setUser({
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                role: 'authenticated',
+                // Digər sahələr üçün default dəyərlər
+                full_name: '',
+                avatar_url: null,
+                created_at: new Date().toISOString()
+              });
+              console.log('Minimal user obyekti yaradıldı:', currentSession.user.id);
             }
           }
         }
@@ -92,7 +102,17 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
               } catch (userError) {
                 console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
                 if (mounted) {
-                  setUser(null);
+                  // Minimal user obyekti yaradaq ki, isAuthenticated true olsun
+                  setUser({
+                    id: newSession.user.id,
+                    email: newSession.user.email || '',
+                    role: 'authenticated',
+                    // Digər sahələr üçün default dəyərlər
+                    full_name: '',
+                    avatar_url: null,
+                    created_at: new Date().toISOString()
+                  });
+                  console.log('SIGNED_IN hadisəsi zamanı minimal user obyekti yaradıldı:', newSession.user.id);
                   setLoading(false);
                 }
               }

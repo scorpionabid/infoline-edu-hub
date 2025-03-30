@@ -106,6 +106,8 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
           const stats = await getRegionStats(region.id);
           
           // regionService-dən alınan adminEmail-i istifadə edirik
+          console.log(`useRegionsStore: ${region.name} üçün adminEmail:`, region.adminEmail);
+          
           enhancedRegions.push({
             ...region,
             sectorCount: stats.sectorCount || 0,
