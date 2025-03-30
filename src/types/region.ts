@@ -26,5 +26,6 @@ export interface EnhancedRegion extends Region {
   sectorCount: number;
   schoolCount: number;
   adminCount: number;
+  adminEmail?: string | null; // Region adminin email ünvanı
   completionRate: number;
 }

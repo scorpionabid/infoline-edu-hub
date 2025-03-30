@@ -1,3 +1,4 @@
+
 import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -256,22 +257,23 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
 // Regionu silmək
 export const deleteRegion = async (regionId: string): Promise<any> => {
   try {
-    // Regionla bağlı məktəb və sektorları yoxlayaq
-    const { count: sectorsCount, error: sectorsError } = await supabase
-      .from('sectors')
-      .select('*', { count: 'exact', head: true })
-      .eq('region_id', regionId);
-      
-    if (sectorsError) throw sectorsError;
-      
-    // Regionu silin
-    const { error } = await supabase
-      .from('regions')
-      .delete()
-      .eq('id', regionId);
-      
-    if (error) throw error;
+    console.log('Region silmə əməliyyatı başlanır:', regionId);
     
+    // Edge function vasitəsilə regionu və onunla əlaqəli adminləri silək
+    const { data, error } = await supabase.functions
+      .invoke('region-operations', {
+        body: { 
+          action: 'delete',
+          regionId: regionId
+        }
+      });
+    
+    if (error) {
+      console.error('Region silmə sorğusu xətası:', error);
+      throw error;
+    }
+    
+    console.log('Region silmə nəticəsi:', data);
     return { success: true };
   } catch (error) {
     console.error('Region silmə xətası:', error);
@@ -341,5 +343,42 @@ export const getRegionStats = async (regionId: string): Promise<any> => {
       schoolCount: 0,
       adminCount: 0
     };
+  }
+};
+
+// Region admin email-ini əldə etmək üçün metod
+export const fetchRegionAdminEmail = async (regionId: string): Promise<string | null> => {
+  try {
+    // Regionla əlaqəli region admin rollarını tapırıq
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('region_id', regionId)
+      .eq('role', 'regionadmin');
+    
+    if (rolesError || !roles || roles.length === 0) {
+      console.log('Bu region üçün admin tapılmadı:', regionId);
+      return null;
+    }
+    
+    // İlk admin user_id ilə auth.users cədvəlindən email ünvanını əldə etmək üçün
+    // edge function istifadə edirik (çünki auth.users cədvəlinə birbaşa çıxışımız yoxdur)
+    const { data, error } = await supabase.functions
+      .invoke('region-operations', {
+        body: { 
+          action: 'get-admin-email',
+          userId: roles[0].user_id
+        }
+      });
+    
+    if (error || !data || !data.email) {
+      console.error('Admin email ünvanını əldə etmə xətası:', error || 'Məlumat tapılmadı');
+      return null;
+    }
+    
+    return data.email;
+  } catch (error) {
+    console.error('Region admin emaili əldə etmə xətası:', error);
+    return null;
   }
 };

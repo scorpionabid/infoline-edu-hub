@@ -22,6 +22,11 @@ interface DeleteRegionRequest {
   action?: string;
 }
 
+interface GetAdminEmailRequest {
+  userId: string;
+  action?: string;
+}
+
 serve(async (req) => {
   // CORS sorğusu üçün
   if (req.method === 'OPTIONS') {
@@ -279,6 +284,57 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
+    } 
+    else if (action === 'get-admin-email') {
+      const { userId } = requestData as GetAdminEmailRequest;
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: 'İstifadəçi ID tələb olunur' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      try {
+        // İstifadəçinin məlumatlarını əldə edirik
+        const { data: userData, error: userError } = await supabaseAdmin
+          .auth.admin.getUserById(userId);
+        
+        if (userError || !userData) {
+          console.error('İstifadəçi məlumatları əldə edilərkən xəta:', userError);
+          return new Response(
+            JSON.stringify({ error: 'İstifadəçi tapılmadı', details: userError }),
+            { 
+              status: 404, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            email: userData.user.email,
+            user_metadata: userData.user.user_metadata
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } catch (error) {
+        console.error('İstifadəçi email-ni əldə edərkən xəta:', error);
+        return new Response(
+          JSON.stringify({ error: 'İstifadəçi email-ni əldə etmə xətası', details: error.message }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
     }
     
     // Digər sorğu növlərinə cavab
