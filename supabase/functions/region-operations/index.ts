@@ -98,6 +98,7 @@ serve(async (req) => {
       
       const regionId = regionData.id;
       let adminId = null;
+      let adminData = null;
       
       // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
       if (adminEmail && adminName) {
@@ -110,39 +111,56 @@ serve(async (req) => {
           // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
           const cleanEmail = adminEmail.trim().toLowerCase();
           
-          // Supabase ilə yeni istifadəçi yaradırıq
-          const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-            email: cleanEmail,
-            password: password,
-            email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
-            user_metadata: {
-              full_name: adminName,
-              role: 'regionadmin',
-              region_id: regionId
-            }
-          });
+          // Əvvəlcə bu email ilə istifadəçi mövcuddursa yoxlayaq
+          const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+          const existingUser = existingUsers?.users.find(u => u.email === cleanEmail);
           
-          if (userError) {
-            console.error('Admin hesabı yaradılması xətası:', userError);
-            // Regionu yaratdıq, amma admin yarada bilmədik
-            return new Response(
-              JSON.stringify({ 
-                success: true, 
-                data: { region: regionData }, 
-                warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
-                details: userError 
-              }),
-              { 
-                status: 201, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          if (existingUser) {
+            console.log('Bu email ilə istifadəçi artıq mövcuddur:', existingUser.id);
+            adminId = existingUser.id;
+            
+            // İstifadəçi metadata-sını yeniləyək
+            await supabaseAdmin.auth.admin.updateUserById(adminId, {
+              user_metadata: {
+                full_name: adminName,
+                role: 'regionadmin',
+                region_id: regionId
               }
-            );
+            });
+          } else {
+            // Yeni istifadəçi yaradaq
+            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+              email: cleanEmail,
+              password: password,
+              email_confirm: true,
+              user_metadata: {
+                full_name: adminName,
+                role: 'regionadmin',
+                region_id: regionId
+              }
+            });
+            
+            if (userError) {
+              console.error('Admin hesabı yaradılması xətası:', userError);
+              // Regionu yaratdıq, amma admin yarada bilmədik
+              return new Response(
+                JSON.stringify({ 
+                  success: true, 
+                  data: { region: regionData }, 
+                  warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
+                  details: userError 
+                }),
+                { 
+                  status: 201, 
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                }
+              );
+            }
+            
+            adminId = userData.user.id;
           }
           
-          adminId = userData.user.id;
-          
-          // Profilin yaradılmasını gözləyək - trigger yaradır, amma əmin olaq
-          // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
+          // Profilin yaradılmasını gözləyək
           await new Promise(resolve => setTimeout(resolve, 500));
           
           // Profili yoxlayaq və ya yaradaq
@@ -172,24 +190,64 @@ serve(async (req) => {
             }
           } else {
             console.log('Profil tapıldı:', profileData);
+            // Profili yeniləyək
+            const { error: updateProfileError } = await supabaseAdmin
+              .from('profiles')
+              .update({
+                full_name: adminName,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', adminId);
+            
+            if (updateProfileError) {
+              console.error('Profil yenilənməsi xətası:', updateProfileError);
+            }
           }
           
-          // İstifadəçi rolunu əlavə edirik
-          const { error: roleError } = await supabaseAdmin
+          // İstifadəçi rolunu əlavə edək/yeniləyək
+          // Əvvəlcə mövcud rol qeydini yoxlayaq
+          const { data: existingRole } = await supabaseAdmin
             .from('user_roles')
-            .insert([
-              {
-                user_id: adminId,
-                role: 'regionadmin',
-                region_id: regionId
-              }
-            ]);
-          
-          if (roleError) {
-            console.error('Rol əlavə edilməsi xətası:', roleError);
+            .select('*')
+            .eq('user_id', adminId)
+            .eq('role', 'regionadmin')
+            .single();
+            
+          if (existingRole) {
+            // Rol mövcuddursa, region_id-ni yeniləyək
+            const { error: updateRoleError } = await supabaseAdmin
+              .from('user_roles')
+              .update({ region_id: regionId })
+              .eq('id', existingRole.id);
+              
+            if (updateRoleError) {
+              console.error('Rol yenilənməsi xətası:', updateRoleError);
+            }
+          } else {
+            // Rol mövcud deyilsə, əlavə edək
+            const { error: roleError } = await supabaseAdmin
+              .from('user_roles')
+              .insert([
+                {
+                  user_id: adminId,
+                  role: 'regionadmin',
+                  region_id: regionId
+                }
+              ]);
+            
+            if (roleError) {
+              console.error('Rol əlavə edilməsi xətası:', roleError);
+            }
           }
           
-          console.log(`Region admin ${adminEmail} created for region ${name} with id ${regionId}`);
+          // Admin email məlumatını saxlayaq
+          adminData = {
+            id: adminId,
+            email: cleanEmail,
+            name: adminName
+          };
+          
+          console.log(`Region admin ${cleanEmail} created/updated for region ${name} with id ${regionId}`);
         } catch (err) {
           console.error('Admin yaradılması prosesində xəta:', err);
           // Regionu yaratdıq, amma admin yarada bilmədik
@@ -213,7 +271,7 @@ serve(async (req) => {
           success: true, 
           data: { 
             region: regionData, 
-            admin: adminId ? { id: adminId, email: adminEmail } : null
+            admin: adminData
           } 
         }),
         { 
@@ -243,7 +301,6 @@ serve(async (req) => {
         .eq('role', 'regionadmin');
       
       // Region ilə əlaqəli digər məlumatları silirik
-      // Avtomatik cascade delete işləyəcək, əgər foreign key məhdudiyyətləri varsa
       const { error: deleteError } = await supabaseAdmin
         .from('regions')
         .delete()
@@ -264,13 +321,28 @@ serve(async (req) => {
       if (roleData && roleData.length > 0) {
         for (const role of roleData) {
           try {
-            // İstifadəçini deaktiv edirik, amma silmirik
-            await supabaseAdmin
+            // İstifadəçini deaktiv edirik 
+            const { error: profileError } = await supabaseAdmin
               .from('profiles')
               .update({ status: 'inactive' })
               .eq('id', role.user_id);
+              
+            if (profileError) {
+              console.error(`Admin profile deactivation error for ${role.user_id}:`, profileError);
+            }
             
-            console.log(`Admin with id ${role.user_id} deactivated`);
+            // User role-ları silek
+            const { error: roleDeleteError } = await supabaseAdmin
+              .from('user_roles')
+              .delete()
+              .eq('user_id', role.user_id)
+              .eq('region_id', regionId);
+              
+            if (roleDeleteError) {
+              console.error(`Admin role deletion error for ${role.user_id}:`, roleDeleteError);
+            }
+            
+            console.log(`Admin with id ${role.user_id} deactivated and roles removed`);
           } catch (err) {
             console.error(`Admin deactivation error for ${role.user_id}:`, err);
           }

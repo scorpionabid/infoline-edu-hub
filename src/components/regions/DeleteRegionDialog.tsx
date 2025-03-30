@@ -46,6 +46,19 @@ const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({
 
   if (!region) return null;
 
+  // Sektör, məktəb və admin saylarını dinamik olaraq interpolasiya edirik
+  const sectorWarning = region.sectorCount > 0 
+    ? t('deleteRegionSectorsWarning').replace('{{count}}', region.sectorCount.toString()) 
+    : '';
+    
+  const schoolWarning = region.schoolCount > 0 
+    ? t('deleteRegionSchoolsWarning').replace('{{count}}', region.schoolCount.toString()) 
+    : '';
+    
+  const adminWarning = region.adminCount > 0 
+    ? t('deleteRegionAdminsWarning').replace('{{count}}', region.adminCount.toString()) 
+    : '';
+  
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -58,19 +71,13 @@ const DeleteRegionDialog: React.FC<DeleteRegionDialogProps> = ({
                 <p className="font-medium">{t('warning')}:</p>
                 <ul className="list-disc pl-5">
                   {region.sectorCount > 0 && (
-                    <li>
-                      {t('deleteRegionSectorsWarning')}
-                    </li>
+                    <li>{sectorWarning}</li>
                   )}
                   {region.schoolCount > 0 && (
-                    <li>
-                      {t('deleteRegionSchoolsWarning')}
-                    </li>
+                    <li>{schoolWarning}</li>
                   )}
                   {region.adminCount > 0 && (
-                    <li>
-                      {t('deleteRegionAdminsWarning')}
-                    </li>
+                    <li>{adminWarning}</li>
                   )}
                 </ul>
               </div>

@@ -1,4 +1,3 @@
-
 import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -30,11 +29,6 @@ export const fetchRegions = async (): Promise<Region[]> => {
     } else {
       console.log('Token mövcuddur:', accessToken.substring(0, 15) + '...');
     }
-    
-    // Supabase client konfiqurasiyasını yoxla
-    console.log('API headers:', {
-      apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' // Təhlükəsizlik üçün truncate
-    });
     
     // HTTP sorğu əvəzinə alternativ yanaşma ilə sınayaq
     try {
