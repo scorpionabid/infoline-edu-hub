@@ -113,6 +113,9 @@ const SchoolsContainer: React.FC = () => {
     setIsImportDialogOpen(true);
   };
 
+  // Region array tipini açıq şəkildə dönüşdürürük
+  const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
+
   return (
     <div className="space-y-6">
       <SchoolHeader 
@@ -130,7 +133,7 @@ const SchoolsContainer: React.FC = () => {
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
             filteredSectors={filteredSectors}
-            regions={regions as RegionType[]} // Açıq şəkildə tipo çevirmə əlavə edirik
+            regions={regionsForFilters}
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}

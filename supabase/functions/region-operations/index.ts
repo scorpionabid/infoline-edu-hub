@@ -123,7 +123,7 @@ serve(async (req) => {
             return new Response(
               JSON.stringify({ 
                 success: true, 
-                data: regionData, 
+                data: { region: regionData }, 
                 warning: 'Region yaradıldı, lakin admin hesabı yaradıla bilmədi',
                 details: userError 
               }),
@@ -191,7 +191,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: true, 
-              data: regionData, 
+              data: { region: regionData }, 
               warning: 'Region yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
               details: err
             }),

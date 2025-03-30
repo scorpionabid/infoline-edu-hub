@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -178,6 +179,7 @@ export const createRegion = async (regionData: CreateRegionParams): Promise<any>
       throw error;
     }
     
+    console.log('Region yaratma nəticəsi:', data);
     return data;
   } catch (error) {
     console.error('Region yaratma xətası:', error);
@@ -190,6 +192,7 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
   try {
     if (regionData.adminEmail && regionData.adminName) {
       // Əgər admin məlumatları varsa, edge function istifadə edirik
+      console.log('Admin məlumatları mövcuddur, edge function istifadə edirik');
       const result = await createRegion(regionData);
       
       if (!result || !result.success) {
@@ -197,13 +200,19 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
       }
       
       // Created_at sahəsinin undefined olmamasını təmin edirik
-      if (result.data.region && !result.data.region.created_at) {
+      if (result.data && result.data.region && !result.data.region.created_at) {
         result.data.region.created_at = new Date().toISOString();
       }
       
-      return result.data.region;
+      if (result.data && result.data.region && !result.data.region.updated_at) {
+        result.data.region.updated_at = new Date().toISOString();
+      }
+      
+      console.log('Edge function ilə yaradılan region:', result.data?.region);
+      return result.data?.region;
     } else {
       // Sadə region yaratma - admin olmadan
+      console.log('Sadə region yaratma - admin məlumatları olmadan');
       const region = {
         name: regionData.name,
         description: regionData.description,
@@ -218,18 +227,26 @@ export const addRegion = async (regionData: CreateRegionParams): Promise<Region>
         .select('*')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert xətası:', error);
+        throw error;
+      }
       
       // Null check əlavə edirik
       if (!data) {
         throw new Error('Region yaradıldı, lakin qaytarılan data undefined idi');
       }
       
-      // Created_at sahəsinin undefined olmamasını təmin edirik
+      // Created_at və updated_at sahələrinin undefined olmamasını təmin edirik
       if (!data.created_at) {
         data.created_at = new Date().toISOString();
       }
       
+      if (!data.updated_at) {
+        data.updated_at = new Date().toISOString();
+      }
+      
+      console.log('Yaradılan region:', data);
       return data as Region;
     }
   } catch (error) {

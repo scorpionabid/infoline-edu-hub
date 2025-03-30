@@ -155,6 +155,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
 
   handleAddRegion: async (formData: RegionFormData, translateFunction = emptyTranslate) => {
     try {
+      console.log("Əlavə edilməyə çalışılır:", formData);
       const regionData = await addRegion({
         name: formData.name,
         description: formData.description,
@@ -164,6 +165,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
         adminPassword: formData.adminPassword
       });
       
+      console.log("Region əlavə edildi:", regionData);
       set({ isOperationComplete: true });
       
       toast.success(translateFunction('regionAdded'), {

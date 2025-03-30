@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, 
@@ -50,7 +51,7 @@ const RegionHeader = ({ t, onAddRegion }) => (
 const Regions: React.FC = () => {
   const { t } = useLanguage();
   const {
-    regions,
+    filteredRegions: regions,
     loading,
     searchTerm,
     selectedStatus,
@@ -84,12 +85,23 @@ const Regions: React.FC = () => {
     setIsDeleteDialogOpen(true);
   }, []);
   
+  const handleRegionView = useCallback((region: EnhancedRegion) => {
+    // Bu funksiyalığı gələcəkdə əlavə edin
+    toast.info(t('viewingRegion'), { description: region.name });
+  }, [t]);
+
+  const handleRegionEdit = useCallback((region: EnhancedRegion) => {
+    // Bu funksiyalığı gələcəkdə əlavə edin
+    toast.info(t('editingRegion'), { description: region.name });
+  }, [t]);
+  
   const handleAddRegionClick = useCallback(() => {
     setIsAddDialogOpen(true);
   }, []);
 
   // Handle add region with t function
   const handleAddRegion = useCallback(async (formData) => {
+    console.log("Add Region Dialog-dan formData:", formData);
     return await storeHandleAddRegion(formData, t);
   }, [storeHandleAddRegion, t]);
 
@@ -261,10 +273,20 @@ const Regions: React.FC = () => {
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" size="icon" title={t('viewDetails')}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            title={t('viewDetails')}
+            onClick={() => handleRegionView(region)}
+          >
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" title={t('edit')}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            title={t('edit')}
+            onClick={() => handleRegionEdit(region)}
+          >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button 
