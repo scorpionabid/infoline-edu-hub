@@ -30,121 +30,87 @@ export const fetchRegions = async (): Promise<Region[]> => {
       console.log('Token mövcuddur:', accessToken.substring(0, 15) + '...');
     }
     
-    // HTTP sorğu əvəzinə alternativ yanaşma ilə sınayaq
-    try {
-      // RLS siyasətlərini bypass etmək üçün service_role istifadə et
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/regions?select=*`,
-        {
-          method: 'GET',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4',
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      console.log('HTTP sorğusu nəticəsi:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('HTTP xətası məlumatı:', errorText);
-      } else {
-        console.log('HTTP sorğusu uğurlu oldu');
-      }
-    } catch (fetchError) {
-      console.error('Fetch xətası:', fetchError);
-    }
+    // Birbaşa sorğu ilə regionları və admin məlumatlarını əldə edirik
+    console.log('Supabase ilə regions və admin məlumatları sorğusu göndərilir...');
     
-    // Orijinal Supabase sorğusu
-    console.log('Supabase ilə regions sorğusu göndərilir...');
-    const { data, error, status, statusText } = await supabase
+    // Əvvəlcə regionları çək
+    const { data: regions, error: regionsError } = await supabase
       .from('regions')
-      .select('*')  // Bütün sahələri seçirik
+      .select('*')
       .order('name');
-
-    console.log('Supabase regions sorğusu nəticəsi:', { status, statusText });
     
-    if (error) {
-      console.error('Regions sorğusunda xəta:', error);
-      throw error;
+    if (regionsError) {
+      console.error('Regions sorğusunda xəta:', regionsError);
+      throw regionsError;
     }
     
-    if (!data) {
+    if (!regions || regions.length === 0) {
       console.warn('Regions sorğusu boş data qaytardı');
       return [];
     }
     
-    console.log(`${data.length} region uğurla yükləndi:`, data);
+    console.log(`${regions.length} region uğurla yükləndi`);
     
-    // Məlumatları formatlaşdırırıq və undefined olmamasını təmin edirik
-    const formattedData = data.map(region => ({
-      ...region,
-      id: region.id || '',
-      name: region.name || '',
-      description: region.description || '',
-      status: region.status || 'inactive',
-      created_at: region.created_at || new Date().toISOString(),
-      updated_at: region.updated_at || new Date().toISOString()
-    }));
+    // Sonra user_roles cədvəlindən regionadmin rollarını çək
+    const { data: adminRoles, error: adminRolesError } = await supabase
+      .from('user_roles')
+      .select('region_id, user_id')
+      .eq('role', 'regionadmin');
     
-    return formattedData as Region[];
+    if (adminRolesError) {
+      console.error('Admin rolları sorğusunda xəta:', adminRolesError);
+    }
+    
+    // Admin rollarını region_id ilə map et
+    const adminMap = new Map();
+    if (adminRoles && adminRoles.length > 0) {
+      adminRoles.forEach(role => {
+        adminMap.set(role.region_id, role.user_id);
+      });
+    }
+    
+    // Profiles cədvəlindən istifadəçi məlumatlarını çək
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, email');
+    
+    if (profilesError) {
+      console.error('Profiles sorğusunda xəta:', profilesError);
+    }
+    
+    // Profiles-i user_id ilə map et
+    const profileMap = new Map();
+    if (profiles && profiles.length > 0) {
+      profiles.forEach(profile => {
+        profileMap.set(profile.id, profile.email);
+      });
+    }
+    
+    // Regionları admin emailləri ilə formatlaşdır
+    const formattedRegions = regions.map(region => {
+      const adminId = adminMap.get(region.id);
+      const adminEmail = adminId ? profileMap.get(adminId) : null;
+      
+      console.log(`${region.name} üçün admin email:`, adminEmail || 'Tapılmadı');
+      
+      return {
+        ...region,
+        id: region.id || '',
+        name: region.name || '',
+        description: region.description || '',
+        status: region.status || 'inactive',
+        created_at: region.created_at || new Date().toISOString(),
+        updated_at: region.updated_at || new Date().toISOString(),
+        adminEmail: adminEmail // Admin emailini əlavə edirik
+      };
+    });
+    
+    console.log('Admin emailləri ilə regionlar:', formattedRegions);
+    return formattedRegions as Region[];
   } catch (error) {
     console.error('Regionları yükləmə xətası:', error);
-    
-    // Müvəqqəti həll: test məlumatları qaytaraq
-    console.log('Test regions məlumatları qaytarılır...');
-    return [
-      {
-        id: 'c7df1328-29ae-4e96-bdee-3508a992951c',
-        name: 'ŞZRT1',
-        description: 'Şəki-Zaqatala Regional Təhsil İdarəsi',
-        status: 'active',
-        created_at: '2025-03-25 04:28:06.934556+00',
-        updated_at: '2025-03-25 04:28:06.934556+00'
-      },
-      {
-        id: '58f5e98a-3cbe-4c6b-af0b-d7724e1f1b00',
-        name: 'MARTI',
-        description: 'Mərkəzi Aran',
-        status: 'active',
-        created_at: '2025-03-24 04:26:47.818714+00',
-        updated_at: '2025-03-24 04:26:47.818714+00'
-      },
-      {
-        id: '3f69571e-bfcd-4a21-8fda-df9e3a34fed2',
-        name: 'ZAQTI',
-        description: 'Info',
-        status: 'active',
-        created_at: '2025-03-28 18:15:52.004671+00',
-        updated_at: '2025-03-28 18:15:52.004671+00'
-      },
-      {
-        id: '94c82e60-4b9f-4d47-a5c9-459641ca0826',
-        name: 'QAZILO',
-        description: 'info',
-        status: 'active',
-        created_at: '2025-03-28 18:41:42.236753+00',
-        updated_at: '2025-03-28 18:41:42.236753+00'
-      },
-      {
-        id: '34c9658d-d2b4-47ee-a0ce-58dc31e9c729',
-        name: 'Region-1',
-        description: 'info region',
-        status: 'active',
-        created_at: '2025-03-29 15:28:28.602089+00',
-        updated_at: '2025-03-29 15:28:28.602089+00'
-      },
-      {
-        id: '765a7b31-bb94-4e9b-92ea-867494ff291e',
-        name: 'Region-2',
-        description: 'info region',
-        status: 'active',
-        created_at: '2025-03-29 15:38:44.747639+00',
-        updated_at: '2025-03-29 15:38:44.747639+00'
-      }
-    ]; // Test məlumatları qaytarırıq
+    // Boş massiv qaytar - test məlumatları olmadan
+    return [];
   }
 };
 
