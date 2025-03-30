@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Table, 
@@ -218,78 +217,78 @@ const Regions: React.FC = () => {
     </TableRow>
   );
 
-  const RegionTableRow = ({ region }: { region: EnhancedRegion }) => (
-    <TableRow>
-      <TableCell className="font-mono text-xs truncate">
-        {region.id?.split('-')?.[0] || ''}...
-      </TableCell>
-      <TableCell className="font-medium">{region.name}</TableCell>
-      <TableCell className="text-center">
-        <Badge variant="outline">{region.sectorCount || 0}</Badge>
-      </TableCell>
-      <TableCell className="text-center">
-        <Badge variant="outline">{region.schoolCount || 0}</Badge>
-      </TableCell>
-      <TableCell className="max-w-[180px] truncate">
-        {region.adminEmail ? (
-          <a 
-            href={`mailto:${region.adminEmail}`}
-            className="text-blue-500 hover:underline text-sm"
-            title={region.adminEmail}
-          >
-            {region.adminEmail}
-          </a>
-        ) : (
-          <span className="text-gray-400 text-sm">{t('adminNotAssigned')}</span>
-        )}
-      </TableCell>
-      <TableCell>
-        <Badge 
-          className={
-            region.completionRate >= 80 ? "bg-green-500" : 
-            region.completionRate >= 50 ? "bg-amber-500" : 
-            "bg-red-500"
-          }
+const RegionTableRow = ({ region }: { region: EnhancedRegion }) => (
+  <TableRow>
+    <TableCell className="font-mono text-xs truncate">
+      {region.id?.split('-')?.[0] || ''}...
+    </TableCell>
+    <TableCell className="font-medium">{region.name}</TableCell>
+    <TableCell className="text-center">
+      <Badge variant="outline">{region.sectorCount || 0}</Badge>
+    </TableCell>
+    <TableCell className="text-center">
+      <Badge variant="outline">{region.schoolCount || 0}</Badge>
+    </TableCell>
+    <TableCell className="max-w-[180px] truncate">
+      {region.adminEmail ? (
+        <a 
+          href={`mailto:${region.adminEmail}`}
+          className="text-blue-500 hover:underline text-sm"
+          title={region.adminEmail}
         >
-          {region.completionRate}%
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant={region.status === 'active' ? 'default' : 'secondary'}>
-          {region.status === 'active' ? t('active') : t('inactive')}
-        </Badge>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end space-x-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            title={t('viewDetails')}
-            onClick={() => handleRegionView(region)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            title={t('edit')}
-            onClick={() => handleRegionEdit(region)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            title={t('delete')}
-            onClick={() => handleRegionDelete(region)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
+          {region.adminEmail}
+        </a>
+      ) : (
+        <span className="text-gray-400 text-sm">{t('adminNotAssigned')}</span>
+      )}
+    </TableCell>
+    <TableCell>
+      <Badge 
+        className={
+          region.completionRate >= 80 ? "bg-green-500" : 
+          region.completionRate >= 50 ? "bg-amber-500" : 
+          "bg-red-500"
+        }
+      >
+        {region.completionRate}%
+      </Badge>
+    </TableCell>
+    <TableCell>
+      <Badge variant={region.status === 'active' ? 'default' : 'secondary'}>
+        {region.status === 'active' ? t('active') : t('inactive')}
+      </Badge>
+    </TableCell>
+    <TableCell className="text-right">
+      <div className="flex justify-end space-x-2">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          title={t('viewDetails')}
+          onClick={() => handleRegionView(region)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          title={t('edit')}
+          onClick={() => handleRegionEdit(region)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          title={t('delete')}
+          onClick={() => handleRegionDelete(region)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </TableCell>
+  </TableRow>
+);
 
   const Pagination = () => (
     <div className="flex justify-center mt-4">

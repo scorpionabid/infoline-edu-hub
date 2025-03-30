@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Region, RegionFormData, EnhancedRegion } from '@/types/region';
-import { addRegion, deleteRegion, fetchRegions, getRegionStats, fetchRegionAdminEmail } from '@/services/regionService';
+import { addRegion, deleteRegion, fetchRegions, getRegionStats } from '@/services/regionService';
 
 type TranslateFunction = (key: string) => string;
 
@@ -102,18 +102,16 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       
       for (const region of regionsData) {
         try {
+          // regionService.ts-dən statistikaları əldə edirik
           const stats = await getRegionStats(region.id);
           
-          // Burada artıq region.adminEmail mövcud olması lazımdır, 
-          // regionService.ts-dən əldə edilib
-          const adminEmail = region.adminEmail || null;
-          
+          // regionService-dən alınan adminEmail-i istifadə edirik
           enhancedRegions.push({
             ...region,
             sectorCount: stats.sectorCount || 0,
             schoolCount: stats.schoolCount || 0,
             adminCount: stats.adminCount || 0,
-            adminEmail: adminEmail,
+            adminEmail: region.adminEmail || null,
             completionRate: Math.floor(Math.random() * 100)
           });
         } catch (err) {
