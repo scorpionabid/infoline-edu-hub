@@ -479,6 +479,12 @@ export type Database = {
           admin_email: string
         }[]
       }
+      get_sector_admin_email: {
+        Args: {
+          sector_id_param: string
+        }
+        Returns: string
+      }
       get_user_emails_by_ids: {
         Args: {
           user_ids: string[]
@@ -487,6 +493,12 @@ export type Database = {
           id: string
           email: string
         }[]
+      }
+      get_user_role: {
+        Args: {
+          user_id: string
+        }
+        Returns: string
       }
       has_access_to_region: {
         Args: {

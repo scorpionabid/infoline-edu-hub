@@ -168,39 +168,18 @@ export const deleteSector = async (sectorId: string): Promise<any> => {
 };
 
 // Sektor admin email-ini əldə etmək üçün metod
-// Bu, bir funksiya ilə rekursiya olmadan admin e-poçtunu əldə edir
 export const fetchSectorAdminEmail = async (sectorId: string): Promise<string | null> => {
   try {
-    // Birbaşa SQL sorğusu ilə sektor adminlərinin email-lərini əldə edək
+    // Yaratdığımız təhlükəsiz funksiyanı çağıraq
     const { data, error } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('sector_id', sectorId)
-      .eq('role', 'sectoradmin')
-      .single();
+      .rpc('get_sector_admin_email', { sector_id_param: sectorId });
     
-    if (error || !data) {
-      console.error('Sektor admin sorğusu xətası:', error);
+    if (error) {
+      console.error('Sektor admin e-poçtu sorğusu xətası:', error);
       return null;
     }
     
-    // İstifadəçi ID-si ilə emaili əldə edək
-    if (data.user_id) {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', data.user_id)
-        .single();
-      
-      if (profilesError || !profiles) {
-        console.error('Profil sorğusu xətası:', profilesError);
-        return null;
-      }
-      
-      return profiles.email || null;
-    }
-    
-    return null;
+    return data || null;
   } catch (error) {
     console.error('Sektor admin e-poçtu əldə etmə xətası:', error);
     return null;
