@@ -12,9 +12,10 @@ export interface Region {
   id: string;
   name: string;
   description?: string;
-  created_at: string; // Burada created_at artıq optional deyil
-  updated_at: string; // updated_at artıq optional deyil, məcburidir
+  created_at: string; 
+  updated_at: string;
   status: string;
+  admin_id?: string; // admin_id əlavə edildi
   // Admin əlaqəli məlumatlar
   adminName?: string;
   adminEmail?: string;

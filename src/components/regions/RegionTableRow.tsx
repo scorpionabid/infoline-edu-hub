@@ -33,8 +33,7 @@ const RegionTableRow: React.FC<RegionTableRowProps> = ({
       <Badge variant="outline">{region.schoolCount || 0}</Badge>
     </TableCell>
     <TableCell className="max-w-[180px] truncate">
-      {/* Admin email sütunu - debug məlumatları əlavə edildi */}
-      {console.log('RegionTableRow - region:', region.name, 'adminEmail:', region.adminEmail)}
+      {/* Console.log əvəzinə şərti ifadə istifadə edək */}
       {region.adminEmail ? (
         <a 
           href={`mailto:${region.adminEmail}`}

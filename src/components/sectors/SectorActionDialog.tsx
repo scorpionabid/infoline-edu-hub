@@ -28,13 +28,13 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
         const result = await deleteSector(sector.id);
         
         if (result.success) {
-          // Updated to use single argument toast call with description
+          // Düzgün toast sintaksisini istifadə edək
           toast.success(t('sectorDeleted'), {
             description: `${sector.name} ${t('sectorDeletedDesc')}`
           });
           onOpenChange(false);
         } else {
-          // Updated to use single argument toast call with description
+          // Düzgün toast sintaksisini istifadə edək
           toast.error(t('unknownErrorOccurred'), {
             description: result.error || t('couldNotDeleteSector')
           });
@@ -42,7 +42,7 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
       }
     } catch (error) {
       console.error('Sector action error:', error);
-      // Updated to use single argument toast call with description
+      // Düzgün toast sintaksisini istifadə edək
       toast.error(t('unknownErrorOccurred'), {
         description: error.message || t('couldNotDeleteSector')
       });

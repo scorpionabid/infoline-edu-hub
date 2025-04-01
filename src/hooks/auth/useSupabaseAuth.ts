@@ -115,15 +115,35 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
             // Sessiya var amma user data yoxdur - minimal user obyekti yaradaq
             if (mounted) {
-              // Minimal user obyekti yaradaq ki, isAuthenticated true olsun
-              const minimalUser = {
+              // Düzəliş: FullUserData tipinə uyğun minimal user obyekti yaradaq
+              const now = new Date().toISOString();
+              const minimalUser: FullUserData = {
                 id: currentSession.user.id,
                 email: currentSession.user.email || '',
                 role: 'authenticated',
-                // Digər sahələr üçün default dəyərlər
-                full_name: '',
-                avatar_url: null,
-                created_at: new Date().toISOString()
+                name: currentSession.user.email?.split('@')[0] || 'User',
+                full_name: currentSession.user.email?.split('@')[0] || 'User',
+                language: 'az',
+                status: 'active',
+                createdAt: now,
+                created_at: now,
+                updatedAt: now,
+                updated_at: now,
+                // Digər tələb olunan sahələr
+                school: null,
+                school_id: null,
+                schoolId: null,
+                sector: null,
+                sector_id: null,
+                sectorId: null,
+                region: null,
+                region_id: null,
+                regionId: null,
+                twoFactorEnabled: false,
+                notificationSettings: {
+                  email: true,
+                  system: true
+                }
               };
               
               setUser(minimalUser);
@@ -173,15 +193,35 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
               } catch (userError) {
                 console.error(`${event}: İstifadəçi məlumatlarını əldə edərkən xəta:`, userError);
                 if (mounted) {
-                  // Minimal user obyekti yaradaq ki, isAuthenticated true olsun
-                  const minimalUser = {
+                  // Düzəliş: FullUserData tipinə uyğun minimal user obyekti yaradaq
+                  const now = new Date().toISOString();
+                  const minimalUser: FullUserData = {
                     id: newSession.user.id,
                     email: newSession.user.email || '',
                     role: 'authenticated',
-                    // Digər sahələr üçün default dəyərlər
-                    full_name: '',
-                    avatar_url: null,
-                    created_at: new Date().toISOString()
+                    name: newSession.user.email?.split('@')[0] || 'User',
+                    full_name: newSession.user.email?.split('@')[0] || 'User',
+                    language: 'az',
+                    status: 'active',
+                    createdAt: now,
+                    created_at: now,
+                    updatedAt: now,
+                    updated_at: now,
+                    // Digər tələb olunan sahələr
+                    school: null,
+                    school_id: null,
+                    schoolId: null,
+                    sector: null,
+                    sector_id: null,
+                    sectorId: null,
+                    region: null,
+                    region_id: null,
+                    regionId: null,
+                    twoFactorEnabled: false,
+                    notificationSettings: {
+                      email: true,
+                      system: true
+                    }
                   };
                   
                   setUser(minimalUser);
@@ -409,6 +449,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     updateProfile: handleUpdateProfile,
     updatePassword: handleUpdatePassword,
     fetchUserData: handleFetchUserData,
-    refreshSession
+    refreshSession // refreshSession əlavə edildi
   };
 };

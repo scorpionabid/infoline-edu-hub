@@ -19,6 +19,7 @@ export interface AuthActions {
   updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
   updatePassword: (password: string) => Promise<boolean>;
   fetchUserData: (userId: string) => Promise<FullUserData>;
+  refreshSession: () => Promise<any | null>; // refreshSession əlavə edildi
 }
 
 // useSupabaseAuth hook-un return tipi
