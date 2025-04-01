@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -12,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useCreateSector, useEditSector, useDeleteSector } from '@/hooks/useSectorMutations';
 
-// SectorActionDialog komponentinin interfeysi
 interface SectorActionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,7 +31,6 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   
-  // State variables for form inputs
   const [name, setName] = useState(sector?.name || '');
   const [description, setDescription] = useState(sector?.description || '');
   const [status, setStatus] = useState(sector?.status || 'active');
@@ -42,7 +39,6 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
   const [adminPassword, setAdminPassword] = useState('Password123');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Reset form values when dialog opens
   useEffect(() => {
     if (isOpen) {
       if (action === 'edit' && sector) {
@@ -60,10 +56,8 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
     }
   }, [isOpen, action, sector]);
 
-  // Auto-generate admin email based on sector name
   useEffect(() => {
     if (action === 'create' && name) {
-      // Azərbaycan əlifbası üçün transliterasiya
       const transliterate = (text) => {
         const letters = {
           'ə': 'e', 'ü': 'u', 'ö': 'o', 'ğ': 'g', 'ı': 'i',
@@ -75,20 +69,18 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
       
       const processedName = transliterate(name)
         .toLowerCase()
-        .replace(/[^\w\s]/gi, '')  // Remove special chars
-        .replace(/\s+/g, '.');     // Replace spaces with dots
+        .replace(/[^\w\s]/gi, '')  
+        .replace(/\s+/g, '.');
       
       setAdminName(`${name} Admin`);
       setAdminEmail(`${processedName}.admin@infoline.edu`);
     }
   }, [name, action]);
   
-  // Use mutations
   const createSectorMutation = useCreateSector();
   const editSectorMutation = useEditSector();
   const deleteSectorMutation = useDeleteSector();
   
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -100,8 +92,8 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
           description,
           regionId: regionId!,
           status,
-          adminName: adminName || undefined,
           adminEmail: adminEmail || undefined,
+          adminName: adminName || undefined,
           adminPassword: adminPassword || undefined
         });
         
@@ -134,7 +126,6 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
         });
       }
       
-      // Refresh data
       queryClient.invalidateQueries({ queryKey: ['sectors'] });
       
       if (onSuccess) {
@@ -152,7 +143,6 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
     }
   };
   
-  // Dialog title based on action
   const getDialogTitle = () => {
     switch (action) {
       case 'create': return t('createSector') || 'Sektor yarat';
@@ -162,7 +152,6 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
     }
   };
   
-  // Class for dialog width based on action
   const getDialogClass = () => {
     return action === 'delete' ? 'sm:max-w-md' : 'sm:max-w-lg';
   };

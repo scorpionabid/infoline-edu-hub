@@ -1,9 +1,9 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSectors, addSector, deleteSector } from '@/services/sectorService';
 import { Sector } from '@/types/sector';
+import { supabase } from '@/integrations/supabase/client';
 
 type TranslateFunction = (key: string) => string;
 

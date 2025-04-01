@@ -1,4 +1,3 @@
-
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -9,6 +8,9 @@ interface CreateSectorData {
   name: string;
   description?: string;
   status: string;
+  adminEmail?: string; // Admin email əlavə edildi
+  adminName?: string;  // Admin adı əlavə edildi
+  adminPassword?: string; // Admin şifrəsi əlavə edildi
 }
 
 // Sektor yeniləmək üçün interface
@@ -23,19 +25,22 @@ interface EditSectorData {
 export const useCreateSector = () => {
   return useMutation({
     mutationFn: async (data: CreateSectorData) => {
-      const { data: result, error } = await supabase
-        .from('sectors')
-        .insert({
-          name: data.name,
-          description: data.description || null,
-          region_id: data.regionId,
-          status: data.status || 'active'
-        })
-        .select()
-        .single();
+      const { data: result, error } = await supabase.functions
+        .invoke('sector-operations', {
+          body: { 
+            action: 'create',
+            name: data.name,
+            description: data.description || null,
+            regionId: data.regionId,
+            status: data.status || 'active',
+            adminEmail: data.adminEmail,
+            adminName: data.adminName,
+            adminPassword: data.adminPassword
+          }
+        });
         
       if (error) throw error;
-      return result;
+      return result?.data?.sector;
     }
   });
 };
