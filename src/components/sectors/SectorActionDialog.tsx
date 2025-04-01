@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -10,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useCreateSector, useEditSector, useDeleteSector } from '@/hooks/useSectorMutations';
+import { useAuth } from '@/context/AuthContext';
 
 interface SectorActionDialogProps {
   isOpen: boolean;
@@ -30,10 +32,11 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
 }) => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const [name, setName] = useState(sector?.name || '');
   const [description, setDescription] = useState(sector?.description || '');
-  const [status, setStatus] = useState(sector?.status || 'active');
+  const [status, setStatus] = useState<'active' | 'inactive'>(sector?.status || 'active');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('Password123');
@@ -87,11 +90,21 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
     
     try {
       if (action === 'create') {
+        console.log('Creating sector with data:', {
+          name,
+          description,
+          regionId: regionId || user?.regionId,
+          status,
+          adminEmail,
+          adminName,
+          adminPassword
+        });
+        
         await createSectorMutation.mutateAsync({
           name,
           description,
-          regionId: regionId!,
-          status: status as 'active' | 'inactive',
+          regionId: regionId || user?.regionId || '',
+          status,
           adminEmail: adminEmail || undefined,
           adminName: adminName || undefined,
           adminPassword: adminPassword || undefined
@@ -207,7 +220,7 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
                       
                       <div className="space-y-2">
                         <Label htmlFor="status">{t('status') || 'Status'}</Label>
-                        <Select value={status} onValueChange={setStatus}>
+                        <Select value={status} onValueChange={(val: 'active' | 'inactive') => setStatus(val)}>
                           <SelectTrigger>
                             <SelectValue placeholder={t('selectStatus') || 'Status seçin'} />
                           </SelectTrigger>
@@ -292,7 +305,7 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
               
               <div className="space-y-2">
                 <Label htmlFor="status">{t('status') || 'Status'}</Label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select value={status} onValueChange={(val: 'active' | 'inactive') => setStatus(val)}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('selectStatus') || 'Status seçin'} />
                   </SelectTrigger>

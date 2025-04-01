@@ -7,7 +7,7 @@ export interface CreateSectorParams {
   name: string;
   description?: string;
   regionId: string;
-  status?: string;
+  status?: 'active' | 'inactive';
   adminEmail?: string;
   adminName?: string;
   adminPassword?: string;
@@ -16,7 +16,7 @@ export interface CreateSectorParams {
 // Sektorları yükləmək üçün funksiya
 export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
   try {
-    console.log('Sektorlar sorğusu göndərilir...');
+    console.log('Sektorlar sorğusu göndərilir...', regionId ? `Region ID: ${regionId}` : 'Bütün regionlar üçün');
     
     let query = supabase
       .from('sectors')
@@ -26,6 +26,7 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
     // Əgər regionId varsa, filtrlə
     if (regionId) {
       query = query.eq('region_id', regionId);
+      console.log(`Region ID ilə filtrlənir: ${regionId}`);
     }
     
     const { data: sectors, error } = await query;
@@ -41,6 +42,7 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
     }
     
     console.log(`${sectors.length} sektor tapıldı, admin emailləri əldə edilir...`);
+    console.log('Ham sektorlar:', sectors);
     
     // Hər sektor üçün admin email-lərini əldə etmək üçün bir map yaradaq
     const sectorAdminEmails = new Map();
@@ -91,24 +93,34 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
       }
     }
     
+    // Regionların adlarını əlavə edək
+    const { data: regions, error: regionsError } = await supabase
+      .from('regions')
+      .select('id, name');
+      
+    const regionNames = regionsError || !regions ? {} : 
+      regions.reduce((acc, region) => {
+        acc[region.id] = region.name;
+        return acc;
+      }, {});
+    
     // Sektorları admin emailləri ilə formalaşdır
     const formattedSectors = sectors.map(sector => {
       // Map-dən admin email-i əldə edək
       const adminEmail = sectorAdminEmails.get(sector.id) || null;
-      
-      // Debug - hər sektor üçün admin məlumatlarını göstər
-      console.log(`Sektor: ${sector.name}, Admin Email: ${adminEmail || 'yoxdur'}`);
+      const regionName = regionNames[sector.region_id] || "Bilinmir";
       
       return {
         ...sector,
         adminEmail,
+        regionName,
         schoolCount: 0, // Bu məlumatlar başqa sorğu ilə əldə edilə bilər
         adminCount: adminEmail ? 1 : 0,
         completionRate: Math.floor(Math.random() * 100) // Hələlik təsadüfi dəyər
       };
     });
     
-    console.log('Formatlanmış sektorlar:', formattedSectors.map(s => ({ name: s.name, adminEmail: s.adminEmail })));
+    console.log('Formatlanmış sektorlar:', formattedSectors);
     return formattedSectors as Sector[];
   } catch (error) {
     console.error('Sektorları əldə edərkən ümumi xəta:', error);
@@ -122,7 +134,6 @@ export const addSector = async (sectorData: CreateSectorParams): Promise<Sector>
     console.log('Sektor əlavə edilir:', sectorData);
     
     // Edge function vasitəsilə sektoru və admini yaradaq
-    // Bu üsul auth.admin.createUser-i server tərəfdə işlədir
     const { data, error } = await supabase.functions
       .invoke('sector-operations', {
         body: { 
@@ -146,14 +157,26 @@ export const addSector = async (sectorData: CreateSectorParams): Promise<Sector>
     
     // Edge function-dan qaytarılan məlumatları formalaşdır
     if (data && data.data && data.data.sector) {
+      // Region adını əldə et
+      const { data: regionData } = await supabase
+        .from('regions')
+        .select('name')
+        .eq('id', data.data.sector.region_id)
+        .single();
+      
+      const regionName = regionData?.name || 'Bilinmir';
+      
       const newSector = {
         ...data.data.sector,
+        regionName,
         adminEmail: data.data.adminEmail || null,
         admin_id: data.data.adminId || null,
         adminCount: data.data.adminId ? 1 : 0,
         schoolCount: 0,
-        completionRate: 0
+        completionRate: 0,
+        status: data.data.sector.status as 'active' | 'inactive'
       };
+      
       console.log('Formatlanmış yeni sektor:', newSector);
       return newSector;
     } else {

@@ -10,7 +10,7 @@ const corsHeaders = {
 interface CreateSectorRequest {
   name: string;
   description?: string;
-  status?: string;
+  status?: 'active' | 'inactive';
   regionId: string;
   adminEmail?: string;
   adminName?: string;
@@ -60,7 +60,7 @@ serve(async (req) => {
       console.log('Request data:', requestData);
 
       // Sektorun yaradılması
-      if (action === 'create') {
+      if (requestData.action === 'create') {
         const { name, description, status, regionId, adminEmail, adminName, adminPassword } = requestData as CreateSectorRequest;
         
         if (!name || !regionId) {
@@ -135,9 +135,11 @@ serve(async (req) => {
               return new Response(
                 JSON.stringify({ 
                   success: true, 
-                  sector: sectorData, 
-                  warning: 'Sektor yaradıldı, lakin admin hesabı yaradıla bilmədi',
-                  details: userError 
+                  data: {
+                    sector: sectorData, 
+                    warning: 'Sektor yaradıldı, lakin admin hesabı yaradıla bilmədi',
+                    details: userError 
+                  }
                 }),
                 { 
                   status: 201, 
@@ -209,9 +211,11 @@ serve(async (req) => {
             return new Response(
               JSON.stringify({ 
                 success: true, 
-                sector: sectorData, 
-                warning: 'Sektor yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
-                details: err
+                data: {
+                  sector: sectorData, 
+                  warning: 'Sektor yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
+                  details: err
+                }
               }),
               { 
                 status: 201, 
@@ -238,7 +242,7 @@ serve(async (req) => {
         );
       } 
       // Sektorun silinməsi
-      else if (action === 'delete') {
+      else if (requestData.action === 'delete') {
         const { sectorId } = requestData as DeleteSectorRequest;
         
         if (!sectorId) {

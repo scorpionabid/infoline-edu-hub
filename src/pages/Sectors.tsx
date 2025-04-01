@@ -1,760 +1,523 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, Role } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
-import SidebarLayout from '@/components/layout/SidebarLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { 
-  Map, 
-  School, 
-  Search, 
-  Plus, 
-  MoreHorizontal, 
-  Pencil, 
-  Trash2, 
-  Eye,
-  ArrowUpDown,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Globe,
-  User,
-  KeyRound
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationEllipsis, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from "@/components/ui/accordion";
-import { UserFormData } from '@/types/user';
-import { mockUsers } from '@/data/mockUsers';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
-import { useRegions } from '@/hooks/useRegions';
 
-const Sectors = () => {
-  const { user } = useAuth();
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ExternalLink, FileSpreadsheet, Plus, Search, Trash2, Pencil } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { useSectorsStore } from '@/hooks/useSectorsStore';
+import SectorActionDialog from '@/components/sectors/SectorActionDialog';
+import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
+const Sectors: React.FC = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { regions } = useRegions();
+  const location = useLocation();
   
-  const {
-    sectors,
-    loading,
+  // Zustand store
+  const { 
+    sectors, 
+    filteredSectors, 
+    loading, 
+    error,
     searchTerm,
     selectedStatus,
-    sortConfig,
     currentPage,
+    pageSize,
     totalPages,
+    isOperationComplete,
+    fetchSectors, 
     handleSearch,
     handleStatusFilter,
-    handleSort,
-    handlePageChange,
-    resetFilters,
     handleAddSector,
     handleUpdateSector,
-    handleDeleteSector
+    handleDeleteSector,
+    resetFilters,
+    handleSort,
+    handlePageChange,
+    setIsOperationComplete
   } = useSectorsStore();
-  
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
-  const [selectedSector, setSelectedSector] = useState(null);
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
-  
+
+  // Lokal state'lər
   const [sectorFormData, setSectorFormData] = useState({
     name: '',
     description: '',
-    status: 'active',
-    region_id: ''
+    region_id: user?.regionId || '',
+    status: 'active' as 'active' | 'inactive'
   });
-  
-  const [adminFormData, setAdminFormData] = useState<UserFormData>({
+  const [adminFormData, setAdminFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    role: 'sectoradmin' as Role,
-    status: 'active',
-    notificationSettings: {
-      email: true,
-      system: true
-    }
+    password: 'Password123'
   });
   
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedSector, setSelectedSector] = useState<any>(null);
+  const [adminGenerationMode, setAdminGenerationMode] = useState<'auto' | 'manual'>('auto');
+  const [exportFormat, setExportFormat] = useState<'excel' | 'csv'>('excel');
   
-  const handleAddDialogOpen = () => {
+  // Səhifələmə üçün state'lər
+  const paginatedSectors = filteredSectors.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Component ilk dəfə açıldığında sektorları yüklə
+  useEffect(() => {
+    const loadSectors = async () => {
+      // Region admini üçün, öz regionundan olan sektorları göstər
+      if (user?.role === 'regionadmin' && user?.regionId) {
+        await fetchSectors(user.regionId, t);
+      } else {
+        // SuperAdmin üçün bütün sektorları göstər
+        await fetchSectors(undefined, t);
+      }
+    };
+    
+    loadSectors();
+    
+    // Digər komponentlərdən gələn state-i təmizlə
+    return () => {
+      resetFilters();
+    };
+  }, [user?.regionId, user?.role, fetchSectors, t, resetFilters]);
+
+  // Əməliyyat status dəyişikliyi
+  useEffect(() => {
+    if (isOperationComplete) {
+      closeDialogs();
+      setIsOperationComplete(false);
+    }
+  }, [isOperationComplete, setIsOperationComplete]);
+
+  // Bütün dialogları bağla
+  const closeDialogs = () => {
+    setShowCreateDialog(false);
+    setShowEditDialog(false);
+    setShowDeleteDialog(false);
+    setSelectedSector(null);
+  };
+
+  // Sektor yaratma dialogunu aç
+  const openCreateDialog = () => {
     setSectorFormData({
       name: '',
       description: '',
-      status: 'active',
-      region_id: ''
+      region_id: user?.regionId || '',
+      status: 'active'
     });
-    
     setAdminFormData({
       name: '',
       email: '',
-      password: '',
-      role: 'sectoradmin' as Role,
-      status: 'active',
-      notificationSettings: {
-        email: true,
-        system: true
-      }
+      password: 'Password123'
     });
-    
-    setIsAddDialogOpen(true);
+    setShowCreateDialog(true);
   };
-  
-  const handleViewAdmin = (sector) => {
+
+  // Sektor redaktə dialogunu aç
+  const openEditDialog = (sector: any) => {
     setSelectedSector(sector);
-    const admin = mockUsers.find(user => user.id === sector.adminId);
-    setSelectedAdmin(admin || { 
-      id: sector.adminId, 
-      name: 'Admin', 
-      email: sector.adminEmail,
-      role: 'sectoradmin' as Role,
-      status: 'active'
+    setSectorFormData({
+      name: sector.name || '',
+      description: sector.description || '',
+      region_id: sector.region_id || user?.regionId || '',
+      status: sector.status as 'active' | 'inactive'
     });
-    setIsUserDialogOpen(true);
+    setShowEditDialog(true);
   };
-  
-  const handleSectorFormChange = (e) => {
-    const { name, value } = e.target;
-    setSectorFormData(prev => ({ ...prev, [name]: value }));
-    
-    if (name === 'name' && value) {
-      const suggestedEmail = `${value.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`;
-      setAdminFormData(prev => ({ 
-        ...prev, 
-        email: suggestedEmail,
-        name: `${value} Admin`
+
+  // Sektor silmə dialogunu aç
+  const openDeleteDialog = (sector: any) => {
+    setSelectedSector(sector);
+    setShowDeleteDialog(true);
+  };
+
+  // Axtarış ve statusla filtrelemə
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleSearch(e.target.value);
+  };
+
+  const handleStatusChange = (value: string | null) => {
+    handleStatusFilter(value);
+  };
+
+  // Formdan məlumatları yığ
+  const handleSectorFormChange = (field: string, value: string) => {
+    setSectorFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    // Avtomatik admin məlumatlarını yarat
+    if (field === 'name' && adminGenerationMode === 'auto') {
+      const transliterateName = (text: string): string => {
+        const letters: Record<string, string> = {
+          'ə': 'e', 'ü': 'u', 'ö': 'o', 'ğ': 'g', 'ı': 'i',
+          'ş': 'sh', 'ç': 'ch', 'Ə': 'E', 'Ü': 'U', 'Ö': 'O',
+          'Ğ': 'G', 'I': 'I', 'Ş': 'Sh', 'Ç': 'Ch'
+        };
+        
+        return text
+          .replace(/[əüöğışçƏÜÖĞIŞÇ]/g, match => letters[match] || match)
+          .toLowerCase()
+          .replace(/\s+/g, '.')
+          .replace(/[^\w\s.]/gi, '');
+      };
+      
+      const adminName = `${value} Admin`;
+      const processedName = transliterateName(value);
+      const adminEmail = `${processedName}.admin@infoline.edu`;
+      
+      setAdminFormData(prev => ({
+        ...prev,
+        name: adminName,
+        email: adminEmail
       }));
     }
   };
-  
-  const handleAdminFormChange = (data: UserFormData) => {
-    setAdminFormData(data);
+
+  // Admin məlumatlarını manuel dəyişmək
+  const handleAdminFormChange = (field: string, value: string) => {
+    // Manual dəyişiklik olduqda, avtomatik generasiyanı söndür
+    setAdminGenerationMode('manual');
+    
+    setAdminFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-  
+
+  // Admin generasiya rejimini dəyişmək
+  const toggleAdminGenerationMode = () => {
+    if (adminGenerationMode === 'manual') {
+      setAdminGenerationMode('auto');
+      // Auto rejimə keçid üçün admin məlumatlarını yenidən generasiya et
+      handleSectorFormChange('name', sectorFormData.name);
+    } else {
+      setAdminGenerationMode('manual');
+    }
+  };
+
+  // Sektor əlavə et
   const handleAddSubmit = async () => {
     const sectorDataToAdd = {
       name: sectorFormData.name,
       description: sectorFormData.description,
-      region_id: selectedRegion,
-      status: sectorFormData.status as 'active' | 'inactive'
+      region_id: sectorFormData.region_id || user?.regionId,
+      status: sectorFormData.status as 'active' | 'inactive',
+      adminEmail: adminFormData.email,
+      adminName: adminFormData.name,
+      adminPassword: adminFormData.password
     };
     
-    const success = await handleAddSector(sectorDataToAdd);
-    
-    if (success) {
-      const newAdminId = `user-${Date.now()}`;
-      const newAdmin = {
-        ...adminFormData,
-        id: newAdminId,
-        regionId: selectedRegion,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      mockUsers.push(newAdmin);
-      
-      setIsAddDialogOpen(false);
-      toast.success('Sektor və admin uğurla əlavə edildi');
-    }
+    await handleAddSector(sectorDataToAdd, t);
   };
-  
-  const handleEditDialogOpen = (sector) => {
-    setSelectedSector(sector);
-    setSectorFormData({
-      name: sector.name,
-      description: sector.description || '',
-      status: sector.status,
-      region_id: sector.region_id
-    });
-    setSelectedRegion(sector.region_id);
-    setIsEditDialogOpen(true);
-  };
-  
-  const handleEditSubmit = async () => {
+
+  // Sektor redaktə et
+  const handleUpdateSubmit = async () => {
     if (!selectedSector) return;
     
-    const sectorUpdates = {
-      name: sectorFormData.name,
-      description: sectorFormData.description,
-      status: sectorFormData.status,
-      region_id: selectedRegion
-    };
-    
-    const success = await handleUpdateSector(selectedSector.id, sectorUpdates);
-    if (success) {
-      setIsEditDialogOpen(false);
-    }
+    await handleUpdateSector(selectedSector.id, sectorFormData, t);
   };
-  
-  const handleDeleteDialogOpen = (sector) => {
-    setSelectedSector(sector);
-    setIsDeleteDialogOpen(true);
-  };
-  
-  const handleDeleteConfirm = async () => {
+
+  // Sektor sil
+  const handleDeleteSubmit = async () => {
     if (!selectedSector) return;
     
-    const success = await handleDeleteSector(selectedSector.id);
-    if (success) {
-      setIsDeleteDialogOpen(false);
-    }
+    await handleDeleteSector(selectedSector.id, t);
   };
-  
-  const renderCompletionRateBadge = (rate) => {
-    if (rate >= 80) {
-      return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">{rate}%</Badge>;
-    } else if (rate >= 60) {
-      return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">{rate}%</Badge>;
-    } else {
-      return <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">{rate}%</Badge>;
-    }
+
+  // Cədvəldə sütunları sırala
+  const handleColumnSort = (key: string) => {
+    handleSort(key);
   };
-  
-  const renderStatusBadge = (status) => {
-    if (status === 'active') {
-      return <div className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-1" /> Aktiv</div>;
-    } else {
-      return <div className="flex items-center"><XCircle className="h-4 w-4 text-red-500 mr-1" /> Deaktiv</div>;
-    }
-  };
-  
-  const handleResetPassword = () => {
-    if (newPassword.length < 6) {
-      setPasswordError('Parol minimum 6 simvol olmalıdır');
-      return;
-    }
-    
-    toast.success(`${selectedAdmin?.email} üçün yeni parol təyin edildi`, {
-      description: "Admin növbəti daxil olduqda bu parolu istifadə edəcək."
+
+  // Excel export
+  const handleExport = () => {
+    toast.info(t('exportStarted'), {
+      description: t('preparingExport')
     });
     
-    setShowPasswordReset(false);
-    setNewPassword('');
-    setIsUserDialogOpen(false);
+    // Əslində burada Excel export kodu olacaq
+    setTimeout(() => {
+      toast.success(t('exportComplete'), {
+        description: t('exportSuccess')
+      });
+    }, 1500);
   };
-  
+
+  // Import
+  const handleImport = () => {
+    toast.info(t('featureInDevelopment'), {
+      description: t('comingSoon')
+    });
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <h1 className="text-2xl font-bold text-red-500">{t('errorOccurred')}</h1>
+        <p>{error.message}</p>
+        <Button onClick={() => fetchSectors(user?.regionId, t)}>{t('tryAgain')}</Button>
+      </div>
+    );
+  }
+
   return (
-    <SidebarLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('sectors')}</h1>
-            <p className="text-muted-foreground">Sektorları idarə et və izlə</p>
+    <div className="container py-4">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-2xl font-bold">{t('sectors')}</h1>
+          <p className="text-muted-foreground">{t('sectorsDescription')}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleImport}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t('import')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            {t('export')}
+          </Button>
+          <Button
+            size="sm"
+            onClick={openCreateDialog}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t('createSector')}
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-background rounded-lg shadow p-4">
+        <div className="flex justify-between items-center mb-4 gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder={t('searchSectors')}
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
           </div>
-          {user?.role === 'superadmin' || user?.role === 'regionadmin' && (
-            <Button onClick={handleAddDialogOpen} className="gap-1">
-              <Plus className="h-4 w-4" />
-              Sektor əlavə et
-            </Button>
-          )}
+          <Select
+            value={selectedStatus || ''}
+            onValueChange={(value) => handleStatusChange(value === '' ? null : value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t('filterByStatus')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{t('allStatuses')}</SelectItem>
+              <SelectItem value="active">{t('active')}</SelectItem>
+              <SelectItem value="inactive">{t('inactive')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">#</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted transition-colors px-4 py-2"
+                  onClick={() => handleColumnSort('name')}
+                >
+                  {t('name')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted transition-colors px-4 py-2"
+                  onClick={() => handleColumnSort('regionName')}
+                >
+                  {t('regionName')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted transition-colors px-4 py-2"
+                  onClick={() => handleColumnSort('adminEmail')}
+                >
+                  {t('sectorAdmin')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted transition-colors px-4 py-2"
+                  onClick={() => handleColumnSort('schoolCount')}
+                >
+                  {t('schoolCount')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted transition-colors px-4 py-2"
+                  onClick={() => handleColumnSort('completionRate')}
+                >
+                  {t('completionRate')}
+                </TableHead>
+                <TableHead className="text-center">{t('status')}</TableHead>
+                <TableHead className="text-right">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array(5).fill(null).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`}>
+                    <TableCell><Skeleton className="h-5 w-5" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-20" /></TableCell>
+                  </TableRow>
+                ))
+              ) : paginatedSectors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-10">
+                    {searchTerm || selectedStatus ? 
+                      t('noSectorsMatchingFilters') :
+                      t('noSectorsYet')}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedSectors.map((sector, index) => (
+                  <TableRow 
+                    key={sector.id}
+                    className="hover:bg-muted/50"
+                  >
+                    <TableCell className="font-medium">
+                      {(currentPage - 1) * pageSize + index + 1}
+                    </TableCell>
+                    <TableCell>{sector.name}</TableCell>
+                    <TableCell>{sector.regionName}</TableCell>
+                    <TableCell>{sector.adminEmail || t('noAdmin')}</TableCell>
+                    <TableCell className="text-center">{sector.schoolCount || 0}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              (sector.completionRate || 0) > 80 
+                                ? 'bg-green-500' 
+                                : (sector.completionRate || 0) > 30 
+                                  ? 'bg-yellow-500' 
+                                  : 'bg-red-500'
+                            }`}
+                            style={{ width: `${sector.completionRate || 0}%` }}
+                          />
+                        </div>
+                        <span className="text-xs">{sector.completionRate || 0}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant={sector.status === 'active' ? 'success' : 'destructive'}
+                      >
+                        {sector.status === 'active' ? t('active') : t('inactive')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => openEditDialog(sector)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">{t('edit')}</span>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => openDeleteDialog(sector)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">{t('delete')}</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
         
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 mb-6 items-start md:items-center justify-between">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Sektorları axtar..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-              </div>
+        {filteredSectors.length > 0 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              {t('showingResults', {
+                start: (currentPage - 1) * pageSize + 1,
+                end: Math.min(currentPage * pageSize, filteredSectors.length),
+                total: filteredSectors.length
+              })}
             </div>
-            
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
-                      <div className="flex items-center">
-                        Ad
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell" onClick={() => handleSort('regionName')}>
-                      <div className="flex items-center">
-                        Region
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">Məktəblər</TableHead>
-                    <TableHead className="hidden md:table-cell">Admin</TableHead>
-                    <TableHead className="hidden md:table-cell">Tamamlanma</TableHead>
-                    <TableHead className="hidden md:table-cell" onClick={() => handleSort('status')}>
-                      <div className="flex items-center">
-                        Status
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right">Əməliyyatlar</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <p>Məlumatlar yüklənir...</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : sectors.length > 0 ? (
-                    sectors.map(sector => (
-                      <TableRow key={sector.id}>
-                        <TableCell className="font-medium">{sector.id.substring(0, 4)}...</TableCell>
-                        <TableCell>{sector.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {sector.regionName}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1">
-                            <School className="h-4 w-4 text-muted-foreground" />
-                            {sector.schoolCount}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Button 
-                            variant="link" 
-                            className="p-0 h-auto text-blue-500 hover:text-blue-700 flex items-center gap-1"
-                            onClick={() => handleViewAdmin(sector)}
-                          >
-                            <User className="h-4 w-4" />
-                            {sector.adminEmail}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {renderCompletionRateBadge(sector.completionRate)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {renderStatusBadge(sector.status)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(`/sectors/${sector.id}`)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Bax
-                              </DropdownMenuItem>
-                              {(user?.role === 'superadmin' || user?.role === 'regionadmin') && (
-                                <>
-                                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditDialogOpen(sector)}>
-                                    <Pencil className="h-4 w-4 mr-2" />
-                                    Redaktə et
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => handleDeleteDialogOpen(sector)}>
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Sil
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Map className="h-8 w-8 mb-2" />
-                          <p>Sektor tapılmadı</p>
-                          {searchTerm && (
-                            <p className="text-sm">Başqa axtarış termini sınayın</p>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                {t('previous')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                {t('next')}
+              </Button>
             </div>
-            
-            {totalPages > 1 && (
-              <div className="mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} 
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          isActive={currentPage === page}
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)} 
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
       
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sektor əlavə et</DialogTitle>
-            <DialogDescription>Yeni sektor əlavə etmək üçün məlumatları daxil edin.</DialogDescription>
-          </DialogHeader>
-          
-          <Accordion type="single" collapsible defaultValue="sector" className="w-full">
-            <AccordionItem value="sector">
-              <AccordionTrigger className="text-lg font-medium">
-                Sektor məlumatları
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-name">Ad</Label>
-                    <Input
-                      id="add-name"
-                      name="name"
-                      value={sectorFormData.name}
-                      onChange={handleSectorFormChange}
-                      placeholder="Sektor adı"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-description">Təsvir</Label>
-                    <Input
-                      id="add-description"
-                      name="description"
-                      value={sectorFormData.description}
-                      onChange={handleSectorFormChange}
-                      placeholder="Sektor haqqında qısa məlumat"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-region">Region</Label>
-                    <select
-                      id="add-region"
-                      name="regionId"
-                      value={selectedRegion}
-                      onChange={(e) => setSelectedRegion(e.target.value)}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      <option value="">Region seçin</option>
-                      {regions.map(region => (
-                        <option key={region.id} value={region.id}>{region.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-status">Status</Label>
-                    <select
-                      id="add-status"
-                      name="status"
-                      value={sectorFormData.status}
-                      onChange={handleSectorFormChange}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      <option value="active">Aktiv</option>
-                      <option value="inactive">Deaktiv</option>
-                    </select>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="admin">
-              <AccordionTrigger className="text-lg font-medium">
-                Admin məlumatları
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-name">Admin adı</Label>
-                    <Input
-                      id="admin-name"
-                      name="name"
-                      value={adminFormData.name}
-                      onChange={(e) => setAdminFormData({...adminFormData, name: e.target.value})}
-                      placeholder="Admin adı və soyadı"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">Email</Label>
-                    <Input
-                      id="admin-email"
-                      name="email"
-                      type="email"
-                      value={adminFormData.email}
-                      onChange={(e) => setAdminFormData({...adminFormData, email: e.target.value})}
-                      placeholder="admin@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Şifrə</Label>
-                    <Input
-                      id="admin-password"
-                      name="password"
-                      type="password"
-                      value={adminFormData.password}
-                      onChange={(e) => setAdminFormData({...adminFormData, password: e.target.value})}
-                      placeholder="Şifrə (minimum 6 simvol)"
-                    />
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Ləğv et</Button>
-            <Button onClick={handleAddSubmit} 
-              disabled={
-                !sectorFormData.name || 
-                !selectedRegion ||
-                !adminFormData.name || 
-                !adminFormData.email || 
-                !adminFormData.password || 
-                adminFormData.password.length < 6
-              }
-            >
-              Əlavə et
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create, edit və delete modal */}
+      <SectorActionDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        action="create"
+        regionId={user?.regionId}
+        onSuccess={() => {
+          closeDialogs();
+        }}
+      />
       
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sektoru redaktə et</DialogTitle>
-            <DialogDescription>Sektor məlumatlarını dəyişin.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Ad</Label>
-              <Input
-                id="edit-name"
-                name="name"
-                value={sectorFormData.name}
-                onChange={handleSectorFormChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Təsvir</Label>
-              <Input
-                id="edit-description"
-                name="description"
-                value={sectorFormData.description}
-                onChange={handleSectorFormChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-region">Region</Label>
-              <select
-                id="edit-region"
-                name="regionId"
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">Region seçin</option>
-                {regions.map(region => (
-                  <option key={region.id} value={region.id}>{region.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <select
-                id="edit-status"
-                name="status"
-                value={sectorFormData.status}
-                onChange={handleSectorFormChange}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="active">Aktiv</option>
-                <option value="inactive">Deaktiv</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Ləğv et</Button>
-            <Button onClick={handleEditSubmit}>Yadda saxla</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SectorActionDialog
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        action="edit"
+        sector={selectedSector}
+        onSuccess={() => {
+          closeDialogs();
+        }}
+      />
       
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Silməyi təsdiqlə</DialogTitle>
-            <DialogDescription>
-              "{selectedSector?.name}" sektorunu silmək istədiyinizə əminsiniz?
-              Bu əməliyyat geri qaytarıla bilməz.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-4">
-            <AlertCircle className="h-16 w-16 text-destructive" />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Ləğv et</Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>Sil</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isUserDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setShowPasswordReset(false);
-          setNewPassword('');
-          setPasswordError('');
-        }
-        setIsUserDialogOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Admin məlumatları</DialogTitle>
-            <DialogDescription>
-              {selectedSector?.name} sektorunun admininə aid məlumatlar
-            </DialogDescription>
-          </DialogHeader>
-          {selectedAdmin && (
-            <div className="space-y-4 py-4">
-              {!showPasswordReset ? (
-                <>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Ad</Label>
-                    <p className="font-medium">{selectedAdmin.name}</p>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Email</Label>
-                    <p className="font-medium">{selectedAdmin.email}</p>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Rol</Label>
-                    <Badge variant="secondary" className="w-fit">Sektor admin</Badge>
-                  </div>
-                  <div className="flex flex-col space-y-1">
-                    <Label className="text-sm text-muted-foreground">Status</Label>
-                    <Badge variant="outline" className={`w-fit ${selectedAdmin.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                      {selectedAdmin.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                    </Badge>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col space-y-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="newPassword">Yeni parol</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        if (e.target.value.length < 6) {
-                          setPasswordError('Parol minimum 6 simvol olmalıdır');
-                        } else {
-                          setPasswordError('');
-                        }
-                      }}
-                      placeholder="Yeni parol daxil edin (minimum 6 simvol)"
-                      className={passwordError ? "border-red-500" : ""}
-                    />
-                    {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <p>Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            {!showPasswordReset ? (
-              <>
-                <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>Bağla</Button>
-                <Button onClick={() => setShowPasswordReset(true)}>
-                  <KeyRound className="h-4 w-4 mr-2" />
-                  Parolu dəyiş
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setShowPasswordReset(false)}>Ləğv et</Button>
-                <Button 
-                  onClick={handleResetPassword}
-                  disabled={newPassword.length < 6}
-                >
-                  Parolu dəyiş
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </SidebarLayout>
+      <SectorActionDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        action="delete"
+        sector={selectedSector}
+        onSuccess={() => {
+          closeDialogs();
+        }}
+      />
+    </div>
   );
 };
 

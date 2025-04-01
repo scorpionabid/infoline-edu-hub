@@ -107,28 +107,17 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      console.log('Sektorlar yüklənir...');
+      console.log('Sektorlar yüklənir...', regionId ? `Region ID: ${regionId}` : 'Bütün regionlar üçün');
       const sectorsData = await fetchSectors(regionId);
-      console.log(`${sectorsData.length} sektor yükləndi`);
+      console.log(`${sectorsData.length} sektor yükləndi`, sectorsData);
       
-      // Regionların adlarını əlavə edək (mock data)
-      const regionsMap = {
-        "58f5e98a-3cbe-4c6b-af0b-d7724e1f1b00": "MARTİ",
-        "aeb70f18-8c26-4a1a-af65-e5f5c9bfdb38": "ŞZRTİ"
-      };
-      
-      const enhancedSectors = sectorsData.map(sector => ({
-        ...sector,
-        regionName: regionsMap[sector.region_id] || "Bilinmir"
-      }));
-
       const { sortConfig, searchTerm, selectedStatus, pageSize } = get();
-      const filtered = filterSectors(enhancedSectors, searchTerm, selectedStatus);
+      const filtered = filterSectors(sectorsData, searchTerm, selectedStatus);
       const sorted = sortSectors(filtered, sortConfig);
       const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
       
       set({
-        sectors: enhancedSectors,
+        sectors: sectorsData,
         filteredSectors: sorted,
         totalPages,
         loading: false
