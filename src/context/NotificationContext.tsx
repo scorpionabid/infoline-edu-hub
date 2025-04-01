@@ -3,7 +3,6 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { Notification, NotificationType, NotificationPriority } from '@/types/notification';
 import { useAuth } from './AuthContext';
 import { v4 as uuidv4 } from 'uuid';
-import { AuthContext as AuthContextType } from './AuthContext';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -40,7 +39,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Əsas state-lər
   const [notifications, setNotifications] = useState<Notification[]>([]);
   
-  // AuthContext-i birbaşa import edir və useAuth hook-dan istifadə edirik
+  // AuthContext-dən istifadəçi məlumatlarını əldə edək
   const { user } = useAuth();
   
   // Yüklənən zaman bildirişləri localStorage-dən oxuyaq
