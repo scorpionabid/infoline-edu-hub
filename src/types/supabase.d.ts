@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   full_name?: string;
@@ -64,3 +63,6 @@ export interface FullUserData {
     system: boolean;
   };
 }
+
+// UserRole tipini yeniləyək - authenticated tipini əlavə edək
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'authenticated';

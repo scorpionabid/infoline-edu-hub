@@ -42,9 +42,9 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
       }
     } catch (error) {
       console.error('Sector action error:', error);
-      // Düzgün toast sintaksisini istifadə edək
+      // Düzgün toast sintaksisini istifadə edək - burada error.message-i düzgün istifadə edək
       toast.error(t('unknownErrorOccurred'), {
-        description: error.message || t('couldNotDeleteSector')
+        description: error instanceof Error ? error.message : t('couldNotDeleteSector')
       });
     } finally {
       setIsProcessing(false);
