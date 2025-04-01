@@ -1,4 +1,3 @@
-
 import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -31,156 +30,96 @@ export const fetchRegions = async (): Promise<Region[]> => {
     }
     
     if (!regions || regions.length === 0) {
+      console.log('Heç bir region tapılmadı');
       return [];
     }
     
-    // Birbaşa auth.users cədvəlindən admin emailləri əldə etməyə çalışaq
-    // Bu, RLS problemlərini həll edə bilər
-    try {
-      // Birbaşa admin emailləri əldə etmək üçün auth.users cədvəli ilə birləşdirmə
-      const { data: adminEmails, error: adminEmailsError } = await supabase
-        .from('admin_emails')
-        .select('*');
+    console.log(`${regions.length} region tapıldı, admin emailləri əldə edilir...`);
+    
+    // Hər region üçün admin email-lərini əldə etmək üçün bir map yaradaq
+    const regionAdminEmails = new Map();
+    
+    // Bütün region adminlərini bir sorgu ilə əldə edək
+    const { data: userRoles, error: userRolesError } = await supabase
+      .from('user_roles')
+      .select('user_id, region_id')
+      .eq('role', 'regionadmin');
+    
+    if (userRolesError) {
+      console.error('Region adminləri sorğusunda xəta:', userRolesError);
+    } else if (userRoles && userRoles.length > 0) {
+      console.log(`${userRoles.length} region admin tapıldı`);
       
-      if (!adminEmailsError && adminEmails && adminEmails.length > 0) {
-        console.log('Admin emailləri birbaşa əldə edildi:', adminEmails.length);
+      // Bütün admin istifadəçilərinin ID-lərini toplayaq
+      const adminUserIds = userRoles.map(role => role.user_id);
+      
+      // Profiles cədvəlindən bütün admin istifadəçilərinin email-lərini əldə edək
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', adminUserIds);
+      
+      if (profilesError) {
+        console.error('Admin profilləri sorğusunda xəta:', profilesError);
+      } else if (profiles && profiles.length > 0) {
+        console.log(`${profiles.length} admin profili tapıldı`);
         
-        // Region ID və admin email map yarat
-        const regionToEmailMap = new Map();
-        adminEmails.forEach(item => {
-          if (item.region_id && item.email) {
-            regionToEmailMap.set(item.region_id, item.email);
+        // Profillərdən user ID -> email mapı yaradaq
+        const userIdToEmailMap = new Map();
+        profiles.forEach(profile => {
+          if (profile.id && profile.email) {
+            userIdToEmailMap.set(profile.id, profile.email);
           }
         });
         
-        // Regionları admin emailləri ilə formalaşdır
-        const formattedRegions = regions.map(region => {
-          const adminEmail = regionToEmailMap.get(region.id) || null;
-          
-          // Debug - hər region üçün admin məlumatlarını göstər
-          console.log(`Region: ${region.name}, Admin Email: ${adminEmail || 'yoxdur'}`);
-          
-          return {
-            ...region,
-            adminEmail,
-            sectorCount: 0,
-            schoolCount: 0,
-            adminCount: adminEmail ? 1 : 0
-          };
-        });
-        
-        console.log('Formatlanmış regionlar (birbaşa):', formattedRegions.map(r => ({ name: r.name, adminEmail: r.adminEmail })));
-        return formattedRegions as Region[];
-      }
-    } catch (directError) {
-      console.error('Birbaşa admin email sorğusunda xəta:', directError);
-      // Xəta baş verərsə, alternativ metoda keçirik
-    }
-    
-    // Alternativ metod: Əvvəlki kimi user_roles və profiles cədvəllərindən əldə et
-    console.log('Alternativ metod istifadə edilir...');
-    
-    // 2. User Roles əldə et - xəta idarəetməsi ilə
-    let userRoles = [];
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('user_id, region_id')
-        .eq('role', 'regionadmin');
-      
-      if (!error && data) {
-        userRoles = data;
-      } else {
-        console.error('User roles sorğusunda xəta:', error);
-      }
-    } catch (rolesError) {
-      console.error('User roles sorğusunda kritik xəta:', rolesError);
-    }
-    
-    // Region ID və user ID map yarat
-    const regionToAdminMap = new Map();
-    userRoles.forEach(role => {
-      if (role.region_id && role.user_id) {
-        regionToAdminMap.set(role.region_id, role.user_id);
-      }
-    });
-    
-    // Admin ID-lərini əldə et
-    const adminIds = Array.from(regionToAdminMap.values());
-    
-    // Profiles cədvəlindən email əldə et - xəta idarəetməsi ilə
-    let adminEmailMap = new Map();
-    
-    if (adminIds.length > 0) {
-      try {
-        // Birinci üsul: Profiles cədvəlindən əldə et
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, email, full_name')
-          .in('id', adminIds);
-          
-        if (!profilesError && profiles) {
-          profiles.forEach(profile => {
-            if (profile.id) {
-              adminEmailMap.set(profile.id, profile.email || null);
+        // İndi user_roles-dan region ID -> user ID -> email mapı yaradaq
+        userRoles.forEach(role => {
+          if (role.region_id && role.user_id) {
+            const email = userIdToEmailMap.get(role.user_id);
+            if (email) {
+              regionAdminEmails.set(role.region_id, email);
+              console.log(`Region ${role.region_id} üçün admin email tapıldı: ${email}`);
             }
-          });
-          console.log('Profiles-dən emaillər əldə edildi');
-        } else {
-          console.error('Profiles sorğusunda xəta:', profilesError);
-          
-          // İkinci üsul: Birbaşa auth.users cədvəlindən əldə et (RPC funksiya vasitəsilə)
-          try {
-            const { data: authEmails, error: authError } = await supabase
-              .rpc('get_user_emails_by_ids', { user_ids: adminIds });
-              
-            if (!authError && authEmails) {
-              authEmails.forEach(item => {
-                if (item.id && item.email) {
-                  adminEmailMap.set(item.id, item.email);
-                }
-              });
-              console.log('RPC funksiya ilə emaillər əldə edildi');
-            } else {
-              console.error('RPC sorğusunda xəta:', authError);
-            }
-          } catch (rpcError) {
-            console.error('RPC sorğusunda kritik xəta:', rpcError);
           }
-        }
-      } catch (profilesError) {
-        console.error('Profiles sorğusunda kritik xəta:', profilesError);
+        });
       }
     }
     
     // Regionları admin emailləri ilə formalaşdır
-    const formattedRegions = regions.map(region => {
-      const adminId = regionToAdminMap.get(region.id);
-      const adminEmail = adminId ? adminEmailMap.get(adminId) || null : null;
+    const formattedRegions = await Promise.all(regions.map(async (region) => {
+      // Map-dən admin email-i əldə edək
+      let adminEmail = regionAdminEmails.get(region.id) || null;
+      
+      // Əgər map-də yoxdursa, birbaşa fetchRegionAdminEmail funksiyamızı çağıraq
+      if (!adminEmail) {
+        try {
+          adminEmail = await fetchRegionAdminEmail(region.id);
+          console.log(`Region ${region.name} üçün fetchRegionAdminEmail ilə əldə edilən email: ${adminEmail || 'yoxdur'}`);
+        } catch (emailError) {
+          console.error(`Region ${region.name} üçün admin email əldə etmə xətası:`, emailError);
+        }
+      }
       
       // Debug - hər region üçün admin məlumatlarını göstər
-      console.log(`Region: ${region.name}, Admin ID: ${adminId || 'yoxdur'}, Admin Email: ${adminEmail || 'yoxdur'}`);
+      console.log(`Region: ${region.name}, Admin Email: ${adminEmail || 'yoxdur'}`);
       
       return {
         ...region,
         adminEmail,
-        // Sadə demo göstərilməsi üçün random məlumatlar əlavə edin
         sectorCount: 0,
         schoolCount: 0,
-        adminCount: adminId ? 1 : 0
+        adminCount: adminEmail ? 1 : 0
       };
-    });
+    }));
     
-    // Yoxlama - formattedRegions-də adminEmail var mı?
     console.log('Formatlanmış regionlar:', formattedRegions.map(r => ({ name: r.name, adminEmail: r.adminEmail })));
-    
     return formattedRegions as Region[];
   } catch (error) {
-    console.error('Regionları yükləmə xətası:', error);
-    // Xəta halında boş siyahı qaytarırıq
+    console.error('Regionları əldə edərkən ümumi xəta:', error);
     return [];
   }
 };
+
 // Regionu Supabase edge function istifadə edərək yaratmaq
 export const createRegion = async (regionData: CreateRegionParams): Promise<any> => {
   try {
@@ -216,70 +155,118 @@ export const createRegion = async (regionData: CreateRegionParams): Promise<any>
 // Regionu birbaşa verilənlər bazasına əlavə etmək (adi halda)
 export const addRegion = async (regionData: CreateRegionParams): Promise<Region> => {
   try {
-    if (regionData.adminEmail && regionData.adminName) {
-      // Əgər admin məlumatları varsa, edge function istifadə edirik
-      console.log('Admin məlumatları mövcuddur, edge function istifadə edirik');
-      const result = await createRegion(regionData);
+    console.log('Region əlavə edilir:', regionData);
+    
+    // Edge function vasitəsilə regionu və admini yaradaq
+    // Bu üsul auth.admin.createUser-i server tərəfdə işlədir
+    const { data, error } = await supabase.functions
+      .invoke('region-operations', {
+        body: { 
+          action: 'create',
+          name: regionData.name,
+          description: regionData.description,
+          status: regionData.status,
+          adminEmail: regionData.adminEmail,
+          adminName: regionData.adminName,
+          adminPassword: regionData.adminPassword
+        }
+      });
+    
+    if (error) {
+      console.error('Region yaratma sorğusu xətası:', error);
+      throw error;
+    }
+    
+    console.log('Region yaratma nəticəsi:', data);
+    
+    // Edge function-dan qaytarılan məlumatları formalaşdır
+    if (data && data.success) {
+      const region = data.data?.region;
+      const admin = data.data?.admin;
       
-      if (!result || !result.success) {
-        throw new Error(result?.error || 'Region yaradılması xətası');
+      if (!region) {
+        throw new Error('Region məlumatları qaytarılmadı');
       }
       
-      // Created_at sahəsinin undefined olmamasını təmin edirik
-      if (result.data && result.data.region && !result.data.region.created_at) {
-        result.data.region.created_at = new Date().toISOString();
+      // Əgər admin yaradılıbsa, amma region-a admin_id təyin edilməyibsə
+      if (admin && admin.id && (!region.admin_id || region.admin_id === null)) {
+        try {
+          console.log(`Admin ID (${admin.id}) region-a (${region.id}) təyin edilir...`);
+          
+          // Region-a admin_id təyin edək
+          const { data: updatedRegion, error: updateError } = await supabase
+            .from('regions')
+            .update({ admin_id: admin.id })
+            .eq('id', region.id)
+            .select('*')
+            .single();
+            
+          if (updateError) {
+            console.error('Region admin_id yeniləmə xətası:', updateError);
+          } else if (updatedRegion) {
+            console.log('Region admin_id uğurla yeniləndi:', updatedRegion);
+            Object.assign(region, updatedRegion);
+          } else {
+            console.log('Region yeniləndi, amma məlumatlar qaytarılmadı');
+            region.admin_id = admin.id;
+          }
+          
+          // User_roles cədvəlinə yazı əlavə edək
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .upsert([{
+              user_id: admin.id,
+              role: 'regionadmin',
+              region_id: region.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+          
+          if (roleError) {
+            console.error('Rol əlavə etmə xətası:', roleError);
+          } else {
+            console.log(`Rol uğurla əlavə edildi: user_id=${admin.id}, region_id=${region.id}`);
+          }
+          
+          // Yoxlayaq ki, region_id düzgün təyin edilib
+          const { data: checkRegion, error: checkError } = await supabase
+            .from('regions')
+            .select('*')
+            .eq('id', region.id)
+            .single();
+            
+          if (checkError) {
+            console.error('Region yoxlama xətası:', checkError);
+          } else if (checkRegion) {
+            console.log('Yoxlama nəticəsi:', checkRegion);
+            if (checkRegion.admin_id !== admin.id) {
+              console.warn(`Region admin_id hələ də düzgün deyil. Gözlənilən: ${admin.id}, Faktiki: ${checkRegion.admin_id}`);
+              // Bir daha cəhd edək
+              await supabase
+                .from('regions')
+                .update({ admin_id: admin.id })
+                .eq('id', region.id);
+              region.admin_id = admin.id;
+            }
+          }
+        } catch (e) {
+          console.error('Admin təyin etmə xətası:', e);
+        }
       }
       
-      if (result.data && result.data.region && !result.data.region.updated_at) {
-        result.data.region.updated_at = new Date().toISOString();
+      // Əgər hələ də admin_id null-dırsa, amma admin obyekti varsa
+      if ((!region.admin_id || region.admin_id === null) && admin && admin.id) {
+        region.admin_id = admin.id;
       }
       
-      // Admin email məlumatını region obyektinə əlavə edirik
-      const regionWithAdmin = {
-        ...result.data?.region,
-        adminEmail: regionData.adminEmail
+      return {
+        ...region,
+        adminEmail: admin?.email || null,
+        admin_id: region.admin_id || admin?.id || null
       };
-      
-      console.log('Edge function ilə yaradılan region:', regionWithAdmin);
-      return regionWithAdmin;
     } else {
-      // Sadə region yaratma - admin olmadan
-      console.log('Sadə region yaratma - admin məlumatları olmadan');
-      const region = {
-        name: regionData.name,
-        description: regionData.description,
-        status: regionData.status || 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('regions')
-        .insert([region])
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Supabase insert xətası:', error);
-        throw error;
-      }
-      
-      // Null check əlavə edirik
-      if (!data) {
-        throw new Error('Region yaradıldı, lakin qaytarılan data undefined idi');
-      }
-      
-      // Created_at və updated_at sahələrinin undefined olmamasını təmin edirik
-      if (!data.created_at) {
-        data.created_at = new Date().toISOString();
-      }
-      
-      if (!data.updated_at) {
-        data.updated_at = new Date().toISOString();
-      }
-      
-      console.log('Yaradılan region:', data);
-      return data as Region;
+      // Xəta halında boş obyekt qaytar
+      throw new Error('Region yaradıldı, amma məlumatlar qaytarılmadı');
     }
   } catch (error) {
     console.error('Region əlavə etmə xətası:', error);
@@ -292,21 +279,45 @@ export const deleteRegion = async (regionId: string): Promise<any> => {
   try {
     console.log('Region silmə əməliyyatı başlanır:', regionId);
     
-    // Edge function vasitəsilə regionu və onunla əlaqəli adminləri silək
-    const { data, error } = await supabase.functions
-      .invoke('region-operations', {
-        body: { 
-          action: 'delete',
-          regionId: regionId
-        }
-      });
+    // Əvvəlcə regionla əlaqəli admin istifadəçiləri əldə edək
+    const { data: userRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('region_id', regionId)
+      .eq('role', 'regionadmin');
     
-    if (error) {
-      console.error('Region silmə sorğusu xətası:', error);
-      throw error;
+    if (rolesError) {
+      console.error('Admin istifadəçiləri əldə etmə xətası:', rolesError);
     }
     
-    console.log('Region silmə nəticəsi:', data);
+    // Admin istifadəçiləri varsa, onları deaktiv edək
+    if (userRoles && userRoles.length > 0) {
+      const userIds = userRoles.map(role => role.user_id);
+      try {
+        // Profilləri deaktiv edək
+        await supabase
+          .from('profiles')
+          .update({ status: 'inactive' })
+          .in('id', userIds);
+          
+        console.log(`${userIds.length} admin istifadəçisi deaktiv edildi`);
+      } catch (profileError) {
+        console.error('Admin profillərini deaktiv etmə xətası:', profileError);
+      }
+    }
+    
+    // Regionu silək
+    const { error: deleteError } = await supabase
+      .from('regions')
+      .delete()
+      .eq('id', regionId);
+    
+    if (deleteError) {
+      console.error('Region silmə xətası:', deleteError);
+      throw deleteError;
+    }
+    
+    console.log('Region uğurla silindi:', regionId);
     return { success: true };
   } catch (error) {
     console.error('Region silmə xətası:', error);

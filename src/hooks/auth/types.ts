@@ -6,6 +6,8 @@ export interface AuthState {
   loading: boolean;
   user: FullUserData | null;
   session: any | null;
+  isAuthenticated: boolean;
+  error: string | null;
 }
 
 // Auth funksiyaları üçün tipimizi təyin edək

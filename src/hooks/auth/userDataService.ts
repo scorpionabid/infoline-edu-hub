@@ -2,22 +2,33 @@ import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
 export const fetchUserData = async (userId: string): Promise<FullUserData> => {
+  console.log(`[fetchUserData] Starting to fetch user data for ID: ${userId}`);
   try {
     // Əsas istifadəçi məlumatlarını əldə edək
+    console.log(`[fetchUserData] Fetching auth user data from Supabase`);
     const { data: authUser, error: authError } = await supabase.auth.getUser();
     
     if (authError) {
-      console.error('Auth user fetch error:', authError);
+      console.error('[fetchUserData] Auth user fetch error:', authError);
       throw authError;
     }
     
+    console.log(`[fetchUserData] Auth user data fetched successfully:`, {
+      id: authUser.user?.id,
+      email: authUser.user?.email,
+      app_metadata: authUser.user?.app_metadata,
+      user_metadata: authUser.user?.user_metadata
+    });
+    
     if (!authUser.user) {
+      console.error('[fetchUserData] Auth user not found in response');
       throw new Error('İstifadəçi tapılmadı');
     }
     
-    console.log('Auth user found:', authUser.user.email);
+    console.log('[fetchUserData] Auth user found:', authUser.user.email);
     
     // Profil məlumatlarını əldə edək
+    console.log(`[fetchUserData] Fetching profile data for user ID: ${userId}`);
     // Aşağıdakı şəkildə limit=1 əlavə edək
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -25,6 +36,12 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .eq('id', userId)
       .limit(1)
       .maybeSingle();
+      
+    console.log(`[fetchUserData] Profile query result:`, { 
+      hasData: !!profile, 
+      hasError: !!profileError,
+      errorMessage: profileError?.message
+    });
     
     if (profileError) {
       console.error('Profile fetch error:', profileError);
@@ -89,6 +106,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     let school = null;
     
     try {
+      console.log(`[fetchUserData] Fetching user role for user ID: ${userId}`);
       const { data: userRoleData, error: userRoleError } = await supabase
         .from('user_roles')
         .select('*')
@@ -97,20 +115,79 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
         .maybeSingle();
         
       if (userRoleError) {
-        console.error('User role fetch error:', userRoleError);
+        console.error('[fetchUserData] User role fetch error:', userRoleError);
       } else if (userRoleData) {
+        console.log('[fetchUserData] User role found:', userRoleData.role);
         userRole = userRoleData;
         
-        // Əlaqəli məlumatları əldə edək (region, sector, school)
-        if (userRole.region_id) {
-          const { data: regionData } = await supabase
+        // RegionAdmin üçün region məlumatlarını əldə edək
+        if (userRole.role === 'regionadmin') {
+          console.log('[fetchUserData] Fetching region data for regionadmin');
+          
+          // Əvvəlcə user_id ilə regions cədvəlində admin_id-yə görə axtaraq
+          const { data: regionByAdminData, error: regionByAdminError } = await supabase
+            .from('regions')
+            .select('*')
+            .eq('admin_id', userId)
+            .limit(1)
+            .maybeSingle();
+            
+          if (regionByAdminError) {
+            console.error('[fetchUserData] Region by admin_id fetch error:', regionByAdminError);
+          } else if (regionByAdminData) {
+            console.log('[fetchUserData] Region found by admin_id:', regionByAdminData.name);
+            region = regionByAdminData;
+            
+            // user_roles cədvəlində region_id-ni yeniləyək
+            if (!userRole.region_id) {
+              console.log('[fetchUserData] Updating user_roles with region_id:', region.id);
+              const { error: updateRoleError } = await supabase
+                .from('user_roles')
+                .update({ region_id: region.id })
+                .eq('id', userRole.id);
+                
+              if (updateRoleError) {
+                console.error('[fetchUserData] Error updating user_role with region_id:', updateRoleError);
+              } else {
+                userRole.region_id = region.id;
+                console.log('[fetchUserData] Updated user_role with region_id:', region.id);
+              }
+            }
+          }
+        }
+        
+        // Əgər region tapılmadısa və region_id varsa, ona görə axtaraq
+        if (!region && userRole.region_id) {
+          console.log(`[fetchUserData] Fetching region data by region_id: ${userRole.region_id}`);
+          const { data: regionData, error: regionError } = await supabase
             .from('regions')
             .select('*')
             .eq('id', userRole.region_id)
             .limit(1)
             .maybeSingle();
             
-          region = regionData;
+          if (regionError) {
+            console.error('[fetchUserData] Region fetch error:', regionError);
+          } else if (regionData) {
+            console.log('[fetchUserData] Region found by region_id:', regionData.name);
+            region = regionData;
+            
+            // Əgər region-un admin_id-si yoxdursa və istifadəçi regionadmin-dirsə, yeniləyək
+            if (userRole.role === 'regionadmin' && !region.admin_id) {
+              console.log('[fetchUserData] Updating region with admin_id:', userId);
+              const { error: updateRegionError } = await supabase
+                .from('regions')
+                .update({ admin_id: userId })
+                .eq('id', region.id);
+                
+              if (updateRegionError) {
+                console.error('[fetchUserData] Error updating region with admin_id:', updateRegionError);
+              } else {
+                region.admin_id = userId;
+                console.log('[fetchUserData] Updated region with admin_id:', userId);
+              }
+            }
+          }
         }
         
         if (userRole.sector_id) {
@@ -226,12 +303,25 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       }
     };
     
+    console.log('[fetchUserData] Successfully constructed full user data:', {
+      id: fullUserData.id,
+      email: fullUserData.email,
+      role: fullUserData.role,
+      name: fullUserData.full_name
+    });
+    
     return fullUserData;
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('[fetchUserData] Error fetching user data:', error);
     
     // Xəta halında default istifadəçi məlumatları qaytara bilərik
-    return createDefaultUserData(userId);
+    const defaultData = createDefaultUserData(userId);
+    console.log('[fetchUserData] Returning default user data due to error:', {
+      id: defaultData.id,
+      role: defaultData.role
+    });
+    
+    return defaultData;
   }
 };
 

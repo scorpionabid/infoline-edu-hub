@@ -21,6 +21,7 @@ import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
 import Index from "@/pages/Index";
+import Debug from "@/pages/Debug";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -199,6 +200,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Profile />
+        </ProtectedRoute>
+      }
+    />
+    <Route 
+      path="/debug" 
+      element={
+        <ProtectedRoute>
+          <Debug />
         </ProtectedRoute>
       }
     />

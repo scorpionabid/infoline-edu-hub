@@ -25,6 +25,8 @@ interface AuthContextType extends AuthState {
   signup: (email: string, password: string, userData: Partial<FullUserData>) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (password: string) => Promise<boolean>;
+  getSession: () => Promise<any | null>;
+  refreshSession: () => Promise<any | null>;
 }
 
 // Context
@@ -41,13 +43,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     session,  // session əlavə et
+    isAuthenticated, // isAuthenticated dəyərini birbaşa useSupabaseAuth-dan alırıq
     signIn,
     signOut,
     updateProfile,
     signUp,  // əlavə funksiyalar
     resetPassword,
     updatePassword,
-    fetchUserData
+    fetchUserData,
+    refreshSession
   } = useSupabaseAuth();
 
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Derive auth state
   const authState: AuthState = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated, // useSupabaseAuth-dan gələn isAuthenticated dəyərini istifadə edirik
     isLoading: loading,
     error,
     session  // session əlavə et
@@ -153,6 +157,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const clearError = () => {
     setError(null);
   };
+  
+  // Get session
+  const getSession = async () => {
+    try {
+      console.log('AuthContext: getSession çağırıldı, mövcud sessiya:', session?.user?.id);
+      return session;
+    } catch (error: any) {
+      console.error('AuthContext: getSession xətası:', error);
+      setError(error.message || 'Sessiya əldə etmə xətası');
+      return null;
+    }
+  };
+  
+  // Refresh session
+  const handleRefreshSession = async () => {
+    try {
+      console.log('AuthContext: refreshSession çağırıldı');
+      setError(null);
+      const result = await refreshSession();
+      console.log('AuthContext: refreshSession nəticəsi:', result?.user?.id);
+      return result;
+    } catch (error: any) {
+      console.error('AuthContext: refreshSession xətası:', error);
+      setError(error.message || 'Sessiya yeniləmə xətası');
+      return null;
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -164,7 +195,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         clearError,
         signup,
         resetPassword: handleResetPassword,
-        updatePassword: handleUpdatePassword
+        updatePassword: handleUpdatePassword,
+        getSession,
+        refreshSession: handleRefreshSession
       }}
     >
       {children}

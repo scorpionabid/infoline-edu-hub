@@ -23,6 +23,7 @@ import NotificationControl from '../notifications/NotificationControl';
 import { useNotifications } from '@/context/NotificationContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
+import AuthDebugger from '../debug/AuthDebugger';
 
 const Logo = () => (
   <div className="flex items-center space-x-2">
@@ -250,6 +251,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         
         <main className="p-4 lg:p-6">
           {children}
+          {/* Auth Debugger - only visible in development mode */}
+          <AuthDebugger visible={true} />
         </main>
       </div>
     </div>

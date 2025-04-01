@@ -13,6 +13,9 @@ export interface School {
   regionId: string;
   sectorId: string;
   status: 'active' | 'inactive';
+  admin_id?: string;
+  adminEmail?: string;
+  adminCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

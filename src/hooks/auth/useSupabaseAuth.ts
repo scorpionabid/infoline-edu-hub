@@ -17,22 +17,59 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   const [state, setState] = useState<AuthState>({
     loading: true,
     user: null,
-    session: null
+    session: null,
+    isAuthenticated: false,
+    error: null
   });
   
   // İstifadəçi məlumatlarını yeniləmək üçün helper function
   const setUser = useCallback((user: FullUserData | null) => {
-    setState(prevState => ({ ...prevState, user }));
+    setState(prevState => {
+      // İstifadəçi varsa, hər zaman isAuthenticated true olmalıdır
+      const isAuthenticated = !!user;
+      
+      return { 
+        ...prevState, 
+        user,
+        isAuthenticated, // İstifadəçi varsa, autentifikasiya olunmuş sayılır
+        // Əgər user null deyilsə, loading false olmalıdır
+        loading: user === null ? prevState.loading : false
+      };
+    });
+    console.log('[setUser] User state updated:', user ? `${user.email} (${user.role})` : 'null', 'isAuthenticated:', !!user);
   }, []);
   
   // Session-u yeniləmək üçün helper function
   const setSession = useCallback((session: any | null) => {
-    setState(prevState => ({ ...prevState, session }));
+    setState(prevState => {
+      // Sessiya varsa və istifadəçi məlumatları hələ yüklənməyibsə, isAuthenticated true olmalıdır
+      // Amma istifadəçi məlumatları artıq yüklənibsə, onların dəyəri üstünlük təşkil edir
+      const isAuthenticated = !!prevState.user || !!session;
+      
+      return { 
+        ...prevState, 
+        session,
+        isAuthenticated
+      };
+    });
+    console.log('[setSession] Session state updated:', session ? `Session ID: ${session.user?.id}` : 'null', 'isAuthenticated:', !!session);
+    
+    // Supabase klientində sessiyanı yeniləyək
+    if (session) {
+      supabase.auth.setSession(session);
+    }
   }, []);
   
   // Loading state-ni yeniləmək üçün helper function
   const setLoading = useCallback((loading: boolean) => {
     setState(prevState => ({ ...prevState, loading }));
+    console.log('[setLoading] Loading state updated:', loading);
+  }, []);
+  
+  // Error state-ni yeniləmək üçün helper function
+  const setError = useCallback((error: string | null) => {
+    setState(prevState => ({ ...prevState, error }));
+    console.log('[setError] Error state updated:', error);
   }, []);
   
   // Sessiya dəyişikliklərinə qulaq asaq və yeniləyək
@@ -49,26 +86,37 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         
         if (sessionError) {
           console.error('Sessiya əldə etmə xətası:', sessionError);
-          if (mounted) setLoading(false);
+          if (mounted) {
+            setError(sessionError.message);
+            setLoading(false);
+          }
           return;
         }
         
-        console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
+        console.log('Mövcud sessiya:', currentSession ? `Var (${currentSession.user.id})` : 'Yoxdur');
         
         if (currentSession && mounted) {
-          setSession(currentSession);
+          // Sessiya varsa, ilk öncə isAuthenticated=true olmalıdır
+          setState(prevState => ({
+            ...prevState,
+            session: currentSession,
+            isAuthenticated: true,
+            loading: true
+          }));
           
           try {
+            console.log(`Istifadəçi məlumatları yüklənir: ${currentSession.user.id}`);
             const userData = await fetchUserData(currentSession.user.id);
             if (mounted) {
               setUser(userData);
+              console.log('İstifadəçi məlumatları uğurla yükləndi:', userData.email, 'Role:', userData.role);
             }
           } catch (userError) {
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
             // Sessiya var amma user data yoxdur - minimal user obyekti yaradaq
             if (mounted) {
               // Minimal user obyekti yaradaq ki, isAuthenticated true olsun
-              setUser({
+              const minimalUser = {
                 id: currentSession.user.id,
                 email: currentSession.user.email || '',
                 role: 'authenticated',
@@ -76,34 +124,57 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
                 full_name: '',
                 avatar_url: null,
                 created_at: new Date().toISOString()
-              });
+              };
+              
+              setUser(minimalUser);
               console.log('Minimal user obyekti yaradıldı:', currentSession.user.id);
             }
           }
+        } else if (mounted) {
+          // Sessiya yoxdursa, loading false və isAuthenticated false olmalıdır
+          setState(prevState => ({
+            ...prevState,
+            loading: false,
+            isAuthenticated: false,
+            session: null,
+            user: null
+          }));
+          console.log('Sessiya yoxdur, auth state sıfırlandı');
         }
         
         // SONRA Auth state dəyişikliklərinə abunə olaq
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          console.log('Auth state dəyişdi:', event);
+          console.log('Auth state dəyişdi:', event, newSession ? 'Session var' : 'Session yoxdur');
           
           if (!mounted) return;
           
-          setSession(newSession);
-          
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            console.log(`Auth event: ${event}, Session ID: ${newSession?.user?.id}`);
+            
+            // Sessiya varsa, ilk öncə isAuthenticated=true olmalıdır
+            if (mounted && newSession) {
+              setState(prevState => ({
+                ...prevState,
+                session: newSession,
+                isAuthenticated: true,
+                loading: true
+              }));
+              console.log(`Auth event: ${event}, isAuthenticated: true`);
+            }
+            
             if (newSession?.user) {
               try {
-                setLoading(true);
+                console.log(`${event}: İstifadəçi məlumatları yüklənir: ${newSession.user.id}`);
                 const userData = await fetchUserData(newSession.user.id);
                 if (mounted) {
                   setUser(userData);
-                  setLoading(false);
+                  console.log(`${event}: İstifadəçi məlumatları uğurla yükləndi:`, userData.email, 'Role:', userData.role);
                 }
               } catch (userError) {
-                console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+                console.error(`${event}: İstifadəçi məlumatlarını əldə edərkən xəta:`, userError);
                 if (mounted) {
                   // Minimal user obyekti yaradaq ki, isAuthenticated true olsun
-                  setUser({
+                  const minimalUser = {
                     id: newSession.user.id,
                     email: newSession.user.email || '',
                     role: 'authenticated',
@@ -111,27 +182,38 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
                     full_name: '',
                     avatar_url: null,
                     created_at: new Date().toISOString()
-                  });
-                  console.log('SIGNED_IN hadisəsi zamanı minimal user obyekti yaradıldı:', newSession.user.id);
-                  setLoading(false);
+                  };
+                  
+                  setUser(minimalUser);
+                  console.log(`${event}: Minimal user obyekti yaradıldı:`, newSession.user.id);
                 }
               }
             }
           } else if (event === 'SIGNED_OUT') {
             if (mounted) {
-              setUser(null);
-              setLoading(false);
+              setState({
+                loading: false,
+                user: null,
+                session: null,
+                isAuthenticated: false,
+                error: null
+              });
+              console.log('İstifadəçi çıxış etdi');
             }
           }
         });
         
-        if (mounted) {
-          setLoading(false);
-        }
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('Auth inisializasiya xətası:', error);
         if (mounted) {
-          setLoading(false);
+          setState(prevState => ({
+            ...prevState,
+            loading: false,
+            error: error.message
+          }));
         }
       }
     };
@@ -142,43 +224,180 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     return () => {
       mounted = false;
     };
-  }, [setLoading, setSession, setUser]);
+  }, []);
+  
+  // Sessiya yeniləmə funksiyası
+  const refreshSession = useCallback(async () => {
+    try {
+      // İlk öncə isAuthenticated=true olduğunu təmin edək
+      setState(prevState => ({
+        ...prevState,
+        isAuthenticated: true,
+        loading: true
+      }));
+      
+      console.log('[refreshSession] Sessiyanı yeniləməyə çalışıram');
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('[refreshSession] Sessiyanı yeniləyərkən xəta:', error);
+        setError(error.message);
+        setLoading(false);
+        return null;
+      }
+      
+      console.log('[refreshSession] Sessiya uğurla yeniləndi:', data.session?.user?.id);
+      
+      // Sessiyanı birbaşa state-ə yerləşdirək
+      setState(prevState => ({
+        ...prevState,
+        session: data.session,
+        isAuthenticated: true
+      }));
+      
+      if (data.session?.user) {
+        try {
+          console.log('[refreshSession] İstifadəçi məlumatlarını yeniləyirəm:', data.session.user.id);
+          const userData = await fetchUserData(data.session.user.id);
+          setUser(userData);
+          console.log('[refreshSession] İstifadəçi məlumatları yeniləndi:', userData.email);
+        } catch (userError) {
+          console.error('[refreshSession] İstifadəçi məlumatlarını yeniləyərkən xəta:', userError);
+        }
+      }
+      
+      return data.session;
+    } catch (error) {
+      console.error('[refreshSession] Yeniləmə zamanı istisna:', error);
+      setError(error instanceof Error ? error.message : 'Sessiyanı yeniləyərkən naməlum xəta');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, setSession, setUser]);
   
   // fetchUserData-nın bağlı variantını yaradaq
   const handleFetchUserData = useCallback(async (userId: string) => {
-    return await fetchUserData(userId);
-  }, []);
+    try {
+      console.log('[handleFetchUserData] İstifadəçi məlumatlarını əldə edirəm:', userId);
+      const userData = await fetchUserData(userId);
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error('[handleFetchUserData] İstifadəçi məlumatlarını əldə edərkən xəta:', error);
+      setError(error instanceof Error ? error.message : 'İstifadəçi məlumatlarını əldə edərkən naməlum xəta');
+      return null;
+    }
+  }, [setUser, setError]);
   
   // signIn-in bağlı variantını yaradaq
   const handleSignIn = useCallback(async (email: string, password: string) => {
-    return await signIn(email, password, setLoading);
-  }, [setLoading]);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Əvvəlcə mövcud sessiyaları təmizləyək
+      await supabase.auth.signOut();
+      console.log('[handleSignIn] Əvvəlki sessiyalar təmizləndi, yeni giriş başlayır');
+      
+      const result = await signIn(email, password, setLoading);
+      console.log('[handleSignIn] SignIn nəticəsi:', result ? 'Uğurlu' : 'Uğursuz');
+      
+      if (result) {
+        // Sessiya məlumatlarını əldə edək
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[handleSignIn] Sessiya əldə edildi:', session.user.id);
+          setSession(session);
+          
+          // İstifadəçi məlumatlarını əldə edək
+          try {
+            console.log('[handleSignIn] İstifadəçi məlumatlarını əldə edirəm:', session.user.id);
+            const userData = await fetchUserData(session.user.id);
+            setUser(userData);
+            console.log('[handleSignIn] İstifadəçi məlumatları əldə edildi:', userData.email);
+            
+            // İstifadəçi məlumatları əldə edildikdən sonra vəziyyəti yeniləyək
+            setState(prev => ({
+              ...prev,
+              isAuthenticated: true,
+              loading: false
+            }));
+          } catch (userError) {
+            console.error('[handleSignIn] İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
+          }
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('[handleSignIn] SignIn xətası:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, setSession, setUser]);
   
   // signOut-un bağlı variantını yaradaq
   const handleSignOut = useCallback(async () => {
-    await signOut(setLoading, setUser, setSession);
-  }, [setLoading, setUser, setSession]);
+    try {
+      setLoading(true);
+      await signOut(setLoading, setUser, setSession);
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
+  }, [setLoading, setUser, setSession, setError]);
   
   // signUp-ın bağlı variantını yaradaq
   const handleSignUp = useCallback(async (email: string, password: string, userData: Partial<Profile>) => {
-    return await signUp(email, password, userData, setLoading);
-  }, [setLoading]);
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await signUp(email, password, userData, setLoading);
+      return result;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
+  }, [setLoading, setError]);
   
   // resetPassword-in bağlı variantını yaradaq
   const handleResetPassword = useCallback(async (email: string) => {
-    return await resetPassword(email, setLoading);
-  }, [setLoading]);
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await resetPassword(email, setLoading);
+      return result;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
+  }, [setLoading, setError]);
   
   // updateProfile-ın bağlı variantını yaradaq
   const handleUpdateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!state.user) return false;
-    return await updateProfile(updates, state.user.id, handleFetchUserData, setUser);
-  }, [state.user, handleFetchUserData, setUser]);
+    try {
+      setError(null);
+      return await updateProfile(updates, state.user.id, handleFetchUserData, setUser);
+    } catch (error) {
+      setError(error.message);
+      return false;
+    }
+  }, [state.user, handleFetchUserData, setUser, setError]);
   
   // updatePassword-in bağlı variantını yaradaq
   const handleUpdatePassword = useCallback(async (password: string) => {
-    return await updatePassword(password);
-  }, []);
+    try {
+      setError(null);
+      return await updatePassword(password);
+    } catch (error) {
+      setError(error.message);
+      return false;
+    }
+  }, [setError]);
 
   // Hook return
   return {
@@ -189,6 +408,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     resetPassword: handleResetPassword,
     updateProfile: handleUpdateProfile,
     updatePassword: handleUpdatePassword,
-    fetchUserData: handleFetchUserData
+    fetchUserData: handleFetchUserData,
+    refreshSession
   };
 };
