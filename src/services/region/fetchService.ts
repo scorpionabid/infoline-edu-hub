@@ -11,7 +11,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
   try {
     console.log('Regionlar sorğusu göndərilir...');
     
-    // 1. Regionları əldə et
+    // 1. Regionları əldə et - Sorğunu sadələşdiririk
     const { data: regions, error: regionsError } = await supabase
       .from('regions')
       .select('*')
@@ -19,7 +19,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
       
     if (regionsError) {
       console.error('Regions sorğusunda xəta:', regionsError);
-      return []; 
+      throw regionsError;
     }
     
     if (!regions || regions.length === 0) {
@@ -29,7 +29,7 @@ export const fetchRegions = async (): Promise<Region[]> => {
     
     console.log(`${regions.length} region tapıldı, admin emailləri əldə edilir...`);
     
-    // Admin emailləri əldə et
+    // Admin emailləri əldə et - optimizasiya edilmiş funksiya ilə
     const adminEmails = await fetchRegionAdminEmails(regions);
     
     // Regionları admin emailləri ilə birlikdə qaytaraq
@@ -46,6 +46,6 @@ export const fetchRegions = async (): Promise<Region[]> => {
     return formattedRegions as Region[];
   } catch (error) {
     console.error('Regionları əldə edərkən xəta:', error);
-    return [];
+    throw error; // Xətanı atıb, onu çağıran funksiyanın idarə etməsinə imkan veririk
   }
 };
