@@ -28,20 +28,20 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
         const result = await deleteSector(sector.id);
         
         if (result.success) {
-          toast.success(`${sector.name} silindi`, {
-            description: t('sectorDeletedDesc')
+          toast.success(t('sectorDeleted'), {
+            description: sector.name
           });
           onOpenChange(false);
         } else {
-          toast.error(result.error || t('couldNotDeleteSector'), {
-            description: t('couldNotDeleteSector')
+          toast.error(t('couldNotDeleteSector'), {
+            description: result.error || t('couldNotDeleteSectorDesc')
           });
         }
       }
     } catch (error) {
       console.error('Sector action error:', error);
       toast.error(t('couldNotDeleteSector'), {
-        description: error instanceof Error ? error.message : t('couldNotDeleteSector')
+        description: error instanceof Error ? error.message : t('couldNotDeleteSectorDesc')
       });
     } finally {
       setIsProcessing(false);
