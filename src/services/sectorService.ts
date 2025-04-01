@@ -171,22 +171,33 @@ export const deleteSector = async (sectorId: string): Promise<any> => {
 // Bu, bir funksiya ilə rekursiya olmadan admin e-poçtunu əldə edir
 export const fetchSectorAdminEmail = async (sectorId: string): Promise<string | null> => {
   try {
-    // Edge function əvəzinə birbaşa SQL funksiya və ya sadə sorğu istifadə edə bilərsiz
-    // burada security definer istifadə edən bir SQL funksiyasını çağırmaq ideal olar
-    // Lakin sadəlik üçün birbaşa, təhlükəsiz bir sorğu ilə əldə edək:
-    const { data: profiles, error } = await supabase
-      .rpc('get_sector_admin_email', {
-        sector_id_param: sectorId
-      });
+    // Birbaşa SQL sorğusu ilə sektor adminlərinin email-lərini əldə edək
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('sector_id', sectorId)
+      .eq('role', 'sectoradmin')
+      .single();
     
-    if (error) {
-      console.error('Sektor admin e-poçtu sorğusu xətası:', error);
+    if (error || !data) {
+      console.error('Sektor admin sorğusu xətası:', error);
       return null;
     }
     
-    // Əgər profil tapılıbsa və email mövcuddursa, qaytarın
-    if (profiles && profiles.length > 0) {
-      return profiles[0].email;
+    // İstifadəçi ID-si ilə emaili əldə edək
+    if (data.user_id) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', data.user_id)
+        .single();
+      
+      if (profilesError || !profiles) {
+        console.error('Profil sorğusu xətası:', profilesError);
+        return null;
+      }
+      
+      return profiles.email || null;
     }
     
     return null;
