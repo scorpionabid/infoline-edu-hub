@@ -56,7 +56,6 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
       }, {});
     
     // Hər bir sektor üçün admin email-lərini ayrı-ayrı sorğular ilə əldə et
-    // Bu, sonsuz rekursiya problemini həll edəcək
     const formattedSectors = await Promise.all(sectors.map(async (sector) => {
       const adminEmail = await fetchSectorAdminEmail(sector.id);
       const regionName = regionNames[sector.region_id] || "Bilinmir";
@@ -170,16 +169,36 @@ export const deleteSector = async (sectorId: string): Promise<any> => {
 // Sektor admin email-ini əldə etmək üçün metod
 export const fetchSectorAdminEmail = async (sectorId: string): Promise<string | null> => {
   try {
-    // Yaratdığımız təhlükəsiz funksiyanı çağıraq
+    // Supabase təhlükəsiz funksiyasını əldə etmək üçün FROM sorğusu istifadə edək
     const { data, error } = await supabase
-      .rpc('get_sector_admin_email', { sector_id_param: sectorId });
+      .from('user_roles')
+      .select('user_id')
+      .eq('sector_id', sectorId)
+      .eq('role', 'sectoradmin')
+      .single();
     
     if (error) {
       console.error('Sektor admin e-poçtu sorğusu xətası:', error);
       return null;
     }
     
-    return data || null;
+    if (!data || !data.user_id) {
+      return null;
+    }
+    
+    // İstifadəçi ID ilə email-i əldə edək
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', data.user_id)
+      .single();
+    
+    if (profileError || !profileData) {
+      console.error('İstifadəçi profili sorğusu xətası:', profileError);
+      return null;
+    }
+    
+    return profileData.email;
   } catch (error) {
     console.error('Sektor admin e-poçtu əldə etmə xətası:', error);
     return null;
