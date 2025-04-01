@@ -30,11 +30,13 @@ export interface Region {
   id: string;
   name: string;
   admin_id?: string;
+  // adminEmail sahəsi əlavə edilir
+  adminEmail?: string;
 }
 
 export interface FullUserData {
   id: string;
-  email: string;
+  email: string; // email məcburidir
   role: string;
   full_name?: string;
   phone?: string;

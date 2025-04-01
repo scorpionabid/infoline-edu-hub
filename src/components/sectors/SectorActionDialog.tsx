@@ -28,7 +28,7 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
         const result = await deleteSector(sector.id);
         
         if (result.success) {
-          toast.success(`${sector.name} ${t('sectorDeletedDesc')}`, {
+          toast.success(`${sector.name} silindi`, {
             description: t('sectorDeletedDesc')
           });
           onOpenChange(false);

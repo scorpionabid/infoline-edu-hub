@@ -39,7 +39,7 @@ const RegionTableRow: React.FC<RegionTableRowProps> = ({
       <TableCell>
         {region.adminEmail ? (
           <div className="flex items-center gap-2">
-            <UserCircle className="h-4 w-4 text-muted-foreground" />
+            <UserCircle className="h-4 w-4 text-primary" />
             <span className="text-sm truncate max-w-[150px]" title={region.adminEmail}>
               {region.adminEmail}
             </span>
