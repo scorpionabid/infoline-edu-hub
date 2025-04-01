@@ -36,22 +36,34 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  // Əsas state-lər
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [initializedAuth, setInitializedAuth] = useState(false);
+  
+  // AuthContext-i təhlükəsiz şəkildə əldə etmək
+  const auth = useContext(require('./AuthContext').AuthContext);
+  const user = auth?.user;
+  
+  // Auth konteksti hazır olduqda initialize etmək
+  useEffect(() => {
+    if (auth) {
+      setInitializedAuth(true);
+    }
+  }, [auth]);
   
   // Yüklənən zaman bildirişləri localStorage-dən oxuyaq
   useEffect(() => {
-    if (user) {
-      const savedNotifications = localStorage.getItem(`notifications-${user.id}`);
-      if (savedNotifications) {
-        try {
+    if (initializedAuth && user) {
+      try {
+        const savedNotifications = localStorage.getItem(`notifications-${user.id}`);
+        if (savedNotifications) {
           setNotifications(JSON.parse(savedNotifications));
-        } catch (e) {
-          console.error('Failed to parse notifications:', e);
         }
+      } catch (e) {
+        console.error('Failed to parse notifications:', e);
       }
     }
-  }, [user]);
+  }, [initializedAuth, user]);
   
   // Bildirişlər dəyişəndə localStorage-ə yazaq
   useEffect(() => {
