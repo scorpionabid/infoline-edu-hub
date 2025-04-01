@@ -83,7 +83,7 @@ export const fetchRegionAdminEmails = async (regions: any[]): Promise<Map<string
     // Profiles və user_roles cədvəllərini join edib email məlumatlarını əldə edək
     const { data: admins, error: adminsError } = await supabase
       .from('profiles')
-      .select('id, email, user_roles!inner(role, region_id)')
+      .select('email, user_roles!inner(role, region_id)')
       .eq('user_roles.role', 'regionadmin')
       .in('user_roles.region_id', regionIds);
     
