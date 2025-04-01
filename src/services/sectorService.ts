@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/sector';
 
@@ -102,7 +103,8 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
         ...sector,
         adminEmail,
         schoolCount: 0, // Bu məlumatlar başqa sorğu ilə əldə edilə bilər
-        adminCount: adminEmail ? 1 : 0
+        adminCount: adminEmail ? 1 : 0,
+        completionRate: Math.floor(Math.random() * 100) // Hələlik təsadüfi dəyər
       };
     });
     
@@ -143,12 +145,17 @@ export const addSector = async (sectorData: CreateSectorParams): Promise<Sector>
     console.log('Sektor yaratma nəticəsi:', data);
     
     // Edge function-dan qaytarılan məlumatları formalaşdır
-    if (data && data.sector) {
-      return {
-        ...data.sector,
-        adminEmail: data.adminEmail || null,
-        admin_id: data.adminId || null
+    if (data && data.data && data.data.sector) {
+      const newSector = {
+        ...data.data.sector,
+        adminEmail: data.data.adminEmail || null,
+        admin_id: data.data.adminId || null,
+        adminCount: data.data.adminId ? 1 : 0,
+        schoolCount: 0,
+        completionRate: 0
       };
+      console.log('Formatlanmış yeni sektor:', newSector);
+      return newSector;
     } else {
       // Xəta halında boş obyekt qaytar
       throw new Error('Sektor yaradıldı, amma məlumatlar qaytarılmadı');
@@ -162,44 +169,23 @@ export const addSector = async (sectorData: CreateSectorParams): Promise<Sector>
 // Sektoru silmək
 export const deleteSector = async (sectorId: string): Promise<any> => {
   try {
-    // Əvvəlcə sektora bağlı adminləri tapaq
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('sector_id', sectorId)
-      .eq('role', 'sectoradmin');
+    console.log(`Sektor siliniyor: ${sectorId}`);
     
-    if (rolesError) {
-      console.error('Sektor adminlərini tapma xətası:', rolesError);
-    } else if (roles && roles.length > 0) {
-      // Adminlərin rollarını siləcəyik
-      const adminIds = roles.map(role => role.user_id);
-      
-      // User_roles cədvəlindən rolları silək
-      const { error: deleteRolesError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('sector_id', sectorId)
-        .eq('role', 'sectoradmin');
-      
-      if (deleteRolesError) {
-        console.error('Admin rollarını silmə xətası:', deleteRolesError);
-      }
-      
-      // Not: İstifadəçiləri silmirik, sadəcə rollarını silirik
+    // Edge function vasitəsilə sektoru silək
+    const { data, error } = await supabase.functions
+      .invoke('sector-operations', {
+        body: { 
+          action: 'delete',
+          sectorId: sectorId
+        }
+      });
+    
+    if (error) {
+      console.error('Sektor silmə sorğusu xətası:', error);
+      throw error;
     }
     
-    // Sektoru silək
-    const { error: deleteSectorError } = await supabase
-      .from('sectors')
-      .delete()
-      .eq('id', sectorId);
-    
-    if (deleteSectorError) {
-      console.error('Sektoru silmə xətası:', deleteSectorError);
-      throw deleteSectorError;
-    }
-    
+    console.log('Sektor silmə nəticəsi:', data);
     return { success: true, message: 'Sektor uğurla silindi' };
   } catch (error) {
     console.error('Sektor silmə xətası:', error);

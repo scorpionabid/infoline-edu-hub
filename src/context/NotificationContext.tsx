@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Notification, NotificationType, NotificationPriority } from '@/types/notification';
-import { useAuth } from './AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 
 interface NotificationContextType {

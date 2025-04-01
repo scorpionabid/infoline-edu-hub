@@ -72,6 +72,8 @@ serve(async (req) => {
             }
           );
         }
+
+        console.log(`Creating sector "${name}" for region ${regionId}`);
         
         // İlk öncə sektoru yaradaq
         const { data: sectorData, error: sectorError } = await supabaseAdmin
@@ -99,14 +101,16 @@ serve(async (req) => {
         }
         
         const sectorId = sectorData.id;
+        console.log(`Sector created with ID: ${sectorId}`);
         let adminId = null;
+        let adminEmailResult = null;
         
         // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
         if (adminEmail && adminName) {
           // İstifadəçinin təqdim etdiyi parol və ya default parol
           const password = adminPassword || 'Password123';
           
-          console.log(`Creating admin with email: ${adminEmail}, name: ${adminName}, password: ${password.substring(0, 3)}*****`);
+          console.log(`Creating admin with email: ${adminEmail}, name: ${adminName}`);
           
           try {
             // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
@@ -131,7 +135,7 @@ serve(async (req) => {
               return new Response(
                 JSON.stringify({ 
                   success: true, 
-                  data: sectorData, 
+                  sector: sectorData, 
                   warning: 'Sektor yaradıldı, lakin admin hesabı yaradıla bilmədi',
                   details: userError 
                 }),
@@ -143,6 +147,8 @@ serve(async (req) => {
             }
             
             adminId = userData.user.id;
+            adminEmailResult = cleanEmail;
+            console.log(`Admin created with ID: ${adminId} and email: ${adminEmailResult}`);
             
             // Profilin yaradılmasını gözləyək - trigger yaradır, amma əmin olaq
             // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
@@ -165,6 +171,7 @@ serve(async (req) => {
                   {
                     id: adminId,
                     full_name: adminName,
+                    email: cleanEmail,
                     language: 'az',
                     status: 'active'
                   }
@@ -172,6 +179,8 @@ serve(async (req) => {
                 
               if (createProfileError) {
                 console.error('Profil yaradılması xətası:', createProfileError);
+              } else {
+                console.log(`Profile manually created for admin ID: ${adminId}`);
               }
             } else {
               console.log('Profil tapıldı:', profileData);
@@ -191,16 +200,16 @@ serve(async (req) => {
             
             if (roleError) {
               console.error('Rol əlavə edilməsi xətası:', roleError);
+            } else {
+              console.log(`Role 'sectoradmin' assigned to user ID: ${adminId}`);
             }
-            
-            console.log(`Sector admin ${adminEmail} created for sector ${name} with id ${sectorId}`);
           } catch (err) {
             console.error('Admin yaradılması prosesində xəta:', err);
             // Sektoru yaratdıq, amma admin yarada bilmədik
             return new Response(
               JSON.stringify({ 
                 success: true, 
-                data: sectorData, 
+                sector: sectorData, 
                 warning: 'Sektor yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
                 details: err
               }),
@@ -212,12 +221,14 @@ serve(async (req) => {
           }
         }
         
+        console.log('Sector creation process completed successfully');
         return new Response(
           JSON.stringify({ 
             success: true, 
             data: { 
               sector: sectorData, 
-              admin: adminId ? { id: adminId, email: adminEmail } : null
+              adminId: adminId,
+              adminEmail: adminEmailResult
             } 
           }),
           { 
@@ -240,12 +251,18 @@ serve(async (req) => {
           );
         }
         
+        console.log(`Deleting sector with ID: ${sectorId}`);
+        
         // Sektorla bağlı adminləri tapaq
         const { data: roleData } = await supabaseAdmin
           .from('user_roles')
           .select('user_id')
           .eq('sector_id', sectorId)
           .eq('role', 'sectoradmin');
+        
+        if (roleData && roleData.length > 0) {
+          console.log(`Found ${roleData.length} admin(s) associated with the sector`);
+        }
         
         // Sektor ilə əlaqəli digər məlumatları silirik
         // Avtomatik cascade delete işləyəcək, əgər foreign key məhdudiyyətləri varsa
@@ -264,6 +281,8 @@ serve(async (req) => {
             }
           );
         }
+        
+        console.log(`Sector with ID: ${sectorId} deleted successfully`);
         
         // Admin hesablarını deaktiv edək (onları silmək əvəzinə)
         if (roleData && roleData.length > 0) {
