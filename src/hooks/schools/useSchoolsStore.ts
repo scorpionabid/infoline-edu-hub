@@ -110,19 +110,19 @@ export const useSchoolsStore = () => {
     setCurrentPage(1);
   }, []);
 
-  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRegion(e.target.value);
+  const handleRegionFilter = useCallback((value: string) => {
+    setSelectedRegion(value === 'all' ? '' : value);
     setSelectedSector('');
     setCurrentPage(1);
   }, []);
 
-  const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSector(e.target.value);
+  const handleSectorFilter = useCallback((value: string) => {
+    setSelectedSector(value === 'all' ? '' : value);
     setCurrentPage(1);
   }, []);
 
-  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(e.target.value);
+  const handleStatusFilter = useCallback((value: string) => {
+    setSelectedStatus(value === 'all' ? '' : value);
     setCurrentPage(1);
   }, []);
 

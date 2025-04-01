@@ -9,11 +9,9 @@ import SchoolHeader from './SchoolHeader';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
-import { toast } from 'sonner';
-import { FileDown, FileUp } from 'lucide-react';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import ImportDialog from './ImportDialog';
-import { Region as RegionType } from '@/types/region'; // Region tipini region.ts-dən idxal edirik
+import { Region as RegionType } from '@/types/region';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -100,7 +98,7 @@ const SchoolsContainer: React.FC = () => {
   // Avtomatik olaraq istifadəçinin regionuna aid sektorlarla filtrələyirik
   useEffect(() => {
     if (user && user.regionId && selectedRegion !== user.regionId) {
-      handleRegionFilter({ target: { value: user.regionId } } as React.ChangeEvent<HTMLSelectElement>);
+      handleRegionFilter(user.regionId);
     }
   }, [user, selectedRegion, handleRegionFilter]);
 

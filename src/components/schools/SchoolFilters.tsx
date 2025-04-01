@@ -67,7 +67,7 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
         <div>
           <Select 
             value={selectedRegion || 'all'} 
-            onValueChange={(value) => handleRegionFilter(value === 'all' ? '' : value)}
+            onValueChange={handleRegionFilter}
           >
             <SelectTrigger aria-label={t('filterByRegion')}>
               <SelectValue placeholder={t('allRegions')} />
@@ -84,7 +84,7 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
         <div>
           <Select 
             value={selectedSector || 'all'} 
-            onValueChange={(value) => handleSectorFilter(value === 'all' ? '' : value)} 
+            onValueChange={handleSectorFilter} 
             disabled={!selectedRegion && filteredSectors.length === 0}
           >
             <SelectTrigger aria-label={t('filterBySector')}>
@@ -102,7 +102,7 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
         <div>
           <Select 
             value={selectedStatus || 'all'} 
-            onValueChange={(value) => handleStatusFilter(value === 'all' ? '' : value)}
+            onValueChange={handleStatusFilter}
           >
             <SelectTrigger aria-label={t('filterByStatus')}>
               <SelectValue placeholder={t('allStatuses')} />
