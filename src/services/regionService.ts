@@ -1,3 +1,4 @@
+
 import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
 
@@ -36,49 +37,60 @@ export const fetchRegions = async (): Promise<Region[]> => {
     // Admin emailləri əldə etmək üçün bir map yaradaq
     const adminEmails = new Map<string, string>();
     
-    // user_roles cədvəlindən regionadmin rolunda olan istifadəçiləri əldə et
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from('user_roles')
-      .select('user_id, region_id, role')
-      .eq('role', 'regionadmin');
-    
-    if (userRolesError) {
-      console.error('Region adminləri sorğusunda xəta:', userRolesError);
-    } else if (userRoles && userRoles.length > 0) {
-      console.log(`${userRoles.length} region admin rolu tapıldı`);
-      
-      // Admin istifadəçilərinin ID-lərini toplayaq
-      const adminIds = userRoles.map(role => role.user_id);
-      
-      // Profiles cədvəlindən email məlumatları əldə et
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .in('id', adminIds);
-      
-      if (profilesError) {
-        console.error('Admin profilləri xətası:', profilesError);
-      } else if (profiles && profiles.length > 0) {
-        console.log(`${profiles.length} admin profili tapıldı`);
+    // Profillərdən və user_roles ilişkilərindən admin e-poçtlarını əldə edək
+    for (const region of regions) {
+      try {
+        // user_roles cədvəlindən regionun admin ID-sini əldə et
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'regionadmin')
+          .eq('region_id', region.id)
+          .limit(1);
         
-        // ID -> email map yaradaq
-        const userIdToEmail = new Map<string, string>();
-        profiles.forEach(profile => {
-          if (profile.id && profile.email) {
-            userIdToEmail.set(profile.id, profile.email);
-          }
-        });
+        if (rolesError) {
+          console.error(`Region ${region.id} üçün admin ID sorğusunda xəta:`, rolesError);
+          continue;
+        }
         
-        // Region -> admin email mapı yaradaq
-        userRoles.forEach(role => {
-          if (role.region_id && role.user_id) {
-            const email = userIdToEmail.get(role.user_id);
-            if (email) {
-              adminEmails.set(role.region_id, email);
-              console.log(`Region ${role.region_id} üçün admin email tapıldı: ${email}`);
-            }
+        if (!userRoles || userRoles.length === 0) {
+          console.log(`Region ${region.id} üçün admin tapılmadı`);
+          continue;
+        }
+        
+        const adminId = userRoles[0].user_id;
+        
+        // Profiles cədvəlindən email məlumatını əldə et
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', adminId)
+          .single();
+        
+        if (!profileError && profile && profile.email) {
+          console.log(`Region ${region.id} üçün admin emaili tapıldı: ${profile.email}`);
+          adminEmails.set(region.id, profile.email);
+        } else {
+          console.log(`Region ${region.id} üçün admin profili tapılmadı:`, profileError);
+          
+          // Auth cədvəlindən e-poçt əldə etmək üçün function çağırışı
+          const { data, error } = await supabase.functions
+            .invoke('region-operations', {
+              body: { 
+                action: 'get-admin-email',
+                userId: adminId
+              }
+            });
+          
+          if (!error && data && data.email) {
+            console.log(`Region ${region.id} üçün edge function ilə email alındı: ${data.email}`);
+            adminEmails.set(region.id, data.email);
+          } else {
+            console.log(`Region ${region.id} üçün edge function ilə email alınamadı`);
           }
-        });
+        }
+      } catch (err) {
+        console.error(`Region ${region.id} üçün admin email əldə edilməsi xətası:`, err);
       }
     }
     
