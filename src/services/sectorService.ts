@@ -33,7 +33,7 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
     
     if (error) {
       console.error('Sektorları yükləmə xətası:', error);
-      return [];
+      throw error;
     }
     
     if (!sectors || sectors.length === 0) {
@@ -124,7 +124,7 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
     return formattedSectors as Sector[];
   } catch (error) {
     console.error('Sektorları əldə edərkən ümumi xəta:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -139,9 +139,9 @@ export const addSector = async (sectorData: CreateSectorParams): Promise<Sector>
         body: { 
           action: 'create',
           name: sectorData.name,
-          description: sectorData.description,
+          description: sectorData.description || null,
           regionId: sectorData.regionId,
-          status: sectorData.status,
+          status: sectorData.status || 'active',
           adminEmail: sectorData.adminEmail,
           adminName: sectorData.adminName,
           adminPassword: sectorData.adminPassword

@@ -1,7 +1,8 @@
+
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
-import { fetchSectors, addSector, deleteSector } from '@/services/sectorService';
+import { fetchSectors as fetchSectorsApi, addSector, deleteSector } from '@/services/sectorService';
 import { Sector } from '@/types/sector';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -107,7 +108,7 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
     
     try {
       console.log('Sektorlar yüklənir...', regionId ? `Region ID: ${regionId}` : 'Bütün regionlar üçün');
-      const sectorsData = await fetchSectors(regionId);
+      const sectorsData = await fetchSectorsApi(regionId);
       console.log(`${sectorsData.length} sektor yükləndi`, sectorsData);
       
       const { sortConfig, searchTerm, selectedStatus, pageSize } = get();

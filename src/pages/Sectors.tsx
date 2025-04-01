@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -36,11 +37,11 @@ const Sectors: React.FC = () => {
     fetchSectors, 
     handleSearch,
     handleStatusFilter,
+    handleSort,
     handleAddSector,
     handleUpdateSector,
     handleDeleteSector,
     resetFilters,
-    handleSort,
     handlePageChange,
     setIsOperationComplete
   } = useSectorsStore();
@@ -264,7 +265,7 @@ const Sectors: React.FC = () => {
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
         <h1 className="text-2xl font-bold text-red-500">{t('errorOccurred')}</h1>
         <p>{error.message}</p>
-        <Button onClick={() => fetchSectors(user?.regionId)}>
+        <Button onClick={() => fetchSectors()}>
           {t('tryAgain')}
         </Button>
       </div>
