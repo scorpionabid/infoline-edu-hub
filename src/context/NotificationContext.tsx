@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { Notification, NotificationType, NotificationPriority } from '@/types/notification';
 import { useAuth } from './AuthContext';
 import { v4 as uuidv4 } from 'uuid';
+import { AuthContext as AuthContextType } from './AuthContext';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -38,22 +39,13 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   // Əsas state-lər
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [initializedAuth, setInitializedAuth] = useState(false);
   
-  // AuthContext-i təhlükəsiz şəkildə əldə etmək
-  const auth = useContext(require('./AuthContext').AuthContext);
-  const user = auth?.user;
-  
-  // Auth konteksti hazır olduqda initialize etmək
-  useEffect(() => {
-    if (auth) {
-      setInitializedAuth(true);
-    }
-  }, [auth]);
+  // AuthContext-i birbaşa import edir və useAuth hook-dan istifadə edirik
+  const { user } = useAuth();
   
   // Yüklənən zaman bildirişləri localStorage-dən oxuyaq
   useEffect(() => {
-    if (initializedAuth && user) {
+    if (user) {
       try {
         const savedNotifications = localStorage.getItem(`notifications-${user.id}`);
         if (savedNotifications) {
@@ -63,7 +55,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.error('Failed to parse notifications:', e);
       }
     }
-  }, [initializedAuth, user]);
+  }, [user]);
   
   // Bildirişlər dəyişəndə localStorage-ə yazaq
   useEffect(() => {
