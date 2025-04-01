@@ -2,15 +2,15 @@
 export interface Sector {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   region_id: string;
-  regionName?: string;  // Əlavə edildi
+  regionName?: string;
   status: 'active' | 'inactive';
-  admin_id?: string;
-  adminEmail?: string;
+  admin_id?: string | null;
+  adminEmail?: string | null;
   schoolCount?: number;
   adminCount?: number;
-  completionRate?: number;  // Əlavə edildi
+  completionRate?: number;
   created_at?: string;
   updated_at?: string;
 }

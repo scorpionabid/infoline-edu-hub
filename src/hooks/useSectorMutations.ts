@@ -1,3 +1,4 @@
+
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -7,10 +8,10 @@ interface CreateSectorData {
   regionId: string;
   name: string;
   description?: string;
-  status: string;
-  adminEmail?: string; // Admin email əlavə edildi
-  adminName?: string;  // Admin adı əlavə edildi
-  adminPassword?: string; // Admin şifrəsi əlavə edildi
+  status: 'active' | 'inactive'; // Tip məhdudlaşdırıldı
+  adminEmail?: string;
+  adminName?: string; 
+  adminPassword?: string;
 }
 
 // Sektor yeniləmək üçün interface
@@ -18,7 +19,7 @@ interface EditSectorData {
   id: string;
   name: string;
   description?: string;
-  status: string;
+  status: 'active' | 'inactive'; // Tip məhdudlaşdırıldı
 }
 
 // Sektor yaratmaq üçün mutation

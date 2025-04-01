@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, Role } from '@/context/AuthContext';
@@ -179,7 +178,6 @@ const Sectors = () => {
   };
   
   const handleAddSubmit = async () => {
-    // Sektor əlavə edilməsi üçün formadan verilənləri alırıq
     const sectorDataToAdd = {
       name: sectorFormData.name,
       description: sectorFormData.description,
@@ -187,12 +185,9 @@ const Sectors = () => {
       status: sectorFormData.status as 'active' | 'inactive'
     };
     
-    // Supabase üzərindən sektoru əlavə edirik
     const success = await handleAddSector(sectorDataToAdd);
     
     if (success) {
-      // TODO: Gələcəkdə, supabase auth ilə admin yaratmaq əlavə edilə bilər
-      // Hələlik mock data ilə işləyirik
       const newAdminId = `user-${Date.now()}`;
       const newAdmin = {
         ...adminFormData,

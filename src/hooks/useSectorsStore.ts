@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -152,7 +153,7 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
         name: sectorData.name,
         description: sectorData.description,
         regionId: sectorData.region_id || sectorData.regionId,
-        status: sectorData.status,
+        status: sectorData.status as 'active' | 'inactive',
         adminEmail: sectorData.adminEmail,
         adminName: sectorData.adminName,
         adminPassword: sectorData.adminPassword
@@ -161,8 +162,12 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
       console.log("Sektor əlavə edildi:", newSector);
       
       // Sektorları yenidən yükləmək əvəzinə state-ə əlavə edək
+      // Burada tiplərin uyğunluğunu təmin edirik
       set(state => ({
-        sectors: [...state.sectors, newSector],
+        sectors: [...state.sectors, {
+          ...newSector,
+          status: newSector.status as 'active' | 'inactive'
+        }],
         isOperationComplete: true
       }));
       
@@ -195,7 +200,7 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
         .update({
           name: updates.name,
           description: updates.description,
-          status: updates.status,
+          status: updates.status as 'active' | 'inactive',
           region_id: updates.region_id,
           updated_at: new Date().toISOString()
         })
@@ -207,10 +212,14 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
       
       console.log("Sektor yeniləndi:", data);
       
-      // State-i yeniləyirik
+      // State-i yeniləyirik - status sahəsinin tipini qoruyuruq
       set(state => ({
         sectors: state.sectors.map(sector => 
-          sector.id === sectorId ? { ...sector, ...data } : sector
+          sector.id === sectorId ? {
+            ...sector,
+            ...data,
+            status: data.status as 'active' | 'inactive'
+          } : sector
         ),
         isOperationComplete: true
       }));

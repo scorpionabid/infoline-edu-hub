@@ -91,7 +91,7 @@ const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
           name,
           description,
           regionId: regionId!,
-          status,
+          status: status as 'active' | 'inactive',
           adminEmail: adminEmail || undefined,
           adminName: adminName || undefined,
           adminPassword: adminPassword || undefined
