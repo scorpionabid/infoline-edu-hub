@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -73,10 +74,10 @@ const Sectors: React.FC = () => {
     const loadSectors = async () => {
       // Region admini üçün, öz regionundan olan sektorları göstər
       if (user?.role === 'regionadmin' && user?.regionId) {
-        await fetchSectors(user.regionId, t);
+        await fetchSectors(user.regionId);
       } else {
         // SuperAdmin üçün bütün sektorları göstər
-        await fetchSectors(undefined, t);
+        await fetchSectors(undefined);
       }
     };
     
@@ -86,7 +87,7 @@ const Sectors: React.FC = () => {
     return () => {
       resetFilters();
     };
-  }, [user?.regionId, user?.role, fetchSectors, t, resetFilters]);
+  }, [user?.regionId, user?.role, fetchSectors, resetFilters]);
 
   // Əməliyyat status dəyişikliyi
   useEffect(() => {
@@ -317,14 +318,14 @@ const Sectors: React.FC = () => {
             />
           </div>
           <Select
-            value={selectedStatus || ''}
-            onValueChange={(value) => handleStatusChange(value === '' ? null : value)}
+            value={selectedStatus || 'all'}
+            onValueChange={(value) => handleStatusFilter(value === 'all' ? null : value)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t('filterByStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allStatuses')}</SelectItem>
+              <SelectItem value="all">{t('allStatuses')}</SelectItem>
               <SelectItem value="active">{t('active')}</SelectItem>
               <SelectItem value="inactive">{t('inactive')}</SelectItem>
             </SelectContent>

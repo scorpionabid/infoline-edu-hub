@@ -36,6 +36,7 @@ export default {
   deleteRegionSectorsWarning: 'Bu region {{count}} sektor daxildir.',
   deleteRegionSchoolsWarning: 'Bu region {{count}} məktəb daxildir.',
   deleteRegionWarning: 'Bu əməliyyat geri qaytarıla bilməz.',
+  deleteSectorWarning: 'Bu əməliyyat geri qaytarıla bilməz.',
   deleting: 'Silinir...',
   cancel: 'Ləğv et',
   createRegion: 'Region yarat',
