@@ -22,6 +22,9 @@ const RegionTableRow: React.FC<RegionTableRowProps> = ({
   onEdit,
   onDelete
 }) => {
+  // Email əlavə edilib, boş halda xüsusi mesaj göstərilir
+  const displayEmail = region.adminEmail || t('noAdmin');
+  
   return (
     <TableRow key={region.id}>
       <TableCell className="font-medium">{region.name}</TableCell>
@@ -37,16 +40,15 @@ const RegionTableRow: React.FC<RegionTableRowProps> = ({
       <TableCell className="text-center">{region.sectorCount}</TableCell>
       <TableCell className="text-center">{region.schoolCount}</TableCell>
       <TableCell>
-        {region.adminEmail ? (
-          <div className="flex items-center gap-2">
-            <UserCircle className="h-4 w-4 text-primary" />
-            <span className="text-sm truncate max-w-[150px]" title={region.adminEmail}>
-              {region.adminEmail}
-            </span>
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">{t('noAdmin')}</span>
-        )}
+        <div className="flex items-center gap-2">
+          <UserCircle className="h-4 w-4 text-primary" />
+          <span 
+            className="text-sm truncate max-w-[150px]" 
+            title={displayEmail}
+          >
+            {displayEmail}
+          </span>
+        </div>
       </TableCell>
       <TableCell className="text-center">
         <div className="flex flex-col space-y-1">
