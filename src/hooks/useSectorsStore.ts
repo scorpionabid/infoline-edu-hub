@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -35,7 +34,7 @@ interface SectorsState {
   resetFilters: () => void;
   handlePageChange: (page: number) => void;
   
-  fetchSectors: (regionId?: string, translateFunction?: TranslateFunction) => Promise<void>;
+  fetchSectors: (regionId?: string) => Promise<void>;
   handleAddSector: (sectorData: any, translateFunction?: TranslateFunction) => Promise<boolean>;
   handleUpdateSector: (sectorId: string, updates: any, translateFunction?: TranslateFunction) => Promise<boolean>;
   handleDeleteSector: (sectorId: string, translateFunction?: TranslateFunction) => Promise<boolean>;
@@ -103,7 +102,7 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
     set({ currentPage: page });
   },
   
-  fetchSectors: async (regionId?: string, translateFunction = emptyTranslate) => {
+  fetchSectors: async (regionId?: string) => {
     set({ loading: true, error: null });
     
     try {
@@ -128,8 +127,8 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
       console.error('Sektorlar yüklənərkən xəta:', err);
       set({ error: err, loading: false });
       
-      toast.error(translateFunction('errorOccurred'), {
-        description: translateFunction('couldNotLoadSectors')
+      toast.error('Xəta baş verdi', {
+        description: 'Sektorlar yüklənə bilmədi'
       });
     }
   },
@@ -150,8 +149,6 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
       
       console.log("Sektor əlavə edildi:", newSector);
       
-      // Sektorları yenidən yükləmək əvəzinə state-ə əlavə edək
-      // Burada tiplərin uyğunluğunu təmin edirik
       set(state => ({
         sectors: [...state.sectors, {
           ...newSector,
@@ -160,7 +157,6 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
         isOperationComplete: true
       }));
       
-      // Filtrləri təzələyək ki, yeni sektorlar görünsün
       get().handleSearch(get().searchTerm);
       
       toast.success(translateFunction('sectorCreated') || 'Sektor yaradıldı', {
@@ -183,7 +179,6 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
     try {
       console.log("Sektor yenilənir:", { sectorId, ...updates });
       
-      // Supabase üzərindən sektoru yeniləyirik
       const { data, error } = await supabase
         .from('sectors')
         .update({
@@ -201,7 +196,6 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
       
       console.log("Sektor yeniləndi:", data);
       
-      // State-i yeniləyirik - status sahəsinin tipini qoruyuruq
       set(state => ({
         sectors: state.sectors.map(sector => 
           sector.id === sectorId ? {
@@ -213,7 +207,6 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
         isOperationComplete: true
       }));
       
-      // Filtrləri təzələyək
       get().handleSearch(get().searchTerm);
       
       toast.success(translateFunction('sectorUpdated') || 'Sektor yeniləndi', {
@@ -239,13 +232,11 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
       const result = await deleteSector(sectorId);
       
       if (result.success) {
-        // State-dən də silək
         set(state => ({
           sectors: state.sectors.filter(sector => sector.id !== sectorId),
           isOperationComplete: true
         }));
         
-        // Filtrləri təzələyək
         get().handleSearch(get().searchTerm);
         
         toast.success(translateFunction('sectorDeleted') || 'Sektor silindi', {
@@ -272,7 +263,6 @@ export const useSectorsStore = create<SectorsState>((set, get) => ({
   }
 }));
 
-// Filtreləmə funksiyası
 const filterSectors = (sectors: Sector[], searchTerm: string, status: string | null): Sector[] => {
   return sectors.filter(sector => {
     const matchesSearch = !searchTerm || 
@@ -286,7 +276,6 @@ const filterSectors = (sectors: Sector[], searchTerm: string, status: string | n
   });
 };
 
-// Sıralama funksiyası
 const sortSectors = (sectors: Sector[], sortConfig: SortConfig): Sector[] => {
   return [...sectors].sort((a: any, b: any) => {
     if (sortConfig.key === 'adminEmail') {
