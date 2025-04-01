@@ -28,14 +28,17 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
         const result = await deleteSector(sector.id);
         
         if (result.success) {
+          // Burada yalnız bir parametr ötürməliyik, əvvəl iki parametr ötürürdük
           toast.success(`${sector.name} ${t('sectorDeletedDesc')}`);
           onOpenChange(false);
         } else {
+          // Burada yalnız bir parametr ötürməliyik, əvvəl iki parametr ötürürdük
           toast.error(result.error || t('couldNotDeleteSector'));
         }
       }
     } catch (error) {
       console.error('Sector action error:', error);
+      // Burada yalnız bir parametr ötürməliyik, əvvəl iki parametr ötürürdük
       toast.error(error instanceof Error ? error.message : t('couldNotDeleteSector'));
     } finally {
       setIsProcessing(false);
