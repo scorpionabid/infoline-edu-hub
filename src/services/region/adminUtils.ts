@@ -91,8 +91,9 @@ export const fetchRegionAdminEmails = async (regions: any[]): Promise<Map<string
       // Adminləri region_id ilə map edək
       for (const admin of admins) {
         if (admin.email && admin.user_roles && admin.user_roles.length > 0) {
-          // Type-safe access to region_id
-          const regionId = admin.user_roles[0].region_id;
+          // Type-safe access to region_id - make sure we cast it to the correct type
+          const userRole = admin.user_roles[0] as { region_id?: string };
+          const regionId = userRole.region_id;
           if (regionId) {
             adminEmails.set(regionId, admin.email);
             console.log(`Region ${regionId} üçün admin emaili tapıldı: ${admin.email}`);
