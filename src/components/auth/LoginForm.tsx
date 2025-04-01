@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -20,8 +21,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  const [email, setEmail] = useState('superadmin@infoline.az');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
   
