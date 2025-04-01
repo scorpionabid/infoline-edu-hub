@@ -28,17 +28,14 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
         const result = await deleteSector(sector.id);
         
         if (result.success) {
-          // Düzgün toast sintaksisi - yalnız bir arqument qəbul edir
           toast.success(`${sector.name} ${t('sectorDeletedDesc')}`);
           onOpenChange(false);
         } else {
-          // Düzgün toast sintaksisi - yalnız bir arqument qəbul edir
           toast.error(result.error || t('couldNotDeleteSector'));
         }
       }
     } catch (error) {
       console.error('Sector action error:', error);
-      // Düzgün toast sintaksisi - yalnız bir arqument qəbul edir
       toast.error(error instanceof Error ? error.message : t('couldNotDeleteSector'));
     } finally {
       setIsProcessing(false);
