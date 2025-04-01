@@ -9,6 +9,8 @@ export interface Profile {
   status?: 'active' | 'inactive' | 'blocked';
   created_at?: string;
   updated_at?: string;
+  email?: string;
+  last_login?: string;
 }
 
 export interface School {
@@ -27,6 +29,7 @@ export interface Sector {
 export interface Region {
   id: string;
   name: string;
+  admin_id?: string;
 }
 
 export interface FullUserData {

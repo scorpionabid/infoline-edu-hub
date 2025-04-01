@@ -20,6 +20,7 @@ export default {
   schools: 'Məktəblər',
   schoolCount: 'Məktəb sayı',
   admin: 'Admin',
+  noAdmin: 'Admin təyin edilməyib',
   completion: 'Tamamlanma',
   active: 'Aktiv',
   inactive: 'Qeyri-aktiv',

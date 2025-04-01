@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.20.0';
 
@@ -9,6 +10,9 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Konsolda daha çox məlumat göstərmək üçün konsol loq əlavə edək
+console.log('Region operations servisi işə düşdü.');
 
 /**
  * Main server function that handles all incoming requests
@@ -33,6 +37,7 @@ serve(async (req) => {
     // Parse request data
     const { action, ...data } = await req.json();
     console.log(`Received request with action: ${action}`);
+    console.log(`Sorğu məlumatları:`, data);
 
     // Dispatch based on action type
     switch (action) {
@@ -97,33 +102,19 @@ async function handleCreateRegion(supabase: SupabaseClient, data: any) {
     console.log(`Region created successfully: ${region.name} (${region.id})`);
     
     let userId = null;
+    let adminData = null;
     
     // If admin details are provided, create/update admin
     if (adminEmail && adminName && adminPassword) {
       console.log(`Processing admin for region: ${region.id}`);
+      console.log(`Admin yaradılır: ${adminEmail}, ${adminName}, şifrə: ${adminPassword.substring(0, 3)}*****`);
 
       try {
-        // Check if user exists by email
-        const { data: existingUser } = await supabase.auth.admin.getUserByEmail(adminEmail);
-        
-        if (existingUser?.user) {
-          // User exists, update their metadata
-          userId = existingUser.user.id;
-          console.log(`Existing user found with ID: ${userId}`);
-          
-          // Update the user's metadata
-          await supabase.auth.admin.updateUserById(userId, {
-            user_metadata: { 
-              full_name: adminName,
-              role: 'regionadmin',
-              region_id: region.id 
-            }
-          });
-          
-          console.log(`Updated metadata for user: ${userId}`);
-        } else {
-          // Create the user
-          const { data: newUser, error: userError } = await supabase.auth.admin.createUser({
+        // Create the user
+        const { data: userData, error: createUserError } = await supabase
+          .auth
+          .admin
+          .createUser({
             email: adminEmail,
             password: adminPassword,
             email_confirm: true,
@@ -134,24 +125,19 @@ async function handleCreateRegion(supabase: SupabaseClient, data: any) {
             }
           });
 
-          if (userError) {
-            console.error('Admin creation error:', userError);
-            // Return region without admin
-            return new Response(
-              JSON.stringify({ 
-                success: true, 
-                data: { 
-                  region,
-                  error: userError.message
-                } 
-              }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-          
-          userId = newUser.user.id;
-          console.log(`Created new user with ID: ${userId}`);
+        if (createUserError) {
+          console.error('Admin creation error:', createUserError);
+          throw createUserError;
         }
+        
+        userId = userData.user.id;
+        console.log(`Created new user with ID: ${userId}`);
+        
+        adminData = {
+          id: userId,
+          email: adminEmail,
+          name: adminName
+        };
         
         // Add entry to user_roles table to properly link the admin with the region
         const { error: roleError } = await supabase
@@ -166,9 +152,10 @@ async function handleCreateRegion(supabase: SupabaseClient, data: any) {
         
         if (roleError) {
           console.error('Error adding role:', roleError);
-        } else {
-          console.log(`Added role 'regionadmin' for user: ${userId}, region: ${region.id}`);
+          throw roleError;
         }
+        
+        console.log(`Added role 'regionadmin' for user: ${userId}, region: ${region.id}`);
         
         // Update the region with admin_id
         const { data: updatedRegion, error: updateError } = await supabase
@@ -180,69 +167,34 @@ async function handleCreateRegion(supabase: SupabaseClient, data: any) {
           
         if (updateError) {
           console.error('Error updating region with admin_id:', updateError);
-        } else if (updatedRegion) {
+          throw updateError;
+        }
+        
+        if (updatedRegion) {
           console.log(`Updated region with admin_id: ${userId}`);
           // Use the updated region data
           Object.assign(region, updatedRegion);
-        } else {
-          // Just update the admin_id in our local copy
-          region.admin_id = userId;
-          console.log(`Region admin_id set locally to: ${userId}`);
         }
 
-        // Check if profile exists and create/update
-        const { data: existingProfile } = await supabase
+        // Create/Update profile
+        const { error: profileError } = await supabase
           .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-        
-        if (existingProfile) {
-          console.log(`Profile found for user: ${userId}`);
+          .upsert([{
+            id: userId,
+            full_name: adminName,
+            email: adminEmail,
+            language: 'az',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
           
-          // Update profile email field
-          await supabase
-            .from('profiles')
-            .update({ 
-              email: adminEmail,
-              full_name: adminName,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', userId);
-            
-          console.log(`Updated profile for user: ${userId}`);
-        } else {
-          // Create profile
-          await supabase
-            .from('profiles')
-            .insert([{
-              id: userId,
-              full_name: adminName,
-              email: adminEmail,
-              language: 'az',
-              status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }]);
-            
-          console.log(`Created profile for user: ${userId}`);
+        if (profileError) {
+          console.error('Error creating/updating profile:', profileError);
+          throw profileError;
         }
-
-        console.log(`Region admin process completed for: ${adminEmail}`);
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            data: { 
-              region,
-              admin: { 
-                id: userId,
-                email: adminEmail, 
-                name: adminName 
-              }
-            } 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        
+        console.log(`Profile created/updated for user: ${userId}`);
       } catch (adminError) {
         console.error('Admin creation process error:', adminError);
         // Return region without admin
@@ -259,9 +211,15 @@ async function handleCreateRegion(supabase: SupabaseClient, data: any) {
       }
     }
 
-    // Return success with region data (no admin created)
+    console.log(`Region creation process completed successfully`);
     return new Response(
-      JSON.stringify({ success: true, data: { region } }),
+      JSON.stringify({
+        success: true, 
+        data: { 
+          region,
+          admin: adminData
+        }
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -316,8 +274,16 @@ async function handleUpdateRegion(supabase: SupabaseClient, data: any) {
       
       // If admin details are provided, update admin
       if (adminEmail && adminName) {
-        // Implementation would be similar to handleCreateRegion
-        // but with updates to existing admin or creation of new one
+        // Check if region has an admin_id
+        if (region.admin_id) {
+          // Update existing admin
+          // Code to update admin would go here
+          console.log(`Admin update for region ${region.id} would go here`);
+        } else if (adminPassword) {
+          // Create new admin for region
+          // Code to create admin would go here
+          console.log(`Admin creation for region ${region.id} would go here`);
+        }
       }
       
       return new Response(
@@ -370,88 +336,91 @@ async function handleDeleteRegion(supabase: SupabaseClient, data: any) {
       );
     }
     
+    // First, update the sectors to remove references to this region
+    const { error: sectorUpdateError } = await supabase
+      .from('sectors')
+      .update({ region_id: null, status: 'inactive' })
+      .eq('region_id', regionId);
+      
+    if (sectorUpdateError) {
+      console.error("Sector update error:", sectorUpdateError);
+    } else {
+      console.log(`Updated sectors for region: ${regionId}`);
+    }
+    
+    // Update the schools to remove references to this region
+    const { error: schoolUpdateError } = await supabase
+      .from('schools')
+      .update({ region_id: null, status: 'inactive' })
+      .eq('region_id', regionId);
+      
+    if (schoolUpdateError) {
+      console.error("School update error:", schoolUpdateError);
+    } else {
+      console.log(`Updated schools for region: ${regionId}`);
+    }
+    
     // Find admin users for this region
-    const { data: adminRoles } = await supabase
+    const { data: adminRoles, error: rolesError } = await supabase
       .from('user_roles')
       .select('user_id')
       .eq('region_id', regionId)
       .eq('role', 'regionadmin');
-
-    // Handle related data and deletion
-    try {
-      // First, update the sectors to remove references to this region
-      // This is safer than deleting the sectors
-      const { error: sectorUpdateError } = await supabase
-        .from('sectors')
-        .update({ region_id: null, status: 'inactive' })
-        .eq('region_id', regionId);
-        
-      if (sectorUpdateError) {
-        console.error("Sector update error:", sectorUpdateError);
-      } else {
-        console.log(`Updated sectors for region: ${regionId}`);
-      }
       
-      // Delete the region
-      const { error: regionDeleteError } = await supabase
-        .from('regions')
-        .delete()
-        .eq('id', regionId);
-
-      if (regionDeleteError) {
-        console.error("Region deletion error:", regionDeleteError);
-        throw regionDeleteError;
-      }
+    if (rolesError) {
+      console.error("Roles fetch error:", rolesError);
+    } else if (adminRoles && adminRoles.length > 0) {
+      console.log(`Found ${adminRoles.length} admin(s) for region: ${regionId}`);
       
-      console.log(`Deleted region: ${regionId}`);
-
-      // Handle admin users
-      if (adminRoles && adminRoles.length > 0) {
-        for (const role of adminRoles) {
-          try {
-            // Delete user roles
-            const { error: roleDeleteError } = await supabase
-              .from('user_roles')
-              .delete()
-              .eq('user_id', role.user_id)
-              .eq('role', 'regionadmin')
-              .eq('region_id', regionId);
-              
-            if (roleDeleteError) {
-              console.error(`Role deletion error for user ${role.user_id}:`, roleDeleteError);
-            } else {
-              console.log(`Deleted role for user: ${role.user_id}, region: ${regionId}`);
-            }
+      for (const role of adminRoles) {
+        try {
+          // Deactivate admin profile
+          const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update({ status: 'inactive' })
+            .eq('id', role.user_id);
             
-            // Deactivate user profile
-            const { error: profileUpdateError } = await supabase
-              .from('profiles')
-              .update({ status: 'inactive' })
-              .eq('id', role.user_id);
-              
-            if (profileUpdateError) {
-              console.error(`Profile update error for user ${role.user_id}:`, profileUpdateError);
-            } else {
-              console.log(`Deactivated profile for user: ${role.user_id}`);
-            }
-          } catch (adminError) {
-            console.error("Admin cleanup error:", adminError);
-            // Continue with deletion even if admin cleanup fails
+          if (profileUpdateError) {
+            console.error(`Profile update error for user ${role.user_id}:`, profileUpdateError);
+          } else {
+            console.log(`Deactivated profile for user: ${role.user_id}`);
           }
+          
+          // Delete user role
+          const { error: roleDeleteError } = await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', role.user_id)
+            .eq('region_id', regionId);
+            
+          if (roleDeleteError) {
+            console.error(`Role deletion error for user ${role.user_id}:`, roleDeleteError);
+          } else {
+            console.log(`Deleted role for user: ${role.user_id}`);
+          }
+        } catch (adminError) {
+          console.error("Admin cleanup error:", adminError);
         }
       }
-
-      return new Response(
-        JSON.stringify({ success: true, message: "Region deleted successfully" }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (error) {
-      console.error("Region deletion process error:", error);
-      return new Response(
-        JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
+    
+    // Delete the region
+    const { error: regionDeleteError } = await supabase
+      .from('regions')
+      .delete()
+      .eq('id', regionId);
+
+    if (regionDeleteError) {
+      console.error("Region deletion error:", regionDeleteError);
+      throw regionDeleteError;
+    }
+    
+    console.log(`Region ${regionId} uğurla silindi`);
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error("Region deletion error:", error);
     return new Response(
@@ -486,42 +455,52 @@ async function handleGetAdminEmail(supabase: SupabaseClient, userId: string) {
       .single();
 
     if (!profileError && profile && profile.email) {
-      console.log(`Found email in profile for user: ${userId}`);
       return new Response(
         JSON.stringify({ success: true, email: profile.email }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // If no email in profiles, try to get from auth.users
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-
-    if (userError || !userData || !userData.user) {
-      console.error("User fetch error:", userError);
-      throw userError || new Error('User not found');
-    }
-
-    const email = userData.user.email;
-    console.log(`Found email in auth for user: ${userId}`);
-
-    // Update the profile with this email if it exists
-    if (email) {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ email })
-        .eq('id', userId);
+    // If no email in profiles, try to get from auth database
+    try {
+      const { data: userData, error: userError } = await supabase
+        .auth
+        .admin
+        .getUserById(userId);
         
-      if (updateError) {
-        console.error(`Profile update error for user ${userId}:`, updateError);
-      } else {
-        console.log(`Updated profile email for user: ${userId}`);
+      if (userError) {
+        console.error("User fetch error:", userError);
+        throw userError;
       }
+      
+      if (!userData || !userData.user) {
+        throw new Error("User not found");
+      }
+      
+      const email = userData.user.email;
+      
+      // Update the profile with this email
+      if (email) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ email })
+          .eq('id', userId);
+          
+        if (updateError) {
+          console.error(`Profile update error for user ${userId}:`, updateError);
+        } else {
+          console.log(`Updated profile email for user: ${userId}`);
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, email }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (authError) {
+      console.error("Auth fetch error:", authError);
+      throw authError;
     }
-
-    return new Response(
-      JSON.stringify({ success: true, email }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error("Email retrieval error:", error);
     return new Response(

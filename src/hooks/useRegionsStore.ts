@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Region, RegionFormData, EnhancedRegion } from '@/types/region';
@@ -102,11 +101,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       
       for (const region of regionsData) {
         try {
-          // regionService.ts-dən statistikaları əldə edirik
           const stats = await getRegionStats(region.id);
-          
-          // regionService-dən alınan adminEmail-i istifadə edirik
-          console.log(`useRegionsStore: ${region.name} üçün adminEmail:`, region.adminEmail);
           
           enhancedRegions.push({
             ...region,
@@ -165,17 +160,13 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       console.log("Region əlavə edildi:", regionData);
       set({ isOperationComplete: true });
       
-      toast.success(translateFunction('regionAdded'), {
-        description: translateFunction('regionAddedDesc')
-      });
+      toast.success(translateFunction('regionAdded'));
       
       return true;
     } catch (err: any) {
       console.error('Region yaradılması xətası:', err);
       
-      toast.error(translateFunction('errorOccurred'), {
-        description: translateFunction('couldNotAddRegion')
-      });
+      toast.error(translateFunction('errorOccurred'));
       
       return false;
     }
@@ -188,9 +179,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
       if (result.success) {
         set({ isOperationComplete: true });
         
-        toast.success(translateFunction('regionDeleted'), {
-          description: translateFunction('regionDeletedDesc')
-        });
+        toast.success(translateFunction('regionDeleted'));
         
         return true;
       } else {
@@ -199,9 +188,7 @@ export const useRegionsStore = create<RegionsState>((set, get) => ({
     } catch (err: any) {
       console.error('Region silinməsi xətası:', err);
       
-      toast.error(translateFunction('errorOccurred'), {
-        description: translateFunction('couldNotDeleteRegion')
-      });
+      toast.error(translateFunction('errorOccurred'));
       
       return false;
     }
@@ -220,7 +207,8 @@ const filterRegions = (
   return regions.filter(region => {
     const matchesSearch = !searchTerm || 
       region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (region.description && region.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      (region.description && region.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (region.adminEmail && region.adminEmail.toLowerCase().includes(searchTerm.toLowerCase()));
       
     const matchesStatus = !status || region.status === status;
     
@@ -233,6 +221,12 @@ const sortRegions = (
   sortConfig: { key: string; direction: 'asc' | 'desc' }
 ): EnhancedRegion[] => {
   return [...regions].sort((a: any, b: any) => {
+    if (sortConfig.key === 'adminEmail') {
+      if (a.adminEmail === null && b.adminEmail === null) return 0;
+      if (a.adminEmail === null) return sortConfig.direction === 'asc' ? 1 : -1;
+      if (b.adminEmail === null) return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === 'asc' ? -1 : 1;
     }

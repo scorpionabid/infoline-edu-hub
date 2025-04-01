@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Trash2, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Eye, Pencil, Trash2, UserCircle } from 'lucide-react';
 import { EnhancedRegion } from '@/types/region';
+import { Progress } from '@/components/ui/progress';
 
 interface RegionTableRowProps {
   region: EnhancedRegion;
@@ -19,79 +20,73 @@ const RegionTableRow: React.FC<RegionTableRowProps> = ({
   t,
   onView,
   onEdit,
-  onDelete,
-}) => (
-  <TableRow>
-    <TableCell className="font-mono text-xs truncate">
-      {region.id?.split('-')?.[0] || ''}...
-    </TableCell>
-    <TableCell className="font-medium">{region.name}</TableCell>
-    <TableCell className="text-center">
-      <Badge variant="outline">{region.sectorCount || 0}</Badge>
-    </TableCell>
-    <TableCell className="text-center">
-      <Badge variant="outline">{region.schoolCount || 0}</Badge>
-    </TableCell>
-    <TableCell className="max-w-[180px] truncate">
-      {/* Console.log əvəzinə şərti ifadə istifadə edək */}
-      {region.adminEmail ? (
-        <a 
-          href={`mailto:${region.adminEmail}`}
-          className="text-blue-500 hover:underline text-sm"
-          title={region.adminEmail}
+  onDelete
+}) => {
+  return (
+    <TableRow key={region.id}>
+      <TableCell className="font-medium">{region.name}</TableCell>
+      <TableCell>{region.description || '-'}</TableCell>
+      <TableCell className="text-center">
+        <Badge 
+          variant={region.status === 'active' ? "default" : "secondary"} 
+          className="justify-center w-20"
         >
-          {region.adminEmail}
-        </a>
-      ) : (
-        <span className="text-gray-400 text-sm">{t('adminNotAssigned')}</span>
-      )}
-    </TableCell>
-    <TableCell>
-      <Badge 
-        className={
-          region.completionRate >= 80 ? "bg-green-500" : 
-          region.completionRate >= 50 ? "bg-amber-500" : 
-          "bg-red-500"
-        }
-      >
-        {region.completionRate}%
-      </Badge>
-    </TableCell>
-    <TableCell>
-      <Badge variant={region.status === 'active' ? 'default' : 'secondary'}>
-        {region.status === 'active' ? t('active') : t('inactive')}
-      </Badge>
-    </TableCell>
-    <TableCell className="text-right">
-      <div className="flex justify-end space-x-2">
-        <Button 
-          variant="outline" 
-          size="icon" 
-          title={t('viewDetails')}
-          onClick={() => onView(region)}
-        >
-          <Eye className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          title={t('edit')}
-          onClick={() => onEdit(region)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          title={t('delete')}
-          onClick={() => onDelete(region)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </TableCell>
-  </TableRow>
-);
+          {region.status === 'active' ? t('active') : t('inactive')}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-center">{region.sectorCount}</TableCell>
+      <TableCell className="text-center">{region.schoolCount}</TableCell>
+      <TableCell>
+        {region.adminEmail ? (
+          <div className="flex items-center gap-2">
+            <UserCircle className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm truncate max-w-[150px]" title={region.adminEmail}>
+              {region.adminEmail}
+            </span>
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">{t('noAdmin')}</span>
+        )}
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="flex flex-col space-y-1">
+          <Progress value={region.completionRate} className="h-2" />
+          <span className="text-xs">{region.completionRate}%</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onView(region)}
+            title={t('viewDetails')}
+          >
+            <Eye className="h-4 w-4" />
+            <span className="sr-only">{t('viewDetails')}</span>
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onEdit(region)}
+            title={t('edit')}
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">{t('edit')}</span>
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onDelete(region)}
+            title={t('delete')}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">{t('delete')}</span>
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 export default RegionTableRow;
