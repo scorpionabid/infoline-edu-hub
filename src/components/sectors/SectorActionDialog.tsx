@@ -40,8 +40,8 @@ export const SectorActionDialog: React.FC<SectorActionDialogProps> = ({
       }
     } catch (error) {
       console.error('Sector action error:', error);
-      toast.error(error instanceof Error ? error.message : t('couldNotDeleteSector'), {
-        description: t('couldNotDeleteSector')
+      toast.error(t('couldNotDeleteSector'), {
+        description: error instanceof Error ? error.message : t('couldNotDeleteSector')
       });
     } finally {
       setIsProcessing(false);
