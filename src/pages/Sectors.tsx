@@ -76,7 +76,7 @@ const Sectors: React.FC = () => {
         await fetchSectors(user.regionId);
       } else {
         // SuperAdmin üçün bütün sektorları göstər
-        await fetchSectors(undefined);
+        await fetchSectors();
       }
     };
     
