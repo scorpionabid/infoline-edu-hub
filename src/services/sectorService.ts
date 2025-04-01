@@ -18,6 +18,7 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
   try {
     console.log('Sektorlar sorğusu göndərilir...', regionId ? `Region ID: ${regionId}` : 'Bütün regionlar üçün');
     
+    // Sektorları birbaşa əldə et
     let query = supabase
       .from('sectors')
       .select('*')
@@ -42,72 +43,22 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
     }
     
     console.log(`${sectors.length} sektor tapıldı, admin emailləri əldə edilir...`);
-    console.log('Ham sektorlar:', sectors);
     
-    // Hər sektor üçün admin email-lərini əldə etmək üçün bir map yaradaq
-    const sectorAdminEmails = new Map();
-    
-    // Bütün sektor adminlərini bir sorgu ilə əldə edək
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from('user_roles')
-      .select('user_id, sector_id')
-      .eq('role', 'sectoradmin');
-    
-    if (userRolesError) {
-      console.error('Sektor adminləri sorğusunda xəta:', userRolesError);
-    } else if (userRoles && userRoles.length > 0) {
-      console.log(`${userRoles.length} sektor admin tapıldı`);
-      
-      // Bütün admin istifadəçilərinin ID-lərini toplayaq
-      const adminUserIds = userRoles.map(role => role.user_id);
-      
-      // Profiles cədvəlindən bütün admin istifadəçilərinin email-lərini əldə edək
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .in('id', adminUserIds);
-      
-      if (profilesError) {
-        console.error('Admin profilləri sorğusunda xəta:', profilesError);
-      } else if (profiles && profiles.length > 0) {
-        console.log(`${profiles.length} admin profili tapıldı`);
-        
-        // Profillərdən user ID -> email mapı yaradaq
-        const userIdToEmailMap = new Map();
-        profiles.forEach(profile => {
-          if (profile.id && profile.email) {
-            userIdToEmailMap.set(profile.id, profile.email);
-          }
-        });
-        
-        // İndi user_roles-dan sector ID -> user ID -> email mapı yaradaq
-        userRoles.forEach(role => {
-          if (role.sector_id && role.user_id) {
-            const email = userIdToEmailMap.get(role.user_id);
-            if (email) {
-              sectorAdminEmails.set(role.sector_id, email);
-              console.log(`Sektor ${role.sector_id} üçün admin email tapıldı: ${email}`);
-            }
-          }
-        });
-      }
-    }
-    
-    // Regionların adlarını əlavə edək
+    // Regionların adlarını əldə et
     const { data: regions, error: regionsError } = await supabase
       .from('regions')
       .select('id, name');
       
     const regionNames = regionsError || !regions ? {} : 
-      regions.reduce((acc, region) => {
+      regions.reduce((acc: Record<string, string>, region: any) => {
         acc[region.id] = region.name;
         return acc;
       }, {});
     
-    // Sektorları admin emailləri ilə formalaşdır
-    const formattedSectors = sectors.map(sector => {
-      // Map-dən admin email-i əldə edək
-      const adminEmail = sectorAdminEmails.get(sector.id) || null;
+    // Hər bir sektor üçün admin email-lərini ayrı-ayrı sorğular ilə əldə et
+    // Bu, sonsuz rekursiya problemini həll edəcək
+    const formattedSectors = await Promise.all(sectors.map(async (sector) => {
+      const adminEmail = await fetchSectorAdminEmail(sector.id);
       const regionName = regionNames[sector.region_id] || "Bilinmir";
       
       return {
@@ -118,7 +69,7 @@ export const fetchSectors = async (regionId?: string): Promise<Sector[]> => {
         adminCount: adminEmail ? 1 : 0,
         completionRate: Math.floor(Math.random() * 100) // Hələlik təsadüfi dəyər
       };
-    });
+    }));
     
     console.log('Formatlanmış sektorlar:', formattedSectors);
     return formattedSectors as Sector[];
@@ -217,47 +168,30 @@ export const deleteSector = async (sectorId: string): Promise<any> => {
 };
 
 // Sektor admin email-ini əldə etmək üçün metod
+// Bu, bir funksiya ilə rekursiya olmadan admin e-poçtunu əldə edir
 export const fetchSectorAdminEmail = async (sectorId: string): Promise<string | null> => {
   try {
-    // 1. Sektorun adminini user_roles cədvəlindən tapaq
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('sector_id', sectorId)
-      .eq('role', 'sectoradmin');
+    // Edge function əvəzinə birbaşa SQL funksiya və ya sadə sorğu istifadə edə bilərsiz
+    // burada security definer istifadə edən bir SQL funksiyasını çağırmaq ideal olar
+    // Lakin sadəlik üçün birbaşa, təhlükəsiz bir sorğu ilə əldə edək:
+    const { data: profiles, error } = await supabase
+      .rpc('get_sector_admin_email', {
+        sector_id_param: sectorId
+      });
     
-    if (rolesError) {
-      console.error('Sektor admin rolları sorğusunda xəta:', rolesError);
+    if (error) {
+      console.error('Sektor admin e-poçtu sorğusu xətası:', error);
       return null;
     }
     
-    if (!roles || roles.length === 0) {
-      console.log(`Sektor ${sectorId} üçün admin tapılmadı`);
-      return null;
+    // Əgər profil tapılıbsa və email mövcuddursa, qaytarın
+    if (profiles && profiles.length > 0) {
+      return profiles[0].email;
     }
     
-    const adminId = roles[0].user_id;
-    
-    // 2. Admin istifadəçisinin email-ini profiles cədvəlindən əldə edək
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', adminId)
-      .single();
-    
-    if (profileError) {
-      console.error('Admin profili sorğusunda xəta:', profileError);
-      return null;
-    }
-    
-    if (!profile || !profile.email) {
-      console.log(`Admin ${adminId} üçün email tapılmadı`);
-      return null;
-    }
-    
-    return profile.email;
+    return null;
   } catch (error) {
-    console.error('Sektor admin email-ini əldə etmə xətası:', error);
+    console.error('Sektor admin e-poçtu əldə etmə xətası:', error);
     return null;
   }
 };

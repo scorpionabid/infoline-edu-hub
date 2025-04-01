@@ -72,12 +72,16 @@ const Sectors: React.FC = () => {
   // Component ilk dəfə açıldığında sektorları yüklə
   useEffect(() => {
     const loadSectors = async () => {
-      // Region admini üçün, öz regionundan olan sektorları göstər
-      if (user?.role === 'regionadmin' && user?.regionId) {
-        await fetchSectors(user.regionId);
-      } else {
-        // SuperAdmin üçün bütün sektorları göstər
-        await fetchSectors();
+      try {
+        // Region admini üçün, öz regionundan olan sektorları göstər
+        if (user?.role === 'regionadmin' && user?.regionId) {
+          await fetchSectors(user.regionId);
+        } else {
+          // SuperAdmin üçün bütün sektorları göstər
+          await fetchSectors();
+        }
+      } catch (err) {
+        console.error("Sektorların yüklənməsində xəta:", err);
       }
     };
     
@@ -217,21 +221,21 @@ const Sectors: React.FC = () => {
       adminPassword: adminFormData.password
     };
     
-    await handleAddSector(sectorDataToAdd, t);
+    await handleAddSector(sectorDataToAdd);
   };
 
   // Sektor redaktə et
   const handleUpdateSubmit = async () => {
     if (!selectedSector) return;
     
-    await handleUpdateSector(selectedSector.id, sectorFormData, t);
+    await handleUpdateSector(selectedSector.id, sectorFormData);
   };
 
   // Sektor sil
   const handleDeleteSubmit = async () => {
     if (!selectedSector) return;
     
-    await handleDeleteSector(selectedSector.id, t);
+    await handleDeleteSector(selectedSector.id);
   };
 
   // Cədvəldə sütunları sırala
