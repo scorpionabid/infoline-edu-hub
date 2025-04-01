@@ -1,6 +1,23 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Supabase Admin User tipi əlavə edək
+interface AdminUser {
+  id: string;
+  email?: string | null;
+  user_metadata?: {
+    role?: string;
+    region_id?: string;
+    [key: string]: any;
+  };
+}
+
+// Auth User List Response tipi
+interface AuthUserListResponse {
+  users: AdminUser[];
+  aud?: string;
+}
+
 /**
  * Region üçün admin email ünvanını əldə etmək üçün utilit funksiya
  * @param regionId Region ID
@@ -45,7 +62,7 @@ export const fetchRegionAdminEmail = async (regionId: string): Promise<string | 
     
     if (!authError && authUsers) {
       // Auth metadatadan regionadmin rolu və müvafiq region_id-ni axtaraq
-      const adminUser = authUsers.users.find(user => 
+      const adminUser = (authUsers as AuthUserListResponse).users.find(user => 
         user.user_metadata?.role === 'regionadmin' && 
         user.user_metadata?.region_id === regionId
       );
@@ -82,7 +99,7 @@ export const fetchRegionAdminEmails = async (regions: any[]): Promise<Map<string
     
     if (!authError && authUsers) {
       // Auth metadatadan regionadmin rolunda olan istifadəçiləri seçək
-      const regionAdmins = authUsers.users.filter(user => 
+      const regionAdmins = (authUsers as AuthUserListResponse).users.filter(user => 
         user.user_metadata?.role === 'regionadmin' && 
         user.user_metadata?.region_id
       );
