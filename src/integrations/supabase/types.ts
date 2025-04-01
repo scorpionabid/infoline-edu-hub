@@ -467,6 +467,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_auth_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_regions_with_admin_emails: {
         Args: Record<PropertyKey, never>
         Returns: {
