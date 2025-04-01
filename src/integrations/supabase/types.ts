@@ -263,6 +263,7 @@ export type Database = {
       }
       regions: {
         Row: {
+          admin_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -271,6 +272,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -279,6 +281,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -464,6 +467,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_regions_with_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          status: string
+          created_at: string
+          updated_at: string
+          admin_email: string
+        }[]
+      }
+      get_user_emails_by_ids: {
+        Args: {
+          user_ids: string[]
+        }
+        Returns: {
+          id: string
+          email: string
+        }[]
+      }
       has_access_to_region: {
         Args: {
           _user_id: string
