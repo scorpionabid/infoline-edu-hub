@@ -50,7 +50,7 @@ github.enabled = false
 google.enabled = false
 
 # Auth yönləndirmə konfiqurasiyası
-[auth.redirects]
+[auth.redirect]
 allow_localhost = true
 
 # Edge Function konfiqurasiyası
