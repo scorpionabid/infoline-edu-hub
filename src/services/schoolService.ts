@@ -21,6 +21,7 @@ export interface CreateSchoolParams {
   adminEmail?: string;
   adminFullName?: string;
   adminPassword?: string;
+  adminStatus?: string;
 }
 
 // Bu funksiyanı faylın əvvəlinə əlavə edək
@@ -172,7 +173,7 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
         adminEmail: schoolData.adminEmail,
         adminFullName: schoolData.adminFullName,
         adminPassword: schoolData.adminPassword,
-        adminStatus: 'active'
+        adminStatus: schoolData.adminStatus || 'active'
       }
     });
 

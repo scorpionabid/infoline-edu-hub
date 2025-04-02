@@ -42,7 +42,8 @@ export const useSchoolOperations = (
         teachingLanguage: formData.language || null,
         adminEmail: formData.adminEmail || null,
         adminFullName: formData.adminFullName || null,
-        adminPassword: formData.adminPassword || null
+        adminPassword: formData.adminPassword || null,
+        adminStatus: formData.adminStatus || 'active'
       };
       
       const result = await addSchool(newSchool);
@@ -70,6 +71,8 @@ export const useSchoolOperations = (
         errorMessage = error.message;
       } else if (error.data && error.data.error) {
         errorMessage = error.data.error;
+      } else if (error.error) {
+        errorMessage = error.error;
       }
       
       toast.error("Məktəb əlavə edilərkən xəta", {

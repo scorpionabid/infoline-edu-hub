@@ -116,25 +116,43 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
   }, [user]);
 
   const validateForm = useCallback(() => {
-    if (!formData.name || !formData.sectorId) {
-      toast.error('Zəruri sahələri doldurun: Məktəb adı və Sektor');
+    // Məcburi sahələri yoxla
+    if (!formData.name) {
+      toast.error('Məktəb adı daxil edilməlidir');
+      setCurrentTab('school');
+      return false;
+    }
+    
+    if (!formData.sectorId) {
+      toast.error('Sektor seçilməlidir');
+      setCurrentTab('school');
       return false;
     }
     
     // Admin məlumatlarının validasiyası
-    if (currentTab === 'admin' && formData.adminEmail) {
+    if (formData.adminEmail || formData.adminFullName || formData.adminPassword) {
+      // Əgər admin məlumatlarından biri varsa, hamısı olmalıdır
+      if (!formData.adminEmail) {
+        toast.error('Admin e-poçt ünvanı daxil edilməlidir');
+        setCurrentTab('admin');
+        return false;
+      }
+      
       if (!formData.adminFullName) {
-        toast.error('Admin e-poçtu daxil edildiyi halda, Admin adı da doldurulmalıdır');
+        toast.error('Admin adı və soyadı daxil edilməlidir');
+        setCurrentTab('admin');
         return false;
       }
       
       if (!formData.adminPassword) {
-        toast.error('Admin yaratmaq üçün şifrə daxil edilməlidir');
+        toast.error('Admin şifrəsi daxil edilməlidir');
+        setCurrentTab('admin');
         return false;
       }
       
       if (formData.adminPassword.length < 6) {
         toast.error('Şifrə ən az 6 simvol olmalıdır');
+        setCurrentTab('admin');
         return false;
       }
       
@@ -142,12 +160,13 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.adminEmail)) {
         toast.error('Düzgün e-poçt formatı daxil edin');
+        setCurrentTab('admin');
         return false;
       }
     }
     
     return true;
-  }, [formData, currentTab]);
+  }, [formData, setCurrentTab]);
 
   // Component unmount olduqdan sonra formanı sıfırla
   useEffect(() => {

@@ -83,6 +83,7 @@ serve(async (req) => {
       } = createData;
       
       if (!name || !regionId || !sectorId) {
+        console.error('Məcburi sahələr çatışmır:', { name, regionId, sectorId });
         return new Response(
           JSON.stringify({ error: 'Məktəb adı, Region ID və Sektor ID tələb olunur' }),
           { 
@@ -140,12 +141,13 @@ serve(async (req) => {
           const cleanEmail = adminEmail.trim().toLowerCase();
           
           // Əvvəlcə emailin istifadədə olub-olmadığını yoxlayaq
-          const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin
-            .listUsers({ filter: { email: cleanEmail } });
+          const { data: existingUsers } = await supabaseAdmin
+            .from('profiles')
+            .select('id, email')
+            .eq('email', cleanEmail)
+            .maybeSingle();
           
-          if (userCheckError) {
-            console.error('İstifadəçi yoxlamasında xəta:', userCheckError);
-          } else if (existingUser && existingUser.users && existingUser.users.length > 0) {
+          if (existingUsers) {
             console.warn(`${cleanEmail} email ünvanı artıq istifadədədir. Yeni istifadəçi yaradılmayacaq.`);
             return new Response(
               JSON.stringify({ 
@@ -197,18 +199,20 @@ serve(async (req) => {
           adminId = userData.user.id;
           adminData = userData;
           
-          // Profilin yaradılmasını gözləyək - trigger yaratmalıdır, amma əmin olmaq üçün yoxlayaq
+          // Profilin yaradılması üçün handle_new_user triggeri işləyir
+          // Buna baxmayaraq, biz əmin olmaq istəyirik ki, profile məlumatları düzgün doldurulub
           // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const { data: profileData, error: profileCheckError } = await supabaseAdmin
+          // Profile məlumatlarını yoxlayaq və yeniləyək (əgər lazımdırsa)
+          const { data: profileData, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('*')
             .eq('id', adminId)
-            .single();
+            .maybeSingle();
           
-          if (profileCheckError || !profileData) {
-            console.log('Profil avtomatik yaradılmayıb, manual yaradaq');
+          if (profileError || !profileData) {
+            console.log('Profile məlumatları tapılmadı, manual yaradaq');
             
             // Profil yaratmağa çəhd edirik
             const { error: createProfileError } = await supabaseAdmin
@@ -227,6 +231,22 @@ serve(async (req) => {
               console.error('Profil yaradılması xətası:', createProfileError);
             } else {
               console.log(`İstifadəçi ${adminId} üçün profil yaradıldı`);
+            }
+          } else if (profileData) {
+            // Profil var, amma tam məlumatları yeniləməyə ehtiyac ola bilər
+            const { error: updateProfileError } = await supabaseAdmin
+              .from('profiles')
+              .update({
+                full_name: adminFullName,
+                email: cleanEmail,
+                status: adminStatus || 'active'
+              })
+              .eq('id', adminId);
+              
+            if (updateProfileError) {
+              console.error('Profil yenilənməsi xətası:', updateProfileError);
+            } else {
+              console.log(`İstifadəçi ${adminId} üçün profil yeniləndi`);
             }
           }
           
@@ -269,7 +289,7 @@ serve(async (req) => {
               success: true, 
               data: { school: schoolData }, 
               warning: 'Məktəb yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
-              details: err
+              details: err 
             }),
             { 
               status: 201, 
@@ -341,13 +361,32 @@ serve(async (req) => {
       // Admin e-poçtu ilə istifadəçini tapaq
       let adminUserId = null;
       if (schoolData.admin_email) {
-        const { data: adminData } = await supabaseAdmin.auth.admin
-          .listUsers({ 
-            filter: { email: schoolData.admin_email } 
-          });
+        // Əvvəlcə profiles cədvəlində admin e-poçtunu axtaraq
+        const { data: profileData } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('email', schoolData.admin_email)
+          .maybeSingle();
           
-        if (adminData && adminData.users && adminData.users.length > 0) {
-          adminUserId = adminData.users[0].id;
+        if (profileData) {
+          adminUserId = profileData.id;
+          console.log(`Admin profili tapıldı: ${adminUserId}`);
+        } else {
+          // Profildə tapılmasa, auth.users-da axtaraq
+          try {
+            const { data } = await supabaseAdmin.auth.admin.listUsers({
+              filter: {
+                email: schoolData.admin_email
+              }
+            });
+            
+            if (data?.users?.length > 0) {
+              adminUserId = data.users[0].id;
+              console.log(`Admin auth.users-da tapıldı: ${adminUserId}`);
+            }
+          } catch (authError) {
+            console.error('Admin axtarışı zamanı xəta:', authError);
+          }
         }
       }
       
@@ -386,12 +425,12 @@ serve(async (req) => {
             .eq('id', adminUserId);
             
           if (profileUpdateError) {
-            console.error(`Admin deactivation error for ${adminUserId}:`, profileUpdateError);
+            console.error(`Admin deaktiv etmə xətası (${adminUserId}):`, profileUpdateError);
           } else {
-            console.log(`Admin with id ${adminUserId} deactivated`);
+            console.log(`Admin ${adminUserId} deaktiv edildi`);
           }
         } catch (err) {
-          console.error(`Admin deactivation error for ${adminUserId}:`, err);
+          console.error(`Admin deaktiv etmə xətası (${adminUserId}):`, err);
         }
       }
       
@@ -407,12 +446,12 @@ serve(async (req) => {
                 .eq('id', role.user_id);
                 
               if (profileUpdateError) {
-                console.error(`Admin deactivation error for ${role.user_id}:`, profileUpdateError);
+                console.error(`Admin deaktiv etmə xətası (${role.user_id}):`, profileUpdateError);
               } else {
-                console.log(`Admin with id ${role.user_id} deactivated`);
+                console.log(`Admin ${role.user_id} deaktiv edildi`);
               }
             } catch (err) {
-              console.error(`Admin deactivation error for ${role.user_id}:`, err);
+              console.error(`Admin deaktiv etmə xətası (${role.user_id}):`, err);
             }
           }
         }

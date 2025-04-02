@@ -1,74 +1,7 @@
 
+# This file defines configuration settings for Supabase Edge Functions
 project_id = "olbfnauhzpdskqnxtwav"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
-[db]
-port = 54322
-shadow_port = 54320
-major_version = 15
-
-[db.pooler]
-port = 54329
-pool_mode = "transaction"
-default_pool_size = 15
-max_client_conn = 100
-
-[realtime]
-enabled = true
-ip_version = "IPv4"
-
-[studio]
-enabled = true
-port = 54323
-api_url = "http://127.0.0.1"
-
-[inbucket]
-enabled = true
-port = 54324
-
-[storage]
-enabled = true
-
-[auth]
-enabled = true
-site_url = "http://localhost:3000"
-
-# Email auth konfiqurasiyası
-[auth.email]
-enable_signup = true
-double_confirm_changes = true
-
-[auth.external]
-apple.enabled = false
-github.enabled = false
-google.enabled = false
-
-# Auth yönləndirmə konfiqurasiyası
-[auth.redirect]
-allow_localhost = true
-
-# Edge Function konfiqurasiyası
 [functions]
-enabled = true
-port = 54324
-
-[functions.safe-login]
-verify_jwt = false
-
-[functions.get-user-role]
-verify_jwt = true
-
 [functions.school-operations]
-verify_jwt = false
-
-[functions.sector-operations]
-verify_jwt = false
-
-[functions.region-operations]
-verify_jwt = false
+verify_jwt = true

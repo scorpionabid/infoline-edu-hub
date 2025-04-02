@@ -42,6 +42,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 value={formData.name}
                 onChange={handleFormChange}
                 placeholder="Məktəb adı daxil edin"
+                required
               />
             </div>
             <div className="flex flex-col space-y-1.5">
@@ -65,6 +66,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               value={formData.sectorId}
               onChange={handleFormChange}
               className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+              required
             >
               <option value="">Seçin</option>
               {filteredSectors.map(sector => (
@@ -90,6 +92,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               <Input
                 id="email"
                 name="email"
+                type="email" 
                 value={formData.email}
                 onChange={handleFormChange}
                 placeholder="E-poçt ünvanı daxil edin"
@@ -200,6 +203,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
             <Input
               id="adminEmail"
               name="adminEmail"
+              type="email"
               value={formData.adminEmail}
               onChange={handleFormChange}
               placeholder="Admin e-poçt ünvanı daxil edin"
@@ -215,7 +219,9 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               value={formData.adminPassword}
               onChange={handleFormChange}
               placeholder="Şifrə daxil edin"
+              minLength={6}
             />
+            <p className="text-xs text-muted-foreground">Şifrə minimum 6 simvoldan ibarət olmalıdır</p>
           </div>
           
           <div className="flex flex-col space-y-1.5">
