@@ -1,4 +1,3 @@
-
 export interface School {
   id: string;
   name: string;
@@ -29,4 +28,28 @@ export interface School {
   completion_rate?: number;
   logo?: string;
   admin_email?: string;
+}
+
+export interface CreateSchoolParams {
+  name: string;
+  principalName?: string;
+  directorName?: string;
+  address?: string;
+  regionId?: string;
+  sectorId?: string;
+  region_id?: string;
+  sector_id?: string;
+  phone?: string;
+  email?: string;
+  studentCount?: number;
+  teacherCount?: number;
+  status?: 'active' | 'inactive';
+  type?: string;
+  schoolType?: string;
+  language?: string;
+  teachingLanguage?: string;
+  adminEmail?: string;
+  adminFullName?: string;
+  adminPassword?: string;
+  adminStatus?: string;
 }

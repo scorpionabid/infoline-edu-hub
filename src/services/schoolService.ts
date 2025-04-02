@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/school';
+import { School, CreateSchoolParams } from '@/types/school';
 
 // Bu funksiyanı faylın əvvəlinə əlavə edək
 const mapSchool = (schoolData: any): School => {
@@ -164,7 +164,7 @@ export const addSchool = async (schoolData: any): Promise<School> => {
       return mapSchool(data.data.school);
     } else {
       // Xəta halında 
-      throw new Error('Məktəb yaradıldı, amma məlumatlar qaytarılmadı');
+      throw new Error('Məktəb yaratıldı, amma məlumatlar qaytarılmadı');
     }
   } catch (error) {
     console.error('Məktəb əlavə etmə xətası:', error);
@@ -180,7 +180,7 @@ export const updateSchool = async (schoolId: string, schoolData: Partial<CreateS
     // Supabase tipləri ilə uyğunlaşdıraq
     const supabaseData = {
       name: schoolData.name,
-      principal_name: schoolData.principalName,
+      principal_name: schoolData.principalName || schoolData.directorName,
       address: schoolData.address,
       phone: schoolData.phone,
       email: schoolData.email,
@@ -189,8 +189,8 @@ export const updateSchool = async (schoolId: string, schoolData: Partial<CreateS
       student_count: schoolData.studentCount ? Number(schoolData.studentCount) : undefined,
       teacher_count: schoolData.teacherCount ? Number(schoolData.teacherCount) : undefined,
       status: schoolData.status,
-      type: schoolData.schoolType,
-      language: schoolData.teachingLanguage,
+      type: schoolData.schoolType || schoolData.type,
+      language: schoolData.teachingLanguage || schoolData.language,
       admin_email: schoolData.adminEmail
     };
 
