@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
 
@@ -184,12 +183,11 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
     // Edge function-dan qaytarılan məlumatları formalaşdır
     if (data && data.data && data.data.school) {
       console.log('Yaradılan məktəb:', data.data.school);
-      console.log('Admin məlumatları:', data.data.admin);
       
       if (data.data.admin) {
         console.log('Admin yaradılmışdır:', data.data.admin.email);
-      } else {
-        console.warn('Admin yaradılmamışdır!');
+      } else if (schoolData.adminEmail) {
+        console.warn('Admin yaradılmamışdır, admin məlumatlarını yoxlayın!');
       }
       
       return mapSchool(data.data.school);

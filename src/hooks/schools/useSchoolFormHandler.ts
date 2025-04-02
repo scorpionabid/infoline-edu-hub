@@ -121,16 +121,20 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
       return false;
     }
     
+    // Admin məlumatlarının validasiyası
     if (currentTab === 'admin' && formData.adminEmail) {
-      // Admin e-poçtu daxil edilmişsə, admin adı da tələb olunur
       if (!formData.adminFullName) {
         toast.error('Admin e-poçtu daxil edildiyi halda, Admin adı da doldurulmalıdır');
         return false;
       }
       
-      // Yeni istifadəçi yaradılırsa, şifrə də tələb olunur
       if (!formData.adminPassword) {
-        toast.error('Yeni admin yaradılarkən şifrə də daxil edilməlidir');
+        toast.error('Admin yaratmaq üçün şifrə daxil edilməlidir');
+        return false;
+      }
+      
+      if (formData.adminPassword.length < 6) {
+        toast.error('Şifrə ən az 6 simvol olmalıdır');
         return false;
       }
     }

@@ -49,7 +49,7 @@ apple.enabled = false
 github.enabled = false
 google.enabled = false
 
-# Auth yönləndirmə konfiqurasiyası - domain səviyyəsində tənzimlənir
+# Auth yönləndirmə konfiqurasiyası
 [auth.redirects]
 allow_localhost = true
 
@@ -72,4 +72,3 @@ verify_jwt = false
 
 [functions.region-operations]
 verify_jwt = false
-

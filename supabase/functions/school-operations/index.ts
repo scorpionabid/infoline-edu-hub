@@ -122,11 +122,8 @@ serve(async (req) => {
       let adminData = null;
       
       // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
-      if (adminEmail && adminFullName) {
-        // İstifadəçinin təqdim etdiyi parol və ya default parol
-        const password = adminPassword || 'Password123!';
-        
-        console.log(`Creating admin with email: ${adminEmail}, name: ${adminFullName}, password: ${password.substring(0, 3)}*****`);
+      if (adminEmail && adminFullName && adminPassword) {
+        console.log(`Creating admin with email: ${adminEmail}, name: ${adminFullName}, password length: ${adminPassword.length}`);
         
         try {
           // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
@@ -135,8 +132,8 @@ serve(async (req) => {
           // Supabase ilə yeni istifadəçi yaradırıq
           const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
             email: cleanEmail,
-            password: password,
-            email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
+            password: adminPassword,
+            email_confirm: true,
             user_metadata: {
               full_name: adminFullName,
               role: 'schooladmin',
@@ -152,7 +149,7 @@ serve(async (req) => {
             return new Response(
               JSON.stringify({ 
                 success: true, 
-                data: schoolData, 
+                data: { school: schoolData }, 
                 warning: 'Məktəb yaradıldı, lakin admin hesabı yaradıla bilmədi',
                 details: userError 
               }),
@@ -163,69 +160,46 @@ serve(async (req) => {
             );
           }
           
+          console.log('Admin created successfully:', userData.user.id);
           adminId = userData.user.id;
           adminData = userData;
           
-          // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Profilin yaradılmasını yoxlayaq
-          const { data: profileData, error: profileError } = await supabaseAdmin
+          // Profil yaratmağa çəhd edirik
+          const { error: createProfileError } = await supabaseAdmin
             .from('profiles')
-            .select('*')
-            .eq('id', adminId)
-            .single();
+            .insert([
+              {
+                id: adminId,
+                full_name: adminFullName,
+                language: 'az',
+                status: adminStatus || 'active',
+                email: cleanEmail
+              }
+            ]);
             
-          if (profileError || !profileData) {
-            console.log('Profil avtomatik yaradılmayıb, manual yaradaq');
-            
-            // Profil yaratmağa cəhd edirik
-            const { error: createProfileError } = await supabaseAdmin
-              .from('profiles')
-              .insert([
-                {
-                  id: adminId,
-                  full_name: adminFullName,
-                  language: 'az',
-                  status: adminStatus || 'active',
-                  email: cleanEmail
-                }
-              ]);
-              
-            if (createProfileError) {
-              console.error('Profil yaradılması xətası:', createProfileError);
-            }
+          if (createProfileError) {
+            console.error('Profil yaradılması xətası:', createProfileError);
           } else {
-            console.log('Profil tapıldı:', profileData);
+            console.log(`Profile created for user ${adminId}`);
           }
           
-          // İstifadəçi rolunu yoxlayaq və əlavə edək
-          const { data: existingRole, error: roleCheckError } = await supabaseAdmin
+          // İstifadəçi rolunu əlavə edək
+          const { error: roleError } = await supabaseAdmin
             .from('user_roles')
-            .select('*')
-            .eq('user_id', adminId)
-            .single();
-          
-          if (roleCheckError || !existingRole) {
-            console.log('İstifadəçi rolu tapılmadı, yeni rol yaradılır');
+            .insert([
+              {
+                user_id: adminId,
+                role: 'schooladmin',
+                region_id: regionId,
+                sector_id: sectorId,
+                school_id: schoolId
+              }
+            ]);
             
-            const { error: roleError } = await supabaseAdmin
-              .from('user_roles')
-              .insert([
-                {
-                  user_id: adminId,
-                  role: 'schooladmin',
-                  region_id: regionId,
-                  sector_id: sectorId,
-                  school_id: schoolId
-                }
-              ]);
-              
-            if (roleError) {
-              console.error('Rol əlavə edilməsi xətası:', roleError);
-            }
+          if (roleError) {
+            console.error('Rol əlavə edilməsi xətası:', roleError);
           } else {
-            console.log('İstifadəçi rolu artıq mövcuddur:', existingRole);
+            console.log(`Role added for user ${adminId}`);
           }
           
           // Əgər admin yaradıldısa, məktəbdə admin_email-i yeniləyək
@@ -236,6 +210,8 @@ serve(async (req) => {
             
           if (updateSchoolError) {
             console.error('Məktəb admin email yenilənməsi xətası:', updateSchoolError);
+          } else {
+            console.log(`School admin_email updated to ${cleanEmail}`);
           }
           
         } catch (err) {
@@ -244,7 +220,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: true, 
-              data: schoolData, 
+              data: { school: schoolData }, 
               warning: 'Məktəb yaradıldı, lakin admin hesabı yaradılarkən xəta baş verdi',
               details: err
             }),
@@ -254,6 +230,19 @@ serve(async (req) => {
             }
           );
         }
+      } else if (adminEmail) {
+        console.error('Admin yaratmaq üçün email, şifrə və ad lazımdır');
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            data: { school: schoolData }, 
+            warning: 'Admin yaratmaq üçün email, şifrə və tam ad lazımdır'
+          }),
+          { 
+            status: 201, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
       
       return new Response(
