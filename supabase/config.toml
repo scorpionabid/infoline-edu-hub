@@ -24,7 +24,7 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-ip_version = "IPV4"
+ip_version = "IPv4"
 
 [studio]
 enabled = true
@@ -42,30 +42,26 @@ enabled = true
 enabled = true
 site_url = "http://localhost:3000"
 
+# Email auth konfiqurasiyası
 [auth.email]
-enabled = true
+enable_signup = true
 double_confirm_changes = true
-double_confirm_changes_email = true
 
-# JWT skladi supabase auth
-[auth.jwt]
-enabled = true
+[auth.external]
+apple.enabled = false
+github.enabled = false
+google.enabled = false
 
-# auth redirect url nizamlamalari
-[[auth.redirect_urls]]
-url = "http://localhost:3000/login"
+# Auth redirect konfiqurasiyası
+[auth.redirect_domains]
+localhost = true
 
-[[auth.redirect_urls]]
-url = "http://localhost:3000/login-complete"
-
-# Edge Function konfigurasyonu
+# Edge Function konfiqurasiyası
 [functions]
 serve_port = 54324
 
 [functions.safe-login]
-verify_jwt = false # bu function auth olmadan erisile bilsin
-port = 9999
+verify_jwt = false
 
 [functions.get-user-role]
-verify_jwt = true # bu function auth olmadan erisile bilmesin
-port = 9998
+verify_jwt = true

@@ -27,14 +27,15 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     // Əvvəlcə yeni SQL funksiyaları ilə tam istifadəçi məlumatlarını almağa çalışaq
     try {
       console.log(`[fetchUserData] Trying to fetch full user data via SQL function`);
-      const { data: fullUserDataResult, error: functionError } = await supabase.rpc('get_full_user_data', {
-        user_id_param: userId
-      });
+      const { data: fullUserDataResult, error: functionError } = await supabase.rpc(
+        'get_full_user_data', 
+        { user_id_param: userId }
+      );
       
       if (!functionError && fullUserDataResult) {
         console.log(`[fetchUserData] Successfully fetched user data via SQL function`);
-        // JSON məlumatlarını JSON obyektinə çevirək
-        const userData = fullUserDataResult;
+        // JSON məlumatlarını parçalayaq və FullUserData obyektinə çevirək
+        const userData = fullUserDataResult as any;
         
         // Status dəyərini düzəldək
         const statusValue = userData.status || 'active';

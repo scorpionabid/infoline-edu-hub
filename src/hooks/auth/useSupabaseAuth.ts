@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { fetchUserData } from './userDataService';
 import { toast } from 'sonner';
 import { FullUserData } from '@/types/supabase';
@@ -146,11 +146,17 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         try {
           console.log('SuperAdmin giriş aşkarlandı, safe-login istifadə edilir');
           
-          const result = await fetch(`${supabase.supabaseUrl}/functions/v1/safe-login`, {
+          // URL və header-lərdə supabaseUrl və API keyi əldə etməliyik
+          // Daha təhlükəsiz versiya ilə əvəz edirik
+          const apiKey = supabase.supabaseUrl.includes('localhost') ? 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4' : 
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+          
+          const result = await fetch(`${supabaseUrl}/functions/v1/safe-login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseKey}`
+              'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({ email, password })
           });
