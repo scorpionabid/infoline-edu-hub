@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
@@ -119,72 +120,75 @@ const Sectors: React.FC = () => {
   );
 
   return (
-    <div className="container py-4">
-      {/* Başlıq və əsas əməliyyat düymələri */}
-      <SectorHeader 
-        onCreateClick={openCreateDialog} 
-        onImport={handleImport} 
-        onExport={handleExport}
-      />
-
-      <div className="bg-background rounded-lg shadow p-4">
-        {/* Axtarış və filtrləmə bölümü */}
-        <SectorFilters 
-          searchTerm={searchTerm} 
-          selectedStatus={selectedStatus} 
-          onSearch={handleSearch} 
-          onStatusFilter={handleStatusFilter}
+    <SidebarLayout>
+      <div className="container py-4">
+        {/* Başlıq və əsas əməliyyat düymələri */}
+        <SectorHeader 
+          onCreateClick={openCreateDialog} 
+          onImport={handleImport} 
+          onExport={handleExport}
         />
 
-        {/* Sektorlar cədvəli */}
-        <SectorTable 
-          loading={loading}
-          sectors={paginatedSectors}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onEdit={openEditDialog}
-          onDelete={openDeleteDialog}
-          onSort={handleSort}
-          searchTerm={searchTerm}
-          selectedStatus={selectedStatus}
+        <div className="bg-background rounded-lg shadow p-4">
+          {/* Axtarış və filtrləmə bölümü */}
+          <SectorFilters 
+            searchTerm={searchTerm} 
+            selectedStatus={selectedStatus} 
+            onSearch={handleSearch} 
+            onStatusFilter={handleStatusFilter}
+          />
+
+          {/* Sektorlar cədvəli */}
+          <SectorTable 
+            loading={loading}
+            sectors={paginatedSectors}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onEdit={openEditDialog}
+            onDelete={openDeleteDialog}
+            onSort={handleSort}
+            searchTerm={searchTerm}
+            selectedStatus={selectedStatus}
+          />
+          
+          {/* Səhifələmə komponenti */}
+          <SectorPagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredSectors.length}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+          />
+        </div>
+        
+        {/* Əməliyyat dialogları */}
+        <SectorActionDialog
+          isOpen={showCreateDialog}
+          onClose={closeDialogs}
+          action="create"
+          regionId={user?.regionId}
+          onSuccess={closeDialogs}
         />
         
-        {/* Səhifələmə komponenti */}
-        <SectorPagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredSectors.length}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
+        <SectorActionDialog
+          isOpen={showEditDialog}
+          onClose={closeDialogs}
+          action="edit"
+          sector={selectedSector}
+          onSuccess={closeDialogs}
+        />
+        
+        <SectorActionDialog
+          isOpen={showDeleteDialog}
+          onClose={closeDialogs}
+          action="delete"
+          sector={selectedSector}
+          onSuccess={closeDialogs}
         />
       </div>
-      
-      {/* Əməliyyat dialogları */}
-      <SectorActionDialog
-        isOpen={showCreateDialog}
-        onClose={closeDialogs}
-        action="create"
-        regionId={user?.regionId}
-        onSuccess={closeDialogs}
-      />
-      
-      <SectorActionDialog
-        isOpen={showEditDialog}
-        onClose={closeDialogs}
-        action="edit"
-        sector={selectedSector}
-        onSuccess={closeDialogs}
-      />
-      
-      <SectorActionDialog
-        isOpen={showDeleteDialog}
-        onClose={closeDialogs}
-        action="delete"
-        sector={selectedSector}
-        onSuccess={closeDialogs}
-      />
-    </div>
+    </SidebarLayout>
   );
 };
 
 export default Sectors;
+
