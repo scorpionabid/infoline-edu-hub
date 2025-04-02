@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 import { 
   Table, 
   TableBody
@@ -95,76 +95,78 @@ const Regions: React.FC = () => {
   }, [isOperationComplete, fetchRegionsWithTranslation, setIsOperationComplete]);
 
   return (
-    <div className="p-6 space-y-6">
-      <RegionHeader t={t} onAddRegion={handleAddRegionClick} />
+    <SidebarLayout>
+      <div className="p-6 space-y-6">
+        <RegionHeader t={t} onAddRegion={handleAddRegionClick} />
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>{t('manageRegions')}</CardTitle>
-          <CardDescription>{t('manageRegionsDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RegionFilters 
-            t={t}
-            searchTerm={searchTerm}
-            selectedStatus={selectedStatus}
-            handleSearch={handleSearch}
-            handleStatusFilter={handleStatusFilter}
-            resetFilters={resetFilters}
-          />
-
-          <div className="rounded-md border">
-            <Table>
-              <RegionTableHeader 
-                t={t}
-                sortConfig={sortConfig}
-                handleSort={handleSort}
-              />
-              <TableBody>
-                {loading ? (
-                  <LoadingState t={t} />
-                ) : regions.length === 0 ? (
-                  <EmptyState t={t} onAddRegion={handleAddRegionClick} />
-                ) : (
-                  regions.map((region) => (
-                    <RegionTableRow
-                      key={region.id}
-                      region={region}
-                      t={t}
-                      onView={handleRegionView}
-                      onEdit={handleRegionEdit}
-                      onDelete={handleRegionDelete}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {totalPages > 1 && 
-            <RegionPagination
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>{t('manageRegions')}</CardTitle>
+            <CardDescription>{t('manageRegionsDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RegionFilters 
               t={t}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              handlePageChange={handlePageChange}
+              searchTerm={searchTerm}
+              selectedStatus={selectedStatus}
+              handleSearch={handleSearch}
+              handleStatusFilter={handleStatusFilter}
+              resetFilters={resetFilters}
             />
-          }
-        </CardContent>
-      </Card>
 
-      <AddRegionDialog 
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSubmit={handleAddRegion}
-      />
+            <div className="rounded-md border">
+              <Table>
+                <RegionTableHeader 
+                  t={t}
+                  sortConfig={sortConfig}
+                  handleSort={handleSort}
+                />
+                <TableBody>
+                  {loading ? (
+                    <LoadingState t={t} />
+                  ) : regions.length === 0 ? (
+                    <EmptyState t={t} onAddRegion={handleAddRegionClick} />
+                  ) : (
+                    regions.map((region) => (
+                      <RegionTableRow
+                        key={region.id}
+                        region={region}
+                        t={t}
+                        onView={handleRegionView}
+                        onEdit={handleRegionEdit}
+                        onDelete={handleRegionDelete}
+                      />
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-      <DeleteRegionDialog 
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        region={selectedRegion}
-        onDelete={handleDeleteRegion}
-      />
-    </div>
+            {totalPages > 1 && 
+              <RegionPagination
+                t={t}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                handlePageChange={handlePageChange}
+              />
+            }
+          </CardContent>
+        </Card>
+
+        <AddRegionDialog 
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          onSubmit={handleAddRegion}
+        />
+
+        <DeleteRegionDialog 
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          region={selectedRegion}
+          onDelete={handleDeleteRegion}
+        />
+      </div>
+    </SidebarLayout>
   );
 };
 
