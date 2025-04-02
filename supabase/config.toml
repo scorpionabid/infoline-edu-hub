@@ -1,7 +1,4 @@
 
-# This is a sample supabase config.toml file.
-# Unlike .env files, TOML allows for nested configuration, which supabase config requires.
-
 project_id = "olbfnauhzpdskqnxtwav"
 
 [api]
@@ -52,16 +49,27 @@ apple.enabled = false
 github.enabled = false
 google.enabled = false
 
-# Auth redirect konfiqurasiyası
-[auth.redirect_domains]
-localhost = true
+# Auth yönləndirmə konfiqurasiyası - domain səviyyəsində tənzimlənir
+[auth.redirects]
+allow_localhost = true
 
 # Edge Function konfiqurasiyası
 [functions]
-serve_port = 54324
+enabled = true
+port = 54324
 
 [functions.safe-login]
 verify_jwt = false
 
 [functions.get-user-role]
 verify_jwt = true
+
+[functions.school-operations]
+verify_jwt = false
+
+[functions.sector-operations]
+verify_jwt = false
+
+[functions.region-operations]
+verify_jwt = false
+
