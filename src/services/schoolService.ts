@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
 
@@ -16,7 +17,7 @@ export interface CreateSchoolParams {
   sectorId: string;
   status?: 'active' | 'inactive';
   adminEmail?: string;
-  adminName?: string;
+  adminFullName?: string;
   adminPassword?: string;
 }
 
@@ -89,10 +90,10 @@ export const fetchSchools = async (regionId?: string, sectorId?: string): Promis
     // Məktəbləri admin emailləri ilə formalaşdır
     const formattedSchools = schools.map(school => ({
       ...school,
-      adminEmail: 'admin@example.com', // FIXME: Admin email-i əldə etmək üçün əlavə sorğu tələb olunur
+      adminEmail: school.admin_email || '', 
       studentCount: school.student_count || 0,
       teacherCount: school.teacher_count || 0,
-      adminCount: 1
+      adminCount: school.admin_email ? 1 : 0
     }));
 
     console.log('Formatlanmış məktəblər:', formattedSchools.map(s => ({ name: s.name, adminEmail: s.adminEmail })));
@@ -129,10 +130,10 @@ export const getSchoolById = async (schoolId: string): Promise<School | null> =>
     // Məktəbi admin emaili ilə formalaşdır
     const formattedSchool = {
       ...school,
-      adminEmail: 'admin@example.com', // FIXME: Admin email-i əldə etmək üçün əlavə sorğu tələb olunur
+      adminEmail: school.admin_email || '',
       studentCount: school.student_count || 0,
       teacherCount: school.teacher_count || 0,
-      adminCount: 1
+      adminCount: school.admin_email ? 1 : 0
     };
 
     console.log('Formatlanmış məktəb:', { name: formattedSchool.name, adminEmail: formattedSchool.adminEmail });
@@ -149,27 +150,29 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
     console.log('Məktəb əlavə edilir:', schoolData);
 
     // Edge function vasitəsilə məktəbi və admini yaradaq
-    const { data, error } = await supabase.functions
-      .invoke('school-operations', {
-        body: {
-          action: 'create',
-          name: schoolData.name,
-          address: schoolData.address,
-          phone: schoolData.phone,
-          email: schoolData.email,
-          principalName: schoolData.principalName,
-          studentCount: schoolData.studentCount,
-          teacherCount: schoolData.teacherCount,
-          schoolType: schoolData.schoolType,
-          teachingLanguage: schoolData.teachingLanguage,
-          regionId: schoolData.regionId,
-          sectorId: schoolData.sectorId,
-          status: schoolData.status,
-          adminEmail: schoolData.adminEmail,
-          adminName: schoolData.adminName,
-          adminPassword: schoolData.adminPassword
-        }
-      });
+    const response = await supabase.functions.invoke('school-operations', {
+      body: {
+        action: 'create',
+        name: schoolData.name,
+        principalName: schoolData.principalName,
+        address: schoolData.address,
+        phone: schoolData.phone,
+        email: schoolData.email,
+        regionId: schoolData.regionId,
+        sectorId: schoolData.sectorId,
+        studentCount: schoolData.studentCount ? Number(schoolData.studentCount) : null,
+        teacherCount: schoolData.teacherCount ? Number(schoolData.teacherCount) : null,
+        type: schoolData.schoolType,
+        language: schoolData.teachingLanguage,
+        status: schoolData.status || 'active',
+        adminEmail: schoolData.adminEmail,
+        adminFullName: schoolData.adminFullName,
+        adminPassword: schoolData.adminPassword,
+        adminStatus: 'active'
+      }
+    });
+
+    const { data, error } = response;
 
     if (error) {
       console.error('Məktəb yaratma sorğusu xətası:', error);
@@ -179,8 +182,17 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
     console.log('Məktəb yaratma nəticəsi:', data);
 
     // Edge function-dan qaytarılan məlumatları formalaşdır
-     if (data && data.school) {
-      return mapSchool(data);
+    if (data && data.data && data.data.school) {
+      console.log('Yaradılan məktəb:', data.data.school);
+      console.log('Admin məlumatları:', data.data.admin);
+      
+      if (data.data.admin) {
+        console.log('Admin yaradılmışdır:', data.data.admin.email);
+      } else {
+        console.warn('Admin yaradılmamışdır!');
+      }
+      
+      return mapSchool(data.data.school);
     } else {
       // Xəta halında boş obyekt qaytar
       throw new Error('Məktəb yaradıldı, amma məlumatlar qaytarılmadı');
@@ -196,9 +208,26 @@ export const updateSchool = async (schoolId: string, schoolData: Partial<CreateS
   try {
     console.log(`Məktəb ID ${schoolId} yenilənir:`, schoolData);
 
+    // Supabase tipləri ilə uyğunlaşdıraq
+    const supabaseData = {
+      name: schoolData.name,
+      principal_name: schoolData.principalName,
+      address: schoolData.address,
+      phone: schoolData.phone,
+      email: schoolData.email,
+      region_id: schoolData.regionId,
+      sector_id: schoolData.sectorId,
+      student_count: schoolData.studentCount ? Number(schoolData.studentCount) : undefined,
+      teacher_count: schoolData.teacherCount ? Number(schoolData.teacherCount) : undefined,
+      status: schoolData.status,
+      type: schoolData.schoolType,
+      language: schoolData.teachingLanguage,
+      admin_email: schoolData.adminEmail
+    };
+
     const { data: updatedSchool, error } = await supabase
       .from('schools')
-      .update(schoolData)
+      .update(supabaseData)
       .eq('id', schoolId)
       .select()
       .single();
@@ -227,10 +256,15 @@ export const deleteSchool = async (schoolId: string): Promise<any> => {
   try {
     console.log(`Məktəb ID ${schoolId} silinir...`);
 
-    const { error } = await supabase
-      .from('schools')
-      .delete()
-      .eq('id', schoolId);
+    // Edge function vasitəsilə məktəbi və admini siləcəyik
+    const response = await supabase.functions.invoke('school-operations', {
+      body: {
+        action: 'delete',
+        schoolId: schoolId
+      }
+    });
+
+    const { data, error } = response;
 
     if (error) {
       console.error(`Məktəb ID ${schoolId} silmə xətası:`, error);

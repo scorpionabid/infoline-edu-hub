@@ -21,8 +21,9 @@ interface CreateSchoolRequest {
   type?: string;
   language?: string;
   adminEmail?: string;
-  adminName?: string;
+  adminFullName?: string;
   adminPassword?: string;
+  adminStatus?: string;
 }
 
 interface DeleteSchoolRequest {
@@ -69,7 +70,7 @@ serve(async (req) => {
       const { 
         name, principalName, address, phone, email, regionId, sectorId,
         studentCount, teacherCount, status, type, language,
-        adminEmail, adminName, adminPassword 
+        adminEmail, adminFullName, adminPassword, adminStatus 
       } = data as CreateSchoolRequest;
       
       if (!name || !regionId || !sectorId) {
@@ -118,13 +119,14 @@ serve(async (req) => {
       
       const schoolId = schoolData.id;
       let adminId = null;
+      let adminData = null;
       
       // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
-      if (adminEmail && adminName) {
+      if (adminEmail && adminFullName) {
         // İstifadəçinin təqdim etdiyi parol və ya default parol
-        const password = adminPassword || 'Password123';
+        const password = adminPassword || 'Password123!';
         
-        console.log(`Creating admin with email: ${adminEmail}, name: ${adminName}, password: ${password.substring(0, 3)}*****`);
+        console.log(`Creating admin with email: ${adminEmail}, name: ${adminFullName}, password: ${password.substring(0, 3)}*****`);
         
         try {
           // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
@@ -136,7 +138,7 @@ serve(async (req) => {
             password: password,
             email_confirm: true, // Emailin təsdiqlənməsinə ehtiyac yoxdur
             user_metadata: {
-              full_name: adminName,
+              full_name: adminFullName,
               role: 'schooladmin',
               region_id: regionId,
               sector_id: sectorId,
@@ -162,14 +164,12 @@ serve(async (req) => {
           }
           
           adminId = userData.user.id;
+          adminData = userData;
           
-          // Profil yaratma - zəruri deyil, avtomatik trigger tərəfindən yaradılacaq
-          // Lakin əmin olmaq üçün yoxlayaq və ya yaradaq
-          
-          // Profilin yaradılmasını gözləyək - trigger yaradır, amma əmin olaq
           // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
+          // Profilin yaradılmasını yoxlayaq
           const { data: profileData, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('*')
@@ -185,9 +185,10 @@ serve(async (req) => {
               .insert([
                 {
                   id: adminId,
-                  full_name: adminName,
+                  full_name: adminFullName,
                   language: 'az',
-                  status: 'active'
+                  status: adminStatus || 'active',
+                  email: cleanEmail
                 }
               ]);
               
@@ -198,21 +199,33 @@ serve(async (req) => {
             console.log('Profil tapıldı:', profileData);
           }
           
-          // İstifadəçi rolunu əlavə edək
-          const { error: roleError } = await supabaseAdmin
+          // İstifadəçi rolunu yoxlayaq və əlavə edək
+          const { data: existingRole, error: roleCheckError } = await supabaseAdmin
             .from('user_roles')
-            .insert([
-              {
-                user_id: adminId,
-                role: 'schooladmin',
-                region_id: regionId,
-                sector_id: sectorId,
-                school_id: schoolId
-              }
-            ]);
+            .select('*')
+            .eq('user_id', adminId)
+            .single();
+          
+          if (roleCheckError || !existingRole) {
+            console.log('İstifadəçi rolu tapılmadı, yeni rol yaradılır');
             
-          if (roleError) {
-            console.error('Rol əlavə edilməsi xətası:', roleError);
+            const { error: roleError } = await supabaseAdmin
+              .from('user_roles')
+              .insert([
+                {
+                  user_id: adminId,
+                  role: 'schooladmin',
+                  region_id: regionId,
+                  sector_id: sectorId,
+                  school_id: schoolId
+                }
+              ]);
+              
+            if (roleError) {
+              console.error('Rol əlavə edilməsi xətası:', roleError);
+            }
+          } else {
+            console.log('İstifadəçi rolu artıq mövcuddur:', existingRole);
           }
           
           // Əgər admin yaradıldısa, məktəbdə admin_email-i yeniləyək
@@ -248,7 +261,7 @@ serve(async (req) => {
           success: true, 
           data: { 
             school: schoolData, 
-            admin: adminId ? { id: adminId, email: adminEmail } : null
+            admin: adminId ? { id: adminId, email: adminEmail, data: adminData } : null
           } 
         }),
         { 
@@ -271,7 +284,38 @@ serve(async (req) => {
         );
       }
       
-      // Məktəblə bağlı adminləri tapaq
+      // Məktəbin məlumatlarını və admin e-poçtunu alaq
+      const { data: schoolData, error: schoolFetchError } = await supabaseAdmin
+        .from('schools')
+        .select('*')
+        .eq('id', schoolId)
+        .single();
+        
+      if (schoolFetchError) {
+        console.error('Məktəb məlumatları alınarkən xəta:', schoolFetchError);
+        return new Response(
+          JSON.stringify({ error: 'Məktəb məlumatları alınarkən xəta', details: schoolFetchError }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      // Admin e-poçtu ilə istifadəçini tapaq
+      let adminUserId = null;
+      if (schoolData.admin_email) {
+        const { data: adminData } = await supabaseAdmin.auth.admin
+          .listUsers({ 
+            filter: { email: schoolData.admin_email } 
+          });
+          
+        if (adminData && adminData.users && adminData.users.length > 0) {
+          adminUserId = adminData.users[0].id;
+        }
+      }
+      
+      // Məktəb ilə əlaqəli rolları tapaq
       const { data: roleData } = await supabaseAdmin
         .from('user_roles')
         .select('user_id')
@@ -296,19 +340,44 @@ serve(async (req) => {
         );
       }
       
-      // Admin hesablarını deaktiv edək (onları silmək əvəzinə)
+      // Admin hesabını deaktiv edək
+      if (adminUserId) {
+        try {
+          // İstifadəçini deaktiv edirik
+          const { error: profileUpdateError } = await supabaseAdmin
+            .from('profiles')
+            .update({ status: 'inactive' })
+            .eq('id', adminUserId);
+            
+          if (profileUpdateError) {
+            console.error(`Admin deactivation error for ${adminUserId}:`, profileUpdateError);
+          } else {
+            console.log(`Admin with id ${adminUserId} deactivated`);
+          }
+        } catch (err) {
+          console.error(`Admin deactivation error for ${adminUserId}:`, err);
+        }
+      }
+      
+      // Əlavə olaraq rollar ilə əlaqəli adminləri də deaktiv edək
       if (roleData && roleData.length > 0) {
         for (const role of roleData) {
-          try {
-            // İstifadəçini deaktiv edirik, amma silmirik
-            await supabaseAdmin
-              .from('profiles')
-              .update({ status: 'inactive' })
-              .eq('id', role.user_id);
-            
-            console.log(`Admin with id ${role.user_id} deactivated`);
-          } catch (err) {
-            console.error(`Admin deactivation error for ${role.user_id}:`, err);
+          if (role.user_id !== adminUserId) { // Əgər yuxarıda işləmişiksə, təkrar etməyək
+            try {
+              // İstifadəçini deaktiv edirik
+              const { error: profileUpdateError } = await supabaseAdmin
+                .from('profiles')
+                .update({ status: 'inactive' })
+                .eq('id', role.user_id);
+                
+              if (profileUpdateError) {
+                console.error(`Admin deactivation error for ${role.user_id}:`, profileUpdateError);
+              } else {
+                console.log(`Admin with id ${role.user_id} deactivated`);
+              }
+            } catch (err) {
+              console.error(`Admin deactivation error for ${role.user_id}:`, err);
+            }
           }
         }
       }
