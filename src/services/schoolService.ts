@@ -125,9 +125,31 @@ export const getSchoolById = async (schoolId: string): Promise<School | null> =>
 };
 
 // Məktəbi yaratmaq
-export const addSchool = async (schoolData: any): Promise<School> => {
+export const addSchool = async (schoolData: CreateSchoolParams): Promise<School> => {
   try {
     console.log('Məktəb əlavə edilir:', schoolData);
+
+    // Eyni adlı məktəbin olub-olmadığını yoxlayaq
+    const { data: nameCheck, error: nameCheckError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('name', schoolData.name);
+    
+    if (!nameCheckError && nameCheck && nameCheck.length > 0) {
+      throw new Error(`${schoolData.name} adı ilə məktəb artıq mövcuddur`);
+    }
+    
+    // Admin e-poçtu varsa, onun mövcud olub-olmadığını yoxlayaq
+    if (schoolData.adminEmail) {
+      const { data: adminCheck, error: adminCheckError } = await supabase
+        .from('schools')
+        .select('id, name')
+        .eq('admin_email', schoolData.adminEmail);
+      
+      if (!adminCheckError && adminCheck && adminCheck.length > 0) {
+        throw new Error(`${schoolData.adminEmail} e-poçtu ilə admin artıq mövcuddur (${adminCheck[0].name} məktəbi)`);
+      }
+    }
 
     // Edge function vasitəsilə məktəbi və admini yaradaq
     const response = await supabase.functions.invoke('school-operations', {
@@ -164,7 +186,7 @@ export const addSchool = async (schoolData: any): Promise<School> => {
       return mapSchool(data.data.school);
     } else {
       // Xəta halında 
-      throw new Error('Məktəb yaratıldı, amma məlumatlar qaytarılmadı');
+      throw new Error('Məktəb yaradıldı, amma məlumatlar qaytarılmadı');
     }
   } catch (error) {
     console.error('Məktəb əlavə etmə xətası:', error);

@@ -23,6 +23,36 @@ export const useSchoolOperations = (
     try {
       console.log("Məktəb əlavə edilir:", formData);
       
+      // İlk öncə eyni adlı məktəb və ya eyni admin e-poçtu ilə məktəb olub-olmadığını yoxlayaq
+      if (formData.adminEmail) {
+        const { data: existingSchools, error: checkError } = await supabase
+          .from('schools')
+          .select('id, name')
+          .eq('admin_email', formData.adminEmail);
+        
+        if (checkError) {
+          console.error('Mövcud məktəbləri yoxlayarkən xəta:', checkError);
+        } else if (existingSchools && existingSchools.length > 0) {
+          toast.error("Admin e-poçtu artıq istifadə olunur", {
+            description: `${existingSchools[0].name} məktəbi eyni admin e-poçtu istifadə edir`
+          });
+          return;
+        }
+      }
+      
+      // Eyni adlı məktəbin olub-olmadığını yoxlayaq
+      const { data: nameCheck, error: nameCheckError } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('name', formData.name);
+      
+      if (!nameCheckError && nameCheck && nameCheck.length > 0) {
+        toast.error("Məktəb adı artıq mövcuddur", {
+          description: `${formData.name} adı ilə məktəb artıq mövcuddur`
+        });
+        return;
+      }
+      
       // Supabase gözlədiyi tip formatında verilənləri düzləndirib göndəririk
       const newSchool = {
         name: formData.name,
@@ -45,38 +75,21 @@ export const useSchoolOperations = (
         adminStatus: formData.adminStatus || 'active'
       };
       
-      // Edge function vasitəsilə məktəbi və admin-i yaradaq
-      const response = await supabase.functions.invoke('school-operations', {
-        body: {
-          action: 'create',
-          ...newSchool
-        }
-      });
-
-      // Edge funksiyasından gələn cavabı emal edək
-      if (response.error) {
-        console.error('Məktəb əlavə edilərkən xəta:', response.error);
-        throw new Error(response.error.message || 'Məktəb əlavə edilərkən naməlum xəta baş verdi');
-      }
-
-      const { data } = response;
+      // Məktəbi yaradaq
+      const result = await addSchool(newSchool);
       
-      // Response məlumatlarını yoxlayaq
-      if (!data.success) {
-        throw new Error(data.error || 'Məktəb əlavə edilərkən xəta: Server cavabı uğursuz oldu');
-      }
-
-      console.log("Əlavə edilən məktəb:", data.data?.school);
+      console.log("Əlavə edilən məktəb:", result);
       
       toast.success("Məktəb uğurla əlavə edildi", {
         description: `${formData.name} məktəbi sistemə əlavə olundu`
       });
       
+      // Dialoqu bağlayaq və məlumatları yeniləyək
       onCloseDialog('add');
       onSuccess();
       
       // Admin yaradılıbsa bildiriş göstərək
-      if (formData.adminEmail && data.data?.admin) {
+      if (formData.adminEmail) {
         toast.success("Məktəb admini uğurla yaradıldı", {
           description: `${formData.adminEmail} e-poçt ünvanı ilə admin yaradıldı`
         });
@@ -95,7 +108,7 @@ export const useSchoolOperations = (
         description: errorMessage
       });
     }
-  }, [onCloseDialog, onSuccess]);
+  }, [addSchool, onCloseDialog, onSuccess]);
 
   const handleEditSubmit = useCallback(async (formData: SchoolFormData, selectedSchool: School | null) => {
     if (!selectedSchool) return;

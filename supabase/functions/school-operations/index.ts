@@ -75,6 +75,38 @@ async function createSchool(supabase: any, payload: SchoolCreateProps): Promise<
     if (!sectorId) {
       return { success: false, error: "Sektor ID təyin edilməyib" };
     }
+    
+    // Əvvəlcə eyni adlı məktəbin olub-olmadığını yoxlayaq
+    const { data: existingSchoolsByName, error: nameCheckError } = await supabase
+      .from('schools')
+      .select('id, name')
+      .eq('name', payload.name);
+    
+    if (nameCheckError) {
+      console.error("Məktəb adı yoxlanarkən xəta:", nameCheckError);
+    } else if (existingSchoolsByName && existingSchoolsByName.length > 0) {
+      return { 
+        success: false, 
+        error: `"${payload.name}" adı ilə məktəb artıq mövcuddur` 
+      };
+    }
+    
+    // Admin e-poçtu varsa, onun mövcud olub-olmadığını yoxlayaq
+    if (payload.adminEmail) {
+      const { data: existingSchoolsByAdmin, error: adminCheckError } = await supabase
+        .from('schools')
+        .select('id, name')
+        .eq('admin_email', payload.adminEmail);
+      
+      if (adminCheckError) {
+        console.error("Admin e-poçtu yoxlanarkən xəta:", adminCheckError);
+      } else if (existingSchoolsByAdmin && existingSchoolsByAdmin.length > 0) {
+        return { 
+          success: false, 
+          error: `"${payload.adminEmail}" e-poçt ünvanı ilə admin artıq "${existingSchoolsByAdmin[0].name}" məktəbinə təyin edilib` 
+        };
+      }
+    }
 
     // Məlumatları hazırlayaq
     const schoolData = {
