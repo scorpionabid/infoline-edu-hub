@@ -139,9 +139,56 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       setLoading(true);
       console.log('Login prosesi başlayır:', email);
       
-      // Əvvəlcə mövcud sessiyadan çıxış edək
-      await supabase.auth.signOut();
+      const isSuperAdmin = email.toLowerCase() === 'superadmin@infoline.az';
       
+      // Əgər SuperAdmin girişidirsə, safe-login edge function istifadə edək
+      if (isSuperAdmin) {
+        try {
+          console.log('SuperAdmin giriş aşkarlandı, safe-login istifadə edilir');
+          
+          const result = await fetch(`${supabase.supabaseUrl}/functions/v1/safe-login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabase.supabaseKey}`
+            },
+            body: JSON.stringify({ email, password })
+          });
+          
+          const responseData = await result.json();
+          
+          if (!result.ok) {
+            console.error('Safe-login xətası:', responseData);
+            throw new Error(responseData.error || 'SuperAdmin giriş xətası');
+          }
+          
+          console.log('Safe-login uğurlu oldu');
+          
+          // Session-u və token-ləri tənzimləyək
+          await supabase.auth.setSession({
+            access_token: responseData.session.access_token,
+            refresh_token: responseData.session.refresh_token
+          });
+          
+          // Session-u yenidən əldə edək
+          const { data: refreshedSession } = await supabase.auth.getSession();
+          
+          // İstifadəçi məlumatlarını əldə edək
+          const userData = await fetchUserData(responseData.user.id);
+          setUser(userData);
+          setSession(refreshedSession.session);
+          setIsAuthenticated(true);
+          
+          return responseData;
+        } catch (safeLoginError) {
+          console.error('Safe-login funksiyasında xəta:', safeLoginError);
+          
+          // Standart metodla cəhd edək
+          console.log('Standart giriş metoduna keçid edilir');
+        }
+      }
+      
+      // Standart login metodu
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password

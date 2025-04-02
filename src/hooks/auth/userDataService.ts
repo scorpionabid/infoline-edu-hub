@@ -24,16 +24,118 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       throw new Error('İstifadəçi tapılmadı');
     }
     
+    // Əvvəlcə yeni SQL funksiyaları ilə tam istifadəçi məlumatlarını almağa çalışaq
+    try {
+      console.log(`[fetchUserData] Trying to fetch full user data via SQL function`);
+      const { data: fullUserDataResult, error: functionError } = await supabase.rpc('get_full_user_data', {
+        user_id_param: userId
+      });
+      
+      if (!functionError && fullUserDataResult) {
+        console.log(`[fetchUserData] Successfully fetched user data via SQL function`);
+        // JSON məlumatlarını JSON obyektinə çevirək
+        const userData = fullUserDataResult;
+        
+        // Status dəyərini düzəldək
+        const statusValue = userData.status || 'active';
+        const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
+          ? statusValue as 'active' | 'inactive' | 'blocked'
+          : 'active' as 'active' | 'inactive' | 'blocked';
+        
+        // Tam məlumatlardan FullUserData obyekti yaradırıq
+        const fullUserData: FullUserData = {
+          id: userData.id || userId,
+          email: userData.email || authUser.user.email || '',
+          role: userData.role || 'schooladmin',
+          full_name: userData.full_name || '',
+          name: userData.name || userData.full_name || '',
+          phone: userData.phone || '',
+          position: userData.position || '',
+          language: userData.language || 'az',
+          avatar: userData.avatar || '',
+          status: typedStatus,
+          school: null, // Tam obyekt məlumatları sonra əlavə edə bilərik
+          school_id: userData.school_id || null,
+          schoolId: userData.school_id || null,
+          sector: null, // Tam obyekt məlumatları sonra əlavə edə bilərik
+          sector_id: userData.sector_id || null,
+          sectorId: userData.sector_id || null,
+          region: null, // Tam obyekt məlumatları sonra əlavə edə bilərik
+          region_id: userData.region_id || null,
+          regionId: userData.region_id || null,
+          last_login: userData.last_login || null,
+          lastLogin: userData.last_login || null,
+          created_at: userData.created_at || new Date().toISOString(),
+          createdAt: userData.created_at || new Date().toISOString(),
+          updated_at: userData.updated_at || new Date().toISOString(),
+          updatedAt: userData.updated_at || new Date().toISOString(),
+          twoFactorEnabled: false,
+          notificationSettings: {
+            email: true,
+            system: true
+          }
+        };
+        
+        // Sonucu qaytaraq
+        console.log('[fetchUserData] Returning full user data:', {
+          id: fullUserData.id,
+          email: fullUserData.email,
+          role: fullUserData.role,
+          name: fullUserData.full_name
+        });
+        
+        return fullUserData;
+      } else if (functionError) {
+        console.log(`[fetchUserData] SQL function error, falling back to standard method:`, functionError);
+      }
+    } catch (functionError) {
+      console.error('[fetchUserData] Error using SQL function:', functionError);
+      // Xəta alında, standart yolla davam edirik
+    }
+    
     // user_metadata-dan birbaşa rol məlumatlarını əldə edək
-    // Bu rekursiv policy xətasını aradan qaldırmaq üçün auth.users-dən user_metadata istifadə edirik
     const userMetadata = authUser.user.user_metadata || {};
     const userRole = userMetadata.role || 'schooladmin';
     const regionId = userMetadata.region_id || null;
-    const sectorId = null; // metadata-da olmaya bilər
-    const schoolId = null; // metadata-da olmaya bilər
+    const sectorId = userMetadata.sector_id || null; 
+    const schoolId = userMetadata.school_id || null;
     
     console.log('[fetchUserData] User role from metadata:', userRole);
     console.log('[fetchUserData] Region ID from metadata:', regionId);
+    
+    // Əgər metadata boşdursa, user_roles cədvəlindən məlumatları əldə etməyə çalışaq
+    if (!userRole || userRole === 'schooladmin') {
+      try {
+        console.log(`[fetchUserData] Fetching role data from user_roles table`);
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role, region_id, sector_id, school_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+          
+        if (!roleError && roleData) {
+          console.log(`[fetchUserData] Role data fetched:`, roleData);
+          const updatedRole = roleData.role;
+          
+          // Metadatanı yeniləyək ki, sonra sistemə daxil olanda düzgün rol görünsün
+          try {
+            await supabase.auth.updateUser({
+              data: { 
+                role: updatedRole,
+                region_id: roleData.region_id,
+                sector_id: roleData.sector_id,
+                school_id: roleData.school_id
+              }
+            });
+            console.log(`[fetchUserData] User metadata updated with role:`, updatedRole);
+          } catch (metadataError) {
+            console.error('[fetchUserData] Error updating user metadata:', metadataError);
+          }
+        }
+      } catch (roleError) {
+        console.error('[fetchUserData] Error fetching role data:', roleError);
+      }
+    }
     
     // Profil məlumatlarını əldə edək - əgər problem yaşanırsa catchda defaultla davam et
     console.log(`[fetchUserData] Fetching profile data for user ID: ${userId}`);

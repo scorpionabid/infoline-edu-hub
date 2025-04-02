@@ -471,6 +471,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_full_user_data: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: Json
+      }
       get_regions_with_admin_emails: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -498,10 +504,18 @@ export type Database = {
           email: string
         }[]
       }
+      get_user_region_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: {
           user_id: string
         }
+        Returns: string
+      }
+      get_user_role_safe: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       has_access_to_region: {
@@ -518,11 +532,37 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_region_access: {
+        Args: {
+          region_id_param: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      has_role_safe: {
+        Args: {
+          role_to_check: string
+        }
+        Returns: boolean
+      }
+      has_sector_access: {
+        Args: {
+          sector_id_param: string
+        }
+        Returns: boolean
+      }
+      is_regionadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_superadmin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       safe_get_user_by_email: {
