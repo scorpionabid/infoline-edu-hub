@@ -1,28 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
-
-// Məktəb yaratmaq üçün parametrlər
-export interface CreateSchoolParams {
-  name: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  principalName?: string;
-  studentCount?: number;
-  teacherCount?: number;
-  schoolType?: string;
-  teachingLanguage?: string;
-  regionId: string;
-  sectorId: string;
-  region_id: string; // Əlavə edildi
-  sector_id: string; // Əlavə edildi
-  status?: 'active' | 'inactive';
-  adminEmail?: string;
-  adminFullName?: string;
-  adminPassword?: string;
-  adminStatus?: string;
-}
 
 // Bu funksiyanı faylın əvvəlinə əlavə edək
 const mapSchool = (schoolData: any): School => {
@@ -148,7 +125,7 @@ export const getSchoolById = async (schoolId: string): Promise<School | null> =>
 };
 
 // Məktəbi yaratmaq
-export const addSchool = async (schoolData: CreateSchoolParams): Promise<School> => {
+export const addSchool = async (schoolData: any): Promise<School> => {
   try {
     console.log('Məktəb əlavə edilir:', schoolData);
 
@@ -156,24 +133,7 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
     const response = await supabase.functions.invoke('school-operations', {
       body: {
         action: 'create',
-        name: schoolData.name,
-        principalName: schoolData.principalName,
-        address: schoolData.address,
-        phone: schoolData.phone,
-        email: schoolData.email,
-        regionId: schoolData.regionId, 
-        sectorId: schoolData.sectorId,
-        region_id: schoolData.region_id, // API üçün region_id parametrini göndəririk
-        sector_id: schoolData.sector_id, // API üçün sector_id parametrini göndəririk
-        studentCount: schoolData.studentCount ? Number(schoolData.studentCount) : null,
-        teacherCount: schoolData.teacherCount ? Number(schoolData.teacherCount) : null,
-        type: schoolData.schoolType,
-        language: schoolData.teachingLanguage,
-        status: schoolData.status || 'active',
-        adminEmail: schoolData.adminEmail,
-        adminFullName: schoolData.adminFullName,
-        adminPassword: schoolData.adminPassword,
-        adminStatus: schoolData.adminStatus || 'active'
+        ...schoolData
       }
     });
 
@@ -182,6 +142,11 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
     if (error) {
       console.error('Məktəb yaratma sorğusu xətası:', error);
       throw error;
+    }
+
+    if (!data.success) {
+      console.error('Server xətası:', data.error);
+      throw new Error(data.error || 'Məktəb yaratma əməliyyatı uğursuz oldu');
     }
 
     console.log('Məktəb yaratma nəticəsi:', data);
@@ -198,7 +163,7 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
       
       return mapSchool(data.data.school);
     } else {
-      // Xəta halında boş obyekt qaytar
+      // Xəta halında 
       throw new Error('Məktəb yaradıldı, amma məlumatlar qaytarılmadı');
     }
   } catch (error) {
@@ -273,6 +238,11 @@ export const deleteSchool = async (schoolId: string): Promise<any> => {
     if (error) {
       console.error(`Məktəb ID ${schoolId} silmə xətası:`, error);
       throw error;
+    }
+
+    if (!data.success) {
+      console.error('Server xətası:', data.error);
+      throw new Error(data.error || 'Məktəb silmə əməliyyatı uğursuz oldu');
     }
 
     console.log(`Məktəb ID ${schoolId} uğurla silindi`);

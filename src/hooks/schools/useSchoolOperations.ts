@@ -1,9 +1,9 @@
-
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
 import { School } from '@/data/schoolsData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseSchoolOperationsReturn {
   handleAddSubmit: (formData: SchoolFormData) => Promise<void>;
@@ -24,30 +24,49 @@ export const useSchoolOperations = (
       console.log("Məktəb əlavə edilir:", formData);
       
       // Supabase gözlədiyi tip formatında verilənləri düzləndirib göndəririk
-      // region_id və sector_id xüsusiyyətlərini əlavə edirik
       const newSchool = {
         name: formData.name,
         principalName: formData.principalName || null,
         regionId: formData.regionId,
         sectorId: formData.sectorId,
-        region_id: formData.regionId, // Əlavə edildi
-        sector_id: formData.sectorId, // Əlavə edildi
+        region_id: formData.regionId, // Edge Function-a uyğunlaşdırmaq üçün əlavə edildi
+        sector_id: formData.sectorId, // Edge Function-a uyğunlaşdırmaq üçün əlavə edildi
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
         studentCount: formData.studentCount ? Number(formData.studentCount) : null,
         teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
-        schoolType: formData.type || null,
-        teachingLanguage: formData.language || null,
+        type: formData.type || null,
+        language: formData.language || null,
         adminEmail: formData.adminEmail || null,
         adminFullName: formData.adminFullName || null,
         adminPassword: formData.adminPassword || null,
         adminStatus: formData.adminStatus || 'active'
       };
       
-      const result = await addSchool(newSchool);
-      console.log("Əlavə edilən məktəb:", result);
+      // Edge function vasitəsilə məktəbi və admin-i yaradaq
+      const response = await supabase.functions.invoke('school-operations', {
+        body: {
+          action: 'create',
+          ...newSchool
+        }
+      });
+
+      // Edge funksiyasından gələn cavabı emal edək
+      if (response.error) {
+        console.error('Məktəb əlavə edilərkən xəta:', response.error);
+        throw new Error(response.error.message || 'Məktəb əlavə edilərkən naməlum xəta baş verdi');
+      }
+
+      const { data } = response;
+      
+      // Response məlumatlarını yoxlayaq
+      if (!data.success) {
+        throw new Error(data.error || 'Məktəb əlavə edilərkən xəta: Server cavabı uğursuz oldu');
+      }
+
+      console.log("Əlavə edilən məktəb:", data.data?.school);
       
       toast.success("Məktəb uğurla əlavə edildi", {
         description: `${formData.name} məktəbi sistemə əlavə olundu`
@@ -56,7 +75,8 @@ export const useSchoolOperations = (
       onCloseDialog('add');
       onSuccess();
       
-      if (formData.adminEmail) {
+      // Admin yaradılıbsa bildiriş göstərək
+      if (formData.adminEmail && data.data?.admin) {
         toast.success("Məktəb admini uğurla yaradıldı", {
           description: `${formData.adminEmail} e-poçt ünvanı ilə admin yaradıldı`
         });
@@ -66,20 +86,16 @@ export const useSchoolOperations = (
       
       let errorMessage = "Məktəb əlavə edilərkən bir xəta baş verdi.";
       
-      // Edge function-dan gələn xəta mesajını göstər
-      if (error.message && typeof error.message === 'string') {
+      // Xəta mesajını göstər
+      if (error.message) {
         errorMessage = error.message;
-      } else if (error.data && error.data.error) {
-        errorMessage = error.data.error;
-      } else if (error.error) {
-        errorMessage = error.error;
       }
       
       toast.error("Məktəb əlavə edilərkən xəta", {
         description: errorMessage
       });
     }
-  }, [addSchool, onCloseDialog, onSuccess]);
+  }, [onCloseDialog, onSuccess]);
 
   const handleEditSubmit = useCallback(async (formData: SchoolFormData, selectedSchool: School | null) => {
     if (!selectedSchool) return;
@@ -100,8 +116,8 @@ export const useSchoolOperations = (
         studentCount: formData.studentCount ? Number(formData.studentCount) : null,
         teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
-        schoolType: formData.type || null,
-        teachingLanguage: formData.language || null,
+        type: formData.type || null,
+        language: formData.language || null,
         adminEmail: formData.adminEmail || null
       };
       

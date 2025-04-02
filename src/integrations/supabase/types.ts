@@ -263,6 +263,7 @@ export type Database = {
       }
       regions: {
         Row: {
+          admin_email: string | null
           admin_id: string | null
           created_at: string
           description: string | null
@@ -272,6 +273,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_email?: string | null
           admin_id?: string | null
           created_at?: string
           description?: string | null
@@ -281,6 +283,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_email?: string | null
           admin_id?: string | null
           created_at?: string
           description?: string | null
@@ -371,6 +374,7 @@ export type Database = {
       }
       sectors: {
         Row: {
+          admin_email: string | null
           created_at: string
           description: string | null
           id: string
@@ -380,6 +384,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_email?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -389,6 +394,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_email?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -604,6 +610,10 @@ export type Database = {
           deleted_at: string
           is_anonymous: boolean
         }[]
+      }
+      update_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       uuid_generate_v4: {
         Args: Record<PropertyKey, never>
