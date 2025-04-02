@@ -13,8 +13,10 @@ interface CreateSchoolRequest {
   address?: string;
   phone?: string;
   email?: string;
-  regionId: string;
-  sectorId: string;
+  regionId?: string;  // regionId və sectorId formatını da qəbul edirik
+  sectorId?: string;
+  region_id?: string; // region_id və sector_id formatını da qəbul edirik
+  sector_id?: string;
   studentCount?: number;
   teacherCount?: number;
   status?: string;
@@ -68,11 +70,17 @@ serve(async (req) => {
 
     // Dispatch based on action type
     if (action === 'create') {
+      const createData = data as CreateSchoolRequest;
+      
+      // regionId/region_id və sectorId/sector_id parametrləri birlikdə işləmək üçün
+      const regionId = createData.regionId || createData.region_id;
+      const sectorId = createData.sectorId || createData.sector_id;
+      
       const { 
-        name, principalName, address, phone, email, regionId, sectorId,
+        name, principalName, address, phone, email,
         studentCount, teacherCount, status, type, language,
         adminEmail, adminFullName, adminPassword, adminStatus 
-      } = data as CreateSchoolRequest;
+      } = createData;
       
       if (!name || !regionId || !sectorId) {
         return new Response(

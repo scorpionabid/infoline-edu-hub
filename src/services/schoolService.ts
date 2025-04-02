@@ -15,6 +15,8 @@ export interface CreateSchoolParams {
   teachingLanguage?: string;
   regionId: string;
   sectorId: string;
+  region_id: string; // Əlavə edildi
+  sector_id: string; // Əlavə edildi
   status?: 'active' | 'inactive';
   adminEmail?: string;
   adminFullName?: string;
@@ -158,8 +160,10 @@ export const addSchool = async (schoolData: CreateSchoolParams): Promise<School>
         address: schoolData.address,
         phone: schoolData.phone,
         email: schoolData.email,
-        regionId: schoolData.regionId,
+        regionId: schoolData.regionId, 
         sectorId: schoolData.sectorId,
+        region_id: schoolData.region_id, // API üçün region_id parametrini göndəririk
+        sector_id: schoolData.sector_id, // API üçün sector_id parametrini göndəririk
         studentCount: schoolData.studentCount ? Number(schoolData.studentCount) : null,
         teacherCount: schoolData.teacherCount ? Number(schoolData.teacherCount) : null,
         type: schoolData.schoolType,
@@ -214,8 +218,8 @@ export const updateSchool = async (schoolId: string, schoolData: Partial<CreateS
       address: schoolData.address,
       phone: schoolData.phone,
       email: schoolData.email,
-      region_id: schoolData.regionId,
-      sector_id: schoolData.sectorId,
+      region_id: schoolData.regionId || schoolData.region_id, // Hər iki formatı dəstəkləyirik
+      sector_id: schoolData.sectorId || schoolData.sector_id, // Hər iki formatı dəstəkləyirik
       student_count: schoolData.studentCount ? Number(schoolData.studentCount) : undefined,
       teacher_count: schoolData.teacherCount ? Number(schoolData.teacherCount) : undefined,
       status: schoolData.status,

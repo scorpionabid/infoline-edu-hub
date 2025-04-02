@@ -23,11 +23,15 @@ export const useSchoolOperations = (
     try {
       console.log("Məktəb əlavə edilir:", formData);
       
+      // Supabase gözlədiyi tip formatında verilənləri düzləndirib göndəririk
+      // region_id və sector_id xüsusiyyətlərini əlavə edirik
       const newSchool = {
         name: formData.name,
         principalName: formData.principalName || null,
         regionId: formData.regionId,
         sectorId: formData.sectorId,
+        region_id: formData.regionId, // Əlavə edildi
+        sector_id: formData.sectorId, // Əlavə edildi
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
@@ -85,6 +89,8 @@ export const useSchoolOperations = (
         principalName: formData.principalName || null,
         regionId: formData.regionId,
         sectorId: formData.sectorId,
+        region_id: formData.regionId, // Əlavə edildi
+        sector_id: formData.sectorId, // Əlavə edildi
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
