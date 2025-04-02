@@ -41,6 +41,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase konfiqurasiya dəyərləri yoxdur:', { supabaseUrl: !!supabaseUrl, supabaseServiceKey: !!supabaseServiceKey });
       return new Response(
         JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
         { 
@@ -63,7 +64,7 @@ serve(async (req) => {
     const { action, ...data } = requestData;
     
     console.log(`School operations function called with action: ${action}`);
-    console.log('Request data:', data);
+    console.log('Request data:', JSON.stringify(data));
 
     // Dispatch based on action type
     if (action === 'create') {
@@ -118,16 +119,40 @@ serve(async (req) => {
       }
       
       const schoolId = schoolData.id;
+      console.log(`Məktəb yaradıldı, ID: ${schoolId}`);
       let adminId = null;
       let adminData = null;
       
       // Əgər admin məlumatları verilibsə, admin hesabı yaradaq
       if (adminEmail && adminFullName && adminPassword) {
-        console.log(`Creating admin with email: ${adminEmail}, name: ${adminFullName}, password length: ${adminPassword.length}`);
+        console.log(`Admin yaradılır: ${adminEmail}, ${adminFullName}, şifrə uzunluğu: ${adminPassword.length}`);
         
         try {
           // Email formatını təmizləyək - UTF-8 olmayan simvollar problemlər yarada bilər
-          const cleanEmail = adminEmail.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+          const cleanEmail = adminEmail.trim().toLowerCase();
+          
+          // Əvvəlcə emailin istifadədə olub-olmadığını yoxlayaq
+          const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin
+            .listUsers({ filter: { email: cleanEmail } });
+          
+          if (userCheckError) {
+            console.error('İstifadəçi yoxlamasında xəta:', userCheckError);
+          } else if (existingUser && existingUser.users && existingUser.users.length > 0) {
+            console.warn(`${cleanEmail} email ünvanı artıq istifadədədir. Yeni istifadəçi yaradılmayacaq.`);
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                data: {
+                  school: schoolData, 
+                  warning: `${cleanEmail} email ünvanı artıq istifadədədir. Yeni istifadəçi yaradılmayacaq.`
+                }
+              }),
+              { 
+                status: 201, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
           
           // Supabase ilə yeni istifadəçi yaradırıq
           const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
@@ -160,27 +185,41 @@ serve(async (req) => {
             );
           }
           
-          console.log('Admin created successfully:', userData.user.id);
+          console.log('Admin uğurla yaradıldı:', userData.user.id);
           adminId = userData.user.id;
           adminData = userData;
           
-          // Profil yaratmağa çəhd edirik
-          const { error: createProfileError } = await supabaseAdmin
+          // Profilin yaradılmasını gözləyək - trigger yaratmalıdır, amma əmin olmaq üçün yoxlayaq
+          // Kiçik bir gözləmə əlavə edək ki, trigger işləməyə vaxt tapsın
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const { data: profileData, error: profileCheckError } = await supabaseAdmin
             .from('profiles')
-            .insert([
-              {
-                id: adminId,
-                full_name: adminFullName,
-                language: 'az',
-                status: adminStatus || 'active',
-                email: cleanEmail
-              }
-            ]);
+            .select('*')
+            .eq('id', adminId)
+            .single();
+          
+          if (profileCheckError || !profileData) {
+            console.log('Profil avtomatik yaradılmayıb, manual yaradaq');
             
-          if (createProfileError) {
-            console.error('Profil yaradılması xətası:', createProfileError);
-          } else {
-            console.log(`Profile created for user ${adminId}`);
+            // Profil yaratmağa çəhd edirik
+            const { error: createProfileError } = await supabaseAdmin
+              .from('profiles')
+              .insert([
+                {
+                  id: adminId,
+                  full_name: adminFullName,
+                  language: 'az',
+                  status: adminStatus || 'active',
+                  email: cleanEmail
+                }
+              ]);
+              
+            if (createProfileError) {
+              console.error('Profil yaradılması xətası:', createProfileError);
+            } else {
+              console.log(`İstifadəçi ${adminId} üçün profil yaradıldı`);
+            }
           }
           
           // İstifadəçi rolunu əlavə edək
@@ -199,7 +238,7 @@ serve(async (req) => {
           if (roleError) {
             console.error('Rol əlavə edilməsi xətası:', roleError);
           } else {
-            console.log(`Role added for user ${adminId}`);
+            console.log(`İstifadəçi ${adminId} üçün rol əlavə edildi`);
           }
           
           // Əgər admin yaradıldısa, məktəbdə admin_email-i yeniləyək
@@ -211,7 +250,7 @@ serve(async (req) => {
           if (updateSchoolError) {
             console.error('Məktəb admin email yenilənməsi xətası:', updateSchoolError);
           } else {
-            console.log(`School admin_email updated to ${cleanEmail}`);
+            console.log(`Məktəb admin_email ${cleanEmail} olaraq yeniləndi`);
           }
           
         } catch (err) {

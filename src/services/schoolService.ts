@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
 
@@ -10,8 +11,8 @@ export interface CreateSchoolParams {
   principalName?: string;
   studentCount?: number;
   teacherCount?: number;
-  schoolType?: 'elementary' | 'middle' | 'high' | 'vocational' | 'special';
-  teachingLanguage?: 'azerbaijani' | 'russian' | 'georgian' | 'turkish' | 'english';
+  schoolType?: string;
+  teachingLanguage?: string;
   regionId: string;
   sectorId: string;
   status?: 'active' | 'inactive';

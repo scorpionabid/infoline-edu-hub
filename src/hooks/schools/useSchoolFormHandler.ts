@@ -137,6 +137,13 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
         toast.error('Şifrə ən az 6 simvol olmalıdır');
         return false;
       }
+      
+      // Email validasiyası
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.adminEmail)) {
+        toast.error('Düzgün e-poçt formatı daxil edin');
+        return false;
+      }
     }
     
     return true;

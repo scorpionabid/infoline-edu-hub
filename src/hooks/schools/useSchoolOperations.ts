@@ -25,19 +25,20 @@ export const useSchoolOperations = (
       
       const newSchool = {
         name: formData.name,
-        principal_name: formData.principalName || null,
-        region_id: formData.regionId,
-        sector_id: formData.sectorId,
+        principalName: formData.principalName || null,
+        regionId: formData.regionId,
+        sectorId: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: formData.studentCount ? Number(formData.studentCount) : null,
-        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
+        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
+        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
-        type: formData.type || null,
-        language: formData.language || null,
-        admin_email: formData.adminEmail || null,
-        logo: null
+        schoolType: formData.type || null,
+        teachingLanguage: formData.language || null,
+        adminEmail: formData.adminEmail || null,
+        adminFullName: formData.adminFullName || null,
+        adminPassword: formData.adminPassword || null
       };
       
       const result = await addSchool(newSchool);
@@ -55,10 +56,20 @@ export const useSchoolOperations = (
           description: `${formData.adminEmail} e-poçt ünvanı ilə admin yaradıldı`
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Məktəb əlavə edilərkən xəta baş verdi:', error);
+      
+      let errorMessage = "Məktəb əlavə edilərkən bir xəta baş verdi.";
+      
+      // Edge function-dan gələn xəta mesajını göstər
+      if (error.message && typeof error.message === 'string') {
+        errorMessage = error.message;
+      } else if (error.data && error.data.error) {
+        errorMessage = error.data.error;
+      }
+      
       toast.error("Məktəb əlavə edilərkən xəta", {
-        description: "Məktəb əlavə edilərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+        description: errorMessage
       });
     }
   }, [addSchool, onCloseDialog, onSuccess]);
@@ -71,18 +82,18 @@ export const useSchoolOperations = (
       
       const updatedSchool = {
         name: formData.name,
-        principal_name: formData.principalName || null,
-        region_id: formData.regionId,
-        sector_id: formData.sectorId,
+        principalName: formData.principalName || null,
+        regionId: formData.regionId,
+        sectorId: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: formData.studentCount ? Number(formData.studentCount) : null,
-        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
+        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
+        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
-        type: formData.type || null,
-        language: formData.language || null,
-        admin_email: formData.adminEmail || null
+        schoolType: formData.type || null,
+        teachingLanguage: formData.language || null,
+        adminEmail: formData.adminEmail || null
       };
       
       const result = await updateSchool(selectedSchool.id, updatedSchool);
@@ -94,10 +105,20 @@ export const useSchoolOperations = (
       
       onCloseDialog('edit');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Məktəb yenilənərkən xəta baş verdi:', error);
+      
+      let errorMessage = "Məktəb yenilənərkən bir xəta baş verdi.";
+      
+      // Edge function-dan gələn xəta mesajını göstər
+      if (error.message && typeof error.message === 'string') {
+        errorMessage = error.message;
+      } else if (error.data && error.data.error) {
+        errorMessage = error.data.error;
+      }
+      
       toast.error("Məktəb yenilənərkən xəta", {
-        description: "Məktəb yenilənərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+        description: errorMessage
       });
     }
   }, [updateSchool, onCloseDialog, onSuccess]);
@@ -116,10 +137,20 @@ export const useSchoolOperations = (
       
       onCloseDialog('delete');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Məktəb silinərkən xəta baş verdi:', error);
+      
+      let errorMessage = "Məktəb silinərkən bir xəta baş verdi.";
+      
+      // Edge function-dan gələn xəta mesajını göstər
+      if (error.message && typeof error.message === 'string') {
+        errorMessage = error.message;
+      } else if (error.data && error.data.error) {
+        errorMessage = error.data.error;
+      }
+      
       toast.error("Məktəb silinərkən xəta", {
-        description: "Məktəb silinərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+        description: errorMessage
       });
     }
   }, [deleteSchool, onCloseDialog, onSuccess]);
