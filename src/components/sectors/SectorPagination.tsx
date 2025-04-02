@@ -81,7 +81,7 @@ const SectorPagination: React.FC<SectorPaginationProps> = ({
     <div className="flex items-center justify-between px-2">
       <div className="text-sm text-gray-500">
         {totalItems !== undefined && pageSize 
-          ? `${t('showing')} ${Math.min((currentPage - 1) * (pageSize || 10) + 1, totalItems)} - ${Math.min(currentPage * (pageSize || 10), totalItems)} ${t('of')} ${totalItems}`
+          ? `${t('showing')} ${Math.min((currentPage - 1) * pageSize + 1, totalItems)} - ${Math.min(currentPage * pageSize, totalItems)} ${t('of')} ${totalItems}`
           : `${t('page')} ${currentPage} ${t('of')} ${totalPages}`}
       </div>
       <div className="flex items-center space-x-2">

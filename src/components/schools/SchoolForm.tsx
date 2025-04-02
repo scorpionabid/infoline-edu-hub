@@ -56,26 +56,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
             </div>
           </div>
           
-          {/* Region seçimi istifadəçinin regionu əsasında avtomatik doldurulacaq */}
-          {isEdit || user?.role === 'superadmin' ? (
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="regionId">Region *</Label>
-              <select
-                id="regionId"
-                name="regionId"
-                value={formData.regionId}
-                onChange={handleFormChange}
-                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
-              >
-                <option value="">Seçin</option>
-                {/* Mockup data instead of actual regions */}
-                <option value="baki">Bakı</option>
-                <option value="sumqayit">Sumqayıt</option>
-                <option value="gence">Gəncə</option>
-              </select>
-            </div>
-          ) : null}
-          
+          {/* Region seçimi silindi, sektor seçildikdə region avtomatik təyin olunacaq */}
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="sectorId">Sektor *</Label>
             <select

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { School as SupabaseSchool } from '@/types/supabase';
 import { mapToMockSchool } from './schoolTypeConverters';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 // Initial form data
 export const getInitialFormState = (): SchoolFormData => ({
@@ -48,13 +49,37 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     }
   }, [user]);
 
-  const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
     
-    if (name === 'regionId') {
-      setFormData(prev => ({ ...prev, sectorId: '' }));
+    // Sektor seçiləndə, onun region ID-sini təyin et
+    if (name === 'sectorId' && value) {
+      try {
+        const { data, error } = await supabase
+          .from('sectors')
+          .select('region_id')
+          .eq('id', value)
+          .single();
+        
+        if (error) {
+          console.error('Sektor məlumatı alınarkən xəta:', error);
+          return;
+        }
+        
+        if (data && data.region_id) {
+          setFormData(prev => ({
+            ...prev,
+            [name]: value,
+            regionId: data.region_id
+          }));
+          return;
+        }
+      } catch (err) {
+        console.error('Sektor sorğusu zamanı xəta:', err);
+      }
     }
+    
+    setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
   const setFormDataFromSchool = useCallback((school: SupabaseSchool) => {
