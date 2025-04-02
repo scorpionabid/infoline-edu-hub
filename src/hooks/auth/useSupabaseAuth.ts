@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, supabaseUrl } from '@/integrations/supabase/client';
 import { fetchUserData } from './userDataService';
@@ -31,7 +30,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Sessiya məlumatlarını yeniləmək
   const refreshSession = useCallback(async () => {
     try {
       console.log('refreshSession çağrılır');
@@ -47,7 +45,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         setSession(data.session);
         setIsAuthenticated(true);
         
-        // İstifadəçi məlumatlarını yeniləyək
         try {
           if (data.session.user.id) {
             const userData = await fetchUserData(data.session.user.id);
@@ -65,13 +62,11 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   }, []);
 
-  // Sessiya dəyişikliklərini izləmək
   useEffect(() => {
     const initializeAuth = async () => {
       setLoading(true);
       
       try {
-        // Əvvəlcə mövcud sessiyanı yoxlayaq
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -82,7 +77,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         
         console.log('Mövcud sessiya:', sessionData?.session?.user?.id || 'yoxdur');
         
-        // Sessiyanı qeyd edək və istifadəçi məlumatlarını yükləyək
         if (sessionData?.session) {
           setSession(sessionData.session);
           setIsAuthenticated(true);
@@ -101,7 +95,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         setLoading(false);
       }
       
-      // Auth dəyişikliklərini dinləyək
       const { data: authListener } = supabase.auth.onAuthStateChange(
         async (event, newSession) => {
           console.log('Auth state dəyişdi:', event, newSession?.user?.id);
@@ -133,7 +126,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     initializeAuth();
   }, []);
 
-  // Login funksiyası
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
@@ -141,22 +133,19 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       
       const isSuperAdmin = email.toLowerCase() === 'superadmin@infoline.az';
       
-      // Əgər SuperAdmin girişidirsə, safe-login edge function istifadə edək
       if (isSuperAdmin) {
         try {
           console.log('SuperAdmin giriş aşkarlandı, safe-login istifadə edilir');
           
-          // URL və header-lərdə supabaseUrl və API keyi əldə etməliyik
-          // Daha təhlükəsiz versiya ilə əvəz edirik
-          const apiKey = supabase.supabaseUrl.includes('localhost') ? 
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4' : 
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+          const apiKey = supabase.auth.getSession().then(() => 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4'
+          );
           
           const result = await fetch(`${supabaseUrl}/functions/v1/safe-login`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
+              'Authorization': `Bearer ${await apiKey}`
             },
             body: JSON.stringify({ email, password })
           });
@@ -170,16 +159,13 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           
           console.log('Safe-login uğurlu oldu');
           
-          // Session-u və token-ləri tənzimləyək
           await supabase.auth.setSession({
             access_token: responseData.session.access_token,
             refresh_token: responseData.session.refresh_token
           });
           
-          // Session-u yenidən əldə edək
           const { data: refreshedSession } = await supabase.auth.getSession();
           
-          // İstifadəçi məlumatlarını əldə edək
           const userData = await fetchUserData(responseData.user.id);
           setUser(userData);
           setSession(refreshedSession.session);
@@ -189,12 +175,10 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         } catch (safeLoginError) {
           console.error('Safe-login funksiyasında xəta:', safeLoginError);
           
-          // Standart metodla cəhd edək
           console.log('Standart giriş metoduna keçid edilir');
         }
       }
       
-      // Standart login metodu
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -215,7 +199,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   };
 
-  // Signup funksiyası
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       setLoading(true);
@@ -243,7 +226,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   };
 
-  // Çıxış funksiyası
   const signOut = async () => {
     try {
       setLoading(true);
@@ -267,7 +249,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   };
 
-  // Profil yeniləmə funksiyası
   const updateProfile = async (updates: any) => {
     try {
       if (!user) {
@@ -286,7 +267,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         return false;
       }
       
-      // Profil yeniləndikdən sonra istifadəçi məlumatlarını yeniləyək
       const updatedUser = await fetchUserData(user.id);
       setUser(updatedUser);
       
@@ -297,7 +277,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   };
 
-  // Şifrə sıfırlama funksiyası
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -316,7 +295,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   };
 
-  // Şifrə yeniləmə funksiyası
   const updatePassword = async (password: string) => {
     try {
       const { error } = await supabase.auth.updateUser({

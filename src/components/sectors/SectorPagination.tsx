@@ -7,12 +7,16 @@ import { useLanguage } from '@/context/LanguageContext';
 interface SectorPaginationProps {
   currentPage: number;
   totalPages: number;
+  totalItems?: number;
+  pageSize?: number;
   onPageChange: (page: number) => void;
 }
 
 const SectorPagination: React.FC<SectorPaginationProps> = ({
   currentPage,
   totalPages,
+  totalItems,
+  pageSize,
   onPageChange,
 }) => {
   const { t } = useLanguage();
@@ -76,7 +80,9 @@ const SectorPagination: React.FC<SectorPaginationProps> = ({
   return (
     <div className="flex items-center justify-between px-2">
       <div className="text-sm text-gray-500">
-        {t('page')} {currentPage} {t('of')} {totalPages}
+        {totalItems !== undefined && pageSize 
+          ? `${t('showing')} ${Math.min((currentPage - 1) * (pageSize || 10) + 1, totalItems)} - ${Math.min(currentPage * (pageSize || 10), totalItems)} ${t('of')} ${totalItems}`
+          : `${t('page')} ${currentPage} ${t('of')} ${totalPages}`}
       </div>
       <div className="flex items-center space-x-2">
         <Button
