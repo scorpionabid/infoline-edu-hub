@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,6 +13,8 @@ export const useCategories = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
+      console.log('Kateqoriyalar sorğusu göndərilir...');
+      
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -21,8 +22,13 @@ export const useCategories = () => {
 
       if (error) throw error;
       
+      console.log('Kateqoriyalar uğurla əldə edildi:', data);
+      
       // Adapter vasitəsi ilə məlumatları daha təhlükəsiz çeviririk
-      setCategories(data.map(category => adaptSupabaseCategory(category)));
+      const formattedCategories = data.map(category => adaptSupabaseCategory(category));
+      console.log('Formatlanmış kateqoriyalar:', formattedCategories);
+      
+      setCategories(formattedCategories);
     } catch (err: any) {
       console.error('Error fetching categories:', err);
       setError(err);

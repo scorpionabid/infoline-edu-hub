@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from "@/context/LanguageContext";
 import { Column } from "@/types/column";
@@ -83,13 +82,22 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                {categories && categories.length > 0 ? (
+                  categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-categories" disabled>
+                    {t("noCategories")}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
+            <FormDescription>
+              {categories && categories.length === 0 && t("pleaseAddCategoriesFirst")}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}

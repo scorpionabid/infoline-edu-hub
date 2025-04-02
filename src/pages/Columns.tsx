@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -33,8 +32,24 @@ const Columns = () => {
   const {
     categories,
     loading: isCategoriesLoading,
-    error: categoriesError
+    error: categoriesError,
+    fetchCategories
   } = useCategories();
+
+  // Kateqoriyaların yüklənmə vəziyyətini və xətalarını izləyirik
+  useEffect(() => {
+    if (categoriesError) {
+      console.error('Kateqoriyaları əldə edərkən xəta baş verdi:', categoriesError);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotLoadCategories')
+      });
+    }
+  }, [categoriesError, t]);
+
+  // Kateqoriyaların formatını yoxlayırıq
+  useEffect(() => {
+    console.log('Columns səhifəsində kateqoriyalar:', categories);
+  }, [categories]);
 
   // URL parametrlərinə əsasən kateqoriya filtrini yeniləyirik
   useEffect(() => {
@@ -337,7 +352,10 @@ const Columns = () => {
             setColumnToEdit(undefined);
           }}
           onAddColumn={handleAddOrEditColumn}
-          categories={categories}
+          categories={categories.map(cat => ({
+            id: cat.id,
+            name: cat.name
+          }))}
           editColumn={columnToEdit}
           columns={columns.map(adaptSupabaseColumn)}
         />
