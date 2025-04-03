@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { useSupabaseSchools } from '@/hooks/useSupabaseSchools';
 
 const Schools = () => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { loading, error } = useSupabaseSchools();
 

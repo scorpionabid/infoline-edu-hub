@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileSpreadsheet, Upload } from 'lucide-react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export interface ExcelActionsProps {
   onDownload: (categoryId?: string) => void;
@@ -10,7 +10,7 @@ export interface ExcelActionsProps {
 }
 
 const ExcelActions: React.FC<ExcelActionsProps> = ({ onDownload, onUpload }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   

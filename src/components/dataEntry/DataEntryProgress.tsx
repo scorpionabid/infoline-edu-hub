@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export interface DataEntryProgressProps {
   total: number;
@@ -10,7 +10,7 @@ export interface DataEntryProgressProps {
 }
 
 const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ total, completed, percentage }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-2 w-full max-w-xs">

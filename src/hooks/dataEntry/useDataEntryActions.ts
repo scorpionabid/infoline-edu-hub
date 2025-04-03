@@ -39,14 +39,14 @@ export const useDataEntryActions = ({
 
   // Sütun üçün məlumat daxil etmə əməliyyatı
   const handleDataChange = useCallback((columnId: string, value: string) => {
-    setDataEntries(prev => {
+    setDataEntries((prev) => {
       // Mövcud daxiletmə əməliyyatını yoxlayırıq
       const existingEntry = prev[columnId];
       
       // ID hər zaman təyin olunmalıdır, mövcuddursa istifadə et, yoxdursa yeni yarat
       const entryId = existingEntry?.id || uuidv4();
       
-      return {
+      const updatedEntries = {
         ...prev,
         [columnId]: {
           id: entryId,                   // ID həmişə olmalıdır
@@ -60,6 +60,8 @@ export const useDataEntryActions = ({
           created_at: existingEntry?.created_at || new Date().toISOString(),
         } as DataEntry
       };
+      
+      return updatedEntries;
     });
     
     setUnsavedChanges(true);

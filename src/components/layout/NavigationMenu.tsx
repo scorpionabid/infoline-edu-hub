@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useAuth, useRole } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { 
@@ -38,7 +39,7 @@ interface NavigationItem {
 }
 
 const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const location = useLocation();
   const { user, logout } = useAuth();
   const isSuperAdmin = useRole('superadmin');
@@ -233,4 +234,3 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
 };
 
 export default NavigationMenu;
-

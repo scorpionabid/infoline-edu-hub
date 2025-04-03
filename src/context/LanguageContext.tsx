@@ -5,6 +5,7 @@ import en from '../translations/en';
 import az from '../translations/az';
 import ru from '../translations/ru';
 import tr from '../translations/tr';
+import { Language, LanguageInfo } from '@/types/language';
 
 type LanguageType = 'az' | 'en' | 'ru' | 'tr';
 
@@ -15,7 +16,8 @@ interface LanguageContextType {
   setLanguage: (lang: LanguageType) => void;
   t: (key: string, params?: Record<string, string>) => string;
   translations: Record<string, string>;
-  languageLoaded: boolean; // Yeni əlavə: dilin yüklənib-yüklənmədiyini izləmək üçün
+  languageLoaded: boolean;
+  languages: Record<string, LanguageInfo>;  // LanguageInfo tipini əlavə edirik
 }
 
 const translations = {
@@ -27,6 +29,14 @@ const translations = {
 
 const defaultLanguage: LanguageType = 'az';
 
+// Dillər haqqında məlumatları əlavə edirik
+const languages: Record<string, LanguageInfo> = {
+  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
+  en: { nativeName: 'English', flag: '🇬🇧' },
+  ru: { nativeName: 'Русский', flag: '🇷🇺' },
+  tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
+};
+
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -34,12 +44,12 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     const savedLanguage = localStorage.getItem('language') as LanguageType;
     return savedLanguage || defaultLanguage;
   });
-  const [languageLoaded, setLanguageLoaded] = useState(false); // Yeni state
+  const [languageLoaded, setLanguageLoaded] = useState(false);
 
   useEffect(() => {
     // Dil seçimini yaddaşda saxla
     localStorage.setItem('language', language);
-    setLanguageLoaded(true); // Dil yükləndikdə state-i yenilə
+    setLanguageLoaded(true);
   }, [language]);
 
   const setLanguage = (lang: LanguageType) => {
@@ -74,7 +84,14 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, translations: translations[language], languageLoaded }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      setLanguage, 
+      t, 
+      translations: translations[language],
+      languageLoaded,
+      languages  // languages xüsusiyyətini əlavə edirik
+    }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -87,3 +104,6 @@ export const useLanguage = () => {
   }
   return context;
 };
+
+// useLanguageSafe funksiyası əlavə edirik - bu, eyni funksionallığı təmin edəcək
+export const useLanguageSafe = useLanguage;

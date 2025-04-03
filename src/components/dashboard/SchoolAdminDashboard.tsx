@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from './NotificationsCard';
 import FormStatusSection from './school-admin/FormStatusSection';
 import { Notification } from '@/types/notification';
@@ -56,7 +56,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   navigateToDataEntry,
   handleFormClick 
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   
