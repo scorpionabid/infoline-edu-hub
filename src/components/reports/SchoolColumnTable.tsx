@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
+import useSchoolColumnReport from '@/hooks/useSchoolColumnReport';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

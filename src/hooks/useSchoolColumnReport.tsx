@@ -1,9 +1,8 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/column';
 
-const useSchoolColumnReport = (schoolId?: string) => {
+export const useSchoolColumnReport = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

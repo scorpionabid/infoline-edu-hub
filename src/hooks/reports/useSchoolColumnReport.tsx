@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { CategoryWithColumns } from '@/types/column';
 
-// Modify the function to handle CategoryWithColumns correctly
+// Export funksiyanı export default kimi ixrac edək
 export const useSchoolColumnReport = (initialCategoryId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(initialCategoryId || '');
@@ -209,3 +210,6 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
     getSelectedSchoolsData
   };
 };
+
+// Default export əlavə edək
+export default useSchoolColumnReport;
