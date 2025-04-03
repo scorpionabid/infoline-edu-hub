@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/region';
@@ -209,4 +208,3 @@ export const useRegionsData = () => {
 
 // Əlavə etdiyimiz alias export, komponentlərdə useRegions() kimi çağırılmasına imkan verir
 export const useRegions = useRegionsData;
-
