@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/supabase';
@@ -155,6 +156,27 @@ export const useDataEntries = () => {
 
   const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
     try {
+      // Kateqoriyaya aid bütün məlumatları tapaq
+      const categoryEntries = entries.filter(
+        entry => entry.category_id === categoryId && entry.school_id === schoolId
+      );
+      
+      // Əgər heç bir məlumat yoxdursa, error qaytaraq
+      if (categoryEntries.length === 0) {
+        console.error('Təsdiq üçün məlumatlar tapılmadı');
+        return false;
+      }
+      
+      // Bütün məlumatları 'pending' statusuna keçirək
+      const updatePromises = categoryEntries.map(entry => {
+        if (entry.status !== 'pending') {
+          return updateEntry(entry.id, { status: 'pending' });
+        }
+        return Promise.resolve(true);
+      });
+      
+      await Promise.all(updatePromises);
+      
       console.log(`Kateqoriya ID: ${categoryId} və Məktəb ID: ${schoolId} təsdiqə göndərildi`);
       return true;
     } catch (error) {
