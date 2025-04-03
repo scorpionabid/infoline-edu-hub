@@ -13,11 +13,12 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
+import { FullUserData } from '@/types/supabase';
 
 interface DeleteUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: User;
+  user: User | FullUserData;
   onDelete: (userId: string) => void;
 }
 
@@ -53,13 +54,15 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     }, 1000);
   };
 
+  const displayName = 'name' in user && user.name ? user.name : user.full_name || '';
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserConfirmation')} <strong>{user.name}</strong>?
+            {t('deleteUserConfirmation')} <strong>{displayName}</strong>?
             <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>

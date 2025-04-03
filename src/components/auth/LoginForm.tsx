@@ -60,13 +60,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
       
       // Birbaşa standart Supabase login metodunu istifadə edirik
       console.log('Normal login cəhdi edilir');
-      const success = await login(email, password);
+      await login(email, password);
       
-      if (success) {
-        console.log('Normal login uğurlu oldu');
-        toast.success(t('loginSuccess'));
-        navigate('/dashboard');
-      }
+      console.log('Normal login uğurlu oldu');
+      toast.success(t('loginSuccess'));
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
       // Xətaları context vasitəsilə idarə edirik
@@ -79,7 +77,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error.toString()}</AlertDescription>
         </Alert>
       )}
       

@@ -32,6 +32,26 @@ export const useSchools = () => {
     fetchSchools();
   }, []);
 
+  const addSchool = async (schoolData: Omit<School, 'id' | 'created_at' | 'updated_at' | 'completion_rate'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .insert([schoolData])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchSchools();
+      return data;
+    } catch (error) {
+      console.error('Məktəbi əlavə edərkən xəta:', error);
+      throw error;
+    }
+  };
+
   const addSchools = async (schoolsData: Omit<School, 'id' | 'created_at' | 'updated_at' | 'completion_rate'>[]) => {
     try {
       // Burada School tipinin tələblərinə uyğun obyektlər yaradırıq
@@ -111,6 +131,7 @@ export const useSchools = () => {
     loading,
     error,
     fetchSchools,
+    addSchool,
     addSchools,
     updateSchool,
     deleteSchool,

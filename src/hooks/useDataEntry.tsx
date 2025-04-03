@@ -34,11 +34,11 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   } = useDataEntryState(selectedCategoryId);
 
   const { 
-    dataEntries,
+    entries,
     loading: entriesLoading,
-    fetchDataEntries,
-    addDataEntry,
-    updateDataEntry,
+    fetchEntries,
+    addEntry,
+    updateEntry,
     submitCategoryForApproval
   } = useDataEntries(user?.schoolId);
 

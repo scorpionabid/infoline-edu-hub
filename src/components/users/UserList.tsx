@@ -205,9 +205,9 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Avatar className="size-8">
-                        <AvatarImage src={user.avatar} alt={user.full_name} />
+                        <AvatarImage src={user.avatar} alt={user.full_name || ''} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {(user.full_name || '').split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="font-medium">{user.full_name}</div>
@@ -300,20 +300,20 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           <UserDetailsDialog
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser}
+            user={selectedUser as unknown as User}
           />
           
           <EditUserDialog
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser}
+            user={selectedUser as unknown as User}
             onSave={handleUpdateUserConfirm}
           />
           
           <DeleteUserDialog
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser}
+            user={selectedUser as unknown as User}
             onDelete={handleDeleteUserConfirm}
           />
         </>

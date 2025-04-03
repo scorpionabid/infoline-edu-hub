@@ -1,3 +1,33 @@
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
+export interface CreateUserData {
+  full_name: string;
+  email: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  avatar?: string;
+}
+
+export interface UpdateUserData {
+  full_name?: string;
+  email?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  avatar?: string;
+  password?: string;
+}
 
 export interface Profile {
   id: string;
@@ -30,13 +60,12 @@ export interface Region {
   id: string;
   name: string;
   admin_id?: string;
-  // adminEmail sahəsi əlavə edilir
   adminEmail?: string;
 }
 
 export interface FullUserData {
   id: string;
-  email: string; // email məcburidir
+  email: string;
   role: string;
   full_name?: string;
   phone?: string;
@@ -44,15 +73,12 @@ export interface FullUserData {
   language?: 'az' | 'en' | 'ru' | 'tr';
   avatar?: string;
   status?: 'active' | 'inactive' | 'blocked';
-  // Əlaqəli obyektlər
   school?: School | null;
   sector?: Sector | null;
   region?: Region | null;
-  // İd-lər
   schoolId?: string | null;
   sectorId?: string | null;
   regionId?: string | null;
-  // Əvvəlki id adları
   school_id?: string | null;
   sector_id?: string | null;
   region_id?: string | null;
@@ -69,6 +95,3 @@ export interface FullUserData {
     system: boolean;
   };
 }
-
-// UserRole tipini yeniləyək - authenticated tipini əlavə edək
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'authenticated';

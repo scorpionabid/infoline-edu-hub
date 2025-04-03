@@ -1,215 +1,242 @@
+
 import React, { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-/**
- * A component for testing authentication functionality.
- * Only available in development mode.
- */
 const AuthTester: React.FC = () => {
-  const auth = useAuth();
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading, user, session, error, login, logout, resetPassword, refreshSession, getSession } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ success?: boolean; message?: string }>({});
-
-  // Only show in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    return null;
-  }
-
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isSessionExpanded, setIsSessionExpanded] = useState(false);
+  const [isUserExpanded, setIsUserExpanded] = useState(false);
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null);
+  
   const handleLogin = async () => {
-    setLoading(true);
-    setResult({});
+    setTestResult(null);
     try {
-      await auth.login(email, password);
-      setResult({ success: true, message: 'Login successful' });
-    } catch (error) {
-      console.error('Login error:', error);
-      setResult({ success: false, message: error instanceof Error ? error.message : 'Unknown error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setLoading(true);
-    setResult({});
-    try {
-      await auth.logout();
-      setResult({ success: true, message: 'Logout successful' });
-    } catch (error) {
-      console.error('Logout error:', error);
-      setResult({ success: false, message: error instanceof Error ? error.message : 'Unknown error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    setResult({});
-    try {
-      // Force a refresh of the auth state
-      const session = await auth.getSession();
-      setResult({ 
-        success: true, 
-        message: `Session refresh: ${session ? 'Session found' : 'No session'}`
+      await login(email, password);
+      setTestResult({
+        success: true,
+        message: 'Login successful'
       });
-    } catch (error) {
-      console.error('Refresh error:', error);
-      setResult({ success: false, message: error instanceof Error ? error.message : 'Unknown error' });
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: `Login failed: ${err.message || 'Unknown error'}`
+      });
+    }
+  };
+  
+  const handleLogout = async () => {
+    setTestResult(null);
+    try {
+      await logout();
+      setTestResult({
+        success: true,
+        message: 'Logout successful'
+      });
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: `Logout failed: ${err.message || 'Unknown error'}`
+      });
+    }
+  };
+  
+  const handleResetPassword = async () => {
+    setTestResult(null);
+    try {
+      await resetPassword(resetEmail);
+      setTestResult({
+        success: true,
+        message: 'Password reset email sent'
+      });
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: `Password reset failed: ${err.message || 'Unknown error'}`
+      });
     }
   };
   
   const handleRefreshSession = async () => {
-    setLoading(true);
-    setResult({});
+    setTestResult(null);
     try {
-      // Sessiyanı yenilə
-      if (auth.refreshSession) {
-        console.log('AuthTester: refreshSession çağırılır...');
-        const session = await auth.refreshSession();
-        console.log('AuthTester: refreshSession nəticəsi:', session);
-        
-        setResult({ 
-          success: true, 
-          message: `Session refreshed: ${session ? `Success (${session.user?.id})` : 'Failed'}`
-        });
-      } else {
-        setResult({ 
-          success: false, 
-          message: 'refreshSession function not available'
-        });
-      }
-    } catch (error) {
-      console.error('Session refresh error:', error);
-      setResult({ success: false, message: error instanceof Error ? error.message : 'Unknown error' });
-    } finally {
-      setLoading(false);
+      const refreshedSession = await refreshSession();
+      setTestResult({
+        success: !!refreshedSession,
+        message: refreshedSession 
+          ? 'Session refreshed successfully' 
+          : 'Session refresh returned null'
+      });
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: `Session refresh failed: ${err.message || 'Unknown error'}`
+      });
     }
   };
-
+  
+  const handleGetSession = async () => {
+    setTestResult(null);
+    try {
+      const currentSession = await getSession();
+      setTestResult({
+        success: !!currentSession,
+        message: currentSession 
+          ? 'Session retrieved successfully' 
+          : 'No active session found'
+      });
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: `Get session failed: ${err.message || 'Unknown error'}`
+      });
+    }
+  };
+  
   return (
-    <Card className="w-full max-w-md mx-auto my-8">
+    <Card className="w-full max-w-4xl">
       <CardHeader>
-        <CardTitle>Authentication Tester</CardTitle>
-        <CardDescription>Test authentication functionality</CardDescription>
+        <CardTitle className="flex items-center justify-between">
+          Auth Testing Tool
+          <Badge variant={isAuthenticated ? "success" : "destructive"} className="ml-2">
+            {isAuthenticated ? "Authenticated" : "Not Authenticated"}
+          </Badge>
+        </CardTitle>
+        <CardDescription>Test authentication functions</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="login">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="status">Auth Status</TabsTrigger>
+            <TabsTrigger value="logout">Logout</TabsTrigger>
+            <TabsTrigger value="reset">Reset Password</TabsTrigger>
+            <TabsTrigger value="session">Session</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="Enter your email"
               />
             </div>
-            
-            <div className="flex space-x-2 flex-wrap gap-2">
-              <Button onClick={handleLogin} disabled={loading || !email || !password}>
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
-              <Button onClick={handleLogout} variant="outline" disabled={loading}>
-                Logout
-              </Button>
-              <Button onClick={handleRefresh} variant="secondary" disabled={loading}>
-                Get Session
-              </Button>
-              <Button onClick={handleRefreshSession} variant="secondary" disabled={loading}>
-                Refresh Session
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="Enter your password"
+              />
             </div>
-            
-            {result.message && (
-              <div className={`p-2 rounded ${result.success ? 'bg-green-100' : 'bg-red-100'}`}>
-                {result.message}
-              </div>
-            )}
+            <Button onClick={handleLogin} disabled={isLoading}>Login</Button>
           </TabsContent>
           
-          <TabsContent value="status" className="mt-4">
-            <div className="space-y-2 text-sm">
-              <div className="grid grid-cols-2 gap-1">
-                <div className="font-medium">isAuthenticated:</div>
-                <div className={auth.isAuthenticated ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                  {auth.isAuthenticated ? 'true' : 'false'}
-                </div>
-                
-                <div className="font-medium">isLoading:</div>
-                <div className={auth.isLoading ? 'text-blue-600' : 'text-gray-600'}>
-                  {auth.isLoading ? 'true' : 'false'}
-                </div>
-                
-                <div className="font-medium">error:</div>
-                <div className={auth.error ? 'text-red-600' : 'text-gray-600'}>
-                  {auth.error || 'null'}
-                </div>
-                
-                <div className="font-medium">session:</div>
-                <div className={auth.session ? 'text-green-600' : 'text-red-600'}>
-                  {auth.session ? '✓' : '✗'}
-                  {auth.session && ` (${auth.session.user?.id?.slice(0, 8)}...)`}
-                </div>
-                
-                <div className="font-medium">user:</div>
-                <div className={auth.user ? 'text-green-600' : 'text-red-600'}>
-                  {auth.user ? '✓' : '✗'}
-                  {auth.user && ` (${auth.user.email})`}
-                </div>
-                
-                <div className="font-medium">role:</div>
-                <div className="text-purple-600 font-medium">
-                  {auth.user?.role || 'none'}
-                </div>
-              </div>
-              
-              {auth.session && (
-                <div className="mt-4 pt-2 border-t">
-                  <div className="font-medium mb-1">Session Details:</div>
-                  <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto">
-                    {JSON.stringify({
-                      user_id: auth.session.user?.id,
-                      email: auth.session.user?.email,
-                      expires_at: auth.session.expires_at,
-                      last_sign_in_at: auth.session.user?.last_sign_in_at
-                    }, null, 2)}
-                  </pre>
-                </div>
-              )}
-              
-              {auth.user && (
-                <div className="mt-4 pt-2 border-t">
-                  <div className="font-medium mb-1">User Details:</div>
-                  <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto">
-                    {JSON.stringify(auth.user, null, 2)}
-                  </pre>
-                </div>
-              )}
+          <TabsContent value="logout" className="mt-4">
+            <Button onClick={handleLogout} disabled={isLoading || !isAuthenticated}>Logout</Button>
+          </TabsContent>
+          
+          <TabsContent value="reset" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email</Label>
+              <Input 
+                id="reset-email" 
+                value={resetEmail} 
+                onChange={(e) => setResetEmail(e.target.value)} 
+                placeholder="Enter your email"
+              />
+            </div>
+            <Button onClick={handleResetPassword} disabled={isLoading}>Send Reset Email</Button>
+          </TabsContent>
+          
+          <TabsContent value="session" className="space-y-4 mt-4">
+            <div className="flex space-x-2">
+              <Button onClick={handleRefreshSession} disabled={isLoading}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Session
+              </Button>
+              <Button onClick={handleGetSession} disabled={isLoading} variant="outline">
+                Get Current Session
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
+        
+        {testResult && (
+          <Alert variant={testResult.success ? "default" : "destructive"} className="mt-4">
+            {testResult.success ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+            <AlertDescription>{testResult.message}</AlertDescription>
+          </Alert>
+        )}
+        
+        {error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error.toString()}</AlertDescription>
+          </Alert>
+        )}
       </CardContent>
-      <CardFooter className="text-xs text-gray-500">
-        This component is only visible in development mode
+      <CardFooter className="flex-col items-start">
+        <div className="w-full">
+          <Collapsible
+            open={isSessionExpanded}
+            onOpenChange={setIsSessionExpanded}
+            className="w-full"
+          >
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="flex w-full justify-between p-2">
+                <span>Session Info</span>
+                {isSessionExpanded ? <ChevronUp /> : <ChevronDown />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-2">
+              <pre className="whitespace-pre-wrap bg-muted p-2 rounded-md text-xs">
+                {session ? JSON.stringify(session, null, 2) : 'No session'}
+              </pre>
+            </CollapsibleContent>
+          </Collapsible>
+          
+          <Collapsible
+            open={isUserExpanded}
+            onOpenChange={setIsUserExpanded}
+            className="w-full"
+          >
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="flex w-full justify-between p-2">
+                <span>User Info</span>
+                {isUserExpanded ? <ChevronUp /> : <ChevronDown />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-2">
+              <pre className="whitespace-pre-wrap bg-muted p-2 rounded-md text-xs">
+                {user ? JSON.stringify(user, null, 2) : 'No user'}
+              </pre>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
       </CardFooter>
     </Card>
   );

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -23,7 +24,7 @@ const AuthDebugger: React.FC<AuthDebuggerProps> = ({ visible = false }) => {
       <div className="space-y-1">
         <div><span className="text-blue-400">isAuthenticated:</span> {auth.isAuthenticated ? 'true' : 'false'}</div>
         <div><span className="text-blue-400">isLoading:</span> {auth.isLoading ? 'true' : 'false'}</div>
-        <div><span className="text-blue-400">error:</span> {auth.error || 'null'}</div>
+        <div><span className="text-blue-400">error:</span> {auth.error ? auth.error.toString() : 'null'}</div>
         <div><span className="text-blue-400">session:</span> {auth.session ? '✓' : '✗'}</div>
         <div><span className="text-blue-400">user:</span> {auth.user ? '✓' : '✗'}</div>
         {auth.user && (

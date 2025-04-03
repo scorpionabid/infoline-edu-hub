@@ -1,281 +1,294 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
-export const fetchUserData = async (userId: string): Promise<FullUserData> => {
-  console.log(`[fetchUserData] Starting to fetch user data for ID: ${userId}`);
-  try {
-    // Əsas istifadəçi məlumatlarını əldə edək
-    console.log(`[fetchUserData] Fetching auth user data from Supabase`);
-    const { data: authUser, error: authError } = await supabase.auth.getUser();
-    
-    if (authError) {
-      console.error('[fetchUserData] Auth user fetch error:', authError);
-      throw authError;
-    }
-    
-    console.log(`[fetchUserData] Auth user data fetched successfully:`, {
-      id: authUser.user?.id,
-      email: authUser.user?.email
-    });
-    
-    if (!authUser.user) {
-      console.error('[fetchUserData] Auth user not found in response');
-      throw new Error('İstifadəçi tapılmadı');
-    }
-    
-    // Əvvəlcə yeni SQL funksiyaları ilə tam istifadəçi məlumatlarını almağa çalışaq
-    try {
-      console.log(`[fetchUserData] Trying to fetch full user data via SQL function`);
-      const { data: fullUserDataResult, error: functionError } = await supabase.rpc(
-        'get_full_user_data', 
-        { user_id_param: userId }
-      );
-      
-      if (!functionError && fullUserDataResult) {
-        console.log(`[fetchUserData] Successfully fetched user data via SQL function`);
-        // JSON məlumatlarını parçalayaq və FullUserData obyektinə çevirək
-        const userData = fullUserDataResult as any;
-        
-        // Status dəyərini düzəldək
-        const statusValue = userData.status || 'active';
-        const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-          ? statusValue as 'active' | 'inactive' | 'blocked'
-          : 'active' as 'active' | 'inactive' | 'blocked';
-        
-        // Tam məlumatlardan FullUserData obyekti yaradırıq
-        const fullUserData: FullUserData = {
-          id: userData.id || userId,
-          email: userData.email || authUser.user.email || '',
-          role: userData.role || 'schooladmin',
-          full_name: userData.full_name || '',
-          name: userData.name || userData.full_name || '',
-          phone: userData.phone || '',
-          position: userData.position || '',
-          language: userData.language || 'az',
-          avatar: userData.avatar || '',
-          status: typedStatus,
-          school: null, // Tam obyekt məlumatları sonra əlavə edə bilərik
-          school_id: userData.school_id || null,
-          schoolId: userData.school_id || null,
-          sector: null, // Tam obyekt məlumatları sonra əlavə edə bilərik
-          sector_id: userData.sector_id || null,
-          sectorId: userData.sector_id || null,
-          region: null, // Tam obyekt məlumatları sonra əlavə edə bilərik
-          region_id: userData.region_id || null,
-          regionId: userData.region_id || null,
-          last_login: userData.last_login || null,
-          lastLogin: userData.last_login || null,
-          created_at: userData.created_at || new Date().toISOString(),
-          createdAt: userData.created_at || new Date().toISOString(),
-          updated_at: userData.updated_at || new Date().toISOString(),
-          updatedAt: userData.updated_at || new Date().toISOString(),
-          twoFactorEnabled: false,
-          notificationSettings: {
-            email: true,
-            system: true
-          }
-        };
-        
-        // Sonucu qaytaraq
-        console.log('[fetchUserData] Returning full user data:', {
-          id: fullUserData.id,
-          email: fullUserData.email,
-          role: fullUserData.role,
-          name: fullUserData.full_name
-        });
-        
-        return fullUserData;
-      } else if (functionError) {
-        console.log(`[fetchUserData] SQL function error, falling back to standard method:`, functionError);
-      }
-    } catch (functionError) {
-      console.error('[fetchUserData] Error using SQL function:', functionError);
-      // Xəta alında, standart yolla davam edirik
-    }
-    
-    // user_metadata-dan birbaşa rol məlumatlarını əldə edək
-    const userMetadata = authUser.user.user_metadata || {};
-    const userRole = userMetadata.role || 'schooladmin';
-    const regionId = userMetadata.region_id || null;
-    const sectorId = userMetadata.sector_id || null; 
-    const schoolId = userMetadata.school_id || null;
-    
-    console.log('[fetchUserData] User role from metadata:', userRole);
-    console.log('[fetchUserData] Region ID from metadata:', regionId);
-    
-    // Əgər metadata boşdursa, user_roles cədvəlindən məlumatları əldə etməyə çalışaq
-    if (!userRole || userRole === 'schooladmin') {
-      try {
-        console.log(`[fetchUserData] Fetching role data from user_roles table`);
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role, region_id, sector_id, school_id')
-          .eq('user_id', userId)
-          .maybeSingle();
-          
-        if (!roleError && roleData) {
-          console.log(`[fetchUserData] Role data fetched:`, roleData);
-          const updatedRole = roleData.role;
-          
-          // Metadatanı yeniləyək ki, sonra sistemə daxil olanda düzgün rol görünsün
-          try {
-            await supabase.auth.updateUser({
-              data: { 
-                role: updatedRole,
-                region_id: roleData.region_id,
-                sector_id: roleData.sector_id,
-                school_id: roleData.school_id
-              }
-            });
-            console.log(`[fetchUserData] User metadata updated with role:`, updatedRole);
-          } catch (metadataError) {
-            console.error('[fetchUserData] Error updating user metadata:', metadataError);
-          }
-        }
-      } catch (roleError) {
-        console.error('[fetchUserData] Error fetching role data:', roleError);
-      }
-    }
-    
-    // Profil məlumatlarını əldə edək - əgər problem yaşanırsa catchda defaultla davam et
-    console.log(`[fetchUserData] Fetching profile data for user ID: ${userId}`);
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .limit(1)
-      .maybeSingle();
-      
-    if (profileError) {
-      console.warn('[fetchUserData] Profile fetch error:', profileError);
-    }
-    
-    // Default profil yaradırıq
-    const defaultProfile = {
-      id: userId,
-      full_name: profile?.full_name || userMetadata.full_name || authUser.user.email?.split('@')[0] || 'User',
-      language: profile?.language || 'az',
-      status: profile?.status || 'active',
-      created_at: profile?.created_at || new Date().toISOString(),
-      updated_at: profile?.updated_at || new Date().toISOString(),
-      last_login: profile?.last_login || null,
-      phone: profile?.phone || null,
-      position: profile?.position || null,
-      avatar: profile?.avatar || null,
-      email: profile?.email || authUser.user.email
-    };
-    
-    // Status dəyərini düzəldək
-    const statusValue = defaultProfile.status || 'active';
-    const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-      ? statusValue as 'active' | 'inactive' | 'blocked'
-      : 'active' as 'active' | 'inactive' | 'blocked';
-    
-    // Region məlumatlarını əldə etməyə çalışaq (əgər region_id varsa)
-    let regionData = null;
-    if (regionId) {
-      try {
-        const { data, error } = await supabase
-          .from('regions')
-          .select('*')
-          .eq('id', regionId)
-          .limit(1)
-          .maybeSingle();
-          
-        if (!error && data) {
-          regionData = data;
-        }
-      } catch (err) {
-        console.error('[fetchUserData] Error fetching region data:', err);
-      }
-    }
-    
-    // Tam istifadəçi məlumatları obyektini formalaşdıraq
-    const fullUserData: FullUserData = {
-      id: userId,
-      email: authUser.user.email || '',
-      role: userRole,
-      full_name: defaultProfile.full_name || '',
-      name: defaultProfile.full_name || '', // name = full_name
-      phone: defaultProfile.phone || '',
-      position: defaultProfile.position || '',
-      language: defaultProfile.language || 'az',
-      avatar: defaultProfile.avatar || '',
-      status: typedStatus,
-      school: null,
-      school_id: schoolId,
-      schoolId: schoolId,
-      sector: null,
-      sector_id: sectorId,
-      sectorId: sectorId,
-      region: regionData,
-      region_id: regionId,
-      regionId: regionId,
-      last_login: defaultProfile.last_login,
-      lastLogin: defaultProfile.last_login,
-      created_at: defaultProfile.created_at,
-      createdAt: defaultProfile.created_at,
-      updated_at: defaultProfile.updated_at,
-      updatedAt: defaultProfile.updated_at,
-      twoFactorEnabled: false,
-      notificationSettings: {
-        email: true,
-        system: true
-      }
-    };
-    
-    console.log('[fetchUserData] Successfully constructed full user data:', {
-      id: fullUserData.id,
-      email: fullUserData.email,
-      role: fullUserData.role,
-      name: fullUserData.full_name
-    });
-    
-    return fullUserData;
-  } catch (error) {
-    console.error('[fetchUserData] Error fetching user data:', error);
-    
-    // Xəta halında default istifadəçi məlumatları qaytara bilərik
-    const defaultData = createDefaultUserData(userId);
-    console.log('[fetchUserData] Returning default user data due to error:', {
-      id: defaultData.id,
-      role: defaultData.role
-    });
-    
-    return defaultData;
-  }
-};
+/**
+ * Bu xidmət simulyasiya edilmiş istifadəçi məlumatları ilə işləmək üçün istifadə olunur.
+ * Həqiqi layihədə bu, Supabase və ya başqa bir backend xidməti ilə əvəz ediləcək.
+ */
 
-// Default istifadəçi məlumatları yaradır
-const createDefaultUserData = (userId: string, email: string = 'user@example.com', name: string = 'User'): FullUserData => {
-  const now = new Date().toISOString();
-  
-  return {
-    id: userId,
-    email: email,
-    role: email === 'superadmin@infoline.az' ? 'superadmin' : 'schooladmin',
-    full_name: name,
-    name: name,
-    language: 'az',
-    status: 'active',
-    school: null,
-    school_id: null,
-    schoolId: null,
-    sector: null,
-    sector_id: null,
-    sectorId: null,
-    region: null,
-    region_id: null,
-    regionId: null,
-    created_at: now,
-    createdAt: now,
-    updated_at: now,
-    updatedAt: now,
+// Real istifadə zamanı fayl quruluşunu backend və api qovluqlarına yaxınlaşdırmaq üçün
+// dəyişəcək. İndi sadəcə funksional bir prototipin nümayiş etdirilməsi üçün istifadə edirik.
+
+// Istifadəçi siyahısının simulyasiyası
+const mockUsers: FullUserData[] = [
+  {
+    id: "u1",
+    email: "superadmin@infoline.az",
+    full_name: "Super Admin",
+    name: "Super Admin",
+    role: "superadmin",
+    region_id: undefined,
+    regionId: undefined,
+    sector_id: undefined,
+    sectorId: undefined,
+    school_id: undefined,
+    schoolId: undefined,
+    status: "active",
+    phone: "+994501234567",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=superadmin",
+    language: "az",
+    position: "Baş Administrator",
+    last_login: "2023-11-01T08:30:00Z",
+    lastLogin: "2023-11-01T08:30:00Z",
+    created_at: "2023-01-15T10:00:00Z",
+    createdAt: "2023-01-15T10:00:00Z",
+    updated_at: "2023-10-25T14:20:00Z",
+    updatedAt: "2023-10-25T14:20:00Z",
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
       system: true
     }
+  },
+  {
+    id: "u2",
+    email: "regionadmin@infoline.az",
+    full_name: "Region Admin",
+    name: "Region Admin",
+    role: "regionadmin",
+    region_id: "r1",
+    regionId: "r1",
+    sector_id: undefined,
+    sectorId: undefined,
+    school_id: undefined,
+    schoolId: undefined,
+    status: "active",
+    phone: "+994502345678",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=region",
+    language: "az",
+    position: "Region Rəhbəri",
+    last_login: "2023-11-02T09:15:00Z",
+    lastLogin: "2023-11-02T09:15:00Z", 
+    created_at: "2023-02-20T11:30:00Z",
+    createdAt: "2023-02-20T11:30:00Z",
+    updated_at: "2023-10-26T15:45:00Z",
+    updatedAt: "2023-10-26T15:45:00Z",
+    twoFactorEnabled: false,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  },
+  {
+    id: "u3",
+    email: "sectoradmin@infoline.az",
+    full_name: "Sektor Admin",
+    name: "Sektor Admin",
+    role: "sectoradmin",
+    region_id: "r1",
+    regionId: "r1",
+    sector_id: "s1",
+    sectorId: "s1",
+    school_id: undefined, 
+    schoolId: undefined,
+    status: "active",
+    phone: "+994503456789",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sector",
+    language: "az",
+    position: "Sektor Rəhbəri",
+    last_login: "2023-11-03T10:45:00Z",
+    lastLogin: "2023-11-03T10:45:00Z",
+    created_at: "2023-03-25T12:15:00Z",
+    createdAt: "2023-03-25T12:15:00Z",
+    updated_at: "2023-10-27T16:30:00Z",
+    updatedAt: "2023-10-27T16:30:00Z",
+    twoFactorEnabled: true,
+    notificationSettings: {
+      email: false,
+      system: true
+    }
+  },
+  {
+    id: "u4",
+    email: "schooladmin@infoline.az",
+    full_name: "Məktəb Admin",
+    name: "Məktəb Admin",
+    role: "schooladmin",
+    region_id: "r1",
+    regionId: "r1",
+    sector_id: "s1",
+    sectorId: "s1",
+    school_id: "sch1",
+    schoolId: "sch1",
+    status: "active",
+    phone: "+994504567890",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=school",
+    language: "az",
+    position: "Məktəb Direktoru",
+    last_login: "2023-11-04T11:30:00Z",
+    lastLogin: "2023-11-04T11:30:00Z",
+    created_at: "2023-04-30T08:45:00Z",
+    createdAt: "2023-04-30T08:45:00Z",
+    updated_at: "2023-10-28T13:20:00Z",
+    updatedAt: "2023-10-28T13:20:00Z",
+    twoFactorEnabled: false,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  }
+];
+
+// Xüsusilə API çağırışlarını simulyasiya etmək üçün istədiyimiz gecikməni yaradır
+const delayedResponse = <T>(data: T, delay = 500): Promise<T> => {
+  return new Promise(resolve => setTimeout(() => resolve(data), delay));
+};
+
+// İstifadəçi ID-si ilə istifadəçini tapmaq üçün funksiya
+export const getUserById = async (id: string): Promise<FullUserData | null> => {
+  const user = mockUsers.find(u => u.id === id);
+  return delayedResponse(user || null);
+};
+
+// Bütün istifadəçiləri əldə etmək üçün funksiya
+export const getAllUsers = async (): Promise<FullUserData[]> => {
+  return delayedResponse([...mockUsers]);
+};
+
+// İstifadəçi məlumatlarını yeniləmək
+export const updateUser = async (userId: string, userData: Partial<FullUserData>): Promise<FullUserData> => {
+  const userIndex = mockUsers.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    throw new Error("İstifadəçi tapılmadı");
+  }
+  
+  // İstifadəçi məlumatlarını yeniləyək
+  mockUsers[userIndex] = {
+    ...mockUsers[userIndex],
+    ...userData,
+    // Avtomatik olaraq yenilənmə tarixini əlavə edək
+    updated_at: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
+  
+  return delayedResponse(mockUsers[userIndex]);
+};
+
+// Yeni istifadəçi yaratmaq
+export const createUser = async (userData: Partial<FullUserData>): Promise<FullUserData> => {
+  // Yeni ID yaradaq
+  const newId = `u${mockUsers.length + 1}`;
+  
+  // Məlumatların düzgün olduğundan əmin olaq
+  if (!userData.email || !userData.full_name || !userData.role) {
+    throw new Error("Email, ad və rol tələb olunur");
+  }
+  
+  // Email ünvanının təkrar olub-olmadığını yoxlayaq
+  if (mockUsers.some(u => u.email === userData.email)) {
+    throw new Error("Bu email ünvanı artıq istifadə olunur");
+  }
+  
+  // Avtomatik əlavə edilən xüsusiyyətlər
+  const now = new Date().toISOString();
+  
+  // Yeni istifadəçi yaratmaq
+  const newUser: FullUserData = {
+    id: newId,
+    email: userData.email,
+    full_name: userData.full_name,
+    name: userData.full_name,
+    role: userData.role,
+    region_id: userData.region_id,
+    regionId: userData.region_id,
+    sector_id: userData.sector_id, 
+    sectorId: userData.sector_id,
+    school_id: userData.school_id,
+    schoolId: userData.school_id,
+    status: userData.status || "active",
+    phone: userData.phone || "",
+    avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${newId}`,
+    language: userData.language || "az",
+    position: userData.position || "",
+    last_login: null,
+    lastLogin: null,
+    created_at: now,
+    createdAt: now,
+    updated_at: now,
+    updatedAt: now,
+    twoFactorEnabled: userData.twoFactorEnabled || false,
+    notificationSettings: userData.notificationSettings || {
+      email: true,
+      system: true
+    }
+  };
+  
+  // İstifadəçini əlavə edək
+  mockUsers.push(newUser);
+  
+  return delayedResponse(newUser);
+};
+
+// İstifadəçi silmə
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  const userIndex = mockUsers.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    return delayedResponse(false);
+  }
+  
+  // İstifadəçini siyahıdan çıxaraq
+  mockUsers.splice(userIndex, 1);
+  
+  return delayedResponse(true);
+};
+
+// Filtrlər və səhifələmə ilə istifadəçiləri əldə etmək
+export const getFilteredUsers = async (
+  filters: {
+    role?: string;
+    region?: string;
+    sector?: string;
+    school?: string;
+    status?: string;
+    search?: string;
+  },
+  pagination: {
+    page: number;
+    pageSize: number;
+  }
+): Promise<{ data: FullUserData[]; count: number }> => {
+  
+  let filteredUsers = [...mockUsers];
+  
+  // Filtrləri tətbiq edək
+  if (filters.role) {
+    filteredUsers = filteredUsers.filter(u => u.role === filters.role);
+  }
+  
+  if (filters.region) {
+    filteredUsers = filteredUsers.filter(u => u.region_id === filters.region);
+  }
+  
+  if (filters.sector) {
+    filteredUsers = filteredUsers.filter(u => u.sector_id === filters.sector);
+  }
+  
+  if (filters.school) {
+    filteredUsers = filteredUsers.filter(u => u.school_id === filters.school);
+  }
+  
+  if (filters.status) {
+    filteredUsers = filteredUsers.filter(u => u.status === filters.status);
+  }
+  
+  if (filters.search) {
+    const searchLower = filters.search.toLowerCase();
+    filteredUsers = filteredUsers.filter(u => 
+      u.full_name?.toLowerCase().includes(searchLower) || 
+      u.email.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  // Ümumi sayı hesablayaq
+  const count = filteredUsers.length;
+  
+  // Səhifələmə tətbiq edək
+  const { page, pageSize } = pagination;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pagedUsers = filteredUsers.slice(startIndex, endIndex);
+  
+  return delayedResponse({ data: pagedUsers, count });
 };
