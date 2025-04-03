@@ -27,7 +27,6 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
       open={isOpen}
       onOpenChange={onOpenChange}
       onAddCategory={onUpdateCategory}
-      onClose={onClose}
       category={category}
     />
   );

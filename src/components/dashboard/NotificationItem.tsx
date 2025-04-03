@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Bell, FileText, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { Notification, NotificationType } from '@/types/notification';
+import { Notification } from '@/types/notification';
+import { NotificationType } from '@/components/dashboard/NotificationType';
 
 export interface NotificationItemProps {
   notification: Notification;
@@ -20,14 +21,19 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => 
     switch(type) {
       case 'newCategory':
         return <FileText className="h-5 w-5 text-blue-500" />;
-      case 'approval':
+      case 'approvalRequest':
       case 'approved':
+      case 'formApproved':
+      case 'approval':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'rejection':
       case 'rejected':
+      case 'formRejected': 
+      case 'rejection':
         return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'dueDateReminder':
       case 'deadline':
         return <Clock className="h-5 w-5 text-amber-500" />;
+      case 'systemUpdate':
       case 'system':
         return <Bell className="h-5 w-5 text-purple-500" />;
       default:

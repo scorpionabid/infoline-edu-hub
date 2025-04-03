@@ -28,6 +28,8 @@ export interface Form {
   categoryName: string;
   status: FormStatus;
   dueDate: string | Date;
+  deadline?: string;
+  completionPercentage?: number;
   createdAt: string | Date;
   updatedAt: string | Date;
   data: Record<string, any>;
@@ -38,8 +40,6 @@ export interface Form {
   rejectedBy?: string;
   rejectedAt?: string | Date;
   rejectionReason?: string;
-  deadline?: string;
-  completionPercentage?: number;
   filledCount?: number;
   totalCount?: number;
 }

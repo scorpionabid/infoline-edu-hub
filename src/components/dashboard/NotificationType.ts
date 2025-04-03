@@ -8,7 +8,11 @@ export type NotificationType =
   | 'systemUpdate' 
   | 'dueDateReminder' 
   | 'newCategory' 
-  | 'info';
+  | 'info'
+  | 'approval'
+  | 'rejection'
+  | 'deadline'
+  | 'system';
 
 export type NotificationEntityType = 
   | 'category' 

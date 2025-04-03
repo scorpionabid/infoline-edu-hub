@@ -35,10 +35,10 @@ export interface ColumnValidationError {
 }
 
 export interface CategoryEntryData {
+  id?: string;
   categoryId: string;
   entries: Record<string, string>;
   status: DataEntryStatus;
-  id?: string;
   categoryName?: string;
   order?: number;
   progress?: number;
@@ -71,6 +71,7 @@ export interface ValidationRules {
     min?: number;
     max?: number;
   };
+  options?: string[] | { label: string; value: any }[];
   customValidation?: (value: any) => boolean | string;
 }
 

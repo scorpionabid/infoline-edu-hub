@@ -21,11 +21,19 @@ export interface User {
   avatar?: string;
   phone?: string;
   position?: string;
+  notificationSettings?: {
+    email: boolean;
+    inApp: boolean;
+    push?: boolean;
+  };
+  passwordResetDate?: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface UserFormData {
   email: string;
   fullName: string;
+  name?: string;
   password?: string;
   confirmPassword?: string;
   role: UserRole;
@@ -37,4 +45,12 @@ export interface UserFormData {
   notifyByEmail?: boolean;
   notifyInApp?: boolean;
   autoAssign?: boolean;
+  phone?: string;
+  position?: string;
+  avatar?: string;
+  notificationSettings?: {
+    email: boolean;
+    inApp: boolean;
+    push?: boolean;
+  };
 }

@@ -22,13 +22,13 @@ export const adaptNotification = (data: any): Notification => {
     type: data.type as NotificationType,
     title: data.title,
     message: data.message,
-    createdAt: data.created_at,
-    time: new Date(data.created_at).toLocaleTimeString(),
-    isRead: data.is_read,
-    userId: data.user_id,
-    priority: data.priority,
-    read_status: data.is_read,
-    relatedEntityId: data.related_entity_id || '',
-    relatedEntityType: data.related_entity_type as NotificationEntityType
+    createdAt: data.created_at || data.createdAt,
+    time: data.time || new Date(data.created_at || data.createdAt).toLocaleTimeString(),
+    isRead: data.is_read || data.isRead || false,
+    userId: data.user_id || data.userId,
+    priority: data.priority || 'normal',
+    read_status: data.is_read || data.read_status || false,
+    relatedEntityId: data.related_entity_id || data.relatedEntityId || '',
+    relatedEntityType: (data.related_entity_type || data.relatedEntityType) as NotificationEntityType
   };
 };
