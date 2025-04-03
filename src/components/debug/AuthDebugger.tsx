@@ -1,42 +1,54 @@
 
 import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-interface AuthDebuggerProps {
-  visible?: boolean;
-}
-
-/**
- * A component that displays the current authentication state for debugging purposes.
- * Only visible in development mode and when the visible prop is true.
- */
-const AuthDebugger: React.FC<AuthDebuggerProps> = ({ visible = false }) => {
+const AuthDebugger: React.FC = () => {
   const auth = useAuth();
+  const [sessionData, setSessionData] = React.useState<any>(null);
   
-  // Only show in development mode and when explicitly enabled
-  if (process.env.NODE_ENV !== 'development' || !visible) {
-    return null;
-  }
+  const getSession = async () => {
+    const { data } = await supabase.auth.getSession();
+    setSessionData(data.session);
+  };
+  
+  React.useEffect(() => {
+    getSession();
+  }, []);
   
   return (
-    <div className="fixed bottom-4 right-4 p-4 bg-black/80 text-white rounded-lg shadow-lg max-w-md z-50 text-xs font-mono">
-      <h3 className="font-bold mb-2">Auth Debugger</h3>
-      <div className="space-y-1">
-        <div><span className="text-blue-400">isAuthenticated:</span> {auth.isAuthenticated ? 'true' : 'false'}</div>
-        <div><span className="text-blue-400">isLoading:</span> {auth.isLoading ? 'true' : 'false'}</div>
-        <div><span className="text-blue-400">error:</span> {auth.error ? auth.error.toString() : 'null'}</div>
-        <div><span className="text-blue-400">session:</span> {auth.session ? '✓' : '✗'}</div>
-        <div><span className="text-blue-400">user:</span> {auth.user ? '✓' : '✗'}</div>
-        {auth.user && (
-          <div className="mt-2 pt-2 border-t border-gray-600">
-            <div><span className="text-green-400">id:</span> {auth.user.id}</div>
-            <div><span className="text-green-400">email:</span> {auth.user.email}</div>
-            <div><span className="text-green-400">role:</span> {auth.user.role}</div>
-            <div><span className="text-green-400">name:</span> {auth.user.full_name}</div>
-          </div>
-        )}
-      </div>
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Auth Debugger</CardTitle>
+        <CardDescription>Debug information about current authentication state</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <h3 className="font-medium">Current User</h3>
+          <pre className="p-4 bg-muted rounded-md overflow-auto max-h-64 text-xs">
+            {JSON.stringify(auth.user, null, 2)}
+          </pre>
+        </div>
+        
+        <div className="space-y-2">
+          <h3 className="font-medium">Current Session</h3>
+          <pre className="p-4 bg-muted rounded-md overflow-auto max-h-64 text-xs">
+            {JSON.stringify(sessionData, null, 2)}
+          </pre>
+        </div>
+        
+        <div className="flex space-x-2">
+          <Button onClick={() => auth.logout()} variant="destructive" size="sm">
+            Logout
+          </Button>
+          <Button onClick={getSession} variant="outline" size="sm">
+            Refresh Session
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

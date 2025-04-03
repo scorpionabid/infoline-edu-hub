@@ -15,30 +15,31 @@ export async function fetchUserData(userId: string): Promise<FullUserData | null
     }
     
     // Tipləri əgər doğrulaya bilmirsə, manual təyin edirik
-    if (userData) {
+    if (userData && typeof userData === 'object') {
       const fullUserData: FullUserData = {
-        id: userData.id || userId,
-        email: userData.email || '',
-        full_name: userData.full_name || '',
-        name: userData.full_name || userData.name || '',
-        role: userData.role || 'schooladmin',
-        regionId: userData.region_id || null,
-        sectorId: userData.sector_id || null,
-        schoolId: userData.school_id || null,
-        phone: userData.phone || '',
-        position: userData.position || '',
-        language: userData.language || 'az',
-        status: userData.status || 'active',
-        avatar: userData.avatar || null,
-        last_login: userData.last_login || null,
-        created_at: userData.created_at || '',
-        updated_at: userData.updated_at || '',
-        region_id: userData.region_id || null,
-        sector_id: userData.sector_id || null,
-        school_id: userData.school_id || null,
-        createdAt: userData.created_at || '',
-        updatedAt: userData.updated_at || '',
-        lastLogin: userData.last_login || null
+        id: userId,
+        email: typeof userData.email === 'string' ? userData.email : '',
+        full_name: typeof userData.full_name === 'string' ? userData.full_name : '',
+        name: typeof userData.full_name === 'string' ? userData.full_name : 
+              typeof userData.name === 'string' ? userData.name : '',
+        role: typeof userData.role === 'string' ? userData.role as any : 'schooladmin',
+        regionId: typeof userData.region_id === 'string' ? userData.region_id : null,
+        sectorId: typeof userData.sector_id === 'string' ? userData.sector_id : null,
+        schoolId: typeof userData.school_id === 'string' ? userData.school_id : null,
+        phone: typeof userData.phone === 'string' ? userData.phone : '',
+        position: typeof userData.position === 'string' ? userData.position : '',
+        language: typeof userData.language === 'string' ? userData.language : 'az',
+        status: typeof userData.status === 'string' ? userData.status : 'active',
+        avatar: typeof userData.avatar === 'string' ? userData.avatar : null,
+        last_login: typeof userData.last_login === 'string' ? userData.last_login : null,
+        created_at: typeof userData.created_at === 'string' ? userData.created_at : '',
+        updated_at: typeof userData.updated_at === 'string' ? userData.updated_at : '',
+        region_id: typeof userData.region_id === 'string' ? userData.region_id : null,
+        sector_id: typeof userData.sector_id === 'string' ? userData.sector_id : null,
+        school_id: typeof userData.school_id === 'string' ? userData.school_id : null,
+        createdAt: typeof userData.created_at === 'string' ? userData.created_at : '',
+        updatedAt: typeof userData.updated_at === 'string' ? userData.updated_at : '',
+        lastLogin: typeof userData.last_login === 'string' ? userData.last_login : null
       };
       return fullUserData;
     }
@@ -83,7 +84,9 @@ export async function fetchAllUsers(): Promise<FullUserData[]> {
     // Məlumatları birləşdiririk
     const users: FullUserData[] = profiles.map(profile => {
       const userRole = roles?.find(role => role.user_id === profile.id);
-      const email = emails?.find(e => e.id === profile.id)?.email || '';
+      const emailData = emails?.find(e => e.id === profile.id);
+      const email = emailData && typeof emailData === 'object' && 'email' in emailData ? 
+                    emailData.email as string : '';
       
       return {
         id: profile.id,

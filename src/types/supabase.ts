@@ -38,6 +38,7 @@ export interface FullUserData extends Profile {
   updatedAt?: string;
   lastLogin?: string | null;
   passwordResetDate?: string;
+  password?: string; // Əlavə edildi UpdateUserData üçün
 }
 
 export interface Region {
@@ -48,7 +49,7 @@ export interface Region {
   admin_email?: string;
   created_at?: string;
   updated_at?: string;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | string;
   // Əlavə uyğunluq üçün
   adminId?: string;
   adminEmail?: string;
@@ -64,7 +65,7 @@ export interface Sector {
   admin_email?: string;
   created_at?: string;
   updated_at?: string;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | string;
   // Əlavə uyğunluq üçün
   adminEmail?: string;
   regionId?: string;
@@ -83,7 +84,7 @@ export interface School {
   phone?: string;
   student_count?: number;
   teacher_count?: number;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | string;
   type?: string;
   language?: string;
   logo?: string;
@@ -108,7 +109,7 @@ export interface DataEntry {
   column_id: string;
   school_id: string;
   value?: string;
-  status?: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
+  status?: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted' | string;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -118,7 +119,7 @@ export interface DataEntry {
   rejection_reason?: string;
 }
 
-export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted' | string;
 
 export type UpdateUserData = Partial<FullUserData>;
 

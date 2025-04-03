@@ -91,8 +91,8 @@ export const fetchUsers = async (
       created_at: userData.created_at,
       updated_at: userData.updated_at,
       last_login: userData.last_login,
-      twoFactorEnabled: userData.twoFactorEnabled || false,
-      notificationSettings: userData.notificationSettings || {
+      twoFactorEnabled: false,
+      notificationSettings: {
         email: true,
         system: true
       },
@@ -144,7 +144,7 @@ export const getUserById = async (userId: string): Promise<any | null> => {
   }
 
   const userData = data;
-  const roleData = userData.user_roles ? userData.user_roles[0] : null;
+  const roleData = userData.user_roles && userData.user_roles.length > 0 ? userData.user_roles[0] : null;
 
   const user = {
     id: userData.id,
@@ -169,8 +169,8 @@ export const getUserById = async (userId: string): Promise<any | null> => {
     created_at: userData.created_at,
     updated_at: userData.updated_at,
     last_login: userData.last_login,
-    twoFactorEnabled: userData.twoFactorEnabled || false,
-    notificationSettings: userData.notificationSettings || {
+    twoFactorEnabled: false,
+    notificationSettings: {
       email: true,
       system: true
     },
@@ -218,7 +218,7 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
   }
 
   const userData = data;
-  const roleData = userData.user_roles ? userData.user_roles[0] : null;
+  const roleData = userData.user_roles && userData.user_roles.length > 0 ? userData.user_roles[0] : null;
 
   const user = {
     id: userData.id,
@@ -243,8 +243,8 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
     created_at: userData.created_at,
     updated_at: userData.updated_at,
     last_login: userData.last_login,
-    twoFactorEnabled: userData.twoFactorEnabled || false,
-    notificationSettings: userData.notificationSettings || {
+    twoFactorEnabled: false,
+    notificationSettings: {
       email: true,
       system: true
     },

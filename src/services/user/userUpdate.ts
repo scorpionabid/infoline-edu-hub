@@ -1,108 +1,182 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UpdateUserData, FullUserData } from '@/types/supabase';
-import { toast } from 'sonner';
-import { getUser } from './userFetch';
+import { FullUserData, UpdateUserData } from '@/types/supabase';
+import { getUserById } from './userFetch';
 
-// İstifadəçini yenilə
-export const updateUser = async (
-  userId: string,
-  userData: UpdateUserData
-): Promise<FullUserData | null> => {
+export const updateUser = async (userId: string, userData: UpdateUserData): Promise<FullUserData | null> => {
   try {
-    // İstifadəçi profilini yenilə
-    const profileUpdates: any = {};
-    
-    if (userData.full_name !== undefined) {
-      profileUpdates.full_name = userData.full_name;
+    // First, get the current user data
+    const currentUser = await getUserById(userId);
+    if (!currentUser) {
+      throw new Error('User not found');
     }
-    
-    if (userData.phone !== undefined) {
-      profileUpdates.phone = userData.phone;
-    }
-    
-    if (userData.position !== undefined) {
-      profileUpdates.position = userData.position;
-    }
-    
-    if (userData.language !== undefined) {
-      profileUpdates.language = userData.language;
-    }
-    
-    if (userData.avatar !== undefined) {
-      profileUpdates.avatar = userData.avatar;
-    }
-    
-    if (userData.status !== undefined) {
-      profileUpdates.status = userData.status;
-    }
-    
-    // Profil məlumatlarını yenilə
-    if (Object.keys(profileUpdates).length > 0) {
-      profileUpdates.updated_at = new Date().toISOString();
-      
-      const { error: profileError } = await supabase
+
+    // Prepare the updated data for the profiles table
+    const profilesData: any = {};
+
+    // Only add fields that have changed
+    if (userData.full_name !== undefined) profilesData.full_name = userData.full_name;
+    if (userData.avatar !== undefined) profilesData.avatar = userData.avatar;
+    if (userData.phone !== undefined) profilesData.phone = userData.phone;
+    if (userData.position !== undefined) profilesData.position = userData.position;
+    if (userData.language !== undefined) profilesData.language = userData.language;
+    if (userData.status !== undefined) profilesData.status = userData.status;
+
+    // Update the profiles table if there are changes
+    if (Object.keys(profilesData).length > 0) {
+      const { error: profilesError } = await supabase
         .from('profiles')
-        .update(profileUpdates)
+        .update(profilesData)
         .eq('id', userId);
-      
-      if (profileError) throw profileError;
+
+      if (profilesError) {
+        throw profilesError;
+      }
     }
-    
-    // Rol məlumatlarını yenilə
-    const roleUpdates: any = {};
-    
-    if (userData.role !== undefined) {
-      roleUpdates.role = userData.role;
-    }
-    
-    if (userData.region_id !== undefined) {
-      roleUpdates.region_id = userData.region_id;
-    }
-    
-    if (userData.sector_id !== undefined) {
-      roleUpdates.sector_id = userData.sector_id;
-    }
-    
-    if (userData.school_id !== undefined) {
-      roleUpdates.school_id = userData.school_id;
-    }
-    
-    if (Object.keys(roleUpdates).length > 0) {
-      roleUpdates.updated_at = new Date().toISOString();
-      
-      const { error: roleError } = await supabase
+
+    // Update the user_roles table if role or related IDs have changed
+    if (userData.role !== undefined || 
+        userData.region_id !== undefined || 
+        userData.sector_id !== undefined || 
+        userData.school_id !== undefined) {
+
+      const userRoleData: any = {};
+      if (userData.role !== undefined) userRoleData.role = userData.role;
+      if (userData.region_id !== undefined) userRoleData.region_id = userData.region_id;
+      if (userData.sector_id !== undefined) userRoleData.sector_id = userData.sector_id;
+      if (userData.school_id !== undefined) userRoleData.school_id = userData.school_id;
+
+      // Check if user_role entry exists
+      const { data: existingRole, error: roleCheckError } = await supabase
         .from('user_roles')
-        .update(roleUpdates)
+        .select()
         .eq('user_id', userId);
-      
-      if (roleError) throw roleError;
+
+      if (roleCheckError) {
+        throw roleCheckError;
+      }
+
+      if (existingRole && existingRole.length > 0) {
+        // Update existing role
+        const { error: roleUpdateError } = await supabase
+          .from('user_roles')
+          .update(userRoleData)
+          .eq('user_id', userId);
+
+        if (roleUpdateError) {
+          throw roleUpdateError;
+        }
+      } else {
+        // Insert new role
+        userRoleData.user_id = userId;
+        const { error: roleInsertError } = await supabase
+          .from('user_roles')
+          .insert(userRoleData);
+
+        if (roleInsertError) {
+          throw roleInsertError;
+        }
+      }
     }
-    
-    // Auth məlumatlarını yenilə (bu bir demo simulyasiyası, real layihədə məxsusi edge function olacaq)
+
+    // Update auth user if email or password is changed
     if (userData.email !== undefined || userData.password !== undefined) {
-      // Demo məqsədilə, real layihədə Supabase Edge Function istifadə ediləcək
-      console.log('Email/Şifrə yeniləməsi:', {
-        email: userData.email,
-        password: userData.password ? '********' : undefined
-      });
+      const authUpdateData: any = {};
+      if (userData.email !== undefined) authUpdateData.email = userData.email;
+      if (userData.password !== undefined) authUpdateData.password = userData.password;
+
+      const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+        userId,
+        authUpdateData
+      );
+
+      if (authUpdateError) {
+        throw authUpdateError;
+      }
+    }
+
+    // Fetch and return the updated user
+    return await getUserById(userId);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+};
+
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  try {
+    // Delete the user from auth
+    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
+    
+    if (authDeleteError) {
+      throw authDeleteError;
     }
     
-    // Yenilənmiş istifadəçi məlumatlarını əldə et
-    const updatedUser = await getUser(userId);
-    
-    toast.success('İstifadəçi uğurla yeniləndi', {
-      description: `İstifadəçi məlumatları yeniləndi`
+    return true;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+};
+
+export const createUser = async (userData: FullUserData & { password: string }): Promise<FullUserData | null> => {
+  try {
+    // Create the user in auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: userData.full_name
+      }
     });
     
-    return updatedUser;
-  } catch (error: any) {
-    console.error('İstifadəçi yeniləmə xətası:', error);
+    if (authError) {
+      throw authError;
+    }
     
-    toast.error('İstifadəçi yenilərkən xəta baş verdi', {
-      description: error.message
-    });
+    const userId = authData.user.id;
     
-    return null;
+    // Create profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        full_name: userData.full_name,
+        avatar: userData.avatar || null,
+        phone: userData.phone || null,
+        position: userData.position || null,
+        language: userData.language || 'az',
+        status: userData.status || 'active'
+      });
+      
+    if (profileError) {
+      // Rollback: delete the auth user
+      await supabase.auth.admin.deleteUser(userId);
+      throw profileError;
+    }
+    
+    // Create user role
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userId,
+        role: userData.role,
+        region_id: userData.region_id || null,
+        sector_id: userData.sector_id || null,
+        school_id: userData.school_id || null
+      });
+      
+    if (roleError) {
+      // Rollback: delete the auth user and profile
+      await supabase.auth.admin.deleteUser(userId);
+      throw roleError;
+    }
+    
+    // Fetch and return the created user
+    return await getUserById(userId);
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
   }
 };

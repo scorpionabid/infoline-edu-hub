@@ -1,56 +1,74 @@
 
-import { Column, CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData, ColumnEntry, DataEntryStatus } from '@/types/dataEntry';
+import { v4 as uuidv4 } from 'uuid';
+import { CategoryEntryData, DataEntryStatus, ColumnEntry } from '@/types/dataEntry';
 
-export const createEmptyForm = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
-  return categories.map(category => ({
-    categoryId: category.id,
-    entries: category.columns.map(column => ({
-      columnId: column.id,
-      value: column.defaultValue || '',
-      status: 'draft' as DataEntryStatus
-    })),
+export const createEmptyEntries = (categoryIds: string[]): CategoryEntryData[] => {
+  return categoryIds.map(categoryId => ({
+    id: uuidv4(),
+    categoryId,
+    categoryName: '',
+    order: 0,
+    progress: 0,
     status: 'draft',
+    values: [],
+    entries: [],
     isCompleted: false,
     isSubmitted: false,
     completionPercentage: 0
   }));
 };
 
-export const getEntryByColumnId = (
-  entries: CategoryEntryData[],
-  categoryId: string,
-  columnId: string
-): ColumnEntry | undefined => {
-  const categoryEntries = entries.find(entry => entry.categoryId === categoryId);
-  if (!categoryEntries) return undefined;
-  
-  return categoryEntries.entries.find(entry => entry.columnId === columnId);
+export const createEmptyEntry = (categoryId: string): CategoryEntryData => {
+  return {
+    id: uuidv4(),
+    categoryId,
+    categoryName: '',
+    order: 0,
+    progress: 0,
+    status: 'draft',
+    values: [],
+    isSubmitted: false
+  };
 };
 
-export const getEntryValue = (
-  entries: CategoryEntryData[],
-  categoryId: string,
-  columnId: string
-): any => {
-  const entry = getEntryByColumnId(entries, categoryId, columnId);
-  return entry ? entry.value : '';
+export const createColumnEntry = (columnId: string, value: string = '', status: DataEntryStatus = 'draft'): ColumnEntry => {
+  return {
+    id: uuidv4(),
+    columnId,
+    value,
+    status
+  };
 };
 
-export const calculateCategoryCompletionPercentage = (
-  category: CategoryWithColumns,
-  entries: ColumnEntry[]
-): number => {
-  const requiredColumns = category.columns.filter(col => col.isRequired);
-  if (requiredColumns.length === 0) return 100;
-  
-  const filledRequiredCount = requiredColumns.reduce((count, column) => {
-    const entry = entries.find(e => e.columnId === column.id);
-    if (entry && entry.value !== '' && entry.value !== null && entry.value !== undefined) {
-      return count + 1;
-    }
-    return count;
-  }, 0);
-  
-  return Math.round((filledRequiredCount / requiredColumns.length) * 100);
+export const calculateProgress = (values: ColumnEntry[], requiredColumnIds: string[]): number => {
+  if (requiredColumnIds.length === 0) {
+    return 100;
+  }
+
+  const completedRequired = requiredColumnIds.filter(id => {
+    const entry = values.find(v => v.columnId === id);
+    return entry && entry.value && entry.value.trim() !== '';
+  }).length;
+
+  return Math.round((completedRequired / requiredColumnIds.length) * 100);
+};
+
+export const formatEntryStatus = (status: DataEntryStatus): {
+  label: string;
+  color: string;
+} => {
+  switch (status) {
+    case 'approved':
+      return { label: 'Təsdiqlənmiş', color: 'green' };
+    case 'rejected':
+      return { label: 'Rədd edilmiş', color: 'red' };
+    case 'pending':
+      return { label: 'Gözləmədə', color: 'yellow' };
+    case 'draft':
+      return { label: 'Qaralama', color: 'gray' };
+    case 'submitted':
+      return { label: 'Göndərilmiş', color: 'blue' };
+    default:
+      return { label: 'Naməlum', color: 'gray' };
+  }
 };

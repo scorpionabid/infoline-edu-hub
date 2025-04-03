@@ -2,10 +2,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Category } from '@/types/category';
 import { Column } from '@/types/column';
-import { EntryValue, CategoryEntryData } from '@/types/dataEntry';
+import { EntryValue, CategoryEntryData, ColumnEntry, DataEntryStatus } from '@/types/dataEntry';
 import { DataEntry } from '@/types/supabase';
 import { useDataEntries } from './useDataEntries';
 import { useAuth } from '@/context/AuthContext';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface CategoryWithData extends Category {
   columns: Column[];
@@ -19,13 +20,13 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [loadingEntries, setLoadingEntries] = useState(false);
-  const [categoryStatus, setCategoryStatus] = useState<'draft' | 'pending' | 'approved' | 'rejected'>('draft');
+  const [categoryStatus, setCategoryStatus] = useState<DataEntryStatus>('draft');
   const [error, setError] = useState<Error | null>(null);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [categories, setCategories] = useState<CategoryWithData[]>([]);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [formData, setFormData] = useState({
-    status: 'draft' as 'draft' | 'submitted' | 'approved' | 'rejected',
+    status: 'draft' as DataEntryStatus,
     entries: [] as CategoryEntryData[],
     lastSaved: '',
     overallProgress: 0
@@ -116,7 +117,10 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       // Map entries by column_id for easy access
       const entriesMap: Record<string, DataEntry> = {};
       categoryEntries.forEach(entry => {
-        entriesMap[entry.column_id] = entry;
+        entriesMap[entry.column_id] = {
+          ...entry,
+          status: (entry.status as DataEntryStatus) || 'draft',
+        };
       });
 
       setDataEntries(entriesMap);
@@ -165,26 +169,28 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
       setUnsavedChanges(true);
 
+      // Generate a unique ID for new entries
+      const entryId = dataEntries[columnId]?.id || uuidv4();
+      
       // Update local state immediately for UI feedback
       setDataEntries(prev => ({
         ...prev,
         [columnId]: {
-          ...(prev[columnId] || {}),
-          id: prev[columnId]?.id || `temp-${columnId}`,
+          id: entryId,
           column_id: columnId,
           category_id: categoryId,
           school_id: schoolId,
           value: value,
-          status: 'pending',
+          status: dataEntries[columnId]?.status || 'pending',
           created_by: user.id,
         } as DataEntry,
       }));
 
       // Decide whether to update or create a new entry
-      if (dataEntries[columnId]?.id && !dataEntries[columnId]?.id.startsWith('temp-')) {
+      if (dataEntries[columnId] && dataEntries[columnId].id && !dataEntries[columnId].id.startsWith('temp-')) {
         // Update existing entry
         try {
-          await updateEntry(dataEntries[columnId].id, { value });
+          await updateEntry(dataEntries[columnId].id!, { value });
           setUnsavedChanges(false);
           return dataEntries[columnId];
         } catch (err) {
@@ -195,6 +201,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
         // Create new entry
         try {
           const newEntry = await addEntry({
+            id: entryId, // Add id here
             column_id: columnId,
             category_id: categoryId,
             school_id: schoolId,
@@ -205,7 +212,10 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
           if (newEntry) {
             setDataEntries(prev => ({
               ...prev,
-              [columnId]: newEntry,
+              [columnId]: {
+                ...newEntry,
+                status: newEntry.status as DataEntryStatus
+              },
             }));
             setUnsavedChanges(false);
             return newEntry;

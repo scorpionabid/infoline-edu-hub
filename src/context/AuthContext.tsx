@@ -1,373 +1,272 @@
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { FullUserData, UserRole } from '@/types/supabase';
+import { AuthState } from '@/hooks/auth/types';
+import { fetchUserData } from '@/hooks/auth/userDataService';
 
-interface AuthContextType {
+export type Role = UserRole;
+
+type AuthContextType = {
   user: FullUserData | null;
   loading: boolean;
-  error: Error | null;
-  clearError: () => void;
-  signingIn: boolean;
-  signingUp: boolean;
-  sendingPasswordReset: boolean;
-  confirmingPasswordReset: boolean;
-  signIn: (email: string, password: string) => Promise<FullUserData | null>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<boolean>;
-  sendPasswordReset: (email: string) => Promise<boolean>;
-  confirmPasswordReset: (newPassword: string) => Promise<boolean>;
-  updateProfile: (userData: Partial<FullUserData>) => Promise<boolean>;
-  updatePassword: (newPassword: string) => Promise<boolean>;
-  getUserData: (userId: string) => Promise<FullUserData | null>;
-  // Autentifikasiya statusu əlavə et (əlaqəli komponentlər üçün)
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  // Auth əməliyyatları üçün alias funksiyalar
-  login: (email: string, password: string) => Promise<FullUserData | null>;
+  login: (email: string, password: string) => Promise<{ user: FullUserData | null; error: Error | null }>;
   logout: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<boolean>;
+  updatePassword: (newPassword: string) => Promise<boolean>;
+  updateProfile: (data: Partial<FullUserData>) => Promise<{ profile: FullUserData | null; error: Error | null }>;
+  isRole: (roles: UserRole[]) => boolean;
+  useRole: (role: UserRole | UserRole[], fallback?: JSX.Element | null) => boolean | JSX.Element | null;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+type AuthAction = 
+  | { type: 'SET_USER'; payload: FullUserData | null }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: Error | null };
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+  switch (action.type) {
+    case 'SET_USER':
+      return { ...state, user: action.payload, loading: false };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, loading: false };
+    default:
+      return state;
+  }
 }
 
-const AuthContext = createContext<AuthContextType>({
+const initialState: AuthState = {
   user: null,
   loading: true,
   error: null,
-  clearError: () => {},
-  signingIn: false,
-  signingUp: false,
-  sendingPasswordReset: false,
-  confirmingPasswordReset: false,
-  signIn: async () => null,
-  signOut: async () => {},
-  signUp: async () => false,
-  sendPasswordReset: async () => false,
-  confirmPasswordReset: async () => false,
-  updateProfile: async () => false,
-  updatePassword: async () => false,
-  getUserData: async () => null,
-  isAuthenticated: false,
-  isLoading: true,
-  login: async () => null,
-  logout: async () => {},
-});
-
-export const useAuth = () => useContext(AuthContext);
-
-// useRole - istifadəçi rolunu yoxlamaq üçün köməkçi funksiya
-export const useRole = (roles: string | string[]): boolean => {
-  const { user } = useAuth();
-  
-  if (!user) return false;
-  
-  if (Array.isArray(roles)) {
-    return roles.includes(user.role);
-  }
-  
-  return user.role === roles;
+  session: null,
+  profile: null
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<FullUserData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [signingIn, setSigningIn] = useState(false);
-  const [signingUp, setSigningUp] = useState(false);
-  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
-  const [confirmingPasswordReset, setConfirmingPasswordReset] = useState(false);
-
-  // Auth hookunu tam obyekt olaraq əldə edirik 
-  const authHook = useSupabaseAuth();
-
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [currentUser, setCurrentUser] = useState<FullUserData | null>(null);
+  
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeAuth = async () => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
       try {
-        setLoading(true);
-        setError(null);
-
-        // supabase.auth.getUser() çağırmaqla cari istifadəçini əldə edirik
-        const { data, error } = await supabase.auth.getUser();
+        // Get the current user and session
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("Auth error:", error);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        if (data.user) {
-          const userData = await getUserData(data.user.id);
-          setUser(userData);
+        // If we have a user, fetch their profile data
+        if (user) {
+          const userData = await fetchUserData(user.id);
+          
+          if (userData) {
+            setCurrentUser(userData);
+            dispatch({ type: 'SET_USER', payload: userData });
+          } else {
+            dispatch({ type: 'SET_USER', payload: null });
+          }
         } else {
-          setUser(null);
+          dispatch({ type: 'SET_USER', payload: null });
         }
-      } catch (err: any) {
-        console.error("Fetch user error:", err);
-        setError(err);
-        setUser(null);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        dispatch({ type: 'SET_ERROR', payload: error as Error });
       } finally {
-        setLoading(false);
+        dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
-
-    fetchUser();
     
-    // Auth vəziyyətinin dəyişikliklərini izləmək üçün
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event);
+    initializeAuth();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.info('Auth state changed:', event);
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-          const userData = await getUserData(session.user.id);
-          setUser(userData);
-        } else {
-          setUser(null);
+          const userData = await fetchUserData(session.user.id);
+          setCurrentUser(userData);
+          dispatch({ type: 'SET_USER', payload: userData });
         }
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        dispatch({ type: 'SET_USER', payload: null });
       }
-    );
+    });
     
     return () => {
       subscription.unsubscribe();
     };
   }, []);
-
-  const clearError = () => setError(null);
-
-  const signIn = async (email: string, password: string): Promise<FullUserData | null> => {
-    setSigningIn(true);
-    setError(null);
-
+  
+  const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        const userData = await getUserData(data.user.id);
-        setUser(userData);
-        return userData;
-      }
-
-      return null;
-    } catch (err: any) {
-      setError(err);
-      setUser(null);
-      return null;
-    } finally {
-      setSigningIn(false);
-    }
-  };
-
-  const signOut = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        throw error;
-      }
-
-      setUser(null);
-    } catch (err: any) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string, name: string): Promise<boolean> => {
-    setSigningUp(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-          },
-        },
+        password
       });
-
+      
       if (error) {
         throw error;
       }
-
-      if (data.user) {
-        const userData = await getUserData(data.user.id);
-        setUser(userData);
+      
+      const userData = data.user ? await fetchUserData(data.user.id) : null;
+      
+      if (userData) {
+        setCurrentUser(userData);
+        dispatch({ type: 'SET_USER', payload: userData });
+        return { user: userData, error: null };
       }
-
-      return true;
-    } catch (err: any) {
-      setError(err);
-      return false;
-    } finally {
-      setSigningUp(false);
+      
+      return { user: null, error: new Error('User data could not be fetched') };
+    } catch (error) {
+      console.error('Login error:', error);
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return { user: null, error: error as Error };
     }
   };
-
-  const sendPasswordReset = async (email: string): Promise<boolean> => {
-    setSendingPasswordReset(true);
-    setError(null);
-
+  
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setCurrentUser(null);
+      dispatch({ type: 'SET_USER', payload: null });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+  
+  const sendPasswordReset = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-
-      if (error) {
-        throw error;
-      }
-
-      return true;
-    } catch (err: any) {
-      setError(err);
-      return false;
-    } finally {
-      setSendingPasswordReset(false);
-    }
-  };
-
-  const confirmPasswordReset = async (newPassword: string): Promise<boolean> => {
-    setConfirmingPasswordReset(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-      if (error) {
-        throw error;
-      }
-
-      return true;
-    } catch (err: any) {
-      setError(err);
-      return false;
-    } finally {
-      setConfirmingPasswordReset(false);
-    }
-  };
-
-  const updateProfile = async (userData: Partial<FullUserData>): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       
-      if (userError || !currentUser) {
-        throw userError || new Error("No authenticated user");
-      }
-
-      const { error } = await supabase.auth.updateUser(userData);
-
       if (error) {
         throw error;
       }
-
-      const updatedUserData = await getUserData(currentUser.id);
-      setUser(updatedUserData);
-
+      
       return true;
-    } catch (err: any) {
-      setError(err);
+    } catch (error) {
+      console.error('Password reset error:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
   };
-
-  const updatePassword = async (newPassword: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
+  
+  const updatePassword = async (newPassword: string) => {
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
       if (error) {
         throw error;
       }
-
+      
       return true;
-    } catch (err: any) {
-      setError(err);
+    } catch (error) {
+      console.error('Update password error:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
   };
-
-  const getUserData = async (userId: string): Promise<FullUserData | null> => {
+  
+  const updateProfile = async (profileData: Partial<FullUserData>) => {
     try {
+      if (!currentUser) {
+        throw new Error('No user is currently logged in');
+      }
+      
+      // Update profile in the profiles table
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
+        .update({
+          full_name: profileData.full_name || currentUser.full_name,
+          phone: profileData.phone || currentUser.phone,
+          position: profileData.position || currentUser.position,
+          language: profileData.language || currentUser.language,
+          avatar: profileData.avatar || currentUser.avatar,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', currentUser.id)
+        .select();
+      
       if (error) {
         throw error;
       }
-
-      // Məlumat boş və ya tələb olunan sahələr olmadığında defaultları təyin edirik
-      const fullUserData: FullUserData = {
-        ...(data as any),
-        id: data?.id || userId,
-        email: data?.email || '',
-        name: data?.full_name || data?.name || '',
-        full_name: data?.full_name || data?.name || '',
-        role: data?.role || 'schooladmin', // default role
-        regionId: data?.region_id || null,
-        sectorId: data?.sector_id || null,
-        schoolId: data?.school_id || null,
-        status: data?.status || 'active'
-      };
-
-      return fullUserData;
-    } catch (err: any) {
-      setError(err);
-      console.error("Get user data error:", err);
-      return null;
+      
+      // If email is provided, update the auth user as well
+      if (profileData.email && profileData.email !== currentUser.email) {
+        const { error: updateAuthError } = await supabase.auth.updateUser({
+          email: profileData.email
+        });
+        
+        if (updateAuthError) {
+          throw updateAuthError;
+        }
+      }
+      
+      // Fetch updated user data
+      const updatedUserData = await fetchUserData(currentUser.id);
+      
+      if (updatedUserData) {
+        setCurrentUser(updatedUserData);
+        dispatch({ type: 'SET_USER', payload: updatedUserData });
+      }
+      
+      return { profile: updatedUserData, error: null };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { profile: null, error: error as Error };
     }
   };
-
-  // Əlavə funksionallıq və qədim ad ilə uyğun olması üçün alias funksiyalar
-  const login = signIn;
-  const logout = signOut;
-  const isAuthenticated = !!user;
-  const isLoading = loading;
-
-  const contextValue: AuthContextType = {
-    user,
-    loading,
-    error,
-    clearError,
-    signingIn,
-    signingUp,
-    sendingPasswordReset,
-    confirmingPasswordReset,
-    signIn,
-    signOut,
-    signUp,
-    sendPasswordReset,
-    confirmPasswordReset,
-    updateProfile,
-    updatePassword,
-    getUserData,
-    isAuthenticated,
-    isLoading,
-    login,
-    logout
+  
+  const isRole = (roles: UserRole[]) => {
+    if (!currentUser) return false;
+    return roles.includes(currentUser.role);
   };
-
+  
+  const useRole = (role: UserRole | UserRole[], fallback: JSX.Element | null = null) => {
+    const roles = Array.isArray(role) ? role : [role];
+    
+    if (state.loading) return fallback;
+    if (!currentUser) return fallback;
+    
+    const hasPermission = roles.includes(currentUser.role);
+    return hasPermission ? true : fallback;
+  };
+  
+  const value = {
+    user: currentUser,
+    loading: state.loading,
+    login,
+    logout,
+    sendPasswordReset,
+    updatePassword,
+    updateProfile,
+    isRole,
+    useRole,
+  };
+  
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
 };

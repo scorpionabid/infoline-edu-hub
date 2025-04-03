@@ -4,7 +4,7 @@ import { UserFormData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
 import { Form } from '@/components/ui/form';
 import { UserRole } from '@/types/supabase';
-import { Role } from '@/context/AuthContext';
+import { useAuth, Role } from '@/context/AuthContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Import custom hook

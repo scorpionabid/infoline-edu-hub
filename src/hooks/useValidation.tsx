@@ -4,6 +4,7 @@ import { ValidationRules, ColumnValidationError } from '@/types/dataEntry';
 import { CategoryWithColumns, Column } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Json } from '@/integrations/supabase/types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface DependsOnCondition {
   columnId: string;
@@ -38,11 +39,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
             const value = valueObj?.value;
             
             if (value === undefined || value === null || value === '') {
-              newErrors.push({
+              const error: ColumnValidationError = {
+                id: uuidv4(),
                 columnId: column.id,
                 message: `"${category.name}" kateqoriyasında "${column.name}" doldurulmalıdır`,
-                categoryId: category.id
-              });
+                categoryId: category.id,
+                value: ''
+              };
+              
+              newErrors.push(error);
               
               if (valueObj) {
                 valueObj.errorMessage = t('fieldRequired');
@@ -59,35 +64,47 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               const numValue = Number(value);
               
               if (isNaN(numValue)) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" rəqəm olmalıdır`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: String(value)
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidFormat');
                 }
               } else if (column.validation) {
                 const validationRules = ensureValidationRules(column.validation);
-                if (validationRules?.minValue !== undefined && numValue < validationRules.minValue) {
-                  newErrors.push({
+                if (validationRules?.min !== undefined && numValue < validationRules.min) {
+                  const error: ColumnValidationError = {
+                    id: uuidv4(),
                     columnId: column.id,
-                    message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${validationRules.minValue} olmalıdır`,
-                    categoryId: category.id
-                  });
+                    message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${validationRules.min} olmalıdır`,
+                    categoryId: category.id,
+                    value: String(value)
+                  };
+                  
+                  newErrors.push(error);
                   
                   if (valueObj) {
                     valueObj.errorMessage = t('minValue');
                   }
                 }
                 
-                if (validationRules?.maxValue !== undefined && numValue > validationRules.maxValue) {
-                  newErrors.push({
+                if (validationRules?.max !== undefined && numValue > validationRules.max) {
+                  const error: ColumnValidationError = {
+                    id: uuidv4(),
                     columnId: column.id,
-                    message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${validationRules.maxValue} olmalıdır`,
-                    categoryId: category.id
-                  });
+                    message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${validationRules.max} olmalıdır`,
+                    categoryId: category.id,
+                    value: String(value)
+                  };
+                  
+                  newErrors.push(error);
                   
                   if (valueObj) {
                     valueObj.errorMessage = t('maxValue');
@@ -98,11 +115,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                   const { min, max } = validationRules.warningThreshold;
                   
                   if ((min !== undefined && numValue < min) || (max !== undefined && numValue > max)) {
-                    newWarnings.push({
+                    const warn: ColumnValidationError = {
+                      id: uuidv4(),
                       columnId: column.id,
                       message: `"${category.name}" kateqoriyasında "${column.name}" qeyri-adi dəyərə malikdir. Zəhmət olmasa təkrar yoxlayın.`,
-                      categoryId: category.id
-                    });
+                      categoryId: category.id,
+                      value: String(value)
+                    };
+                    
+                    newWarnings.push(warn);
                     
                     if (valueObj && !valueObj.errorMessage) {
                       valueObj.warningMessage = t('unusualValue');
@@ -117,11 +138,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               const validationRules = ensureValidationRules(column.validation);
               
               if (validationRules?.minLength !== undefined && strValue.length < validationRules.minLength) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" minimum ${validationRules.minLength} simvol olmalıdır`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: strValue
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = t('minLength');
@@ -129,11 +154,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
               
               if (validationRules?.maxLength !== undefined && strValue.length > validationRules.maxLength) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" maksimum ${validationRules.maxLength} simvol olmalıdır`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: strValue
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = t('maxLength');
@@ -141,11 +170,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
               
               if (validationRules?.pattern && !new RegExp(validationRules.pattern).test(strValue)) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" düzgün formatda deyil`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: strValue
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = validationRules.patternMessage || t('invalidFormat');
@@ -158,11 +191,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               const validationRules = ensureValidationRules(column.validation);
               
               if (isNaN(dateValue.getTime())) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" düzgün tarix formatında deyil`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: String(value)
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidDate');
@@ -172,11 +209,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                   const minDate = new Date(validationRules.minDate);
                   
                   if (dateValue < minDate) {
-                    newErrors.push({
+                    const error: ColumnValidationError = {
+                      id: uuidv4(),
                       columnId: column.id,
                       message: `"${category.name}" kateqoriyasında "${column.name}" ${minDate.toLocaleDateString()}-dən sonra olmalıdır`,
-                      categoryId: category.id
-                    });
+                      categoryId: category.id,
+                      value: String(value)
+                    };
+                    
+                    newErrors.push(error);
                     
                     if (valueObj) {
                       valueObj.errorMessage = t('minDate');
@@ -188,11 +229,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                   const maxDate = new Date(validationRules.maxDate);
                   
                   if (dateValue > maxDate) {
-                    newErrors.push({
+                    const error: ColumnValidationError = {
+                      id: uuidv4(),
                       columnId: column.id,
                       message: `"${category.name}" kateqoriyasında "${column.name}" ${maxDate.toLocaleDateString()}-dən əvvəl olmalıdır`,
-                      categoryId: category.id
-                    });
+                      categoryId: category.id,
+                      value: String(value)
+                    };
+                    
+                    newErrors.push(error);
                     
                     if (valueObj) {
                       valueObj.errorMessage = t('maxDate');
@@ -205,11 +250,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
             else if (column.type === 'email') {
               const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               if (!emailRegex.test(String(value))) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" düzgün email formatında deyil`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: String(value)
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidEmail');
@@ -220,11 +269,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
             else if (column.type === 'phone') {
               const phoneRegex = /^[\d\s\+\-\(\)]{7,15}$/;
               if (!phoneRegex.test(String(value))) {
-                newErrors.push({
+                const error: ColumnValidationError = {
+                  id: uuidv4(),
                   columnId: column.id,
                   message: `"${category.name}" kateqoriyasında "${column.name}" düzgün telefon formatında deyil`,
-                  categoryId: category.id
-                });
+                  categoryId: category.id,
+                  value: String(value)
+                };
+                
+                newErrors.push(error);
                 
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidPhone');
@@ -262,11 +315,15 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 const value = currentValueObj?.value;
                 
                 if (value === undefined || value === null || value === '') {
-                  newErrors.push({
+                  const error: ColumnValidationError = {
+                    id: uuidv4(),
                     columnId: column.id,
                     message: `"${category.name}" kateqoriyasında "${column.name}" doldurulmalıdır`,
-                    categoryId: category.id
-                  });
+                    categoryId: category.id,
+                    value: ''
+                  };
+                  
+                  newErrors.push(error);
                   
                   if (currentValueObj) {
                     currentValueObj.errorMessage = t('fieldRequired');

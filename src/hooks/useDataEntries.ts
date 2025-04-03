@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntry } from '@/types/supabase';
+import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 
 export const useDataEntries = () => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
@@ -19,7 +19,13 @@ export const useDataEntries = () => {
         throw error;
       }
 
-      setEntries(data || []);
+      // Safely cast the response data to our DataEntry type
+      const typedEntries = data ? data.map(entry => ({
+        ...entry,
+        status: entry.status as DataEntryStatus,
+      })) : [];
+
+      setEntries(typedEntries);
     } catch (error: any) {
       setError(error);
       console.error('Məlumatları əldə edərkən xəta:', error);
@@ -95,7 +101,7 @@ export const useDataEntries = () => {
       const { data, error } = await supabase
         .from('data_entries')
         .update({
-          status: 'approved',
+          status: 'approved' as DataEntryStatus,
           approved_by: approverId,
           approved_at: new Date().toISOString()
         })
@@ -118,7 +124,7 @@ export const useDataEntries = () => {
       const { data, error } = await supabase
         .from('data_entries')
         .update({
-          status: 'rejected',
+          status: 'rejected' as DataEntryStatus,
           rejected_by: rejectorId,
           rejection_reason: reason
         })
@@ -170,7 +176,7 @@ export const useDataEntries = () => {
       // Bütün məlumatları 'pending' statusuna keçirək
       const updatePromises = categoryEntries.map(entry => {
         if (entry.status !== 'pending') {
-          return updateEntry(entry.id, { status: 'pending' });
+          return updateEntry(entry.id, { status: 'pending' as DataEntryStatus });
         }
         return Promise.resolve(true);
       });

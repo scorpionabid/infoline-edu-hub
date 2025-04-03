@@ -7,7 +7,7 @@ import { User, UserFormData } from '@/types/user';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
-import { UpdateUserData } from '@/types/supabase';
+import { UpdateUserData, FullUserData } from '@/types/supabase';
 
 interface EditUserDialogProps {
   open: boolean;

@@ -26,7 +26,7 @@ export interface CategoryEntryData {
   rejectionReason?: string;
   values: ColumnEntry[];
   // Geri uyğunluq üçün əlavə sahələr
-  entries?: { columnId: string; value: string; status: DataEntryStatus }[];
+  entries?: { columnId: string; value: string; status: DataEntryStatus; id: string }[];
   isCompleted?: boolean;
   completionPercentage?: number;
 }
@@ -83,6 +83,16 @@ export interface ValidationRules {
   max?: number;
   pattern?: string;
   options?: string[];
+  // Əlavə validasiya xassələri
+  minValue?: number;
+  maxValue?: number;
+  warningThreshold?: {
+    min?: number;
+    max?: number;
+  };
+  patternMessage?: string;
+  minDate?: string | Date;
+  maxDate?: string | Date;
 }
 
 export interface EntryValue {
@@ -97,6 +107,7 @@ export interface CategoryFilter {
   status: string;
   assignment: string;
   withDeadline: boolean;
+  showArchived: boolean; // Əlavə edildi
 }
 
 export interface DataEntryForm {
