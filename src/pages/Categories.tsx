@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -21,13 +22,13 @@ const Categories = () => {
   // Category handling
   const {
     categories,
-    isLoading,
-    isError,
-    categoriesCount,
+    loading,
+    error,
+    fetchCategories,
     addCategory,
     updateCategory,
-    deleteCategory,
-    updateCategoryStatus
+    deleteCategory: apiDeleteCategory,
+    updateCategory: apiUpdateCategory
   } = useCategories();
   
   // Editing state
@@ -59,10 +60,7 @@ const Categories = () => {
     try {
       if (editingCategory) {
         // Update existing category
-        await updateCategory({
-          ...editingCategory,
-          ...categoryData
-        });
+        await updateCategory(editingCategory.id, categoryData);
         toast.success(t('categoryUpdated'));
       } else {
         // Add new category with all required fields
@@ -84,15 +82,14 @@ const Categories = () => {
     }
   };
   
-  // Handle category deletion
-  const deleteCategory = (categoryId: string, categoryName: string) => {
+  // Handle category deletion - burada funksiya adını dəyişdirdik
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
     toast({
-      title: t('deletingCategory'),
-      description: `${categoryName}`,
+      description: `${t('deletingCategory')}: ${categoryName}`
     });
     
     try {
-      await deleteCategory(categoryId);
+      await apiDeleteCategory(categoryId);
       return true; // success
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -103,7 +100,7 @@ const Categories = () => {
   // Handle status update
   const handleUpdateStatus = async (id: string, status: 'active' | 'inactive') => {
     try {
-      await updateCategoryStatus(id, status);
+      await apiUpdateCategory(id, { status });
       return true; // success
     } catch (error) {
       console.error('Error updating status:', error);
@@ -139,7 +136,7 @@ const Categories = () => {
   
   // Stats for the header
   const stats = {
-    total: categoriesCount,
+    total: categories.length,
     active: categories.filter(c => c.status === 'active').length,
     inactive: categories.filter(c => c.status === 'inactive').length,
   };
@@ -170,7 +167,7 @@ const Categories = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('totalCategories')}</p>
-              {isLoading ? (
+              {loading ? (
                 <Skeleton className="h-8 w-16 mt-1" />
               ) : (
                 <p className="text-2xl font-bold">{stats.total}</p>
@@ -184,7 +181,7 @@ const Categories = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('activeCategories')}</p>
-              {isLoading ? (
+              {loading ? (
                 <Skeleton className="h-8 w-16 mt-1" />
               ) : (
                 <p className="text-2xl font-bold">{stats.active}</p>
@@ -200,7 +197,7 @@ const Categories = () => {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('inactiveCategories')}</p>
-              {isLoading ? (
+              {loading ? (
                 <Skeleton className="h-8 w-16 mt-1" />
               ) : (
                 <p className="text-2xl font-bold">{stats.inactive}</p>
@@ -293,16 +290,15 @@ const Categories = () => {
         categories={categories} 
         onEditCategory={handleEditCategory} 
         filter={filter}
-        isLoading={isLoading}
-        isError={isError}
-        onDeleteCategory={deleteCategory}
+        isLoading={loading}
+        isError={!!error}
+        onDeleteCategory={handleDeleteCategory}
         onUpdateStatus={handleUpdateStatus}
       />
       
       {/* Category Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <CategoryForm 
-          isOpen={isFormOpen}
           category={editingCategory}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
