@@ -66,7 +66,9 @@ export const fetchUsers = async (
   }
 
   const users = data.map((userData: any) => {
-    const roleData = userData.user_roles ? userData.user_roles[0] : null;
+    const roleData = userData.user_roles && userData.user_roles.length > 0 
+      ? userData.user_roles[0] 
+      : null;
     
     const user = {
       id: userData.id,
@@ -144,7 +146,9 @@ export const getUserById = async (userId: string): Promise<any | null> => {
   }
 
   const userData = data;
-  const roleData = userData.user_roles && userData.user_roles.length > 0 ? userData.user_roles[0] : null;
+  const roleData = userData.user_roles && userData.user_roles.length > 0 
+    ? userData.user_roles[0] 
+    : null;
 
   const user = {
     id: userData.id,
@@ -218,7 +222,9 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
   }
 
   const userData = data;
-  const roleData = userData.user_roles && userData.user_roles.length > 0 ? userData.user_roles[0] : null;
+  const roleData = userData.user_roles && userData.user_roles.length > 0 
+    ? userData.user_roles[0] 
+    : null;
 
   const user = {
     id: userData.id,

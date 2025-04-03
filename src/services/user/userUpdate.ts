@@ -103,22 +103,6 @@ export const updateUser = async (userId: string, userData: UpdateUserData): Prom
   }
 };
 
-export const deleteUser = async (userId: string): Promise<boolean> => {
-  try {
-    // Delete the user from auth
-    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
-    
-    if (authDeleteError) {
-      throw authDeleteError;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error;
-  }
-};
-
 export const createUser = async (userData: FullUserData & { password: string }): Promise<FullUserData | null> => {
   try {
     // Create the user in auth
