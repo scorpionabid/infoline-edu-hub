@@ -1,6 +1,5 @@
 
-import { CategoryWithColumns, Column } from '@/types/column';
-import { ColumnOption } from '@/types/column';
+import { CategoryWithColumns, Column, ColumnOption } from '@/types/column';
 
 // Function to create a demo category for testing
 export const createDemoCategory = (): CategoryWithColumns => {
@@ -89,7 +88,7 @@ export const getOptionValue = (option: string | ColumnOption): string => {
   if (typeof option === 'string') {
     return option;
   }
-  return option.value;
+  return option.value || '';
 };
 
 export default createDemoCategory;

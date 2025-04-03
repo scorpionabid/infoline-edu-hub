@@ -18,44 +18,54 @@ import ValidationFields from './columnDialog/ValidationFields';
 import OptionsField from './columnDialog/OptionsField';
 
 interface AddColumnDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAddColumn: (newColumn: Omit<Column, "id">) => Promise<boolean>;
-  categories: { id: string; name: string }[];
-  editColumn?: Column; // For edit mode
-  columns?: Column[]; // For parent column selection
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onSubmit?: (columnData: Omit<Column, "id"> | Column) => Promise<boolean>;
+  categoryId?: string;
+  column?: Column | null;
+  categoryName?: string;
+  categories?: { id: string; name: string }[];
+  columns?: Column[];
 }
 
 const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
-  isOpen,
-  onClose,
-  onAddColumn,
-  categories,
-  editColumn,
+  open = false,
+  onOpenChange,
+  onSubmit,
+  categoryId = "",
+  column = null,
+  categoryName = "",
+  categories = [],
   columns = [],
 }) => {
   const {
     form,
     selectedType,
     handleTypeChange,
-    onSubmit,
+    onSubmit: handleFormSubmit,
     isEditMode,
     t
-  } = useColumnForm(categories, editColumn, onAddColumn);
+  } = useColumnForm({
+    categories,
+    editColumn: column,
+    onAddColumn: onSubmit || (async () => false),
+  });
 
   // Handle form submission
   const handleSubmit = async (values: any) => {
-    if (await onSubmit(values)) {
-      onClose();
+    if (await handleFormSubmit(values)) {
+      if (onOpenChange) {
+        onOpenChange(false);
+      }
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={() => onOpenChange && onOpenChange(!open)}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? t("editColumn") : t("addColumn")}
+            {isEditMode ? (t("editColumn") || "Sütunu düzəlt") : (t("addColumn") || "Sütun əlavə et")}
           </DialogTitle>
         </DialogHeader>
 
@@ -67,9 +77,10 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                 form={form}
                 categories={categories}
                 columns={columns}
-                editColumn={editColumn}
+                editColumn={column}
                 selectedType={selectedType}
                 handleTypeChange={handleTypeChange}
+                categoryId={categoryId}
               />
 
               {/* Validasiya sahələri */}
@@ -88,11 +99,11 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={onClose}>
-                {t("cancel")}
+              <Button variant="outline" type="button" onClick={() => onOpenChange && onOpenChange(false)}>
+                {t("cancel") || "Ləğv et"}
               </Button>
               <Button type="submit">
-                {isEditMode ? t("saveChanges") : t("addColumn")}
+                {isEditMode ? (t("saveChanges") || "Dəyişiklikləri saxla") : (t("addColumn") || "Sütun əlavə et")}
               </Button>
             </DialogFooter>
           </form>

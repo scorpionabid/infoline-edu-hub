@@ -8,6 +8,7 @@ const teachersDemoCategory = createDemoCategory();
 teachersDemoCategory.id = 'teachers-category';
 teachersDemoCategory.name = 'Müəllim heyəti';
 
+// Helper functions to create demo categories
 export const createDemoCategories = (): CategoryWithColumns[] => {
   return [demoCategory, teachersDemoCategory];
 };
