@@ -39,10 +39,7 @@ export const useSupabaseAuth = () => {
                 regionId: userData.region_id || null,
                 sectorId: userData.sector_id || null,
                 schoolId: userData.school_id || null,
-                avatar: userData.avatar || null,
-                app_metadata: {},
-                user_metadata: {},
-                aud: 'authenticated'
+                avatar: userData.avatar || null
               };
               setUser(authUser);
             }
@@ -77,10 +74,7 @@ export const useSupabaseAuth = () => {
               regionId: userData.region_id || null,
               sectorId: userData.sector_id || null,
               schoolId: userData.school_id || null,
-              avatar: userData.avatar || null,
-              app_metadata: {},
-              user_metadata: {},
-              aud: 'authenticated'
+              avatar: userData.avatar || null
             };
             setUser(authUser);
           }
@@ -124,10 +118,7 @@ export const useSupabaseAuth = () => {
             regionId: userData.region_id || null,
             sectorId: userData.sector_id || null,
             schoolId: userData.school_id || null,
-            avatar: userData.avatar || null,
-            app_metadata: {},
-            user_metadata: {},
-            aud: 'authenticated'
+            avatar: userData.avatar || null
           };
           setUser(authUser);
         }
@@ -227,47 +218,6 @@ export const useSupabaseAuth = () => {
     }
   };
   
-  // Qeydiyyat
-  const signUp = async (email: string, password: string, metadata: any = {}) => {
-    try {
-      setSigningUp(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
-        },
-      });
-      
-      if (error) throw error;
-      
-      toast.success('Qeydiyyat uğurla tamamlandı', {
-        description: 'Hesabınız uğurla yaradıldı. E-poçtunuzu təsdiqləyin.'
-      });
-      
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Qeydiyyat zamanı xəta baş verdi'));
-      throw err;
-    } finally {
-      setSigningUp(false);
-    }
-  };
-  
-  // Çıxış et
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setUser(null);
-      toast.info('Çıxış edildi');
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Çıxış zamanı xəta baş verdi'));
-      throw err;
-    }
-  };
-  
   // Profil məlumatlarını yenilə
   const updateProfile = async (userData: Partial<FullUserData>) => {
     if (!user) return false;
@@ -329,10 +279,7 @@ export const useSupabaseAuth = () => {
             regionId: updatedUserData.region_id || null,
             sectorId: updatedUserData.sector_id || null,
             schoolId: updatedUserData.school_id || null,
-            avatar: updatedUserData.avatar || null,
-            app_metadata: {},
-            user_metadata: {},
-            aud: 'authenticated'
+            avatar: updatedUserData.avatar || null
           };
           setUser(authUser);
         }
