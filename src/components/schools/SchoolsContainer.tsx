@@ -54,7 +54,7 @@ const SchoolsContainer: React.FC = () => {
     handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
-    handleDeleteConfirmFromHook, // Düzəltdim burada
+    handleDeleteConfirmFromHook,
     handleAdminUpdate,
     handleResetPassword,
     formData,
