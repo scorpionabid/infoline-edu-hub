@@ -1,120 +1,292 @@
-
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { FullUserData } from '@/types/supabase';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { FullUserData, UserRole } from '@/types/supabase';
 
-// Auth konteksti üçün tip təriflərini əlavə edirik
 interface AuthContextType {
   user: FullUserData | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  loading: boolean;
   error: Error | null;
   clearError: () => void;
-  login: (email: string, password: string) => Promise<any>;
-  logout: () => Promise<void>;
-  signUp: (email: string, password: string, metadata: any) => Promise<any>;
-  sendPasswordResetEmail: (email: string) => Promise<void>;
-  confirmPasswordReset: (password: string) => Promise<void>;
+  signingIn: boolean;
+  signingUp: boolean;
+  sendingPasswordReset: boolean;
+  confirmingPasswordReset: boolean;
+  signIn: (email: string, password: string) => Promise<FullUserData | null>;
+  signOut: () => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<boolean>;
+  sendPasswordReset: (email: string) => Promise<boolean>;
+  confirmPasswordReset: (newPassword: string) => Promise<boolean>;
   updateProfile: (userData: Partial<FullUserData>) => Promise<boolean>;
-  updateUser: (userData: Partial<FullUserData>) => Promise<boolean>; // Adding this to match usage
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  hasRole: (role: string | string[]) => boolean;
-  // Added for debug components
-  session: any;
-  resetPassword?: () => Promise<void>;
-  refreshSession?: () => Promise<void>;
-  getSession?: () => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<boolean>;
+  getUserData: (userId: string) => Promise<FullUserData | null>;
 }
 
-// Kontekst yaradırıq
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  error: null,
+  clearError: () => {},
+  signingIn: false,
+  signingUp: false,
+  sendingPasswordReset: false,
+  confirmingPasswordReset: false,
+  signIn: async () => null,
+  signOut: async () => {},
+  signUp: async () => false,
+  sendPasswordReset: async () => false,
+  confirmPasswordReset: async () => false,
+  updateProfile: async () => false,
+  updatePassword: async () => false,
+  getUserData: async () => null
+});
 
-// Kontekst provide'rını yaradırıq
+export const useAuth = () => useContext(AuthContext);
+
+// Session xətasını düzəltmək üçün session dəyişənini çıxarırıq
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const {
-    user,
-    loading: isLoading,
-    error,
-    clearError,
-    signIn,
-    signOut,
-    signUp: registerUser,
-    sendPasswordResetEmail,
-    confirmPasswordReset,
-    updateProfile,
-    changePassword,
-    hasRole,
-    session,
-  } = useSupabaseAuth();
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
+  const [signingUp, setSigningUp] = useState(false);
+  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+  const [confirmingPasswordReset, setConfirmingPasswordReset] = useState(false);
 
-  // Auth kontekstinin dəyərlərini formalaşdırırıq
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    error,
-    clearError,
-    login: signIn,
-    logout: signOut,
-    signUp: registerUser,
-    sendPasswordResetEmail,
-    confirmPasswordReset,
-    updateProfile,
-    updateUser: updateProfile, // Alias for updateProfile to fix existing code
-    changePassword,
-    hasRole,
-    session,
-    // Dummy implementations for debug components
-    resetPassword: async () => {},
-    refreshSession: async () => {},
-    getSession: async () => {},
+  // Auth kontextini komponent boyunca istifadə etmək üçün hook
+  const { auth } = useSupabaseAuth();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (auth.currentUser) {
+          const userData = await getUserData(auth.currentUser.id);
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } catch (err: any) {
+        setError(err);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [auth.currentUser]);
+
+  const clearError = () => setError(null);
+
+  const signIn = async (email: string, password: string): Promise<FullUserData | null> => {
+    setSigningIn(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        const userData = await getUserData(data.user.id);
+        setUser(userData);
+        return userData;
+      }
+
+      return null;
+    } catch (err: any) {
+      setError(err);
+      setUser(null);
+      return null;
+    } finally {
+      setSigningIn(false);
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  const signOut = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
 
-// AuthContext'i istifadə etmək üçün hook yaradırıq
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+      const { error } = await supabase.auth.signOut();
 
-// Rol yoxlanışı üçün utility hook
-export const useRole = (requiredRole: string | string[]): boolean => {
-  const { user } = useAuth();
-  
-  if (!user) return false;
-  
-  if (Array.isArray(requiredRole)) {
-    return requiredRole.includes(user.role as string);
-  }
-  
-  return user?.role === requiredRole;
-};
+      if (error) {
+        throw error;
+      }
 
-// Rol görünürlüyü üçün HOC (Higher Order Component)
-export const withRole = (requiredRole: string | string[], Component: React.FC<any>) => {
-  return (props: any) => {
-    const hasRequiredRole = useRole(requiredRole);
-    
-    if (!hasRequiredRole) {
+      setUser(null);
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, name: string): Promise<boolean> => {
+    setSigningUp(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        const userData = await getUserData(data.user.id);
+        setUser(userData);
+      }
+
+      return true;
+    } catch (err: any) {
+      setError(err);
+      return false;
+    } finally {
+      setSigningUp(false);
+    }
+  };
+
+  const sendPasswordReset = async (email: string): Promise<boolean> => {
+    setSendingPasswordReset(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (err: any) {
+      setError(err);
+      return false;
+    } finally {
+      setSendingPasswordReset(false);
+    }
+  };
+
+  const confirmPasswordReset = async (newPassword: string): Promise<boolean> => {
+    setConfirmingPasswordReset(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (err: any) {
+      setError(err);
+      return false;
+    } finally {
+      setConfirmingPasswordReset(false);
+    }
+  };
+
+  const updateProfile = async (userData: Partial<FullUserData>): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser(userData);
+
+      if (error) {
+        throw error;
+      }
+
+      const updatedUserData = await getUserData(auth.currentUser!.id);
+      setUser(updatedUserData);
+
+      return true;
+    } catch (err: any) {
+      setError(err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (err: any) {
+      setError(err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUserData = async (userId: string): Promise<FullUserData | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data as FullUserData;
+    } catch (err: any) {
+      setError(err);
       return null;
     }
-    
-    return <Component {...props} />;
   };
+
+  const contextValue: AuthContextType = {
+    user,
+    loading,
+    error,
+    clearError,
+    signingIn,
+    signingUp,
+    sendingPasswordReset,
+    confirmingPasswordReset,
+    signIn,
+    signOut,
+    signUp,
+    sendPasswordReset,
+    confirmPasswordReset,
+    updateProfile,
+    updatePassword,
+    getUserData
+  };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// UserRole tipini eksport edirik
-export type { UserRole };
-
-// UserRole tipi üçün göstərici  
-export const Role = {
-  SUPER_ADMIN: "superadmin" as UserRole,
-  REGION_ADMIN: "regionadmin" as UserRole,
-  SECTOR_ADMIN: "sectoradmin" as UserRole,
-  SCHOOL_ADMIN: "schooladmin" as UserRole,
-};

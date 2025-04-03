@@ -17,6 +17,16 @@ import BasicColumnFields from './columnDialog/BasicColumnFields';
 import ValidationFields from './columnDialog/ValidationFields';
 import OptionsField from './columnDialog/OptionsField';
 
+interface BasicColumnFieldsProps {
+  form: any;
+  categories: { id: string; name: string }[];
+  columns?: Column[];
+  editColumn: Column | null;
+  selectedType: string;
+  handleTypeChange: (value: string) => void;
+  categoryId: string;
+}
+
 interface AddColumnDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;

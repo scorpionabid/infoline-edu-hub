@@ -1,68 +1,61 @@
 
-import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Trash } from 'lucide-react';
 
-interface DeleteCategoryDialogProps {
+export interface DeleteCategoryDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  categoryName?: string;
+  onDelete: (id: string) => Promise<boolean>;
+  categoryId: string;
+  categoryName: string;
 }
 
 const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
   isOpen,
   onOpenChange,
-  onConfirm,
+  onDelete,
+  categoryId,
   categoryName
 }) => {
-  const { t } = useLanguage();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const handleConfirm = () => {
+  const handleDelete = async () => {
     setIsDeleting(true);
-    // API çağrışı simyulasiyası
-    setTimeout(() => {
-      onConfirm();
+    try {
+      await onDelete(categoryId);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    } finally {
       setIsDeleting(false);
-    }, 500);
+      onOpenChange(false);
+    }
   };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            {categoryName 
-              ? t('deleteCategoryConfirmationName').replace('{name}', categoryName) 
-              : t('deleteCategoryConfirmation')}
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Trash className="h-5 w-5 text-destructive" />
+            Kateqoriyanı silmək istədiyinizə əminsiniz?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteCategoryWarning')}
+            <p>
+              <strong>{categoryName}</strong> kateqoriyasını silmək istədiyinizi təsdiqləyin.
+              Bu əməliyyat geri qaytarıla bilməz və bütün əlaqəli məlumatlar silinəcək.
+            </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-          <Button 
-            onClick={handleConfirm}
-            variant="destructive"
-            className="gap-2"
+          <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
             disabled={isDeleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {t('delete')}
-          </Button>
+            {isDeleting ? 'Silinir...' : 'Bəli, sil'}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
