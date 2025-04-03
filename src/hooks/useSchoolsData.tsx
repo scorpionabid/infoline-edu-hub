@@ -1,213 +1,125 @@
 
-import { useState, useCallback, useMemo } from 'react';
-import { School, SchoolFormData, mockSchools, mockRegions, mockSectors } from '@/data/schoolsData';
-import { toast } from '@/hooks/use-toast';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { School } from '@/types/school';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
-// Define interfaces for hook return
-export interface SortConfig {
-  key: string | null;
-  direction: 'asc' | 'desc' | null;
-}
+export const useSchoolsData = () => {
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
 
-interface UseSchoolsDataReturn {
-  schools: School[];
-  searchTerm: string;
-  selectedRegion: string;
-  selectedSector: string;
-  selectedStatus: string;
-  filteredSectors: { id: string; regionId: string; name: string; }[];
-  sortConfig: SortConfig;
-  currentPage: number;
-  itemsPerPage: number;
-  filteredSchools: School[];
-  sortedSchools: School[];
-  currentItems: School[];
-  totalPages: number;
-  handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleSectorFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleStatusFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleSort: (key: string) => void;
-  handlePageChange: (page: number) => void;
-  resetFilters: () => void;
-  handleAddSchool: (newSchool: School) => void;
-  handleUpdateSchool: (updatedSchool: School) => void;
-  handleDeleteSchool: (schoolId: string) => void;
-  refreshData: () => void;
-}
+  const fetchSchools = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase.from('schools').select('*');
 
-export const useSchoolsData = (): UseSchoolsDataReturn => {
-  const [schools, setSchools] = useState<School[]>(mockSchools);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedSector, setSelectedSector] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [version, setVersion] = useState(0); // Məlumatların yenilənməsini izləmək üçün
-  const itemsPerPage = 5;
+      // Rol əsaslı filtrasiya
+      switch (user?.role) {
+        case 'superadmin':
+          // SuperAdmin bütün məktəbləri görə bilər
+          break;
+        case 'regionadmin':
+          query = query.eq('region_id', user.regionId);
+          break;
+        case 'sectoradmin':
+          query = query.eq('sector_id', user.sectorId);
+          break;
+        case 'schooladmin':
+          query = query.eq('id', user.schoolId);
+          break;
+      }
 
-  // Məlumatları yeniləmək üçün metod
-  const refreshData = useCallback(() => {
-    setVersion(prev => prev + 1);
+      const { data, error } = await query.order('name');
+
+      if (error) throw error;
+
+      setSchools(data || []);
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Məktəbləri yükləyərkən xəta:', err);
+      setError(err);
+      setLoading(false);
+      toast.error('Məktəbləri yükləyərkən xəta baş verdi');
+    }
+  }, [user]);
+
+  const createSchool = useCallback(async (schoolData: Omit<School, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .insert(schoolData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSchools(prev => [...prev, data]);
+      toast.success('Məktəb uğurla yaradıldı');
+      return data;
+    } catch (err: any) {
+      console.error('Məktəb yaradılarkən xəta:', err);
+      toast.error('Məktəb yaradılarkən xəta baş verdi');
+      throw err;
+    }
   }, []);
 
-  // Filtered sectors based on selected region
-  const filteredSectors = useMemo(() => {
-    return selectedRegion 
-      ? mockSectors.filter(sector => sector.regionId === selectedRegion) 
-      : mockSectors;
-  }, [selectedRegion]);
+  const updateSchool = useCallback(async (schoolId: string, schoolData: Partial<School>) => {
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .update(schoolData)
+        .eq('id', schoolId)
+        .select()
+        .single();
 
-  // Filter schools based on search term and filters
-  const filteredSchools = useMemo(() => {
-    return schools.filter(school => {
-      const searchMatch = 
-        school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        school.principalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        school.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        school.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        school.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      if (error) throw error;
 
-      const regionMatch = selectedRegion ? school.regionId === selectedRegion : true;
-      const sectorMatch = selectedSector ? school.sectorId === selectedSector : true;
-      const statusMatch = selectedStatus ? school.status === selectedStatus : true;
+      setSchools(prev => prev.map(school => 
+        school.id === schoolId ? data : school
+      ));
       
-      return searchMatch && regionMatch && sectorMatch && statusMatch;
-    });
-  }, [schools, searchTerm, selectedRegion, selectedSector, selectedStatus, version]);
-
-  // Sort schools based on sort config
-  const sortedSchools = useMemo(() => {
-    const sortableSchools = [...filteredSchools];
-    if (sortConfig.key) {
-      sortableSchools.sort((a, b) => {
-        if (a[sortConfig.key as keyof School] < b[sortConfig.key as keyof School]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (a[sortConfig.key as keyof School] > b[sortConfig.key as keyof School]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
+      toast.success('Məktəb uğurla yeniləndi');
+      return data;
+    } catch (err: any) {
+      console.error('Məktəb yenilənərkən xəta:', err);
+      toast.error('Məktəb yenilənərkən xəta baş verdi');
+      throw err;
     }
-    return sortableSchools;
-  }, [filteredSchools, sortConfig]);
-
-  // Pagination
-  const totalPages = useMemo(() => {
-    return Math.ceil(sortedSchools.length / itemsPerPage);
-  }, [sortedSchools.length, itemsPerPage]);
-
-  // Səhifə sayı dəyişəndə cari səhifə nömrəsini yenidən hesablayaq
-  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
-  const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  
-  const currentItems = useMemo(() => {
-    return sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
-  }, [sortedSchools, indexOfFirstItem, indexOfLastItem, version]);
-
-  // Event handlers
-  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
   }, []);
 
-  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRegion(e.target.value);
-    setSelectedSector('');
-    setCurrentPage(1);
-  }, []);
+  const deleteSchool = useCallback(async (schoolId: string) => {
+    try {
+      const { error } = await supabase
+        .from('schools')
+        .delete()
+        .eq('id', schoolId);
 
-  const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSector(e.target.value);
-    setCurrentPage(1);
-  }, []);
+      if (error) throw error;
 
-  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleSort = useCallback((key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+      setSchools(prev => prev.filter(school => school.id !== schoolId));
+      toast.success('Məktəb uğurla silindi');
+      return true;
+    } catch (err: any) {
+      console.error('Məktəb silinərkən xəta:', err);
+      toast.error('Məktəb silinərkən xəta baş verdi');
+      throw err;
     }
-    setSortConfig({ key, direction });
-  }, [sortConfig]);
-
-  const handlePageChange = useCallback((page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }, [totalPages]);
-
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedRegion('');
-    setSelectedSector('');
-    setSelectedStatus('');
-    setCurrentPage(1);
   }, []);
 
-  // CRUD operations
-  const handleAddSchool = useCallback((newSchool: School) => {
-    setSchools(prevSchools => [...prevSchools, newSchool]);
-    toast({
-      title: "Məktəb uğurla əlavə edildi",
-      variant: "default",
-    });
-    refreshData();
-  }, [refreshData]);
-
-  const handleUpdateSchool = useCallback((updatedSchool: School) => {
-    setSchools(prevSchools => 
-      prevSchools.map(school => 
-        school.id === updatedSchool.id ? updatedSchool : school
-      )
-    );
-    toast({
-      title: "Məktəb uğurla yeniləndi",
-      variant: "default",
-    });
-    refreshData();
-  }, [refreshData]);
-
-  const handleDeleteSchool = useCallback((schoolId: string) => {
-    setSchools(prevSchools => prevSchools.filter(school => school.id !== schoolId));
-    toast({
-      title: "Məktəb uğurla silindi",
-      variant: "default",
-    });
-    refreshData();
-  }, [refreshData]);
+  useEffect(() => {
+    fetchSchools();
+  }, [fetchSchools]);
 
   return {
     schools,
-    searchTerm,
-    selectedRegion,
-    selectedSector,
-    selectedStatus,
-    filteredSectors,
-    sortConfig,
-    currentPage: adjustedCurrentPage,
-    itemsPerPage,
-    filteredSchools,
-    sortedSchools,
-    currentItems,
-    totalPages,
-    handleSearch,
-    handleRegionFilter,
-    handleSectorFilter,
-    handleStatusFilter,
-    handleSort,
-    handlePageChange,
-    resetFilters,
-    handleAddSchool,
-    handleUpdateSchool,
-    handleDeleteSchool,
-    refreshData
+    loading,
+    error,
+    fetchSchools,
+    createSchool,
+    updateSchool,
+    deleteSchool
   };
 };

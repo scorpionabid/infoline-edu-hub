@@ -1,135 +1,122 @@
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Sector } from '@/types/supabase';
-import { useLanguage } from '@/context/LanguageContext';
+import { Sector } from '@/types/sector';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
-export const useSectors = (regionId?: string) => {
+export const useSectorsData = () => {
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { t } = useLanguage();
+  const { user } = useAuth();
 
-  const fetchSectors = async () => {
+  const fetchSectors = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       let query = supabase.from('sectors').select('*');
-      if (regionId) {
-        query = query.eq('region_id', regionId);
+
+      // Rol əsaslı filtrasiya
+      switch (user?.role) {
+        case 'superadmin':
+          // SuperAdmin bütün sektorları görə bilər
+          break;
+        case 'regionadmin':
+          query = query.eq('region_id', user.regionId);
+          break;
+        case 'sectoradmin':
+          query = query.eq('id', user.sectorId);
+          break;
       }
-      const { data, error } = await query;
-      if (error) {
-        throw error;
-      }
+
+      const { data, error } = await query.order('name');
+
+      if (error) throw error;
+
       setSectors(data || []);
-    } catch (error: any) {
-      setError(error);
-      toast.error(t('failedToFetchSectors'), {
-        description: error.message
-      });
-    } finally {
       setLoading(false);
+    } catch (err: any) {
+      console.error('Sektorları yükləyərkən xəta:', err);
+      setError(err);
+      setLoading(false);
+      toast.error('Sektorları yükləyərkən xəta baş verdi');
     }
-  };
+  }, [user]);
 
-  useEffect(() => {
-    fetchSectors();
-  }, [regionId, t]);
-
-  const addSectors = async (sectorsData: Omit<Sector, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const createSector = useCallback(async (sectorData: Omit<Sector, 'id'>) => {
     try {
-      // Burada Sector tipinin tələblərinə uyğun obyektlər yaradırıq
-      const formattedSectors = sectorsData.map(sector => ({
-        name: sector.name,
-        region_id: sector.region_id,
-        description: sector.description,
-        status: sector.status || 'active',
-        admin_email: sector.admin_email
-      }));
-
       const { data, error } = await supabase
         .from('sectors')
-        .insert(formattedSectors);
+        .insert(sectorData)
+        .select()
+        .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      await fetchSectors();
-      return true;
-    } catch (error) {
-      console.error('Sektorları əlavə edərkən xəta:', error);
-      return false;
+      setSectors(prev => [...prev, data]);
+      toast.success('Sektor uğurla yaradıldı');
+      return data;
+    } catch (err: any) {
+      console.error('Sektor yaradılarkən xəta:', err);
+      toast.error('Sektor yaradılarkən xəta baş verdi');
+      throw err;
     }
-  };
+  }, []);
 
-  const updateSector = async (id: string, updates: Partial<Sector>) => {
-    setLoading(true);
-    setError(null);
+  const updateSector = useCallback(async (sectorId: string, sectorData: Partial<Sector>) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('sectors')
-        .update(updates)
-        .eq('id', id);
-      if (error) {
-        throw error;
-      }
-      setSectors(prevSectors =>
-        prevSectors.map(sector => (sector.id === id ? { ...sector, ...updates } : sector))
-      );
-      toast.success(t('sectorUpdated'), {
-        description: t('sectorUpdatedDesc')
-      });
-      return true;
-    } catch (error: any) {
-      setError(error);
-      toast.error(t('sectorUpdateFailed'), {
-        description: error.message
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+        .update(sectorData)
+        .eq('id', sectorId)
+        .select()
+        .single();
 
-  const deleteSector = async (id: string) => {
-    setLoading(true);
-    setError(null);
+      if (error) throw error;
+
+      setSectors(prev => prev.map(sector => 
+        sector.id === sectorId ? data : sector
+      ));
+      
+      toast.success('Sektor uğurla yeniləndi');
+      return data;
+    } catch (err: any) {
+      console.error('Sektor yenilənərkən xəta:', err);
+      toast.error('Sektor yenilənərkən xəta baş verdi');
+      throw err;
+    }
+  }, []);
+
+  const deleteSector = useCallback(async (sectorId: string) => {
     try {
       const { error } = await supabase
         .from('sectors')
         .delete()
-        .eq('id', id);
-      if (error) {
-        throw error;
-      }
-      setSectors(prevSectors => prevSectors.filter(sector => sector.id !== id));
-      toast.success(t('sectorDeleted'), {
-        description: t('sectorDeletedDesc')
-      });
+        .eq('id', sectorId);
+
+      if (error) throw error;
+
+      setSectors(prev => prev.filter(sector => sector.id !== sectorId));
+      toast.success('Sektor uğurla silindi');
       return true;
-    } catch (error: any) {
-      setError(error);
-      toast.error(t('sectorDeleteFailed'), {
-        description: error.message
-      });
-      return false;
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      console.error('Sektor silinərkən xəta:', err);
+      toast.error('Sektor silinərkən xəta baş verdi');
+      throw err;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSectors();
+  }, [fetchSectors]);
 
   return {
     sectors,
     loading,
     error,
     fetchSectors,
-    addSectors,
+    createSector,
     updateSector,
-    deleteSector,
+    deleteSector
   };
 };
-
-export default useSectors;

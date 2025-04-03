@@ -1,183 +1,162 @@
 
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Category } from '@/types/category';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
-import { Category } from '@/types/column';
 
 export const useCategoriesData = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
-  // Fetch all categories
+  // Bütün kateqoriyaları əldə etmə
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     setIsError(false);
     
     try {
-      // Mock data - in a real app, this would be an API call
-      setTimeout(() => {
-        const mockCategories: Category[] = [
-          {
-            id: 'cat1',
-            name: 'Ümumi məlumatlar',
-            description: 'Məktəb haqqında ümumi məlumatlar',
-            assignment: 'all',
-            priority: 1,
-            status: 'active',
-            deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
-            archived: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            order: 1
-          },
-          {
-            id: 'cat2',
-            name: 'Müəllim heyəti',
-            description: 'Müəllim heyəti haqqında məlumatlar',
-            assignment: 'sectors',
-            priority: 2,
-            status: 'active',
-            deadline: new Date(Date.now() + 20*24*60*60*1000).toISOString(),
-            archived: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            order: 2
-          }
-        ];
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('priority');
 
-        setCategories(mockCategories);
-        setIsLoading(false);
-      }, 800);
+      if (error) throw error;
+
+      setCategories(data || []);
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Kateqoriyaları əldə edərkən xəta:', error);
       setIsError(true);
       setIsLoading(false);
       toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
     }
   }, []);
 
-  // Fetch a single category
+  // Tək kateqoriya əldə etmə
   const fetchSingleCategory = useCallback(async (categoryId: string): Promise<Category | null> => {
-    setIsLoading(true);
-    
     try {
-      // Mock data - in a real app, this would be an API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockCategory = categories.find(c => c.id === categoryId) || {
-            id: categoryId,
-            name: 'Test kateqoriyası',
-            description: 'Test təsviri',
-            assignment: 'all' as const,
-            priority: 1,
-            status: 'active',
-            deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
-            archived: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            order: 1
-          };
-          
-          setIsLoading(false);
-          resolve(mockCategory);
-        }, 500);
-      });
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', categoryId)
+        .single();
+
+      if (error) throw error;
+      
+      return data;
     } catch (error) {
-      console.error('Error fetching category:', error);
-      setIsLoading(false);
+      console.error('Kateqoriya yüklənərkən xəta:', error);
       toast.error('Kateqoriya yüklənərkən xəta baş verdi');
       return null;
     }
-  }, [categories]);
+  }, []);
 
-  // Create a new category
+  // Kateqoriya yaratma
   const createCategory = useCallback(async (categoryData: Omit<Category, "id" | "createdAt" | "updatedAt">) => {
     try {
-      const newCategory: Category = {
-        ...categoryData,
-        id: uuid(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        order: categoryData.priority || 1 // Order xassəsini təminat altına alırıq
-      };
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          ...categoryData,
+          id: uuid(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
       
-      setCategories(prev => [...prev, newCategory]);
-      return newCategory;
+      setCategories(prev => [...prev, data]);
+      return data;
     } catch (error) {
-      console.error('Error creating category:', error);
+      console.error('Kateqoriya yaradılarkən xəta:', error);
       toast.error('Kateqoriya yaradılarkən xəta baş verdi');
       throw error;
     }
   }, []);
 
-  // Update an existing category
+  // Kateqoriya yeniləmə
   const updateCategory = useCallback(async (categoryData: Partial<Category> & { id: string }) => {
     try {
-      setCategories(prev => 
-        prev.map(cat => 
-          cat.id === categoryData.id 
-            ? { 
-                ...cat, 
-                ...categoryData, 
-                updatedAt: new Date().toISOString(),
-                // Əgər priority yenilənibsə, order-i də yeniləyirik
-                order: categoryData.priority !== undefined ? categoryData.priority : cat.order
-              } 
-            : cat
-        )
-      );
+      const { data, error } = await supabase
+        .from('categories')
+        .update({
+          ...categoryData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', categoryData.id)
+        .select()
+        .single();
+
+      if (error) throw error;
       
-      return categoryData;
+      setCategories(prev => prev.map(cat => 
+        cat.id === categoryData.id ? data : cat
+      ));
+      
+      return data;
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('Kateqoriya yenilənərkən xəta:', error);
       toast.error('Kateqoriya yenilənərkən xəta baş verdi');
       throw error;
     }
   }, []);
 
-  // Delete a category
+  // Kateqoriya silmə
   const deleteCategory = useCallback(async (categoryId: string, categoryName: string) => {
     try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       toast.success(`"${categoryName}" kateqoriyası silindi`);
       return true;
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error('Kateqoriya silinərkən xəta:', error);
       toast.error('Kateqoriya silinərkən xəta baş verdi');
       throw error;
     }
   }, []);
 
-  // Archive/unarchive a category
+  // Kateqoriya arxivləmə
   const archiveCategory = useCallback(async (categoryId: string, archived: boolean) => {
     try {
+      const { data, error } = await supabase
+        .from('categories')
+        .update({ 
+          archived, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', categoryId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
       setCategories(prev => 
-        prev.map(cat => 
-          cat.id === categoryId 
-            ? { 
-                ...cat, 
-                archived,
-                updatedAt: new Date().toISOString() 
-              } 
-            : cat
-        )
+        prev.map(cat => cat.id === categoryId ? data : cat)
       );
       
       return true;
     } catch (error) {
-      console.error('Error changing archive status:', error);
+      console.error('Kateqoriyanın arxiv statusu dəyişdirilkən xəta:', error);
       toast.error('Kateqoriyanın arxiv statusu dəyişdirilkən xəta baş verdi');
       throw error;
     }
   }, []);
 
-  // Initial data load
+  // İlkin yükləmə
   const initialize = useCallback(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Load data on mount
+  // Komponent yüklənərkən işə sal
   useState(() => {
     initialize();
   });

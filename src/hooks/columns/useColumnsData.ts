@@ -1,146 +1,117 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
-import { v4 as uuid } from 'uuid';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Column } from '@/types/column';
+import { toast } from 'sonner';
+import { v4 as uuid } from 'uuid';
 
 export const useColumnsData = (categoryId?: string) => {
   const [columns, setColumns] = useState<Column[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { t } = useLanguage();
-  const { toast } = useToast();
 
-  // Fetch columns for a specific category
-  const fetchColumns = async () => {
+  // Kateqoriya üçün sütunları əldə etmə
+  const fetchColumns = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Mock fetch - in a real app, this would call an API or DB service
-      setTimeout(() => {
-        const mockColumns: Column[] = [
-          {
-            id: 'col1',
-            categoryId: categoryId || 'default',
-            name: 'Şagird sayı',
-            type: 'number',
-            isRequired: true,
-            order: 1,
-            orderIndex: 1,
-            status: 'active',
-            validation: {
-              min: 0,
-              max: 10000
-            }
-          },
-          {
-            id: 'col2',
-            categoryId: categoryId || 'default',
-            name: 'Müəllim sayı',
-            type: 'number',
-            isRequired: true,
-            order: 2,
-            orderIndex: 2,
-            status: 'active',
-            validation: {
-              min: 0,
-              max: 1000
-            }
-          },
-          {
-            id: 'col3',
-            categoryId: categoryId || 'default',
-            name: 'Məktəb tipi',
-            type: 'select',
-            isRequired: true,
-            order: 3,
-            orderIndex: 3,
-            status: 'active',
-            options: [
-              { label: 'İbtidai məktəb', value: 'primary' },
-              { label: 'Orta məktəb', value: 'middle' },
-              { label: 'Tam orta məktəb', value: 'high' }
-            ]
-          }
-        ];
+      let query = supabase.from('columns').select('*');
+      
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
 
-        setColumns(mockColumns);
-        setIsLoading(false);
-      }, 800);
+      const { data, error } = await query.order('order_index');
+
+      if (error) throw error;
+
+      setColumns(data || []);
+      setIsLoading(false);
     } catch (err: any) {
-      console.error('Error fetching columns:', err);
+      console.error('Sütunları yükləyərkən xəta:', err);
       setError(err);
       setIsLoading(false);
-      toast({
-        title: t('error'),
-        description: t('errorFetchingColumns'),
-        variant: 'destructive',
-      });
+      toast.error('Sütunlar yüklənərkən xəta baş verdi');
     }
-  };
+  }, [categoryId]);
 
-  // Create new column
-  const createColumn = async (columnData: Omit<Column, 'id'>) => {
+  // Yeni sütun yaratma
+  const createColumn = useCallback(async (columnData: Omit<Column, 'id'>) => {
     try {
-      // Mock create - in a real app, this would call an API or DB service
-      const newColumn: Column = {
-        ...columnData,
-        id: uuid()
-      };
+      const { data, error } = await supabase
+        .from('columns')
+        .insert({
+          ...columnData,
+          id: uuid(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-      setColumns(prev => [...prev, newColumn]);
-      return newColumn;
+      if (error) throw error;
+
+      setColumns(prev => [...prev, data]);
+      toast.success('Sütun uğurla yaradıldı');
+      return data;
     } catch (err: any) {
-      console.error('Error creating column:', err);
-      toast({
-        title: t('error'),
-        description: t('errorCreatingColumn'),
-        variant: 'destructive',
-      });
+      console.error('Sütun yaradılarkən xəta:', err);
+      toast.error('Sütun yaradılarkən xəta baş verdi');
       throw err;
     }
-  };
+  }, []);
 
-  // Update existing column
-  const updateColumn = async (columnData: Column) => {
+  // Sütunu yeniləmə
+  const updateColumn = useCallback(async (columnData: Column) => {
     try {
-      // Mock update - in a real app, this would call an API or DB service
+      const { data, error } = await supabase
+        .from('columns')
+        .update({
+          ...columnData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', columnData.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
       setColumns(prev => prev.map(col => 
-        col.id === columnData.id ? columnData : col
+        col.id === columnData.id ? data : col
       ));
-      return columnData;
+      
+      toast.success('Sütun uğurla yeniləndi');
+      return data;
     } catch (err: any) {
-      console.error('Error updating column:', err);
-      toast({
-        title: t('error'),
-        description: t('errorUpdatingColumn'),
-        variant: 'destructive',
-      });
+      console.error('Sütun yenilənərkən xəta:', err);
+      toast.error('Sütun yenilənərkən xəta baş verdi');
       throw err;
     }
-  };
+  }, []);
 
-  // Delete column
-  const deleteColumn = async (columnId: string) => {
+  // Sütunu silmə
+  const deleteColumn = useCallback(async (columnId: string) => {
     try {
-      // Mock delete - in a real app, this would call an API or DB service
+      const { error } = await supabase
+        .from('columns')
+        .delete()
+        .eq('id', columnId);
+
+      if (error) throw error;
+
       setColumns(prev => prev.filter(col => col.id !== columnId));
+      toast.success('Sütun uğurla silindi');
       return true;
     } catch (err: any) {
-      console.error('Error deleting column:', err);
-      toast({
-        title: t('error'),
-        description: t('errorDeletingColumn'),
-        variant: 'destructive',
-      });
+      console.error('Sütun silinərkən xəta:', err);
+      toast.error('Sütun silinərkən xəta baş verdi');
       throw err;
     }
-  };
+  }, []);
 
-  // Load columns on mount or when categoryId changes
+  // Komponentin ilkin yüklənməsi zamanı
   useEffect(() => {
     fetchColumns();
-  }, [categoryId]);
+  }, [fetchColumns]);
 
   return {
     columns,

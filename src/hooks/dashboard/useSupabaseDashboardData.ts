@@ -7,7 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 interface DashboardData {
   totalSchools?: number;
   activeSchools?: number;
-  pendingForms?: any[];
+  pendingForms?: number;
+  completedForms?: number;
   upcomingDeadlines?: any[];
   notifications?: any[];
   totalUsers?: number;
@@ -25,312 +26,66 @@ export const useSupabaseDashboardData = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        if (!user || !user.role) {
-          throw new Error('İstifadəçi rolu əldə edilə bilmədi.');
-        }
-
-        setUserRole(user.role);
-
-        let data: DashboardData = {};
-
-        // Burada tip instantiation probleminə səbəb olan kodu sadeleşdiririk
-        // və tip xətasından qaçınmaq üçün tip assertion istifadə edirik
-        switch (user.role) {
-          case 'superadmin':
-            data = await fetchSuperAdminDashboardData();
-            break;
-          case 'regionadmin':
-            if (!user.regionId) {
-              throw new Error('Region administratoru üçün region ID-si tapılmadı.');
-            }
-            data = await fetchRegionAdminDashboardData(user.regionId);
-            break;
-          case 'sectoradmin':
-            if (!user.sectorId) {
-              throw new Error('Sektor administratoru üçün sektor ID-si tapılmadı.');
-            }
-            data = await fetchSectorAdminDashboardData(user.sectorId);
-            break;
-          case 'schooladmin':
-            if (!user.schoolId) {
-              throw new Error('Məktəb administratoru üçün məktəb ID-si tapılmadı.');
-            }
-            data = await fetchSchoolAdminDashboardData(user.schoolId);
-            break;
-          default:
-            throw new Error(`Bilinməyən istifadəçi rolu: ${user.role}`);
-        }
-
-        setDashboardData(data);
-        setChartData(await fetchChartData());
-      } catch (err: any) {
-        setError(err);
-        console.error('Dashboard məlumatlarını əldə edərkən xəta:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user]);
-
-  const refreshData = async () => {
-    if (user) {
-      setIsLoading(true);
-      setError(null);
-      try {
-        let data: DashboardData = {};
-
-        switch (user.role) {
-          case 'superadmin':
-            data = await fetchSuperAdminDashboardData();
-            break;
-          case 'regionadmin':
-            if (!user.regionId) {
-              throw new Error('Region administratoru üçün region ID-si tapılmadı.');
-            }
-            data = await fetchRegionAdminDashboardData(user.regionId);
-            break;
-          case 'sectoradmin':
-            if (!user.sectorId) {
-              throw new Error('Sektor administratoru üçün sektor ID-si tapılmadı.');
-            }
-            data = await fetchSectorAdminDashboardData(user.sectorId);
-            break;
-          case 'schooladmin':
-            if (!user.schoolId) {
-              throw new Error('Məktəb administratoru üçün məktəb ID-si tapılmadı.');
-            }
-            data = await fetchSchoolAdminDashboardData(user.schoolId);
-            break;
-          default:
-            throw new Error(`Bilinməyən istifadəçi rolu: ${user.role}`);
-        }
-
-        setDashboardData(data);
-        setChartData(await fetchChartData());
-      } catch (err: any) {
-        setError(err);
-        console.error('Dashboard məlumatlarını yenilərkən xəta:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  // Bu funksiya notification tipini düzgün formatda çevirmək üçün istifadə olunacaq
-  const mapNotificationData = (notifications: any[]) => {
-    return notifications.map(notification => ({
-      id: notification.id,
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      time: notification.created_at,
-    }));
-  };
-
-  // Supabase-dən SuperAdmin üçün məlumatları əldə etmə funksiyası
-  // Burada sonsuz tip instantiation problemini həll etmək üçün tip-casting istifadə edirik
-  const fetchSuperAdminDashboardData = async (): Promise<DashboardData> => {
     try {
-      // 1. Ümumi məktəb sayı əldə etmək
-      const { data: schoolsData, error: schoolsError } = await supabase
-        .from('schools')
-        .select('id');
-
-      // 2. Aktiv məktəb sayı əldə etmək
-      const { data: activeSchoolsData, error: activeSchoolsError } = await supabase
-        .from('schools')
-        .select('id')
-        .eq('status', 'active');
-
-      // 3. Təsdiqlənməmiş formlar əldə etmək
-      const { data: pendingFormsData, error: pendingFormsError } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('status', 'pending')
-        .limit(5);
-
-      // 4. Son əlavə edilmiş formlar əldə etmək
-      const { data: upcomingDeadlinesData, error: upcomingDeadlinesError } = await supabase
-        .from('data_entries')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      // 5. Bildirişlər əldə etmək
-      const { data: notificationsData, error: notificationsError } = await supabase
-        .from('notifications')
-        .select('*')
-        .limit(5);
-
-      // 6. İstifadəçi sayı əldə etmək
-      const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select('id');
-
-      // 7. Aktiv istifadəçi sayı əldə etmək
-      const { data: activeUsersData, error: activeUsersError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('status', 'active');
-
-      // 8. Kateqoriya sayı əldə etmək
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id');
-
-      // 9. Sütun sayı əldə etmək
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('columns')
-        .select('id');
-
-      // 10. Form sayı əldə etmək
-      const { data: formsData, error: formsError } = await supabase
-        .from('data_entries')
-        .select('id');
-
-      if (
-        schoolsError || activeSchoolsError || pendingFormsError || upcomingDeadlinesError ||
-        notificationsError || usersError || activeUsersError || categoriesError ||
-        columnsError || formsError
-      ) {
-        throw new Error('Məlumatları əldə edərkən xəta baş verdi.');
+      if (!user) {
+        throw new Error('İstifadəçi məlumatları tapılmadı');
       }
 
-      const dashboardData: DashboardData = {
-        totalSchools: schoolsData ? schoolsData.length : 0,
-        activeSchools: activeSchoolsData ? activeSchoolsData.length : 0,
-        pendingForms: pendingFormsData || [],
-        upcomingDeadlines: upcomingDeadlinesData || [],
-        totalUsers: usersData ? usersData.length : 0,
-        activeUsers: activeUsersData ? activeUsersData.length : 0,
-        totalCategories: categoriesData ? categoriesData.length : 0,
-        totalColumns: columnsData ? columnsData.length : 0,
-        totalForms: formsData ? formsData.length : 0,
-      };
+      let dashboardQuery = supabase.rpc('get_dashboard_data', { 
+        p_user_id: user.id, 
+        p_user_role: user.role 
+      });
 
-      // notifications üçün düzəliş
-      if (notificationsData && !notificationsError) {
-        dashboardData.notifications = mapNotificationData(notificationsData);
-      }
+      const { data, error } = await dashboardQuery;
 
-      return dashboardData;
-    } catch (error) {
-      console.error('SuperAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-      setError(error as Error);
-      return {};
-    }
-  };
+      if (error) throw error;
 
-  // Region Admin üçün məlumatları əldə etmə funksiyası
-  const fetchRegionAdminDashboardData = async (regionId: string): Promise<DashboardData> => {
-    try {
-      // Region administratoru üçün məlumatları əldə etmək
-      // Bu metodu sadələşdiririk, çünki burada da eyni tip instantiation problemi var
-      const { data: schoolsData } = await supabase
-        .from('schools')
-        .select('id')
-        .eq('region_id', regionId);
-
-      // Digər sorğular da eyni şəkildə sadələşdirilə bilər
-      
-      return {
-        totalSchools: schoolsData ? schoolsData.length : 0,
-        // Digər məlumatlar doldurulmalıdır...
-      };
-    } catch (error) {
-      console.error('RegionAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-      setError(error as Error);
-      return {};
-    }
-  };
-
-  // Sector Admin üçün məlumatları əldə etmə funksiyası
-  const fetchSectorAdminDashboardData = async (sectorId: string): Promise<DashboardData> => {
-    try {
-      // Sektor administratoru üçün məlumatları əldə etmək
-      // Bu metodu sadələşdiririk, çünki burada da eyni tip instantiation problemi var
-      const { data: schoolsData } = await supabase
-        .from('schools')
-        .select('id')
-        .eq('sector_id', sectorId);
-      
-      // Digər sorğular da eyni şəkildə sadələşdirilə bilər
-      
-      return {
-        totalSchools: schoolsData ? schoolsData.length : 0,
-        // Digər məlumatlar doldurulmalıdır...
-      };
-    } catch (error) {
-      console.error('SectorAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-      setError(error as Error);
-      return {};
-    }
-  };
-
-  // School Admin üçün məlumatları əldə etmə funksiyası
-  const fetchSchoolAdminDashboardData = async (schoolId: string): Promise<DashboardData> => {
-    try {
-      // Məktəb administratoru üçün məlumatları əldə etmək
-      // Bu metodu sadələşdiririk, çünki burada da eyni tip instantiation problemi var
-      const { data: pendingFormsData } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('school_id', schoolId)
-        .eq('status', 'pending')
-        .limit(5);
-      
-      // Digər sorğular da eyni şəkildə sadələşdirilə bilər
-      
-      return {
-        pendingForms: pendingFormsData || [],
-        // Digər məlumatlar doldurulmalıdır...
-      };
-    } catch (error) {
-      console.error('SchoolAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-      setError(error as Error);
-      return {};
+      setDashboardData(data || {});
+      setChartData(await fetchChartData());
+    } catch (err: any) {
+      console.error('Dashboard məlumatlarını əldə edərkən xəta:', err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchChartData = async (): Promise<ChartData> => {
-    // Mock chart data (əsl məlumatlar Supabase-dən gələcək)
-    const activityData = [
-      { name: 'Yan', value: 20 },
-      { name: 'Fev', value: 45 },
-      { name: 'Mar', value: 28 },
-      { name: 'Apr', value: 60 },
-      { name: 'May', value: 35 },
-      { name: 'İyun', value: 80 },
-    ];
+    try {
+      const { data, error } = await supabase.rpc('get_chart_data', { 
+        p_user_id: user?.id, 
+        p_user_role: user?.role 
+      });
 
-    const regionSchoolsData = [
-      { name: 'Bakı', value: 120 },
-      { name: 'Sumqayıt', value: 75 },
-      { name: 'Gəncə', value: 90 },
-    ];
+      if (error) throw error;
 
-    const categoryCompletionData = [
-      { name: 'Ümumi məlumat', completed: 78 },
-      { name: 'Müəllim heyəti', completed: 65 },
-      { name: 'Şagird məlumatları', completed: 85 },
-    ];
+      return data || {
+        activityData: [],
+        regionSchoolsData: [],
+        categoryCompletionData: []
+      };
+    } catch (err) {
+      console.error('Qrafik məlumatlarını əldə edərkən xəta:', err);
+      return {
+        activityData: [],
+        regionSchoolsData: [],
+        categoryCompletionData: []
+      };
+    }
+  };
 
-    return {
-      activityData,
-      regionSchoolsData,
-      categoryCompletionData,
-    };
+  useEffect(() => {
+    fetchDashboardData();
+  }, [user?.id, user?.role]);
+
+  const refreshData = () => {
+    fetchDashboardData();
   };
 
   return {
@@ -338,7 +93,6 @@ export const useSupabaseDashboardData = () => {
     isLoading,
     error,
     chartData,
-    userRole,
-    refreshData,
+    refreshData
   };
 };
