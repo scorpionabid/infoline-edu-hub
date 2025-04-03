@@ -53,7 +53,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
             <div className="text-2xl font-bold">{data.schools}</div>
           </CardContent>
         </Card>
-        <CompletionRateCard rate={data.completionRate} />
+        <CompletionRateCard completion={data.completionRate} />
         <ApprovalRateCard rate={data.approvalRate} pendingCount={data.pendingApprovals} />
       </div>
 
@@ -101,7 +101,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
 
       {/* Fourth Row */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 mb-4">
-        <PendingFormsCard forms={data.pendingForms} />
+        <PendingFormsCard forms={data.pendingForms as FormItem[]} />
         <Activity activities={data.activityData} />
       </div>
     </>
