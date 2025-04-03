@@ -1,4 +1,3 @@
-
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
 
@@ -53,7 +52,7 @@ export interface ColumnValidationError {
 }
 
 export interface DataEntry {
-  id?: string;
+  id: string; // id daima məcburidir, optional deyil
   category_id: string;
   column_id: string;
   school_id: string;

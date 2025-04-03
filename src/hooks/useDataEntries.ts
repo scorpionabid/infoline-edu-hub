@@ -21,6 +21,7 @@ export const useDataEntries = () => {
 
       // Safely cast the response data to our DataEntry type
       const typedEntries = data ? data.map(entry => ({
+        id: entry.id, // id həmişə təyin edilir
         ...entry,
         status: entry.status as DataEntryStatus,
       })) : [];
@@ -38,7 +39,7 @@ export const useDataEntries = () => {
     fetchEntries();
   }, []);
 
-  const addEntry = async (entry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
+  const addEntry = async (entry: Omit<DataEntry, 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('data_entries')
