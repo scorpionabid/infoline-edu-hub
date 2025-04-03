@@ -6,11 +6,13 @@ export interface FormItem {
   title: string;
   status: FormStatus;
   completionPercentage: number;
-  categoryId?: string;
-  date?: string;
-  deadline?: string;
+  categoryId: string;
+  deadline: string;
+  filledCount: number;
+  totalCount: number;
   category?: string;
   dueDate?: string | Date;
+  date?: string;
 }
 
 export interface FormStats {
@@ -82,3 +84,4 @@ export interface FormTemplate {
   createdAt: string | Date;
   updatedAt: string | Date;
 }
+

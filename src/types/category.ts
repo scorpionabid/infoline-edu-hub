@@ -1,47 +1,49 @@
 
 export type CategoryAssignment = 'all' | 'sectors';
+export type CategoryStatus = 'active' | 'inactive' | 'archived';
 
 export interface Category {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   assignment: CategoryAssignment;
-  status: 'active' | 'inactive' | 'archived';
-  priority?: number;
-  column_count?: number;
+  status: CategoryStatus;
   deadline?: string;
+  archived: boolean;
+  priority: number;
+  column_count: number;
   createdAt?: string;
   updatedAt?: string;
+  order?: number; // Daha çox əvvəlki müqayisə üçün əlavə olunur
+}
+
+export interface CategoryFilter {
+  status?: CategoryStatus;
+  assignment?: CategoryAssignment;
+  search?: string;
   archived?: boolean;
-  // Supabase verilənlər bazası ilə uyğunluq üçün əlavə edildi
-  order?: number;
 }
 
-// Kateqoriyanı sıralama ilə birlikdə göstərmək üçün genişlənmiş tip
-export interface CategoryWithOrder extends Category {
-  order?: number;
-}
-
-// Bu tip mock data üçün istifadə olunur
+// MockCategory tipini əlavə edirik
 export interface MockCategory extends Category {
-  columnCount?: number;
   completionRate?: number;
+  columnCount?: number;
 }
 
-// Supabase-dən gələn kateqoriya obyektini uyğunlaşdırmaq üçün adapter funksiya
-export const adaptSupabaseCategory = (data: any): Category => {
+// Supabase category-ni adaptasiya etmək üçün funksiya
+export const adaptSupabaseCategory = (category: any): Category => {
   return {
-    id: data.id,
-    name: data.name,
-    description: data.description || '',
-    assignment: data.assignment as CategoryAssignment,
-    status: data.status || 'active',
-    priority: data.priority || 0,
-    column_count: data.column_count || 0,
-    deadline: data.deadline,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    archived: data.archived || false,
-    order: data.order || data.priority || 0
+    id: category.id,
+    name: category.name,
+    description: category.description || "",
+    assignment: category.assignment || "all",
+    status: category.status || "active",
+    deadline: category.deadline,
+    archived: category.archived || false,
+    priority: category.priority || 0,
+    column_count: category.column_count || 0,
+    createdAt: category.created_at,
+    updatedAt: category.updated_at,
+    order: category.order_index || 0,
   };
 };

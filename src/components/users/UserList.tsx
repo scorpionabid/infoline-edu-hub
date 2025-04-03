@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -145,6 +145,15 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
       passwordResetDate: user.passwordResetDate,
       notificationSettings: user.notificationSettings
     };
+  };
+
+  const handleUpdateUser = async (userId: string, data: Partial<User>) => {
+    // Make sure status is one of the allowed values
+    if (data.status && !['active', 'inactive', 'blocked'].includes(data.status as string)) {
+      data.status = 'active'; // Default to active if invalid
+    }
+    
+    // ... rest of the function
   };
 
   return (

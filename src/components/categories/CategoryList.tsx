@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Category } from '@/types/category';
-import { CategoryFilter } from '@/types/dataEntry';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, 
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger 
-} from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Edit, Trash, Archive, Eye, EyeOff } from 'lucide-react';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Category, CategoryStatus, CategoryFilter } from "@/types/category";
+import { useLanguage } from '@/context/LanguageContext';
+import { format } from 'date-fns';
 import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
+  Plus, Search, Edit, Trash2, Archive, MoreVertical, 
+  AlertTriangle, Filter, SortAsc, SortDesc
+} from 'lucide-react';
+import { 
+  DropdownMenu, DropdownMenuContent, 
+  DropdownMenuItem, DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
 
 interface CategoryListProps {
   categories: Category[];
@@ -41,7 +42,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
 }) => {
   const { t } = useLanguage();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  
+
   const filteredCategories = categories.filter(category => {
     if (filter.status && category.status !== filter.status) {
       return false;
@@ -61,7 +62,18 @@ const CategoryList: React.FC<CategoryListProps> = ({
     
     return true;
   });
-  
+
+  const filterByStatus = (categories: Category[], status: CategoryStatus | 'all') => {
+    if (status === 'all') return categories;
+
+    return categories.filter(category => {
+      if (status === 'active' && category.status === 'active') return true;
+      if (status === 'inactive' && category.status === 'inactive') return true;
+      if (status === 'archived' && category.archived) return true;
+      return false;
+    });
+  };
+
   const handleStatusToggle = async (categoryId: string, currentStatus: string) => {
     if (currentStatus !== 'active' && currentStatus !== 'inactive') {
       toast.error(t('cannotToggleSpecialStatus'));
@@ -89,7 +101,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
       );
     }
   };
-  
+
   const handleDelete = async (categoryId: string) => {
     if (onDeleteCategory) {
       const success = await onDeleteCategory(categoryId);
@@ -104,7 +116,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
     
     setConfirmDelete(null);
   };
-  
+
   const handleArchiveToggle = async (categoryId: string, isArchived: boolean) => {
     toast.success(
       isArchived 
@@ -112,13 +124,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
         : t('categoryArchived')
     );
   };
-  
+
   const getAssignmentBadge = (assignment: 'all' | 'sectors') => {
     return assignment === 'all' 
       ? <Badge variant="secondary">{t('allRegions')}</Badge>
       : <Badge variant="outline">{t('sectorsOnly')}</Badge>;
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-60">
@@ -126,7 +138,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
       </div>
     );
   }
-  
+
   if (isError) {
     return (
       <div className="flex justify-center items-center h-60">
@@ -134,7 +146,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
       </div>
     );
   }
-  
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -194,7 +206,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
                         <span className="sr-only">{t('openMenu')}</span>
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -210,7 +222,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                             e.preventDefault();
                             setConfirmDelete(category.id);
                           }}>
-                            <Trash className="mr-2 h-4 w-4" />
+                            <Trash2 className="mr-2 h-4 w-4" />
                             <span>{t('delete')}</span>
                           </DropdownMenuItem>
                         </AlertDialogTrigger>

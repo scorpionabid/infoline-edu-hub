@@ -16,7 +16,9 @@ export const useDashboardData = () => {
   const [chartData, setChartData] = useState({
     activityData: [],
     regionSchoolsData: [],
-    categoryCompletionData: []
+    categoryCompletionData: [],
+    categoryCompletion: [],
+    statusDistribution: []
   });
 
   // Supabase dashboard data hook
@@ -43,16 +45,16 @@ export const useDashboardData = () => {
       // İstifadəçi roluna görə fərqli məlumatları əldə edək
       switch (user.role) {
         case 'superadmin':
-          roleSpecificData = await supabaseDashboard.fetchSuperAdminData(user);
+          roleSpecificData = await supabaseDashboard.superAdminData(user);
           break;
         case 'regionadmin':
-          roleSpecificData = await supabaseDashboard.fetchRegionAdminData(user);
+          roleSpecificData = await supabaseDashboard.regionAdminData(user);
           break;
         case 'sectoradmin':
-          roleSpecificData = await supabaseDashboard.fetchSectorAdminData(user);
+          roleSpecificData = await supabaseDashboard.sectorAdminData(user);
           break;
         case 'schooladmin':
-          roleSpecificData = await supabaseDashboard.fetchSchoolAdminData(user);
+          roleSpecificData = await supabaseDashboard.schoolAdminData(user);
           break;
         default:
           break;
@@ -82,6 +84,16 @@ export const useDashboardData = () => {
           { name: 'Category A', completed: Math.floor(Math.random() * 100) },
           { name: 'Category B', completed: Math.floor(Math.random() * 100) },
           { name: 'Category C', completed: Math.floor(Math.random() * 100) }
+        ],
+        categoryCompletion: [
+          { name: 'Category A', completion: Math.floor(Math.random() * 100) },
+          { name: 'Category B', completion: Math.floor(Math.random() * 100) },
+          { name: 'Category C', completion: Math.floor(Math.random() * 100) }
+        ],
+        statusDistribution: [
+          { status: 'Pending', count: Math.floor(Math.random() * 100) },
+          { status: 'Approved', count: Math.floor(Math.random() * 100) },
+          { status: 'Rejected', count: Math.floor(Math.random() * 100) },
         ]
       });
     } catch (err: any) {

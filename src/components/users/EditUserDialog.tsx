@@ -32,12 +32,12 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   
   // Convert User to UserFormData
   const initialFormData: UserFormData = {
-    name: user.name,
+    name: user.full_name || user.name || '',
     email: user.email,
     role: user.role,
-    regionId: user.regionId,
-    sectorId: user.sectorId,
-    schoolId: user.schoolId,
+    regionId: user.region_id || user.regionId,
+    sectorId: user.sector_id || user.sectorId,
+    schoolId: user.school_id || user.schoolId,
     status: user.status,
     avatar: user.avatar,
     language: user.language,
@@ -124,7 +124,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           data={formData} 
           onChange={setFormData} 
           currentUserRole={currentUser?.role}
-          currentUserRegionId={currentUser?.regionId}
+          currentUserRegionId={currentUser?.regionId || currentUser?.region_id}
           isEdit={true}
           passwordRequired={showPasswordReset}
         />

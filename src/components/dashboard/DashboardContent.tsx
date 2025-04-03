@@ -9,9 +9,9 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  ActivityItem,
-  FormItem
+  ActivityItem
 } from '@/types/dashboard';
+import { FormItem } from '@/types/form';
 import { Notification, adaptNotification } from '@/types/notification';
 import { FormStatus } from '@/types/form';
 import SuperAdminDashboard from './SuperAdminDashboard';
@@ -121,7 +121,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
           
           // For SuperAdminDashboard, make sure all required properties are present
-          const adaptedSuperAdminData: SuperAdminDashboardData = {
+          const adaptedSuperAdminData = {
             ...superAdminData,
             notifications: adaptedNotifications,
             // Default dəyərlərin təyin edilməsi
@@ -135,18 +135,18 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             approvedSchools: superAdminData.approvedSchools || 0,
             rejectedSchools: superAdminData.rejectedSchools || 0,
             // ActivityItem tipini uyğunlaşdıraq
-            activityData: superAdminData.activityData?.map(item => ({
-              id: item.id,
-              type: item.type,
-              title: item.title,
-              description: item.description,
-              timestamp: item.timestamp,
-              userId: item.userId,
+            activityData: (superAdminData.activityData || []).map(item => ({
+              id: item.id || '',
+              type: item.type || '',
+              title: item.title || '',
+              description: item.description || '',
+              timestamp: item.timestamp || '',
+              userId: item.userId || '',
               action: item.action || '',
               actor: item.actor || '',
               target: item.target || '',
               time: item.time || ''
-            })) || []
+            }))
           };
           
           return <SuperAdminDashboard data={adaptedSuperAdminData} />;
@@ -169,18 +169,18 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             approvedSchools: regionAdminData.approvedSchools || 0,
             rejectedSchools: regionAdminData.rejectedSchools || 0,
             // ActivityItem tipini uyğunlaşdıraq
-            activityData: regionAdminData.activityData?.map(item => ({
-              id: item.id,
-              type: item.type,
-              title: item.title,
-              description: item.description,
-              timestamp: item.timestamp,
-              userId: item.userId,
+            activityData: (regionAdminData.activityData || []).map(item => ({
+              id: item.id || '',
+              type: item.type || '',
+              title: item.title || '',
+              description: item.description || '',
+              timestamp: item.timestamp || '',
+              userId: item.userId || '',
               action: item.action || '',
               actor: item.actor || '',
               target: item.target || '',
               time: item.time || ''
-            })) || []
+            }))
           };
           
           return <RegionAdminDashboard data={adaptedRegionAdminData} />;
@@ -202,18 +202,18 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             approvedSchools: sectorAdminData.approvedSchools || 0,
             rejectedSchools: sectorAdminData.rejectedSchools || 0,
             // ActivityItem tipini uyğunlaşdıraq
-            activityData: sectorAdminData.activityData?.map(item => ({
-              id: item.id,
-              type: item.type,
-              title: item.title,
-              description: item.description,
-              timestamp: item.timestamp,
-              userId: item.userId, 
+            activityData: (sectorAdminData.activityData || []).map(item => ({
+              id: item.id || '',
+              type: item.type || '',
+              title: item.title || '',
+              description: item.description || '',
+              timestamp: item.timestamp || '',
+              userId: item.userId || '', 
               action: item.action || '',
               actor: item.actor || '',
               target: item.target || '',
               time: item.time || ''
-            })) || []
+            }))
           };
           
           return <SectorAdminDashboard data={adaptedSectorAdminData} />;
@@ -228,9 +228,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const pendingForms = schoolAdminData.pendingForms ? 
             adaptFormItems(schoolAdminData.pendingForms) : [];
           
-          // Ensure completedForms is correctly formatted
-          const completedForms = schoolAdminData.completedForms ?
-            adaptFormItems(schoolAdminData.completedForms) : [];
+          // Ensure completedForms is correctly formatted - could be FormItem[] or number
+          let completedForms: FormItem[];
+          if (Array.isArray(schoolAdminData.completedForms)) {
+            completedForms = adaptFormItems(schoolAdminData.completedForms);
+          } else {
+            // If it's a number, convert it to an empty array - we'll handle this in the component
+            completedForms = [];
+          }
           
           // Forms, pendingForms və recentForms məlumatlarını uyğunlaşdıraq
           const adaptedSchoolAdminData: SchoolAdminDashboardData = {
@@ -254,19 +259,25 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             // Adapt recentForms if present
             recentForms: schoolAdminData.recentForms ? 
               adaptFormItems(schoolAdminData.recentForms) : [],
+            // Adapt dueSoonForms if present
+            dueSoonForms: schoolAdminData.dueSoonForms ? 
+              adaptFormItems(schoolAdminData.dueSoonForms) : [],
+            // Adapt overdueForms if present
+            overdueForms: schoolAdminData.overdueForms ? 
+              adaptFormItems(schoolAdminData.overdueForms) : [],
             // ActivityItem tipini uyğunlaşdıraq
-            activityData: schoolAdminData.activityData?.map(item => ({
-              id: item.id,
-              type: item.type,
-              title: item.title,
-              description: item.description,
-              timestamp: item.timestamp,
-              userId: item.userId,
+            activityData: (schoolAdminData.activityData || []).map(item => ({
+              id: item.id || '',
+              type: item.type || '',
+              title: item.title || '',
+              description: item.description || '',
+              timestamp: item.timestamp || '',
+              userId: item.userId || '',
               action: item.action || '',
               actor: item.actor || '',
               target: item.target || '',
               time: item.time || ''
-            })) || []
+            }))
           };
           
           return (

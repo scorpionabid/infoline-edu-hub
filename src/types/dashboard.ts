@@ -1,6 +1,6 @@
 
 import { Notification } from "./notification";
-import { FormItem } from "./form";
+import { FormItem, FormStatus } from "./form";
 
 // Activity Item tipini təyin edirik
 export interface ActivityItem {
@@ -66,6 +66,7 @@ export interface RegionAdminDashboardData {
   pendingForms: FormItem[];
   completedForms: FormItem[];
   recentForms?: FormItem[];
+  regionName?: string;
 }
 
 // Sector Admin Dashboard Data tipi
@@ -83,6 +84,8 @@ export interface SectorAdminDashboardData {
   pendingForms: FormItem[];
   completedForms: FormItem[];
   recentForms?: FormItem[];
+  sectorName?: string;
+  regionName?: string;
 }
 
 // School Admin Dashboard Data tipi
@@ -103,7 +106,7 @@ export interface SchoolAdminDashboardData {
   categoryCompletion: { name: string; completion: number }[];
   statusDistribution: { status: string; count: number }[];
   pendingForms: FormItem[];
-  completedForms: number;
+  completedForms: FormItem[];
   dueSoonForms: FormItem[];
   overdueForms: FormItem[];
   recentForms?: FormItem[];
@@ -111,3 +114,6 @@ export interface SchoolAdminDashboardData {
 
 // Ümumi Dashboard Data tipi
 export type DashboardData = SuperAdminDashboardData | RegionAdminDashboardData | SectorAdminDashboardData | SchoolAdminDashboardData;
+
+// FormStatus tipi yenidən ixrac edirik
+export { FormStatus } from './form';
