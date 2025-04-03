@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { Category } from '@/types/category';
 import { Column } from '@/types/column';
@@ -6,6 +7,7 @@ import { DataEntry } from '@/types/supabase';
 import { useDataEntries } from './useDataEntries';
 import { useAuth } from '@/context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '@/utils/generateId';
 
 export interface CategoryWithData extends Category {
   columns: Column[];
@@ -170,7 +172,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
       if (dataEntries[columnId] && dataEntries[columnId].id && !dataEntries[columnId].id.startsWith('temp-')) {
         try {
-          await updateEntry(dataEntries[columnId].id!, { value });
+          await updateEntry(dataEntries[columnId].id, { value });
           setUnsavedChanges(false);
           return dataEntries[columnId];
         } catch (err) {
