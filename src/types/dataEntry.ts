@@ -19,7 +19,7 @@ export interface DataEntry {
   errorMessage?: string;
 }
 
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'overdue';
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'submitted';
 
 export interface CategoryFilter {
   assignment: 'all' | 'sectors' | '';
@@ -54,6 +54,10 @@ export interface ValidationRules {
   min?: number;
   max?: number;
   pattern?: string;
+  patternMessage?: string;
+  minDate?: string;
+  maxDate?: string;
+  warningThreshold?: number;
   customValidation?: (value: any) => boolean | string;
 }
 

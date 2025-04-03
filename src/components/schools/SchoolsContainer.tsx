@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -57,7 +58,7 @@ const SchoolsContainer: React.FC = () => {
     handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
-    handleDeleteConfirm,
+    handleDeleteConfirm: handleDeleteConfirmFromHook,
     handleAdminUpdate,
     handleResetPassword,
     formData,
@@ -114,7 +115,7 @@ const SchoolsContainer: React.FC = () => {
     handleSearch(e.target.value);
   };
 
-  const handleDeleteConfirm = () => {
+  const executeDeleteConfirm = () => {
     if (selectedSchool) {
       handleDeleteConfirmHelper(selectedSchool);
     }
@@ -122,6 +123,7 @@ const SchoolsContainer: React.FC = () => {
 
   const handleDeleteConfirmHelper = async (school: School) => {
     closeDeleteDialog();
+    await handleDeleteConfirmFromHook(school);
   };
 
   const handleEditDialogOpenWrapper = (school: School) => {
@@ -222,7 +224,7 @@ const SchoolsContainer: React.FC = () => {
         closeEditDialog={closeEditDialog}
         closeAddDialog={closeAddDialog}
         closeAdminDialog={closeAdminDialog}
-        handleDeleteConfirm={handleDeleteConfirm}
+        handleDeleteConfirm={executeDeleteConfirm}
         handleAddSubmit={handleAddSubmit}
         handleEditSubmit={handleEditSubmitWrapper}
         handleAdminUpdate={handleAdminUpdateWrapper}
