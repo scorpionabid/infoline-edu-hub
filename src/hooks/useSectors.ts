@@ -206,3 +206,7 @@ export const useSectorsData = () => {
     getEnhancedSectors
   };
 };
+
+// Əlavə etdiyimiz alias export, komponentlərdə useSectors() kimi çağırılmasına imkan verir
+export const useSectors = useSectorsData;
+
