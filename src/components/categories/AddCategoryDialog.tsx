@@ -1,199 +1,167 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { DatePicker } from '@/components/ui/date-picker';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { CategoryAssignment } from '@/types/category';
+import { Category } from '@/types/category';
 
-interface AddCategoryDialogProps {
+// CategoryWithOrder interfeysi yaradırıq - bunlar EditCategoryDialog-dan istifadə olunur
+export type CategoryWithOrder = Category & {
+  order?: number;
+};
+
+export interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddCategory: (categoryData: any) => Promise<boolean>;
+  onAddCategory: (categoryData: CategoryWithOrder) => Promise<boolean>;
+  category?: CategoryWithOrder; // Mövcud kateqoriya redaktə üçün
 }
 
-export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ 
-  open, 
+export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
+  open,
   onOpenChange,
-  onAddCategory 
+  onAddCategory,
+  category // opsional prop - əgər varsa, bu redaktə əməliyyatıdır
 }) => {
   const { t } = useLanguage();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [assignment, setAssignment] = useState<CategoryAssignment>('all');
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [deadline, setDeadline] = useState<Date | undefined>(new Date());
+  const [assignment, setAssignment] = useState('all');
   const [priority, setPriority] = useState<number>(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setAssignment('all');
-    setStatus('active');
-    setDeadline(new Date());
-    setPriority(0);
-    setIsSubmitting(false);
-  };
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Kateqoriya redaktə edilərkən formu doldurmaq
+  useEffect(() => {
+    if (category && open) {
+      setName(category.name || '');
+      setDescription(category.description || '');
+      setAssignment(category.assignment || 'all');
+      setPriority(category.priority || 0);
+    } else if (!category && open) {
+      // Yeni kateqoriya yaradarkən formu sıfırlamaq
+      setName('');
+      setDescription('');
+      setAssignment('all');
+      setPriority(0);
+    }
+  }, [category, open]);
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-
+    setSubmitting(true);
+    
     try {
-      const categoryData = {
+      const categoryData: CategoryWithOrder = {
+        ...(category ? { id: category.id } : {}),
         name,
         description,
         assignment,
-        status,
-        deadline: deadline ? deadline.toISOString() : null,
         priority,
-        columnCount: 0,
-        order: priority,
-        archived: false
+        status: 'active',
+        order: category?.order || 0
       };
-
-      const success = await onAddCategory(categoryData);
       
+      const success = await onAddCategory(categoryData);
       if (success) {
-        resetForm();
         onOpenChange(false);
-        toast.success(t('categoryAddedSuccess'), {
-          description: t('categoryAddedSuccessDesc')
-        });
       }
     } catch (error) {
-      console.error('Error adding category:', error);
-      toast.error(t('categoryAddError'), {
-        description: t('categoryAddErrorDesc')
-      });
+      console.error('Category save error:', error);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
+  const isEditMode = !!category;
+  
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
-      onOpenChange(isOpen);
-    }}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('addNewCategory')}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? t('editCategory') : t('addCategory')}
+          </DialogTitle>
+          <DialogDescription>
+            {isEditMode ? t('editCategoryDescription') : t('addCategoryDescription')}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              {t('name')}
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="name">{t('name')}</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="col-span-3"
-              placeholder={t('categoryNamePlaceholder')}
+              placeholder={t('enterCategoryName')}
+              disabled={submitting}
             />
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
-              {t('description')}
-            </Label>
-            <Textarea
+          <div className="space-y-2">
+            <Label htmlFor="description">{t('description')}</Label>
+            <Input
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="col-span-3"
-              placeholder={t('categoryDescPlaceholder')}
+              placeholder={t('enterCategoryDescription')}
+              disabled={submitting}
             />
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="assignment" className="text-right">
-              {t('assignment')}
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="assignment">{t('assignment')}</Label>
             <Select 
               value={assignment} 
-              onValueChange={(value) => setAssignment(value as CategoryAssignment)}
+              onValueChange={setAssignment} 
+              disabled={submitting}
             >
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger id="assignment">
                 <SelectValue placeholder={t('selectAssignment')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t('all')}</SelectItem>
-                <SelectItem value="sectors">{t('sectors')}</SelectItem>
+                <SelectItem value="all">{t('allUsers')}</SelectItem>
+                <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              {t('status')}
-            </Label>
-            <Select 
-              value={status} 
-              onValueChange={(value) => setStatus(value as 'active' | 'inactive')}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder={t('selectStatus')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">{t('active')}</SelectItem>
-                <SelectItem value="inactive">{t('inactive')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="deadline" className="text-right">
-              {t('deadline')}
-            </Label>
-            <div className="col-span-3">
-              <DatePicker date={deadline} setDate={setDeadline} />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="priority" className="text-right">
-              {t('priority')}
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="priority">{t('priority')}</Label>
             <Input
               id="priority"
               type="number"
               min="0"
+              step="1"
               value={priority}
-              onChange={(e) => setPriority(Number(e.target.value))}
-              className="col-span-3"
+              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+              placeholder={t('enterPriority')}
+              disabled={submitting}
             />
           </div>
         </div>
         
         <DialogFooter>
           <Button
-            type="button"
             variant="outline"
-            onClick={() => {
-              resetForm();
-              onOpenChange(false);
-            }}
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
           >
             {t('cancel')}
           </Button>
-          <Button 
-            type="submit" 
-            onClick={handleSubmit} 
-            disabled={!name || isSubmitting}
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={!name || submitting}
           >
-            {isSubmitting ? t('adding') : t('add')}
+            {submitting ? (isEditMode ? t('updating') : t('adding')) : (isEditMode ? t('update') : t('add'))}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
+export default AddCategoryDialog;

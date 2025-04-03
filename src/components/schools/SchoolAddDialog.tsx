@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,6 @@ export const SchoolAddDialog: React.FC<SchoolAddDialogProps> = ({
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   
-  // Regon və Sector məlumatlarını əldə etmək
   const { regions, fetchRegions } = useRegionsData();
   const { sectors, fetchSectors } = useSectorsData();
   
@@ -73,6 +71,8 @@ export const SchoolAddDialog: React.FC<SchoolAddDialogProps> = ({
     try {
       const newSchool: Omit<School, 'id' | 'createdAt' | 'updatedAt'> = {
         name,
+        regionId: regionId,
+        sectorId: sectorId,
         region_id: regionId,
         sector_id: sectorId,
         address,
@@ -100,10 +100,9 @@ export const SchoolAddDialog: React.FC<SchoolAddDialogProps> = ({
 
   const handleRegionChange = (value: string) => {
     setRegionId(value);
-    setSectorId(''); // Reset sector when region changes
+    setSectorId('');
   };
   
-  // Get filtered sectors based on selected region
   const filteredSectors = sectors.filter(sector => sector.region_id === regionId);
 
   return (

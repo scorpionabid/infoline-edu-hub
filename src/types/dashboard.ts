@@ -21,38 +21,46 @@ export interface DashboardData {
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
-  recentSchools: School[];
+  regions: number;
+  sectors: number; 
+  schools: number;
+  users: number;
+  pendingApprovals: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  regionStats: { name: string; schoolCount: number }[];
-  categoryCompletions: CategoryCompletionData[];
-  statusCounts: { [key: string]: number };
+  regionStats?: { name: string; schoolCount: number }[];
+  categoryCompletions?: CategoryCompletionData[];
+  statusCounts?: { [key: string]: number };
   regionSchoolsData?: any[];
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
-  recentSectors: Sector[];
-  pendingSectors: number;
-  approvedSectors: number;
-  rejectedSectors: number;
-  sectorStats: { name: string; schoolCount: number }[];
-  categoryCompletions: CategoryCompletionData[];
-  statusCounts: { [key: string]: number };
+  sectors: number;
+  schools: number;
+  approvalRate: number;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
+  sectorStats?: { name: string; schoolCount: number }[];
+  categoryCompletions?: CategoryCompletionData[];
+  statusCounts?: { [key: string]: number };
   statusData?: any[];
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
   sectorName: string;
   regionName: string;
-  recentSchools: School[];
+  schools: number;
+  pendingApprovals: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  schoolStats: { name: string; completionRate: number }[];
-  categoryCompletions: CategoryCompletionData[];
-  statusCounts: { [key: string]: number };
+  schoolStats?: { name: string; completionRate: number }[];
+  categoryCompletions?: CategoryCompletionData[];
+  statusCounts?: { [key: string]: number };
   statusData?: any[];
 }
 
@@ -67,13 +75,13 @@ export interface SchoolAdminDashboardData extends DashboardData {
     dueSoon: number;
     overdue: number;
   };
-  completedForms?: FormItem[];
+  completedForms: FormItem[];  // FormItem[] tipini təyin edirik, number deyil
   pendingForms?: FormItem[];
   recentForms?: FormItem[];
-  categoryCompletions: CategoryCompletionData[];
-  unsubmittedCount: number;
-  dueSoonCount: number;
-  overdueCount: number;
+  categoryCompletions?: CategoryCompletionData[];
+  unsubmittedCount?: number;
+  dueSoonCount?: number;
+  overdueCount?: number;
 }
 
 export interface CategoryCompletionData {
@@ -102,6 +110,7 @@ export interface ChartData {
   };
   regionSchoolsData?: any[];
   activityData?: ActivityItem[];
+  categoryCompletionData?: CategoryCompletionData[]; // eksik xüsusiyyət əlavə edildi
 }
 
 export interface ActivityItem {
@@ -114,6 +123,10 @@ export interface ActivityItem {
   userName?: string;
   entityId?: string;
   entityType?: string;
+  action?: string; // providers/utils.ts-də xətanı həll etmək üçün
+  actor?: string;
+  target?: string;
+  time?: string;
 }
 
 export interface FormItem {

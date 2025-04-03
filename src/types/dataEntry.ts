@@ -37,7 +37,7 @@ export interface ColumnValidationError {
 export interface CategoryEntryData {
   id?: string;
   categoryId: string;
-  entries: Record<string, string>;
+  entries: Record<string, string>; // Burada entries Record<string, string> olaraq təyin edilir
   status: DataEntryStatus;
   categoryName?: string;
   order?: number;
@@ -51,7 +51,7 @@ export interface CategoryEntryData {
 export interface ColumnEntry {
   columnId: string;
   value: string;
-  isValid: boolean;
+  isValid: boolean; // Bu xüsusiyyət lazımdır, əks halda tip xətası olur
   errorMessage?: string;
   id?: string;
   status?: DataEntryStatus;

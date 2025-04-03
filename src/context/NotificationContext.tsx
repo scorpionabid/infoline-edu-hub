@@ -1,158 +1,169 @@
 
-// Mövcud kontekstin başlanğıcını saxlayırıq
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Notification, NotificationType } from '@/types/notification';
-import { mockNotifications, getMockNotifications } from '@/data/mock/mockNotifications';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { Notification, NotificationType } from '@/types/notification'; // Düzəliş burada
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  fetchNotifications: () => Promise<void>;
-  markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  clearAll: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
+  getNotificationsByType: (type: NotificationType) => Notification[];
+  loadNotifications: () => Promise<void>;
+  loading: boolean;
 }
 
 const NotificationContext = createContext<NotificationContextType>({
   notifications: [],
   unreadCount: 0,
-  fetchNotifications: async () => {},
-  markAsRead: async () => {},
   markAllAsRead: async () => {},
-  clearAll: async () => {},
+  markAsRead: async () => {},
+  getNotificationsByType: () => [],
+  loadNotifications: async () => {},
+  loading: false,
 });
 
-export const useNotifications = () => useContext(NotificationContext);
-
-export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const { user } = useAuth();
 
-  // Bildiriş sayını hesablayır
-  const unreadCount = React.useMemo(() => {
-    return notifications.filter(notification => !notification.isRead).length;
-  }, [notifications]);
-
-  // Bildirişləri yükləmə funksiyası
-  const fetchNotifications = async () => {
+  const loadNotifications = async () => {
     if (!user) return;
-    
+
+    setLoading(true);
     try {
-      // Supabase'dən bildirişləri əldə et
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
-      // Format bildirişləri
-      const formattedNotifications = (data || []).map(item => ({
-        id: item.id,
-        type: item.type as NotificationType,
-        title: item.title,
-        message: item.message,
-        createdAt: item.created_at,
-        time: new Date(item.created_at).toLocaleTimeString(),
-        isRead: item.is_read,
-        userId: item.user_id,
-        priority: item.priority,
-        read_status: item.is_read,
-        relatedEntityId: item.related_entity_id,
-        relatedEntityType: item.related_entity_type
+
+      const formattedNotifications: Notification[] = data.map(notification => ({
+        id: notification.id,
+        type: notification.type as NotificationType,
+        title: notification.title,
+        message: notification.message,
+        userId: notification.user_id,
+        priority: notification.priority,
+        relatedEntityId: notification.related_entity_id,
+        relatedEntityType: notification.related_entity_type,
+        createdAt: notification.created_at,
+        isRead: notification.is_read,
+        read_status: notification.is_read, // Supabase uyğunluğu üçün əlavə edildi
+        time: new Date(notification.created_at).toLocaleTimeString()
       }));
-      
-      setNotifications(formattedNotifications as Notification[]);
+
+      setNotifications(formattedNotifications);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-      // Mock data ilə doldurulan zaman
-      const mockData = getMockNotifications();
-      setNotifications(mockData);
+      console.error('Error loading notifications:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Bildirişi oxunmuş kimi işarələmək
-  const markAsRead = async (id: string) => {
-    try {
-      // Supabase-də yenilə
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, read_status: true })
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      // Lokal state yenilə
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif.id === id ? { ...notif, isRead: true, read_status: true } : notif
-        )
-      );
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
-    }
-  };
-
-  // Bütün bildirişləri oxunmuş kimi işarələmək
-  const markAllAsRead = async () => {
-    if (!user || notifications.length === 0) return;
-    
-    try {
-      // Supabase-də yenilə
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true, read_status: true })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Lokal state yenilə
-      setNotifications(prev => 
-        prev.map(notif => ({ ...notif, isRead: true, read_status: true }))
-      );
-    } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
-    }
-  };
-  
-  // Bütün bildirişləri təmizləmək
-  const clearAll = async () => {
-    if (!user || notifications.length === 0) return;
-    
-    try {
-      // Arxivləşdirmə və ya silmə əməliyyatı üçün Supabase-i istifadə edə bilərsiniz
-      // Burada sadəcə state'i təmizləyirik
-      setNotifications([]);
-      
-      // Faktiki silmə əməliyyatını backenddə həyata keçirmək üçün:
-      // await supabase.from('notifications').delete().eq('user_id', user.id);
-    } catch (error) {
-      console.error('Failed to clear all notifications:', error);
-    }
-  };
-
-  // İlk dəfə komponent render olunduqda bildirişləri yüklə
   useEffect(() => {
     if (user) {
-      fetchNotifications();
+      loadNotifications();
+
+      // Real-time bildirişlər üçün abunə
+      const subscription = supabase
+        .channel('public:notifications')
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          const newNotification: Notification = {
+            id: payload.new.id,
+            type: payload.new.type as NotificationType,
+            title: payload.new.title,
+            message: payload.new.message,
+            userId: payload.new.user_id,
+            priority: payload.new.priority,
+            relatedEntityId: payload.new.related_entity_id,
+            relatedEntityType: payload.new.related_entity_type,
+            createdAt: payload.new.created_at,
+            isRead: payload.new.is_read,
+            read_status: payload.new.is_read, // Supabase uyğunluğu üçün əlavə edildi
+            time: new Date(payload.new.created_at).toLocaleTimeString()
+          };
+          setNotifications(prev => [newNotification, ...prev]);
+        })
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, [user]);
 
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, isRead: true, read_status: true }
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, isRead: true, read_status: true }))
+      );
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const getNotificationsByType = (type: NotificationType) => {
+    return notifications.filter(notification => notification.type === type);
+  };
+
+  const unreadCount = notifications.filter(notification => !notification.isRead).length;
+
   return (
-    <NotificationContext.Provider 
+    <NotificationContext.Provider
       value={{
         notifications,
         unreadCount,
-        fetchNotifications,
-        markAsRead,
         markAllAsRead,
-        clearAll
+        markAsRead,
+        getNotificationsByType,
+        loadNotifications,
+        loading,
       }}
     >
       {children}
     </NotificationContext.Provider>
   );
 };
+
+export const useNotifications = () => useContext(NotificationContext);

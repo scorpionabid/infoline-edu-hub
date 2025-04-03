@@ -1,154 +1,186 @@
-import { User } from '@/types/user';
+
+import { User, UserFormData } from '@/types/user';
+import { UserRole } from '@/types/supabase';
 
 export const mockUsers: User[] = [
   {
-    id: 'superadmin-1',
-    name: 'Super Admin',
-    email: 'superadmin@infoline.edu',
-    role: 'superadmin',
-    status: 'active',
-    avatar: '',
-    lastLogin: '2023-10-15T08:30:00',
-    twoFactorEnabled: true,
-    language: 'az',
+    id: "user-1",
+    name: "Admin İstifadəçi",
+    email: "admin@example.com",
+    role: "superadmin",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=admin",
+    language: "az",
+    phone: "+994551234567",
+    position: "System Administrator",
     notificationSettings: {
       email: true,
+      inApp: true,
+      push: true,
       system: true
     },
-    createdAt: '2023-01-01T00:00:00',
-    updatedAt: '2023-01-01T00:00:00'
+    createdAt: "2023-01-01T00:00:00Z",
+    updatedAt: "2023-01-01T00:00:00Z"
   },
   {
-    id: 'regionadmin-1',
-    name: 'Bakı Region Admini',
-    email: 'bakuadmin@infoline.edu',
-    role: 'regionadmin',
-    regionId: 'region-1',
-    status: 'active',
-    avatar: '',
-    lastLogin: '2023-10-14T14:22:00',
-    twoFactorEnabled: false,
-    language: 'az',
+    id: "user-2",
+    name: "Bakı Region Admini",
+    email: "baku@example.com",
+    role: "regionadmin",
+    regionId: "region-1",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=baku",
+    language: "az",
+    phone: "+994552345678",
+    position: "Region Manager",
     notificationSettings: {
       email: true,
+      inApp: true,
       system: true
     },
-    createdAt: '2023-01-05T00:00:00',
-    updatedAt: '2023-05-12T00:00:00'
+    createdAt: "2023-01-02T00:00:00Z",
+    updatedAt: "2023-01-02T00:00:00Z"
   },
   {
-    id: 'regionadmin-2',
-    name: 'Gəncə Region Admini',
-    email: 'ganja@infoline.edu',
-    role: 'regionadmin',
-    regionId: 'region-2',
-    status: 'active',
-    avatar: '',
-    lastLogin: '2023-10-10T09:15:00',
-    twoFactorEnabled: false,
-    language: 'az',
+    id: "user-3",
+    name: "Nəsimi Sektor Admini",
+    email: "nasimi@example.com",
+    role: "sectoradmin",
+    regionId: "region-1",
+    sectorId: "sector-1",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=nasimi",
+    language: "az",
+    phone: "+994553456789",
+    position: "Sector Manager",
     notificationSettings: {
       email: true,
-      system: false
-    },
-    createdAt: '2023-02-15T00:00:00',
-    updatedAt: '2023-08-02T00:00:00'
-  },
-  {
-    id: 'sectoradmin-1',
-    name: 'Yasamal Sektor Admini',
-    email: 'yasamal@infoline.edu',
-    role: 'sectoradmin',
-    regionId: 'region-1',
-    sectorId: 'sector-1',
-    status: 'active',
-    avatar: '',
-    lastLogin: '2023-10-12T11:45:00',
-    twoFactorEnabled: false,
-    language: 'az',
-    notificationSettings: {
-      email: false,
+      inApp: true,
       system: true
     },
-    createdAt: '2023-03-10T00:00:00',
-    updatedAt: '2023-09-05T00:00:00'
+    createdAt: "2023-01-03T00:00:00Z",
+    updatedAt: "2023-01-03T00:00:00Z"
   },
   {
-    id: 'sectoradmin-2',
-    name: 'Nəsimi Sektor Admini',
-    email: 'nasimi@infoline.edu',
-    role: 'sectoradmin',
-    regionId: 'region-1',
-    sectorId: 'sector-2',
-    status: 'inactive',
-    avatar: '',
-    twoFactorEnabled: false,
-    language: 'ru',
+    id: "user-4",
+    name: "20 nömrəli məktəb Admini",
+    email: "school20@example.com",
+    role: "schooladmin",
+    regionId: "region-1",
+    sectorId: "sector-1",
+    schoolId: "school-1",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=school20",
+    language: "az",
+    phone: "+994554567890",
+    position: "School Director",
     notificationSettings: {
       email: true,
+      inApp: true,
       system: true
     },
-    createdAt: '2023-03-15T00:00:00',
-    updatedAt: '2023-07-20T00:00:00'
+    createdAt: "2023-01-04T00:00:00Z",
+    updatedAt: "2023-01-04T00:00:00Z"
   },
   {
-    id: 'schooladmin-1',
-    name: 'Məktəb 45 Admini',
-    email: 'school45@infoline.edu',
-    role: 'schooladmin',
-    regionId: 'region-1',
-    sectorId: 'sector-1',
-    schoolId: 'school-1',
-    status: 'active',
-    avatar: '',
-    lastLogin: '2023-10-15T08:15:00',
-    twoFactorEnabled: false,
-    language: 'az',
+    id: "user-5",
+    name: "Sumqayıt Region Admini",
+    email: "sumgait@example.com",
+    role: "regionadmin",
+    regionId: "region-2",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=sumgait",
+    language: "az",
+    phone: "+994555678901",
+    position: "Region Manager",
     notificationSettings: {
       email: true,
+      inApp: true,
       system: true
     },
-    createdAt: '2023-04-01T00:00:00',
-    updatedAt: '2023-10-01T00:00:00'
+    createdAt: "2023-01-05T00:00:00Z",
+    updatedAt: "2023-01-05T00:00:00Z"
   },
   {
-    id: 'schooladmin-2',
-    name: 'Məktəb 153 Admini',
-    email: 'school153@infoline.edu',
-    role: 'schooladmin',
-    regionId: 'region-1',
-    sectorId: 'sector-1',
-    schoolId: 'school-2',
-    status: 'blocked',
-    avatar: '',
-    lastLogin: '2023-09-01T10:30:00',
-    twoFactorEnabled: false,
-    language: 'en',
-    notificationSettings: {
-      email: false,
-      system: false
-    },
-    createdAt: '2023-04-15T00:00:00',
-    updatedAt: '2023-09-01T00:00:00'
-  },
-  {
-    id: 'schooladmin-3',
-    name: 'Məktəb 23 Admini',
-    email: 'school23@infoline.edu',
-    role: 'schooladmin',
-    regionId: 'region-1',
-    sectorId: 'sector-2',
-    schoolId: 'school-3',
-    status: 'active',
-    avatar: '',
-    lastLogin: '2023-10-14T12:00:00',
-    twoFactorEnabled: true,
-    language: 'az',
+    id: "user-6",
+    name: "Gəncə Region Admini",
+    email: "ganja@example.com",
+    role: "regionadmin",
+    regionId: "region-3",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=ganja",
+    language: "az",
+    phone: "+994556789012",
+    position: "Region Manager",
     notificationSettings: {
       email: true,
+      inApp: true,
       system: true
     },
-    createdAt: '2023-05-01T00:00:00',
-    updatedAt: '2023-09-15T00:00:00'
+    createdAt: "2023-01-06T00:00:00Z",
+    updatedAt: "2023-01-06T00:00:00Z"
+  },
+  {
+    id: "user-7",
+    name: "158 nömrəli məktəb Admini",
+    email: "school158@example.com",
+    role: "schooladmin",
+    regionId: "region-1",
+    sectorId: "sector-2",
+    schoolId: "school-2",
+    status: "active",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=school158",
+    language: "az",
+    phone: "+994557890123",
+    position: "School Director",
+    notificationSettings: {
+      email: true,
+      inApp: true,
+      system: true
+    },
+    createdAt: "2023-01-07T00:00:00Z",
+    updatedAt: "2023-01-07T00:00:00Z"
+  },
+  {
+    id: "user-8",
+    name: "245 nömrəli məktəb Admini",
+    email: "school245@example.com",
+    role: "schooladmin",
+    regionId: "region-1",
+    sectorId: "sector-3",
+    schoolId: "school-3",
+    status: "inactive",
+    avatar: "https://api.dicebear.com/6.x/avataaars/svg?seed=school245",
+    language: "az",
+    phone: "+994558901234",
+    position: "School Director",
+    notificationSettings: {
+      email: true,
+      inApp: true,
+      system: true
+    },
+    createdAt: "2023-01-08T00:00:00Z",
+    updatedAt: "2023-01-08T00:00:00Z"
   }
 ];
+
+// Yeni istifadəçi yaratmaq üçün mock funksiya
+export const createMockUser = (userData: UserFormData): User => {
+  return {
+    id: `user-${Date.now()}`,
+    name: userData.name,
+    email: userData.email,
+    role: userData.role,
+    regionId: userData.regionId,
+    sectorId: userData.sectorId,
+    schoolId: userData.schoolId,
+    status: userData.status,
+    avatar: userData.avatar || `https://api.dicebear.com/6.x/avataaars/svg?seed=${userData.email}`,
+    language: userData.language || 'az',
+    phone: userData.phone,
+    position: userData.position,
+    notificationSettings: userData.notificationSettings,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+};

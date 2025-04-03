@@ -1,34 +1,50 @@
 
-import { NotificationType, NotificationEntityType } from '@/components/dashboard/NotificationType';
+export type NotificationType = 
+  | 'category_created' 
+  | 'deadline_approaching' 
+  | 'form_submitted' 
+  | 'form_approved' 
+  | 'form_rejected' 
+  | 'system_update'
+  | string;
+
+export type NotificationEntityType = 
+  | 'category' 
+  | 'form' 
+  | 'school' 
+  | 'user' 
+  | 'system'
+  | string;
 
 export interface Notification {
   id: string;
   type: NotificationType;
   title: string;
   message: string;
-  createdAt: string;
-  time: string; // formatted time
-  isRead: boolean;
   userId: string;
   priority: string;
-  read_status: boolean;
   relatedEntityId: string;
   relatedEntityType: NotificationEntityType;
+  createdAt: string;
+  isRead: boolean;
+  read_status: boolean; // Supabase uyğunluğu üçün əlavə edildi
+  time?: string;
 }
 
-export const adaptNotification = (data: any): Notification => {
+// Notification obyektini uyğunlaşdırmaq üçün helper funksiya
+export function adaptNotification(rawNotification: any): Notification {
   return {
-    id: data.id,
-    type: data.type as NotificationType,
-    title: data.title,
-    message: data.message,
-    createdAt: data.created_at || data.createdAt,
-    time: data.time || new Date(data.created_at || data.createdAt).toLocaleTimeString(),
-    isRead: data.is_read || data.isRead || false,
-    userId: data.user_id || data.userId,
-    priority: data.priority || 'normal',
-    read_status: data.is_read || data.read_status || false,
-    relatedEntityId: data.related_entity_id || data.relatedEntityId || '',
-    relatedEntityType: (data.related_entity_type || data.relatedEntityType) as NotificationEntityType
+    id: rawNotification.id || '',
+    type: rawNotification.type || 'system_update',
+    title: rawNotification.title || '',
+    message: rawNotification.message || '',
+    userId: rawNotification.user_id || rawNotification.userId || '',
+    priority: rawNotification.priority || 'normal',
+    relatedEntityId: rawNotification.related_entity_id || '',
+    relatedEntityType: rawNotification.related_entity_type || 'system',
+    createdAt: rawNotification.created_at || rawNotification.createdAt || new Date().toISOString(),
+    isRead: rawNotification.is_read || false,
+    read_status: rawNotification.read_status || rawNotification.is_read || false,
+    time: rawNotification.time || ''
   };
-};
+}
