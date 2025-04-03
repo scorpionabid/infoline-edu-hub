@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useSupabaseAuth';
 import LoginForm from '@/components/auth/LoginForm';
 import LoginHeader from '@/components/auth/LoginHeader';
 import LoginBackgroundDecorations from '@/components/auth/LoginBackgroundDecorations';
 import LoginCredentials from '@/components/auth/LoginCredentials';
 
 const Login = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -17,12 +17,12 @@ const Login = () => {
   
   // Daxil olmuş istifadəçini yönləndirmə
   useEffect(() => {
-    if (isAuthenticated && !loading) {
+    if (user && !loading) {
       const from = location.state?.from?.pathname || '/dashboard';
       console.log(`İstifadəçi auth olundu, "${from}" səhifəsinə yönləndirilir`);
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, loading, navigate, location]);
+  }, [user, loading, navigate, location]);
 
   // Yüklənmə zamanı göstəriləcək
   if (loading) {

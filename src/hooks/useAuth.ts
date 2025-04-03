@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -69,6 +68,20 @@ export const useAuth = (): UseAuthReturn => {
       if (error) {
         setState(prev => ({ ...prev, error, loading: false }));
         return { error };
+      }
+      
+      if (data.user) {
+        try {
+          const userData = await getUserData(data.user.id);
+          setState(prev => ({ 
+            ...prev, 
+            user: userData, 
+            session: data.session,
+            loading: false
+          }));
+        } catch (err) {
+          console.error('İstifadəçi məlumatları alınarkən xəta:', err);
+        }
       }
       
       return { error: null };
@@ -269,6 +282,7 @@ export const useAuth = (): UseAuthReturn => {
     // Auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state dəyişdi:', event, !!session);
         setState(prev => ({ ...prev, session }));
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -281,6 +295,7 @@ export const useAuth = (): UseAuthReturn => {
                 loading: false,
                 session
               }));
+              console.log('Auth state yeniləndi:', event, !!userData);
             } catch (error) {
               console.error('İstifadəçi məlumatları alınarkən xəta:', error);
               setState(prev => ({ 
@@ -292,6 +307,7 @@ export const useAuth = (): UseAuthReturn => {
             }
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log('İstifadəçi çıxış etdi');
           setState({ 
             user: null, 
             loading: false, 
@@ -321,6 +337,7 @@ export const useAuth = (): UseAuthReturn => {
               user: userData, 
               loading: false 
             }));
+            console.log('İlkin sessiya məlumatları alındı:', !!userData);
           } catch (userError) {
             setState(prev => ({ 
               ...prev, 
@@ -350,6 +367,9 @@ export const useAuth = (): UseAuthReturn => {
     };
   }, []);
   
+  // Açıq şəkildə isAuthenticated dəyərini hesablayaq
+  const isAuthenticated = !!state.user && !!state.session;
+  
   return {
     ...state,
     login,
@@ -359,7 +379,7 @@ export const useAuth = (): UseAuthReturn => {
     resetPassword,
     updatePassword,
     clearError,
-    isAuthenticated: !!state.user,
+    isAuthenticated,
     hasRole
   };
 };

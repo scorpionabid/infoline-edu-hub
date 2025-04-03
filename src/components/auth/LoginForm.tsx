@@ -54,19 +54,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
     try {
       console.log('Login prosesi başladı');
       
-      const { error } = await login(email, password);
+      const result = await login(email, password);
       
-      if (error) {
-        console.error('Login xətası:', error);
+      if (result.error) {
+        console.error('Login xətası:', result.error);
         toast.error(t('loginFailed'), {
-          description: error.message
+          description: result.error.message
         });
         return;
       }
       
-      console.log('Login uğurlu oldu');
+      console.log('Login uğurlu oldu, yönləndirilir...');
       toast.success(t('loginSuccess'));
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(t('loginFailed'), {
