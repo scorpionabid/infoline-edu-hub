@@ -32,10 +32,10 @@ import {
   XCircle,
   Mail,
 } from 'lucide-react';
-import { SortConfig } from '@/hooks/useSupabaseSchools';
+import { SortConfig } from '@/hooks/schools/useSchoolsStore';
 import { School } from '@/types/supabase';
-import { useRegionsData } from '@/hooks/useRegions';
-import { useSectorsData } from '@/hooks/useSectors';
+import { useRegionsData } from '@/hooks/regions';
+import { useSectorsData } from '@/hooks/sectors';
 
 interface SchoolTableProps {
   currentItems: School[];
@@ -144,7 +144,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
         break;
     }
   };
-  
+
   return (
     <div className="rounded-md border">
       <Table>

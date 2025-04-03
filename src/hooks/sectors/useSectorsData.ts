@@ -5,16 +5,25 @@ import { Sector } from '@/types/sector';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
-export const useSectorsData = () => {
+/**
+ * Sektor məlumatlarını idarə etmək üçün hook
+ */
+export const useSectorsData = (selectedRegionId?: string) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
 
+  // Sektorları yükləyən funksiya
   const fetchSectors = useCallback(async () => {
     setLoading(true);
     try {
       let query = supabase.from('sectors').select('*');
+
+      // Region filtrini tətbiq et əgər təyin edilibsə
+      if (selectedRegionId) {
+        query = query.eq('region_id', selectedRegionId);
+      }
 
       // Rol əsaslı filtrasiya
       switch (user?.role) {
@@ -49,8 +58,9 @@ export const useSectorsData = () => {
       setLoading(false);
       toast.error('Sektorları yükləyərkən xəta baş verdi');
     }
-  }, [user]);
+  }, [user, selectedRegionId]);
 
+  // Sektor yaratma funksiyası
   const createSector = useCallback(async (sectorData: Omit<Sector, 'id'>) => {
     try {
       // Sektorun region_id sahəsinin olduğunu yoxla
@@ -76,6 +86,7 @@ export const useSectorsData = () => {
     }
   }, []);
 
+  // Sektor yeniləmə funksiyası
   const updateSector = useCallback(async (sectorId: string, sectorData: Partial<Sector>) => {
     try {
       const { data, error } = await supabase
@@ -100,6 +111,7 @@ export const useSectorsData = () => {
     }
   }, []);
 
+  // Sektor silmə funksiyası
   const deleteSector = useCallback(async (sectorId: string) => {
     try {
       // Əvvəlcə sektora bağlı məktəbləri yoxla
@@ -206,6 +218,3 @@ export const useSectorsData = () => {
     getEnhancedSectors
   };
 };
-
-// Komponentlərdə useSectors() kimi çağırılmasına imkan verən alias export
-export const useSectors = useSectorsData;

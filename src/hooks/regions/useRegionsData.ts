@@ -5,13 +5,17 @@ import { Region } from '@/types/region';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
+/**
+ * Region məlumatlarını idarə etmək üçün hook
+ */
 export const useRegionsData = () => {
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
 
-  const fetchRegions = useCallback(async () => {
+  // Regionları yükləyən funksiya
+  const fetchRegions = useCallback(async (t?: Function) => {
     setLoading(true);
     try {
       let query = supabase.from('regions').select('*');
@@ -42,10 +46,12 @@ export const useRegionsData = () => {
       console.error('Regionları yükləyərkən xəta:', err);
       setError(err);
       setLoading(false);
-      toast.error('Regionları yükləyərkən xəta baş verdi');
+      const errorMessage = t ? t('regionLoadError') : 'Regionları yükləyərkən xəta baş verdi';
+      toast.error(errorMessage);
     }
   }, [user]);
 
+  // Region yaratma funksiyası
   const createRegion = useCallback(async (regionData: Omit<Region, 'id'>) => {
     try {
       const { data, error } = await supabase
@@ -66,6 +72,7 @@ export const useRegionsData = () => {
     }
   }, []);
 
+  // Region yeniləmə funksiyası
   const updateRegion = useCallback(async (regionId: string, regionData: Partial<Region>) => {
     try {
       const { data, error } = await supabase
@@ -90,7 +97,8 @@ export const useRegionsData = () => {
     }
   }, []);
 
-  const deleteRegion = useCallback(async (regionId: string) => {
+  // Region silmə funksiyası
+  const deleteRegion = useCallback(async (regionId: string, t?: Function) => {
     try {
       // Əvvəlcə region ilə əlaqəli sektorları və məktəbləri yoxla
       const { count: sectorCount } = await supabase
@@ -110,18 +118,30 @@ export const useRegionsData = () => {
         .eq('region_id', regionId);
       
       if (sectorCount && sectorCount > 0) {
-        toast.error(`Bu regionda ${sectorCount} sektor var. Əvvəlcə sektorları silin.`);
+        const errorMessage = t ? 
+          t('regionDeleteSectorError', { count: sectorCount }) : 
+          `Bu regionda ${sectorCount} sektor var. Əvvəlcə sektorları silin.`;
+        
+        toast.error(errorMessage);
         return false;
       }
       
       if (schoolCount && schoolCount > 0) {
-        toast.error(`Bu regionda ${schoolCount} məktəb var. Əvvəlcə məktəbləri silin.`);
+        const errorMessage = t ?
+          t('regionDeleteSchoolError', { count: schoolCount }) :
+          `Bu regionda ${schoolCount} məktəb var. Əvvəlcə məktəbləri silin.`;
+        
+        toast.error(errorMessage);
         return false;
       }
       
       // Regiona bağlı adminlər varsa xəbərdarlıq, lakin yenə də silməyə imkan ver
       if (adminCount && adminCount > 0) {
-        toast.warning(`Bu regionla əlaqəli ${adminCount} admin var.`);
+        const warningMessage = t ?
+          t('regionHasAdminsWarning', { count: adminCount }) :
+          `Bu regionla əlaqəli ${adminCount} admin var.`;
+        
+        toast.warning(warningMessage);
       }
       
       const { error } = await supabase
@@ -132,16 +152,25 @@ export const useRegionsData = () => {
       if (error) throw error;
 
       setRegions(prev => prev.filter(region => region.id !== regionId));
-      toast.success('Region uğurla silindi');
+      
+      const successMessage = t ?
+        t('regionDeleteSuccess') :
+        'Region uğurla silindi';
+      
+      toast.success(successMessage);
       return true;
     } catch (err: any) {
       console.error('Region silinərkən xəta:', err);
-      toast.error('Region silinərkən xəta baş verdi');
+      const errorMessage = t ?
+        t('regionDeleteError') :
+        'Region silinərkən xəta baş verdi';
+      
+      toast.error(errorMessage);
       throw err;
     }
   }, []);
   
-  // Region detallı məlumatlarını əldə et
+  // Regions with enhanced data
   const getEnhancedRegions = useCallback(async () => {
     try {
       const enhancedRegions = await Promise.all(
@@ -206,6 +235,3 @@ export const useRegionsData = () => {
     getEnhancedRegions
   };
 };
-
-// Komponentlərdə useRegions() kimi çağırılmasına imkan verən alias export
-export const useRegions = useRegionsData;

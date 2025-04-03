@@ -191,4 +191,3 @@ const Sectors: React.FC = () => {
 };
 
 export default Sectors;
-

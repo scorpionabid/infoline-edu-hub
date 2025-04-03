@@ -5,12 +5,16 @@ import { School } from '@/types/school';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
+/**
+ * Məktəb məlumatlarını idarə etmək üçün hook
+ */
 export const useSchoolsData = () => {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
 
+  // Məktəbləri yükləyən funksiya
   const fetchSchools = useCallback(async () => {
     setLoading(true);
     try {
@@ -84,6 +88,7 @@ export const useSchoolsData = () => {
     }
   }, [user]);
 
+  // Məktəb yaratma funksiyası 
   const createSchool = useCallback(async (schoolData: Omit<School, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       // schoolData-nı Supabase formatına çevir
@@ -151,6 +156,7 @@ export const useSchoolsData = () => {
     }
   }, []);
 
+  // Məktəb yeniləmə funksiyası
   const updateSchool = useCallback(async (schoolId: string, schoolData: Partial<School>) => {
     try {
       // schoolData-nı Supabase formatına çevir
@@ -229,6 +235,7 @@ export const useSchoolsData = () => {
     }
   }, []);
 
+  // Məktəb silmə funksiyası
   const deleteSchool = useCallback(async (schoolId: string) => {
     try {
       // Məktəb ilə əlaqəli verilənləri sil
