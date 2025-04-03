@@ -1,6 +1,7 @@
 
 import { Json } from './supabase';
-import { Category } from './category';
+import { CategoryWithOrder } from './category';
+import { ValidationRules } from './dataEntry';
 
 export type ColumnType = 'text' | 'number' | 'select' | 'date' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea';
 
@@ -21,13 +22,34 @@ export type Column = {
   options?: string[] | ColumnOption[];  // Allow both string[] or object[] for options
   status: string;
   order: number;
-  orderIndex: number;  // Add this missing property
-  validation?: any;
-  dependsOn?: string;  // Column that this field depends on
+  orderIndex: number;  // Bu xassəni əlavə edirik
+  validation?: ValidationRules | any;  // validationRules əvəzinə validation istifadə edirik
+  dependsOn?: string | DependsOnCondition;  // Column that this field depends on
   parentColumnId?: string; // ID of the parent column if this is a dependent column
 };
 
-export type CategoryWithColumns = Category & {
+// Add the DependsOnCondition type
+export type DependsOnCondition = {
+  columnId: string;
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: any;
+  };
+};
+
+export type CategoryWithColumns = {
+  id: string;
+  name: string;
+  description?: string;
+  assignment: 'all' | 'sectors';
+  priority: number;
+  deadline?: string | Date;
+  status: string;
+  columnCount?: number;
+  order: number;
+  archived?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   columns: Column[];
 };
 

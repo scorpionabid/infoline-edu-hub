@@ -1,5 +1,5 @@
 
-import { FullUserData, CreateUserData, UpdateUserData, UserRole } from '@/types/supabase';
+import { UserRole } from '@/types/supabase';
 
 export interface UserFetchFilters {
   role?: UserRole;
@@ -16,6 +16,6 @@ export interface UserPagination {
 }
 
 export interface UsersResponse {
-  data: FullUserData[];
+  data: any[]; // FullUserData tipini any ilə əvəz edirik
   count: number;
 }

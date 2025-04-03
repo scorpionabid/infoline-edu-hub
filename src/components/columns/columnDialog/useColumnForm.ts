@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -6,6 +7,7 @@ import { Column, ColumnType, ColumnOption, adaptColumnToSupabase } from "@/types
 import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { ValidationRules } from "@/types/dataEntry"; // validationRules tipini import edirik
 
 export const createFormSchema = (t: (key: string) => string) => {
   return z.object({
@@ -108,7 +110,7 @@ export const useColumnForm = (
         categoryId: editColumn.categoryId,
         type: editColumn.type as ColumnType,
         isRequired: editColumn.isRequired,
-        validationRules: editColumn.validationRules as any || editColumn.validation as any || {},
+        validationRules: editColumn.validation as any, // validation istifadə edirik
         defaultValue: editColumn.defaultValue || "",
         placeholder: editColumn.placeholder || "",
         helpText: editColumn.helpText || "",
@@ -157,6 +159,7 @@ export const useColumnForm = (
     try {
       if (!onAddColumn) return false;
       
+      // validationRules -> validation olaraq çeviririk
       const supabaseColumnData = {
         name: values.name,
         category_id: values.categoryId,

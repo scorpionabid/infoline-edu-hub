@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -21,7 +20,6 @@ const DataEntry: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("form");
 
-  // useDataEntries hook'undan əldə edilən dəyərləri yenidən işləyək
   const {
     entries,
     loading,
@@ -36,7 +34,6 @@ const DataEntry: React.FC = () => {
     getApprovalStatus
   } = useDataEntries();
 
-  // URL parametrlərinə əsasən kateqoriya filtrini yeniləyirik
   useEffect(() => {
     const categoryId = searchParams.get("category");
     if (categoryId) {
@@ -44,7 +41,6 @@ const DataEntry: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Məlumatların yüklənmə vəziyyətini və xətalarını izləyirik
   useEffect(() => {
     if (error) {
       console.error('Məlumatları əldə edərkən xəta baş verdi:', error);
@@ -54,7 +50,6 @@ const DataEntry: React.FC = () => {
     }
   }, [error, t]);
 
-  // Məlumatların statistikası
   const stats = React.useMemo(() => {
     return {
       totalEntries: entries.length,
@@ -66,12 +61,17 @@ const DataEntry: React.FC = () => {
     };
   }, [entries]);
 
-  // Excel ixracı
   const handleExportData = () => {
-    exportDataToExcel(entries);
+    const exportableEntries = entries.map(entry => ({
+      id: entry.id,
+      columnId: entry.column_id,
+      value: entry.value,
+      status: entry.status as 'pending' | 'approved' | 'rejected',
+      errorMessage: entry.rejection_reason
+    }));
+    exportDataToExcel(exportableEntries);
   };
 
-  // Mini statistika kartları
   const MinimalisticStats = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <Card className="border-0 bg-black text-white">
@@ -153,7 +153,6 @@ const DataEntry: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Burada məlumatların şəbəkə görünüşü olacaq */}
                 <Card>
                   <CardContent className="p-6">
                     <h3 className="font-semibold text-lg mb-4">Məlumat şəbəkəsi</h3>

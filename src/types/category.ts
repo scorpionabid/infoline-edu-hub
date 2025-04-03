@@ -8,10 +8,14 @@ export type Category = {
   deadline?: string | Date;
   status: string;
   columnCount?: number;  // using camelCase instead of snake_case
-  order: number;  // adding the missing order property
-  archived?: boolean;  // adding the missing archived property
+  order: number;  // added this property
+  archived?: boolean;  // adding archived property
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type CategoryWithOrder = Category & {
+  order: number;
 };
 
 export type MockCategory = {

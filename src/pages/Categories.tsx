@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -86,9 +85,14 @@ const Categories = () => {
   };
   
   // Handle category deletion
-  const handleDeleteCategory = async (id: string) => {
+  const deleteCategory = (categoryId: string, categoryName: string) => {
+    toast({
+      title: t('deletingCategory'),
+      description: `${categoryName}`,
+    });
+    
     try {
-      await deleteCategory(id);
+      await deleteCategory(categoryId);
       return true; // success
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -291,17 +295,17 @@ const Categories = () => {
         filter={filter}
         isLoading={isLoading}
         isError={isError}
-        onDeleteCategory={handleDeleteCategory}
+        onDeleteCategory={deleteCategory}
         onUpdateStatus={handleUpdateStatus}
       />
       
       {/* Category Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <CategoryForm 
+          isOpen={isFormOpen}
+          category={editingCategory}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
-          category={editingCategory}
-          isOpen={isFormOpen}
         />
       </Dialog>
     </div>

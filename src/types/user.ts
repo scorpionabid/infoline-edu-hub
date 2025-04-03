@@ -18,6 +18,7 @@ export type User = {
   updatedAt?: string;
   lastLogin?: string | null;
   twoFactorEnabled?: boolean;
+  passwordResetDate?: string; // Əlavə edirik
   notificationSettings?: {
     email: boolean;
     system: boolean;
@@ -34,7 +35,9 @@ export type CreateUserData = {
   sectorId?: string | null;
   schoolId?: string | null;
   language?: string;
-  avatar?: string;  // Adding avatar property to fix error
+  avatar?: string;  // Əlavə edildi
+  phone?: string;   // Əlavə edildi
+  position?: string; // Əlavə edildi
   notificationSettings?: {
     email: boolean;
     system: boolean;
@@ -42,19 +45,23 @@ export type CreateUserData = {
 };
 
 export type UpdateUserData = Partial<Omit<User, 'id'>> & {
-  password?: string;  // Adding password for update operations
+  password?: string;  // Əlavə edildi
 };
 
 export type UserFormData = {
   name: string;
   email: string;
   password?: string;
+  confirmPassword?: string; // Əlavə edildi
   role: UserRole;  // Use UserRole from supabase types
   status?: string;
   regionId?: string | null;
   sectorId?: string | null;
   schoolId?: string | null;
   language?: string;
+  avatar?: string; // Əlavə edildi
+  phone?: string;  // Əlavə edildi
+  position?: string; // Əlavə edildi
   notificationSettings?: {
     email: boolean;
     system: boolean;

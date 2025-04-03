@@ -49,7 +49,7 @@ export const useCategories = () => {
         description: category.description,
         assignment: category.assignment,
         priority: category.priority,
-        deadline: category.deadline,
+        deadline: typeof category.deadline === 'object' ? category.deadline.toISOString() : category.deadline,
         status: category.status || 'active',
         order: category.order || category.priority,
         archived: category.archived || false
@@ -88,7 +88,7 @@ export const useCategories = () => {
         description: updates.description,
         assignment: updates.assignment,
         priority: updates.priority,
-        deadline: updates.deadline,
+        deadline: typeof updates.deadline === 'object' ? updates.deadline.toISOString() : updates.deadline,
         status: updates.status,
         order: updates.order || updates.priority,
         archived: updates.archived
@@ -156,6 +156,10 @@ export const useCategories = () => {
     fetchCategories,
     addCategory,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    isLoading: loading,    // əlavə edildi
+    isError: !!error,      // əlavə edildi
+    categoriesCount: categories.length, // əlavə edildi
+    updateCategoryStatus: updateCategory  // əlavə edildi
   };
 };

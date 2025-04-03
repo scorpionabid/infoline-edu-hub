@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -57,7 +56,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
 
   const dataEntryHook = useDataEntry(categoryId || initialCategoryId);
 
-  // Extract all the properties we need to work with from the dataEntryHook
   const {
     category,
     columns,
@@ -74,7 +72,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     refreshData
   } = dataEntryHook;
 
-  // Since we're missing some properties in the original hook, let's add mock data for them
   const categories = category ? [{ ...category, columns }] : [];
   const currentCategoryIndex = 0;
   const formData = {
@@ -87,7 +84,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         status: (dataEntries[col.id]?.status || 'pending') as 'pending' | 'approved' | 'rejected'
       })),
       isCompleted: categoryStatus === 'approved',
-      isSubmitted: categoryStatus === 'pending', // Fix: use 'pending' instead of 'submitted'
+      isSubmitted: categoryStatus === 'pending',
       completionPercentage: categoryStatus === 'approved' ? 100 : categoryStatus === 'pending' ? 50 : 0,
     })) || [],
     lastSaved: new Date().toISOString(),
@@ -100,7 +97,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const errors: Array<{columnId: string, message: string}> = [];
   
   const changeCategory = (index: number) => {
-    // In this simplified version, we don't have multiple categories to change
     console.log('Changing to category index', index);
   };
   
@@ -117,7 +113,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   const saveForm = () => {
     toast.success(t('dataSaved'));
-    // Additional logic to save the form
   };
   
   const getErrorForColumn = (columnId: string) => {
@@ -126,12 +121,10 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   };
   
   const downloadExcelTemplate = (categoryId: string) => {
-    // Logic to download the Excel template
     toast.info(t('downloadingTemplate'));
   };
   
   const uploadExcelData = async (file: File, categoryId: string) => {
-    // Logic to upload Excel data
     toast.success(t('uploadDataSuccess'));
   };
 
@@ -319,7 +312,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   description={currentCategory.description || ''}
                   deadline={typeof currentCategory.deadline === 'string' ? currentCategory.deadline : currentCategory.deadline?.toISOString()}
                   completionPercentage={getCurrentCategoryCompletion()}
-                  isSubmitted={formData.status === 'pending'} // Fix: use 'pending' instead of 'submitted'
+                  isSubmitted={formData.status === 'pending'}
                 />
                 <Separator className="my-4" />
                 
@@ -329,6 +322,16 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 
                 {categoryStatus === 'rejected' && (
                   <RejectionAlert errorMessage={currentCategory.description || t('formRejected')} />
+                )}
+                
+                {categoryStatus === "pending" && (
+                  <div className="my-4 p-3 border rounded bg-yellow-50 flex items-center">
+                    <Clock className="h-5 w-5 text-yellow-500 mr-2" />
+                    <div>
+                      <p className="font-medium">{t('waitingForApproval')}</p>
+                      <p className="text-sm text-muted-foreground">{t('waitingForApprovalDesc')}</p>
+                    </div>
+                  </div>
                 )}
                 
                 <div className="space-y-4 mt-4">
@@ -344,7 +347,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                         label={column.name}
                         type={column.type}
                         required={column.isRequired}
-                        disabled={formData.status === 'pending' || categoryStatus === 'approved'} // Fix: use 'pending'
+                        disabled={formData.status === 'pending' || categoryStatus === 'approved'}
                         options={column.options as string[]}
                         placeholder={column.placeholder}
                         helpText={column.helpText}

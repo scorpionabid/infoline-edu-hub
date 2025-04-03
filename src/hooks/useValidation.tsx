@@ -1,6 +1,7 @@
+
 import { useState, useCallback, useEffect } from 'react';
-import { ColumnValidationError } from '@/types/dataEntry';
-import { CategoryWithColumns, Column, ValidationRules } from '@/types/column';
+import { ValidationRules, ColumnValidationError } from '@/types/dataEntry';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Json } from '@/integrations/supabase/types';
 
@@ -67,8 +68,8 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidFormat');
                 }
-              } else if (column.validation || column.validationRules) {
-                const validationRules = ensureValidationRules(column.validation || column.validationRules);
+              } else if (column.validation) {
+                const validationRules = ensureValidationRules(column.validation);
                 if (validationRules?.minValue !== undefined && numValue < validationRules.minValue) {
                   newErrors.push({
                     columnId: column.id,
@@ -111,9 +112,9 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
             }
             
-            else if (column.type === 'text' && (column.validation || column.validationRules)) {
+            else if (column.type === 'text' && column.validation) {
               const strValue = String(value);
-              const validationRules = ensureValidationRules(column.validation || column.validationRules);
+              const validationRules = ensureValidationRules(column.validation);
               
               if (validationRules?.minLength !== undefined && strValue.length < validationRules.minLength) {
                 newErrors.push({
@@ -147,14 +148,14 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 });
                 
                 if (valueObj) {
-                  valueObj.errorMessage = validationRules.patternError || t('invalidFormat');
+                  valueObj.errorMessage = validationRules.patternMessage || t('invalidFormat');
                 }
               }
             }
             
-            else if (column.type === 'date' && (column.validation || column.validationRules)) {
+            else if (column.type === 'date' && column.validation) {
               const dateValue = new Date(value);
-              const validationRules = ensureValidationRules(column.validation || column.validationRules);
+              const validationRules = ensureValidationRules(column.validation);
               
               if (isNaN(dateValue.getTime())) {
                 newErrors.push({
@@ -235,7 +236,11 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
         
         category.columns.forEach(column => {
           if (column.dependsOn) {
-            const dependsOn = column.dependsOn as DependsOnCondition;
+            // String tipindən DependsOnCondition tipinə çevirmək
+            const dependsOn = typeof column.dependsOn === 'string' 
+              ? { columnId: column.dependsOn, condition: { type: 'equals', value: true } } as DependsOnCondition
+              : column.dependsOn as DependsOnCondition;
+              
             const parentValueObj = categoryEntry.values.find((v: any) => v.columnId === dependsOn.columnId);
             const currentValueObj = categoryEntry.values.find((v: any) => v.columnId === column.id);
             

@@ -11,6 +11,12 @@ export type ValidationRules = {
   required?: boolean;
   pattern?: string;
   patternMessage?: string;
+  minDate?: string;
+  maxDate?: string;
+  warningThreshold?: {
+    min?: number;
+    max?: number;
+  };
 };
 
 // Type for a single value in a data entry
@@ -19,8 +25,17 @@ export type EntryValue = string | number | boolean | null;
 // Type for a dependency condition
 export type DependsOnCondition = {
   columnId: string;
-  equals?: string | string[];
-  notEquals?: string | string[];
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: any;
+  };
+};
+
+// Type for validation errors
+export type ColumnValidationError = {
+  columnId: string;
+  message: string;
+  categoryId: string;
 };
 
 // Type for a single data entry
@@ -41,6 +56,11 @@ export type CategoryEntryData = {
   approvedAt?: string;
   rejectedAt?: string;
   rejectionReason?: string;
+  values?: any[]; // Əlavə olaraq values xüsusiyyəti əlavə edirik
+  completionPercentage?: number; // Tamamlanma faizi
+  isCompleted?: boolean; // Tamamlanıb-tamamlanmadığı
+  isSubmitted?: boolean; // Təqdim edilib-edilmədiyi
+  approvalStatus?: string; // Təsdiq statusu
 };
 
 // Type for the entire form data
@@ -49,6 +69,15 @@ export type FormData = {
   categories: CategoryEntryData[];
   lastSaved: string;
   overallProgress: number;
+};
+
+// Form data tipi əlavə edirik
+export type DataEntryForm = {
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  entries: CategoryEntryData[];
+  lastSaved: string;
+  overallProgress: number;
+  schoolId?: string;
 };
 
 // Submit data type

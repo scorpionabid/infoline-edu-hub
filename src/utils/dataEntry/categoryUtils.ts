@@ -1,89 +1,127 @@
 
-import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData } from '@/types/dataEntry';
+import { CategoryWithColumns } from "@/types/column";
+import { CategoryEntryData, DataEntryForm } from "@/types/dataEntry";
 
 /**
- * URL parametrdən form statusu əldə edir
+ * Kateqoriya üçün yeni başlıq hazırlayır
+ * 
+ * @param category Kateqoriya obyekti
+ * @returns Formatlanmış başlıq
  */
-export const getFormStatusFromParams = (queryParams: URLSearchParams): 'draft' | 'submitted' | 'approved' | 'rejected' => {
-  const statusParam = queryParams.get('status');
-  
-  if (statusParam === 'submitted') {
-    return 'submitted';
-  } else if (statusParam === 'approved') {
-    return 'approved';
-  } else if (statusParam === 'rejected') {
-    return 'rejected';
+export const formatCategoryTitle = (category: CategoryWithColumns): string => {
+  const remainingDays = category.deadline 
+    ? getRemainingDays(new Date(category.deadline))
+    : null;
+
+  let deadlineInfo = '';
+  if (remainingDays !== null) {
+    if (remainingDays < 0) {
+      deadlineInfo = ' (Müddət bitib)';
+    } else if (remainingDays === 0) {
+      deadlineInfo = ' (Bu gün)';
+    } else {
+      deadlineInfo = ` (${remainingDays} gün qalıb)`;
+    }
   }
-  
-  return 'draft';
+
+  return `${category.name}${deadlineInfo}`;
 };
 
 /**
- * Form statusuna görə ilkin məlumatları hazırlayır
+ * Kateqoriya tamamlanma statusunu əldə edir
+ * 
+ * @param categoryData Kateqoriya məlumatları
+ * @returns Status və tamamlanma faizi
  */
-export const prepareEntriesBasedOnStatus = (
-  entries: CategoryEntryData[], 
-  status: 'draft' | 'submitted' | 'approved' | 'rejected'
-): CategoryEntryData[] => {
-  if (status === 'draft') {
-    return entries;
+export const getCategoryCompletionStatus = (categoryData?: CategoryEntryData) => {
+  if (!categoryData) return { status: 'draft', completionPercentage: 0 };
+
+  if (categoryData.status === 'approved') {
+    return { status: 'approved', completionPercentage: 100 };
+  } else if (categoryData.status === 'rejected') {
+    return { status: 'rejected', completionPercentage: categoryData.completionPercentage || 0 };
+  } else if (categoryData.submittedAt) {
+    return { status: 'submitted', completionPercentage: categoryData.completionPercentage || 0 };
+  } else if (categoryData.entries.length > 0) {
+    // Məlumatların mövcudluğunu yoxla
+    const requiredEntryCount = categoryData.entries.filter(entry => {
+      // Burada isRequired xassəsinə çatmaq mümkün deyil
+      // Buna görə də sadəcə entry mövcudluğunu və statusunu yoxlayırıq
+      return true;
+    }).length;
+    
+    if (requiredEntryCount > 0) {
+      return { 
+        status: 'draft', 
+        completionPercentage: categoryData.completionPercentage || 0 
+      };
+    }
   }
-  
-  // Entries-in kopiyasını yaradırıq
-  const updatedEntries = JSON.parse(JSON.stringify(entries)) as CategoryEntryData[];
-  
-  if (status === 'submitted') {
-    // Bütün entries-ləri submitted edirik
-    updatedEntries.forEach(entry => {
-      entry.isSubmitted = true;
-    });
-  } else if (status === 'approved') {
-    // Bütün entries-ləri approved edirik
-    updatedEntries.forEach(entry => {
-      entry.isSubmitted = true;
-      entry.approvalStatus = 'approved';
-    });
-  } else if (status === 'rejected') {
-    // Bütün entries-ləri rejected edirik
-    updatedEntries.forEach(entry => {
-      entry.isSubmitted = true;
-      entry.approvalStatus = 'rejected';
-      
-      // Random xəta mesajları əlavə edirik (real mühitdə API-dən gələcək)
-      if (entry.values.length > 0) {
-        const randomValueIndex = Math.floor(Math.random() * entry.values.length);
-        entry.values[randomValueIndex].errorMessage = "Bu dəyər uyğun deyil, zəhmət olmasa yenidən yoxlayın";
-      }
-    });
-  }
-  
-  return updatedEntries;
+
+  return { status: 'draft', completionPercentage: 0 };
 };
 
 /**
- * Kateqoriya ID-sinə görə indeks tapır
+ * Qalan günləri hesablayır
+ * 
+ * @param targetDate Hədəf tarix
+ * @returns Qalan gün sayı
  */
-export const findCategoryIndex = (categories: CategoryWithColumns[], categoryId: string | null): number => {
-  if (!categoryId) return 0;
+export const getRemainingDays = (targetDate: Date): number => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  targetDate.setHours(0, 0, 0, 0);
   
-  const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
-  return categoryIndex !== -1 ? categoryIndex : 0;
+  const differenceInTime = targetDate.getTime() - today.getTime();
+  const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+  
+  return differenceInDays;
 };
 
 /**
- * Təcili və ya son müddəti keçmiş kateqoriya indeksini tapır
+ * Son gün vəziyyətini təyin edir
+ * 
+ * @param deadline Son tarix
+ * @returns Vəziyyət kodu: 'overdue', 'today', 'soon' və ya 'normal'
  */
-export const findUrgentCategoryIndex = (categories: CategoryWithColumns[]): number => {
-  const now = new Date();
-  const threeDaysLater = new Date(now);
-  threeDaysLater.setDate(now.getDate() + 3);
+export const getDeadlineStatus = (deadline?: string | Date): string => {
+  if (!deadline) return 'normal';
+  
+  const deadlineDate = new Date(deadline);
+  const remainingDays = getRemainingDays(deadlineDate);
+  
+  if (remainingDays < 0) return 'overdue';
+  if (remainingDays === 0) return 'today';
+  if (remainingDays <= 3) return 'soon';
+  return 'normal';
+};
 
-  const overdueOrUrgentCategoryIndex = categories.findIndex(category => {
-    if (!category.deadline) return false;
-    const deadlineDate = new Date(category.deadline);
-    return deadlineDate <= threeDaysLater;
+/**
+ * Kateqoriyanın tamamlanma faizini hesablayır
+ * 
+ * @param categoryWithColumns Kateqoriya və sütunları
+ * @param formData Form məlumatları
+ * @returns Tamamlanma faizi (0-100)
+ */
+export const calculateCategoryCompletion = (
+  categoryWithColumns: CategoryWithColumns,
+  formData: DataEntryForm
+): number => {
+  const categoryData = formData.entries.find(entry => entry.categoryId === categoryWithColumns.id);
+  
+  if (!categoryData || !categoryData.entries) return 0;
+  
+  const requiredColumns = categoryWithColumns.columns.filter(col => col.isRequired);
+  if (requiredColumns.length === 0) return 100;
+  
+  let filledRequiredCount = 0;
+  
+  requiredColumns.forEach(column => {
+    const entry = categoryData.entries.find(e => e.columnId === column.id);
+    if (entry && entry.value !== undefined && entry.value !== null && entry.value !== '') {
+      filledRequiredCount++;
+    }
   });
-
-  return overdueOrUrgentCategoryIndex !== -1 ? overdueOrUrgentCategoryIndex : 0;
+  
+  return Math.round((filledRequiredCount / requiredColumns.length) * 100);
 };
