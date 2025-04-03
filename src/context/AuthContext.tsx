@@ -1,227 +1,259 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { useSupabaseAuth } from '@/hooks/auth';  // hooks/auth/index.ts-dən import et
-import { FullUserData } from '@/types/supabase';
-import { toast } from 'sonner';
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from './LanguageContext';
+import { FullUserData } from '@/types/supabase';
 
-// User roles
-export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
-
-// Auth state interface
-interface AuthState {
-  user: FullUserData | null;
+interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  error: string | null;
-  session: any | null;  // session əlavə et
-}
-
-// Auth context interface - əlavə funksiyaları daxil et
-interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<boolean>;
+  user: FullUserData | null;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
-  clearError: () => void;
-  signup: (email: string, password: string, userData: Partial<FullUserData>) => Promise<boolean>;
-  resetPassword: (email: string) => Promise<boolean>;
-  updatePassword: (password: string) => Promise<boolean>;
-  getSession: () => Promise<any | null>;
-  refreshSession: () => Promise<any | null>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
-// Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Context provider props
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-// Context provider
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const {
-    user,
-    loading,
-    session,  // session əlavə et
-    isAuthenticated, // isAuthenticated dəyərini birbaşa useSupabaseAuth-dan alırıq
-    signIn,
-    signOut,
-    updateProfile,
-    signUp,  // əlavə funksiyalar
-    resetPassword,
-    updatePassword,
-    fetchUserData,
-    refreshSession
-  } = useSupabaseAuth();
-
-  const [error, setError] = useState<string | null>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<FullUserData | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  // Derive auth state
-  const authState: AuthState = {
-    user,
-    isAuthenticated, // useSupabaseAuth-dan gələn isAuthenticated dəyərini istifadə edirik
-    isLoading: loading,
-    error,
-    session  // session əlavə et
-  };
-
-  // Login function
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // İstifadəçi sessiyasını yoxlamaq
+  const checkUserSession = async () => {
     try {
-      setError(null);
-      const data = await signIn(email, password);
-      return !!data?.user;
-    } catch (error: any) {
-      setError(error.message || 'Bilinməyən giriş xətası');
-      return false;
-    }
-  };
-
-  // Signup function əlavə edək
-  const signup = async (email: string, password: string, userData: Partial<FullUserData>): Promise<boolean> => {
-    try {
-      setError(null);
-      const data = await signUp(email, password, userData);
-      return !!data?.user;
-    } catch (error: any) {
-      setError(error.message || 'Qeydiyyat xətası');
-      return false;
-    }
-  };
-
-  // Logout function
-  const logout = async () => {
-    try {
-      setError(null);
-      await signOut();
-      navigate('/login');
-    } catch (error: any) {
-      setError(error.message || 'Çıxış xətası');
-      navigate('/login');
-    }
-  };
-
-  // Update user function
-  const updateUser = async (userData: Partial<FullUserData>): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      setError(null);
-      const profileUpdates = {
-        full_name: userData.full_name,
-        phone: userData.phone,
-        position: userData.position,
-        language: userData.language,
-        avatar: userData.avatar,
-        status: userData.status,
-      };
+      setIsLoading(true);
       
-      // undefined dəyərləri təmizləyək
-      Object.keys(profileUpdates).forEach(key => {
-        if (profileUpdates[key as keyof typeof profileUpdates] === undefined) {
-          delete profileUpdates[key as keyof typeof profileUpdates];
+      // İndiki sessiyanı əldə et
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+      
+      if (currentSession) {
+        // İstifadəçi məlumatlarını RPC vasitəsilə əldə et
+        const { data: userData, error: userError } = await supabase.rpc(
+          'get_full_user_data',
+          { user_id_param: currentSession.user.id }
+        );
+        
+        if (userError) {
+          throw userError;
         }
+        
+        // İstifadəçi məlumatlarını təyin et
+        setUser(userData as FullUserData);
+        setIsAuthenticated(true);
+        console.log('İstifadəçi sessiyası yükləndi:', userData);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        console.log('İstifadəçi sessiyası yoxdur');
+      }
+    } catch (error) {
+      console.error('Sessiya yoxlanışı zamanı xəta:', error);
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // İlkin sessiya yoxlaması və authStateChange listener
+  useEffect(() => {
+    checkUserSession();
+    
+    // Auth state dəyişikliyini izləmək
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('Auth state dəyişdi:', event);
+        setSession(newSession);
+        
+        if (event === 'SIGNED_IN' && newSession) {
+          try {
+            // İstifadəçi məlumatlarını RPC vasitəsilə əldə et
+            const { data: userData, error: userError } = await supabase.rpc(
+              'get_full_user_data',
+              { user_id_param: newSession.user.id }
+            );
+            
+            if (userError) {
+              throw userError;
+            }
+            
+            // İstifadəçi məlumatlarını təyin et
+            setUser(userData as FullUserData);
+            setIsAuthenticated(true);
+            console.log('İstifadəçi giriş etdi:', userData);
+          } catch (error) {
+            console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', error);
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setIsAuthenticated(false);
+          console.log('İstifadəçi çıxış etdi');
+        }
+      }
+    );
+    
+    // Komponentin silinməsi zamanı abunəliyi ləğv et
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Login funksiyası
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Supabase-də login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
       
-      return await updateProfile(profileUpdates);
+      if (error) {
+        throw error;
+      }
+      
+      setSession(data.session);
+      toast.success(t('loginSuccess'), {
+        description: t('welcomeBack')
+      });
+      
+      navigate('/dashboard');
     } catch (error: any) {
-      setError(error.message || 'Profil yeniləmə xətası');
-      return false;
+      console.error('Login xətası:', error);
+      let errorMessage = t('loginError');
+      
+      // Xəta mesajlarını müəyyənləşdirək
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = t('invalidCredentials');
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = t('emailNotConfirmed');
+      }
+      
+      toast.error(t('loginFailed'), {
+        description: errorMessage
+      });
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // updatePassword-i wrap edək
-  const handleUpdatePassword = async (password: string): Promise<boolean> => {
+  // Logout funksiyası
+  const logout = async () => {
     try {
-      setError(null);
-      return await updatePassword(password);
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setUser(null);
+      setIsAuthenticated(false);
+      setSession(null);
+      
+      toast.success(t('logoutSuccess'));
+      navigate('/login');
     } catch (error: any) {
-      setError(error.message || 'Şifrə yeniləmə xətası');
-      return false;
+      console.error('Logout xətası:', error);
+      toast.error(t('logoutError'), {
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // resetPassword-i wrap edək
-  const handleResetPassword = async (email: string): Promise<boolean> => {
+  // Şifrə sıfırlama funksiyası
+  const resetPassword = async (email: string) => {
     try {
-      setError(null);
-      return await resetPassword(email);
+      setIsLoading(true);
+      
+      // Şifrə sıfırlama linki göndərmək
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success(t('resetPasswordEmailSent'), {
+        description: t('checkYourEmail')
+      });
     } catch (error: any) {
-      setError(error.message || 'Şifrə sıfırlama xətası');
-      return false;
+      console.error('Şifrə sıfırlama xətası:', error);
+      toast.error(t('resetPasswordError'), {
+        description: error.message
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Clear error
-  const clearError = () => {
-    setError(null);
-  };
-  
-  // Get session
-  const getSession = async () => {
+  // Yeni şifrə təyin etmək
+  const updatePassword = async (password: string) => {
     try {
-      console.log('AuthContext: getSession çağırıldı, mövcud sessiya:', session?.user?.id);
-      return session;
+      setIsLoading(true);
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success(t('passwordUpdated'), {
+        description: t('passwordUpdateSuccess')
+      });
+      navigate('/login');
     } catch (error: any) {
-      console.error('AuthContext: getSession xətası:', error);
-      setError(error.message || 'Sessiya əldə etmə xətası');
-      return null;
-    }
-  };
-  
-  // Refresh session
-  const handleRefreshSession = async () => {
-    try {
-      console.log('AuthContext: refreshSession çağırıldı');
-      setError(null);
-      const result = await refreshSession();
-      console.log('AuthContext: refreshSession nəticəsi:', result?.user?.id);
-      return result;
-    } catch (error: any) {
-      console.error('AuthContext: refreshSession xətası:', error);
-      setError(error.message || 'Sessiya yeniləmə xətası');
-      return null;
+      console.error('Şifrə yeniləmə xətası:', error);
+      toast.error(t('passwordUpdateError'), {
+        description: error.message
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        ...authState,
-        login,
-        logout,
-        updateUser,
-        clearError,
-        signup,
-        resetPassword: handleResetPassword,
-        updatePassword: handleUpdatePassword,
-        getSession,
-        refreshSession: handleRefreshSession
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  // Kontekst dəyərləri
+  const value = {
+    isAuthenticated,
+    isLoading,
+    user,
+    session,
+    login,
+    logout,
+    resetPassword,
+    updatePassword,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hooks
+// Hook üçün convenience method
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export const useRole = (role: Role | Role[]) => {
-  const { user } = useAuth();
-  
-  if (!user) return false;
-  
-  if (Array.isArray(role)) {
-    return role.includes(user.role as Role);
-  }
-  
-  return user.role === role;
 };

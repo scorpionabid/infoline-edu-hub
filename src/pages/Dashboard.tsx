@@ -1,21 +1,21 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
-import { useDashboardData } from '@/hooks/dashboard/useDashboardData';
+import { useSupabaseDashboardData } from '@/hooks/dashboard/useSupabaseDashboardData';
 import { ChartData } from '@/types/dashboard';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { dashboardData, isLoading, error, chartData, userRole } = useDashboardData();
+  const { dashboardData, isLoading, error, chartData, userRole, refreshData } = useSupabaseDashboardData();
   const [fallbackLoaded, setFallbackLoaded] = useState(false);
   const navigate = useNavigate();
   
-  // Sistem vəziyyətinin diaqnostikası, sadəcə bir dəfə və ya auth dəyişdikdə işləsin
+  // Sistem vəziyyətinin diaqnostikası
   useEffect(() => {
     console.group('Dashboard komponent diaqnostikası');
     console.log('Authentication vəziyyəti:', { 
@@ -42,12 +42,14 @@ const Dashboard: React.FC = () => {
       console.log('userRole:', userRole);
       console.log('Fallback vəziyyəti:', fallbackLoaded);
       
-      console.log('Dashboard data tipləri:', {
-        pendingForms: Array.isArray(dashboardData.pendingForms) ? 'array' : typeof dashboardData.pendingForms,
-        pendingFormsCount: Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms.length : 'N/A',
-        upcomingDeadlines: Array.isArray(dashboardData.upcomingDeadlines) ? 'array' : typeof dashboardData.upcomingDeadlines,
-        deadlinesCount: Array.isArray(dashboardData.upcomingDeadlines) ? dashboardData.upcomingDeadlines.length : 'N/A'
-      });
+      if (dashboardData.pendingForms && dashboardData.upcomingDeadlines) {
+        console.log('Dashboard data tipləri:', {
+          pendingForms: Array.isArray(dashboardData.pendingForms) ? 'array' : typeof dashboardData.pendingForms,
+          pendingFormsCount: Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms.length : 'N/A',
+          upcomingDeadlines: Array.isArray(dashboardData.upcomingDeadlines) ? 'array' : typeof dashboardData.upcomingDeadlines,
+          deadlinesCount: Array.isArray(dashboardData.upcomingDeadlines) ? dashboardData.upcomingDeadlines.length : 'N/A'
+        });
+      }
     }
   }, [dashboardData, isLoading, error, fallbackLoaded, userRole]);
   
@@ -70,18 +72,13 @@ const Dashboard: React.FC = () => {
   }, [isLoading]);
   
   // Əgər istifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndirək
-  // useCallback istifadə edərək funksiyaların yenidən yaradılmasının qarşısını alaq
-  const redirectToLogin = useCallback(() => {
-    navigate('/login');
-  }, [navigate]);
-  
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      redirectToLogin();
+      navigate('/login');
     }
-  }, [isAuthenticated, authLoading, redirectToLogin]);
+  }, [isAuthenticated, authLoading, navigate]);
   
-  // Xəta olduqda bildiriş göstərək - sadəcə xəta dəyişdikdə
+  // Xəta olduqda bildiriş göstərək
   useEffect(() => {
     if (error) {
       console.error('Dashboard data error:', error);
@@ -131,7 +128,7 @@ const Dashboard: React.FC = () => {
   return (
     <SidebarLayout>
       <div className="space-y-4">
-        <DashboardHeader />
+        <DashboardHeader refreshData={refreshData} />
         
         {isLoading && !fallbackLoaded ? (
           <div className="flex flex-col items-center justify-center h-[60vh]">
