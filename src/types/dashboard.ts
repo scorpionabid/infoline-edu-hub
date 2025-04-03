@@ -1,16 +1,8 @@
 
-import { FormItem, FormStatus } from '@/types/form';
-import { Notification } from '@/types/notification';
+import { Notification } from './notification';
+import { FormItem } from './form';
+export type { FormItem } from './form';
 
-// Dashboard üçün əsas data tipi
-export interface DashboardData {
-  // Burada ümumi dashboard məlumatları saxlanılır
-  notifications: Notification[];
-  activityData: ActivityItem[];
-  completionRate: number;
-}
-
-// Aktivlik elementi üçün tip
 export interface ActivityItem {
   id: string;
   type: string;
@@ -18,94 +10,53 @@ export interface ActivityItem {
   description: string;
   timestamp: string;
   userId: string;
-  action?: string;
-  actor?: string;
-  target?: string;
+  action: string;
+  actor: string;
+  target: string;
   time: string;
 }
 
-// Chart data üçün tip
-export interface ChartData {
-  categoryCompletion: {
-    name: string;
-    completed: number;
-  }[];
-  statusDistribution: {
-    status: string;
-    count: number;
-  }[];
-  activityData?: any[];
-  regionSchoolsData?: any[];
-  categoryCompletionData?: any[];
+export interface DashboardData {
+  notifications: Notification[];
+  activityData?: ActivityItem[];
+  pendingForms?: FormItem[];
 }
 
-// SuperAdmin dashboard specific data
 export interface SuperAdminDashboardData extends DashboardData {
   regions: number;
   sectors: number;
   schools: number;
   users: number;
+  completionRate: number;
   pendingApprovals: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  dueSoonForms?: number;
-  overdueForms?: number;
-  categoryCompletion: {
-    name: string;
-    completed: number;
-  }[];
-  statusDistribution: {
-    status: string;
-    count: number;
-  }[];
-  pendingForms?: FormItem[];
-  completedForms?: FormItem[];
 }
 
-// Region admin dashboard specific data
 export interface RegionAdminDashboardData extends DashboardData {
-  regionName?: string;
+  regionName: string;
   sectors: number;
   schools: number;
   approvalRate: number;
+  completionRate: number;
   pendingApprovals: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  categoryCompletion: {
-    name: string;
-    completed: number;
-  }[];
-  statusDistribution: {
-    status: string;
-    count: number;
-  }[];
-  pendingForms: FormItem[];
 }
 
-// Sector admin dashboard specific data
 export interface SectorAdminDashboardData extends DashboardData {
-  sectorName?: string;
-  regionName?: string;
+  sectorName: string;
+  regionName: string;
   schools: number;
   pendingApprovals: number;
+  completionRate: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  categoryCompletion: {
-    name: string;
-    completed: number;
-  }[];
-  statusDistribution: {
-    status: string;
-    count: number;
-  }[];
-  pendingForms?: FormItem[];
-  completedForms?: FormItem[];
 }
 
-// School admin dashboard specific data
 export interface SchoolAdminDashboardData extends DashboardData {
   schoolName: string;
   sectorName: string;
@@ -117,20 +68,10 @@ export interface SchoolAdminDashboardData extends DashboardData {
     dueSoon: number;
     overdue: number;
   };
-  categoryCompletion: {
-    name: string;
-    completed: number;
-  }[];
-  statusDistribution: {
-    status: string;
-    count: number;
-  }[];
-  pendingForms: FormItem[];
-  completedForms: FormItem[];
-  dueSoonForms: FormItem[];
-  overdueForms: FormItem[];
+  completionRate: number;
   recentForms?: FormItem[];
+  dueSoonForms?: FormItem[];
+  overdueForms?: FormItem[];
+  pendingForms: FormItem[];
+  completedForms: FormItem[] | number; // Burası ya FormItem[] ya da number olabilir
 }
-
-// Export FormItem tipini də birdə ixrac edək
-export { FormItem, FormStatus };

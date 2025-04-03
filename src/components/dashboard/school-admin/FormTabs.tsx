@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
-import { Form, FormStatus, FormItem } from '@/types/form';
+import { FormStatus, FormItem, Form } from '@/types/form';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { adaptFormStatus } from '@/hooks/dashboard/utils';
 
 interface FormTabsProps {
-  recentForms: Form[];
+  recentForms: FormItem[];
   handleFormClick: (formId: string) => void;
 }
 
@@ -22,17 +22,15 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [forms, setForms] = useState<Form[]>(initialForms);
+  const [forms, setForms] = useState<FormItem[]>(initialForms);
   const [loading, setLoading] = useState(false);
   
-  // Real data ilə işləyərkən formaları (kateqoriyaları) yükləyən funksiya
   useEffect(() => {
     const fetchForms = async () => {
       if (!user?.schoolId) return;
       
       setLoading(true);
       try {
-        // Kateqoriyaları əldə et
         const { data: categories, error: categoriesError } = await supabase
           .from('categories')
           .select('*')
@@ -40,16 +38,13 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
         
         if (categoriesError) throw categoriesError;
         
-        // Hər kateqoriya üçün məlumat giriş statistikalarını əldə et
         const formsWithStats = await Promise.all(categories.map(async (category) => {
-          // Kateqoriya üçün doldurulmuş məlumatları əldə et
           const { count: filledCount } = await supabase
             .from('data_entries')
             .select('*', { count: 'exact', head: true })
             .eq('category_id', category.id)
             .eq('school_id', user.schoolId);
           
-          // Kateqoriya üçün təsdiqlənmiş məlumatları əldə et
           const { count: approvedCount } = await supabase
             .from('data_entries')
             .select('*', { count: 'exact', head: true })
@@ -57,7 +52,6 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             .eq('school_id', user.schoolId)
             .eq('status', 'approved');
           
-          // Kateqoriya üçün rədd edilmiş məlumatları əldə et
           const { count: rejectedCount } = await supabase
             .from('data_entries')
             .select('*', { count: 'exact', head: true })
@@ -65,13 +59,11 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             .eq('school_id', user.schoolId)
             .eq('status', 'rejected');
           
-          // Kateqoriya üçün sütunları əldə et
           const { count: columnCount } = await supabase
             .from('columns')
             .select('*', { count: 'exact', head: true })
             .eq('category_id', category.id);
           
-          // Status təyin et
           let status: FormStatus = 'pending';
           if (rejectedCount > 0) {
             status = 'rejected';
@@ -83,18 +75,16 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             
             if (deadlineDate < now) {
               status = 'overdue';
-            } else if (deadlineDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) { // 3 gün
+            } else if (deadlineDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) {
               status = 'dueSoon';
             }
           }
           
-          // Tamamlanma faizini hesabla
           let completionPercentage = 0;
           if (columnCount > 0) {
             completionPercentage = Math.round((filledCount / columnCount) * 100);
           }
           
-          // Form obyektini yarat və Form tipinə uyğunlaşdır
           return {
             id: category.id,
             title: category.name,
@@ -122,7 +112,6 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
       }
     };
     
-    // İlkin formlar yoxdursa və ya formalar boş array isə, real dataları əldə et
     if ((!initialForms || initialForms.length === 0) && user?.schoolId) {
       fetchForms();
     } else {
@@ -130,7 +119,6 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
     }
   }, [initialForms, user?.schoolId, user?.id]);
   
-  // Formaların kateqoriyalarının siyahısını əldə edir
   const categories = React.useMemo(() => {
     const categorySet = new Set(['all']);
     forms.forEach(form => {
@@ -141,33 +129,28 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
     return Array.from(categorySet);
   }, [forms]);
   
-  // Axtarış və filtrləmələrdən sonra formaları süzür
-  const filterForms = (forms: Form[], tabValue: string) => {
+  const filterForms = (forms: FormItem[], tabValue: string) => {
     let filteredForms = [...forms];
     
-    // Tab filtri tətbiq edir
     if (tabValue === 'pending') {
       filteredForms = filteredForms.filter(form => form.status === 'pending');
     } else if (tabValue === 'urgent') {
       filteredForms = filteredForms.filter(form => 
         form.status === 'rejected' || 
         form.status === 'overdue' ||
-        (form.status === 'dueSoon') || // Son tarixi yaxınlaşan formlar
-        (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)) // 3 gün içində olanlar
+        (form.status === 'dueSoon') ||
+        (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000))
       );
     }
     
-    // Kateqoriya filtri
     if (selectedCategory !== 'all') {
       filteredForms = filteredForms.filter(form => form.categoryId === selectedCategory);
     }
     
-    // Status filtri
     if (selectedStatus !== 'all') {
       filteredForms = filteredForms.filter(form => form.status === selectedStatus as FormStatus);
     }
     
-    // Axtarış filtri
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filteredForms = filteredForms.filter(form => 
@@ -179,7 +162,6 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
     return filteredForms;
   };
   
-  // Yüklənmə zamanı göstəriləcək
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -258,7 +240,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   category={form.categoryId}
                   status={form.status}
                   completionPercentage={form.completionPercentage || 0}
-                  deadline={form.deadline || form.dueDate}
+                  deadline={form.deadline || ""}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}
@@ -282,7 +264,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   category={form.categoryId}
                   status={form.status}
                   completionPercentage={form.completionPercentage || 0}
-                  deadline={form.deadline || form.dueDate}
+                  deadline={form.deadline || ""}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}
@@ -306,7 +288,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   category={form.categoryId}
                   status={form.status}
                   completionPercentage={form.completionPercentage || 0}
-                  deadline={form.deadline || form.dueDate}
+                  deadline={form.deadline || ""}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}

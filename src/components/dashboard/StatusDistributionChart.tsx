@@ -1,62 +1,81 @@
 
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface StatusDistributionChartProps {
-  data: {
-    status: string;
-    count: number;
-  }[];
+  data: Array<{
+    name: string;
+    value: number;
+    color: string;
+    status?: string; // Opsiyonel status field
+  }>;
+  title?: string;
+  className?: string;
 }
 
-const COLORS = ['#4ade80', '#facc15', '#f87171', '#fb923c', '#60a5fa'];
-
-const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data }) => {
+const StatusDistributionChart: React.FC<StatusDistributionChartProps> = ({ data, title, className }) => {
   const { t } = useLanguage();
-  
-  const formattedData = data.map(item => ({
-    name: t(item.status.toLowerCase()), // status adını tərcümə edirik
-    value: item.count,
-    status: item.status.toLowerCase()
-  }));
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor="middle" 
+        dominantBaseline="central"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
-    <div className="w-full h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={formattedData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-          >
-            {formattedData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={COLORS[index % COLORS.length]} 
-                stroke="#fff"
-                strokeWidth={2}
+    <Card className={className}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-md font-medium">
+          {title || t('statusDistribution')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={renderCustomizedLabel}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    stroke={entry.color}
+                    strokeWidth={1}
+                  />
+                ))}
+              </Pie>
+              <Legend />
+              <Tooltip
+                formatter={(value: number) => [value, 'Count']}
+                labelFormatter={(name) => t(name.toLowerCase())}
               />
-            ))}
-          </Pie>
-          <Tooltip 
-            formatter={(value) => [value, t('count')]}
-            labelFormatter={(_, data) => data[0].payload.name}
-          />
-          <Legend 
-            formatter={(value, entry) => t(entry.payload.status)}
-            layout="horizontal"
-            verticalAlign="bottom"
-            align="center"
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

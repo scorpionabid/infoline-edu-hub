@@ -1,62 +1,25 @@
 
-export type CategoryAssignment = 'all' | 'sectors';
 export type CategoryStatus = 'active' | 'inactive' | 'archived';
+export type CategoryAssignment = 'all' | 'sectors' | 'specific';
 
 export interface Category {
   id: string;
   name: string;
-  description: string;
-  assignment: CategoryAssignment;
+  description?: string;
   status: CategoryStatus;
-  deadline?: string;
+  assignment: CategoryAssignment;
+  priority: number;
   archived: boolean;
-  priority: number;
   column_count: number;
-  createdAt?: string;
-  updatedAt?: string;
-  order?: number; // Daha çox əvvəlki müqayisə üçün əlavə olunur
+  order?: number;
+  deadline?: string | null;
 }
 
-export interface CategoryFilter {
-  status?: CategoryStatus;
-  assignment?: CategoryAssignment;
-  search?: string;
-  archived?: boolean;
-}
-
-// MockCategory tipini əlavə edirik
-export interface MockCategory extends Category {
-  completionRate?: number;
-  columnCount?: number;
-}
-
-// CategoryWithOrder tipini əlavə edirik
-export interface CategoryWithOrder {
-  id: string;
-  name: string;
-  description: string;
-  assignment: CategoryAssignment;
-  status: CategoryStatus;
-  priority: number;
+export interface CategoryWithOrder extends Category {
   order: number;
-  archived: boolean;
-  column_count: number;
 }
 
-// Supabase category-ni adaptasiya etmək üçün funksiya
-export const adaptSupabaseCategory = (category: any): Category => {
-  return {
-    id: category.id,
-    name: category.name,
-    description: category.description || "",
-    assignment: category.assignment || "all",
-    status: category.status || "active",
-    deadline: category.deadline,
-    archived: category.archived || false,
-    priority: category.priority || 0,
-    column_count: category.column_count || 0,
-    createdAt: category.created_at,
-    updatedAt: category.updated_at,
-    order: category.order_index || 0,
-  };
-};
+export interface CategoryWithColumns {
+  category: Category;
+  columns: import('@/types/column').Column[];
+}

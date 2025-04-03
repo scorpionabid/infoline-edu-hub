@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,17 +7,15 @@ import {
   SuperAdminDashboardData, 
   RegionAdminDashboardData,
   SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  ActivityItem
+  SchoolAdminDashboardData
 } from '@/types/dashboard';
 import { FormItem } from '@/types/form';
-import { Notification, adaptNotification } from '@/types/notification';
 import { FormStatus } from '@/types/form';
+import { adaptNotifications, adaptFormItems, adaptActivityItems } from '@/hooks/dashboard/utils';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
-import NotificationsCard from './NotificationsCard';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -31,7 +28,6 @@ interface DashboardContentProps {
   isLoading: boolean;
 }
 
-// Notification formatını uyğunlaşdırma funksiyası
 const adaptNotifications = (notifications: any[]): Notification[] => {
   if (!notifications || !Array.isArray(notifications)) {
     console.warn('Notifications is not an array:', notifications);
@@ -41,7 +37,6 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
   return notifications.map(notification => adaptNotification(notification));
 };
 
-// FormItem-ləri Form formatına çevirmək üçün helper funksiya
 const adaptFormItems = (formItems: any[]): FormItem[] => {
   if (!formItems || !Array.isArray(formItems)) {
     console.warn('FormItems is not an array:', formItems);
@@ -60,6 +55,26 @@ const adaptFormItems = (formItems: any[]): FormItem[] => {
   }));
 };
 
+const adaptActivityItems = (activityItems: any[]): ActivityItem[] => {
+  if (!activityItems || !Array.isArray(activityItems)) {
+    console.warn('ActivityItems is not an array:', activityItems);
+    return [];
+  }
+  
+  return activityItems.map(item => ({
+    id: item.id || '',
+    type: item.type || '',
+    title: item.title || '',
+    description: item.description || '',
+    timestamp: item.timestamp || '',
+    userId: item.userId || '',
+    action: item.action || '',
+    actor: item.actor || '',
+    target: item.target || '',
+    time: item.time || ''
+  }));
+};
+
 const DashboardContent: React.FC<DashboardContentProps> = ({
   userRole,
   dashboardData,
@@ -72,7 +87,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   console.log('DashboardContent rendering for role:', userRole);
   console.log('Dashboard data available:', !!dashboardData);
 
-  // Məlumatlar null və ya undefined olduğunu yoxlayaq
   if (!dashboardData) {
     console.error('Dashboard data is undefined or null');
     return (
@@ -84,7 +98,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
-  // Data entry səhifəsinə keçid
   const navigateToDataEntry = () => {
     navigate('/data-entry');
     toast.success(t('navigatingToDataEntry'), {
@@ -92,7 +105,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     });
   };
 
-  // Form-a keçid funksiyası - Data entry səhifəsinə yönləndirir və form ID-sini ötürür
   const handleFormClick = (formId: string) => {
     navigate(`/data-entry?formId=${formId}`);
     toast.info(t('openingForm'), {
@@ -100,7 +112,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     });
   };
 
-  // Yüklənmə zamanı göstəriləcək
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -109,22 +120,18 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
-  // Render appropriate dashboard based on user role
   const renderDashboard = () => {
     console.log('Rendering dashboard for role:', userRole);
     
     try {
       switch (userRole) {
         case 'superadmin': {
-          console.log('Rendering SuperAdminDashboard');
           const superAdminData = dashboardData as SuperAdminDashboardData;
           const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
           
-          // For SuperAdminDashboard, make sure all required properties are present
           const adaptedSuperAdminData = {
             ...superAdminData,
             notifications: adaptedNotifications,
-            // Default dəyərlərin təyin edilməsi
             regions: superAdminData.regions || 0,
             sectors: superAdminData.sectors || 0,
             schools: superAdminData.schools || 0,
@@ -134,7 +141,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingSchools: superAdminData.pendingSchools || 0,
             approvedSchools: superAdminData.approvedSchools || 0,
             rejectedSchools: superAdminData.rejectedSchools || 0,
-            // ActivityItem tipini uyğunlaşdıraq
             activityData: (superAdminData.activityData || []).map(item => ({
               id: item.id || '',
               type: item.type || '',
@@ -155,7 +161,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const regionAdminData = dashboardData as RegionAdminDashboardData;
           const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
           
-          // For RegionAdminDashboard, make sure all required properties are present
           const adaptedRegionAdminData = {
             ...regionAdminData,
             notifications: adaptedNotifications,
@@ -168,7 +173,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingSchools: regionAdminData.pendingSchools || 0,
             approvedSchools: regionAdminData.approvedSchools || 0,
             rejectedSchools: regionAdminData.rejectedSchools || 0,
-            // ActivityItem tipini uyğunlaşdıraq
             activityData: (regionAdminData.activityData || []).map(item => ({
               id: item.id || '',
               type: item.type || '',
@@ -189,7 +193,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const sectorAdminData = dashboardData as SectorAdminDashboardData;
           const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
           
-          // For SectorAdminDashboard, make sure all required properties are present
           const adaptedSectorAdminData = {
             ...sectorAdminData,
             notifications: adaptedNotifications,
@@ -201,14 +204,13 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingSchools: sectorAdminData.pendingSchools || 0,
             approvedSchools: sectorAdminData.approvedSchools || 0,
             rejectedSchools: sectorAdminData.rejectedSchools || 0,
-            // ActivityItem tipini uyğunlaşdıraq
             activityData: (sectorAdminData.activityData || []).map(item => ({
               id: item.id || '',
               type: item.type || '',
               title: item.title || '',
               description: item.description || '',
               timestamp: item.timestamp || '',
-              userId: item.userId || '', 
+              userId: item.userId || '',
               action: item.action || '',
               actor: item.actor || '',
               target: item.target || '',
@@ -224,26 +226,23 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const schoolAdminData = dashboardData as SchoolAdminDashboardData;
           const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
           
-          // Ensure pendingForms exists and is properly formatted
           const pendingForms = schoolAdminData.pendingForms ? 
             adaptFormItems(schoolAdminData.pendingForms) : [];
           
-          // Ensure completedForms is correctly formatted - could be FormItem[] or number
-          let completedForms: FormItem[];
+          let completedForms: FormItem[] | number;
           if (Array.isArray(schoolAdminData.completedForms)) {
             completedForms = adaptFormItems(schoolAdminData.completedForms);
+          } else if (typeof schoolAdminData.completedForms === 'number') {
+            completedForms = schoolAdminData.completedForms;
           } else {
-            // If it's a number, convert it to an empty array - we'll handle this in the component
             completedForms = [];
           }
           
-          // Forms, pendingForms və recentForms məlumatlarını uyğunlaşdıraq
-          const adaptedSchoolAdminData: SchoolAdminDashboardData = {
+          const adaptedSchoolAdminData = {
             ...schoolAdminData,
             notifications: adaptedNotifications,
             pendingForms: pendingForms,
             completedForms: completedForms,
-            // Make sure 'forms' property is present
             forms: schoolAdminData.forms || {
               pending: 0,
               approved: 0,
@@ -251,21 +250,16 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               dueSoon: 0,
               overdue: 0
             },
-            // Make sure required properties are present
             schoolName: schoolAdminData.schoolName || "Unknown School",
             sectorName: schoolAdminData.sectorName || "Unknown Sector",
             regionName: schoolAdminData.regionName || "Unknown Region",
             completionRate: schoolAdminData.completionRate || 0,
-            // Adapt recentForms if present
             recentForms: schoolAdminData.recentForms ? 
               adaptFormItems(schoolAdminData.recentForms) : [],
-            // Adapt dueSoonForms if present
             dueSoonForms: schoolAdminData.dueSoonForms ? 
               adaptFormItems(schoolAdminData.dueSoonForms) : [],
-            // Adapt overdueForms if present
             overdueForms: schoolAdminData.overdueForms ? 
               adaptFormItems(schoolAdminData.overdueForms) : [],
-            // ActivityItem tipini uyğunlaşdıraq
             activityData: (schoolAdminData.activityData || []).map(item => ({
               id: item.id || '',
               type: item.type || '',

@@ -1,30 +1,37 @@
 
-import { Category } from "@/types/category";
-
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea' | 'email' | 'phone' | 'multiselect';
+export type ColumnType = 
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'select'
+  | 'multiselect'
+  | 'checkbox'
+  | 'radio'
+  | 'file'
+  | 'image'
+  | 'email'
+  | 'phone'
+  | 'textarea';
 
 export interface ColumnOption {
-  value: string;
   label: string;
+  value: string;
 }
 
 export interface ColumnValidation {
-  min?: number;
-  max?: number;
-  pattern?: string;
   required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  patternMessage?: string;
-  warningThreshold?: number | { min?: number; max?: number };
-  minDate?: string;
-  maxDate?: string;
-  options?: string[] | ColumnOption[];
   minValue?: number;
   maxValue?: number;
-  format?: string;
-  regex?: string;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
   patternError?: string;
+  format?: string;
+  min?: number;
+  max?: number;
+  regex?: string;
+  minDate?: string;
+  maxDate?: string;
 }
 
 export interface Column {
@@ -33,82 +40,53 @@ export interface Column {
   type: ColumnType;
   categoryId: string;
   isRequired: boolean;
+  options: string[] | ColumnOption[];
+  orderIndex: number;
+  order?: number;
   placeholder?: string;
   helpText?: string;
   defaultValue?: string;
-  orderIndex: number;
-  options: string[] | ColumnOption[];
   validation?: ColumnValidation;
-  status: string;
-  order?: number;
+  status?: string;
   parentColumnId?: string;
   dependsOn?: string;
 }
 
 export interface CategoryWithColumns {
-  category: Category;
+  category: {
+    id: string;
+    name: string;
+    description?: string;
+    status: CategoryStatus;
+    assignment: CategoryAssignment;
+    priority: number;
+    archived: boolean;
+    column_count: number;
+    deadline?: string;
+  };
   columns: Column[];
-  id?: string;
-  name?: string;
   deadline?: string;
 }
 
-// Supabase column-ni adaptasiya etmək üçün funksiya
-export const adaptSupabaseColumn = (column: any): Column => {
-  // Parse options array if it's a string
-  let parsedOptions = column.options;
-  if (typeof column.options === 'string') {
-    try {
-      parsedOptions = JSON.parse(column.options);
-    } catch (e) {
-      parsedOptions = [];
-    }
-  }
+export type CategoryStatus = 'active' | 'inactive' | 'archived';
+export type CategoryAssignment = 'all' | 'sectors' | 'specific';
 
-  // Parse validation object if it's a string
-  let parsedValidation = column.validation;
-  if (typeof column.validation === 'string') {
-    try {
-      parsedValidation = JSON.parse(column.validation);
-    } catch (e) {
-      parsedValidation = {};
-    }
-  }
-
-  return {
-    id: column.id,
-    name: column.name,
-    type: column.type as ColumnType,
-    categoryId: column.category_id,
-    isRequired: column.is_required !== false,
-    placeholder: column.placeholder || '',
-    helpText: column.help_text || '',
-    defaultValue: column.default_value || '',
-    orderIndex: column.order_index || 0,
-    options: Array.isArray(parsedOptions) ? parsedOptions : [],
-    validation: parsedValidation || {},
-    status: column.status || 'active',
-    order: column.order_index || 0,
-    parentColumnId: column.parent_column_id,
-    dependsOn: column.depends_on,
-  };
-};
-
-// SupaBase üçün column-ni düzənləmə
+// Supabase-dən gələn sütun obyektini Column tipinə çevirmək üçün
 export const adaptColumnToSupabase = (column: Column) => {
   return {
+    id: column.id,
     name: column.name,
     category_id: column.categoryId,
     type: column.type,
     is_required: column.isRequired,
+    options: Array.isArray(column.options) ? JSON.stringify(column.options) : null,
+    order_index: column.orderIndex || column.order || 0,
     placeholder: column.placeholder || null,
     help_text: column.helpText || null,
     default_value: column.defaultValue || null,
-    order_index: column.orderIndex,
-    options: JSON.stringify(column.options || []),
-    validation: JSON.stringify(column.validation || {}),
-    status: column.status,
+    validation: column.validation ? JSON.stringify(column.validation) : null,
+    status: column.status || 'active',
     parent_column_id: column.parentColumnId || null,
-    depends_on: column.dependsOn || null,
+    depends_on: column.dependsOn || null
   };
 };

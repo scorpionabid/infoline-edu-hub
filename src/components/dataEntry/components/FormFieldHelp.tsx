@@ -1,23 +1,28 @@
 
 import React from 'react';
-import { HelpCircle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FormFieldHelpProps {
-  helpText: string;
+  text: string;
 }
 
-const FormFieldHelp: React.FC<FormFieldHelpProps> = ({ helpText }) => {
-  if (!helpText) return null;
-  
+const FormFieldHelp: React.FC<FormFieldHelpProps> = ({ text }) => {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+          <span className="ml-1 inline-flex cursor-help">
+            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+          </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="max-w-xs">{helpText}</p>
+          <p className="max-w-xs text-sm">{text}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

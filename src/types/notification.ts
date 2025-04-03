@@ -1,5 +1,6 @@
 
-import { NotificationType, NotificationEntityType } from '@/components/dashboard/NotificationType';
+export type NotificationType = 'info' | 'warning' | 'success' | 'error';
+export type NotificationEntityType = 'category' | 'column' | 'school' | 'region' | 'sector' | 'user' | 'form';
 
 export interface Notification {
   id: string;
@@ -13,6 +14,7 @@ export interface Notification {
   relatedEntityId?: string;
   relatedEntityType?: NotificationEntityType;
   read_status?: boolean;
+  time?: string; // Vaxt xüsusiyyətini əlavə edirik, çünki çox yerdə istifadə olunur
 }
 
 export const adaptNotification = (notification: any): Notification => {
@@ -27,6 +29,7 @@ export const adaptNotification = (notification: any): Notification => {
     userId: notification.userId || notification.user_id || '',
     relatedEntityId: notification.relatedEntityId || notification.related_entity_id,
     relatedEntityType: notification.relatedEntityType || notification.related_entity_type,
-    read_status: notification.read_status
+    read_status: notification.read_status,
+    time: notification.time // Vaxt xüsusiyyətini əlavə edirik
   };
 };
