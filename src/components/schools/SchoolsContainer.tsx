@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { School } from '@/types/school';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
@@ -14,12 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { SchoolAdminDialog } from './SchoolAdminDialog';
-import { SchoolDeleteDialog } from './SchoolDeleteDialog';
-import { SchoolEditDialog } from './SchoolEditDialog';
-import { SchoolAddDialog } from './SchoolAddDialog';
+import SchoolAdminDialog from './SchoolAdminDialog';
+import SchoolDeleteDialog from './SchoolDeleteDialog';
+import SchoolEditDialog from './SchoolEditDialog';
+import SchoolAddDialog from './SchoolAddDialog';
 
 const SchoolsContainer: React.FC = () => {
   const { t } = useLanguage();
@@ -27,9 +28,9 @@ const SchoolsContainer: React.FC = () => {
 
   const {
     schools,
-    isLoading,
+    loading,
     error,
-    addSchool,
+    createSchool,
     updateSchool,
     deleteSchool,
     assignAdmin,
@@ -54,9 +55,6 @@ const SchoolsContainer: React.FC = () => {
     handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
-    handleDeleteConfirmFromHook,
-    handleAdminUpdate,
-    handleResetPassword,
     formData,
     currentTab,
     setCurrentTab,
@@ -80,6 +78,16 @@ const SchoolsContainer: React.FC = () => {
   const handleDeleteConfirmHelper = async (school: School) => {
     closeDeleteDialog();
     // Buraya kod əlavə edilməlidir əgər silmə əməliyyatı olacaqsa
+    try {
+      await deleteSchool(school.id);
+      toast.success(t('schoolDeleted'), {
+        description: t('schoolDeletedSuccess', { name: school.name })
+      });
+    } catch (error) {
+      toast.error(t('error'), {
+        description: t('schoolDeleteFailed')
+      });
+    }
   };
 
   return (
@@ -107,7 +115,7 @@ const SchoolsContainer: React.FC = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                {/* Search Icon */}
+                <Search className="h-4 w-4" />
               </span>
             </div>
 
@@ -171,7 +179,7 @@ const SchoolsContainer: React.FC = () => {
       <SchoolAddDialog
         isOpen={isAddDialogOpen}
         onOpenChange={closeAddDialog}
-        onAddSchool={addSchool}
+        onAddSchool={createSchool}
         onClose={closeAddDialog}
       />
 

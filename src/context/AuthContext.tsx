@@ -1,65 +1,37 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext } from 'react';
+import { FullUserData, UserRole } from '@/types/supabase';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
-import { UserRole } from '@/types/supabase';
 
-// Default dəyər təyin edirik ki, kontekst yaradılanda boş dəyər olmasın
-const defaultAuthValue = {
+// Default auth konteksti dəyərləri
+export const defaultAuthContext = {
   user: null,
   loading: true,
   error: null,
   session: null,
-  login: async () => ({ error: new Error("Auth context not initialized") }),
-  signup: async () => ({ error: new Error("Auth context not initialized") }),
+  login: async (email: string, password: string) => ({ error: new Error('Not implemented') }),
+  signup: async (email: string, password: string, userData: Partial<FullUserData>) => ({ error: new Error('Not implemented') }),
   logout: async () => {},
-  updateProfile: async () => {},
-  resetPassword: async () => ({ error: new Error("Auth context not initialized") }),
-  updatePassword: async () => ({ error: new Error("Auth context not initialized") }),
+  updateProfile: async (profileData: Partial<FullUserData>) => {},
+  resetPassword: async (email: string) => ({ error: null }),
+  updatePassword: async (password: string) => ({ error: null }),
   clearError: () => {},
   isAuthenticated: false,
-  hasRole: () => false,
+  hasRole: (role: UserRole | UserRole[]) => false,
   isLoading: true,
-  sendPasswordReset: async () => false,
-  confirmPasswordReset: async () => false
+  sendPasswordReset: async (email: string) => false,
+  confirmPasswordReset: async (password: string) => false,
 };
 
-// Auth context for application-wide auth state
-const AuthContext = createContext(defaultAuthValue);
+// Auth kontekstinin yaradılması
+const AuthContext = createContext(defaultAuthContext);
 
-// Auth provider component
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Auth provider komponenti
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const auth = useAuthHook();
-  
-  return (
-    <AuthContext.Provider value={auth}>
-      {children}
-    </AuthContext.Provider>
-  );
+
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 };
 
-// Hook to use auth throughout the application
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-// Role checking hook for conditional rendering
-export const useRole = (
-  role: UserRole | UserRole[], 
-  fallback: JSX.Element | null = null
-): boolean | JSX.Element | null => {
-  const { user, loading } = useAuth();
-  
-  if (loading) return fallback;
-  
-  if (!user) return fallback;
-  
-  if (Array.isArray(role)) {
-    return role.includes(user.role as UserRole) || fallback;
-  }
-  
-  return user.role === role || fallback;
-};
+// Auth kontekstini istifadə etmək üçün hook
+export const useAuth = () => useContext(AuthContext);

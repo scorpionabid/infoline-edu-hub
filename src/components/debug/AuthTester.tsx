@@ -16,6 +16,18 @@ const AuthTester: React.FC = () => {
     return null;
   }
   
+  // Login üçün demo məlumatlar
+  const handleMockLogin = async () => {
+    await auth.login('test@example.com', 'password');
+  };
+
+  // Profil yeniləmək üçün demo məlumatlar
+  const handleUpdateProfile = async () => {
+    await auth.updateProfile({
+      full_name: `User ${Math.floor(Math.random() * 100)}`
+    });
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -29,7 +41,7 @@ const AuthTester: React.FC = () => {
         
         {!auth.isAuthenticated ? (
           <Button 
-            onClick={() => auth.login('test@example.com', 'password')} 
+            onClick={handleMockLogin} 
             variant="secondary" 
             size="sm"
           >
@@ -47,9 +59,7 @@ const AuthTester: React.FC = () => {
         
         {auth.isAuthenticated && (
           <Button 
-            onClick={() => auth.updateProfile({
-              full_name: `User ${Math.floor(Math.random() * 100)}`
-            })}
+            onClick={handleUpdateProfile}
             variant="outline"
             size="sm"
           >

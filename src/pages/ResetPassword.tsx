@@ -53,16 +53,18 @@ const ResetPassword = () => {
     setResetInProgress(true);
     
     try {
-      await confirmPasswordReset(password);
-      setResetSuccess(true);
-      toast.success(t('passwordResetSuccess'), {
-        description: t('passwordResetSuccessDescription')
-      });
-      
-      // Redirect to login after 3 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      const success = await confirmPasswordReset(password);
+      if (success) {
+        setResetSuccess(true);
+        toast.success(t('passwordResetSuccess'), {
+          description: t('passwordResetSuccessDescription')
+        });
+        
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
     } catch (error: any) {
       console.error('Password reset error:', error);
     } finally {

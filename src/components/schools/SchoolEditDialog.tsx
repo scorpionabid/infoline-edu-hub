@@ -1,11 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { School } from '@/types/school';
-import { EditDialog } from './school-dialogs';
-import { useSectors } from '@/hooks/useSectors';
+import { Region } from '@/types/region';
+import { Sector } from '@/types/sector';
+import { useLanguage } from '@/context/LanguageContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRegionsData } from '@/hooks/regions/useRegionsData';
+import { useSectorsData } from '@/hooks/sectors/useSectorsData';
 
 interface SchoolEditDialogProps {
   isOpen: boolean;
@@ -23,64 +28,211 @@ export const SchoolEditDialog: React.FC<SchoolEditDialogProps> = ({
   onClose
 }) => {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState<any>({});
-  const [currentTab, setCurrentTab] = useState('school');
-  const { sectors } = useSectors();
-
+  const [name, setName] = useState('');
+  const [regionId, setRegionId] = useState<string>('');
+  const [sectorId, setSectorId] = useState<string>('');
+  const [address, setAddress] = useState('');
+  const [principalName, setPrincipalName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Regon və Sector məlumatlarını əldə etmək
+  const { regions, fetchRegions } = useRegionsData();
+  const { sectors, fetchSectors } = useSectorsData();
+  
+  // Dialog açıldıqda region və məktəb məlumatlarını yükləyək
   useEffect(() => {
-    if (isOpen && school) {
-      setFormData({
-        name: school.name || '',
-        regionId: school.regionId || '',
-        sectorId: school.sectorId || '',
-        address: school.address || '',
-        email: school.email || '',
-        phone: school.phone || '',
-        principalName: school.principalName || '',
-        studentCount: school.studentCount || 0,
-        teacherCount: school.teacherCount || 0,
-        type: school.type || '',
-        language: school.language || '',
-        status: school.status || 'active',
-        adminEmail: school.adminEmail || ''
-      });
+    if (isOpen) {
+      fetchRegions();
     }
-  }, [isOpen, school]);
+  }, [isOpen, fetchRegions]);
+  
+  // Region seçildikdə və ya dəyişdirildikdə sektorları yükləyək
+  useEffect(() => {
+    if (regionId) {
+      fetchSectors(regionId);
+    }
+  }, [regionId, fetchSectors]);
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  // Məktəb məlumatları ilə formu doldurmaq
+  useEffect(() => {
+    if (school) {
+      setName(school.name || '');
+      setRegionId(school.region_id || '');
+      setSectorId(school.sector_id || '');
+      setAddress(school.address || '');
+      setPrincipalName(school.principal_name || '');
+      setPhone(school.phone || '');
+      setEmail(school.email || '');
+    }
+  }, [school]);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async () => {
     if (!school) return;
-
+    
+    setSubmitting(true);
     try {
-      await onUpdateSchool(school.id, data);
-      onClose();
+      const updatedSchool: Partial<School> = {
+        name,
+        region_id: regionId,
+        sector_id: sectorId,
+        address,
+        principal_name: principalName,
+        phone,
+        email,
+      };
+      
+      const success = await onUpdateSchool(school.id, updatedSchool);
+      if (success) {
+        onClose();
+      }
     } catch (error) {
-      console.error('Məktəb yeniləmə xətası:', error);
+      console.error('Update school error:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const filteredSectors = React.useMemo(() => {
-    return sectors.map(sector => ({
-      id: sector.id,
-      name: sector.name,
-      regionId: sector.regionId || sector.region_id
-    })).filter(sector => !formData.regionId || sector.regionId === formData.regionId);
-  }, [sectors, formData.regionId]);
+  const handleRegionChange = (value: string) => {
+    setRegionId(value);
+    setSectorId(''); // Reset sector when region changes
+  };
+  
+  // Get filtered sectors based on selected region
+  const filteredSectors = sectors.filter(sector => sector.region_id === regionId);
 
   return (
-    <EditDialog
-      open={isOpen}
-      onOpenChange={onOpenChange}
-      school={school}
-      onSubmit={handleSubmit}
-      formData={formData}
-      onChange={handleInputChange}
-      currentTab={currentTab}
-      onTabChange={setCurrentTab}
-      filteredSectors={filteredSectors}
-    />
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{t('editSchool')}</DialogTitle>
+          <DialogDescription>
+            {school ? t('editingSchool', { name: school.name }) : t('selectSchoolFirst')}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {school && (
+          <>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">{t('schoolName')}</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('enterSchoolName')}
+                  disabled={submitting}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="region">{t('region')}</Label>
+                  <Select value={regionId} onValueChange={handleRegionChange} disabled={submitting}>
+                    <SelectTrigger id="region">
+                      <SelectValue placeholder={t('selectRegion')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regions.map((region: Region) => (
+                        <SelectItem key={region.id} value={region.id}>
+                          {region.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="sector">{t('sector')}</Label>
+                  <Select 
+                    value={sectorId} 
+                    onValueChange={setSectorId} 
+                    disabled={!regionId || submitting}
+                  >
+                    <SelectTrigger id="sector">
+                      <SelectValue placeholder={t('selectSector')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredSectors.map((sector: Sector) => (
+                        <SelectItem key={sector.id} value={sector.id}>
+                          {sector.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address">{t('address')}</Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder={t('enterAddress')}
+                  disabled={submitting}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="principalName">{t('principalName')}</Label>
+                  <Input
+                    id="principalName"
+                    value={principalName}
+                    onChange={(e) => setPrincipalName(e.target.value)}
+                    placeholder={t('enterPrincipalName')}
+                    disabled={submitting}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t('phone')}</Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={t('enterPhone')}
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('email')}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('enterEmail')}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+              >
+                {t('cancel')}
+              </Button>
+              <Button
+                type="submit"
+                onClick={handleSubmit}
+                disabled={!name || !regionId || !sectorId || submitting}
+              >
+                {submitting ? t('updating') : t('saveChanges')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
+
+export default SchoolEditDialog;
