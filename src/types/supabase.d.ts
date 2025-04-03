@@ -13,7 +13,7 @@ export interface CreateUserData {
   language?: string;
   status?: 'active' | 'inactive' | 'blocked';
   avatar?: string;
-  password?: string; // Şifrə əlavə edildi
+  password?: string;
 }
 
 export interface UpdateUserData {
@@ -28,7 +28,7 @@ export interface UpdateUserData {
   language?: string;
   status?: 'active' | 'inactive' | 'blocked';
   avatar?: string;
-  password?: string; // Şifrə əlavə edildi
+  password?: string;
 }
 
 export interface Profile {
@@ -68,9 +68,9 @@ export interface Region {
 export interface FullUserData {
   id: string;
   email: string;
-  role: UserRole; // String obyekti əvəzinə UserRole tipini istifadə edirik
+  role: UserRole;
   full_name?: string;
-  name?: string; // User tipi ilə uyğunluq üçün əlavə edildi
+  name?: string;
   phone?: string;
   position?: string;
   language?: 'az' | 'en' | 'ru' | 'tr';
@@ -96,4 +96,26 @@ export interface FullUserData {
     email: boolean;
     system: boolean;
   };
+  // User interfeysi ilə uyğunlaşmaq üçün əlavə edilmiş xüsusiyyətlər
+  app_metadata?: any;
+  user_metadata?: any;
+  aud?: string;
+}
+
+// DataEntry interfeysi əlavə edirik
+export interface DataEntry {
+  id: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  value?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+  version_history_id?: string;
 }

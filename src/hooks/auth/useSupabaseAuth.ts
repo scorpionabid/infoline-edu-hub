@@ -1,330 +1,363 @@
-import { useEffect, useState } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserData, getUserById } from './userDataService';
-import { User, Session } from '@supabase/supabase-js';
+import { fetchUserById } from './userDataService';
+import { User } from '@/types/user';
+import { FullUserData } from '@/types/supabase';
+import { toast } from 'sonner';
+import { UserRole } from '@/types/supabase';
 
-export type AuthState = {
-  loading: boolean;
-  isAuthenticated: boolean;
-  user: User | null;
-  session: Session | null;
-};
-
-export type AuthActions = {
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, userData: any) => Promise<any>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: any) => Promise<boolean>;
-  resetPassword: (email: string) => Promise<boolean>;
-  updatePassword: (password: string) => Promise<boolean>;
-  fetchUserData: (userId: string) => Promise<User>;
-  refreshSession: () => Promise<any>;
-};
-
-export type UseSupabaseAuthReturn = AuthState & AuthActions;
-
-export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
-  const [session, setSession] = useState<Session | null>(null);
+export const useSupabaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const refreshSession = useCallback(async () => {
-    try {
-      console.log('refreshSession çağrılır');
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        console.error('Session yeniləmə xətası:', error);
-        return null;
-      }
-      
-      if (data.session) {
-        console.log('Session yeniləndi');
-        setSession(data.session);
-        setIsAuthenticated(true);
-        
-        try {
-          if (data.session.user.id) {
-            const userData = await fetchUserData(data.session.user.id);
-            setUser(userData);
-          }
-        } catch (userError) {
-          console.error('İstifadəçi məlumatları yeniləmə xətası:', userError);
-        }
-      }
-      
-      return data.session;
-    } catch (error) {
-      console.error('Session yeniləmə xətası:', error);
-      return null;
-    }
-  }, []);
-
+  const [error, setError] = useState<Error | null>(null);
+  
+  // Yüklənir vəziyyəti
+  const [signingIn, setSigningIn] = useState(false);
+  const [signingUp, setSigningUp] = useState(false);
+  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+  const [confirmingPasswordReset, setConfirmingPasswordReset] = useState(false);
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  
+  // Oturum durumunu izlə
   useEffect(() => {
-    const initializeAuth = async () => {
-      setLoading(true);
-      
-      try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('getSession xətası:', sessionError);
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Mövcud sessiya:', sessionData?.session?.user?.id || 'yoxdur');
-        
-        if (sessionData?.session) {
-          setSession(sessionData.session);
-          setIsAuthenticated(true);
-          
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
           try {
-            const userData = await fetchUserData(sessionData.session.user.id);
-            setUser(userData);
-            console.log('İstifadəçi rolu:', userData.role);
-          } catch (userError) {
-            console.error('İstifadəçi məlumatları yükləmə xətası:', userError);
+            const userData = await fetchUserById(session.user.id);
+            if (userData) {
+              // FullUserData və User tiplərini uyğunlaşdırmaq üçün tiplərini çevirək
+              const authUser: User = {
+                ...userData,
+                id: userData.id,
+                email: userData.email || '',
+                name: userData.full_name || userData.name || '',
+                role: userData.role,
+                regionId: userData.region_id || null,
+                sectorId: userData.sector_id || null,
+                schoolId: userData.school_id || null,
+                avatar: userData.avatar || null,
+                app_metadata: {},
+                user_metadata: {},
+                aud: 'authenticated'
+              };
+              setUser(authUser);
+            }
+          } catch (err) {
+            console.error('Oturum durumu dəyişikliyi zamanı xəta:', err);
+            setError(err instanceof Error ? err : new Error('Xəta baş verdi'));
+          }
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+        
+        console.info('Auth state dəyişdi:', event);
+      }
+    );
+    
+    // İlkin oturumu yoxla
+    const getInitialSession = async () => {
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const userData = await fetchUserById(session.user.id);
+          if (userData) {
+            const authUser: User = {
+              ...userData,
+              id: userData.id,
+              email: userData.email || '',
+              name: userData.full_name || userData.name || '',
+              role: userData.role,
+              regionId: userData.region_id || null,
+              sectorId: userData.sector_id || null,
+              schoolId: userData.school_id || null,
+              avatar: userData.avatar || null,
+              app_metadata: {},
+              user_metadata: {},
+              aud: 'authenticated'
+            };
+            setUser(authUser);
           }
         }
-      } catch (error) {
-        console.error('Auth initializing xətası:', error);
+      } catch (err) {
+        console.error('İlkin sessiya yoxlanarkən xəta:', err);
+        setError(err instanceof Error ? err : new Error('Xəta baş verdi'));
       } finally {
         setLoading(false);
       }
-      
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        async (event, newSession) => {
-          console.log('Auth state dəyişdi:', event, newSession?.user?.id);
-          
-          if (newSession) {
-            setSession(newSession);
-            setIsAuthenticated(true);
-            
-            try {
-              const userData = await fetchUserData(newSession.user.id);
-              setUser(userData);
-              console.log('İstifadəçi rolu:', userData.role);
-            } catch (userError) {
-              console.error('İstifadəçi məlumatları yükləmə xətası:', userError);
-            }
-          } else {
-            setSession(null);
-            setUser(null);
-            setIsAuthenticated(false);
-          }
-        }
-      );
-      
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
     };
     
-    initializeAuth();
+    getInitialSession();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
-
+  
+  // Giriş et
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
-      console.log('Login prosesi başlayır:', email);
-      
-      const isSuperAdmin = email.toLowerCase() === 'superadmin@infoline.az';
-      
-      if (isSuperAdmin) {
-        try {
-          console.log('SuperAdmin giriş aşkarlandı, safe-login istifadə edilir');
-          
-          const apiKey = supabase.auth.getSession().then(() => 
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4'
-          );
-          
-          const result = await fetch(`${supabaseUrl}/functions/v1/safe-login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${await apiKey}`
-            },
-            body: JSON.stringify({ email, password })
-          });
-          
-          const responseData = await result.json();
-          
-          if (!result.ok) {
-            console.error('Safe-login xətası:', responseData);
-            throw new Error(responseData.error || 'SuperAdmin giriş xətası');
-          }
-          
-          console.log('Safe-login uğurlu oldu');
-          
-          await supabase.auth.setSession({
-            access_token: responseData.session.access_token,
-            refresh_token: responseData.session.refresh_token
-          });
-          
-          const { data: refreshedSession } = await supabase.auth.getSession();
-          
-          const userData = await fetchUserData(responseData.user.id);
-          setUser(userData);
-          setSession(refreshedSession.session);
-          setIsAuthenticated(true);
-          
-          return responseData;
-        } catch (safeLoginError) {
-          console.error('Safe-login funksiyasında xəta:', safeLoginError);
-          
-          console.log('Standart giriş metoduna keçid edilir');
-        }
-      }
+      setSigningIn(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
       
-      if (error) {
-        console.error('Login xətası:', error.message);
-        throw error;
+      if (error) throw error;
+      
+      if (data.user) {
+        const userData = await fetchUserById(data.user.id);
+        if (userData) {
+          const authUser: User = {
+            ...userData,
+            id: userData.id,
+            email: userData.email || '',
+            name: userData.full_name || userData.name || '',
+            role: userData.role,
+            regionId: userData.region_id || null,
+            sectorId: userData.sector_id || null,
+            schoolId: userData.school_id || null,
+            avatar: userData.avatar || null,
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated'
+          };
+          setUser(authUser);
+        }
       }
       
-      console.log('Login uğurla tamamlandı:', data?.user?.id);
-      return data;
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
+      return data.user;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Giriş zamanı xəta baş verdi'));
+      throw err;
     } finally {
-      setLoading(false);
+      setSigningIn(false);
     }
   };
-
-  const signUp = async (email: string, password: string, userData: any) => {
+  
+  // Qeydiyyat
+  const signUp = async (email: string, password: string, metadata: any = {}) => {
     try {
-      setLoading(true);
-      console.log('Qeydiyyat prosesi başlayır:', email);
-      
+      setSigningUp(true);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: userData
-        }
+          data: metadata,
+        },
       });
       
-      if (error) {
-        console.error('Qeydiyyat xətası:', error.message);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Qeydiyyat uğurla tamamlandı:', data?.user?.id);
+      toast.success('Qeydiyyat uğurla tamamlandı', {
+        description: 'Hesabınız uğurla yaradıldı. E-poçtunuzu təsdiqləyin.'
+      });
+      
       return data;
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Qeydiyyat zamanı xəta baş verdi'));
+      throw err;
     } finally {
-      setLoading(false);
+      setSigningUp(false);
     }
   };
-
+  
+  // Çıxış et
   const signOut = async () => {
     try {
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
-      if (error) {
-        console.error('Çıxış xətası:', error);
-        throw error;
-      }
-      
-      setSession(null);
       setUser(null);
-      setIsAuthenticated(false);
-      
-      console.log('Çıxış uğurla tamamlandı');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+      toast.info('Çıxış edildi');
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Çıxış zamanı xəta baş verdi'));
+      throw err;
     }
   };
-
-  const updateProfile = async (updates: any) => {
+  
+  // Şifrə sıfırlama linki göndər
+  const sendPasswordResetEmail = async (email: string) => {
     try {
-      if (!user) {
-        console.error('İstifadəçi təyin olunmayıb, profil yeniləməsi mümkün deyil');
-        return false;
-      }
+      setSendingPasswordReset(true);
       
-      console.log('Profil yenilənir:', updates);
-      const { error } = await supabase
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Şifrə sıfırlama bağlantısı göndərildi', {
+        description: 'E-poçt qutunuzu yoxlayın'
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Şifrə sıfırlama linki göndərilərkən xəta baş verdi'));
+      throw err;
+    } finally {
+      setSendingPasswordReset(false);
+    }
+  };
+  
+  // Şifrə sıfırlamanı təsdiqlə
+  const confirmPasswordReset = async (password: string) => {
+    try {
+      setConfirmingPasswordReset(true);
+      
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Şifrəniz yeniləndi', {
+        description: 'İndi yeni şifrənizlə giriş edə bilərsiniz'
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Şifrə yeniləmə zamanı xəta baş verdi'));
+      throw err;
+    } finally {
+      setConfirmingPasswordReset(false);
+    }
+  };
+  
+  // Profil məlumatlarını yenilə
+  const updateProfile = async (userData: Partial<FullUserData>) => {
+    if (!user) return false;
+    
+    try {
+      setUpdatingProfile(true);
+      
+      // İlk öncə Supabase auth istifadəçi məlumatlarını yeniləyin
+      const { error: authError } = await supabase.auth.updateUser({
+        email: userData.email,
+        data: {
+          full_name: userData.full_name || userData.name,
+        },
+      });
+      
+      if (authError) throw authError;
+      
+      // Sonra profil məlumatlarını yeniləyin
+      const { error: profileError } = await supabase
         .from('profiles')
-        .update(updates)
+        .update({
+          full_name: userData.full_name || userData.name,
+          phone: userData.phone,
+          position: userData.position,
+          language: userData.language,
+          avatar: userData.avatar,
+        })
         .eq('id', user.id);
       
-      if (error) {
-        console.error('Profil yeniləmə xətası:', error);
-        return false;
+      if (profileError) throw profileError;
+      
+      // İstifadəçi rolunu yeniləyin
+      if (userData.role) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({
+            role: userData.role as UserRole,
+            region_id: userData.region_id || null,
+            sector_id: userData.sector_id || null,
+            school_id: userData.school_id || null,
+          })
+          .eq('user_id', user.id);
+        
+        if (roleError) throw roleError;
       }
       
-      const updatedUser = await fetchUserData(user.id);
-      setUser(updatedUser);
+      // İstifadəçi məlumatlarını yeniləmək
+      if (user) {
+        const updatedUserData = await fetchUserById(user.id);
+        if (updatedUserData) {
+          const authUser: User = {
+            ...updatedUserData,
+            id: updatedUserData.id,
+            email: updatedUserData.email || '',
+            name: updatedUserData.full_name || updatedUserData.name || '',
+            role: updatedUserData.role,
+            regionId: updatedUserData.region_id || null,
+            sectorId: updatedUserData.sector_id || null,
+            schoolId: updatedUserData.school_id || null,
+            avatar: updatedUserData.avatar || null,
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated'
+          };
+          setUser(authUser);
+        }
+      }
       
+      toast.success('Profil məlumatlarınız yeniləndi');
       return true;
-    } catch (error) {
-      console.error('Update profile error:', error);
-      return false;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Profil yeniləmə zamanı xəta baş verdi'));
+      throw err;
+    } finally {
+      setUpdatingProfile(false);
     }
   };
-
-  const resetPassword = async (email: string) => {
+  
+  // Şifrə dəyişdirmə
+  const changePassword = async (currentPassword: string, newPassword: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+      setChangingPassword(true);
+      
+      // Verify current password first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
       });
       
-      if (error) {
-        console.error('Şifrə sıfırlama xətası:', error);
-        return false;
-      }
+      if (signInError) throw new Error('Hazırkı şifrə düzgün deyil');
       
-      return true;
-    } catch (error) {
-      console.error('Reset password error:', error);
-      return false;
-    }
-  };
-
-  const updatePassword = async (password: string) => {
-    try {
+      // Then change the password
       const { error } = await supabase.auth.updateUser({
-        password
+        password: newPassword,
       });
       
-      if (error) {
-        console.error('Şifrə yeniləmə xətası:', error);
-        return false;
-      }
+      if (error) throw error;
       
+      toast.success('Şifrəniz uğurla dəyişdirildi');
       return true;
-    } catch (error) {
-      console.error('Update password error:', error);
-      return false;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Şifrə dəyişdirmə zamanı xəta baş verdi'));
+      throw err;
+    } finally {
+      setChangingPassword(false);
     }
   };
 
+  // Təyin edilmiş rolun olub-olmadığını yoxla
+  const hasRole = (role: string): boolean => {
+    return user?.role === role;
+  };
+  
   return {
-    loading,
-    isAuthenticated,
     user,
-    session,
+    loading,
+    error,
+    signingIn,
+    signingUp,
+    sendingPasswordReset,
+    confirmingPasswordReset,
+    updatingProfile,
+    changingPassword,
     signIn,
     signUp,
     signOut,
+    sendPasswordResetEmail,
+    confirmPasswordReset,
     updateProfile,
-    resetPassword,
-    updatePassword,
-    fetchUserData,
-    refreshSession,
+    changePassword,
+    hasRole,
+    fetchUserById
   };
 };
 

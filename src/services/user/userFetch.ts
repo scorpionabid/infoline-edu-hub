@@ -101,7 +101,7 @@ export const getUsers = async (
         : 'active' as 'active' | 'inactive' | 'blocked';
       
       // UserRole tipləməsini düzəltmək
-      const roleValue = item.role as string;
+      const roleValue = item.role;
       const typedRole = ((roleValue === 'superadmin' || roleValue === 'regionadmin' || 
                          roleValue === 'sectoradmin' || roleValue === 'schooladmin') 
                          ? roleValue : 'schooladmin') as UserRole;
@@ -198,7 +198,7 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       : 'active' as 'active' | 'inactive' | 'blocked';
     
     // UserRole tipini düzəltmək
-    const roleValue = roleData.role as string;
+    const roleValue = roleData.role;
     const typedRole = ((roleValue === 'superadmin' || roleValue === 'regionadmin' || 
                        roleValue === 'sectoradmin' || roleValue === 'schooladmin') 
                        ? roleValue : 'schooladmin') as UserRole;

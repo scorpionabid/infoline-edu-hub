@@ -136,6 +136,39 @@ export const useDataEntries = () => {
     }
   };
 
+  // Təsdiq statuslarını əldə etmək üçün yeni funksiya
+  const getApprovalStatus = async (schoolId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('status, count')
+        .eq('school_id', schoolId)
+        .group('status');
+
+      if (error) {
+        throw error;
+      }
+
+      // Status saylarını qaytarırıq
+      const statusCounts: {[key: string]: number} = {
+        pending: 0,
+        approved: 0,
+        rejected: 0
+      };
+      
+      data.forEach((item: {status: string, count: number}) => {
+        if (item.status in statusCounts) {
+          statusCounts[item.status] = parseInt(item.count as any);
+        }
+      });
+      
+      return statusCounts;
+    } catch (error) {
+      console.error('Təsdiq statuslarını əldə edərkən xəta:', error);
+      return { pending: 0, approved: 0, rejected: 0 };
+    }
+  };
+
   const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
     try {
       // Bu funksiyanın implementasiyası backend və edge funksiyalarında olmalıdır
@@ -158,8 +191,10 @@ export const useDataEntries = () => {
     deleteEntry,
     approveEntry,
     rejectEntry,
+    getApprovalStatus,
     submitCategoryForApproval
   };
 };
 
+// Həm default export, həm də named export əlavə edirik
 export default useDataEntries;

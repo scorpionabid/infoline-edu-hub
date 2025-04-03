@@ -1,9 +1,15 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { Category } from '@/types/category';
 import { Column } from '@/types/column';
-import { DataEntry } from '@/types/dataEntry';
-import useDataEntries from './useDataEntries';
+import { EntryValue, CategoryEntryData } from '@/types/dataEntry';
+import { DataEntry } from '@/types/supabase';
+import { useDataEntries } from './useDataEntries';
 import { useAuth } from '@/context/AuthContext';
+
+export interface CategoryWithData extends Category {
+  columns: Column[];
+}
 
 export const useDataEntry = (categoryId?: string, schoolId?: string) => {
   const [category, setCategory] = useState<Category | null>(null);
@@ -16,6 +22,17 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
   const [categoryStatus, setCategoryStatus] = useState<'draft' | 'pending' | 'approved' | 'rejected'>('draft');
   const [error, setError] = useState<Error | null>(null);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [categories, setCategories] = useState<CategoryWithData[]>([]);
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
+  const [formData, setFormData] = useState({
+    status: 'draft' as 'draft' | 'submitted' | 'approved' | 'rejected',
+    entries: [] as CategoryEntryData[],
+    lastSaved: '',
+    overallProgress: 0
+  });
+  const [errors, setErrors] = useState<Array<{columnId: string, message: string}>>([]);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+
   const { user } = useAuth();
 
   // useDataEntries hooku istifadə edirik
@@ -48,6 +65,9 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
         deadline: new Date().toISOString(),
         status: 'active',
         columnCount: 5,
+        order: 1, // order əlavə edildi
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       setCategory(mockCategory);
 
@@ -60,12 +80,21 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
         isRequired: i < 3,
         orderIndex: i,
         status: 'active',
+        order: i, // order əlavə edildi
         options: i % 3 === 2 ? ['Seçim 1', 'Seçim 2', 'Seçim 3'] : undefined,
         helpText: `Sütun ${i + 1} üçün kömək mətni`,
         placeholder: `Sütun ${i + 1} üçün nümunə`,
       }));
       setColumns(mockColumns);
       setFilteredColumns(mockColumns);
+
+      // Mock categories üçün
+      setCategories([
+        {
+          ...mockCategory,
+          columns: mockColumns
+        }
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Kateqoriya məlumatlarını əldə edərkən xəta baş verdi'));
     } finally {
@@ -191,6 +220,22 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     [categoryId, schoolId, user, dataEntries, updateEntry, addEntry]
   );
 
+  // Kateqoriya dəyişmək
+  const changeCategory = useCallback((index: number) => {
+    if (index >= 0 && index < categories.length) {
+      setCurrentCategoryIndex(index);
+    }
+  }, [categories]);
+
+  // Formu yadda saxla
+  const saveForm = useCallback(() => {
+    console.log('Form saxlanıldı');
+    setFormData(prev => ({
+      ...prev,
+      lastSaved: new Date().toISOString()
+    }));
+  }, []);
+
   // Kateqoriyani təsdiqə göndər
   const handleSubmitForApproval = useCallback(async () => {
     if (!categoryId || !schoolId) {
@@ -213,6 +258,10 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       const success = await submitCategoryForApproval(categoryId, schoolId);
       if (success) {
         setCategoryStatus('pending');
+        setFormData(prev => ({
+          ...prev,
+          status: 'submitted'
+        }));
       }
       return success;
     } catch (err) {
@@ -223,20 +272,52 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     }
   }, [categoryId, schoolId, columns, dataEntries, submitCategoryForApproval]);
 
+  // Excel şablonunu yüklə
+  const downloadExcelTemplate = useCallback((categoryId: string) => {
+    console.log(`Excel şablonu yüklənir: ${categoryId}`);
+  }, []);
+
+  // Excel məlumatları yüklə
+  const uploadExcelData = useCallback((file: File, categoryId: string) => {
+    console.log(`Excel məlumatları yüklənir: ${file.name}, categoryId: ${categoryId}`);
+  }, []);
+
+  // Sütun səhvini əldə et
+  const getErrorForColumn = useCallback((columnId: string) => {
+    const error = errors.find(e => e.columnId === columnId);
+    return error ? error.message : undefined;
+  }, [errors]);
+
   return {
     category,
     columns,
     filteredColumns,
     dataEntries,
-    loading: loading || entriesLoading,
+    loading,
     loadingEntries,
     submitting,
     categoryStatus,
     error: error || entriesError,
     unsavedChanges,
+    // DataEntryForm üçün vacib parametrlər
+    categories,
+    currentCategoryIndex,
+    formData,
+    isAutoSaving,
+    isSubmitting: submitting,
+    isLoading: loading,
+    errors,
     handleDataChange,
     handleSubmitForApproval,
-    refreshData: fetchDataEntriesForCategory
+    refreshData: fetchDataEntriesForCategory,
+    // DataEntryForm komponenti üçün əlavə parametrlər
+    changeCategory,
+    updateValue: handleDataChange,
+    submitForApproval: handleSubmitForApproval,
+    saveForm,
+    getErrorForColumn,
+    downloadExcelTemplate,
+    uploadExcelData
   };
 };
 

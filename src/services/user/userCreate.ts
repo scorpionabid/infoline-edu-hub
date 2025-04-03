@@ -23,7 +23,7 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
         phone: userData.phone,
         position: userData.position,
         language: userData.language || 'az',
-        avatar: userData.avatar, // Avatar artıq CreateUserData interfeysinə əlavə edildi
+        avatar: userData.avatar,
         status: (userData.status || 'active') as 'active' | 'inactive' | 'blocked'
       });
     

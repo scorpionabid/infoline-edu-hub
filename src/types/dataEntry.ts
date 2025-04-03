@@ -116,3 +116,7 @@ export interface ValidationRules {
   regex?: string;
   customValidator?: (value: any) => { valid: boolean; message?: string };
 }
+
+// DataEntry tipi artıq supabase.d.ts faylına köçürdük,
+// beləliklə həm o fayldan həm də buradan import edilə bilər
+export type { DataEntry } from '@/types/supabase';
