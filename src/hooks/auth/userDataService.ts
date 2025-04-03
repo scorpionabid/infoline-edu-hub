@@ -1,7 +1,6 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserData } from './userDataService';
-import { toast } from 'sonner';
 import { FullUserData } from '@/types/supabase';
 
 // Supabase URL-ni mühit dəyişənlərdən əldə edirik
@@ -30,24 +29,15 @@ export const fetchUserData = async (userId: string): Promise<FullUserData | null
       .eq('user_id', userId)
       .single();
     
-    if (roleError) throw roleError;
+    if (roleError && roleError.code !== 'PGRST116') throw roleError;
     
-    // Email məlumatını əldə edirik
-    const { data: userData, error: userError } = await supabase
-      .from('auth.users')
-      .select('email')
-      .eq('id', userId)
-      .single();
-    
-    if (userError) {
-      // Əgər auth.users cədvəlinə giriş icazəsi yoxdursa
-      console.warn('Auth users cədvəlinə giriş edilə bilmədi, simulyasiya məlumatlar istifadə edilir');
-    }
+    // Email məlumatını simulyasiya edirik - real tətbiqdə auth API istifadə ediləcək
+    const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
     
     // İstifadəçi məlumatlarını birləşdiririk
     const userFullData: FullUserData = {
       id: userId,
-      email: userData?.email || profile?.email || '',
+      email: profile?.email || mockEmail,
       full_name: profile?.full_name || '',
       name: profile?.full_name || '',
       phone: profile?.phone || '',
@@ -73,3 +63,6 @@ export const fetchUserData = async (userId: string): Promise<FullUserData | null
     return null;
   }
 };
+
+// getUserData funksiyasını əlavə edirik - fetchUserData ilə eyni funksionallıq
+export const getUserData = fetchUserData;

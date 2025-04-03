@@ -1,56 +1,42 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, ArrowLeft } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import ThemeToggle from '@/components/ThemeToggle';
-import LanguageSelector from '@/components/LanguageSelector';
+import { useAuth } from '@/context/AuthContext';
+import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm';
+import LoginBackgroundDecorations from '@/components/auth/LoginBackgroundDecorations';
+import LoginHeader from '@/components/auth/LoginHeader';
+import { toast } from 'sonner';
 
 const ForgotPassword = () => {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  const { resetPassword } = useSupabaseAuth();
-  
+  const { sendPasswordResetEmail } = useAuth();
   const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email) return;
-    
-    setIsSubmitting(true);
+    if (!email) {
+      toast.error('Email ünvanı daxil edin');
+      return;
+    }
     
     try {
-      const success = await resetPassword(email);
-      
-      if (success) {
-        setIsSubmitted(true);
-      }
-    } catch (error) {
-      console.error('Error resetting password:', error);
+      setLoading(true);
+      await sendPasswordResetEmail(email);
+      navigate('/login', { state: { resetEmailSent: true } });
+    } catch (error: any) {
+      toast.error('Şifrə sıfırlama xətası', {
+        description: error.message
+      });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden grid-pattern">
-      {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-infoline-100/30 rounded-bl-full -z-10" />
-      <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-infoline-100/30 rounded-tr-full -z-10" />
-      
-      {/* Theme and language toggles */}
-      <div className="absolute top-4 right-4 flex space-x-2">
-        <ThemeToggle />
-        <LanguageSelector />
-      </div>
+      <LoginBackgroundDecorations />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -58,66 +44,39 @@ const ForgotPassword = () => {
         transition={{ duration: 0.5 }}
         className="glass-panel rounded-lg w-full max-w-md p-8 shadow-xl"
       >
-        {isSubmitted ? (
-          <div className="text-center space-y-4 py-6">
-            <h1 className="text-2xl font-bold">{t('checkYourEmail')}</h1>
-            <p className="text-muted-foreground">
-              {t('passwordResetEmailSent')}
-            </p>
-            <div className="pt-4">
-              <Button 
-                className="w-full"
-                onClick={() => navigate('/login')}
-              >
-                {t('backToLogin')}
-              </Button>
-            </div>
+        <LoginHeader title="Şifrəni sıfırla" description="Şifrə sıfırlamaq üçün e-poçt ünvanınızı daxil edin" />
+        
+        <form className="space-y-6 mt-8" onSubmit={handleResetPassword}>
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-medium">E-poçt ünvanı</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
           </div>
-        ) : (
-          <>
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold">{t('forgotPassword')}</h1>
-              <p className="text-muted-foreground mt-2">{t('enterEmailToReset')}</p>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('email')}</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@example.com"
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? t('sending') : t('resetPassword')}
-              </Button>
-            </form>
-            
-            <div className="mt-6">
-              <Button 
-                variant="outline" 
-                className="w-full flex items-center justify-center gap-2"
-                onClick={() => navigate('/login')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                {t('backToLogin')}
-              </Button>
-            </div>
-          </>
-        )}
+          
+          <button
+            type="submit"
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            disabled={loading}
+          >
+            {loading ? 'Göndərilir...' : 'Şifrə sıfırlama linkini göndər'}
+          </button>
+          
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium focus:outline-none"
+            >
+              Giriş səhifəsinə qayıt
+            </button>
+          </div>
+        </form>
       </motion.div>
     </div>
   );

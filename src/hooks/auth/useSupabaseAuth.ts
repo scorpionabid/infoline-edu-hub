@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserData } from './userDataService';
 import { toast } from 'sonner';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 
 // Supabase URL-ni mühit dəyişənlərdən əldə edirik
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -226,6 +227,47 @@ export const useSupabaseAuth = () => {
     }
   };
   
+  // Qeydiyyat
+  const signUp = async (email: string, password: string, metadata: any = {}) => {
+    try {
+      setSigningUp(true);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Qeydiyyat uğurla tamamlandı', {
+        description: 'Hesabınız uğurla yaradıldı. E-poçtunuzu təsdiqləyin.'
+      });
+      
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Qeydiyyat zamanı xəta baş verdi'));
+      throw err;
+    } finally {
+      setSigningUp(false);
+    }
+  };
+  
+  // Çıxış et
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      toast.info('Çıxış edildi');
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Çıxış zamanı xəta baş verdi'));
+      throw err;
+    }
+  };
+  
   // Profil məlumatlarını yenilə
   const updateProfile = async (userData: Partial<FullUserData>) => {
     if (!user) return false;
@@ -234,14 +276,16 @@ export const useSupabaseAuth = () => {
       setUpdatingProfile(true);
       
       // İlk öncə Supabase auth istifadəçi məlumatlarını yeniləyin
-      const { error: authError } = await supabase.auth.updateUser({
-        email: userData.email,
-        data: {
-          full_name: userData.full_name || userData.name,
-        },
-      });
-      
-      if (authError) throw authError;
+      if (userData.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: userData.email,
+          data: {
+            full_name: userData.full_name || userData.name,
+          },
+        });
+        
+        if (authError) throw authError;
+      }
       
       // Sonra profil məlumatlarını yeniləyin
       const { error: profileError } = await supabase
@@ -262,7 +306,7 @@ export const useSupabaseAuth = () => {
         const { error: roleError } = await supabase
           .from('user_roles')
           .update({
-            role: userData.role as UserRole,
+            role: userData.role,
             region_id: userData.region_id || null,
             sector_id: userData.sector_id || null,
             school_id: userData.school_id || null,
