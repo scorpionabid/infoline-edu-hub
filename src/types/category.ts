@@ -1,5 +1,5 @@
 
-export type CategoryAssignment = 'all' | 'sectors' | string;
+export type CategoryAssignment = 'all' | 'sectors';
 
 export interface Category {
   id: string;
@@ -7,7 +7,7 @@ export interface Category {
   description: string;
   assignment: CategoryAssignment;
   status: string;
-  deadline?: string;
+  deadline?: string | null;
   archived: boolean;
   priority: number;
   order: number;
@@ -24,11 +24,28 @@ export interface CategoryFilter {
   assignment: 'all' | 'sectors' | '';
   status: string;
   archived: boolean;
+  showArchived?: boolean;
+  search?: string;
 }
 
 export interface CategoryWithColumns {
   category: Category;
   columns: Column[];
+}
+
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | string;
+
+export interface ColumnOption {
+  label: string;
+  value: string;
+}
+
+export interface ColumnValidation {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  customMessage?: string;
 }
 
 export interface Column {
@@ -49,21 +66,6 @@ export interface Column {
   validation?: ColumnValidation;
 }
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | string;
-
-export interface ColumnOption {
-  label: string;
-  value: string;
-}
-
-export interface ColumnValidation {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  pattern?: string;
-  customMessage?: string;
-}
-
 export const adaptCategory = (rawData: any): Category => {
   return {
     id: rawData.id || '',
@@ -71,7 +73,7 @@ export const adaptCategory = (rawData: any): Category => {
     description: rawData.description || '',
     assignment: rawData.assignment || 'all',
     status: rawData.status || 'active',
-    deadline: rawData.deadline || undefined,
+    deadline: rawData.deadline || null,
     archived: rawData.archived || false,
     priority: rawData.priority || 0,
     order: rawData.order || rawData.priority || 0,
@@ -103,10 +105,10 @@ export const adaptSupabaseCategory = (rawData: any): Category => {
     description: rawData.description || '',
     assignment: rawData.assignment || 'all',
     status: rawData.status || 'active',
-    deadline: rawData.deadline || undefined,
+    deadline: rawData.deadline || null,
     archived: rawData.archived || false,
     priority: rawData.priority || 0,
-    order: rawData.order || rawData.priority || 0,
+    order: rawData.order || rawData.order_index || rawData.priority || 0,
     columnCount: rawData.column_count || 0,
     createdAt: rawData.created_at,
     updatedAt: rawData.updated_at
@@ -114,5 +116,5 @@ export const adaptSupabaseCategory = (rawData: any): Category => {
 };
 
 export interface MockCategory extends Category {
-  // Lazım gələrsə əlavə xüsusiyyətlər burada təyin edilə bilər
+  completionRate?: number;
 }

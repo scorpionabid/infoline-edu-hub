@@ -6,7 +6,7 @@ import {
   TableHeader, TableRow 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Category, CategoryFilter } from '@/types/category';
+import { Category, CategoryFilter, CategoryAssignment } from '@/types/category';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
@@ -50,7 +50,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
     }
     
     // Filter by archived status
-    if (!filter.showArchived && category.archived) {
+    if (!filter.archived && category.archived) {
       return false;
     }
     

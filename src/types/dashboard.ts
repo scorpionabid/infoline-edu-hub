@@ -1,26 +1,26 @@
 
+import { FormItem } from './form';
 import { Notification } from './notification';
 
-// Form status-u və Form əşya interfeysi
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'due';
-
-export interface FormItem {
+export interface ActivityItem {
   id: string;
-  title: string; 
-  status: FormStatus;
-  completionPercentage: number;
-  deadline?: string;
-  category?: string;
+  action: string;
+  actor: string;
+  target: string;
+  time: string;
 }
 
-// Diaqram məlumatları üçün interfeyslər
 export interface ChartData {
-  activityData: { name: string; value: number }[];
-  regionSchoolsData: { name: string; value: number }[];
-  categoryCompletionData: { name: string; completed: number }[];
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor: string[];
+    borderColor: string[];
+    borderWidth: number;
+  }[];
 }
 
-// Status data interfeysi
 export interface StatusData {
   completed: number;
   pending: number;
@@ -28,63 +28,79 @@ export interface StatusData {
   notStarted: number;
 }
 
-// Əsas Dashboard məlumatları
-export interface DashboardData {
-  notifications: Notification[];
-  isLoading?: boolean;
-  error?: Error | null;
-  totalSchools?: number;
-  activeSchools?: number;
-  pendingForms?: FormItem[];
-  upcomingDeadlines?: FormItem[];
+export interface CategoryCompletionData {
+  name: string;
+  completed: number;
+  total: number;
+  percentage: number;
 }
 
-// SuperAdmin Dashboard məlumatları
+// Base Dashboard Data
+export interface DashboardData {
+  regions?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
+  completionRate?: number;
+  pendingApprovals?: number;
+  notifications?: Notification[];
+  activityData?: ActivityItem[];
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
+  statusData?: StatusData;
+  chartData?: ChartData;
+  categoryCompletionData?: CategoryCompletionData[];
+}
+
+// SuperAdmin Dashboard Data
 export interface SuperAdminDashboardData extends DashboardData {
   regions: number;
   sectors: number;
   schools: number;
   users: number;
-  completionRate: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
-  statusData?: StatusData;
-  activityData?: { id: string; action: string; actor: string; target: string; time: string; }[];
-  categoryCompletionData?: { name: string; completed: number }[];
+  statusData: StatusData;
+  categoryCompletionData: CategoryCompletionData[];
+  recentForms?: FormItem[];
+  pendingForms?: FormItem[];
 }
 
-// Region Admin Dashboard məlumatları
+// RegionAdmin Dashboard Data
 export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
   sectors: number;
   schools: number;
-  users?: number;
+  users: number;
   approvalRate: number;
   completionRate: number;
+  statusData: StatusData;
   pendingApprovals: number;
-  pendingSchools: number; 
-  approvedSchools: number;
-  rejectedSchools: number;
-  categories?: { name: string; completionRate: number; color: string }[];
-  sectorCompletions?: { name: string; completionRate: number }[];
-}
-
-// Sektor Admin Dashboard məlumatları
-export interface SectorAdminDashboardData extends DashboardData {
-  sectorName: string;
-  regionName: string;
-  schools: number;
-  pendingApprovals: number;
-  completionRate: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  totalForms?: number;
+  sectorCompletions?: any[];
+  recentForms?: FormItem[];
+  pendingForms?: FormItem[];
+  upcomingDeadlines?: FormItem[];
 }
 
-// Məktəb Admin Dashboard məlumatları
+// SectorAdmin Dashboard Data
+export interface SectorAdminDashboardData extends DashboardData {
+  sectorName: string;
+  schools: number;
+  users: number;
+  completionRate: number;
+  statusData: StatusData;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
+  recentForms?: FormItem[];
+  pendingForms?: FormItem[];
+  upcomingDeadlines?: FormItem[];
+}
+
+// SchoolAdmin Dashboard Data
 export interface SchoolAdminDashboardData extends DashboardData {
   schoolName: string;
   sectorName: string;
@@ -97,11 +113,9 @@ export interface SchoolAdminDashboardData extends DashboardData {
     overdue: number;
   };
   completionRate: number;
-  pendingForms: FormItem[];
   recentForms?: FormItem[];
-  totalCategories?: number;
-  completedCategories?: number;
-  pendingCategories?: number;
+  pendingForms?: FormItem[];
+  completedForms?: number;
   totalForms?: number;
-  completedForms?: FormItem[];
+  upcomingDeadlines?: FormItem[];
 }

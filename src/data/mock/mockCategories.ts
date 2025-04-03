@@ -1,94 +1,137 @@
 
-import { MockCategory } from '@/types/category';
+import { MockCategory } from "@/types/category";
 
-// Kategoriyaların siyahısı
-export const mockCategories: MockCategory[] = [
-  {
-    id: 'cat-1',
-    name: 'Ümumi məlumat',
-    assignment: 'All',
-    status: 'active',
-    createdAt: '2023-01-15',
-    updatedAt: '2023-02-10',
-    priority: 1,
-    completionRate: 78,
-    deadline: '2023-12-25'
-  },
-  {
-    id: 'cat-2',
-    name: 'Müəllim heyəti',
-    assignment: 'All',
-    status: 'active',
-    createdAt: '2023-01-16',
-    updatedAt: '2023-03-05',
-    priority: 2,
-    completionRate: 65,
-    deadline: '2023-12-20'
-  },
-  {
-    id: 'cat-3',
-    name: 'Şagirdlər',
-    assignment: 'All',
-    status: 'active',
-    createdAt: '2023-01-17',
-    updatedAt: '2023-02-20',
-    priority: 3,
-    completionRate: 82,
-    deadline: '2023-12-15'
-  },
-  {
-    id: 'cat-4',
-    name: 'Texniki baza',
-    assignment: 'All',
-    status: 'active',
-    createdAt: '2023-01-18',
-    updatedAt: '2023-04-15',
-    priority: 4,
-    completionRate: 59,
-    deadline: '2023-12-30'
-  },
-  {
-    id: 'cat-5',
-    name: 'Maliyyə',
-    assignment: 'Sectors',
-    status: 'active',
-    createdAt: '2023-01-19',
-    updatedAt: '2023-03-25',
-    priority: 5,
-    completionRate: 45,
-    deadline: '2024-01-10'
-  },
-  {
-    id: 'cat-6',
-    name: 'Tədris planı',
-    assignment: 'All',
-    status: 'active',
-    createdAt: '2023-01-20',
-    updatedAt: '2023-04-10',
-    priority: 6,
-    completionRate: 91,
-    deadline: '2024-01-15'
-  },
-  {
-    id: 'cat-7',
-    name: 'İnfrastruktur',
-    assignment: 'All',
-    status: 'inactive',
-    createdAt: '2023-01-21',
-    updatedAt: '2023-04-05',
-    priority: 7,
-    completionRate: 38,
-    deadline: '2023-12-10'
-  },
-  {
-    id: 'cat-8',
-    name: 'İmtahan nəticələri',
-    assignment: 'All',
-    status: 'active',
-    createdAt: '2023-01-22',
-    updatedAt: '2023-05-01',
-    priority: 8,
-    completionRate: 73,
-    deadline: '2024-01-20'
-  }
-];
+// Mock kategoriya məlumatlarını əldə etmək üçün funksiya
+export const getMockCategories = (): MockCategory[] => {
+  return [
+    {
+      id: "1",
+      name: "Təcili məlumatlar",
+      assignment: "all",
+      createdAt: new Date("2023-01-15").toISOString(),
+      updatedAt: new Date("2023-02-10").toISOString(),
+      status: "active",
+      priority: 1,
+      description: "Məktəbin ümumi təsviri və əsas məlumatları",
+      columnCount: 3,
+      order: 1,
+      archived: false,
+      completionRate: 85
+    },
+    {
+      id: "2",
+      name: "Tədris",
+      assignment: "sectors",
+      createdAt: new Date("2023-01-20").toISOString(),
+      updatedAt: new Date("2023-03-05").toISOString(),
+      status: "active",
+      priority: 2,
+      description: "Tədris planı və proqram məlumatları",
+      columnCount: 2,
+      order: 2,
+      archived: false,
+      completionRate: 60
+    },
+    {
+      id: "3",
+      name: "İnfrastruktur",
+      assignment: "all",
+      createdAt: new Date("2023-02-01").toISOString(), 
+      updatedAt: new Date("2023-02-20").toISOString(),
+      status: "active",
+      priority: 3,
+      description: "Məktəbin infrastruktur və texniki məlumatları",
+      columnCount: 3,
+      order: 3,
+      archived: false,
+      completionRate: 75
+    },
+    {
+      id: "4",
+      name: "Davamiyyət",
+      assignment: "sectors",
+      createdAt: new Date("2023-02-15").toISOString(),
+      updatedAt: new Date("2023-04-10").toISOString(),
+      status: "active",
+      priority: 4,
+      description: "Davamiyyət haqqında məlumatlar",
+      columnCount: 3,
+      order: 4,
+      archived: false,
+      completionRate: 40
+    },
+    {
+      id: "5",
+      name: "Nailiyyət",
+      assignment: "sectors",
+      createdAt: new Date("2023-03-01").toISOString(),
+      updatedAt: new Date("2023-03-25").toISOString(),
+      status: "active",
+      priority: 5,
+      description: "Şagirdlərin akademik nailiyyətləri və statistikaları",
+      columnCount: 2,
+      order: 5,
+      archived: false,
+      completionRate: 25
+    },
+    {
+      id: "6",
+      name: "Təhsil planlaşdırması",
+      assignment: "all",
+      createdAt: new Date("2023-03-10").toISOString(),
+      updatedAt: new Date("2023-04-01").toISOString(),
+      status: "active",
+      priority: 6,
+      description: "Tədris ili üçün planlaşdırma məlumatları",
+      columnCount: 4,
+      order: 6,
+      archived: false,
+      completionRate: 95
+    },
+    {
+      id: "7",
+      name: "Abituriyent hazırlığı",
+      assignment: "sectors",
+      createdAt: new Date("2023-03-20").toISOString(),
+      updatedAt: new Date("2023-04-15").toISOString(),
+      status: "active",
+      priority: 7,
+      description: "Abituriyent hazırlığı və nəticələri",
+      columnCount: 5,
+      order: 7,
+      archived: false,
+      completionRate: 70
+    },
+    {
+      id: "8",
+      name: "Olimpiyada nəticələri",
+      assignment: "all",
+      createdAt: new Date("2023-04-01").toISOString(),
+      updatedAt: new Date("2023-04-20").toISOString(),
+      status: "inactive",
+      priority: 8,
+      description: "Respublika və beynəlxalq olimpiyada nəticələri",
+      columnCount: 3,
+      order: 8,
+      archived: false,
+      completionRate: 50
+    }
+  ];
+};
+
+export const createDemoCategories = () => getMockCategories();
+
+export const createTeachersDemoCategory = () => ({
+  id: "teacher-data",
+  name: "Müəllim məlumatları",
+  assignment: "sectors",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  status: "active",
+  priority: 2,
+  description: "Müəllim heyəti haqqında məlumatlar",
+  columnCount: 5,
+  order: 2,
+  archived: false,
+  completionRate: 65
+});

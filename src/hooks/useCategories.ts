@@ -49,7 +49,7 @@ export const useCategories = () => {
         description: category.description,
         assignment: category.assignment,
         priority: category.priority,
-        deadline: category.deadline ? (typeof category.deadline === 'object' ? category.deadline.toISOString() : category.deadline) : null,
+        deadline: category.deadline ? (typeof category.deadline === 'object' ? (category.deadline as Date).toISOString() : category.deadline) : null,
         status: category.status || 'active',
         order: category.order || category.priority,
         archived: category.archived || false
@@ -88,7 +88,7 @@ export const useCategories = () => {
         description: updates.description,
         assignment: updates.assignment,
         priority: updates.priority,
-        deadline: typeof updates.deadline === 'object' ? updates.deadline.toISOString() : updates.deadline,
+        deadline: updates.deadline ? (typeof updates.deadline === 'object' ? (updates.deadline as Date).toISOString() : updates.deadline) : null,
         status: updates.status,
         order: updates.order || updates.priority,
         archived: updates.archived
@@ -183,7 +183,7 @@ export const useCategoryOperations = () => {
         description: category.description,
         assignment: category.assignment,
         priority: category.priority,
-        deadline: typeof category.deadline === 'object' ? category.deadline.toISOString() : category.deadline,
+        deadline: category.deadline ? (typeof category.deadline === 'object' ? (category.deadline as Date).toISOString() : category.deadline) : null,
         status: category.status || 'active',
         order: category.order || category.priority,
         archived: category.archived || false
@@ -221,7 +221,7 @@ export const useCategoryOperations = () => {
           description: category.description,
           assignment: category.assignment,
           priority: category.priority,
-          deadline: typeof category.deadline === 'object' ? category.deadline.toISOString() : category.deadline,
+          deadline: category.deadline ? (typeof category.deadline === 'object' ? (category.deadline as Date).toISOString() : category.deadline) : null,
           status: category.status,
           order: category.order || category.priority
         })

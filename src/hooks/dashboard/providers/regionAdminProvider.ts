@@ -1,62 +1,64 @@
-import { getBaseData } from './baseProvider';
-import { getMockNotifications } from '../mockDashboardData';
-import { RegionAdminDashboardData } from '@/types/dashboard';
 
-export function getRegionAdminData(): RegionAdminDashboardData {
-  const baseData = getBaseData();
-  const notifications = getMockNotifications().map(n => ({
-    ...n, 
-    time: n.createdAt || new Date().toISOString() 
-  }));
-  
+import { RegionAdminDashboardData } from '@/types/dashboard';
+import { getBaseDashboardData, getFormStatusCounts } from './baseProvider';
+
+export const getRegionAdminDashboardData = (regionId?: string): RegionAdminDashboardData => {
+  const baseData = getBaseDashboardData();
+  const regionName = getRegionName(regionId || '1');
+
   return {
-    ...baseData,
-    regionName: "Bakı",
-    sectors: 5,
-    schools: 15,
-    users: 30,
-    completionRate: 65,
-    pendingApprovals: 10,
-    pendingSchools: 6,
-    approvedSchools: 20,
-    rejectedSchools: 3,
-    notifications,
-    categories: [
-      { name: "Tədris planı", completionRate: 85, color: "bg-blue-500" },
-      { name: "Müəllim heyəti", completionRate: 70, color: "bg-green-500" },
-      { name: "İnfrastruktur", completionRate: 55, color: "bg-purple-500" },
-      { name: "Maliyyə", completionRate: 40, color: "bg-amber-500" }
+    regionName,
+    sectors: 8,
+    schools: 120,
+    users: 180,
+    approvalRate: 92, // Təsdiq faizi
+    completionRate: 78,
+    pendingApprovals: 15,
+    pendingSchools: 5,
+    approvedSchools: 110,
+    rejectedSchools: 5,
+    notifications: baseData.notifications || [],
+    activityData: baseData.activityData || [],
+    statusData: {
+      completed: 110,
+      pending: 5,
+      rejected: 5,
+      notStarted: 0
+    },
+    chartData: {
+      labels: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May'],
+      datasets: [
+        {
+          label: 'Məlumat toplamış məktəblər',
+          data: [70, 80, 90, 100, 110],
+          backgroundColor: ['rgba(59, 130, 246, 0.5)'],
+          borderColor: ['rgb(59, 130, 246)'],
+          borderWidth: 1,
+        },
+      ],
+    },
+    categoryCompletionData: [
+      { name: 'Şagird məlumatları', completed: 115, total: 120, percentage: 96 },
+      { name: 'Müəllim məlumatları', completed: 105, total: 120, percentage: 88 },
+      { name: 'İnfrastruktur', completed: 95, total: 120, percentage: 79 },
+      { name: 'Maliyyə', completed: 80, total: 120, percentage: 67 }
     ],
     sectorCompletions: [
-      { name: "Nəsimi", completionRate: 80 },
-      { name: "Binəqədi", completionRate: 65 },
-      { name: "Yasamal", completionRate: 75 },
-      { name: "Sabunçu", completionRate: 60 }
+      { name: 'Binəqədi', completion: 92 },
+      { name: 'Yasamal', completion: 85 },
+      { name: 'Nəsimi', completion: 78 },
+      { name: 'Səbail', completion: 70 }
     ]
   };
-}
+};
 
-export const getRegionAdminDashboardData = (userId: string): RegionAdminDashboardData => {
-  // Base data əldə edirik
-  const baseData = getBaseDashboardData();
-
-  // Region Admin xüsusi dataları əlavə edirik
-  return {
-    ...baseData,
-    regionName: "Bakı şəhəri",
-    sectors: 5,
-    schools: 72,
-    users: 86,
-    approvalRate: 67,
-    completionRate: 72,
-    pendingApprovals: 18,
-    pendingSchools: 6,
-    approvedSchools: 66,
-    rejectedSchools: 0,
-    categories: [
-      { name: "Şagirdlər", completionRate: 84, color: "#10B981" },
-      { name: "Müəllimlər", completionRate: 65, color: "#F59E0B" },
-      { name: "İnfrastruktur", completionRate: 42, color: "#8B5CF6" }
-    ]
+// Helper functions
+const getRegionName = (regionId: string): string => {
+  const regionsMap = {
+    '1': 'Bakı',
+    '2': 'Sumqayıt',
+    '3': 'Gəncə'
   };
+  
+  return (regionsMap as {[key: string]: string})[regionId] || 'Unknown region';
 };

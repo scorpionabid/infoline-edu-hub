@@ -1,188 +1,134 @@
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { School } from '@/types/school';
 import { SchoolFormData } from '@/types/school-form';
 import { toast } from 'sonner';
-import { School as SupabaseSchool } from '@/types/supabase';
-import { mapToMockSchool } from './schoolTypeConverters';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/context/LanguageContext';
 
-// Initial form data
-export const getInitialFormState = (): SchoolFormData => ({
-  name: '',
-  principalName: '',
-  address: '',
-  regionId: '',
-  sectorId: '',
-  phone: '',
-  email: '',
-  studentCount: '',
-  teacherCount: '',
-  status: 'active',
-  type: 'full_secondary',
-  language: 'az',
-  adminEmail: '',
-  adminFullName: '',
-  adminPassword: '',
-  adminStatus: 'active'
-});
+export const useSchoolFormHandler = (initialData?: School) => {
+  const { t } = useLanguage();
+  const [formData, setFormData] = useState<SchoolFormData>({
+    name: initialData?.name || '',
+    regionId: initialData?.regionId || '',
+    sectorId: initialData?.sectorId || '',
+    address: initialData?.address || '',
+    phone: initialData?.phone || '',
+    email: initialData?.email || '',
+    principalName: initialData?.principalName || '',
+    studentCount: initialData?.studentCount ? Number(initialData.studentCount) : 0,
+    teacherCount: initialData?.teacherCount ? Number(initialData.teacherCount) : 0,
+    type: initialData?.type || '',
+    language: initialData?.language || '',
+    status: initialData?.status || 'active',
+    adminEmail: '',
+    adminFullName: '',
+    adminPassword: '',
+    adminStatus: 'active'
+  });
 
-interface UseSchoolFormHandlerReturn {
-  formData: SchoolFormData;
-  currentTab: string;
-  setCurrentTab: (tab: string) => void;
-  setFormDataFromSchool: (school: SupabaseSchool) => void;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  resetForm: () => void;
-  validateForm: () => boolean;
-}
-
-export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
-  const { user } = useAuth();
-  const [formData, setFormData] = useState<SchoolFormData>(getInitialFormState());
   const [currentTab, setCurrentTab] = useState('school');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Avtomatik olaraq istifadəçinin regionunu təyin et
   useEffect(() => {
-    if (user && user.regionId) {
-      setFormData(prev => ({ ...prev, regionId: user.regionId }));
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        regionId: initialData.regionId || '',
+        sectorId: initialData.sectorId || '',
+        address: initialData.address || '',
+        phone: initialData.phone || '',
+        email: initialData.email || '',
+        principalName: initialData.principalName || '',
+        studentCount: initialData.studentCount ? Number(initialData.studentCount) : 0,
+        teacherCount: initialData.teacherCount ? Number(initialData.teacherCount) : 0,
+        type: initialData.type || '',
+        language: initialData.language || '',
+        status: initialData.status || 'active',
+        adminEmail: '',
+        adminFullName: '',
+        adminPassword: '',
+        adminStatus: 'active'
+      });
     }
-  }, [user]);
+  }, [initialData]);
 
-  const handleFormChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    // Sektor seçiləndə, onun region ID-sini təyin et
-    if (name === 'sectorId' && value) {
-      try {
-        const { data, error } = await supabase
-          .from('sectors')
-          .select('region_id')
-          .eq('id', value)
-          .single();
-        
-        if (error) {
-          console.error('Sektor məlumatı alınarkən xəta:', error);
-          return;
-        }
-        
-        if (data && data.region_id) {
-          setFormData(prev => ({
-            ...prev,
-            [name]: value,
-            regionId: data.region_id
-          }));
-          return;
-        }
-      } catch (err) {
-        console.error('Sektor sorğusu zamanı xəta:', err);
-      }
-    }
-    
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
+  const validateForm = (): boolean => {
+    let isValid = true;
+    const newErrors: Record<string, string> = {};
 
-  const setFormDataFromSchool = useCallback((school: SupabaseSchool) => {
-    const mappedSchool = mapToMockSchool(school);
-    
-    setFormData({
-      name: mappedSchool.name,
-      principalName: mappedSchool.principalName || '',
-      address: mappedSchool.address || '',
-      regionId: mappedSchool.regionId,
-      sectorId: mappedSchool.sectorId,
-      phone: mappedSchool.phone || '',
-      email: mappedSchool.email || '',
-      studentCount: mappedSchool.studentCount?.toString() || '',
-      teacherCount: mappedSchool.teacherCount?.toString() || '',
-      status: mappedSchool.status || 'active',
-      type: mappedSchool.type || 'full_secondary',
-      language: mappedSchool.language || 'az',
-      adminEmail: mappedSchool.adminEmail || '',
-      adminFullName: '',
-      adminPassword: '',
-      adminStatus: 'active'
-    });
-  }, []);
-
-  const resetForm = useCallback(() => {
-    const initialState = getInitialFormState();
-    // İstifadəçinin regionunu saxla
-    if (user && user.regionId) {
-      initialState.regionId = user.regionId;
-    }
-    setFormData(initialState);
-    setCurrentTab('school');
-  }, [user]);
-
-  const validateForm = useCallback(() => {
-    // Məcburi sahələri yoxla
     if (!formData.name) {
-      toast.error('Məktəb adı daxil edilməlidir');
-      setCurrentTab('school');
-      return false;
+      newErrors.name = t('schoolNameRequired');
+      isValid = false;
     }
-    
-    if (!formData.sectorId) {
-      toast.error('Sektor seçilməlidir');
-      setCurrentTab('school');
-      return false;
-    }
-    
-    // Admin məlumatlarının validasiyası
-    if (formData.adminEmail || formData.adminFullName || formData.adminPassword) {
-      // Əgər admin məlumatlarından biri varsa, hamısı olmalıdır
-      if (!formData.adminEmail) {
-        toast.error('Admin e-poçt ünvanı daxil edilməlidir');
-        setCurrentTab('admin');
-        return false;
-      }
-      
-      if (!formData.adminFullName) {
-        toast.error('Admin adı və soyadı daxil edilməlidir');
-        setCurrentTab('admin');
-        return false;
-      }
-      
-      if (!formData.adminPassword) {
-        toast.error('Admin şifrəsi daxil edilməlidir');
-        setCurrentTab('admin');
-        return false;
-      }
-      
-      if (formData.adminPassword.length < 6) {
-        toast.error('Şifrə ən az 6 simvol olmalıdır');
-        setCurrentTab('admin');
-        return false;
-      }
-      
-      // Email validasiyası
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.adminEmail)) {
-        toast.error('Düzgün e-poçt formatı daxil edin');
-        setCurrentTab('admin');
-        return false;
-      }
-    }
-    
-    return true;
-  }, [formData, setCurrentTab]);
 
-  // Component unmount olduqdan sonra formanı sıfırla
-  useEffect(() => {
-    return () => {
-      setFormData(getInitialFormState());
-      setCurrentTab('school');
-    };
-  }, []);
+    if (!formData.sectorId) {
+      newErrors.sectorId = t('sectorRequired');
+      isValid = false;
+    }
+
+    if (currentTab === 'admin') {
+      if (!formData.adminFullName) {
+        newErrors.adminFullName = t('adminFullNameRequired');
+        isValid = false;
+      }
+
+      if (!formData.adminEmail) {
+        newErrors.adminEmail = t('adminEmailRequired');
+        isValid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.adminEmail)) {
+        newErrors.adminEmail = t('adminEmailInvalid');
+        isValid = false;
+      }
+
+      if (!formData.adminPassword || formData.adminPassword.length < 6) {
+        newErrors.adminPassword = t('adminPasswordRequired');
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleFormSubmit = async (
+    submitAction: (data: Omit<School, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>,
+    editAction?: (data: Partial<School>) => Promise<void>,
+    schoolId?: string
+  ) => {
+    if (!validateForm()) {
+      toast.error(t('formHasErrors'));
+      return;
+    }
+
+    try {
+      if (currentTab === 'school') {
+        const { adminEmail, adminFullName, adminPassword, adminStatus, ...schoolData } = formData;
+        await submitAction(schoolData as Omit<School, 'id' | 'createdAt' | 'updatedAt'>);
+        toast.success(t('schoolAddedSuccessfully'));
+      } else if (currentTab === 'admin' && schoolId && editAction) {
+        const { adminEmail, adminFullName, adminPassword, adminStatus } = formData;
+        await editAction({
+          id: schoolId,
+          adminEmail: adminEmail,
+          adminFullName: adminFullName,
+          adminPassword: adminPassword,
+          adminStatus: adminStatus
+        });
+        toast.success(t('adminUpdatedSuccessfully'));
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast.error(t('submissionFailed'));
+    }
+  };
 
   return {
     formData,
+    setFormData,
     currentTab,
     setCurrentTab,
-    setFormDataFromSchool,
-    handleFormChange,
-    resetForm,
+    errors,
+    setErrors,
+    handleFormSubmit,
     validateForm
   };
 };

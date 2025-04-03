@@ -1,23 +1,19 @@
 
-// FormStatus tipini gücləndiririk
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'due';
-
-export interface Form {
-  id: string;
-  title: string;
-  description?: string;
-  deadline?: string;
-  status: FormStatus;
-  completionPercentage: number;
-  categoryId?: string;
-  category?: string; // Geriyə uyğunluq üçün
-}
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon';
 
 export interface FormItem {
   id: string;
   title: string;
-  status: FormStatus; // String tipinin təyin edilməsi problemini həll edək
+  status: FormStatus;
   completionPercentage: number;
-  deadline?: string;
-  category?: string; // Geriyə uyğunluq üçün
+  category?: string;
+  date?: string;
+}
+
+export interface FormStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  dueSoon: number;
+  overdue: number;
 }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -112,7 +111,6 @@ const SchoolsContainer: React.FC = () => {
   }, [user, selectedRegion, handleRegionFilter]);
 
   const handleExportClick = () => {
-    // Tip uyğunsuzluğunu aradan qaldırmaq üçün School tipinə konvertasiya
     const exportSchools = schools?.map(school => ({ 
       ...school,
       region_id: school.regionId || school.region_id,
@@ -126,7 +124,6 @@ const SchoolsContainer: React.FC = () => {
     setIsImportDialogOpen(true);
   };
 
-  // Axtarış üçün wrapper funksiya
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     handleSearch(e.target.value);
   };
@@ -134,7 +131,6 @@ const SchoolsContainer: React.FC = () => {
   const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
   const userRole = user?.role as UserRole;
 
-  // Tipləri uyğunlaşdır
   const handleEditDialogOpenWrapper = (school: any) => {
     handleEditDialogOpen(school as School);
   };
@@ -149,8 +145,7 @@ const SchoolsContainer: React.FC = () => {
   
   const handleAdminUpdateWrapper = (adminData: any) => {
     if (typeof adminData === 'object' && adminData !== null) {
-      handleAdminUpdate(adminData.userId || '', adminData.role || '', 
-        adminData.regionId || null, adminData.sectorId || null, adminData.schoolId || null);
+      handleAdminUpdate(adminData);
     }
   };
 
@@ -211,9 +206,9 @@ const SchoolsContainer: React.FC = () => {
         closeEditDialog={closeEditDialog}
         closeAddDialog={closeAddDialog}
         closeAdminDialog={closeAdminDialog}
-        handleDeleteConfirm={handleDeleteConfirm}
+        handleDeleteConfirm={() => handleDeleteConfirm()}
         handleAddSubmit={handleAddSubmit}
-        handleEditSubmit={handleEditSubmit}
+        handleEditSubmit={(data) => handleEditSubmit(data)}
         handleAdminUpdate={handleAdminUpdateWrapper}
         handleResetPassword={handleResetPassword}
         formData={formData}

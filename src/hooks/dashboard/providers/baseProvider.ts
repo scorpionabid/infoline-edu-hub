@@ -1,125 +1,116 @@
-import { mockCategories } from '@/data/mock/mockCategories';
-import { 
-  getMockNotifications, 
-  getMockRegions, 
-  getMockSectors, 
-  getMockSchools 
-} from '../mockDashboardData';
-import { DashboardData } from '@/types/dashboard';
-import { createSafeFormItems, transformDeadlineToString, validateMockCategories } from './utils';
 
-export function getBaseData(): DashboardData {
-  const mockSchools = getMockSchools();
-  const mockRegions = getMockRegions();
-  const mockSectors = getMockSectors();
-  
-  console.log('getBaseData çağırıldı');
-  validateMockCategories();
-  
-  const totalSchools = mockSchools.length;
-  const activeSchools = mockSchools.filter(school => school.status === 'active').length;
-  
-  const pendingFormItems = createSafeFormItems(mockCategories);
-  
-  console.log('pendingFormItems yaradıldı:', pendingFormItems.length);
-  
-  let upcomingDeadlines: { category: string; date: string }[] = [];
-  
-  try {
-    upcomingDeadlines = Array.isArray(mockCategories) 
-      ? mockCategories
-        .filter(category => {
-          const hasDeadline = category.deadline !== undefined && category.deadline !== null && category.deadline !== '';
-          if (!hasDeadline) {
-            console.log(`Kateqoriya "${category.name}" deadline xüsusiyyətinə malik deyil`);
-          }
-          return hasDeadline;
-        })
-        .slice(0, 5)
-        .map(category => {
-          return {
-            category: category.name,
-            date: transformDeadlineToString(category.deadline)
-          };
-        })
-      : [];
-    
-    console.log('upcomingDeadlines yaradıldı:', upcomingDeadlines.length);
-  } catch (error) {
-    console.error('upcomingDeadlines yaradılması zamanı xəta:', error);
-  }
-  
-  let regionalStats = mockRegions.map(region => {
-    return {
-      region: region.name,
-      approved: Math.floor(Math.random() * 50),
-      pending: Math.floor(Math.random() * 30),
-      rejected: Math.floor(Math.random() * 10)
-    };
-  });
-  
-  let sectorStats = mockSectors.map(sector => {
-    return {
-      sector: sector.name,
-      approved: Math.floor(Math.random() * 30),
-      pending: Math.floor(Math.random() * 20),
-      rejected: Math.floor(Math.random() * 5)
-    };
-  });
-  
-  const result: DashboardData = {
-    totalSchools,
-    activeSchools,
-    pendingForms: pendingFormItems,
-    upcomingDeadlines,
-    regionalStats,
-    sectorStats
-  };
-  
-  console.log('getBaseData bitdi, nəticə hazırdır');
-  return result;
-}
+import { DashboardData } from '@/types/dashboard';
+import { FormItem, FormStatus } from '@/types/form';
+import { getMockNotifications } from '../mockDashboardData';
 
 export const getBaseDashboardData = (): DashboardData => {
+  const notifications = getMockNotifications();
+  
   return {
-    notifications: mockNotifications,
-    isLoading: false,
-    error: null,
-    totalSchools: 0,
-    activeSchools: 0,
-    pendingForms: [
-      {
-        id: "1",
-        title: "Müəllim məlumatları",
-        status: "pending" as FormStatus,
-        completionPercentage: 45,
-        category: "Kadrlar"
-      },
-      {
-        id: "2",
-        title: "Infrastruktur məlumatları",
-        status: "pending" as FormStatus,
-        completionPercentage: 30,
-        category: "İnfrastruktur"
-      }
+    regions: 12,
+    sectors: 45,
+    schools: 450,
+    users: 1200,
+    completionRate: 68,
+    pendingApprovals: 15,
+    notifications,
+    activityData: getActivityData(),
+    pendingSchools: 12,
+    approvedSchools: 428,
+    rejectedSchools: 10,
+    statusData: {
+      completed: 428,
+      pending: 12,
+      rejected: 10,
+      notStarted: 0
+    },
+    chartData: {
+      labels: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May'],
+      datasets: [
+        {
+          label: 'Məlumat toplamış məktəblər',
+          data: [250, 300, 350, 400, 450],
+          backgroundColor: ['rgba(59, 130, 246, 0.5)'],
+          borderColor: ['rgb(59, 130, 246)'],
+          borderWidth: 1,
+        },
+      ],
+    },
+    categoryCompletionData: [
+      { name: 'Şagird məlumatları', completed: 432, total: 450, percentage: 96 },
+      { name: 'Müəllim məlumatları', completed: 405, total: 450, percentage: 90 },
+      { name: 'İnfrastruktur', completed: 380, total: 450, percentage: 84 },
+      { name: 'Maliyyə', completed: 290, total: 450, percentage: 64 }
     ],
-    upcomingDeadlines: [
-      {
-        id: "3",
-        title: "Şagird məlumatları",
-        status: "dueSoon" as FormStatus,
-        completionPercentage: 75,
-        category: "Şagirdlər",
-        deadline: "2023-09-20T23:59:59Z"
+    pendingForms: [
+      { 
+        id: '1', 
+        title: 'Şagird sayı', 
+        status: 'pending' as FormStatus, 
+        completionPercentage: 65, 
+        category: 'Şagird məlumatları', 
+        date: '2023-05-20' 
       },
-      {
-        id: "4",
-        title: "Maliyyə məlumatları",
-        status: "due" as FormStatus,
-        completionPercentage: 15,
-        category: "Maliyyə",
-        deadline: "2023-09-25T23:59:59Z"
+      { 
+        id: '2', 
+        title: 'Müəllim sayı', 
+        status: 'dueSoon' as FormStatus, 
+        completionPercentage: 40, 
+        category: 'Müəllim məlumatları', 
+        date: '2023-05-15' 
       }
     ]
   };
+};
+
+// Activity data generator
+const getActivityData = () => [
+  {
+    id: '1',
+    action: 'Yeni məktəb əlavə edildi',
+    actor: 'Admin İstifadəçi',
+    target: '42 saylı məktəb',
+    time: '15 dəq əvvəl'
+  },
+  {
+    id: '2',
+    action: 'Məlumat təsdiqləndi',
+    actor: 'Sektor Admin',
+    target: 'Şagird məlumatları',
+    time: '1 saat əvvəl'
+  },
+  {
+    id: '3',
+    action: 'Yeni kateqoriya yaradıldı',
+    actor: 'Super Admin',
+    target: 'Olimpiyada nəticələri',
+    time: '3 saat əvvəl'
+  }
+];
+
+// Məlumat formalarının statuslarına görə sayını əldə etmək üçün funksiya
+export const getFormStatusCounts = (formItems: FormItem[]) => {
+  const counts = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    dueSoon: 0,
+    overdue: 0
+  };
+
+  formItems.forEach(form => {
+    if (form.status === 'pending') {
+      counts.pending++;
+    } else if (form.status === 'approved') {
+      counts.approved++;
+    } else if (form.status === 'rejected') {
+      counts.rejected++;
+    } else if (form.status === 'dueSoon') {
+      counts.dueSoon++;
+    } else if (form.status === 'overdue') {
+      counts.overdue++;
+    }
+  });
+
+  return counts;
 };

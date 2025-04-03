@@ -1,12 +1,11 @@
-import { create } from 'zustand';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { School } from "@/types/school";
+import { Region } from "@/types/region";
+import { Sector } from "@/types/sector";
 import { useSchoolsData } from './schools/useSchoolsData';
 import { useRegionsData } from './regions/useRegionsData';
 import { useSectorsData } from './sectors/useSectorsData';
 import { SortConfig } from '@/types/sorting';
-import { useState, useMemo } from 'react';
-import { School } from '@/types/school';
-import { Region } from '@/types/region';
-import { Sector } from '@/types/sector';
 
 export const useSchoolsStore = () => {
   // Get data from hooks

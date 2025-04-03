@@ -1,5 +1,5 @@
 
-import { Notification, NotificationType } from '@/types/notification';
+import { Notification, NotificationType, NotificationEntityType } from '@/types/notification';
 
 // Demo bildirisləri
 export const mockNotifications: Notification[] = [
@@ -14,7 +14,7 @@ export const mockNotifications: Notification[] = [
     userId: 'user-1',
     priority: 'normal',
     read_status: false,
-    relatedEntityType: 'category'
+    relatedEntityType: 'category' as NotificationEntityType
   },
   {
     id: '2',
@@ -27,7 +27,7 @@ export const mockNotifications: Notification[] = [
     userId: 'user-1',
     priority: 'high',
     read_status: true,
-    relatedEntityType: 'category'
+    relatedEntityType: 'category' as NotificationEntityType
   }
 ];
 

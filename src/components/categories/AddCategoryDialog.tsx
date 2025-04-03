@@ -1,212 +1,164 @@
-
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Category, CategoryAssignment } from '@/types/category';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Switch } from '@/components/ui/switch';
-import { Category } from '@/types/category';
+import { useLanguage } from '@/context/LanguageContext';
+import { Textarea } from '@/components/ui/textarea';
 
-export interface AddCategoryDialogProps {
+interface AddCategoryDialogProps {
   isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
   onClose: () => void;
-  category?: Category;
+  onSubmit: (data: Omit<Category, "id" | "createdAt" | "updatedAt">) => Promise<void>;
+  initialData?: Partial<Category>;
+  isEdit?: boolean;
 }
 
-const formSchema = z.object({
-  name: z.string().min(1, { message: 'Kateqoriya adı tələb olunur' }),
-  description: z.string().optional(),
-  assignment: z.enum(['all', 'sectors'], {
-    required_error: 'Təyinat seçilməlidir',
-  }),
-  status: z.enum(['active', 'inactive'], {
-    required_error: 'Status seçilməlidir',
-  }),
-  deadline: z.date().optional(),
-  priority: z.number().int().positive().default(1),
-});
+export function AddCategoryDialog({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+  isEdit = false
+}: AddCategoryDialogProps) {
+  const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState(initialData?.name || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [assignment, setAssignment] = useState<CategoryAssignment>(initialData?.assignment as CategoryAssignment || 'all');
+  const [status, setStatus] = useState(initialData?.status || 'active');
+  const [deadline, setDeadline] = useState<Date | undefined>(
+    initialData?.deadline ? new Date(initialData.deadline) : undefined
+  );
+  const [priority, setPriority] = useState(initialData?.priority || 1);
 
-type FormValues = z.infer<typeof formSchema>;
-
-const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ 
-  isOpen, 
-  onOpenChange, 
-  onSubmit, 
-  onClose, 
-  category 
-}) => {
-  const isEditMode = !!category;
-  
-  const { 
-    register, 
-    handleSubmit, 
-    control, 
-    formState: { errors, isSubmitting }, 
-    reset 
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: category?.name || '',
-      description: category?.description || '',
-      assignment: category?.assignment || 'all',
-      status: category?.status as ('active' | 'inactive') || 'active',
-      deadline: category?.deadline ? new Date(category.deadline) : undefined,
-      priority: category?.priority || 1,
-    },
-  });
-
-  const handleFormSubmit = async (data: FormValues) => {
+  const handleSubmit = async () => {
+    if (!name) return;
+    
+    setIsLoading(true);
+    
+    const categoryData = {
+      name,
+      description,
+      assignment,
+      status: status as "active" | "inactive",
+      deadline: deadline || null,
+      priority,
+      columnCount: initialData?.columnCount || 0,
+      order: initialData?.order || priority,
+      archived: initialData?.archived || false
+    };
+    
     try {
-      const categoryData = {
-        ...data,
-        name: data.name,
-        description: data.description,
-        assignment: data.assignment,
-        status: data.status,
-        deadline: data.deadline,
-        priority: data.priority,
-        columnCount: category?.columnCount || 0,
-        order: category?.order || data.priority,
-        archived: category?.archived || false,
-      };
-      
-      const success = await onSubmit(categoryData);
-      if (success) {
-        reset();
-        onClose();
-      }
-      return success;
+      await onSubmit(categoryData as Omit<Category, "id" | "createdAt" | "updatedAt">);
+      onClose();
     } catch (error) {
-      console.error('Category submission error:', error);
-      return false;
+      console.error("Error submitting category:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Kateqoriyanı Redaktə Et' : 'Yeni Kateqoriya'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('editCategory') : t('addCategory')}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Kateqoriya adı *</Label>
-              <Input
-                id="name"
-                {...register('name')}
-                placeholder="Kateqoriya adını daxil edin"
-                className={errors.name ? 'border-red-500' : ''}
-              />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="description">Təsvir</Label>
-              <Textarea
-                id="description"
-                {...register('description')}
-                placeholder="Kateqoriya təsvirini daxil edin"
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label>Təyinat *</Label>
-              <Controller
-                name="assignment"
-                control={control}
-                render={({ field }) => (
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="flex space-x-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id="assignment-all" />
-                      <Label htmlFor="assignment-all">Hamısı</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sectors" id="assignment-sectors" />
-                      <Label htmlFor="assignment-sectors">Sektorlar</Label>
-                    </div>
-                  </RadioGroup>
-                )}
-              />
-              {errors.assignment && <p className="text-red-500 text-sm">{errors.assignment.message}</p>}
-            </div>
-            
-            <div className="grid gap-2">
-              <Label>Son tarix</Label>
-              <Controller
-                name="deadline"
-                control={control}
-                render={({ field }) => (
-                  <DatePicker
-                    date={field.value}
-                    setDate={field.onChange}
-                  />
-                )}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="priority">Prioritet</Label>
-              <Input
-                id="priority"
-                type="number"
-                {...register('priority', { valueAsNumber: true })}
-                min={1}
-                defaultValue={1}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="status">Status</Label>
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="status-switch">{field.value === 'active' ? 'Aktiv' : 'Deaktiv'}</Label>
-                    <Switch
-                      id="status-switch"
-                      checked={field.value === 'active'}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked ? 'active' : 'inactive');
-                      }}
-                    />
-                  </div>
-                )}
-              />
-            </div>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              {t('name')}
+            </Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="col-span-3"
+            />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Ləğv et
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Gözləyin...' : isEditMode ? 'Yadda saxla' : 'Əlavə et'}
-            </Button>
-          </DialogFooter>
-        </form>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              {t('description')}
+            </Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="assignment" className="text-right">
+              {t('assignment')}
+            </Label>
+            <select
+              id="assignment"
+              value={assignment}
+              onChange={(e) => setAssignment(e.target.value as CategoryAssignment)}
+              className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="all">{t('allRegions')}</option>
+              <option value="sectors">{t('sectorsOnly')}</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status" className="text-right">
+              {t('status')}
+            </Label>
+            <select
+              id="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="active">{t('active')}</option>
+              <option value="inactive">{t('inactive')}</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="deadline" className="text-right">
+              {t('deadline')}
+            </Label>
+            <DatePicker
+              id="deadline"
+              value={deadline}
+              onValueChange={setDeadline}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="priority" className="text-right">
+              {t('priority')}</Label>
+            <Input
+              type="number"
+              id="priority"
+              value={priority}
+              onChange={(e) => setPriority(Number(e.target.value))}
+              className="col-span-3"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="animate-spin mr-2">
+                  ●
+                </span>
+                {t('submitting')}
+              </>
+            ) : (
+              t('save')
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AddCategoryDialog;
+}
