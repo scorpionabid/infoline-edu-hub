@@ -1,10 +1,11 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/dataEntry';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
-export const useDataEntries = () => {
+export const useDataEntries = (categoryId?: string, schoolId?: string) => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -74,24 +75,29 @@ export const useDataEntries = () => {
 
       if (error) throw error;
 
-      const formattedEntries = data?.map(entry => ({
-        id: entry.id,
-        categoryId: entry.category_id,
-        categoryName: entry.categories?.name || '',
-        columnId: entry.column_id,
-        schoolId: entry.school_id,
-        schoolName: entry.schools?.name || '',
-        value: entry.value || '',
-        status: entry.status || 'pending',
-        createdAt: entry.created_at,
-        updatedAt: entry.updated_at,
-        createdBy: entry.created_by,
-        approvedAt: entry.approved_at,
-        approvedBy: entry.approved_by,
-        rejectedBy: entry.rejected_by,
-        rejectionReason: entry.rejection_reason || '',
-        deadline: entry.categories?.deadline
-      })) || [];
+      const formattedEntries = data?.map(entry => {
+        const formattedEntry: DataEntry = {
+          id: entry.id,
+          categoryId: entry.category_id,
+          category_id: entry.category_id,
+          categoryName: entry.categories?.name || '',
+          columnId: entry.column_id,
+          column_id: entry.column_id,
+          schoolId: entry.school_id,
+          school_id: entry.school_id,
+          value: entry.value || '',
+          status: entry.status || 'pending',
+          createdAt: entry.created_at,
+          updatedAt: entry.updated_at,
+          createdBy: entry.created_by,
+          approvedAt: entry.approved_at,
+          approvedBy: entry.approved_by,
+          rejectedBy: entry.rejected_by,
+          rejectionReason: entry.rejection_reason || '',
+          deadline: entry.categories?.deadline
+        };
+        return formattedEntry;
+      }) || [];
 
       setEntries(formattedEntries);
       setLoading(false);
@@ -106,9 +112,9 @@ export const useDataEntries = () => {
   const addEntry = useCallback(async (entryData: Omit<DataEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const supabaseEntryData = {
-        category_id: entryData.categoryId,
-        column_id: entryData.columnId,
-        school_id: entryData.schoolId || user?.schoolId,
+        category_id: entryData.categoryId || entryData.category_id,
+        column_id: entryData.columnId || entryData.column_id,
+        school_id: entryData.schoolId || entryData.school_id || user?.schoolId,
         value: entryData.value,
         status: entryData.status || 'pending',
         created_by: user?.id,
@@ -129,10 +135,12 @@ export const useDataEntries = () => {
       const newEntry: DataEntry = {
         id: data.id,
         categoryId: data.category_id,
+        category_id: data.category_id,
         categoryName: data.categories?.name || '',
         columnId: data.column_id,
+        column_id: data.column_id,
         schoolId: data.school_id,
-        schoolName: data.schools?.name || '',
+        school_id: data.school_id,
         value: data.value || '',
         status: data.status || 'pending',
         createdAt: data.created_at,
@@ -191,10 +199,12 @@ export const useDataEntries = () => {
       const updatedEntry: DataEntry = {
         id: data.id,
         categoryId: data.category_id,
+        category_id: data.category_id,
         categoryName: data.categories?.name || '',
         columnId: data.column_id,
+        column_id: data.column_id,
         schoolId: data.school_id,
-        schoolName: data.schools?.name || '',
+        school_id: data.school_id,
         value: data.value || '',
         status: data.status || 'pending',
         createdAt: data.created_at,
@@ -231,8 +241,11 @@ export const useDataEntries = () => {
 
   const deleteEntry = useCallback(async (entryId: string) => {
     try {
-      const entry = entries.find(e => e.id === entryId);
-      const schoolId = entry?.schoolId;
+      const { data: entryData } = await supabase
+        .from('data_entries')
+        .select('school_id')
+        .eq('id', entryId)
+        .single();
       
       const { error } = await supabase
         .from('data_entries')
@@ -244,8 +257,8 @@ export const useDataEntries = () => {
       setEntries(prev => prev.filter(entry => entry.id !== entryId));
       toast.success('Məlumat uğurla silindi');
       
-      if (schoolId) {
-        await updateSchoolCompletionRate(schoolId);
+      if (entryData?.school_id) {
+        await updateSchoolCompletionRate(entryData.school_id);
       }
       
       return true;
@@ -254,85 +267,120 @@ export const useDataEntries = () => {
       toast.error('Məlumat silinərkən xəta baş verdi');
       throw err;
     }
-  }, [entries]);
-  
-  const approveEntry = useCallback(async (entryId: string, updateData?: Partial<DataEntry>) => {
-    return await updateEntry(entryId, {
-      ...updateData,
-      status: 'approved',
-      approved_at: new Date().toISOString(),
-      approved_by: user?.id
-    });
-  }, [user, updateEntry]);
+  }, []);
 
-  const rejectEntry = useCallback(async (entryId: string, updateData?: Partial<DataEntry>) => {
-    return await updateEntry(entryId, {
-      ...updateData,
-      status: 'rejected',
-      rejected_by: user?.id,
-      rejection_reason: updateData?.rejectionReason || updateData?.rejection_reason || ''
-    });
-  }, [user, updateEntry]);
-
-  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-        
-      if (error) throw error;
-      
-      for (const entry of data) {
-        await updateEntry(entry.id, { status: 'pending' });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Category submission error:', error);
-      return false;
-    }
+  // Approval funksiyaları
+  const approveEntry = useCallback(async (entryId: string) => {
+    return updateEntry(entryId, { status: 'approved' });
   }, [updateEntry]);
 
-  const getApprovalStatus = useCallback((categoryId: string) => {
-    const categoryEntries = entries.filter(entry => entry.category_id === categoryId || entry.categoryId === categoryId);
-    
-    if (categoryEntries.length === 0) return 'pending';
-    
-    const approvedCount = categoryEntries.filter(entry => entry.status === 'approved').length;
-    const rejectedCount = categoryEntries.filter(entry => entry.status === 'rejected').length;
-    
-    if (rejectedCount > 0) return 'rejected';
-    if (approvedCount === categoryEntries.length) return 'approved';
-    
-    return 'pending';
-  }, [entries]);
-  
+  const rejectEntry = useCallback(async (entryId: string, rejectionReason?: string) => {
+    return updateEntry(entryId, { 
+      status: 'rejected',
+      rejectionReason: rejectionReason || 'Məlumat yanlışdır.'
+    });
+  }, [updateEntry]);
+
+  // Məktəbin tamamlanma faizini yeniləmək üçün funksiya
   const updateSchoolCompletionRate = async (schoolId: string) => {
     try {
-      const { count: totalColumnsCount } = await supabase
+      // Məktəbin bütün kateqoriyalar üzrə ümumi sütun sayını əldə et
+      const { count: totalColumns } = await supabase
         .from('columns')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
       
-      if (!totalColumnsCount) return;
-      
-      const { count: approvedEntriesCount } = await supabase
+      // Məktəbin daxil edilmiş məlumatlarının sayını əldə et
+      const { count: filledEntries } = await supabase
         .from('data_entries')
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', schoolId)
-        .eq('status', 'approved');
+        .select('id', { count: 'exact', head: true })
+        .eq('school_id', schoolId);
       
-      const completionRate = Math.round((approvedEntriesCount || 0) / totalColumnsCount * 100);
+      // Tamamlanma faizini hesabla
+      const completionRate = totalColumns && totalColumns > 0 
+        ? Math.round((filledEntries || 0) / totalColumns * 100) 
+        : 0;
       
+      // Məktəbin tamamlanma faizini yenilə
       await supabase
         .from('schools')
         .update({ completion_rate: completionRate })
         .eq('id', schoolId);
+        
     } catch (err) {
-      console.error('Məktəb tamamlanma faizini yeniləyərkən xəta:', err);
+      console.error('Məktəbin tamamlanma faizini yeniləyərkən xəta:', err);
     }
   };
+
+  // Kateqoriyanın təsdiq vəziyyətini əldə etmək üçün funksiya
+  const getApprovalStatus = useCallback(async (categoryId: string, schoolId: string) => {
+    try {
+      // Kateqoriya üzrə sütun sayını əldə et
+      const { count: columnCount } = await supabase
+        .from('columns')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', categoryId);
+      
+      // Kateqoriya və məktəb üzrə təsdiqlənmiş məlumatların sayını əldə et
+      const { count: approvedCount } = await supabase
+        .from('data_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId)
+        .eq('status', 'approved');
+      
+      // Kateqoriya və məktəb üzrə rədd edilmiş məlumatların sayını əldə et
+      const { count: rejectedCount } = await supabase
+        .from('data_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId)
+        .eq('status', 'rejected');
+      
+      // Təsdiq vəziyyətini təyin et
+      if (rejectedCount && rejectedCount > 0) {
+        return 'rejected';
+      } else if (approvedCount === columnCount && columnCount > 0) {
+        return 'approved';
+      } else {
+        return 'pending';
+      }
+    } catch (err) {
+      console.error('Təsdiq vəziyyətini əldə edərkən xəta:', err);
+      return 'pending';
+    }
+  }, []);
+
+  // Kateqoriyanın təsdiq üçün göndərilməsi
+  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
+    try {
+      // Kateqoriya üzrə bütün daxil edilmiş məlumatları təsdiq üçün göndər
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update({ status: 'pending' })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+      
+      if (error) throw error;
+      
+      // Bildiriş göndər
+      await supabase.from('notifications').insert({
+        type: 'info',
+        title: 'Kateqoriya təsdiqə göndərildi',
+        message: `${categoryId} kateqoriyası təsdiq üçün göndərildi`,
+        user_id: user?.id,
+        priority: 'normal',
+        related_entity_id: categoryId,
+        related_entity_type: 'category'
+      });
+      
+      toast.success('Kateqoriya təsdiq üçün uğurla göndərildi');
+      return true;
+    } catch (err) {
+      console.error('Kateqoriyanı təsdiqə göndərərkən xəta:', err);
+      toast.error('Kateqoriyanı təsdiqə göndərərkən xəta baş verdi');
+      return false;
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchEntries();

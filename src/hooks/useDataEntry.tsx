@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Category } from '@/types/category';
 import { useDataEntries } from './useDataEntries';
@@ -28,7 +29,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     rejectEntry: rejectEntryFn,
     submitCategoryForApproval: submitCategoryForApprovalFn,
     getApprovalStatus: getApprovalStatusFn
-  } = useDataEntries();
+  } = useDataEntries(categoryId, schoolId);
 
   // Submitı əlavə edək
   const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
@@ -166,16 +167,14 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     refreshData,
     changeCategory,
     updateValue: handleDataChange,
-    submitForApproval: handleSubmitForApproval,
     saveForm,
     getErrorForColumn,
     downloadExcelTemplate,
     uploadExcelData,
-    submitCategoryForApproval,
     
-    // Əlavə edilən metodlar
-    approveEntry: approveEntryFn || updateEntry,
-    rejectEntry: rejectEntryFn || updateEntry,
+    // Təsdiq əməliyyatları
+    approveEntry: approveEntryFn,
+    rejectEntry: rejectEntryFn,
     submitCategoryForApproval,
     getApprovalStatus: getApprovalStatusFn || ((id: string) => "pending")
   };

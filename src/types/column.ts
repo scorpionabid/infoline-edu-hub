@@ -74,6 +74,7 @@ export interface CategoryWithColumns {
     priority: number;
     status?: string;
     assignment?: string; // CategoryAssignment
+    deadline?: string; // Əlavə edildi
   };
   columns: Column[];
   id?: string; // Uyğunluq üçün əlavə edildi
@@ -83,6 +84,7 @@ export interface CategoryWithColumns {
   status?: string; // Uyğunluq üçün əlavə edildi
   assignment?: string; // Uyğunluq üçün əlavə edildi
   order?: number; // Uyğunluq üçün əlavə edildi
+  deadline?: string; // Əlavə edildi
 }
 
 export const adaptSupabaseColumn = (rawData: any): Column => {

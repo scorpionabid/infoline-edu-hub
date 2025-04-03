@@ -84,7 +84,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             if (deadlineDate < now) {
               status = 'overdue';
             } else if (deadlineDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) { // 3 gün
-              status = 'due';
+              status = 'dueSoon';
             }
           }
           
@@ -97,7 +97,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
           return {
             id: category.id,
             title: category.name,
-            category: 'Əsas',
+            categoryId: category.id,
             status,
             completionPercentage,
             deadline: category.deadline,
@@ -126,8 +126,8 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
   const categories = React.useMemo(() => {
     const categorySet = new Set(['all']);
     forms.forEach(form => {
-      if (form.category) {
-        categorySet.add(form.category);
+      if (form.categoryId) {
+        categorySet.add(form.categoryId);
       }
     });
     return Array.from(categorySet);
@@ -144,14 +144,14 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
       filteredForms = filteredForms.filter(form => 
         form.status === 'rejected' || 
         form.status === 'overdue' ||
-        (form.status === 'due') || // Son tarixi yaxınlaşan formlar
+        (form.status === 'dueSoon') || // Son tarixi yaxınlaşan formlar
         (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)) // 3 gün içində olanlar
       );
     }
     
     // Kateqoriya filtri
     if (selectedCategory !== 'all') {
-      filteredForms = filteredForms.filter(form => form.category === selectedCategory);
+      filteredForms = filteredForms.filter(form => form.categoryId === selectedCategory);
     }
     
     // Status filtri
@@ -164,7 +164,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
       const query = searchQuery.toLowerCase();
       filteredForms = filteredForms.filter(form => 
         form.title.toLowerCase().includes(query) || 
-        form.category?.toLowerCase().includes(query)
+        (form.categoryId && form.categoryId.toLowerCase().includes(query))
       );
     }
     
@@ -234,7 +234,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
               <SelectItem value="rejected">{t('rejected')}</SelectItem>
               <SelectItem value="draft">{t('draft')}</SelectItem>
               <SelectItem value="overdue">{t('overdue')}</SelectItem>
-              <SelectItem value="due">{t('dueSoon')}</SelectItem>
+              <SelectItem value="dueSoon">{t('dueSoon')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -247,7 +247,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.category}
+                  category={form.categoryId}
                   status={form.status}
                   completionPercentage={form.completionPercentage}
                   deadline={form.deadline}
@@ -271,7 +271,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.category}
+                  category={form.categoryId}
                   status={form.status}
                   completionPercentage={form.completionPercentage}
                   deadline={form.deadline}
@@ -295,7 +295,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.category}
+                  category={form.categoryId}
                   status={form.status}
                   completionPercentage={form.completionPercentage}
                   deadline={form.deadline}

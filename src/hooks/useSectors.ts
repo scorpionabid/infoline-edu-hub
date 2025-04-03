@@ -9,6 +9,8 @@ export interface Sector {
   region_id: string;
   status: "active" | "inactive";
   admin_email?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const useSectors = (regionId?: string) => {

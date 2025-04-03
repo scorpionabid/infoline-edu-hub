@@ -24,6 +24,8 @@ export interface School {
   updatedAt?: string;
   completion_rate?: number; // SupaBase  əsaslı ad
   completionRate?: number; // Frontend əsaslı ad
+  language?: string; // Əlavə edildi
+  adminEmail?: string; // Əlavə edildi
 }
 
 // Adaptor funksiyası
@@ -49,5 +51,22 @@ export const adaptSchoolData = (rawData: any): School => ({
   createdAt: rawData.created_at || '',
   updatedAt: rawData.updated_at || '',
   completionRate: rawData.completion_rate || 0,
-  completion_rate: rawData.completion_rate || 0
+  completion_rate: rawData.completion_rate || 0,
+  language: rawData.language || '', // Əlavə edildi
+  adminEmail: rawData.admin_email || '' // Əlavə edildi
 });
+
+export interface CreateSchoolParams {
+  name: string;
+  regionId: string;
+  sectorId: string;
+  status?: 'active' | 'inactive';
+  address?: string;
+  phone?: string;
+  email?: string;
+  principalName?: string;
+  studentCount?: number;
+  teacherCount?: number;
+  type?: string;
+  language?: string;
+}

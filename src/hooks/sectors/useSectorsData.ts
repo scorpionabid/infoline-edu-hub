@@ -1,84 +1,82 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Sector } from '@/types/sector';
+import { Sector } from '@/hooks/useSectors'; 
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
 
-/**
- * Sektor məlumatlarını idarə etmək üçün hook
- */
-export const useSectorsData = (selectedRegionId?: string) => {
+export const useSectorsData = () => {
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
 
-  // Sektorları yükləyən funksiya
-  const fetchSectors = useCallback(async () => {
-    setLoading(true);
+  const fetchSectors = useCallback(async (regionId?: string) => {
+    setIsLoading(true);
     try {
-      let query = supabase.from('sectors').select('*');
-
-      // Region filtrini tətbiq et əgər təyin edilibsə
-      if (selectedRegionId) {
-        query = query.eq('region_id', selectedRegionId);
+      let query = supabase
+        .from('sectors')
+        .select('*');
+        
+      if (regionId) {
+        query = query.eq('region_id', regionId);
       }
-
-      // Rol əsaslı filtrasiya
-      switch (user?.role) {
-        case 'superadmin':
-          // SuperAdmin bütün sektorları görə bilər
-          break;
-        case 'regionadmin':
-          query = query.eq('region_id', user.regionId);
-          break;
-        case 'sectoradmin':
-          query = query.eq('id', user.sectorId);
-          break;
-        default:
-          // Digər rollar üçün standart qaydalar
-          if (user?.sectorId) {
-            query = query.eq('id', user.sectorId);
-          } else if (user?.regionId) {
-            query = query.eq('region_id', user.regionId);
-          }
-          break;
-      }
-
+      
       const { data, error } = await query.order('name');
 
       if (error) throw error;
+      
+      const formattedSectors: Sector[] = data.map(sector => ({
+        id: sector.id,
+        name: sector.name,
+        description: sector.description || '',
+        region_id: sector.region_id,
+        status: sector.status === 'active' ? 'active' : 'inactive',
+        admin_email: sector.admin_email || '',
+        createdAt: sector.created_at || '',
+        updatedAt: sector.updated_at || ''
+      }));
 
-      setSectors(data || []);
-      setLoading(false);
+      setSectors(formattedSectors);
+      setIsLoading(false);
     } catch (err: any) {
       console.error('Sektorları yükləyərkən xəta:', err);
       setError(err);
-      setLoading(false);
+      setIsLoading(false);
       toast.error('Sektorları yükləyərkən xəta baş verdi');
     }
-  }, [user, selectedRegionId]);
+  }, []);
 
-  // Sektor yaratma funksiyası
-  const createSector = useCallback(async (sectorData: Omit<Sector, 'id'>) => {
+  const createSector = useCallback(async (sectorData: Omit<Sector, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // Sektorun region_id sahəsinin olduğunu yoxla
-      if (!sectorData.region_id) {
-        throw new Error('Region ID təyin edilməyib');
-      }
-      
+      const newSector = {
+        name: sectorData.name,
+        description: sectorData.description || '',
+        region_id: sectorData.region_id,
+        admin_email: sectorData.admin_email || '',
+        status: sectorData.status || 'active',
+      };
+
       const { data, error } = await supabase
         .from('sectors')
-        .insert(sectorData)
+        .insert([newSector])
         .select()
         .single();
 
       if (error) throw error;
+      
+      const formattedSector: Sector = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        region_id: data.region_id,
+        status: data.status === 'active' ? 'active' : 'inactive',
+        admin_email: data.admin_email || '',
+        createdAt: data.created_at || '',
+        updatedAt: data.updated_at || ''
+      };
 
-      setSectors(prev => [...prev, data]);
+      setSectors(prev => [...prev, formattedSector]);
       toast.success('Sektor uğurla yaradıldı');
-      return data;
+      return formattedSector;
     } catch (err: any) {
       console.error('Sektor yaradılarkən xəta:', err);
       toast.error('Sektor yaradılarkən xəta baş verdi');
@@ -86,24 +84,33 @@ export const useSectorsData = (selectedRegionId?: string) => {
     }
   }, []);
 
-  // Sektor yeniləmə funksiyası
-  const updateSector = useCallback(async (sectorId: string, sectorData: Partial<Sector>) => {
+  const updateSector = useCallback(async (sectorData: Sector) => {
     try {
-      const { data, error } = await supabase
+      const updatedSector = {
+        name: sectorData.name,
+        description: sectorData.description || '',
+        region_id: sectorData.region_id,
+        admin_email: sectorData.admin_email || '',
+        status: sectorData.status || 'active',
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
         .from('sectors')
-        .update(sectorData)
-        .eq('id', sectorId)
-        .select()
-        .single();
+        .update(updatedSector)
+        .eq('id', sectorData.id);
 
       if (error) throw error;
 
       setSectors(prev => prev.map(sector => 
-        sector.id === sectorId ? data : sector
+        sector.id === sectorData.id ? {
+          ...sectorData,
+          updatedAt: new Date().toISOString(),
+        } : sector
       ));
       
       toast.success('Sektor uğurla yeniləndi');
-      return data;
+      return sectorData;
     } catch (err: any) {
       console.error('Sektor yenilənərkən xəta:', err);
       toast.error('Sektor yenilənərkən xəta baş verdi');
@@ -111,31 +118,22 @@ export const useSectorsData = (selectedRegionId?: string) => {
     }
   }, []);
 
-  // Sektor silmə funksiyası
   const deleteSector = useCallback(async (sectorId: string) => {
     try {
-      // Əvvəlcə sektora bağlı məktəbləri yoxla
-      const { count: schoolCount } = await supabase
+      // Əvvəlcə məktəbləri yoxla
+      const { data: schools, error: schoolsError } = await supabase
         .from('schools')
-        .select('*', { count: 'exact', head: true })
+        .select('id')
         .eq('sector_id', sectorId);
       
-      // Admin sayını yoxla
-      const { count: adminCount } = await supabase
-        .from('user_roles')
-        .select('*', { count: 'exact', head: true })
-        .eq('sector_id', sectorId);
+      if (schoolsError) throw schoolsError;
       
-      if (schoolCount && schoolCount > 0) {
-        toast.error(`Bu sektorda ${schoolCount} məktəb var. Əvvəlcə məktəbləri silin.`);
+      if (schools && schools.length > 0) {
+        toast.error(`Bu sektora ${schools.length} məktəb aid olduğuna görə silmək mümkün deyil`);
         return false;
       }
       
-      // Sektora bağlı adminlər varsa xəbərdarlıq, lakin yenə də silməyə imkan ver
-      if (adminCount && adminCount > 0) {
-        toast.warning(`Bu sektorla əlaqəli ${adminCount} admin var.`);
-      }
-      
+      // Sektoru sil
       const { error } = await supabase
         .from('sectors')
         .delete()
@@ -152,69 +150,19 @@ export const useSectorsData = (selectedRegionId?: string) => {
       throw err;
     }
   }, []);
-  
-  // Sektorların detallı məlumatlarını əldə et
-  const getEnhancedSectors = useCallback(async () => {
-    try {
-      const enhancedSectors = await Promise.all(
-        sectors.map(async (sector) => {
-          const [
-            { count: schoolCount },
-            { count: adminCount },
-            { data: regionData }
-          ] = await Promise.all([
-            supabase.from('schools').select('*', { count: 'exact', head: true }).eq('sector_id', sector.id),
-            supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('sector_id', sector.id),
-            supabase.from('regions').select('name').eq('id', sector.region_id).single()
-          ]);
-          
-          // Ümumi tamamlanma dərəcəsini hesabla
-          const { data: schools } = await supabase
-            .from('schools')
-            .select('completion_rate')
-            .eq('sector_id', sector.id);
-          
-          let completionRate = 0;
-          if (schools && schools.length > 0) {
-            const totalRate = schools.reduce((sum, school) => sum + (school.completion_rate || 0), 0);
-            completionRate = Math.round(totalRate / schools.length);
-          }
-          
-          return {
-            ...sector,
-            schoolCount: schoolCount || 0,
-            adminCount: adminCount || 0,
-            regionName: regionData?.name || '',
-            completionRate
-          };
-        })
-      );
-      
-      return enhancedSectors;
-    } catch (err) {
-      console.error('Genişləndirilmiş sektor məlumatlarını əldə edərkən xəta:', err);
-      return sectors.map(sector => ({
-        ...sector,
-        schoolCount: 0,
-        adminCount: 0,
-        regionName: '',
-        completionRate: 0
-      }));
-    }
-  }, [sectors]);
 
+  // Komponentin ilkin yüklənməsi zamanı
   useEffect(() => {
     fetchSectors();
   }, [fetchSectors]);
 
-  return {
-    sectors,
-    loading,
+  return { 
+    sectors, 
+    isLoading, 
     error,
     fetchSectors,
     createSector,
     updateSector,
-    deleteSector,
-    getEnhancedSectors
+    deleteSector
   };
 };

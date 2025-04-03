@@ -1,3 +1,4 @@
+
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
 
@@ -41,6 +42,7 @@ export interface DataEntryFormState {
 export interface CategoryWithColumns {
   category: Category;
   columns: Column[];
+  deadline?: string; // Əlavə edildi
 }
 
 export interface ColumnValidationError {

@@ -1,6 +1,6 @@
 
 import { Notification } from './notification';
-import { FormItem } from './form';
+import { FormItem, FormStatus } from './form';
 
 export interface ChartData {
   activityData: { name: string; value: number }[];
@@ -14,7 +14,8 @@ export interface DashboardData {
   isLoading: boolean;
   error: Error | null;
   notifications?: Notification[];
-  totalSchools?: number; // Əlavə edildi
+  totalSchools?: number;
+  activeSchools?: number; // Əlavə edildi
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
@@ -25,9 +26,10 @@ export interface SuperAdminDashboardData extends DashboardData {
   completionRate: number;
   pendingApprovals: number;
   notifications: Notification[];
-  pendingSchools?: number; // Əlavə edildi
-  approvedSchools?: number; // Əlavə edildi
-  rejectedSchools?: number; // Əlavə edildi
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
+  activityData?: any[]; // Əlavə edildi
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
@@ -41,7 +43,8 @@ export interface RegionAdminDashboardData extends DashboardData {
   pendingSchools?: number;
   approvedSchools?: number;
   rejectedSchools?: number;
-  users?: number; // Əlavə edildi
+  users?: number;
+  categories?: number; // Əlavə edildi
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
@@ -70,9 +73,9 @@ export interface SchoolAdminDashboardData extends DashboardData {
   completionRate: number;
   notifications: Notification[];
   categories?: number;
-  totalForms?: number; // Əlavə edildi
+  totalForms?: number;
   completedForms?: number;
-  pendingForms: FormItem[]; // Əlavə edilib
+  pendingForms: FormItem[];
   rejectedForms?: number;
   dueDates?: Array<{
     category: string;

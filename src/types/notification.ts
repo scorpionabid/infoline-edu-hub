@@ -1,77 +1,61 @@
 
-export type NotificationType = 
-  | 'info' 
-  | 'warning' 
-  | 'error' 
-  | 'success' 
-  | 'new_category' 
-  | 'deadline' 
-  | 'completed' 
-  | 'approved' 
-  | 'rejected'
-  | 'system'
-  | 'newCategory'
-  | 'formApproved'
-  | 'formRejected'
-  | 'dueDateReminder'
-  | 'systemUpdate'
-  | 'approvalRequest';
-
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
+export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'system' | string;
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical' | string;
 
 export interface Notification {
   id: string;
+  type: NotificationType;
   title: string;
   message: string;
-  type: NotificationType;
-  priority: NotificationPriority;
-  userId: string;
   createdAt: string;
-  isRead: boolean;
   time?: string;
-  is_read?: boolean; 
-  read_status: string; // 'read' | 'unread' olaraq üstünlük verilir
+  isRead: boolean;
+  userId: string;
+  priority: NotificationPriority;
   relatedEntityId?: string;
   relatedEntityType?: string;
-  related_entity_id?: string; 
-  related_entity_type?: string; 
-  user_id?: string; 
-  created_at?: string; 
+  read_status: boolean; // Əlavə edildi
 }
 
-// Supabase'dən gələn məlumatları Notification tipinə çevirmək üçün
-export const adaptSupabaseNotification = (rawData: any): Notification => {
+// DB-dən gələn notification məlumatlarını Frontend formatına çevirmək üçün adaptor
+export const adaptNotification = (dbNotification: any): Notification => {
   return {
-    id: rawData.id,
-    title: rawData.title || '',
-    message: rawData.message || '',
-    type: rawData.type as NotificationType,
-    priority: rawData.priority as NotificationPriority || 'normal',
-    userId: rawData.user_id || '',
-    createdAt: rawData.created_at || new Date().toISOString(),
-    isRead: rawData.is_read || false,
-    time: rawData.created_at || new Date().toISOString(),
-    read_status: rawData.is_read ? 'read' : 'unread',
-    relatedEntityId: rawData.related_entity_id,
-    relatedEntityType: rawData.related_entity_type,
-    user_id: rawData.user_id,
-    created_at: rawData.created_at,
-    is_read: rawData.is_read,
-    related_entity_id: rawData.related_entity_id,
-    related_entity_type: rawData.related_entity_type
+    id: dbNotification.id || '',
+    type: dbNotification.type || 'info',
+    title: dbNotification.title || '',
+    message: dbNotification.message || '',
+    createdAt: dbNotification.created_at || new Date().toISOString(),
+    time: formatTimeAgo(dbNotification.created_at) || '',
+    isRead: dbNotification.is_read || false,
+    userId: dbNotification.user_id || '',
+    priority: dbNotification.priority || 'normal',
+    relatedEntityId: dbNotification.related_entity_id || null,
+    relatedEntityType: dbNotification.related_entity_type || null,
+    read_status: dbNotification.is_read || false // Əlavə edildi
   };
 };
 
-// Frontend-dən Supabase'ə məlumat göndərmək üçün
-export const adaptNotificationToSupabase = (notification: Partial<Notification>) => {
-  return {
-    title: notification.title,
-    message: notification.message,
-    type: notification.type,
-    priority: notification.priority || 'normal',
-    user_id: notification.userId || notification.user_id,
-    is_read: notification.isRead || notification.is_read || false,
-    related_entity_id: notification.relatedEntityId || notification.related_entity_id,
-    related_entity_type: notification.relatedEntityType || notification.related_entity_type
-  };
-};
+// Vaxt formatını xoş görünüşlü şəkildə formatlamaq üçün funksiya
+function formatTimeAgo(dateString?: string): string {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.round(diffMs / 1000);
+  const diffMin = Math.round(diffSec / 60);
+  const diffHour = Math.round(diffMin / 60);
+  const diffDay = Math.round(diffHour / 24);
+
+  if (diffSec < 60) {
+    return `${diffSec} saniyə əvvəl`;
+  } else if (diffMin < 60) {
+    return `${diffMin} dəqiqə əvvəl`;
+  } else if (diffHour < 24) {
+    return `${diffHour} saat əvvəl`;
+  } else if (diffDay < 7) {
+    return `${diffDay} gün əvvəl`;
+  } else {
+    return date.toLocaleDateString('az-AZ');
+  }
+}

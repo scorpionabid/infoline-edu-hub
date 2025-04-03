@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import SchoolFilters from './SchoolFilters';
@@ -63,7 +64,8 @@ const SchoolsContainer: React.FC = () => {
     formData,
     currentTab,
     setCurrentTab,
-    handleFormChange
+    handleFormChange,
+    setFormData, // Əlavə edildi
   } = useSchoolDialogHandlers();
 
   const {
@@ -185,7 +187,7 @@ const SchoolsContainer: React.FC = () => {
         handleAdminUpdate={handleAdminUpdate}
         handleResetPassword={handleResetPassword}
         formData={formData}
-        handleFormChange={handleFormChange}
+        handleFormChange={handleInputChange}
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         filteredSectors={filteredSectors}

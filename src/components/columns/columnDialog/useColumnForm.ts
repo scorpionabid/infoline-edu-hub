@@ -7,7 +7,7 @@ import { Column, ColumnType, ColumnOption, adaptColumnToSupabase } from "@/types
 import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/types/supabase";
-import { ValidationRules } from "@/types/dataEntry"; // validationRules tipini import edirik
+import { ValidationRules } from "@/types/dataEntry";
 
 export const createFormSchema = (t: (key: string) => string) => {
   return z.object({
@@ -165,13 +165,13 @@ export const useColumnForm = (
         category_id: values.categoryId,
         type: values.type as string,
         is_required: values.isRequired,
-        validation: values.validationRules || null,
+        validation: JSON.stringify(values.validationRules || null),
         default_value: values.defaultValue || null,
         placeholder: values.placeholder || null,
         help_text: values.helpText || null,
         order_index: values.order,
         status: values.status,
-        options: ["select", "multiselect", "checkbox", "radio"].includes(values.type) ? options : null
+        options: ["select", "multiselect", "checkbox", "radio"].includes(values.type) ? JSON.stringify(options) : null
       };
       
       if (isEditMode && editColumn?.id) {

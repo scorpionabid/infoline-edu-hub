@@ -1,156 +1,176 @@
-import { useState, useCallback } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
 import { toast } from 'sonner';
-import { v4 as uuid } from 'uuid';
 
 export const useCategoriesData = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Bütün kateqoriyaları əldə etmə
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
-    setIsError(false);
-    
     try {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('priority');
+        .order('order', { ascending: true });
 
       if (error) throw error;
-
-      // Add required 'order' property
-      const formattedData = data.map(item => ({
-        ...item,
-        order: item.order || item.priority || 0
-      }));
       
-      setCategories(formattedData as Category[]);
+      const formattedCategories = data.map(category => ({
+        ...category,
+        id: category.id,
+        name: category.name,
+        description: category.description || '',
+        assignment: category.assignment || 'all',
+        deadline: category.deadline || '',
+        status: category.status || 'active',
+        archived: category.archived || false,
+        priority: category.priority || 0,
+        order: category.order || category.priority || 0,
+        columnCount: category.column_count || 0,
+        createdAt: category.created_at,
+        updatedAt: category.updated_at
+      })) as Category[];
+
+      setCategories(formattedCategories);
       setIsLoading(false);
-    } catch (error) {
-      console.error('Kateqoriyaları əldə edərkən xəta:', error);
-      setIsError(true);
+    } catch (err: any) {
+      console.error('Kateqoriyaları yükləyərkən xəta:', err);
+      setError(err);
       setIsLoading(false);
-      toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
+      toast.error('Kateqoriyaları yükləyərkən xəta baş verdi');
     }
   }, []);
 
-  // Tək kateqoriya əldə etmə
-  const fetchSingleCategory = useCallback(async (categoryId: string): Promise<Category | null> => {
+  const createCategory = useCallback(async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('id', categoryId)
-        .single();
-
-      if (error) throw error;
-      
-      // Add required 'order' property
-      const formattedData = {
-        ...data,
-        order: data.order || data.priority || 0
-      };
-      
-      return formattedData as Category;
-    } catch (error) {
-      console.error('Kateqoriya yüklənərkən xəta:', error);
-      toast.error('Kateqoriya yüklənərkən xəta baş verdi');
-      return null;
-    }
-  }, []);
-
-  // Kateqoriya yaratma
-  const createCategory = useCallback(async (categoryData: Omit<Category, "id" | "createdAt" | "updatedAt">) => {
-    try {
-      // Ensure deadline is string
-      const deadline = categoryData.deadline ? 
-        (typeof categoryData.deadline === 'object' ? categoryData.deadline.toISOString() : categoryData.deadline) : 
-        null;
-        
-      const supabaseCategory = {
-        name: categoryData.name,
-        description: categoryData.description,
-        assignment: categoryData.assignment,
-        priority: categoryData.priority,
-        deadline: deadline,
-        status: categoryData.status || 'active',
-        order: categoryData.order || categoryData.priority,
-        archived: categoryData.archived || false
-      };
-
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([supabaseCategory])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
       const newCategory = {
-        ...data,
-        order: data.order || data.priority || 0
-      } as Category;
-      
-      setCategories(prev => [...prev, newCategory]);
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error adding category:', err);
-      throw err;
-    }
-  }, []);
-
-  // Kateqoriya yeniləmə
-  const updateCategory = useCallback(async (updates: Partial<Category> & { id: string }) => {
-    try {
-      // Ensure deadline is string
-      const deadline = updates.deadline ? 
-        (typeof updates.deadline === 'object' ? updates.deadline.toISOString() : updates.deadline) : 
-        null;
-        
-      const supabaseUpdates = {
-        name: updates.name,
-        description: updates.description,
-        assignment: updates.assignment,
-        priority: updates.priority,
-        deadline: deadline,
-        status: updates.status,
-        order: updates.order || updates.priority,
-        archived: updates.archived
+        name: categoryData.name,
+        description: categoryData.description || '',
+        assignment: categoryData.assignment || 'all',
+        status: categoryData.status || 'active',
+        deadline: categoryData.deadline || null,
+        archived: categoryData.archived || false,
+        priority: categoryData.priority || 0,
+        order: categoryData.order || categoryData.priority || 0,
+        column_count: categoryData.columnCount || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
         .from('categories')
-        .update(supabaseUpdates)
-        .eq('id', updates.id)
+        .insert([newCategory])
         .select()
         .single();
 
       if (error) throw error;
-      
-      const updatedCategory = {
-        ...data,
-        order: data.order || data.priority || 0
-      } as Category;
-      
-      setCategories(prev => prev.map(category => 
-        category.id === updates.id ? updatedCategory : category
-      ));
-      
+
+      const createdCategory: Category = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        assignment: data.assignment || 'all',
+        deadline: data.deadline || undefined,
+        status: data.status || 'active',
+        archived: data.archived || false,
+        priority: data.priority || 0,
+        order: data.order || data.priority || 0,
+        columnCount: data.column_count || 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
+      setCategories(prev => [...prev, createdCategory]);
+      toast.success('Kateqoriya uğurla yaradıldı');
       return data;
     } catch (err: any) {
-      console.error('Error updating category:', err);
+      console.error('Kateqoriya yaradılarkən xəta:', err);
+      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
       throw err;
     }
   }, []);
 
-  // Kateqoriya silmə
-  const deleteCategory = useCallback(async (categoryId: string, categoryName: string) => {
+  const updateCategory = useCallback(async (categoryData: Category) => {
     try {
+      const updatedCategory = {
+        id: categoryData.id,
+        name: categoryData.name,
+        description: categoryData.description || '',
+        assignment: categoryData.assignment || 'all',
+        status: categoryData.status || 'active',
+        deadline: categoryData.deadline || null,
+        archived: categoryData.archived || false,
+        priority: categoryData.priority || 0,
+        order: categoryData.order || categoryData.priority || 0,
+        column_count: categoryData.columnCount || 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('categories')
+        .update(updatedCategory)
+        .eq('id', categoryData.id);
+
+      if (error) throw error;
+
+      setCategories(prev => 
+        prev.map(cat => cat.id === categoryData.id ? categoryData : cat)
+      );
+      
+      toast.success('Kateqoriya uğurla yeniləndi');
+      return updatedCategory;
+    } catch (err: any) {
+      console.error('Kateqoriya yenilənərkən xəta:', err);
+      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
+      throw err;
+    }
+  }, []);
+
+  const archiveCategory = useCallback(async (categoryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({
+          archived: true,
+          status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      setCategories(prev => 
+        prev.map(cat => 
+          cat.id === categoryId 
+            ? { ...cat, archived: true, status: 'inactive' } 
+            : cat
+        )
+      );
+      
+      toast.success('Kateqoriya arxivə köçürüldü');
+      return true;
+    } catch (err: any) {
+      console.error('Kateqoriya arxivləşdirilərkən xəta:', err);
+      toast.error('Kateqoriya arxivləşdirilərkən xəta baş verdi');
+      throw err;
+    }
+  }, []);
+
+  const deleteCategory = useCallback(async (categoryId: string) => {
+    try {
+      // Kateqoriyaya aid sütunları silirik
+      const { error: columnsError } = await supabase
+        .from('columns')
+        .delete()
+        .eq('category_id', categoryId);
+
+      if (columnsError) throw columnsError;
+      
+      // Sonra kateqoriyanı silirik
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -158,64 +178,30 @@ export const useCategoriesData = () => {
 
       if (error) throw error;
 
-      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-      toast.success(`"${categoryName}" kateqoriyası silindi`);
+      setCategories(prev => prev.filter(category => category.id !== categoryId));
+      toast.success('Kateqoriya uğurla silindi');
+      
       return true;
-    } catch (error) {
-      console.error('Kateqoriya silinərkən xəta:', error);
+    } catch (err: any) {
+      console.error('Kateqoriya silinərkən xəta:', err);
       toast.error('Kateqoriya silinərkən xəta baş verdi');
-      throw error;
+      throw err;
     }
   }, []);
 
-  // Kateqoriya arxivləmə
-  const archiveCategory = useCallback(async (categoryId: string, archived: boolean) => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .update({ 
-          archived, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', categoryId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setCategories(prev => 
-        prev.map(cat => cat.id === categoryId ? data : cat)
-      );
-      
-      return true;
-    } catch (error) {
-      console.error('Kateqoriyanın arxiv statusu dəyişdirilkən xəta:', error);
-      toast.error('Kateqoriyanın arxiv statusu dəyişdirilkən xəta baş verdi');
-      throw error;
-    }
-  }, []);
-
-  // İlkin yükləmə
-  const initialize = useCallback(() => {
+  // Komponentin ilkin yüklənməsi zamanı
+  useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Komponent yüklənərkən işə sal
-  useState(() => {
-    initialize();
-  });
-
-  return {
-    categories,
-    isLoading,
-    isError,
+  return { 
+    categories, 
+    isLoading, 
+    error,
     fetchCategories,
-    fetchSingleCategory,
     createCategory,
     updateCategory,
-    deleteCategory,
-    archiveCategory
+    archiveCategory,
+    deleteCategory
   };
 };
-
-export default useCategoriesData;

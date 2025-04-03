@@ -169,7 +169,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
               <h2 className="text-3xl font-bold">{data.completionRate}%</h2>
             </div>
             <div className="p-2 bg-green-100 rounded-full text-green-600">
-              <DataEntryProgress percentage={data.completionRate} size={32} strokeWidth={4} />
+              <DataEntryProgress percentage={data.completionRate} strokeWidth={4} />
             </div>
           </div>
           <Progress value={data.completionRate} max={100} className="h-1 mt-3" />
