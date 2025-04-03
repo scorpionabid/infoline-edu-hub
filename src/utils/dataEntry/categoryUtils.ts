@@ -1,11 +1,15 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { CategoryWithColumns } from '@/types/column';
 import { CategoryEntryData, ColumnEntry, DataEntryStatus } from '@/types/dataEntry';
 
-export const getCategoryName = (categories: CategoryWithColumns[], categoryId: string): string => {
-  const category = categories.find(c => c.id === categoryId);
-  return category ? category.name : '';
+export const getCurrentCategory = (categories: CategoryWithColumns[], categoryId?: string): CategoryWithColumns | undefined => {
+  if (!categoryId || !categories.length) return undefined;
+  return categories.find(cat => cat.category?.id === categoryId);
+};
+
+export const getCategoryName = (categories: CategoryWithColumns[], categoryId?: string): string => {
+  const category = getCurrentCategory(categories, categoryId);
+  return category?.category?.name || 'Unnamed Category';
 };
 
 export const getRequiredColumnIds = (categories: CategoryWithColumns[], categoryId: string): string[] => {
@@ -137,4 +141,10 @@ export const convertToDisplayFormat = (
       isSubmitted: status !== 'draft',
     };
   });
+};
+
+export const prepareCategoryForSubmit = (category: CategoryWithColumns, data: any[]) => {
+  if (!category?.category?.id) return null;
+  
+  // ... keep existing code (function implementation)
 };

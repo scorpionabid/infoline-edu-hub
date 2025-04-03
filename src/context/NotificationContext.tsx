@@ -88,7 +88,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       time: createdAt, // time xüsusiyyətini əlavə edirik
       priority,
       relatedEntityId,
-      relatedEntityType
+      relatedEntityType,
+      read_status: 'unread' // read_status əlavə edildi
     };
     
     setNotifications(prev => [newNotification, ...prev]);
@@ -98,7 +99,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications(prev =>
       prev.map(notification =>
         notification.id === id
-          ? { ...notification, isRead: true }
+          ? { ...notification, isRead: true, read_status: 'read' }
           : notification
       )
     );
@@ -106,7 +107,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   
   const markAllAsRead = () => {
     setNotifications(prev =>
-      prev.map(notification => ({ ...notification, isRead: true }))
+      prev.map(notification => ({ ...notification, isRead: true, read_status: 'read' }))
     );
   };
   

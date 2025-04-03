@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -74,6 +73,15 @@ const SchoolsContainer: React.FC = () => {
     handleImportSchools
   } = useImportExport(() => setIsOperationComplete(true));
 
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    handleInputChange(name, value);
+  };
+
   useEffect(() => {
     if (isOperationComplete) {
       fetchSchools();
@@ -81,7 +89,6 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
-  // İstifadəçinin regionuna əsasən sektorları filtirləyirik
   const filteredSectors = useMemo(() => {
     let sectorsList = sectors.map(sector => ({
       id: sector.id,
@@ -89,7 +96,6 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // Əgər regionadmin və ya schooladmin-dirsə, yalnız öz regionuna aid sektorları göstər
     if (user && (user.role === 'regionadmin' || user.role === 'schooladmin') && user.regionId) {
       sectorsList = sectorsList.filter(sector => sector.regionId === user.regionId);
     }
@@ -97,14 +103,12 @@ const SchoolsContainer: React.FC = () => {
     return sectorsList;
   }, [sectors, user]);
 
-  // Avtomatik olaraq istifadəçinin regionuna aid sektorlarla filtrələyirik
   useEffect(() => {
     if (user && user.regionId && selectedRegion !== user.regionId) {
       handleRegionFilter(user.regionId);
     }
   }, [user, selectedRegion, handleRegionFilter]);
 
-  // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
     handleExportToExcel(schools);
   };
@@ -113,11 +117,9 @@ const SchoolsContainer: React.FC = () => {
     setIsImportDialogOpen(true);
   };
 
-  // Region array tipini açıq şəkildə dönüşdürürük
   const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
   const userRole = user?.role as UserRole;
 
-  // School tipini düzəldək
   const typedSelectedSchool = selectedSchool as unknown as School;
 
   return (
@@ -189,7 +191,6 @@ const SchoolsContainer: React.FC = () => {
         filteredSectors={filteredSectors}
       />
       
-      {/* Import Dialog */}
       <ImportDialog 
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}

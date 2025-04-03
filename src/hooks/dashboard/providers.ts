@@ -4,11 +4,11 @@ import { Category } from '@/types/category';
 import { School } from '@/types/school';
 import { DashboardData, FormItem } from '@/types/dashboard';
 
-export const getBaseData = async (user: User) => {
+export const getBaseData = async (user: User | any) => {
   // Əsas məlumatları burada yüklə
   return {
     userId: user.id,
-    userName: user.full_name || user.email,
+    userName: user.full_name || user.email || user.name,
     isLoading: false,
     error: null
   };
@@ -64,6 +64,6 @@ export const getSectorAdminData = async () => {
 export const getSchoolAdminData = async () => {
   return {
     // Məktəb admin məlumatları
-    pendingForms: 5, // Add pendingForms for SchoolAdminDashboard
+    pendingForms: [] as FormItem[], // Add pendingForms for SchoolAdminDashboard
   };
 };

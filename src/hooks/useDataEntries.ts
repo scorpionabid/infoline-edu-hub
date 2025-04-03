@@ -1,11 +1,10 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/dataEntry';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
-export const useDataEntries = (categoryId?: string, schoolId?: string) => {
+export const useDataEntries = () => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -20,10 +19,8 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
         categories (id, name, deadline)
       `);
 
-      // Rol əsaslı filtrasiya
       switch (user?.role) {
         case 'superadmin':
-          // SuperAdmin bütün məlumatları görə bilər
           break;
         case 'regionadmin':
           if (user.regionId) {
@@ -50,7 +47,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
           break;
       }
 
-      // Kateqoriya və məktəb əsasında filtrlər
       if (categoryId) {
         query = query.eq('category_id', categoryId);
       }
@@ -59,11 +55,9 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
         query = query.eq('school_id', schoolId);
       }
 
-      // Əlavə filtrlər
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined) {
-            // Supabase formatında sahə adlarını istifadə et
             const fieldName = key === 'categoryId' ? 'category_id' : 
                             key === 'columnId' ? 'column_id' :
                             key === 'schoolId' ? 'school_id' :
@@ -80,7 +74,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
 
       if (error) throw error;
 
-      // Supabase-dən gələn datanı DataEntry tipinə çevir
       const formattedEntries = data?.map(entry => ({
         id: entry.id,
         categoryId: entry.category_id,
@@ -112,7 +105,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
 
   const addEntry = useCallback(async (entryData: Omit<DataEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // entryData-nı Supabase formatına çevir
       const supabaseEntryData = {
         category_id: entryData.categoryId,
         column_id: entryData.columnId,
@@ -134,7 +126,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
 
       if (error) throw error;
 
-      // Supabase-dən gələn datanı DataEntry tipinə çevir
       const newEntry: DataEntry = {
         id: data.id,
         categoryId: data.category_id,
@@ -157,7 +148,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
       setEntries(prev => [...prev, newEntry]);
       toast.success('Məlumat uğurla əlavə edildi');
       
-      // Məktəbin tamamlanma faizini yenilə
       await updateSchoolCompletionRate(data.school_id);
       
       return newEntry;
@@ -170,13 +160,11 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
 
   const updateEntry = useCallback(async (entryId: string, updateData: Partial<DataEntry>) => {
     try {
-      // updateData-nı Supabase formatına çevir
       const supabaseUpdateData: any = {};
       
       if (updateData.value !== undefined) supabaseUpdateData.value = updateData.value;
       if (updateData.status !== undefined) supabaseUpdateData.status = updateData.status;
       
-      // Status dəyişikliyi ilə əlaqəli xüsusi sahələri təyin et
       if (updateData.status === 'approved') {
         supabaseUpdateData.approved_at = new Date().toISOString();
         supabaseUpdateData.approved_by = user?.id;
@@ -200,7 +188,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
 
       if (error) throw error;
 
-      // Supabase-dən gələn datanı DataEntry tipinə çevir
       const updatedEntry: DataEntry = {
         id: data.id,
         categoryId: data.category_id,
@@ -224,7 +211,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
         entry.id === entryId ? updatedEntry : entry
       ));
       
-      // Status mesajını göstər
       if (updateData.status === 'approved') {
         toast.success('Məlumat təsdiqləndi');
       } else if (updateData.status === 'rejected') {
@@ -233,7 +219,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
         toast.success('Məlumat uğurla yeniləndi');
       }
       
-      // Məktəbin tamamlanma faizini yenilə
       await updateSchoolCompletionRate(data.school_id);
       
       return updatedEntry;
@@ -246,7 +231,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
 
   const deleteEntry = useCallback(async (entryId: string) => {
     try {
-      // Silinən məlumatın məktəb ID-sini əldə et
       const entry = entries.find(e => e.id === entryId);
       const schoolId = entry?.schoolId;
       
@@ -260,7 +244,6 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
       setEntries(prev => prev.filter(entry => entry.id !== entryId));
       toast.success('Məlumat uğurla silindi');
       
-      // Məktəbin tamamlanma faizini yenilə
       if (schoolId) {
         await updateSchoolCompletionRate(schoolId);
       }
@@ -273,27 +256,75 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
     }
   }, [entries]);
   
-  // Məktəbin tamamlanma faizini hesablayıb yeniləyən funksiya
+  const approveEntry = useCallback(async (entryId: string, updateData?: Partial<DataEntry>) => {
+    return await updateEntry(entryId, {
+      ...updateData,
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: user?.id
+    });
+  }, [user, updateEntry]);
+
+  const rejectEntry = useCallback(async (entryId: string, updateData?: Partial<DataEntry>) => {
+    return await updateEntry(entryId, {
+      ...updateData,
+      status: 'rejected',
+      rejected_by: user?.id,
+      rejection_reason: updateData?.rejectionReason || updateData?.rejection_reason || ''
+    });
+  }, [user, updateEntry]);
+
+  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+        
+      if (error) throw error;
+      
+      for (const entry of data) {
+        await updateEntry(entry.id, { status: 'pending' });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Category submission error:', error);
+      return false;
+    }
+  }, [updateEntry]);
+
+  const getApprovalStatus = useCallback((categoryId: string) => {
+    const categoryEntries = entries.filter(entry => entry.category_id === categoryId || entry.categoryId === categoryId);
+    
+    if (categoryEntries.length === 0) return 'pending';
+    
+    const approvedCount = categoryEntries.filter(entry => entry.status === 'approved').length;
+    const rejectedCount = categoryEntries.filter(entry => entry.status === 'rejected').length;
+    
+    if (rejectedCount > 0) return 'rejected';
+    if (approvedCount === categoryEntries.length) return 'approved';
+    
+    return 'pending';
+  }, [entries]);
+  
   const updateSchoolCompletionRate = async (schoolId: string) => {
     try {
-      // Ümumi sütun sayını əldə et
       const { count: totalColumnsCount } = await supabase
         .from('columns')
         .select('*', { count: 'exact', head: true });
       
       if (!totalColumnsCount) return;
       
-      // Məktəb üçün doldurulmuş və təsdiqlənmiş sütunların sayını əldə et
       const { count: approvedEntriesCount } = await supabase
         .from('data_entries')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', schoolId)
         .eq('status', 'approved');
       
-      // Tamamlanma faizini hesabla
       const completionRate = Math.round((approvedEntriesCount || 0) / totalColumnsCount * 100);
       
-      // Məktəbin tamamlanma faizini yenilə
       await supabase
         .from('schools')
         .update({ completion_rate: completionRate })
@@ -314,6 +345,10 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
     fetchEntries,
     addEntry,
     updateEntry,
-    deleteEntry
+    deleteEntry,
+    approveEntry,
+    rejectEntry,
+    submitCategoryForApproval,
+    getApprovalStatus
   };
 };

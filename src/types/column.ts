@@ -35,6 +35,7 @@ export interface Column {
   validation?: ColumnValidation;
   status?: string;
   order: number; // əlavə edildi
+  dependsOn?: string; // asılılıq üçün əlavə edildi
   // Supabase uyğunluğu üçün
   category_id?: string;
   is_required?: boolean;
@@ -44,6 +45,7 @@ export interface Column {
   created_at?: string;
   updated_at?: string;
   parentColumnId?: string;
+  parent_column_id?: string;
 }
 
 export interface ColumnValidation {
@@ -59,6 +61,8 @@ export interface ColumnValidation {
   };
   options?: string[] | ColumnOption[];
   required?: boolean;
+  minDate?: string;
+  maxDate?: string;
 }
 
 export interface CategoryWithColumns {
@@ -68,8 +72,17 @@ export interface CategoryWithColumns {
     description?: string;
     order: number;
     priority: number;
+    status?: string;
+    assignment?: string; // CategoryAssignment
   };
   columns: Column[];
+  id?: string; // Uyğunluq üçün əlavə edildi
+  name?: string; // Uyğunluq üçün əlavə edildi
+  priority?: number; // Uyğunluq üçün əlavə edildi
+  description?: string; // Uyğunluq üçün əlavə edildi
+  status?: string; // Uyğunluq üçün əlavə edildi
+  assignment?: string; // Uyğunluq üçün əlavə edildi
+  order?: number; // Uyğunluq üçün əlavə edildi
 }
 
 export const adaptSupabaseColumn = (rawData: any): Column => {
@@ -89,7 +102,8 @@ export const adaptSupabaseColumn = (rawData: any): Column => {
     order: rawData.order || rawData.order_index || 0,
     created_at: rawData.created_at,
     updated_at: rawData.updated_at,
-    parentColumnId: rawData.parent_column_id
+    parentColumnId: rawData.parent_column_id,
+    dependsOn: rawData.depends_on,
   };
 };
 
@@ -106,6 +120,7 @@ export const adaptColumnToSupabase = (column: Partial<Column>) => {
     options: column.options || [],
     validation: column.validation || {},
     status: column.status || 'active',
-    parent_column_id: column.parentColumnId
+    parent_column_id: column.parentColumnId || column.parent_column_id,
+    depends_on: column.dependsOn
   };
 };

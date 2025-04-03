@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from '@/types/column';
@@ -39,9 +38,12 @@ export const useColumnsData = (categoryId?: string) => {
         options: col.options || [],
         validation: col.validation || {},
         status: col.status || 'active',
+        order: col.order || col.order_index || 0,
         createdAt: col.created_at,
-        updatedAt: col.updated_at
-      })) || [];
+        updatedAt: col.updated_at,
+        parentColumnId: col.parent_column_id,
+        dependsOn: col.depends_on
+      })) as Column[];
 
       setColumns(formattedColumns);
       setIsLoading(false);
@@ -56,27 +58,40 @@ export const useColumnsData = (categoryId?: string) => {
   // Yeni sütun yaratma
   const createColumn = useCallback(async (columnData: Omit<Column, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      // JSON safeOptions
+      const safeOptions = ["select", "multiselect", "checkbox", "radio"].includes(columnData.type) 
+        ? JSON.stringify(columnData.options) 
+        : null;
+        
+      // JSON safeValidation  
+      const safeValidation = columnData.validation 
+        ? JSON.stringify(columnData.validation)
+        : null;
+        
       // ColumnData-nı Supabase formatına çevir
       const supabaseColumnData = {
         id: uuid(),
         name: columnData.name,
         type: columnData.type,
-        category_id: columnData.categoryId,
-        is_required: columnData.isRequired,
+        category_id: columnData.categoryId || columnData.category_id,
+        is_required: columnData.isRequired || columnData.is_required || true,
         placeholder: columnData.placeholder || '',
-        help_text: columnData.helpText || '',
-        default_value: columnData.defaultValue || '',
-        order_index: columnData.orderIndex || 0,
-        options: columnData.options || [],
-        validation: columnData.validation || {},
+        help_text: columnData.helpText || columnData.help_text || '',
+        default_value: columnData.defaultValue || columnData.default_value || '',
+        order_index: columnData.orderIndex || columnData.order_index || 0,
+        order: columnData.order || columnData.orderIndex || 0,
+        options: safeOptions,
+        validation: safeValidation,
         status: columnData.status || 'active',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        parent_column_id: columnData.parentColumnId || columnData.parent_column_id,
+        depends_on: columnData.dependsOn
       };
 
       const { data, error } = await supabase
         .from('columns')
-        .insert(supabaseColumnData)
+        .insert([supabaseColumnData])
         .select()
         .single();
 
@@ -86,7 +101,7 @@ export const useColumnsData = (categoryId?: string) => {
       const newColumn: Column = {
         id: data.id,
         name: data.name,
-        type: data.type,
+        type: data.type as ColumnType,
         categoryId: data.category_id,
         isRequired: data.is_required,
         placeholder: data.placeholder || '',
@@ -96,15 +111,18 @@ export const useColumnsData = (categoryId?: string) => {
         options: data.options || [],
         validation: data.validation || {},
         status: data.status || 'active',
+        order: data.order || data.order_index || 0,
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
+        parentColumnId: data.parent_column_id,
+        dependsOn: data.depends_on
       };
 
       setColumns(prev => [...prev, newColumn]);
       toast.success('Sütun uğurla yaradıldı');
       
       // Kateqoriyanın sütun sayını artır
-      await updateCategoryColumnCount(columnData.categoryId, 1);
+      await updateCategoryColumnCount(columnData.categoryId || columnData.category_id as string, 1);
       
       return newColumn;
     } catch (err: any) {

@@ -98,7 +98,7 @@ const SchoolColumnTable: React.FC = () => {
   } = useSchoolColumnReport("");
 
   const selectedCategory = React.useMemo(() => {
-    return categories.find(cat => cat.id === selectedCategoryId);
+    return categories.find(cat => cat.category?.id === selectedCategoryId);
   }, [categories, selectedCategoryId]);
 
   const filteredData = React.useMemo(() => {
@@ -361,8 +361,8 @@ const SchoolColumnTable: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 {categories.map((category: CategoryWithColumns) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                  <SelectItem key={category.category?.id} value={category.category?.id || ''}>
+                    {category.category?.name}
                   </SelectItem>
                 ))}
               </SelectContent>

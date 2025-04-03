@@ -8,11 +8,10 @@ import {
   SuperAdminDashboardData, 
   RegionAdminDashboardData,
   SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  FormItem,
-  FormStatus
+  SchoolAdminDashboardData
 } from '@/types/dashboard';
-import { Notification } from '@/types/notification';
+import { Notification, adaptSupabaseNotification } from '@/types/notification';
+import { FormItem, FormStatus } from '@/types/form';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
@@ -46,7 +45,8 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
     time: notification.time || notification.createdAt || new Date().toISOString(),
     isRead: notification.isRead || false,
     userId: notification.userId || '',
-    priority: notification.priority || 'normal'
+    priority: notification.priority || 'normal',
+    read_status: notification.isRead ? 'read' : 'unread' // Əlavə edildi
   }));
 };
 
@@ -59,7 +59,7 @@ const adaptFormItems = (formItems: FormItem[]) => {
   
   return formItems.map(item => ({
     ...item,
-    status: item.status as FormStatus
+    status: item.status as FormStatus | unknown as 'pending' | 'approved' | 'rejected' | 'overdue'
   }));
 };
 
@@ -133,7 +133,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             schools: superAdminData.schools || 0,
             users: superAdminData.users || 0,
             completionRate: superAdminData.completionRate || 0,
-            pendingApprovals: superAdminData.pendingApprovals || 0
+            pendingApprovals: superAdminData.pendingApprovals || 0,
+            pendingSchools: superAdminData.pendingSchools || 0,
+            approvedSchools: superAdminData.approvedSchools || 0,
+            rejectedSchools: superAdminData.rejectedSchools || 0
           };
           
           return <SuperAdminDashboard data={adaptedSuperAdminData} />;
@@ -149,7 +152,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             regionName: regionAdminData.regionName || 'Unknown Region',
             sectors: regionAdminData.sectors || 0,
             schools: regionAdminData.schools || 0,
-            approvalRate: regionAdminData.approvalRate || 0
+            approvalRate: regionAdminData.approvalRate || 0,
+            completionRate: regionAdminData.completionRate || 0,
+            pendingApprovals: regionAdminData.pendingApprovals || 0,
+            pendingSchools: regionAdminData.pendingSchools || 0,
+            approvedSchools: regionAdminData.approvedSchools || 0,
+            rejectedSchools: regionAdminData.rejectedSchools || 0
           };
           
           return <RegionAdminDashboard data={adaptedRegionAdminData} />;
@@ -165,7 +173,11 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             sectorName: sectorAdminData.sectorName || 'Unknown Sector',
             regionName: sectorAdminData.regionName || 'Unknown Region',
             schools: sectorAdminData.schools || 0,
-            pendingApprovals: sectorAdminData.pendingApprovals || 0
+            pendingApprovals: sectorAdminData.pendingApprovals || 0,
+            completionRate: sectorAdminData.completionRate || 0,
+            pendingSchools: sectorAdminData.pendingSchools || 0,
+            approvedSchools: sectorAdminData.approvedSchools || 0,
+            rejectedSchools: sectorAdminData.rejectedSchools || 0
           };
           
           return <SectorAdminDashboard data={adaptedSectorAdminData} />;
@@ -176,10 +188,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const schoolAdminData = dashboardData as SchoolAdminDashboardData;
           const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
           
+          // Ensure pendingForms exists and is properly formatted
+          const pendingForms = schoolAdminData.pendingForms || [];
+          
           // Forms, pendingForms və recentForms məlumatlarını uyğunlaşdıraq
           const adaptedSchoolAdminData = {
             ...schoolAdminData,
             notifications: adaptedNotifications,
+            pendingForms: pendingForms,
             // Make sure 'forms' property is present
             forms: schoolAdminData.forms || {
               pending: 0,

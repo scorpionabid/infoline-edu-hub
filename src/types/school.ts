@@ -1,60 +1,53 @@
 
+export type SchoolStatus = "active" | "inactive" | string;
+
 export interface School {
   id: string;
   name: string;
+  regionId: string;
+  regionName?: string;
+  sectorId: string;
+  sectorName?: string;
   address?: string;
   phone?: string;
   email?: string;
-  directorName?: string;
-  principalName?: string;  // əlavə edildi
-  studentCount?: number;
-  teacherCount?: number;
-  schoolType?: 'elementary' | 'middle' | 'high' | 'vocational' | 'special';
-  teachingLanguage?: 'azerbaijani' | 'russian' | 'georgian' | 'turkish' | 'english';
-  regionId: string;
-  sectorId: string;
-  status: 'active' | 'inactive';
-  admin_id?: string; 
-  adminEmail?: string;
-  adminCount?: number;
+  principal_name?: string; // SupaBase  əsaslı ad
+  principalName?: string; // Frontend əsaslı ad
+  student_count?: number; // SupaBase  əsaslı ad
+  studentCount?: number; // Frontend əsaslı ad
+  teacher_count?: number; // SupaBase  əsaslı ad
+  teacherCount?: number; // Frontend əsaslı ad
+  type?: string;
+  logo?: string;
+  status: SchoolStatus;
   createdAt?: string;
   updatedAt?: string;
-  // Supabase anlarında lazım olan sahələr
-  region_id?: string;
-  sector_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  principal_name?: string;
-  language?: string;
-  type?: string;
-  completion_rate?: number;
-  completionRate?: number; // əlavə edildi
-  logo?: string;
-  admin_email?: string;
-  regionName?: string; // əlavə edildi
-  sectorName?: string; // əlavə edildi
+  completion_rate?: number; // SupaBase  əsaslı ad
+  completionRate?: number; // Frontend əsaslı ad
 }
 
-export interface CreateSchoolParams {
-  name: string;
-  principalName?: string;
-  directorName?: string;
-  address?: string;
-  regionId?: string;
-  sectorId?: string;
-  region_id?: string;
-  sector_id?: string;
-  phone?: string;
-  email?: string;
-  studentCount?: number;
-  teacherCount?: number;
-  status?: 'active' | 'inactive';
-  type?: string;
-  schoolType?: string;
-  language?: string;
-  teachingLanguage?: string;
-  adminEmail?: string;
-  adminFullName?: string;
-  adminPassword?: string;
-  adminStatus?: string;
-}
+// Adaptor funksiyası
+export const adaptSchoolData = (rawData: any): School => ({
+  id: rawData.id,
+  name: rawData.name,
+  regionId: rawData.region_id,
+  regionName: rawData.region_name || '',
+  sectorId: rawData.sector_id,
+  sectorName: rawData.sector_name || '',
+  address: rawData.address || '',
+  phone: rawData.phone || '',
+  email: rawData.email || '',
+  principalName: rawData.principal_name || '',
+  principal_name: rawData.principal_name || '',
+  studentCount: rawData.student_count || 0,
+  student_count: rawData.student_count || 0,
+  teacherCount: rawData.teacher_count || 0,
+  teacher_count: rawData.teacher_count || 0,
+  type: rawData.type || '',
+  logo: rawData.logo || '',
+  status: rawData.status || 'active',
+  createdAt: rawData.created_at || '',
+  updatedAt: rawData.updated_at || '',
+  completionRate: rawData.completion_rate || 0,
+  completion_rate: rawData.completion_rate || 0
+});

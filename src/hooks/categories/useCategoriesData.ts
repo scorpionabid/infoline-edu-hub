@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
@@ -23,7 +22,13 @@ export const useCategoriesData = () => {
 
       if (error) throw error;
 
-      setCategories(data || []);
+      // Add required 'order' property
+      const formattedData = data.map(item => ({
+        ...item,
+        order: item.order || item.priority || 0
+      }));
+      
+      setCategories(formattedData as Category[]);
       setIsLoading(false);
     } catch (error) {
       console.error('Kateqoriyaları əldə edərkən xəta:', error);
@@ -44,7 +49,13 @@ export const useCategoriesData = () => {
 
       if (error) throw error;
       
-      return data;
+      // Add required 'order' property
+      const formattedData = {
+        ...data,
+        order: data.order || data.priority || 0
+      };
+      
+      return formattedData as Category;
     } catch (error) {
       console.error('Kateqoriya yüklənərkən xəta:', error);
       toast.error('Kateqoriya yüklənərkən xəta baş verdi');
@@ -55,52 +66,85 @@ export const useCategoriesData = () => {
   // Kateqoriya yaratma
   const createCategory = useCallback(async (categoryData: Omit<Category, "id" | "createdAt" | "updatedAt">) => {
     try {
+      // Ensure deadline is string
+      const deadline = categoryData.deadline ? 
+        (typeof categoryData.deadline === 'object' ? categoryData.deadline.toISOString() : categoryData.deadline) : 
+        null;
+        
+      const supabaseCategory = {
+        name: categoryData.name,
+        description: categoryData.description,
+        assignment: categoryData.assignment,
+        priority: categoryData.priority,
+        deadline: deadline,
+        status: categoryData.status || 'active',
+        order: categoryData.order || categoryData.priority,
+        archived: categoryData.archived || false
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .insert({
-          ...categoryData,
-          id: uuid(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert([supabaseCategory])
         .select()
         .single();
 
       if (error) throw error;
       
-      setCategories(prev => [...prev, data]);
+      const newCategory = {
+        ...data,
+        order: data.order || data.priority || 0
+      } as Category;
+      
+      setCategories(prev => [...prev, newCategory]);
+      
       return data;
-    } catch (error) {
-      console.error('Kateqoriya yaradılarkən xəta:', error);
-      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
-      throw error;
+    } catch (err: any) {
+      console.error('Error adding category:', err);
+      throw err;
     }
   }, []);
 
   // Kateqoriya yeniləmə
-  const updateCategory = useCallback(async (categoryData: Partial<Category> & { id: string }) => {
+  const updateCategory = useCallback(async (updates: Partial<Category> & { id: string }) => {
     try {
+      // Ensure deadline is string
+      const deadline = updates.deadline ? 
+        (typeof updates.deadline === 'object' ? updates.deadline.toISOString() : updates.deadline) : 
+        null;
+        
+      const supabaseUpdates = {
+        name: updates.name,
+        description: updates.description,
+        assignment: updates.assignment,
+        priority: updates.priority,
+        deadline: deadline,
+        status: updates.status,
+        order: updates.order || updates.priority,
+        archived: updates.archived
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .update({
-          ...categoryData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', categoryData.id)
+        .update(supabaseUpdates)
+        .eq('id', updates.id)
         .select()
         .single();
 
       if (error) throw error;
       
-      setCategories(prev => prev.map(cat => 
-        cat.id === categoryData.id ? data : cat
+      const updatedCategory = {
+        ...data,
+        order: data.order || data.priority || 0
+      } as Category;
+      
+      setCategories(prev => prev.map(category => 
+        category.id === updates.id ? updatedCategory : category
       ));
       
       return data;
-    } catch (error) {
-      console.error('Kateqoriya yenilənərkən xəta:', error);
-      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
-      throw error;
+    } catch (err: any) {
+      console.error('Error updating category:', err);
+      throw err;
     }
   }, []);
 

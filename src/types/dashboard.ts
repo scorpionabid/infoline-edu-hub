@@ -1,21 +1,6 @@
 
 import { Notification } from './notification';
-
-export interface FormStatus {
-  total: number;
-  completed: number;
-  pending: number;
-  overdue: number;
-  dueSoon: number;
-}
-
-export interface FormItem {
-  id: string;
-  title: string;
-  status: 'pending' | 'approved' | 'rejected' | 'overdue';
-  deadline?: string;
-  completionRate?: number;
-}
+import { FormItem } from './form';
 
 export interface ChartData {
   activityData: { name: string; value: number }[];
@@ -24,9 +9,12 @@ export interface ChartData {
 }
 
 export interface DashboardData {
-  isLoading?: boolean;
-  error?: Error | null;
+  userId: string;
+  userName?: string;
+  isLoading: boolean;
+  error: Error | null;
   notifications?: Notification[];
+  totalSchools?: number; // Əlavə edildi
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
@@ -36,6 +24,10 @@ export interface SuperAdminDashboardData extends DashboardData {
   users: number;
   completionRate: number;
   pendingApprovals: number;
+  notifications: Notification[];
+  pendingSchools?: number; // Əlavə edildi
+  approvedSchools?: number; // Əlavə edildi
+  rejectedSchools?: number; // Əlavə edildi
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
@@ -43,6 +35,13 @@ export interface RegionAdminDashboardData extends DashboardData {
   sectors: number;
   schools: number;
   approvalRate: number;
+  notifications: Notification[];
+  completionRate?: number;
+  pendingApprovals?: number;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
+  users?: number; // Əlavə edildi
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
@@ -50,13 +49,17 @@ export interface SectorAdminDashboardData extends DashboardData {
   regionName: string;
   schools: number;
   pendingApprovals: number;
+  notifications: Notification[];
+  completionRate?: number; // Əlavə edildi
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
   schoolName: string;
   sectorName: string;
   regionName: string;
-  completionRate: number;
   forms: {
     pending: number;
     approved: number;
@@ -64,7 +67,16 @@ export interface SchoolAdminDashboardData extends DashboardData {
     dueSoon: number;
     overdue: number;
   };
-  recentForms: FormItem[];
+  completionRate: number;
+  notifications: Notification[];
+  categories?: number;
+  totalForms?: number; // Əlavə edildi
+  completedForms?: number;
+  pendingForms: FormItem[]; // Əlavə edilib
+  rejectedForms?: number;
+  dueDates?: Array<{
+    category: string;
+    date: string;
+  }>;
+  recentForms?: FormItem[];
 }
-
-export type UserDashboard = SuperAdminDashboardData | RegionAdminDashboardData | SectorAdminDashboardData | SchoolAdminDashboardData;

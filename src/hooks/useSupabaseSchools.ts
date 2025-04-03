@@ -1,183 +1,65 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/supabase';
-import { useRegions } from './useRegions';
-import { useSectors } from './useSectors';
+import { School, adaptSchoolData } from '@/types/school';
+import { useRegions } from '@/hooks/useRegions';
+import { useSectors } from '@/hooks/useSectors';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-
-export interface SortConfig {
-  key: string | null;
-  direction: 'asc' | 'desc' | null;
-}
 
 export const useSupabaseSchools = () => {
   const [schools, setSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedSector, setSelectedSector] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const { t } = useLanguage();
-  
-  // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
   const { regions } = useRegions();
-  const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
+  const { sectors } = useSectors();
 
-  // Məktəbləri yükləmək metodu
-  const fetchSchools = useCallback(async () => {
+  const fetchSchools = useCallback(async (params?: { regionId?: string; sectorId?: string; status?: string }) => {
     setLoading(true);
     try {
       let query = supabase.from('schools').select('*');
-      
-      if (selectedRegion) {
-        query = query.eq('region_id', selectedRegion);
+
+      if (params?.regionId) {
+        query = query.eq('region_id', params.regionId);
       }
       
-      if (selectedSector) {
-        query = query.eq('sector_id', selectedSector);
+      if (params?.sectorId) {
+        query = query.eq('sector_id', params.sectorId);
       }
       
-      if (selectedStatus) {
-        query = query.eq('status', selectedStatus);
+      if (params?.status) {
+        query = query.eq('status', params.status);
       }
-      
-      const { data, error } = await query;
-      
+
+      const { data, error } = await query.order('name');
+
       if (error) throw error;
-      
-      setSchools(data as School[]);
+
+      const formattedSchools: School[] = data.map(school => {
+        const region = regions.find(r => r.id === school.region_id);
+        const sector = sectors.find(s => s.id === school.sector_id);
+        
+        return adaptSchoolData({
+          ...school,
+          region_name: region?.name || '',
+          sector_name: sector?.name || ''
+        });
+      });
+
+      setSchools(formattedSchools);
     } catch (err: any) {
       console.error('Error fetching schools:', err);
       setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadSchools')
-      });
+      toast.error('Məktəbləri əldə edərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  }, [selectedRegion, selectedSector, selectedStatus, t]);
+  }, [regions, sectors]);
 
-  // Filtrlənmiş məktəblər
-  const filteredSchools = schools.filter(school => {
-    const searchMatch = 
-      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.address && school.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.phone && school.phone.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    return searchMatch;
-  });
-
-  // Sıralanmış məktəblər
-  const sortedSchools = [...filteredSchools].sort((a, b) => {
-    if (!sortConfig.key) return 0;
-    
-    const key = sortConfig.key as keyof School;
-    const aValue = a[key] as any;
-    const bValue = b[key] as any;
-    
-    if (!aValue && !bValue) return 0;
-    if (!aValue) return sortConfig.direction === 'asc' ? 1 : -1;
-    if (!bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-    
-    if (aValue < bValue) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
-    }
-    return 0;
-  });
-
-  // Paginated məktəblər
-  const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
-  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
-  const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Event handlers
-  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRegion(e.target.value);
-    setSelectedSector('');
-    setCurrentPage(1);
-  }, []);
-
-  const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSector(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleSort = useCallback((key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  }, [sortConfig]);
-
-  const handlePageChange = useCallback((page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }, [totalPages]);
-
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedRegion('');
-    setSelectedSector('');
-    setSelectedStatus('');
-    setCurrentPage(1);
-  }, []);
-
-  // Məlumatların ilkin yüklənməsi
   useEffect(() => {
     fetchSchools();
   }, [fetchSchools]);
 
-  return {
-    schools,
-    loading,
-    error,
-    searchTerm,
-    selectedRegion,
-    selectedSector,
-    selectedStatus,
-    sortConfig,
-    currentPage: adjustedCurrentPage,
-    itemsPerPage,
-    filteredSchools,
-    sortedSchools,
-    currentItems,
-    totalPages,
-    regions,
-    sectors,
-    sectorsLoading,
-    handleSearch,
-    handleRegionFilter,
-    handleSectorFilter,
-    handleStatusFilter,
-    handleSort,
-    handlePageChange,
-    resetFilters,
-    fetchSchools, // məlumatları yenidən yükləmək üçün
-    setSchools, // məktəb əlavə və ya silmək üçün
-  };
+  return { schools, loading, error, fetchSchools };
 };
+
+export default useSupabaseSchools;

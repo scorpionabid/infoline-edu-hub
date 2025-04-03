@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Category } from '@/types/category';
 import { useDataEntries } from './useDataEntries';
@@ -24,11 +23,18 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     fetchEntries,
     addEntry,
     updateEntry,
-    deleteEntry
+    deleteEntry,
+    approveEntry: approveEntryFn,
+    rejectEntry: rejectEntryFn,
+    submitCategoryForApproval: submitCategoryForApprovalFn,
+    getApprovalStatus: getApprovalStatusFn
   } = useDataEntries();
 
   // Submitı əlavə edək
   const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
+    if (submitCategoryForApprovalFn) {
+      return submitCategoryForApprovalFn(categoryId, schoolId);
+    }
     try {
       console.log(`Category ${categoryId} for school ${schoolId} submitted for approval`);
       return true;
@@ -36,7 +42,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       console.error('Kateqoriya təsdiqi zamanı xəta:', error);
       return false;
     }
-  }, []);
+  }, [submitCategoryForApprovalFn]);
 
   // Kateqoriya məlumatları ilə bağlı vəziyyət və əməliyyatlar
   const {
@@ -96,10 +102,10 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     setSubmitting,
     entries,
     submitCategoryForApproval,
-    setFormData,
     columns,
     setLoadingEntries,
-    setIsAutoSaving
+    setIsAutoSaving,
+    setFormData
   });
 
   // Köməkçi funksiyalar
@@ -168,9 +174,10 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     submitCategoryForApproval,
     
     // Əlavə edilən metodlar
-    approveEntry: updateEntry,
-    rejectEntry: updateEntry,
-    getApprovalStatus: (id: string) => "pending"
+    approveEntry: approveEntryFn || updateEntry,
+    rejectEntry: rejectEntryFn || updateEntry,
+    submitCategoryForApproval,
+    getApprovalStatus: getApprovalStatusFn || ((id: string) => "pending")
   };
 };
 

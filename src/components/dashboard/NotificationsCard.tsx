@@ -21,6 +21,10 @@ const adaptIfNeeded = (notification: Notification): Notification => {
       message: '',
       createdAt: new Date().toISOString(),
       time: new Date().toISOString(),
+      isRead: false,
+      userId: '',
+      priority: 'normal',
+      read_status: 'unread'
     };
   }
   
@@ -29,6 +33,14 @@ const adaptIfNeeded = (notification: Notification): Notification => {
     return {
       ...notification,
       time: notification.createdAt
+    };
+  }
+  
+  // Ensure read_status is set
+  if (!notification.read_status) {
+    return {
+      ...notification,
+      read_status: notification.isRead ? 'read' : 'unread'
     };
   }
   
