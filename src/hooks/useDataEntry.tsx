@@ -155,12 +155,13 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
       setUnsavedChanges(true);
 
-      const entryId = dataEntries[columnId]?.id || uuidv4();
+      // Burada idempotent bir ID yaradaq və məlumatları yeniləyək
+      const entryId = dataEntries[columnId]?.id || `temp-${uuidv4()}`;
       
       setDataEntries(prev => ({
         ...prev,
         [columnId]: {
-          id: entryId,
+          id: entryId, // id artıq optional deyil
           column_id: columnId,
           category_id: categoryId,
           school_id: schoolId,
