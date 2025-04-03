@@ -65,70 +65,98 @@ export interface Region {
   adminEmail?: string;
 }
 
-// RoleObject interfeysi əlavə edək
-export interface RoleObject {
-  id: string;
-  user_id: string;
-  role: string;
-  region_id: string;
-  sector_id: string;
-  school_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface FullUserData {
   id: string;
   email: string;
-  role: UserRole; // Changed from UserRole | RoleObject to just UserRole
-  full_name?: string;
+  full_name: string;
   name?: string;
+  role: UserRole;
+  region_id?: string;
+  regionId?: string;
+  sector_id?: string;
+  sectorId?: string;
+  school_id?: string;
+  schoolId?: string;
   phone?: string;
   position?: string;
-  language?: 'az' | 'en' | 'ru' | 'tr';
+  language?: string;
   avatar?: string;
-  status?: 'active' | 'inactive' | 'blocked';
-  school?: School | null;
-  sector?: Sector | null;
-  region?: Region | null;
-  schoolId?: string | null;
-  sectorId?: string | null;
-  regionId?: string | null;
-  school_id?: string | null;
-  sector_id?: string | null;
-  region_id?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  status?: string;
   last_login?: string;
-  createdAt?: string;
-  updatedAt?: string;
   lastLogin?: string;
-  twoFactorEnabled?: boolean;
+  created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
   notificationSettings?: {
     email: boolean;
     system: boolean;
   };
-  passwordResetDate?: string; // Add this for EditUserDialog
-  // User interfeysi ilə uyğunlaşmaq üçün əlavə edilmiş xüsusiyyətlər
-  app_metadata?: any;
-  user_metadata?: any;
-  aud?: string;
+  twoFactorEnabled?: boolean;
+  passwordResetDate?: string;
 }
 
-// DataEntry interfeysi əlavə edirik
-export interface DataEntry {
+export type DbResult<T> = {
+  data: T;
+  error: PostgrestError | null;
+};
+
+// Burada School, Region, Sector və DataEntry kimi əsas modellər əlavə edirik ki, supabase ilə problemsiz inteqrasiya olsun
+export type School = {
+  id: string;
+  name: string;
+  region_id: string;
+  sector_id: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principal_name?: string;
+  status?: string;
+  type?: string;
+  language?: string;
+  student_count?: number;
+  teacher_count?: number;
+  completion_rate?: number;
+  admin_email?: string;
+  logo?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Region = {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Sector = {
+  id: string;
+  name: string;
+  region_id: string;
+  description?: string;
+  status?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type DataEntry = {
   id: string;
   category_id: string;
   column_id: string;
   school_id: string;
   value?: string;
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: string;
+  created_by?: string;
   created_at?: string;
   updated_at?: string;
-  created_by?: string;
   approved_by?: string;
   approved_at?: string;
   rejected_by?: string;
   rejection_reason?: string;
-  version_history_id?: string;
-}
+};

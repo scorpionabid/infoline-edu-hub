@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
@@ -12,8 +12,8 @@ interface BasicInfoSectionProps {
   data: UserFormData;
   onFormChange: (fieldName: string, value: any) => void;
   availableRoles: UserRole[];
-  isEdit: boolean;
-  passwordRequired: boolean;
+  isEdit?: boolean;
+  passwordRequired?: boolean;
   hideRoleSelector?: boolean;
 }
 
@@ -22,75 +22,82 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   data,
   onFormChange,
   availableRoles,
-  isEdit,
-  passwordRequired,
+  isEdit = false,
+  passwordRequired = false,
   hideRoleSelector = false,
 }) => {
   const { t } = useLanguage();
-  
+
+  const handleRoleChange = (value: string) => {
+    onFormChange('role', value as UserRole);
+    
+    // When role changes, clear sector and school
+    if (data.sectorId) {
+      onFormChange('sectorId', undefined);
+    }
+    if (data.schoolId) {
+      onFormChange('schoolId', undefined);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-4 md:flex-row">
+    <div>
+      <h3 className="text-lg font-medium mb-4">{t('basicInfo')}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>{t('fullName')} *</FormLabel>
+            <FormItem>
+              <FormLabel>{t('fullName')}</FormLabel>
               <FormControl>
                 <Input
+                  placeholder={t('enterFullName')}
                   {...field}
-                  onChange={e => {
+                  onChange={(e) => {
                     field.onChange(e);
                     onFormChange('name', e.target.value);
                   }}
-                  placeholder={t('enterFullName')}
-                  required
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>{t('email')} *</FormLabel>
+            <FormItem>
+              <FormLabel>{t('email')}</FormLabel>
               <FormControl>
                 <Input
+                  type="email"
+                  placeholder={t('enterEmail')}
                   {...field}
-                  onChange={e => {
+                  onChange={(e) => {
                     field.onChange(e);
                     onFormChange('email', e.target.value);
                   }}
-                  placeholder={t('enterEmail')}
-                  required
-                  type="email"
+                  disabled={isEdit}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-      </div>
-      
-      <div className="flex flex-col gap-4 md:flex-row">
+
         {!hideRoleSelector && (
           <FormField
             control={form.control}
             name="role"
             render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t('role')} *</FormLabel>
+              <FormItem>
+                <FormLabel>{t('role')}</FormLabel>
                 <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    onFormChange('role', value);
-                  }}
+                  value={data.role}
+                  onValueChange={handleRoleChange}
                   disabled={isEdit}
                 >
                   <FormControl>
@@ -111,15 +118,15 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             )}
           />
         )}
-        
+
         <FormField
           control={form.control}
           name="status"
           render={({ field }) => (
-            <FormItem className="w-full">
+            <FormItem>
               <FormLabel>{t('status')}</FormLabel>
               <Select
-                value={field.value}
+                value={data.status || "active"}
                 onValueChange={(value) => {
                   field.onChange(value);
                   onFormChange('status', value);
@@ -140,100 +147,57 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             </FormItem>
           )}
         />
-      </div>
-      
-      {(passwordRequired || !isEdit) && (
-        <div className="flex flex-col gap-4 md:flex-row">
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t('password')} {!isEdit && '*'}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    onChange={e => {
-                      field.onChange(e);
-                      onFormChange('password', e.target.value);
-                    }}
-                    placeholder={t('enterPassword')}
-                    type="password"
-                    required={!isEdit || passwordRequired}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>{t('confirmPassword')} {!isEdit && '*'}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    onChange={e => {
-                      field.onChange(e);
-                      onFormChange('confirmPassword', e.target.value);
-                    }}
-                    placeholder={t('confirmPassword')}
-                    type="password"
-                    required={!isEdit || passwordRequired}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      )}
-      
-      <div className="flex flex-col gap-4 md:flex-row">
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>{t('phone')}</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  onChange={e => {
-                    field.onChange(e);
-                    onFormChange('phone', e.target.value);
-                  }}
-                  placeholder={t('enterPhone')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="position"
-          render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>{t('position')}</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  onChange={e => {
-                    field.onChange(e);
-                    onFormChange('position', e.target.value);
-                  }}
-                  placeholder={t('enterPosition')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+        {(!isEdit || passwordRequired) && (
+          <>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('password')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder={t('enterPassword')}
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onFormChange('password', e.target.value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {passwordRequired ? t('passwordRequired') : t('passwordRequirements')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('confirmPassword')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder={t('confirmPassword')}
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        onFormChange('confirmPassword', e.target.value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,150 +1,123 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useReducer, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { ActionType, CategoryEntryData } from '@/types/dataEntry';
 import { CategoryWithColumns } from '@/types/column';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 
-export const useDataEntryState = (initialCategoryId?: string | null) => {
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const lastCategoryIdRef = useRef<string | null>(initialCategoryId);
-  const { user } = useAuth();
-  const { t } = useLanguage();
+const initialState = {
+  loading: true,
+  categories: [] as CategoryWithColumns[],
+  currentCategory: 0,
+  error: null as Error | null,
+  isSubmitting: false,
+  isAutoSaving: false,
+  status: 'draft' as 'draft' | 'submitted' | 'approved' | 'rejected',
+  lastSaved: '',
+  progress: 0
+};
 
-  // Kateqoriyaları və sütunları Supabase-dən çəkmək
-  const fetchCategories = useCallback(async () => {
-    setIsLoading(true);
+function reducer(state: typeof initialState, action: ActionType) {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_CATEGORIES':
+      return { ...state, categories: action.payload, loading: false };
+    case 'SET_CURRENT_CATEGORY':
+      return { ...state, currentCategory: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, loading: false };
+    case 'SET_IS_SUBMITTING':
+      return { ...state, isSubmitting: action.payload };
+    case 'SET_IS_AUTO_SAVING':
+      return { ...state, isAutoSaving: action.payload };
+    case 'SET_STATUS':
+      return { ...state, status: action.payload };
+    case 'SET_LAST_SAVED':
+      return { ...state, lastSaved: action.payload };
+    case 'SET_PROGRESS':
+      return { ...state, progress: action.payload };
+    default:
+      return state;
+  }
+}
+
+export function useDataEntryState() {
+  const { schoolId = '', categoryId = '' } = useParams();
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const [entryData, setEntryData] = useState<CategoryEntryData[]>([]);
+
+  // Mock data for demonstration
+  const fetchData = useCallback(async () => {
     try {
-      // Əvvəlcə kateqoriyaları çəkək
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
-
-      if (categoriesError) throw categoriesError;
-
-      // Əgər kateqoriya yoxdursa, boş massiv qaytaraq
-      if (!categoriesData || categoriesData.length === 0) {
-        setCategories([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Hər bir kateqoriyaya aid sütunları çəkək
-      const categoriesWithColumns: CategoryWithColumns[] = await Promise.all(
-        categoriesData.map(async (category) => {
-          // Sütunları çəkək
-          const { data: columnsData, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id)
-            .eq('status', 'active')
-            .order('order_index', { ascending: true });
-
-          if (columnsError) throw columnsError;
-
-          // Kateqoriya və sütunlar ilə obyekt yaradaq
-          return {
-            id: category.id,
-            name: category.name,
-            description: category.description || '',
-            deadline: category.deadline,
-            status: category.status === 'active' ? 'active' : 'inactive',
-            priority: category.priority || 0,
-            assignment: category.assignment === 'sectors' ? 'sectors' : 'all',
-            createdAt: category.created_at,
-            columns: columnsData.map(column => ({
-              id: column.id,
-              categoryId: column.category_id,
-              name: column.name,
-              type: column.type,
-              isRequired: column.is_required,
-              placeholder: column.placeholder || '',
-              helpText: column.help_text || '',
-              options: column.options,
-              order: column.order_index || 0,
-              status: column.status === 'active' ? 'active' : 'inactive',
-              defaultValue: column.default_value || '',
-              validation: column.validation
-            }))
-          };
-        })
-      );
-
-      // Məlumatların approval statusunu yoxlayaq
-      if (user?.schoolId) {
-        const updatedCategoriesWithStatus = await Promise.all(
-          categoriesWithColumns.map(async (category) => {
-            try {
-              // Kateqoriya üçün məlumatların statusunu yoxlayaq
-              const { data, error } = await supabase
-                .from('data_entries')
-                .select('status')
-                .eq('school_id', user.schoolId)
-                .eq('category_id', category.id);
-
-              if (error) throw error;
-
-              // Məlumatların statusuna görə kateqoriya statusunu təyin edək
-              if (data && data.length > 0) {
-                // Əgər bütün məlumatlar approved isə, kateqoriya approved statusunu alır
-                if (data.every(item => item.status === 'approved')) {
-                  return { ...category, status: 'approved' as 'active' | 'inactive' };
-                }
-                // Əgər hər hansı məlumat rejected isə, kateqoriya rejected statusunu alır
-                else if (data.some(item => item.status === 'rejected')) {
-                  return { ...category, status: 'rejected' as 'active' | 'inactive' };
-                }
-                // Əks halda, pending statusu verilir
-                else {
-                  return { ...category, status: 'pending' as 'active' | 'inactive' };
-                }
-              }
-
-              return category;
-            } catch (err) {
-              console.error(`Error checking status for category ${category.id}:`, err);
-              return category;
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockCategories: CategoryWithColumns[] = [
+        {
+          id: "cat-1",
+          name: "Məktəb haqqında məlumatlar",
+          description: "Əsas məktəb məlumatları",
+          deadline: "2023-12-31",
+          status: "active",
+          priority: 1,
+          assignment: "all",
+          createdAt: "2023-01-01",
+          order: 1,
+          columns: [
+            {
+              id: "col-1",
+              categoryId: "cat-1",
+              name: "Şagird sayı",
+              type: "number",
+              isRequired: true,
+              status: "active",
+              order: 1,
+              orderIndex: 1,
+              validation: {}
             }
-          })
-        );
-
-        setCategories(updatedCategoriesWithStatus);
-      } else {
-        setCategories(categoriesWithColumns);
-      }
-
-      // Əgər initialCategoryId varsa, onun indeksini tapaq
-      if (initialCategoryId) {
-        const categoryIndex = categoriesWithColumns.findIndex(
-          category => category.id === initialCategoryId
-        );
-        if (categoryIndex !== -1) {
-          setCurrentCategoryIndex(categoryIndex);
+          ]
         }
-      }
-    } catch (err) {
-      console.error('Error fetching categories and columns:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadCategories')
-      });
-    } finally {
-      setIsLoading(false);
+      ];
+
+      const mockEntryData: CategoryEntryData[] = [
+        {
+          categoryId: "cat-1",
+          entries: [
+            {
+              id: "entry-1",
+              columnId: "col-1",
+              value: "100",
+              status: "pending"
+            }
+          ],
+          status: "draft",
+          values: [],
+          completionPercentage: 50,
+          isCompleted: false,
+          isSubmitted: false
+        }
+      ];
+
+      dispatch({ type: 'SET_CATEGORIES', payload: mockCategories });
+      setEntryData(mockEntryData);
+      dispatch({ type: 'SET_LAST_SAVED', payload: new Date().toISOString() });
+      dispatch({ type: 'SET_PROGRESS', payload: 50 });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error as Error });
     }
-  }, [initialCategoryId, user, t]);
+  }, [schoolId, categoryId]);
 
   return {
-    categories,
-    setCategories,
-    isLoading,
-    setIsLoading,
-    currentCategoryIndex,
-    setCurrentCategoryIndex,
-    lastCategoryIdRef,
-    fetchCategories
+    ...state,
+    entryData,
+    setEntryData,
+    fetchData,
+    schoolId,
+    categoryId,
+    dispatch
   };
-};
+}
+
+export default useDataEntryState;

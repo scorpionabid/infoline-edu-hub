@@ -27,19 +27,24 @@ const RegionSection: React.FC<RegionSectionProps> = ({
 }) => {
   const { t } = useLanguage();
   
-  // Only SuperAdmin or RegionAdmin need to pick a region
-  // or if the role is regionadmin, sectoradmin or schooladmin
-  const shouldShowRegion = !hideSection && 
-    (isSuperAdmin || 
-     currentUserRole === 'regionadmin' || 
-     data.role === 'regionadmin' ||
-     data.role === 'sectoradmin' ||
-     data.role === 'schooladmin');
+  const shouldShowRegion = !hideSection && (
+    data.role === 'regionadmin' || 
+    data.role === 'sectoradmin' || 
+    data.role === 'schooladmin'
+  );
   
   if (!shouldShowRegion) {
     return null;
   }
-
+  
+  // SuperAdmin can select region freely
+  // RegionAdmin is limited to their own region
+  const isRegionSelectable = isSuperAdmin || 
+    (currentUserRole === 'regionadmin' && data.role !== 'regionadmin');
+  
+  // If currentUserRole is regionadmin, they can only assign users to their own region
+  const currentUserRegionId = form.getValues('regionId');
+  
   return (
     <FormField
       control={form.control}
@@ -50,10 +55,19 @@ const RegionSection: React.FC<RegionSectionProps> = ({
           <Select
             value={data.regionId || "none"}
             onValueChange={(value) => {
-              field.onChange(value === "none" ? undefined : value);
-              onFormChange('regionId', value === "none" ? undefined : value);
+              const newValue = value === "none" ? undefined : value;
+              field.onChange(newValue);
+              onFormChange('regionId', newValue);
+              
+              // Clear sector and school when region changes
+              if (data.sectorId) {
+                onFormChange('sectorId', undefined);
+              }
+              if (data.schoolId) {
+                onFormChange('schoolId', undefined);
+              }
             }}
-            disabled={currentUserRole === 'regionadmin' && !!data.regionId}
+            disabled={!isRegionSelectable}
           >
             <FormControl>
               <SelectTrigger>

@@ -1,40 +1,56 @@
 
-import { CategoryWithColumns } from '@/types/column';
-import { createDemoCategories, createTeachersDemoCategory } from './createDemoCategory';
+import { CategoryWithColumns, Column } from '@/types/column';
+import { createDemoCategory } from './createDemoCategory';
 
-// Kateqoriyaları tarixin yeni olmasına görə sıralayır
-export const sortCategoriesByDate = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
-  return [...categories].sort((a, b) => {
-    const dateA = new Date(a.createdAt).getTime();
-    const dateB = new Date(b.createdAt).getTime();
-    return dateB - dateA; // Ən yeni olandan başlayaraq
-  });
+// Create a demo category for testing
+const demoCategory = createDemoCategory();
+const teachersDemoCategory = createDemoCategory();
+teachersDemoCategory.id = 'teachers-category';
+teachersDemoCategory.name = 'Müəllim heyəti';
+
+export const createDemoCategories = (): CategoryWithColumns[] => {
+  return [demoCategory, teachersDemoCategory];
 };
 
-// Kateqoriyaları prioritetə görə sıralayır
+export const createTeachersDemoCategory = (): CategoryWithColumns => {
+  return teachersDemoCategory;
+};
+
+// Function to sort categories by priority
 export const sortCategoriesByPriority = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
   return [...categories].sort((a, b) => a.priority - b.priority);
 };
 
-// Status filtrinə görə kateqoriyaları filtrləyir
+// Function to sort categories by name
+export const sortCategoriesByName = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {
+  return [...categories].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+// Function to filter categories by status
 export const filterCategoriesByStatus = (categories: CategoryWithColumns[], status: string): CategoryWithColumns[] => {
-  if (!status || status === 'all') return categories;
-  return categories.filter(cat => cat.status === status);
+  return categories.filter(category => category.status === status);
 };
 
-// Təyinata görə kateqoriyaları filtrləyir
+// Function to filter categories by assignment
 export const filterCategoriesByAssignment = (categories: CategoryWithColumns[], assignment: 'all' | 'sectors'): CategoryWithColumns[] => {
-  if (!assignment) return categories;
-  return categories.filter(cat => cat.assignment === assignment);
+  return categories.filter(category => category.assignment === assignment);
 };
 
-// Axtarış sorğusuna görə kateqoriyaları filtrləyir
-export const filterCategoriesBySearchQuery = (categories: CategoryWithColumns[], query: string): CategoryWithColumns[] => {
-  if (!query) return categories;
-  const lowercaseQuery = query.toLowerCase();
-  return categories.filter(
-    cat => 
-      cat.name.toLowerCase().includes(lowercaseQuery) || 
-      (cat.description && cat.description.toLowerCase().includes(lowercaseQuery))
+// Function to search categories by name
+export const searchCategoriesByName = (categories: CategoryWithColumns[], searchTerm: string): CategoryWithColumns[] => {
+  const term = searchTerm.toLowerCase();
+  return categories.filter(category => 
+    category.name.toLowerCase().includes(term) || 
+    (category.description && category.description.toLowerCase().includes(term))
   );
+};
+
+export default {
+  sortCategoriesByPriority,
+  sortCategoriesByName,
+  filterCategoriesByStatus,
+  filterCategoriesByAssignment,
+  searchCategoriesByName,
+  createDemoCategories,
+  createTeachersDemoCategory
 };

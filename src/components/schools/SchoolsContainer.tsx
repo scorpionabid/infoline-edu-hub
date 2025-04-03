@@ -114,7 +114,7 @@ const SchoolsContainer: React.FC = () => {
 
   // Region array tipini açıq şəkildə dönüşdürürük
   const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
-  const userRole = user?.role as UserRole || undefined;
+  const userRole = user?.role as UserRole;
 
   return (
     <div className="space-y-6">
