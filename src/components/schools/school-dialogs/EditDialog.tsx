@@ -1,93 +1,86 @@
 
 import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLanguage } from '@/context/LanguageContext';
 import { School } from '@/types/school';
 import SchoolForm from '../SchoolForm';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface EditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   school: School | null;
-  onSubmit: (data: Partial<School>) => void;
+  onSubmit: (data: any) => void;
   formData: any;
   onChange: (field: string, value: any) => void;
   currentTab: string;
   onTabChange: (tab: string) => void;
-  filteredSectors: Array<{ id: string; name: string; regionId: string }>;
+  filteredSectors: { id: string; name: string; regionId: string }[];
 }
 
-export const EditDialog: React.FC<EditDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  school, 
-  onSubmit, 
-  formData, 
+export const EditDialog = ({
+  open,
+  onOpenChange,
+  school,
+  onSubmit,
+  formData,
   onChange,
   currentTab,
   onTabChange,
   filteredSectors
-}) => {
+}: EditDialogProps) => {
   const { t } = useLanguage();
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleTabChange = (value: string) => {
+    onTabChange(value);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('editSchool')}</DialogTitle>
-          <DialogDescription>
-            {t('editSchoolDescription')}
-          </DialogDescription>
+          <DialogTitle>
+            {t('editSchool')}: {school?.name}
+          </DialogTitle>
         </DialogHeader>
-        
-        <Tabs value={currentTab} onValueChange={onTabChange} className="w-full">
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="basic">{t('basicInfo')}</TabsTrigger>
-            <TabsTrigger value="advanced">{t('additionalInfo')}</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="basic" className="space-y-4 pt-4">
-            <SchoolForm
-              formData={formData}
-              handleFormChange={(e) => {
-                const { name, value } = e.target;
-                onChange(name, value);
-              }}
-              currentTab="basic"
-              filteredSectors={filteredSectors}
-            />
-          </TabsContent>
-          
-          <TabsContent value="advanced" className="space-y-4 pt-4">
-            <SchoolForm
-              formData={formData}
-              handleFormChange={(e) => {
-                const { name, value } = e.target;
-                onChange(name, value);
-              }}
-              currentTab="advanced"
-              filteredSectors={filteredSectors}
-            />
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('cancel')}
-          </Button>
-          <Button onClick={() => onSubmit(formData)}>
-            {t('save')}
-          </Button>
-        </DialogFooter>
+        <form onSubmit={handleFormSubmit}>
+          <Tabs value={currentTab} onValueChange={handleTabChange}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="general">{t('generalInfo')}</TabsTrigger>
+              <TabsTrigger value="additional">{t('additionalInfo')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="general">
+              <SchoolForm 
+                formData={formData}
+                onChange={(field, value) => onChange(field, value)} // field və value parameterlərini tək tək keçiririk
+                currentTab={currentTab}
+                setCurrentTab={onTabChange}
+                filteredSectors={filteredSectors}
+              />
+            </TabsContent>
+            <TabsContent value="additional">
+              <SchoolForm 
+                formData={formData}
+                onChange={(field, value) => onChange(field, value)} // field və value parameterlərini tək tək keçiririk
+                currentTab={currentTab}
+                setCurrentTab={onTabChange}
+                filteredSectors={filteredSectors}
+              />
+            </TabsContent>
+          </Tabs>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit">{t('save')}</Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

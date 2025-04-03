@@ -1,94 +1,97 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
-import { ArrowRight, ChartBar, ClipboardList, Database, School } from 'lucide-react';
+import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, LogIn } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSelector from '@/components/LanguageSelector';
 
-const Index: React.FC = () => {
+const Index = () => {
+  const { isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const { isAuthenticated, user, isLoading } = useAuth();
   
-  useEffect(() => {
-    // İstifadəçi autentifikasiya olduqda və yüklənmə başa çatdıqda
-    if (isAuthenticated && !isLoading) {
-      console.log("İndeks səhifəsi: İstifadəçi autentifikasiya olundu, Dashboard-a yönləndirilir");
-      // Dashboard-a yönləndir
-      navigate('/dashboard');
-    } else {
-      console.log("İndeks səhifəsi: İstifadəçi autentifikasiya olunmayıb veya yüklənir:", {isAuthenticated, isLoading});
-    }
-  }, [isAuthenticated, isLoading, navigate]);
+  console.log('İndeks səhifəsi: İstifadəçi autentifikasiya olunmayıb veya yüklənir:', { isAuthenticated, isLoading });
   
-  const featureCards = [
-    {
-      title: t('schools'),
-      description: t('schoolsDescription'),
-      icon: <School className="h-8 w-8 text-primary" />,
-      path: "/schools"
-    },
-    {
-      title: t('dataEntry'),
-      description: t('dataEntryDescription'),
-      icon: <ClipboardList className="h-8 w-8 text-primary" />,
-      path: "/data-entry"
-    },
-    {
-      title: t('reports'),
-      description: t('reportsDescription'),
-      icon: <ChartBar className="h-8 w-8 text-primary" />,
-      path: "/reports"
-    },
-    {
-      title: t('categories'),
-      description: t('categoriesDescription'),
-      icon: <Database className="h-8 w-8 text-primary" />,
-      path: "/categories"
-    }
-  ];
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-        <p className="text-lg text-muted-foreground">{t('loading')}</p>
-      </div>
-    );
-  }
-
-  // İstifadəçi daxil olmayıbsa, xoş gəldiniz səhifəsini göstərək
   return (
-    <div className="container px-4 py-12 max-w-5xl mx-auto">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold mb-4">{t('welcomeToInfoLine')}</h1>
-        <p className="text-xl text-muted-foreground">
-          {t('infolineDescription')}
-        </p>
-        <div className="mt-6">
-          <Button onClick={() => navigate('/login')} size="lg">
-            {t('login')}
-          </Button>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted">
+      <header className="py-6 px-4 sm:px-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground font-bold">
+            IL
+          </div>
+          <span className="font-semibold text-xl">InfoLine</span>
         </div>
-      </div>
+        
+        <div className="flex items-center gap-2">
+          <LanguageSelector />
+          <ThemeToggle />
+          {!isAuthenticated && !isLoading && (
+            <Button asChild size="sm" variant="outline" className="ml-2">
+              <Link to="/login" className="flex items-center gap-1">
+                <LogIn className="w-4 h-4" />
+                {t('login')}
+              </Link>
+            </Button>
+          )}
+        </div>
+      </header>
       
-      <div className="grid md:grid-cols-2 gap-6 mt-10">
-        {featureCards.map((card, index) => (
-          <Card key={index} className="transition-all hover:shadow-lg">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                {card.icon}
-                <CardTitle>{card.title}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-base">{card.description}</CardDescription>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-4xl text-center">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter mb-6">
+            {t('welcomeToInfoLine')}
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            {t('infoLineDescription')}
+          </p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {isAuthenticated ? (
+              <Button asChild size="lg" className="px-8">
+                <Link to="/dashboard" className="flex items-center gap-2">
+                  {t('goToDashboard')}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild size="lg" className="px-8">
+                  <Link to="/login" className="flex items-center gap-2">
+                    {t('login')}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/register">
+                    {t('register')}
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </main>
+      
+      <footer className="py-6 px-4 sm:px-6 border-t">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} InfoLine. {t('allRightsReserved')}
+          </p>
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <Link to="#" className="hover:underline">
+              {t('privacyPolicy')}
+            </Link>
+            <Link to="#" className="hover:underline">
+              {t('termsOfService')}
+            </Link>
+            <Link to="#" className="hover:underline">
+              {t('contact')}
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

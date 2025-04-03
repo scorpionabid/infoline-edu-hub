@@ -18,7 +18,7 @@ interface SchoolDialogsProps {
   handleAddSubmit: (data: Omit<School, 'id' | 'createdAt' | 'updatedAt'>) => void;
   handleEditSubmit: (data: Partial<School>) => void;
   handleAdminUpdate: (adminData: any) => void;
-  handleResetPassword: () => void;
+  handleResetPassword: (newPassword: string) => void; // Tip düzəlişi
   formData: any;
   handleFormChange: (field: string, value: any) => void;
   currentTab: string;

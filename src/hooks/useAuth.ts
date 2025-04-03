@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +21,9 @@ export type UseAuthReturn = AuthState & {
   clearError: () => void;
   isAuthenticated: boolean;
   hasRole: (role: UserRole | UserRole[]) => boolean;
+  isLoading: boolean; // əlavə edildi
+  sendPasswordReset: (email: string) => Promise<boolean>; // əlavə edildi
+  confirmPasswordReset: (password: string) => Promise<boolean>; // əlavə edildi
 };
 
 /**
@@ -36,7 +40,7 @@ const getUserData = async (userId: string): Promise<FullUserData | null> => {
       throw error;
     }
     
-    return data as FullUserData;
+    return data as unknown as FullUserData; // Tipi düzəldək
   } catch (error) {
     console.error('Istifadəçi məlumatları alınarkən xəta:', error);
     return null;
@@ -135,7 +139,55 @@ export const useAuth = (): UseAuthReturn => {
     }
   };
   
-  // Reset password
+  // Reset password - email göndərmə funksiyası
+  const sendPasswordReset = async (email: string): Promise<boolean> => {
+    try {
+      setState(prev => ({ ...prev, loading: true }));
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        setState(prev => ({ ...prev, error, loading: false }));
+        return false;
+      }
+      
+      toast.success('Şifrə sıfırlama linki e-poçt adresinizə göndərildi');
+      return true;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error, loading: false }));
+      return false;
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  };
+  
+  // Şifrə sıfırlama təsdiqi funksiyası
+  const confirmPasswordReset = async (password: string): Promise<boolean> => {
+    try {
+      setState(prev => ({ ...prev, loading: true }));
+      
+      const { error } = await supabase.auth.updateUser({
+        password
+      });
+      
+      if (error) {
+        setState(prev => ({ ...prev, error, loading: false }));
+        return false;
+      }
+      
+      toast.success('Şifrəniz uğurla yeniləndi');
+      return true;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error, loading: false }));
+      return false;
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  };
+  
+  // Reset password (kompatibllik üçün)
   const resetPassword = async (email: string) => {
     try {
       setState(prev => ({ ...prev, loading: true }));
@@ -380,7 +432,10 @@ export const useAuth = (): UseAuthReturn => {
     updatePassword,
     clearError,
     isAuthenticated,
-    hasRole
+    hasRole,
+    isLoading: state.loading, // Əlavə edilən isLoading property
+    sendPasswordReset, // Əlavə edilən method
+    confirmPasswordReset // Əlavə edilən method
   };
 };
 

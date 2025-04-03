@@ -4,14 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 const ForgotPasswordForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { sendPasswordReset } = useAuth();
   const { t } = useLanguage();
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,16 +20,13 @@ const ForgotPasswordForm: React.FC = () => {
       const success = await sendPasswordReset(email);
       
       if (success) {
-        toast({
-          title: t('passwordResetEmailSent'),
-          description: t('checkYourEmailForPasswordReset'),
+        toast.success(t('passwordResetEmailSent'), {
+          description: t('checkYourEmailForPasswordReset')
         });
       }
     } catch (error) {
-      toast({
-        title: t('error'),
-        description: t('somethingWentWrong'),
-        variant: 'destructive',
+      toast.error(t('error'), {
+        description: t('somethingWentWrong')
       });
     } finally {
       setLoading(false);
