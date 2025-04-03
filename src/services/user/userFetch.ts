@@ -66,7 +66,7 @@ export const fetchUsers = async (
       id: userData.id,
       email: userData.email,
       name: userData.full_name,
-      role: userData.role as unknown as string, // role tipini təhlükəsiz çevririk
+      role: userData.role as unknown as string,
       status: userData.status,
       regionId: userData.user_roles?.[0]?.region_id || null,
       sectorId: userData.user_roles?.[0]?.sector_id || null,
@@ -148,6 +148,8 @@ export const getUserById = async (userId: string): Promise<any | null> => {
 
   return user;
 };
+
+export const getUser = getUserById;
 
 export const getUserByEmail = async (email: string): Promise<any | null> => {
   const { data, error } = await supabase
