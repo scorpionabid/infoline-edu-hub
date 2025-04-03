@@ -206,3 +206,7 @@ export const useRegionsData = () => {
     getEnhancedRegions
   };
 };
+
+// Əlavə etdiyimiz alias export, komponentlərdə useRegions() kimi çağırılmasına imkan verir
+export const useRegions = useRegionsData;
+
