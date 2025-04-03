@@ -22,7 +22,7 @@ interface AuthContextType {
   updatePassword: (password: string) => Promise<void>;
   updateUser: (userData: Partial<FullUserData>) => Promise<void>;
   clearError: () => void;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<Session | null>;  // Return type changed to Session | null
   getSession: () => Promise<Session | null>;
 }
 

@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 
-const useSectors = (regionId?: string) => {
+export const useSectors = (regionId?: string) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
