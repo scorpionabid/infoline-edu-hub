@@ -20,6 +20,11 @@ export interface ColumnValidation {
   minDate?: string;
   maxDate?: string;
   options?: string[] | ColumnOption[];
+  minValue?: number;
+  maxValue?: number;
+  format?: string;
+  regex?: string;
+  patternError?: string;
 }
 
 export interface Column {

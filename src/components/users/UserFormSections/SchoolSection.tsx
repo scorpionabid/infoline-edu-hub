@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
+import { UserRole } from '@/types/supabase';
 
 interface SchoolSectionProps {
   form: any;
@@ -21,10 +22,9 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
   hideSection = false,
 }) => {
   const { t } = useLanguage();
-
-  const shouldShow = !hideSection && (data.role === 'schooladmin' && data.sectorId);
-
-  if (!shouldShow) {
+  
+  // Don't show school for superadmin, regionadmin or if sector is not selected or if section is hidden
+  if (hideSection || data.role === 'superadmin' || data.role === 'regionadmin' || data.role === 'sectoradmin' || !data.sectorId) {
     return null;
   }
 

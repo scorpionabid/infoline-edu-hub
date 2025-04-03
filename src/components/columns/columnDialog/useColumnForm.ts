@@ -6,14 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Column, ColumnType, ColumnOption, adaptColumnToSupabase } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/types/supabase";
-import { ValidationRules } from "@/types/dataEntry";
 
 export const createFormSchema = (t: (key: string) => string) => {
   return z.object({
     name: z.string().min(1, { message: t("columnNameRequired") }),
     categoryId: z.string().min(1, { message: t("categoryRequired") }),
-    type: z.enum(["text", "number", "date", "select", "multiselect", "checkbox", "radio", "file", "image", "email", "phone", "boolean", "textarea"]),
+    type: z.enum(["text", "number", "date", "select", "multiselect", "checkbox", "radio", "file", "image", "email", "phone", "textarea"]) as z.ZodType<ColumnType>,
     isRequired: z.boolean().default(false),
     validationRules: z.object({
       minValue: z.number().optional(),
@@ -50,7 +48,7 @@ export const useColumnForm = (
   onAddColumn?: (newColumn: Omit<Column, "id">) => Promise<boolean>
 ) => {
   const { t } = useLanguage();
-  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type as ColumnType || "text");
+  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     editColumn?.options 
       ? Array.isArray(editColumn.options) 
@@ -95,7 +93,7 @@ export const useColumnForm = (
 
   useEffect(() => {
     if (isEditMode && editColumn) {
-      setSelectedType(editColumn.type as ColumnType);
+      setSelectedType(editColumn.type);
       
       if (editColumn.options) {
         setOptions(
@@ -108,7 +106,7 @@ export const useColumnForm = (
       form.reset({
         name: editColumn.name,
         categoryId: editColumn.categoryId,
-        type: editColumn.type as ColumnType,
+        type: editColumn.type,
         isRequired: editColumn.isRequired,
         validationRules: editColumn.validation as any,
         defaultValue: editColumn.defaultValue || "",
