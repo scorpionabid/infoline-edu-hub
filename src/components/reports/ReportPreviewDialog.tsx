@@ -31,13 +31,12 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   const handlePrint = () => {
     setLoading(prev => ({ ...prev, print: true }));
     
-    // Print prosesini simulyasiya et
     setTimeout(() => {
       setLoading(prev => ({ ...prev, print: false }));
       toast.success(t('printInitiated'), {
         description: t('printInitiatedDesc')
       });
-      // Real tətbiqdə window.print() əlavə edilə bilər
+      window.print();
     }, 1000);
   };
   
@@ -45,12 +44,39 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   const handleShare = () => {
     setLoading(prev => ({ ...prev, share: true }));
     
-    // Paylaşma prosesini simulyasiya et
     setTimeout(() => {
       setLoading(prev => ({ ...prev, share: false }));
-      toast.success(t('reportShared'), {
-        description: t('reportSharedDesc')
-      });
+      
+      // Paylaşma funksiyasını web API-ı ilə həyata keçirməyə cəhd et
+      if (navigator.share) {
+        navigator.share({
+          title: report.title || report.name,
+          text: report.description || t('reportShareDefaultText'),
+        })
+        .then(() => {
+          toast.success(t('reportShared'), {
+            description: t('reportSharedDesc')
+          });
+        })
+        .catch((error) => {
+          console.error('Paylaşma əməliyyatı zamanı xəta baş verdi:', error);
+          toast.error(t('shareError'), {
+            description: t('shareErrorDesc')
+          });
+        });
+      } else {
+        // Paylaşma API-ı mövcud deyilsə, URL-i kopyalama ilə dəstəklə
+        const textArea = document.createElement('textarea');
+        textArea.value = window.location.href;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        toast.success(t('urlCopied'), {
+          description: t('urlCopiedDesc')
+        });
+      }
     }, 1000);
   };
   
@@ -58,9 +84,10 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   const handleDownload = () => {
     setLoading(prev => ({ ...prev, download: true }));
     
-    // Yükləmə prosesini simulyasiya et
     setTimeout(() => {
       setLoading(prev => ({ ...prev, download: false }));
+      
+      // Faktiki excel ixracı burada olacaq
       toast.success(t('reportDownloaded'), {
         description: t('reportDownloadedDesc')
       });

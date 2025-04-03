@@ -24,6 +24,12 @@ export const useRegionsData = () => {
         case 'regionadmin':
           query = query.eq('id', user.regionId);
           break;
+        default:
+          // Digər rollar üçün standart qaydalar
+          if (user?.regionId) {
+            query = query.eq('id', user.regionId);
+          }
+          break;
       }
 
       const { data, error } = await query.order('name');
@@ -86,6 +92,38 @@ export const useRegionsData = () => {
 
   const deleteRegion = useCallback(async (regionId: string) => {
     try {
+      // Əvvəlcə region ilə əlaqəli sektorları və məktəbləri yoxla
+      const { count: sectorCount } = await supabase
+        .from('sectors')
+        .select('*', { count: 'exact', head: true })
+        .eq('region_id', regionId);
+      
+      const { count: schoolCount } = await supabase
+        .from('schools')
+        .select('*', { count: 'exact', head: true })
+        .eq('region_id', regionId);
+      
+      // Admin sayını yoxla
+      const { count: adminCount } = await supabase
+        .from('user_roles')
+        .select('*', { count: 'exact', head: true })
+        .eq('region_id', regionId);
+      
+      if (sectorCount && sectorCount > 0) {
+        toast.error(`Bu regionda ${sectorCount} sektor var. Əvvəlcə sektorları silin.`);
+        return false;
+      }
+      
+      if (schoolCount && schoolCount > 0) {
+        toast.error(`Bu regionda ${schoolCount} məktəb var. Əvvəlcə məktəbləri silin.`);
+        return false;
+      }
+      
+      // Regiona bağlı adminlər varsa xəbərdarlıq, lakin yenə də silməyə imkan ver
+      if (adminCount && adminCount > 0) {
+        toast.warning(`Bu regionla əlaqəli ${adminCount} admin var.`);
+      }
+      
       const { error } = await supabase
         .from('regions')
         .delete()
@@ -102,6 +140,56 @@ export const useRegionsData = () => {
       throw err;
     }
   }, []);
+  
+  // Region detallı məlumatlarını əldə et
+  const getEnhancedRegions = useCallback(async () => {
+    try {
+      const enhancedRegions = await Promise.all(
+        regions.map(async (region) => {
+          const [
+            { count: sectorCount },
+            { count: schoolCount },
+            { count: adminCount }
+          ] = await Promise.all([
+            supabase.from('sectors').select('*', { count: 'exact', head: true }).eq('region_id', region.id),
+            supabase.from('schools').select('*', { count: 'exact', head: true }).eq('region_id', region.id),
+            supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('region_id', region.id)
+          ]);
+          
+          // Ümumi tamamlanma dərəcəsini hesabla
+          const { data: schools } = await supabase
+            .from('schools')
+            .select('completion_rate')
+            .eq('region_id', region.id);
+          
+          let completionRate = 0;
+          if (schools && schools.length > 0) {
+            const totalRate = schools.reduce((sum, school) => sum + (school.completion_rate || 0), 0);
+            completionRate = Math.round(totalRate / schools.length);
+          }
+          
+          return {
+            ...region,
+            sectorCount: sectorCount || 0,
+            schoolCount: schoolCount || 0,
+            adminCount: adminCount || 0,
+            completionRate
+          };
+        })
+      );
+      
+      return enhancedRegions;
+    } catch (err) {
+      console.error('Genişləndirilmiş region məlumatlarını əldə edərkən xəta:', err);
+      return regions.map(region => ({
+        ...region,
+        sectorCount: 0,
+        schoolCount: 0,
+        adminCount: 0,
+        completionRate: 0
+      }));
+    }
+  }, [regions]);
 
   useEffect(() => {
     fetchRegions();
@@ -114,6 +202,7 @@ export const useRegionsData = () => {
     fetchRegions,
     createRegion,
     updateRegion,
-    deleteRegion
+    deleteRegion,
+    getEnhancedRegions
   };
 };

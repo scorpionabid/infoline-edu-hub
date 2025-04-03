@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { FormStatus } from '@/types/form';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface FormCardProps {
   id: string;
@@ -26,45 +27,59 @@ const FormCard: React.FC<FormCardProps> = ({
   deadline,
   onClick 
 }) => {
+  const { t } = useLanguage();
+  
   const statusConfig = {
     pending: { 
-      label: 'Gözləmədə', 
+      label: t('pending'), 
       icon: <Clock className="h-4 w-4" />, 
       variant: 'bg-amber-50 text-amber-700 border-amber-200' 
     },
     approved: { 
-      label: 'Təsdiqlənib', 
+      label: t('approved'), 
       icon: <CheckCircle2 className="h-4 w-4" />, 
       variant: 'bg-green-50 text-green-700 border-green-200' 
     },
     rejected: { 
-      label: 'Rədd edilib', 
+      label: t('rejected'), 
       icon: <XCircle className="h-4 w-4" />, 
       variant: 'bg-red-50 text-red-700 border-red-200' 
     },
     empty: { 
-      label: 'Boş', 
+      label: t('empty'), 
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-slate-50 text-slate-700 border-slate-200' 
     },
     due: { 
-      label: 'Vaxtı yaxınlaşır', 
+      label: t('dueSoon'), 
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-blue-50 text-blue-700 border-blue-200' 
     },
     overdue: { 
-      label: 'Vaxtı keçib', 
+      label: t('overdue'), 
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-rose-50 text-rose-700 border-rose-200' 
     },
     draft: { 
-      label: 'Qaralama', 
+      label: t('draft'), 
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-slate-50 text-slate-700 border-slate-200' 
     }
   };
 
   const isOverdue = deadline && new Date(deadline) < new Date();
+
+  // Format deadline to display in locale format
+  const formatDeadline = (deadline?: string) => {
+    if (!deadline) return '';
+    
+    try {
+      const date = new Date(deadline);
+      return date.toLocaleDateString();
+    } catch (error) {
+      return '';
+    }
+  };
 
   return (
     <Card className="w-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
@@ -95,18 +110,18 @@ const FormCard: React.FC<FormCardProps> = ({
           />
         </div>
         <div className="flex justify-between text-xs mt-1">
-          <span>{completionPercentage}% tamamlanıb</span>
+          <span>{completionPercentage}% {t('completed')}</span>
           {deadline && (
             <span className={cn("flex items-center gap-1", isOverdue ? "text-red-600" : "text-slate-600")}>
               <Calendar className="h-3 w-3" />
-              {isOverdue ? 'Gecikmiş' : new Date(deadline).toLocaleDateString('az-AZ')}
+              {isOverdue ? t('overdue') : formatDeadline(deadline)}
             </span>
           )}
         </div>
       </CardContent>
       <CardFooter className="pt-0">
         <Button variant="ghost" size="sm" className="w-full h-8 justify-between p-2">
-          <span>Məlumat daxil et</span>
+          <span>{t('enterData')}</span>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </CardFooter>

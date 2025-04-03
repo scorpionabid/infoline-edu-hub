@@ -1,13 +1,7 @@
 
 import React from 'react';
-import { 
-  DeleteDialog, 
-  EditDialog, 
-  AddDialog, 
-  AdminDialog 
-} from './school-dialogs';
-import { School } from '@/data/schoolsData';
-import { SchoolFormData } from '@/types/school-form';
+import { School } from '@/types/school';
+import { DeleteDialog, AddDialog, EditDialog, AdminDialog } from './school-dialogs';
 
 interface SchoolDialogsProps {
   isDeleteDialogOpen: boolean;
@@ -15,21 +9,21 @@ interface SchoolDialogsProps {
   isAddDialogOpen: boolean;
   isAdminDialogOpen: boolean;
   selectedSchool: School | null;
-  selectedAdmin: School | null;
+  selectedAdmin: any | null;
   closeDeleteDialog: () => void;
   closeEditDialog: () => void;
   closeAddDialog: () => void;
   closeAdminDialog: () => void;
   handleDeleteConfirm: () => void;
-  handleAddSubmit: () => void;
-  handleEditSubmit: () => void;
-  handleAdminUpdate: () => void;
-  handleResetPassword: (newPassword: string) => void;
-  formData: SchoolFormData;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  handleAddSubmit: (data: Omit<School, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  handleEditSubmit: (data: Partial<School>) => void;
+  handleAdminUpdate: (adminData: any) => void;
+  handleResetPassword: () => void;
+  formData: any;
+  handleFormChange: (field: string, value: any) => void;
   currentTab: string;
   setCurrentTab: (tab: string) => void;
-  filteredSectors: Array<{ id: string; name: string; regionId: string }>;
+  filteredSectors: { id: string; name: string; regionId: string }[];
 }
 
 const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
@@ -56,38 +50,47 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
 }) => {
   return (
     <>
-      <DeleteDialog 
-        isOpen={isDeleteDialogOpen} 
-        onClose={closeDeleteDialog} 
-        onConfirm={handleDeleteConfirm} 
+      {/* Məktəbi silmək üçün dialog */}
+      <DeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={closeDeleteDialog}
+        school={selectedSchool}
+        onDelete={handleDeleteConfirm}
       />
       
-      <AddDialog 
-        isOpen={isAddDialogOpen} 
-        onClose={closeAddDialog} 
-        onSubmit={handleAddSubmit} 
-        formData={formData} 
-        handleFormChange={handleFormChange} 
-        currentTab={currentTab} 
-        setCurrentTab={setCurrentTab} 
+      {/* Məktəbi redaktə etmək üçün dialog */}
+      <EditDialog
+        open={isEditDialogOpen}
+        onOpenChange={closeEditDialog}
+        school={selectedSchool}
+        onSubmit={handleEditSubmit}
+        formData={formData}
+        onChange={handleFormChange}
+        currentTab={currentTab}
+        onTabChange={setCurrentTab}
         filteredSectors={filteredSectors}
       />
       
-      <EditDialog 
-        isOpen={isEditDialogOpen} 
-        onClose={closeEditDialog} 
-        onSubmit={handleEditSubmit} 
-        formData={formData} 
-        handleFormChange={handleFormChange} 
+      {/* Yeni məktəb əlavə etmək üçün dialog */}
+      <AddDialog
+        open={isAddDialogOpen}
+        onOpenChange={closeAddDialog}
+        onSubmit={handleAddSubmit}
+        formData={formData}
+        onChange={handleFormChange}
+        currentTab={currentTab}
+        onTabChange={setCurrentTab}
         filteredSectors={filteredSectors}
       />
       
-      <AdminDialog 
-        isOpen={isAdminDialogOpen} 
-        onClose={closeAdminDialog} 
-        onUpdate={handleAdminUpdate} 
-        onResetPassword={handleResetPassword} 
-        selectedAdmin={selectedAdmin} 
+      {/* Məktəb admini idarə etmək üçün dialog */}
+      <AdminDialog
+        open={isAdminDialogOpen}
+        onOpenChange={closeAdminDialog}
+        school={selectedSchool}
+        admin={selectedAdmin}
+        onSubmit={handleAdminUpdate}
+        onResetPassword={handleResetPassword}
       />
     </>
   );

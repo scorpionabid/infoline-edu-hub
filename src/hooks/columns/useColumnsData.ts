@@ -24,7 +24,26 @@ export const useColumnsData = (categoryId?: string) => {
 
       if (error) throw error;
 
-      setColumns(data || []);
+      // Supabase-dən gələn datanı Column tipinə çevir
+      const formattedColumns = data?.map(col => ({
+        ...col,
+        id: col.id,
+        name: col.name,
+        type: col.type,
+        categoryId: col.category_id,
+        isRequired: col.is_required,
+        placeholder: col.placeholder || '',
+        helpText: col.help_text || '',
+        defaultValue: col.default_value || '',
+        orderIndex: col.order_index || 0,
+        options: col.options || [],
+        validation: col.validation || {},
+        status: col.status || 'active',
+        createdAt: col.created_at,
+        updatedAt: col.updated_at
+      })) || [];
+
+      setColumns(formattedColumns);
       setIsLoading(false);
     } catch (err: any) {
       console.error('Sütunları yükləyərkən xəta:', err);
@@ -35,24 +54,59 @@ export const useColumnsData = (categoryId?: string) => {
   }, [categoryId]);
 
   // Yeni sütun yaratma
-  const createColumn = useCallback(async (columnData: Omit<Column, 'id'>) => {
+  const createColumn = useCallback(async (columnData: Omit<Column, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      // ColumnData-nı Supabase formatına çevir
+      const supabaseColumnData = {
+        id: uuid(),
+        name: columnData.name,
+        type: columnData.type,
+        category_id: columnData.categoryId,
+        is_required: columnData.isRequired,
+        placeholder: columnData.placeholder || '',
+        help_text: columnData.helpText || '',
+        default_value: columnData.defaultValue || '',
+        order_index: columnData.orderIndex || 0,
+        options: columnData.options || [],
+        validation: columnData.validation || {},
+        status: columnData.status || 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('columns')
-        .insert({
-          ...columnData,
-          id: uuid(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(supabaseColumnData)
         .select()
         .single();
 
       if (error) throw error;
 
-      setColumns(prev => [...prev, data]);
+      // Supabase-dən gələn datanı Column tipinə çevir
+      const newColumn: Column = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        categoryId: data.category_id,
+        isRequired: data.is_required,
+        placeholder: data.placeholder || '',
+        helpText: data.help_text || '',
+        defaultValue: data.default_value || '',
+        orderIndex: data.order_index || 0,
+        options: data.options || [],
+        validation: data.validation || {},
+        status: data.status || 'active',
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+
+      setColumns(prev => [...prev, newColumn]);
       toast.success('Sütun uğurla yaradıldı');
-      return data;
+      
+      // Kateqoriyanın sütun sayını artır
+      await updateCategoryColumnCount(columnData.categoryId, 1);
+      
+      return newColumn;
     } catch (err: any) {
       console.error('Sütun yaradılarkən xəta:', err);
       toast.error('Sütun yaradılarkən xəta baş verdi');
@@ -63,24 +117,55 @@ export const useColumnsData = (categoryId?: string) => {
   // Sütunu yeniləmə
   const updateColumn = useCallback(async (columnData: Column) => {
     try {
+      // ColumnData-nı Supabase formatına çevir
+      const supabaseColumnData = {
+        name: columnData.name,
+        type: columnData.type,
+        category_id: columnData.categoryId,
+        is_required: columnData.isRequired,
+        placeholder: columnData.placeholder || '',
+        help_text: columnData.helpText || '',
+        default_value: columnData.defaultValue || '',
+        order_index: columnData.orderIndex || 0,
+        options: columnData.options || [],
+        validation: columnData.validation || {},
+        status: columnData.status || 'active',
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('columns')
-        .update({
-          ...columnData,
-          updated_at: new Date().toISOString()
-        })
+        .update(supabaseColumnData)
         .eq('id', columnData.id)
         .select()
         .single();
 
       if (error) throw error;
 
+      // Supabase-dən gələn datanı Column tipinə çevir
+      const updatedColumn: Column = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        categoryId: data.category_id,
+        isRequired: data.is_required,
+        placeholder: data.placeholder || '',
+        helpText: data.help_text || '',
+        defaultValue: data.default_value || '',
+        orderIndex: data.order_index || 0,
+        options: data.options || [],
+        validation: data.validation || {},
+        status: data.status || 'active',
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+
       setColumns(prev => prev.map(col => 
-        col.id === columnData.id ? data : col
+        col.id === columnData.id ? updatedColumn : col
       ));
       
       toast.success('Sütun uğurla yeniləndi');
-      return data;
+      return updatedColumn;
     } catch (err: any) {
       console.error('Sütun yenilənərkən xəta:', err);
       toast.error('Sütun yenilənərkən xəta baş verdi');
@@ -91,6 +176,10 @@ export const useColumnsData = (categoryId?: string) => {
   // Sütunu silmə
   const deleteColumn = useCallback(async (columnId: string) => {
     try {
+      // Silinən sütunun kateqoriya ID-sini əldə et
+      const column = columns.find(col => col.id === columnId);
+      const categoryId = column?.categoryId;
+      
       const { error } = await supabase
         .from('columns')
         .delete()
@@ -100,13 +189,40 @@ export const useColumnsData = (categoryId?: string) => {
 
       setColumns(prev => prev.filter(col => col.id !== columnId));
       toast.success('Sütun uğurla silindi');
+      
+      // Kateqoriyanın sütun sayını azalt
+      if (categoryId) {
+        await updateCategoryColumnCount(categoryId, -1);
+      }
+      
       return true;
     } catch (err: any) {
       console.error('Sütun silinərkən xəta:', err);
       toast.error('Sütun silinərkən xəta baş verdi');
       throw err;
     }
-  }, []);
+  }, [columns]);
+  
+  // Kateqoriyanın sütun sayını yeniləmə
+  const updateCategoryColumnCount = async (categoryId: string, change: number) => {
+    try {
+      const { data } = await supabase
+        .from('categories')
+        .select('column_count')
+        .eq('id', categoryId)
+        .single();
+      
+      const currentCount = data?.column_count || 0;
+      const newCount = Math.max(0, currentCount + change); // Neqativ olmadığından əmin ol
+      
+      await supabase
+        .from('categories')
+        .update({ column_count: newCount })
+        .eq('id', categoryId);
+    } catch (err) {
+      console.error('Kateqoriyanın sütun sayını yeniləyərkən xəta:', err);
+    }
+  };
 
   // Komponentin ilkin yüklənməsi zamanı
   useEffect(() => {
