@@ -1,132 +1,134 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
-export const useSectors = (regionId?: string) => {
+const useSectors = (regionId?: string) => {
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
 
   const fetchSectors = async () => {
     setLoading(true);
+    setError(null);
     try {
-      let query = supabase
-        .from('sectors')
-        .select('*')
-        .order('name');
-      
+      let query = supabase.from('sectors').select('*');
       if (regionId) {
         query = query.eq('region_id', regionId);
       }
-
       const { data, error } = await query;
-
-      if (error) throw error;
-      
-      setSectors(data as Sector[]);
-    } catch (err: any) {
-      console.error('Error fetching sectors:', err);
-      setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadSectors')
+      if (error) {
+        throw error;
+      }
+      setSectors(data || []);
+    } catch (error: any) {
+      setError(error);
+      toast.error(t('failedToFetchSectors'), {
+        description: error.message
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const addSector = async (sector: Omit<Sector, 'id' | 'created_at' | 'updated_at'>) => {
+  useEffect(() => {
+    fetchSectors();
+  }, [regionId, t]);
+
+  const addSectors = async (sectorsData: Omit<Sector, 'id' | 'created_at' | 'updated_at'>[]) => {
     try {
+      // Burada Sector tipinin tələblərinə uyğun obyektlər yaradırıq
+      const formattedSectors = sectorsData.map(sector => ({
+        name: sector.name,
+        region_id: sector.region_id,
+        description: sector.description,
+        status: sector.status || 'active',
+        admin_email: sector.admin_email
+      }));
+
       const { data, error } = await supabase
         .from('sectors')
-        .insert([sector])
-        .select()
-        .single();
+        .insert(formattedSectors);
 
-      if (error) throw error;
-      
-      setSectors(prev => [...prev, data as Sector]);
-      toast.success(t('sectorAdded'), {
-        description: t('sectorAddedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error adding sector:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotAddSector')
-      });
-      throw err;
+      if (error) {
+        throw error;
+      }
+
+      await fetchSectors();
+      return true;
+    } catch (error) {
+      console.error('Sektorları əlavə edərkən xəta:', error);
+      return false;
     }
   };
 
   const updateSector = async (id: string, updates: Partial<Sector>) => {
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('sectors')
         .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setSectors(prev => prev.map(sector => 
-        sector.id === id ? { ...sector, ...data } as Sector : sector
-      ));
-      
+        .eq('id', id);
+      if (error) {
+        throw error;
+      }
+      setSectors(prevSectors =>
+        prevSectors.map(sector => (sector.id === id ? { ...sector, ...updates } : sector))
+      );
       toast.success(t('sectorUpdated'), {
         description: t('sectorUpdatedDesc')
       });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error updating sector:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotUpdateSector')
+      return true;
+    } catch (error: any) {
+      setError(error);
+      toast.error(t('sectorUpdateFailed'), {
+        description: error.message
       });
-      throw err;
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteSector = async (id: string) => {
+    setLoading(true);
+    setError(null);
     try {
       const { error } = await supabase
         .from('sectors')
         .delete()
         .eq('id', id);
-
-      if (error) throw error;
-      
-      setSectors(prev => prev.filter(sector => sector.id !== id));
-      
+      if (error) {
+        throw error;
+      }
+      setSectors(prevSectors => prevSectors.filter(sector => sector.id !== id));
       toast.success(t('sectorDeleted'), {
         description: t('sectorDeletedDesc')
       });
-    } catch (err: any) {
-      console.error('Error deleting sector:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteSector')
+      return true;
+    } catch (error: any) {
+      setError(error);
+      toast.error(t('sectorDeleteFailed'), {
+        description: error.message
       });
-      throw err;
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchSectors();
-  }, [regionId]);
 
   return {
     sectors,
     loading,
     error,
     fetchSectors,
-    addSector,
+    addSectors,
     updateSector,
-    deleteSector
+    deleteSector,
   };
 };
+
+export default useSectors;

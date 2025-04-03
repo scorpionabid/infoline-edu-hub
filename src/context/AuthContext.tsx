@@ -7,15 +7,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from './LanguageContext';
 import { FullUserData } from '@/types/supabase';
 
+// Təyin oluna bilən rol tipləri
+export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: FullUserData | null;
   session: Session | null;
+  error: Error | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  updateUser: (userData: Partial<FullUserData>) => Promise<void>;
+  clearError: () => void;
+  refreshSession: () => Promise<void>;
+  getSession: () => Promise<Session | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,8 +33,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [user, setUser] = useState<FullUserData | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  // Xətanı təmizləmək
+  const clearError = () => {
+    setError(null);
+  };
 
   // İstifadəçi sessiyasını yoxlamaq
   const checkUserSession = async () => {
@@ -61,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Sessiya yoxlanışı zamanı xəta:', error);
       setUser(null);
       setIsAuthenticated(false);
+      setError(error as Error);
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', error);
             setUser(null);
             setIsAuthenticated(false);
+            setError(error as Error);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -115,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      clearError();
       
       // Supabase-də login
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -147,6 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: errorMessage
       });
       
+      setError(error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -174,6 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(t('logoutError'), {
         description: error.message
       });
+      setError(error);
     } finally {
       setIsLoading(false);
     }
@@ -183,6 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     try {
       setIsLoading(true);
+      clearError();
       
       // Şifrə sıfırlama linki göndərmək
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -201,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(t('resetPasswordError'), {
         description: error.message
       });
+      setError(error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -211,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updatePassword = async (password: string) => {
     try {
       setIsLoading(true);
+      clearError();
       const { error } = await supabase.auth.updateUser({
         password,
       });
@@ -228,9 +250,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(t('passwordUpdateError'), {
         description: error.message
       });
+      setError(error);
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // İstifadəçi məlumatlarını yeniləmək
+  const updateUser = async (userData: Partial<FullUserData>) => {
+    try {
+      setIsLoading(true);
+      clearError();
+
+      // TODO: Burada profile update əməliyyatı həyata keçiriləcək
+      // Bu hal-hazırda implementasiya olunmayıb
+      
+      // Uğurlu yeniləmə
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+      toast.success(t('profileUpdated'));
+      
+    } catch (error: any) {
+      console.error('Profil yeniləmə xətası:', error);
+      toast.error(t('profileUpdateError'), {
+        description: error.message
+      });
+      setError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Sessiyanı yeniləmək
+  const refreshSession = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setSession(data.session);
+      return data.session;
+    } catch (error: any) {
+      console.error('Sessiya yeniləmə xətası:', error);
+      setError(error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Cari sessiyanı əldə etmək
+  const getSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setSession(data.session);
+      return data.session;
+    } catch (error: any) {
+      console.error('Sessiyanı əldə etmə xətası:', error);
+      setError(error);
+      return null;
     }
   };
 
@@ -240,10 +326,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading,
     user,
     session,
+    error,
     login,
     logout,
     resetPassword,
     updatePassword,
+    updateUser,
+    clearError,
+    refreshSession,
+    getSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -256,4 +347,21 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+// Rol yoxlama hook'u
+export const useRole = (requiredRoles: Role | Role[]): boolean => {
+  const { user } = useAuth();
+  
+  if (!user || !user.role) {
+    return false;
+  }
+  
+  // Əgər tək rol yoxlanılırsa
+  if (typeof requiredRoles === 'string') {
+    return user.role === requiredRoles;
+  }
+  
+  // Əgər rol massivi yoxlanılırsa
+  return requiredRoles.includes(user.role as Role);
 };

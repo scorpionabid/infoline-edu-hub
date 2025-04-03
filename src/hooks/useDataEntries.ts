@@ -1,303 +1,160 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 import { DataEntry } from '@/types/supabase';
-import { useAuth } from '@/context/AuthContext';
 
-export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
-  const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
+  const [entries, setEntries] = useState<DataEntry[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { t } = useLanguage();
-  const { user } = useAuth();
 
-  const fetchDataEntries = useCallback(async () => {
+  const fetchEntries = async () => {
     setLoading(true);
-    try {
-      let query = supabase
-        .from('data_entries')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (schoolId) {
-        query = query.eq('school_id', schoolId);
-      } else if (user?.schoolId) {
-        query = query.eq('school_id', user.schoolId);
-      }
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-      
-      if (columnId) {
-        query = query.eq('column_id', columnId);
-      }
+    setError(null);
 
+    let query = supabase
+      .from('data_entries')
+      .select('*');
+
+    if (schoolId) {
+      query = query.eq('school_id', schoolId);
+    }
+
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+
+    if (columnId) {
+      query = query.eq('column_id', columnId);
+    }
+
+    try {
       const { data, error } = await query;
 
-      if (error) throw error;
-      
-      setDataEntries(data as DataEntry[]);
-    } catch (err: any) {
-      console.error('Error fetching data entries:', err);
-      setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadDataEntries')
-      });
+      if (error) {
+        throw error;
+      }
+
+      setEntries(data || []);
+    } catch (error: any) {
+      setError(error);
     } finally {
       setLoading(false);
-    }
-  }, [schoolId, categoryId, columnId, user, t]);
-
-  const addDataEntry = async (dataEntry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      const entryWithSchoolId = {
-        ...dataEntry,
-        school_id: dataEntry.school_id || user?.schoolId,
-        created_by: user?.id,
-        status: 'pending'
-      };
-
-      const { data, error } = await supabase
-        .from('data_entries')
-        .insert([entryWithSchoolId])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setDataEntries(prev => [data as DataEntry, ...prev]);
-      toast.success(t('dataEntrySaved'), {
-        description: t('dataEntrySavedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error adding data entry:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotSaveData')
-      });
-      throw err;
-    }
-  };
-
-  const updateDataEntry = async (id: string, updates: Partial<DataEntry>) => {
-    try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setDataEntries(prev => prev.map(entry => 
-        entry.id === id ? { ...entry, ...data } as DataEntry : entry
-      ));
-      
-      toast.success(t('dataEntryUpdated'), {
-        description: t('dataEntryUpdatedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error updating data entry:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotUpdateData')
-      });
-      throw err;
-    }
-  };
-
-  const deleteDataEntry = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setDataEntries(prev => prev.filter(entry => entry.id !== id));
-      
-      toast.success(t('dataEntryDeleted'), {
-        description: t('dataEntryDeletedDesc')
-      });
-    } catch (err: any) {
-      console.error('Error deleting data entry:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteData')
-      });
-      throw err;
-    }
-  };
-
-  const approveDataEntry = async (id: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({ status: 'approved' })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setDataEntries(prev => prev.map(entry => 
-        entry.id === id ? { ...entry, ...data } as DataEntry : entry
-      ));
-      
-      toast.success(t('dataEntryApproved'), {
-        description: t('dataEntryApprovedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error approving data entry:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotApproveData')
-      });
-      throw err;
-    }
-  };
-
-  const rejectDataEntry = async (id: string, rejectionReason: string) => {
-    try {
-      if (!rejectionReason) {
-        throw new Error('Rejection reason is required');
-      }
-
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({ 
-          status: 'rejected',
-          rejection_reason: rejectionReason
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setDataEntries(prev => prev.map(entry => 
-        entry.id === id ? { ...entry, ...data } as DataEntry : entry
-      ));
-      
-      toast.success(t('dataEntryRejected'), {
-        description: t('dataEntryRejectedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error rejecting data entry:', err);
-      toast.error(t('errorOccurred'), {
-        description: err.message || t('couldNotRejectData')
-      });
-      throw err;
-    }
-  };
-
-  const getApprovalStatus = async (schoolId: string, categoryId?: string) => {
-    try {
-      let query = supabase
-        .from('data_entries')
-        .select('status')
-        .eq('school_id', schoolId);
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      const statusCounts = {
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        total: 0
-      };
-      
-      if (data && data.length > 0) {
-        data.forEach((item: any) => {
-          const status = item.status as keyof typeof statusCounts;
-          if (status in statusCounts) {
-            statusCounts[status] += 1;
-            statusCounts.total += 1;
-          }
-        });
-      }
-      
-      return statusCounts;
-    } catch (err) {
-      console.error('Error fetching approval status:', err);
-      throw err;
-    }
-  };
-
-  const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
-    try {
-      if (!categoryId || !schoolId) {
-        throw new Error('Category ID and School ID are required');
-      }
-
-      // RPC çağırışı yerinə birbaşa sorğu edirik
-      const { data: entries, error: entriesError } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-
-      if (entriesError) throw entriesError;
-      
-      if (!entries || entries.length === 0) {
-        throw new Error('No data entries found for this category');
-      }
-      
-      // Bütün məlumatları 'pending' statusuna yeniləyirik
-      const { error: updateError } = await supabase
-        .from('data_entries')
-        .update({ status: 'pending' })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-        
-      if (updateError) throw updateError;
-      
-      await fetchDataEntries();
-      
-      toast.success(t('categorySubmitted'), {
-        description: t('categorySubmittedDesc')
-      });
-      
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error submitting category for approval:', err);
-      toast.error(t('errorOccurred'), {
-        description: err.message || t('couldNotSubmitCategory')
-      });
-      throw err;
     }
   };
 
   useEffect(() => {
-    fetchDataEntries();
-  }, [fetchDataEntries]);
+    fetchEntries();
+  }, [schoolId, categoryId, columnId]);
+
+  const addEntry = async (entry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .insert([entry]);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchEntries();
+      return true;
+    } catch (error: any) {
+      setError(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateEntry = async (id: string, updates: Partial<DataEntry>) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchEntries();
+      return true;
+    } catch (error: any) {
+      setError(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteEntry = async (id: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchEntries();
+      return true;
+    } catch (error: any) {
+      setError(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addEntries = async (entries: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>[]) => {
+    try {
+      // Təqdim edilən məlumatların tipini yoxlayaq və düzəldək
+      const formattedEntries = entries.map(entry => ({
+        category_id: entry.category_id,
+        column_id: entry.column_id, 
+        school_id: entry.school_id,
+        created_by: entry.created_by,
+        status: entry.status || 'pending',
+        value: entry.value
+      }));
+
+      const { data, error } = await supabase
+        .from('data_entries')
+        .insert(formattedEntries);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchEntries();
+      return true;
+    } catch (error) {
+      console.error('Məlumatları əlavə edərkən xəta:', error);
+      return false;
+    }
+  };
 
   return {
-    dataEntries,
+    entries,
     loading,
     error,
-    fetchDataEntries,
-    addDataEntry,
-    updateDataEntry,
-    deleteDataEntry,
-    getApprovalStatus,
-    approveDataEntry,
-    rejectDataEntry,
-    submitCategoryForApproval
+    fetchEntries,
+    addEntry,
+    updateEntry,
+    deleteEntry,
+    addEntries
   };
 };
+
+export default useDataEntries;
