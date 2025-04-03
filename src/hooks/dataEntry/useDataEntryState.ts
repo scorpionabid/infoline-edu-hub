@@ -19,6 +19,7 @@ export const useDataEntryState = () => {
   });
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [errors, setErrors] = useState<Array<{columnId: string, message: string}>>([]);
+  const [isReady, setIsReady] = useState(false); // Yeni state: komponent yüklənməyə hazır olduğunu göstərir
 
   return {
     dataEntries,
@@ -31,6 +32,7 @@ export const useDataEntryState = () => {
     formData,
     isAutoSaving,
     errors,
+    isReady,
     setDataEntries,
     setCategoryStatus,
     setUnsavedChanges,
@@ -40,6 +42,7 @@ export const useDataEntryState = () => {
     setCurrentCategoryIndex,
     setFormData,
     setIsAutoSaving,
-    setErrors
+    setErrors,
+    setIsReady
   };
 };

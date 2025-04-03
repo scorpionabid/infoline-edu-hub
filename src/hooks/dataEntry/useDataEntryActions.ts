@@ -3,18 +3,20 @@ import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 import { Column } from '@/types/column';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface UseDataEntryActionsProps {
   categoryId?: string;
   schoolId?: string;
   user: any;
   dataEntries: Record<string, DataEntry>;
-  setDataEntries: (data: Record<string, DataEntry> | ((prev: Record<string, DataEntry>) => Record<string, DataEntry>)) => void;
+  setDataEntries: (entries: Record<string, DataEntry>) => void;
   setCategoryStatus: (status: DataEntryStatus) => void;
-  setUnsavedChanges: (value: boolean) => void;
-  setSubmitting: (value: boolean) => void;
-  entries: DataEntry[];
-  submitCategoryForApproval: (categoryId: string, schoolId: string) => Promise<boolean>;
+  setUnsavedChanges: (hasChanges: boolean) => void;
+  setSubmitting: (isSubmitting: boolean) => void;
+  entries?: any[];
+  submitCategoryForApproval?: (categoryId: string, schoolId: string) => Promise<boolean>;
   setFormData: (data: any) => void;
   columns: Column[];
 }
@@ -28,144 +30,135 @@ export const useDataEntryActions = ({
   setCategoryStatus,
   setUnsavedChanges,
   setSubmitting,
-  entries,
+  entries = [],
   submitCategoryForApproval,
   setFormData,
   columns
 }: UseDataEntryActionsProps) => {
-  const handleDataChange = useCallback(
-    async (columnId: string, value: string) => {
-      if (!categoryId || !schoolId || !user) {
-        console.error('Məlumat dəyişikliyi üçün lazımi məlumatlar çatışmır');
-        return null;
-      }
+  const { t } = useLanguage();
 
-      setUnsavedChanges(true);
-
-      // Burada idempotent bir ID yaradaq və məlumatları yeniləyək
-      const entryId = dataEntries[columnId]?.id || `temp-${uuidv4()}`;
+  // Sütun üçün məlumat daxil etmə əməliyyatı
+  const handleDataChange = useCallback((columnId: string, value: string) => {
+    setDataEntries(prev => {
+      // Mövcud daxiletmə əməliyyatını yoxlayırıq
+      const existingEntry = prev[columnId];
       
-      // Əmin olaq ki, id həmişə təyin olunub və optional deyil
-      setDataEntries(prev => ({
+      // ID hər zaman təyin olunmalıdır, mövcuddursa istifadə et, yoxdursa yeni yarat
+      const entryId = existingEntry?.id || uuidv4();
+      
+      return {
         ...prev,
         [columnId]: {
-          id: entryId, 
+          id: entryId,                   // ID həmişə olmalıdır
+          category_id: categoryId || '',
           column_id: columnId,
-          category_id: categoryId,
-          school_id: schoolId,
-          value: value,
-          status: dataEntries[columnId]?.status || 'pending',
-          created_by: user.id,
-        } as DataEntry, // Tip düzəltməsi
-      }));
+          school_id: schoolId || '',
+          value,
+          status: existingEntry?.status || 'draft',
+          created_by: user?.id,
+          updated_at: new Date().toISOString(),
+          created_at: existingEntry?.created_at || new Date().toISOString(),
+        } as DataEntry
+      };
+    });
+    
+    setUnsavedChanges(true);
+  }, [categoryId, schoolId, user, setDataEntries, setUnsavedChanges]);
 
-      // Mövcud və ya yeni bir məlumat daxil edilərsə müvafiq əməliyyat yerinə yetirək
-      if (dataEntries[columnId] && dataEntries[columnId].id && !dataEntries[columnId].id.startsWith('temp-')) {
-        try {
-          // updateEntry funksiyası artıq mövcud olmadığından bu hissəni commenz alıb saxlayırıq
-          // Gerçək tətbiqlərdə burada serverlə əlaqə yaradılmalıdır
-          // await updateEntry(dataEntries[columnId].id, { value });
-          setUnsavedChanges(false);
-          return dataEntries[columnId];
-        } catch (err) {
-          console.error('Məlumat yeniləmə xətası:', err);
-          return null;
-        }
-      } else {
-        try {
-          const newEntryData = {
-            id: entryId, // id xassəsi təyin edilib
-            column_id: columnId,
-            category_id: categoryId,
-            school_id: schoolId,
-            value: value,
-            status: 'pending',
-            created_by: user.id,
-          } as DataEntry;
-          
-          // addEntry funksiyası artıq mövcud olmadığından bu hissəni commenz alıb saxlayırıq
-          // Gerçək tətbiqlərdə burada serverlə əlaqə yaradılmalıdır
-          // const newEntry = await addEntry(newEntryData);
-          setDataEntries(prev => ({
-            ...prev,
-            [columnId]: newEntryData,
-          }));
-          setUnsavedChanges(false);
-          return newEntryData;
-        } catch (err) {
-          console.error('Məlumat əlavə etmə xətası:', err);
-          return null;
-        }
-      }
-    },
-    [categoryId, schoolId, user, dataEntries, setDataEntries, setUnsavedChanges]
-  );
-
+  // Təsdiq üçün göndərmə əməliyyatı
   const handleSubmitForApproval = useCallback(async () => {
     if (!categoryId || !schoolId) {
-      console.error('Təsdiq üçün lazımi məlumatlar çatışmır');
+      toast.error(t('missingRequiredData'));
       return false;
     }
 
-    setSubmitting(true);
     try {
-      const requiredColumns = columns.filter(col => col.isRequired);
-      const allRequiredFilled = requiredColumns.every(col => 
-        dataEntries[col.id] && dataEntries[col.id].value && dataEntries[col.id].value.trim() !== ''
-      );
+      setSubmitting(true);
+      
+      // Məlumatların yoxlanılması 
+      const missingRequired = columns
+        .filter(col => col.isRequired)
+        .some(col => {
+          const entry = dataEntries[col.id];
+          return !entry || !entry.value;
+        });
 
-      if (!allRequiredFilled) {
-        throw new Error('Bütün məcburi sahələr doldurulmalıdır');
+      if (missingRequired) {
+        toast.error(t('fillRequiredFields'));
+        return false;
       }
-
-      const success = await submitCategoryForApproval(categoryId, schoolId);
+      
+      // Server-ə göndərmə
+      const success = await submitCategoryForApproval?.(categoryId, schoolId);
+      
       if (success) {
         setCategoryStatus('pending');
+        setUnsavedChanges(false);
+        toast.success(t('submittedForApproval'));
+        
+        // Form məlumatlarını yenilə
         setFormData(prev => ({
           ...prev,
-          status: 'submitted'
+          status: 'pending' as DataEntryStatus,
+          lastSaved: new Date().toISOString()
         }));
+        
+        return true;
+      } else {
+        toast.error(t('errorSubmittingForm'));
+        return false;
       }
-      return success;
-    } catch (err) {
-      console.error('Təsdiq prosesi zamanı xəta:', err);
+    } catch (error) {
+      console.error('Təsdiq üçün göndərmədə xəta:', error);
+      toast.error(t('errorSubmittingForm'));
       return false;
     } finally {
       setSubmitting(false);
     }
-  }, [categoryId, schoolId, columns, dataEntries, submitCategoryForApproval, setSubmitting, setCategoryStatus, setFormData]);
+  }, [
+    categoryId, 
+    schoolId, 
+    t, 
+    columns, 
+    dataEntries, 
+    submitCategoryForApproval, 
+    setSubmitting, 
+    setCategoryStatus, 
+    setUnsavedChanges,
+    setFormData
+  ]);
 
-  const fetchDataEntriesForCategory = useCallback(async () => {
+  // Kateqoriya üçün mövcud məlumatları yüklə
+  const fetchDataEntriesForCategory = useCallback(() => {
     if (!categoryId || !schoolId) return;
-
-    try {
-      const categoryEntries = entries.filter(
-        entry => entry.category_id === categoryId && entry.school_id === schoolId
-      );
-
-      const entriesMap: Record<string, DataEntry> = {};
-      categoryEntries.forEach(entry => {
-        entriesMap[entry.column_id] = {
-          ...entry,
-          status: (entry.status as DataEntryStatus) || 'draft',
+    
+    // Burada API çağırışı olacaq, hələlik dummy data ilə əvəz edirik
+    const dummyEntries = entries.reduce((acc, entry) => {
+      if (entry.category_id === categoryId && entry.school_id === schoolId) {
+        return {
+          ...acc,
+          [entry.column_id]: {
+            id: entry.id,
+            category_id: entry.category_id,
+            column_id: entry.column_id,
+            school_id: entry.school_id,
+            value: entry.value,
+            status: entry.status,
+            created_at: entry.created_at,
+            updated_at: entry.updated_at,
+            created_by: entry.created_by
+          } as DataEntry
         };
-      });
-
-      setDataEntries(entriesMap);
-
-      if (categoryEntries.length > 0) {
-        if (categoryEntries.some(entry => entry.status === 'rejected')) {
-          setCategoryStatus('rejected');
-        } else if (categoryEntries.every(entry => entry.status === 'approved')) {
-          setCategoryStatus('approved');
-        } else {
-          setCategoryStatus('pending');
-        }
-      } else {
-        setCategoryStatus('draft');
       }
-    } catch (err) {
-      console.error('Məlumatları əldə edərkən xəta:', err);
+      return acc;
+    }, {} as Record<string, DataEntry>);
+    
+    setDataEntries(dummyEntries);
+    
+    // Status-u təyin et
+    const categoryEntry = entries.find(e => e.category_id === categoryId);
+    if (categoryEntry) {
+      setCategoryStatus(categoryEntry.status as DataEntryStatus);
     }
   }, [categoryId, schoolId, entries, setDataEntries, setCategoryStatus]);
 

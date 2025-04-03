@@ -53,6 +53,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     formData,
     isAutoSaving,
     errors,
+    isReady,
     setDataEntries,
     setCategoryStatus,
     setUnsavedChanges,
@@ -62,7 +63,8 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     setCurrentCategoryIndex,
     setFormData,
     setIsAutoSaving,
-    setErrors
+    setErrors,
+    setIsReady
   } = useDataEntryState();
 
   // Məlumat daxiletmə əməliyyatları
@@ -99,11 +101,22 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
   // Kateqoriya məlumatlarını yüklə
   const refreshData = useCallback(() => {
-    fetchCategoryData();
-    if (!entriesLoading) {
-      fetchDataEntriesForCategory();
+    console.log('Məlumatlar yenilənir... CategoryID:', categoryId);
+    if (categoryId) {
+      fetchCategoryData();
+      
+      // Məlumatlar hazır olduqda fetchDataEntriesForCategory() çağrılacaq
+      // Bu əlavə məlumatları yükləmə prosesini optimallaşdırmaq üçündür
+      if (!entriesLoading) {
+        fetchDataEntriesForCategory();
+      }
+    } else {
+      console.warn('categoryId təyin edilməyib');
     }
-  }, [fetchCategoryData, entriesLoading, fetchDataEntriesForCategory]);
+    
+    // Component-in hazır olduğunu bildir
+    setIsReady(true);
+  }, [categoryId, fetchCategoryData, entriesLoading, fetchDataEntriesForCategory, setIsReady]);
 
   return {
     // Vəziyyət
@@ -123,6 +136,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     isAutoSaving,
     isSubmitting: submitting,
     isLoading: loading,
+    isReady,
     errors,
     
     // Əməliyyatlar

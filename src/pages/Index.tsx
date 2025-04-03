@@ -1,76 +1,75 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
 import { ArrowRight, ChartBar, ClipboardList, Database, School } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
 
 const Index: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { isAuthenticated, user, isLoading } = useAuth();
-  const [redirecting, setRedirecting] = useState(false);
-
+  
   useEffect(() => {
-    console.log('Index səhifəsi yükləndi. İstifadəçi:', user?.role);
-    console.log('İstifadəçi autentifikasiya vəziyyəti:', isAuthenticated ? 'Daxil olub' : 'Daxil olmayıb');
-    console.log('Yüklənir:', isLoading);
-
-    // İstifadəçi artıq daxil olubsa və yüklənmə tamamlanıbsa
-    if (isAuthenticated && !isLoading && !redirecting) {
-      console.log('İstifadəçi daxil olub, dashboard-a yönləndirilir');
-      setRedirecting(true);
-      
-      // Timeout əlavə edək ki, state yenilənsin və sonra yönləndirək
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 100);
+    // İstifadəçi autentifikasiya olduqda və yüklənmə başa çatdıqda
+    if (isAuthenticated && !isLoading) {
+      // Dashboard-a yönləndir
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, isLoading, navigate, user, redirecting]);
-
+  }, [isAuthenticated, isLoading, navigate]);
+  
   const featureCards = [
     {
-      title: "Məktəb İdarəetməsi",
-      description: "Məktəbləri əlavə edin, redaktə edin və idarə edin.",
+      title: t('schools'),
+      description: t('schoolsDescription'),
       icon: <School className="h-8 w-8 text-primary" />,
       path: "/schools"
     },
     {
-      title: "Məlumat Daxil Etmə",
-      description: "Məktəb məlumatlarının daxil edilməsi və təsdiqlənməsi.",
+      title: t('dataEntry'),
+      description: t('dataEntryDescription'),
       icon: <ClipboardList className="h-8 w-8 text-primary" />,
       path: "/data-entry"
     },
     {
-      title: "Hesabatlar",
-      description: "Məlumatların analizi və hesabatların yaradılması.",
+      title: t('reports'),
+      description: t('reportsDescription'),
       icon: <ChartBar className="h-8 w-8 text-primary" />,
       path: "/reports"
     },
     {
-      title: "Kateqoriyalar",
-      description: "Kateqoriyaların və sütunların idarə edilməsi.",
+      title: t('categories'),
+      description: t('categoriesDescription'),
       icon: <Database className="h-8 w-8 text-primary" />,
       path: "/categories"
     }
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex items-center justify-center mb-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+        <p className="text-lg text-muted-foreground">{t('loading')}</p>
+      </div>
+    );
+  }
+
   // İstifadəçi daxil olmayıbsa, xoş gəldiniz səhifəsini göstərək
-  if (!isAuthenticated && !isLoading) {
+  if (!isAuthenticated) {
     return (
       <div className="container px-4 py-12 max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-4">InfoLine Təhsil İdarəetmə Sistemi</h1>
+          <h1 className="text-4xl font-bold mb-4">{t('welcomeToInfoLine')}</h1>
           <p className="text-xl text-muted-foreground">
-            Azərbaycanda məktəblərdən statistik məlumatların toplanması, analizi və hesabatlandırılması üçün mərkəzləşdirilmiş platforma
+            {t('infolineDescription')}
           </p>
           <div className="mt-6">
             <Button onClick={() => navigate('/login')} size="lg">
-              Daxil Ol
+              {t('login')}
             </Button>
           </div>
         </div>
@@ -94,17 +93,7 @@ const Index: React.FC = () => {
     );
   }
 
-  // Yüklənir vəziyyəti və ya yönləndirmə prosesi
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="flex items-center justify-center mb-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-        <p className="text-lg text-muted-foreground">{redirecting ? "Dashboard-a yönləndirilir..." : "Yüklənir..."}</p>
-      </div>
-    </div>
-  );
+  return null; // İstifadəçi daxil olubsa və yüklənirsə, boş göstər
 };
 
 export default Index;

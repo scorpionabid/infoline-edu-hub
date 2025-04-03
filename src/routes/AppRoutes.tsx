@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth, useRole } from "@/context/AuthContext";
@@ -222,9 +221,9 @@ const AppRoutes = () => (
     <Route 
       path="/" 
       element={
-        <ProtectedRoute>
+        <PublicRoute>
           <Index />
-        </ProtectedRoute>
+        </PublicRoute>
       }
     />
     <Route 
