@@ -1,10 +1,30 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth as useAuthHook, UseAuthReturn } from '@/hooks/useAuth';
+import { useAuth as useAuthHook } from '@/hooks/useAuth';
 import { UserRole } from '@/types/supabase';
 
+// Default dəyər təyin edirik ki, kontekst yaradılanda boş dəyər olmasın
+const defaultAuthValue = {
+  user: null,
+  loading: true,
+  error: null,
+  session: null,
+  login: async () => ({ error: new Error("Auth context not initialized") }),
+  signup: async () => ({ error: new Error("Auth context not initialized") }),
+  logout: async () => {},
+  updateProfile: async () => {},
+  resetPassword: async () => ({ error: new Error("Auth context not initialized") }),
+  updatePassword: async () => ({ error: new Error("Auth context not initialized") }),
+  clearError: () => {},
+  isAuthenticated: false,
+  hasRole: () => false,
+  isLoading: true,
+  sendPasswordReset: async () => false,
+  confirmPasswordReset: async () => false
+};
+
 // Auth context for application-wide auth state
-const AuthContext = createContext<UseAuthReturn | undefined>(undefined);
+const AuthContext = createContext(defaultAuthValue);
 
 // Auth provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

@@ -1,8 +1,7 @@
 
-// Mövcud kodu import edib düzgün export edək
-import { useAuth } from '@/context/AuthContext';
-import { FullUserData, UserRole } from '@/types/supabase';
+// Düzgün re-export üçün src/hooks/auth altındakı fayl istifadə edilir
 import useSupabaseAuth from '@/hooks/auth/useSupabaseAuth';
+import { getUserData } from '@/hooks/auth/userDataService';
 
-export { useAuth, useSupabaseAuth };
-export type { FullUserData, UserRole };
+export { useSupabaseAuth, getUserData };
+export default useSupabaseAuth;
