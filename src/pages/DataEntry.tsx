@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -11,6 +12,18 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, FileSpreadsheet, InfoIcon, LayoutGrid, Loader2 } from 'lucide-react';
 import { exportDataToExcel } from '@/utils/excelExport';
+import { DataEntry } from '@/types/dataEntry';
+
+// Adapter funksiyası əlavə edildi
+const adaptDataForExport = (entries: DataEntry[]) => {
+  return entries.map(entry => ({
+    id: entry.id!,
+    columnId: entry.column_id,
+    value: entry.value || '',
+    status: entry.status as 'pending' | 'approved' | 'rejected',
+    errorMessage: entry.rejection_reason || ''
+  }));
+};
 
 const DataEntry: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -62,14 +75,12 @@ const DataEntry: React.FC = () => {
   }, [entries]);
 
   const handleExportData = () => {
-    const exportableEntries = entries.map(entry => ({
-      id: entry.id,
-      columnId: entry.column_id,
-      value: entry.value,
-      status: entry.status as 'pending' | 'approved' | 'rejected',
-      errorMessage: entry.rejection_reason
-    }));
-    exportDataToExcel(exportableEntries);
+    if (entries && entries.length > 0) {
+      const exportableEntries = adaptDataForExport(entries);
+      exportDataToExcel(exportableEntries);
+    } else {
+      toast.warning(t('noDataToExport'));
+    }
   };
 
   const MinimalisticStats = () => (

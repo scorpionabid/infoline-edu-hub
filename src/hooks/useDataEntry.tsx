@@ -200,15 +200,15 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       } else {
         // Create new entry
         try {
-          const newEntry = await addEntry({
-            id: entryId, // Add id here
+          const newEntryData = {
             column_id: columnId,
             category_id: categoryId,
             school_id: schoolId,
             value: value,
             status: 'pending',
             created_by: user.id,
-          });
+          };
+          const newEntry = await addEntry(newEntryData);
           if (newEntry) {
             setDataEntries(prev => ({
               ...prev,

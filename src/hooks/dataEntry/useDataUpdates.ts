@@ -1,11 +1,12 @@
 
 import { useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData, DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
+import { CategoryEntryData, DataEntryForm, ColumnValidationError, ColumnEntry } from '@/types/dataEntry';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { v4 as uuid } from 'uuid'; // UUID əlavə edildi
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
@@ -56,13 +57,14 @@ export const useDataUpdates = ({
             newEntries[categoryIndex].values[valueIndex] = {
               ...newEntries[categoryIndex].values[valueIndex],
               value,
-              status: 'pending'
+              status: 'pending',
             };
             
             // Xəta mesajını silirik
             delete newEntries[categoryIndex].values[valueIndex].errorMessage;
           } else {
             newEntries[categoryIndex].values.push({
+              id: uuid(), // UUID əlavə edildi
               columnId,
               value,
               status: 'pending'

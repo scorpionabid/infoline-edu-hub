@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, adaptSupabaseColumn } from '@/types/column';
 import { CategoryEntryData, DataEntryStatus } from '@/types/dataEntry';
-import { v4 as uuid } from 'uuid'; // uuid import edildi
+import { v4 as uuid } from 'uuid';
 
 export const useCategoryData = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
@@ -50,7 +50,7 @@ export const useCategoryData = (schoolId?: string) => {
             deadline: category.deadline || '',
             status: category.status || 'active',
             priority: category.priority || 0,
-            order: category.priority || 0, // Burada order xassəsini əlavə edirik
+            order: category.priority || 0, 
             createdAt: category.created_at,
             updatedAt: category.updated_at,
             columns: adaptedColumns,
@@ -78,14 +78,25 @@ export const useCategoryData = (schoolId?: string) => {
     try {
       // Bu bir təqlid datadır, real tətbiqdə server əməliyyatı olacaq
       setTimeout(() => {
-        const mockEntryData = categories.map(category => ({
+        const mockEntryData: CategoryEntryData[] = categories.map(category => ({
+          id: uuid(), // UUID generator ilə unikal ID yaradırıq
           categoryId: category.id,
+          categoryName: category.name,
+          order: category.order || 0,
+          progress: 0,
+          status: 'draft' as DataEntryStatus,
           entries: category.columns.map(column => ({
+            id: uuid(),
             columnId: column.id,
             value: '',
             status: 'draft' as DataEntryStatus
           })),
-          status: 'draft' as DataEntryStatus,
+          values: category.columns.map(column => ({
+            id: uuid(),
+            columnId: column.id,
+            value: '',
+            status: 'draft' as DataEntryStatus
+          })),
           isCompleted: false,
           isSubmitted: false,
           completionPercentage: 0

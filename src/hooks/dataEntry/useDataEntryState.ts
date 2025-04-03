@@ -3,6 +3,7 @@ import { useState, useReducer, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { ActionType, CategoryEntryData } from '@/types/dataEntry';
 import { CategoryWithColumns } from '@/types/column';
+import { v4 as uuid } from 'uuid'; // UUID əlavə edildi
 
 const initialState = {
   loading: true,
@@ -83,7 +84,11 @@ export function useDataEntryState() {
 
       const mockEntryData: CategoryEntryData[] = [
         {
+          id: uuid(), // UUID əlavə edildi
           categoryId: "cat-1",
+          categoryName: "Məktəb haqqında məlumatlar",
+          order: 1,
+          progress: 50,
           entries: [
             {
               id: "entry-1",
@@ -93,7 +98,14 @@ export function useDataEntryState() {
             }
           ],
           status: "draft",
-          values: [],
+          values: [
+            {
+              id: "entry-1",
+              columnId: "col-1",
+              value: "100",
+              status: "pending"
+            }
+          ],
           completionPercentage: 50,
           isCompleted: false,
           isSubmitted: false

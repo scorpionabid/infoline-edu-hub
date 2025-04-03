@@ -1,9 +1,10 @@
 
 import { useCallback, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { DataEntryForm } from '@/types/dataEntry';
-import { toast } from '@/components/ui/use-toast';
+import { DataEntryForm, ColumnEntry } from '@/types/dataEntry';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { v4 as uuid } from 'uuid'; // UUID əlavə edildi
 
 interface UseFormActionsProps {
   formData: DataEntryForm;
@@ -55,6 +56,7 @@ export const useFormActions = ({
         } else {
           // Yeni sütun qiymətini əlavə edirik
           values.push({
+            id: uuid(), // UUID əlavə edildi
             columnId,
             value,
             status: 'pending'
@@ -114,10 +116,7 @@ export const useFormActions = ({
     // LocalStorage-də saxlayaq
     localStorage.setItem('infolineFormData', JSON.stringify(formData));
     
-    toast({
-      title: t('changesAutoSaved'),
-      variant: "default",
-    });
+    toast.success(t('changesAutoSaved'));
     
     setFormData(prev => ({
       ...prev,
@@ -151,18 +150,14 @@ export const useFormActions = ({
         setFormData(updatedFormData);
         setIsSubmitting(false);
         
-        toast({
-          title: t('submissionSuccess'),
-          description: t('submissionDescription'),
-          variant: "default",
+        toast.success(t('submissionSuccess'), {
+          description: t('submissionDescription')
         });
       }, 2000);
       return true;
     } else {
-      toast({
-        title: "Xəta",
-        description: "Zəhmət olmasa bütün məcburi sahələri doldurun",
-        variant: "destructive",
+      toast.error("Xəta", {
+        description: "Zəhmət olmasa bütün məcburi sahələri doldurun"
       });
       return false;
     }
