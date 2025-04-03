@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
-import { Form, FormStatus } from '@/types/form';
+import { Form, FormStatus, FormItem } from '@/types/form';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -94,16 +94,24 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             completionPercentage = Math.round((filledCount / columnCount) * 100);
           }
           
+          // Form obyektini yarat və Form tipinə uyğunlaşdır
           return {
             id: category.id,
             title: category.name,
             categoryId: category.id,
+            categoryName: category.name,
             status,
             completionPercentage,
             deadline: category.deadline,
+            dueDate: category.deadline,
             filledCount: filledCount || 0,
-            totalCount: columnCount || 0
-          };
+            totalCount: columnCount || 0,
+            createdAt: category.created_at,
+            updatedAt: category.updated_at,
+            data: {},
+            userId: user?.id || '',
+            schoolId: user?.schoolId || ''
+          } as Form;
         }));
         
         setForms(formsWithStats);
@@ -120,7 +128,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
     } else {
       setForms(initialForms);
     }
-  }, [initialForms, user?.schoolId]);
+  }, [initialForms, user?.schoolId, user?.id]);
   
   // Formaların kateqoriyalarının siyahısını əldə edir
   const categories = React.useMemo(() => {
@@ -249,8 +257,8 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   title={form.title}
                   category={form.categoryId}
                   status={form.status}
-                  completionPercentage={form.completionPercentage}
-                  deadline={form.deadline}
+                  completionPercentage={form.completionPercentage || 0}
+                  deadline={form.deadline || form.dueDate}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}
@@ -273,8 +281,8 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   title={form.title}
                   category={form.categoryId}
                   status={form.status}
-                  completionPercentage={form.completionPercentage}
-                  deadline={form.deadline}
+                  completionPercentage={form.completionPercentage || 0}
+                  deadline={form.deadline || form.dueDate}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}
@@ -297,8 +305,8 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
                   title={form.title}
                   category={form.categoryId}
                   status={form.status}
-                  completionPercentage={form.completionPercentage}
-                  deadline={form.deadline}
+                  completionPercentage={form.completionPercentage || 0}
+                  deadline={form.deadline || form.dueDate}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}

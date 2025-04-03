@@ -58,7 +58,7 @@ const SchoolsContainer: React.FC = () => {
     handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
-    handleDeleteConfirm: handleDeleteConfirmFromHook,
+    handleDeleteConfirmFromHook, // adını dəyişdirdik!
     handleAdminUpdate,
     handleResetPassword,
     formData,
@@ -115,6 +115,7 @@ const SchoolsContainer: React.FC = () => {
     handleSearch(e.target.value);
   };
 
+  // handleDeleteConfirm adlı ikinci əlavə funksiya yaratdıq
   const executeDeleteConfirm = () => {
     if (selectedSchool) {
       handleDeleteConfirmHelper(selectedSchool);
@@ -146,7 +147,7 @@ const SchoolsContainer: React.FC = () => {
 
   const handleEditSubmitWrapper = (data: Partial<School>) => {
     if (selectedSchool) {
-      handleEditSubmit(data, selectedSchool);
+      handleEditSubmit(data as any, selectedSchool);
     }
   };
 
@@ -157,7 +158,7 @@ const SchoolsContainer: React.FC = () => {
       sector_id: school.sectorId || school.sector_id
     })) || [];
     
-    handleExportToExcel(exportSchools as School[]);
+    handleExportToExcel(exportSchools as any);
   };
 
   const handleImportClick = () => {
@@ -197,9 +198,9 @@ const SchoolsContainer: React.FC = () => {
             searchTerm={searchTerm}
             sortConfig={sortConfig || { key: '', direction: 'ascending' }}
             handleSort={handleSort}
-            handleEditDialogOpen={handleEditDialogOpenWrapper}
-            handleDeleteDialogOpen={handleDeleteDialogOpenWrapper}
-            handleAdminDialogOpen={handleAdminDialogOpenWrapper}
+            handleEditDialogOpen={handleEditDialogOpenWrapper as any}
+            handleDeleteDialogOpen={handleDeleteDialogOpenWrapper as any}
+            handleAdminDialogOpen={handleAdminDialogOpenWrapper as any}
             userRole={userRole}
           />
           

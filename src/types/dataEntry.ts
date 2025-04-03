@@ -38,6 +38,14 @@ export interface CategoryEntryData {
   categoryId: string;
   entries: Record<string, string>;
   status: DataEntryStatus;
+  id?: string;
+  categoryName?: string;
+  order?: number;
+  progress?: number;
+  values?: any[];
+  isSubmitted?: boolean;
+  isCompleted?: boolean;
+  completionPercentage?: number;
 }
 
 export interface ColumnEntry {
@@ -45,6 +53,8 @@ export interface ColumnEntry {
   value: string;
   isValid: boolean;
   errorMessage?: string;
+  id?: string;
+  status?: DataEntryStatus;
 }
 
 export interface ValidationRules {
@@ -57,7 +67,10 @@ export interface ValidationRules {
   patternMessage?: string;
   minDate?: string;
   maxDate?: string;
-  warningThreshold?: number;
+  warningThreshold?: number | {
+    min?: number;
+    max?: number;
+  };
   customValidation?: (value: any) => boolean | string;
 }
 
@@ -69,4 +82,5 @@ export interface DataEntryForm {
   lastSaved: string;
   hasUnsavedChanges: boolean;
   validationErrors: Record<string, string>;
+  overallProgress?: number;
 }

@@ -11,7 +11,7 @@ export interface EditCategoryDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   category: CategoryWithOrder;
-  onSubmit: (categoryData: CategoryWithOrder) => Promise<boolean>;
+  onUpdateCategory: (categoryData: CategoryWithOrder) => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -19,14 +19,14 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   isOpen,
   onOpenChange,
   category,
-  onSubmit,
+  onUpdateCategory,
   onClose,
 }) => {
   return (
     <AddCategoryDialog
       open={isOpen}
       onOpenChange={onOpenChange}
-      onSubmit={onSubmit}
+      onAddCategory={onUpdateCategory}
       onClose={onClose}
       category={category}
     />
@@ -34,3 +34,6 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
 };
 
 export default EditCategoryDialog;
+
+// Aşağıdakı export default olmayan versiyasını istifadə edə bilərik Categories.tsx faylı üçün
+export { EditCategoryDialog };

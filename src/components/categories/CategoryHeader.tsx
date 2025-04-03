@@ -5,21 +5,17 @@ import { Plus } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 export interface CategoryHeaderProps {
-  onAddClick: () => void;
+  onAddCategory: () => void;
 }
 
-const CategoryHeader: React.FC<CategoryHeaderProps> = ({ onAddClick }) => {
+const CategoryHeader: React.FC<CategoryHeaderProps> = ({ onAddCategory }) => {
   const { t } = useLanguage();
-
+  
   return (
-    <div className="flex justify-between items-center">
-      <div>
-        <h2 className="text-2xl font-bold">{t('categories')}</h2>
-        <p className="text-muted-foreground">{t('manageCategoriesDescription')}</p>
-      </div>
-      <Button onClick={onAddClick} className="gap-1">
-        <Plus className="h-4 w-4" />
-        {t('addCategory')}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+      <h1 className="text-2xl font-bold tracking-tight">{t('categories')}</h1>
+      <Button onClick={onAddCategory}>
+        <Plus className="mr-2 h-4 w-4" /> {t('addCategory')}
       </Button>
     </div>
   );

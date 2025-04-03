@@ -1,109 +1,71 @@
 
-import { FormItem, FormStatus } from './form';
+import { FormItem } from './form';
 import { Notification } from './notification';
+import { School } from './school';
+import { Region } from './region';
+import { Sector } from './sector';
+import { User } from './user';
 
-export interface ActivityItem {
-  id: string;
-  action: string;
-  actor: string;
-  target: string;
-  time: string;
-}
-
-export interface ChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    backgroundColor: string[];
-    borderColor: string[];
-    borderWidth: number;
-  }[];
-  activityData?: any;
-}
-
-export interface StatusData {
-  completed: number;
-  pending: number;
-  rejected: number;
-  notStarted: number;
-}
-
-export interface CategoryCompletionData {
-  name: string;
-  completed: number;
-  total: number;
-  percentage: number;
-}
-
-// Base Dashboard Data
 export interface DashboardData {
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  users?: number;
-  completionRate?: number;
-  pendingApprovals?: number;
-  notifications?: Notification[];
-  activityData?: ActivityItem[];
-  pendingSchools?: number;
-  approvedSchools?: number;
-  rejectedSchools?: number;
-  statusData?: StatusData;
-  chartData?: ChartData;
-  categoryCompletionData?: CategoryCompletionData[];
-  pendingForms?: FormItem[];
+  notifications: Notification[];
 }
 
-// SuperAdmin Dashboard Data
 export interface SuperAdminDashboardData extends DashboardData {
   regions: number;
   sectors: number;
   schools: number;
   users: number;
-  statusData: StatusData;
+  completionRate: number;
+  approvalRate: number;
+  pendingApprovals: number;
   categoryCompletionData: CategoryCompletionData[];
+  regionCompletionData: RegionCompletionData[];
+  recentSchools: School[];
+  recentRegions: Region[];
+  recentSectors: Sector[];
+  recentUsers: User[];
+  mostActiveRegions: RegionActivityData[];
   recentForms?: FormItem[];
-  pendingForms?: FormItem[];
 }
 
-// RegionAdmin Dashboard Data
 export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
   sectors: number;
   schools: number;
   users: number;
-  approvalRate: number;
   completionRate: number;
-  statusData: StatusData;
+  approvalRate: number;
   pendingApprovals: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  sectorCompletions?: any[];
+  categoryCompletionData: CategoryCompletionData[];
+  sectorCompletionData: SectorCompletionData[];
+  recentSchools: School[];
+  recentSectors: Sector[];
+  recentUsers: User[];
   recentForms?: FormItem[];
-  pendingForms?: FormItem[];
   upcomingDeadlines?: FormItem[];
 }
 
-// SectorAdmin Dashboard Data
 export interface SectorAdminDashboardData extends DashboardData {
   sectorName: string;
   regionName?: string;
   schools: number;
   users: number;
   completionRate: number;
-  statusData: StatusData;
   pendingApprovals: number;
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
+  categoryCompletionData: CategoryCompletionData[];
+  schoolCompletionData: SchoolCompletionData[];
+  recentSchools: School[];
+  recentUsers: User[];
   recentForms?: FormItem[];
-  pendingForms?: FormItem[];
   upcomingDeadlines?: FormItem[];
 }
 
-// SchoolAdmin Dashboard Data
 export interface SchoolAdminDashboardData extends DashboardData {
   schoolName: string;
   sectorName: string;
@@ -116,9 +78,52 @@ export interface SchoolAdminDashboardData extends DashboardData {
     overdue: number;
   };
   completionRate: number;
-  recentForms?: FormItem[];
-  pendingForms?: FormItem[];
-  completedForms?: number;
-  totalForms?: number;
+  categories: number;
+  pendingCategories: number;
+  approvedCategories: number;
+  rejectedCategories: number;
+  recentForms: FormItem[];
   upcomingDeadlines?: FormItem[];
+  completedForms?: FormItem[];
+}
+
+export interface CategoryCompletionData {
+  name: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+export interface SectorCompletionData {
+  name: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+export interface SchoolCompletionData {
+  name: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+export interface RegionCompletionData {
+  name: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+export interface RegionActivityData {
+  name: string;
+  activity: number;
+}
+
+export interface ChartData {
+  categoryCompletionData?: CategoryCompletionData[];
+  regionCompletionData?: RegionCompletionData[];
+  sectorCompletionData?: SectorCompletionData[];
+  schoolCompletionData?: SchoolCompletionData[];
+  regionSchoolsData?: Array<{ name: string; value: number }>;
 }
