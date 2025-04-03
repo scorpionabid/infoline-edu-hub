@@ -292,3 +292,8 @@ export const getFilteredUsers = async (
   
   return delayedResponse({ data: pagedUsers, count });
 };
+
+// Yeni fetchUserData funksiyası əlavə edirik, useSupabaseAuth.ts faylı üçün
+export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
+  return getUserById(userId);
+};

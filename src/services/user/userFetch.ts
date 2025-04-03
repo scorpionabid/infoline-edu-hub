@@ -101,7 +101,10 @@ export const getUsers = async (
         : 'active' as 'active' | 'inactive' | 'blocked';
       
       // UserRole tipləməsini düzəltmək
-      const role = item.role as UserRole;
+      const roleValue = item.role as string;
+      const typedRole = ((roleValue === 'superadmin' || roleValue === 'regionadmin' || 
+                         roleValue === 'sectoradmin' || roleValue === 'schooladmin') 
+                         ? roleValue : 'schooladmin') as UserRole;
       
       // Tam istifadəçi məlumatlarını yaradırıq
       return {
@@ -109,7 +112,7 @@ export const getUsers = async (
         email: emails[item.user_id] || '',
         full_name: profile.full_name,
         name: profile.full_name, // name = full_name
-        role: role,
+        role: typedRole,
         region_id: item.region_id,
         regionId: item.region_id,
         sector_id: item.sector_id,
@@ -194,8 +197,11 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       ? statusValue as 'active' | 'inactive' | 'blocked'
       : 'active' as 'active' | 'inactive' | 'blocked';
     
-    // UserRole tipləməsini düzəltmək
-    const role = roleData.role as UserRole;
+    // UserRole tipini düzəltmək
+    const roleValue = roleData.role as string;
+    const typedRole = ((roleValue === 'superadmin' || roleValue === 'regionadmin' || 
+                       roleValue === 'sectoradmin' || roleValue === 'schooladmin') 
+                       ? roleValue : 'schooladmin') as UserRole;
     
     // Tam istifadəçi məlumatlarını birləşdiririk
     const fullUserData: FullUserData = {
@@ -203,7 +209,7 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       email: mockEmail,
       full_name: profile.full_name,
       name: profile.full_name,
-      role: role,
+      role: typedRole,
       region_id: roleData.region_id,
       regionId: roleData.region_id,
       sector_id: roleData.sector_id,

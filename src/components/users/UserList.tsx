@@ -300,20 +300,20 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           <UserDetailsDialog
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser as unknown as User}
+            user={selectedUser}
           />
           
           <EditUserDialog
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser as unknown as User}
+            user={selectedUser}
             onSave={handleUpdateUserConfirm}
           />
           
           <DeleteUserDialog
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser as unknown as User}
+            user={selectedUser}
             onDelete={handleDeleteUserConfirm}
           />
         </>

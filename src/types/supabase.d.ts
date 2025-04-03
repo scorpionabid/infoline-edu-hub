@@ -1,3 +1,4 @@
+
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export interface CreateUserData {
@@ -12,6 +13,7 @@ export interface CreateUserData {
   language?: string;
   status?: 'active' | 'inactive' | 'blocked';
   avatar?: string;
+  password?: string; // Şifrə əlavə edildi
 }
 
 export interface UpdateUserData {
@@ -26,7 +28,7 @@ export interface UpdateUserData {
   language?: string;
   status?: 'active' | 'inactive' | 'blocked';
   avatar?: string;
-  password?: string;
+  password?: string; // Şifrə əlavə edildi
 }
 
 export interface Profile {
@@ -66,8 +68,9 @@ export interface Region {
 export interface FullUserData {
   id: string;
   email: string;
-  role: string;
+  role: UserRole; // String obyekti əvəzinə UserRole tipini istifadə edirik
   full_name?: string;
+  name?: string; // User tipi ilə uyğunluq üçün əlavə edildi
   phone?: string;
   position?: string;
   language?: 'az' | 'en' | 'ru' | 'tr';
@@ -85,7 +88,6 @@ export interface FullUserData {
   created_at?: string;
   updated_at?: string;
   last_login?: string;
-  name?: string;
   createdAt?: string;
   updatedAt?: string;
   lastLogin?: string;

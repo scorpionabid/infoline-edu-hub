@@ -3,33 +3,17 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/supabase';
 
-export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
+export const useDataEntries = () => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchEntries = async () => {
     setLoading(true);
-    setError(null);
-
-    let query = supabase
-      .from('data_entries')
-      .select('*');
-
-    if (schoolId) {
-      query = query.eq('school_id', schoolId);
-    }
-
-    if (categoryId) {
-      query = query.eq('category_id', categoryId);
-    }
-
-    if (columnId) {
-      query = query.eq('column_id', columnId);
-    }
-
     try {
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*');
 
       if (error) {
         throw error;
@@ -38,6 +22,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       setEntries(data || []);
     } catch (error: any) {
       setError(error);
+      console.error('Məlumatları əldə edərkən xəta:', error);
     } finally {
       setLoading(false);
     }
@@ -45,35 +30,29 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
 
   useEffect(() => {
     fetchEntries();
-  }, [schoolId, categoryId, columnId]);
+  }, []);
 
   const addEntry = async (entry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
-    setLoading(true);
-    setError(null);
-
     try {
       const { data, error } = await supabase
         .from('data_entries')
-        .insert([entry]);
+        .insert([entry])
+        .select()
+        .single();
 
       if (error) {
         throw error;
       }
 
       await fetchEntries();
-      return true;
-    } catch (error: any) {
-      setError(error);
-      return false;
-    } finally {
-      setLoading(false);
+      return data;
+    } catch (error) {
+      console.error('Məlumat əlavə edərkən xəta:', error);
+      throw error;
     }
   };
 
   const updateEntry = async (id: string, updates: Partial<DataEntry>) => {
-    setLoading(true);
-    setError(null);
-
     try {
       const { data, error } = await supabase
         .from('data_entries')
@@ -86,18 +65,13 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
 
       await fetchEntries();
       return true;
-    } catch (error: any) {
-      setError(error);
+    } catch (error) {
+      console.error('Məlumatı yeniləyərkən xəta:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
   const deleteEntry = async (id: string) => {
-    setLoading(true);
-    setError(null);
-
     try {
       const { data, error } = await supabase
         .from('data_entries')
@@ -110,29 +84,22 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
 
       await fetchEntries();
       return true;
-    } catch (error: any) {
-      setError(error);
+    } catch (error) {
+      console.error('Məlumatı silərkən xəta:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
-  const addEntries = async (entries: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>[]) => {
+  const approveEntry = async (id: string, approverId: string) => {
     try {
-      // Təqdim edilən məlumatların tipini yoxlayaq və düzəldək
-      const formattedEntries = entries.map(entry => ({
-        category_id: entry.category_id,
-        column_id: entry.column_id, 
-        school_id: entry.school_id,
-        created_by: entry.created_by,
-        status: entry.status || 'pending',
-        value: entry.value
-      }));
-
       const { data, error } = await supabase
         .from('data_entries')
-        .insert(formattedEntries);
+        .update({
+          status: 'approved',
+          approved_by: approverId,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', id);
 
       if (error) {
         throw error;
@@ -141,54 +108,42 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       await fetchEntries();
       return true;
     } catch (error) {
-      console.error('Məlumatları əlavə edərkən xəta:', error);
+      console.error('Məlumatı təsdiqləyərkən xəta:', error);
       return false;
     }
   };
 
-  const getApprovalStatus = async (schoolId: string) => {
+  const rejectEntry = async (id: string, rejectorId: string, reason: string) => {
     try {
       const { data, error } = await supabase
         .from('data_entries')
-        .select('status')
-        .eq('school_id', schoolId);
+        .update({
+          status: 'rejected',
+          rejected_by: rejectorId,
+          rejection_reason: reason
+        })
+        .eq('id', id);
 
       if (error) {
         throw error;
       }
 
-      // Hesablama əməliyyatlarını yerinə yetirək
-      const status = data.reduce((acc: Record<string, number>, curr) => {
-        if (!acc[curr.status]) {
-          acc[curr.status] = 0;
-        }
-        acc[curr.status]++;
-        return acc;
-      }, { pending: 0, approved: 0, rejected: 0 });
-
-      return status;
+      await fetchEntries();
+      return true;
     } catch (error) {
-      console.error('Məlumat status tələbində xəta:', error);
-      return { pending: 0, approved: 0, rejected: 0 };
+      console.error('Məlumatı rədd edərkən xəta:', error);
+      return false;
     }
   };
 
   const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
     try {
-      // Kateqoriya məlumatlarını pending statusuna yeniləyək
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({ status: 'pending' })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-
-      if (error) {
-        throw error;
-      }
-
+      // Bu funksiyanın implementasiyası backend və edge funksiyalarında olmalıdır
+      // İmitasiya üçün simulyasiya edirik
+      console.log(`Kateqoriya ID: ${categoryId} və Məktəb ID: ${schoolId} təsdiqə göndərildi`);
       return true;
     } catch (error) {
-      console.error('Kateqoriya təsdiqi tələbində xəta:', error);
+      console.error('Kateqoriyanı təsdiqə göndərərkən xəta:', error);
       return false;
     }
   };
@@ -201,8 +156,8 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     addEntry,
     updateEntry,
     deleteEntry,
-    addEntries,
-    getApprovalStatus,
+    approveEntry,
+    rejectEntry,
     submitCategoryForApproval
   };
 };

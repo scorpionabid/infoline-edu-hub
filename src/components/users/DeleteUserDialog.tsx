@@ -54,7 +54,9 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     }, 1000);
   };
 
-  const displayName = 'name' in user && user.name ? user.name : user.full_name || '';
+  // Adı həm User, həm də FullUserData tiplərindən əldə edə biləcək şəkildə düzəltdik
+  const displayName = 'name' in user && user.name ? user.name : 
+                       'full_name' in user && user.full_name ? user.full_name : '';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, supabaseUrl } from '@/integrations/supabase/client';
-import { fetchUserData } from './userDataService';
-import { toast } from 'sonner';
-import { FullUserData } from '@/types/supabase';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchUserData, getUserById } from './userDataService';
+import { User, Session } from '@supabase/supabase-js';
 
 export type AuthState = {
   loading: boolean;
   isAuthenticated: boolean;
-  user: FullUserData | null;
-  session: any | null;
+  user: User | null;
+  session: Session | null;
 };
 
 export type AuthActions = {
@@ -18,15 +17,15 @@ export type AuthActions = {
   updateProfile: (updates: any) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (password: string) => Promise<boolean>;
-  fetchUserData: (userId: string) => Promise<FullUserData>;
+  fetchUserData: (userId: string) => Promise<User>;
   refreshSession: () => Promise<any>;
 };
 
 export type UseSupabaseAuthReturn = AuthState & AuthActions;
 
 export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
-  const [session, setSession] = useState<any>(null);
-  const [user, setUser] = useState<FullUserData | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 

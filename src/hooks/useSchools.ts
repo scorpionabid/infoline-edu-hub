@@ -138,5 +138,5 @@ export const useSchools = () => {
   };
 };
 
-// Əsas export üçün həm default export, həm də named export əlavə edirik
+// Həm default export, həm də named export əlavə edirik
 export default useSchools;
