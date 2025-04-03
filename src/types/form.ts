@@ -5,8 +5,8 @@ export interface Form {
   categoryId: string;
   status: FormStatus;
   dueDate?: string;
-  deadline: string; // deadline xətasını düzəltmək üçün
-  completionPercentage: number; // completionPercentage xətasını düzəltmək üçün
+  deadline: string; 
+  completionPercentage: number; 
   filledCount: number;
   totalCount: number;
   createdAt?: string;

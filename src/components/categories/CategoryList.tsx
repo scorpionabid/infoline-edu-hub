@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
@@ -6,7 +5,8 @@ import {
   TableHeader, TableRow 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Category, CategoryFilter, CategoryAssignment } from '@/types/category';
+import { Category } from '@/types/category';
+import { CategoryFilter } from '@/types/dataEntry';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
@@ -42,24 +42,19 @@ const CategoryList: React.FC<CategoryListProps> = ({
   const { t } = useLanguage();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   
-  // Filtered categories based on current filter
   const filteredCategories = categories.filter(category => {
-    // Filter by status if specified
     if (filter.status && category.status !== filter.status) {
       return false;
     }
     
-    // Filter by archived status
     if (!filter.archived && category.archived) {
       return false;
     }
     
-    // Filter by search term if specified
     if (filter.search && !category.name.toLowerCase().includes(filter.search.toLowerCase())) {
       return false;
     }
     
-    // Filter by assignment if specified
     if (filter.assignment && category.assignment !== filter.assignment) {
       return false;
     }
@@ -67,9 +62,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
     return true;
   });
   
-  // Handle category status toggle
   const handleStatusToggle = async (categoryId: string, currentStatus: string) => {
-    // Əgər status aktiv və ya qeyri-aktiv deyilsə, əməliyyatı dayandırırıq
     if (currentStatus !== 'active' && currentStatus !== 'inactive') {
       toast.error(t('cannotToggleSpecialStatus'));
       return;
@@ -77,7 +70,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
     
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     
-    // Call onUpdateStatus if provided, otherwise use the demo toast
     if (onUpdateStatus) {
       const success = await onUpdateStatus(categoryId, newStatus);
       if (success) {
@@ -90,7 +82,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
         toast.error(t('statusUpdateFailed'));
       }
     } else {
-      // For demonstration only: in a real app, this would be an API call
       toast.success(
         currentStatus === 'active' 
           ? t('categoryDeactivated')
@@ -99,9 +90,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
     }
   };
   
-  // Handle category deletion
   const handleDelete = async (categoryId: string) => {
-    // Call onDeleteCategory if provided, otherwise use the demo toast
     if (onDeleteCategory) {
       const success = await onDeleteCategory(categoryId);
       if (success) {
@@ -110,16 +99,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
         toast.error(t('deleteFailed'));
       }
     } else {
-      // For demonstration only: in a real app, this would be an API call
       toast.success(t('categoryDeleted'));
     }
     
     setConfirmDelete(null);
   };
   
-  // Handle category archive toggle
   const handleArchiveToggle = async (categoryId: string, isArchived: boolean) => {
-    // For demonstration only: in a real app, this would be an API call
     toast.success(
       isArchived 
         ? t('categoryUnarchived')
@@ -192,11 +178,9 @@ const CategoryList: React.FC<CategoryListProps> = ({
                     {category.status !== 'active' && category.status !== 'inactive' && (
                       <Badge 
                         variant={
-                          category.status === 'approved' ? 'default' :
-                          category.status === 'pending' ? 'secondary' :
-                          category.status === 'rejected' ? 'destructive' :
-                          category.status === 'dueSoon' ? 'outline' :
-                          category.status === 'overdue' ? 'destructive' :
+                          category.status === 'active' ? 'default' :
+                          category.status === 'inactive' ? 'secondary' :
+                          category.status === 'archived' ? 'destructive' :
                           'default'
                         }
                       >

@@ -1,64 +1,65 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { useNotificationsData } from '@/hooks/useNotificationsData';
 import { Notification } from '@/types/notification';
-import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
-import { Bell } from 'lucide-react';
-import { useNotifications } from '@/hooks/useNotifications';
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  isLoading: boolean;
-  error: Error | null;
-  refreshNotifications: () => Promise<void>;
-  clearAll: () => void; // clearAll funksiyası əlavə edildi
+  loading: boolean;
+  isLoading: boolean; // Alias for loading
+  error: Error | null; // Added error field
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (notificationId: string) => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
+  clearAll: () => Promise<void>; // Alias for deleteAllNotifications
+  refreshNotifications: () => Promise<void>; // Alias for fetchNotifications
 }
 
-const NotificationContext = createContext<NotificationContextType>({
-  notifications: [],
-  unreadCount: 0,
-  markAsRead: () => {},
-  markAllAsRead: () => {},
-  isLoading: false,
-  error: null,
-  refreshNotifications: async () => {},
-  clearAll: () => {}, // clearAll funksiyası əlavə edildi
-});
+const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const useNotificationContext = () => useContext(NotificationContext);
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (context === undefined) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
+};
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    isLoading, 
-    error, 
-    refreshNotifications 
-  } = useNotifications();
-
-  const clearAll = () => {
-    // Bu funksiya provayderdə qeyd edilib
-    console.log("Bütün bildirimlər silinir");
-    // Burada bütün bildirişləri silmək üçün əlavə kodlar əlavə edilə bilər
-  };
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+  } = useNotificationsData();
 
   return (
-    <NotificationContext.Provider value={{ 
-      notifications, 
-      unreadCount, 
-      markAsRead, 
-      markAllAsRead, 
-      isLoading, 
-      error, 
-      refreshNotifications,
-      clearAll // clearAll funksiyası əlavə edildi 
+    <NotificationContext.Provider value={{
+      notifications,
+      unreadCount,
+      loading,
+      isLoading: loading, // Alias for consistency
+      error, // Added error field
+      fetchNotifications,
+      markAsRead,
+      markAllAsRead,
+      deleteNotification,
+      deleteAllNotifications,
+      clearAll: deleteAllNotifications, // Alias function
+      refreshNotifications: fetchNotifications, // Alias function
     }}>
       {children}
     </NotificationContext.Provider>
   );
 };
+
+// Re-exporting for easier import
+export default NotificationProvider;

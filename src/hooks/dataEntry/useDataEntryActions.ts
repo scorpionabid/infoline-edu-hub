@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { DataEntry } from '@/types/dataEntry';
-import { Column } from '@/types/category';
+import { Column } from '@/types/column';
 
 export interface UseDataEntryActionsProps {
   categoryId?: string;

@@ -18,6 +18,7 @@ export interface DataEntry {
   rejectionReason?: string;
   rejection_reason?: string; // uyğunluq üçün
   errorMessage?: string;
+  read_status?: boolean; // Added for NotificationContext compatibility
 }
 
 export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'submitted';
@@ -68,6 +69,8 @@ export interface ValidationRules {
   patternMessage?: string;
   minDate?: string;
   maxDate?: string;
+  minValue?: number; // Added for useValidation.tsx
+  maxValue?: number; // Added for useValidation.tsx
   warningThreshold?: number | {
     min?: number;
     max?: number;

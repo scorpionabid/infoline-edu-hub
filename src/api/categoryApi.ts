@@ -17,7 +17,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       status: "active",
       priority: 1,
       description: "Məktəbin ümumi təsviri və əsas məlumatları",
-      columnCount: 3,
+      column_count: 3,
       order: 1,
       archived: false
     },
@@ -30,7 +30,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       status: "active",
       priority: 2,
       description: "Tədris planı və proqram məlumatları",
-      columnCount: 2,
+      column_count: 2,
       order: 2,
       archived: false
     },
@@ -43,7 +43,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       status: "active",
       priority: 3,
       description: "Məktəbin infrastruktur və texniki məlumatları",
-      columnCount: 3,
+      column_count: 3,
       order: 3,
       archived: false
     },
@@ -56,7 +56,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       status: "active",
       priority: 4,
       description: "Davamiyyət haqqında məlumatlar",
-      columnCount: 3,
+      column_count: 3,
       order: 4,
       archived: false
     },
@@ -69,7 +69,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       status: "active",
       priority: 5,
       description: "Şagirdlərin akademik nailiyyətləri və statistikaları",
-      columnCount: 2,
+      column_count: 2,
       order: 5,
       archived: false
     }
@@ -85,7 +85,7 @@ export const addCategory = async (categoryData: Omit<Category, "id"> & { id?: st
   return {
     ...categoryData,
     id: categoryData.id || Date.now().toString(),
-    order: categoryData.order || Date.now(), // Əgər order yoxdursa, bir standart dəyər təyin edirik
+    order: categoryData.priority || Date.now(), // Əgər priority yoxdursa, bir standart dəyər təyin edirik
     archived: categoryData.archived || false // Əlavə edildi
   } as Category;
 };

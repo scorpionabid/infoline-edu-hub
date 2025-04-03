@@ -1,59 +1,35 @@
 
-import { UserRole } from "./supabase";
+import { UserRole } from './supabase';
 
 export interface User {
   id: string;
-  name: string;
   email: string;
-  role: UserRole;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  status: "active" | "inactive" | "blocked";
-  avatar?: string;
-  language?: string;
-  phone?: string;
+  full_name: string;  // fullName əvəzinə full_name istifadə etmək
   position?: string;
+  status: "active" | "inactive" | "blocked";
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   notificationSettings: {
     email: boolean;
     inApp: boolean;
     push?: boolean;
-    system?: boolean;
+    system?: boolean; // system bildirişlərini əlavə edirik
   };
-  createdAt: string;
-  updatedAt: string;
-  lastLogin?: string;
+  avatar?: string;
+  lastLoginAt?: string;
   passwordResetDate?: string;
   twoFactorEnabled?: boolean;
-}
-
-export interface UserFormData {
-  name: string;
-  email: string;
-  password?: string;
-  confirmPassword?: string;
-  role: UserRole;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  status: "active" | "inactive" | "blocked";
-  avatar?: string;
-  language?: string;
+  lastLogin?: string; // Compatibility with different variable names
+  createdAt?: string;
+  updatedAt?: string;
   phone?: string;
-  position?: string;
-  notificationSettings: {
-    email: boolean;
-    inApp: boolean;
-    push?: boolean;
-    system?: boolean;
-  };
+  language?: string;
 }
 
-export interface UserFilter {
-  role?: UserRole | '';
-  status?: string | '';
-  regionId?: string | '';
-  sectorId?: string | '';
-  schoolId?: string | '';
-  search?: string;
+export interface UserDetails extends User {
+  regionName?: string;
+  sectorName?: string;
+  schoolName?: string;
 }
