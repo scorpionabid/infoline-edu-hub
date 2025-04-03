@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Table, 
@@ -97,7 +96,19 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
     }
   };
 
-  // Determine if user is editable by current user
+  const getUserStatus = (status: string): "active" | "inactive" | "blocked" => {
+    switch (status) {
+      case "active":
+        return "active";
+      case "inactive":
+        return "inactive";
+      case "blocked":
+        return "blocked";
+      default:
+        return "inactive"; // Default status əgər bilinməzsə
+    }
+  };
+
   const canEditUser = (user: FullUserData) => {
     if (isSuperAdmin) return true;
     if (currentUserRole === 'regionadmin' && currentUserRegionId === user.region_id) return true;
@@ -113,7 +124,6 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
     }
   };
 
-  // Create a user object from FullUserData that matches User type
   const adaptUserForDetailsDialog = (user: FullUserData): User => {
     return {
       id: user.id,
@@ -318,7 +328,6 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
         </div>
       )}
       
-      {/* Dialog Components */}
       {selectedUser && (
         <>
           <UserDetailsDialog

@@ -5,10 +5,10 @@ export interface Form {
   categoryId: string;
   status: FormStatus;
   dueDate?: string;
-  deadline?: string; // deadline xətasını düzəltmək üçün
-  completionPercentage?: number; // completionPercentage xətasını düzəltmək üçün
-  filledCount?: number;
-  totalCount?: number;
+  deadline: string; // deadline xətasını düzəltmək üçün
+  completionPercentage: number; // completionPercentage xətasını düzəltmək üçün
+  filledCount: number;
+  totalCount: number;
   createdAt?: string;
   updatedAt?: string;
   data?: any;

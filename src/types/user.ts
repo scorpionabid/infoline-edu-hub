@@ -18,16 +18,20 @@ export interface User {
     email: boolean;
     inApp: boolean;
     push?: boolean;
-    system?: boolean; // İmza üçün sistem əlavə edildi
+    system?: boolean;
   };
   createdAt: string;
   updatedAt: string;
+  lastLogin?: string;
+  passwordResetDate?: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface UserFormData {
   name: string;
   email: string;
   password?: string;
+  confirmPassword?: string;
   role: UserRole;
   regionId?: string;
   sectorId?: string;
@@ -41,7 +45,7 @@ export interface UserFormData {
     email: boolean;
     inApp: boolean;
     push?: boolean;
-    system?: boolean; // İmza üçün sistem əlavə edildi
+    system?: boolean;
   };
 }
 

@@ -21,43 +21,46 @@ export interface DashboardData {
 }
 
 export interface SuperAdminDashboardData extends DashboardData {
-  regions: number;
-  sectors: number; 
-  schools: number;
-  users: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
+  regions?: number;
+  sectors?: number; 
+  schools?: number;
+  users?: number;
+  pendingApprovals?: number;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
   regionStats?: { name: string; schoolCount: number }[];
   categoryCompletions?: CategoryCompletionData[];
   statusCounts?: { [key: string]: number };
   regionSchoolsData?: any[];
+  statusData?: any[];
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
-  sectors: number;
-  schools: number;
-  approvalRate: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
+  sectors?: number;
+  schools?: number;
+  approvalRate?: number;
+  pendingApprovals?: number;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
   sectorStats?: { name: string; schoolCount: number }[];
   categoryCompletions?: CategoryCompletionData[];
   statusCounts?: { [key: string]: number };
   statusData?: any[];
+  approvedSectors?: number;
+  rejectedSectors?: number;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
   sectorName: string;
   regionName: string;
-  schools: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
+  schools?: number;
+  pendingApprovals?: number;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
   schoolStats?: { name: string; completionRate: number }[];
   categoryCompletions?: CategoryCompletionData[];
   statusCounts?: { [key: string]: number };
@@ -75,7 +78,7 @@ export interface SchoolAdminDashboardData extends DashboardData {
     dueSoon: number;
     overdue: number;
   };
-  completedForms: FormItem[];  // FormItem[] tipini təyin edirik, number deyil
+  completedForms?: FormItem[];
   pendingForms?: FormItem[];
   recentForms?: FormItem[];
   categoryCompletions?: CategoryCompletionData[];
@@ -110,7 +113,7 @@ export interface ChartData {
   };
   regionSchoolsData?: any[];
   activityData?: ActivityItem[];
-  categoryCompletionData?: CategoryCompletionData[]; // eksik xüsusiyyət əlavə edildi
+  categoryCompletionData?: CategoryCompletionData[];
 }
 
 export interface ActivityItem {
@@ -123,7 +126,7 @@ export interface ActivityItem {
   userName?: string;
   entityId?: string;
   entityType?: string;
-  action?: string; // providers/utils.ts-də xətanı həll etmək üçün
+  action?: string;
   actor?: string;
   target?: string;
   time?: string;

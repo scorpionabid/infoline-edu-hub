@@ -40,10 +40,10 @@ export function adaptNotification(rawNotification: any): Notification {
     message: rawNotification.message || '',
     userId: rawNotification.user_id || rawNotification.userId || '',
     priority: rawNotification.priority || 'normal',
-    relatedEntityId: rawNotification.related_entity_id || '',
-    relatedEntityType: rawNotification.related_entity_type || 'system',
+    relatedEntityId: rawNotification.related_entity_id || rawNotification.relatedEntityId || '',
+    relatedEntityType: rawNotification.related_entity_type || rawNotification.relatedEntityType || 'system',
     createdAt: rawNotification.created_at || rawNotification.createdAt || new Date().toISOString(),
-    isRead: rawNotification.is_read || false,
+    isRead: rawNotification.is_read || rawNotification.isRead || false,
     read_status: rawNotification.read_status || rawNotification.is_read || false,
     time: rawNotification.time || ''
   };

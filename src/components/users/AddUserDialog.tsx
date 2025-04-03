@@ -40,10 +40,11 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     email: '',
     password: '',
     role: getInitialRole(),
-    status: 'active', // Artıq UserFormData interfeysinə əlavə edilib
+    status: 'active',
     regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     notificationSettings: {
       email: true,
+      inApp: true, // inApp əlavə edildi
       system: true
     }
   };

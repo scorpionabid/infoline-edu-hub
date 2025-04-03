@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -21,7 +22,7 @@ const adaptDataForExport = (entries: DataEntry[]) => {
     school_id: entry.school_id, 
     value: entry.value || '',
     status: entry.status as 'pending' | 'approved' | 'rejected',
-    errorMessage: entry.rejection_reason || ''
+    errorMessage: entry.rejectionReason || entry.rejection_reason || ''
   }));
 };
 

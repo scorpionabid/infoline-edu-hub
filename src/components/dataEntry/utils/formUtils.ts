@@ -11,7 +11,7 @@ export const createEmptyEntries = (categoryIds: string[]): CategoryEntryData[] =
     progress: 0,
     status: 'draft',
     values: [],
-    entries: [],
+    entries: {}, // Boş bir object olaraq təyin edildi
     isCompleted: false,
     isSubmitted: false,
     completionPercentage: 0
@@ -27,6 +27,7 @@ export const createEmptyEntry = (categoryId: string): CategoryEntryData => {
     progress: 0,
     status: 'draft',
     values: [],
+    entries: {}, // Boş bir object olaraq təyin edildi
     isSubmitted: false
   };
 };
@@ -36,6 +37,7 @@ export const createColumnEntry = (columnId: string, value: string = '', status: 
     id: uuidv4(),
     columnId,
     value,
+    isValid: true, // isValid əlavə edildi
     status
   };
 };

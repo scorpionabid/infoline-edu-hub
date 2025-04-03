@@ -1,167 +1,179 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLanguage } from '@/context/LanguageContext';
-import { Category } from '@/types/category';
+import { useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Category, CategoryAssignment } from "@/types/category";
 
-// CategoryWithOrder interfeysi yaradırıq - bunlar EditCategoryDialog-dan istifadə olunur
-export type CategoryWithOrder = Category & {
+export interface CategoryWithOrder extends Category {
   order?: number;
-};
+}
 
-export interface AddCategoryDialogProps {
+interface AddCategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddCategory: (categoryData: CategoryWithOrder) => Promise<boolean>;
-  category?: CategoryWithOrder; // Mövcud kateqoriya redaktə üçün
+  onAddCategory: (category: CategoryWithOrder) => Promise<boolean>;
+  category?: CategoryWithOrder; // for edit mode
 }
 
 export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   open,
   onOpenChange,
   onAddCategory,
-  category // opsional prop - əgər varsa, bu redaktə əməliyyatıdır
+  category
 }) => {
   const { t } = useLanguage();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [assignment, setAssignment] = useState('all');
-  const [priority, setPriority] = useState<number>(0);
-  const [submitting, setSubmitting] = useState(false);
-  
-  // Kateqoriya redaktə edilərkən formu doldurmaq
-  useEffect(() => {
-    if (category && open) {
-      setName(category.name || '');
-      setDescription(category.description || '');
-      setAssignment(category.assignment || 'all');
-      setPriority(category.priority || 0);
-    } else if (!category && open) {
-      // Yeni kateqoriya yaradarkən formu sıfırlamaq
-      setName('');
-      setDescription('');
-      setAssignment('all');
-      setPriority(0);
-    }
-  }, [category, open]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = !!category;
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
+  // Define form schema with zod
+  const formSchema = z.object({
+    name: z.string().min(1, { message: t('categoryNameRequired') }),
+    description: z.string().optional(),
+    assignment: z.enum(['all', 'sectors'] as const), // Burada const assertion əlavə edilib
+    priority: z.number().int().optional(),
+  });
+
+  // Initialize form with react-hook-form and zod resolver
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: category?.name || "",
+      description: category?.description || "",
+      assignment: (category?.assignment as CategoryAssignment) || "all", // Tip çevrilməsi əlavə edildi
+      priority: category?.priority || 0,
+    },
+  });
+
+  // Form submission handler
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     
+    const categoryData: CategoryWithOrder = {
+      id: category?.id || "",
+      name: values.name,
+      description: values.description || "",
+      assignment: values.assignment as CategoryAssignment, // Tip çevrilməsi əlavə edildi
+      status: category?.status || "active",
+      priority: values.priority,
+      order: category?.order || 0,
+    };
+
     try {
-      const categoryData: CategoryWithOrder = {
-        ...(category ? { id: category.id } : {}),
-        name,
-        description,
-        assignment,
-        priority,
-        status: 'active',
-        order: category?.order || 0
-      };
-      
       const success = await onAddCategory(categoryData);
       if (success) {
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Category save error:', error);
+      console.error("Error submitting category:", error);
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const isEditMode = !!category;
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? t('editCategory') : t('addCategory')}
+            {isEditMode ? t('editCategory') : t('addNewCategory')}
           </DialogTitle>
-          <DialogDescription>
-            {isEditMode ? t('editCategoryDescription') : t('addCategoryDescription')}
-          </DialogDescription>
         </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">{t('name')}</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('enterCategoryName')}
-              disabled={submitting}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('categoryName')}</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">{t('description')}</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('enterCategoryDescription')}
-              disabled={submitting}
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('description')}</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="assignment">{t('assignment')}</Label>
-            <Select 
-              value={assignment} 
-              onValueChange={setAssignment} 
-              disabled={submitting}
-            >
-              <SelectTrigger id="assignment">
-                <SelectValue placeholder={t('selectAssignment')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('allUsers')}</SelectItem>
-                <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="priority">{t('priority')}</Label>
-            <Input
-              id="priority"
-              type="number"
-              min="0"
-              step="1"
-              value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
-              placeholder={t('enterPriority')}
-              disabled={submitting}
+
+            <FormField
+              control={form.control}
+              name="assignment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('assignment')}</FormLabel>
+                  <Select 
+                    onValueChange={(value: string) => field.onChange(value as CategoryAssignment)} // Burada tip çevriliməsi əlavə edildi
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('selectAssignment')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="all">{t('allSchools')}</SelectItem>
+                      <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-          >
-            {t('cancel')}
-          </Button>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={!name || submitting}
-          >
-            {submitting ? (isEditMode ? t('updating') : t('adding')) : (isEditMode ? t('update') : t('add'))}
-          </Button>
-        </DialogFooter>
+
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('priority')}</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                {t('cancel')}
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? t('saving') : isEditMode ? t('saveChanges') : t('addCategory')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
 };
 
-export default AddCategoryDialog;
+export { AddCategoryDialog };

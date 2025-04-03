@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,10 +8,12 @@ import {
   SuperAdminDashboardData, 
   RegionAdminDashboardData,
   SectorAdminDashboardData,
-  SchoolAdminDashboardData
+  SchoolAdminDashboardData,
+  ActivityItem,
+  FormItem
 } from '@/types/dashboard';
 import { Notification, adaptNotification } from '@/types/notification';
-import { FormItem, FormStatus } from '@/types/form';
+import { FormStatus } from '@/types/form';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
@@ -39,15 +42,21 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
 };
 
 // FormItem-ləri Form formatına çevirmək üçün helper funksiya
-const adaptFormItems = (formItems: FormItem[]) => {
+const adaptFormItems = (formItems: any[]): FormItem[] => {
   if (!formItems || !Array.isArray(formItems)) {
     console.warn('FormItems is not an array:', formItems);
     return [];
   }
   
   return formItems.map(item => ({
-    ...item,
-    status: item.status as FormStatus
+    id: item.id || '',
+    title: item.title || '',
+    categoryId: item.categoryId || '',
+    status: (item.status as FormStatus) || 'draft',
+    completionPercentage: item.completionPercentage || 0,
+    deadline: item.deadline || '',
+    filledCount: item.filledCount || 0,
+    totalCount: item.totalCount || 0
   }));
 };
 
@@ -112,7 +121,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
           
           // For SuperAdminDashboard, make sure all required properties are present
-          const adaptedSuperAdminData = {
+          const adaptedSuperAdminData: SuperAdminDashboardData = {
             ...superAdminData,
             notifications: adaptedNotifications,
             // Default dəyərlərin təyin edilməsi
@@ -124,7 +133,20 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingApprovals: superAdminData.pendingApprovals || 0,
             pendingSchools: superAdminData.pendingSchools || 0,
             approvedSchools: superAdminData.approvedSchools || 0,
-            rejectedSchools: superAdminData.rejectedSchools || 0
+            rejectedSchools: superAdminData.rejectedSchools || 0,
+            // ActivityItem tipini uyğunlaşdıraq
+            activityData: superAdminData.activityData?.map(item => ({
+              id: item.id,
+              type: item.type,
+              title: item.title,
+              description: item.description,
+              timestamp: item.timestamp,
+              userId: item.userId,
+              action: item.action || '',
+              actor: item.actor || '',
+              target: item.target || '',
+              time: item.time || ''
+            })) || []
           };
           
           return <SuperAdminDashboard data={adaptedSuperAdminData} />;
@@ -145,7 +167,20 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingApprovals: regionAdminData.pendingApprovals || 0,
             pendingSchools: regionAdminData.pendingSchools || 0,
             approvedSchools: regionAdminData.approvedSchools || 0,
-            rejectedSchools: regionAdminData.rejectedSchools || 0
+            rejectedSchools: regionAdminData.rejectedSchools || 0,
+            // ActivityItem tipini uyğunlaşdıraq
+            activityData: regionAdminData.activityData?.map(item => ({
+              id: item.id,
+              type: item.type,
+              title: item.title,
+              description: item.description,
+              timestamp: item.timestamp,
+              userId: item.userId,
+              action: item.action || '',
+              actor: item.actor || '',
+              target: item.target || '',
+              time: item.time || ''
+            })) || []
           };
           
           return <RegionAdminDashboard data={adaptedRegionAdminData} />;
@@ -165,7 +200,20 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             completionRate: sectorAdminData.completionRate || 0,
             pendingSchools: sectorAdminData.pendingSchools || 0,
             approvedSchools: sectorAdminData.approvedSchools || 0,
-            rejectedSchools: sectorAdminData.rejectedSchools || 0
+            rejectedSchools: sectorAdminData.rejectedSchools || 0,
+            // ActivityItem tipini uyğunlaşdıraq
+            activityData: sectorAdminData.activityData?.map(item => ({
+              id: item.id,
+              type: item.type,
+              title: item.title,
+              description: item.description,
+              timestamp: item.timestamp,
+              userId: item.userId, 
+              action: item.action || '',
+              actor: item.actor || '',
+              target: item.target || '',
+              time: item.time || ''
+            })) || []
           };
           
           return <SectorAdminDashboard data={adaptedSectorAdminData} />;
@@ -177,13 +225,19 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
           
           // Ensure pendingForms exists and is properly formatted
-          const pendingForms = schoolAdminData.pendingForms || [];
+          const pendingForms = schoolAdminData.pendingForms ? 
+            adaptFormItems(schoolAdminData.pendingForms) : [];
+          
+          // Ensure completedForms is correctly formatted
+          const completedForms = schoolAdminData.completedForms ?
+            adaptFormItems(schoolAdminData.completedForms) : [];
           
           // Forms, pendingForms və recentForms məlumatlarını uyğunlaşdıraq
-          const adaptedSchoolAdminData = {
+          const adaptedSchoolAdminData: SchoolAdminDashboardData = {
             ...schoolAdminData,
             notifications: adaptedNotifications,
             pendingForms: pendingForms,
+            completedForms: completedForms,
             // Make sure 'forms' property is present
             forms: schoolAdminData.forms || {
               pending: 0,
@@ -198,7 +252,21 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             regionName: schoolAdminData.regionName || "Unknown Region",
             completionRate: schoolAdminData.completionRate || 0,
             // Adapt recentForms if present
-            recentForms: schoolAdminData.recentForms || []
+            recentForms: schoolAdminData.recentForms ? 
+              adaptFormItems(schoolAdminData.recentForms) : [],
+            // ActivityItem tipini uyğunlaşdıraq
+            activityData: schoolAdminData.activityData?.map(item => ({
+              id: item.id,
+              type: item.type,
+              title: item.title,
+              description: item.description,
+              timestamp: item.timestamp,
+              userId: item.userId,
+              action: item.action || '',
+              actor: item.actor || '',
+              target: item.target || '',
+              time: item.time || ''
+            })) || []
           };
           
           return (
