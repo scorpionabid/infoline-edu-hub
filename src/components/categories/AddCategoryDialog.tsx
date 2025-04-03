@@ -176,4 +176,4 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   );
 };
 
-export { AddCategoryDialog };
+// Təkrar export silinib

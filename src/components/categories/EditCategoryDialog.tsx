@@ -11,7 +11,7 @@ export interface EditCategoryDialogProps {
   onClose: () => void;
 }
 
-const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
+export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   isOpen,
   onOpenChange,
   category,
@@ -35,8 +35,3 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     />
   );
 };
-
-export default EditCategoryDialog;
-
-// Aşağıdakı export default olmayan versiyasını istifadə edə bilərik Categories.tsx faylı üçün
-export { EditCategoryDialog };

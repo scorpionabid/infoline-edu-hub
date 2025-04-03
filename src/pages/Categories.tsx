@@ -1,3 +1,4 @@
+
 // Düzəltmək: import { AddCategoryDialog as default } from '@/components/categories/AddCategoryDialog';
 // Doğrusu:
 import { AddCategoryDialog } from '@/components/categories/AddCategoryDialog';
@@ -12,7 +13,8 @@ import CategoryHeader from '@/components/categories/CategoryHeader';
 import CategoryPagination from '@/components/categories/CategoryPagination';
 import CategoryFilters from '@/components/categories/CategoryFilters';
 import { useCategoriesData } from '@/hooks/categories/useCategoriesData';
-import { Category, CategoryFilter } from '@/types/category';
+import { Category } from '@/types/category';
+import { CategoryFilter } from '@/types/dataEntry'; // CategoryFilter tipini dataEntry-dən import edirik
 import { EditCategoryDialog } from '@/components/categories/EditCategoryDialog';
 import { ArchiveCategoryDialog } from '@/components/categories/ArchiveCategoryDialog';
 import { DeleteCategoryDialog } from '@/components/categories/DeleteCategoryDialog';
@@ -167,6 +169,10 @@ const Categories = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+  };
+
   return (
     <SidebarLayout>
       <div className="space-y-4">
@@ -206,10 +212,11 @@ const Categories = () => {
       {selectedCategory && (
         <>
           <EditCategoryDialog
-            open={isEditDialogOpen}
+            isOpen={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
             category={selectedCategory}
             onUpdateCategory={handleUpdateCategory}
+            onClose={handleCloseEditDialog}
           />
 
           <ArchiveCategoryDialog
