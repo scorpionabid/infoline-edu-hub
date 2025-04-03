@@ -77,3 +77,7 @@ export async function fetchUserData(userId: string): Promise<FullUserData | null
     return null;
   }
 }
+
+// fetchUserData funksiyasını getUserData adı ilə də ixrac edirik ki, 
+// mövcud koda uyğun olsun
+export const getUserData = fetchUserData;

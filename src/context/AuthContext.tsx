@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { AuthState } from '@/hooks/auth/types';
-import { fetchUserData } from '@/hooks/auth/userDataService';
+import { getUserData } from '@/hooks/auth/userDataService';
 
 export type Role = UserRole;
 
@@ -69,14 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       
       try {
-        // Get the current user and session
         const { data: { user } } = await supabase.auth.getUser();
         const { data: { session } } = await supabase.auth.getSession();
         setSessionData(session);
         
-        // If we have a user, fetch their profile data
         if (user) {
-          const userData = await fetchUserData(user.id);
+          const userData = await getUserData(user.id);
           
           if (userData) {
             setCurrentUser(userData);
@@ -101,14 +98,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     initializeAuth();
     
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.info('Auth state changed:', event);
       setSessionData(session);
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-          const userData = await fetchUserData(session.user.id);
+          const userData = await getUserData(session.user.id);
           setCurrentUser(userData);
           dispatch({ type: 'SET_USER', payload: userData });
         }
@@ -138,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
       
-      const userData = data.user ? await fetchUserData(data.user.id) : null;
+      const userData = data.user ? await getUserData(data.user.id) : null;
       
       if (userData) {
         setCurrentUser(userData);
@@ -223,7 +219,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('No user is currently logged in');
       }
       
-      // Update profile in the profiles table
       const { data, error } = await supabase
         .from('profiles')
         .update({
@@ -242,7 +237,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
       
-      // If email is provided, update the auth user as well
       if (profileData.email && profileData.email !== currentUser.email) {
         const { error: updateAuthError } = await supabase.auth.updateUser({
           email: profileData.email
@@ -254,8 +248,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
-      // Fetch updated user data
-      const updatedUserData = await fetchUserData(currentUser.id);
+      const updatedUserData = await getUserData(currentUser.id);
       
       if (updatedUserData) {
         setCurrentUser(updatedUserData);
@@ -320,7 +313,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Rol yoxlanışı üçün köməkçi funksiya
 export const useRole = (
   role: UserRole | UserRole[], 
   fallback: JSX.Element | null = null
