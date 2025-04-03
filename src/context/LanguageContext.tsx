@@ -1,97 +1,106 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { toast } from 'sonner';
-import en from '../translations/en';
-import az from '../translations/az';
-import ru from '../translations/ru';
-import tr from '../translations/tr';
-import { Language, LanguageInfo } from '@/types/language';
-
-type LanguageType = 'az' | 'en' | 'ru' | 'tr';
-
-type TranslationKeys = keyof typeof az;
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { translations, defaultLang, Language } from '@/translations';
+import { LanguageType } from '@/types/language';
 
 interface LanguageContextType {
-  language: LanguageType;
-  setLanguage: (lang: LanguageType) => void;
-  t: (key: string, params?: Record<string, string>) => string;
-  translations: Record<string, string>;
-  languageLoaded: boolean;
-  languages: Record<string, LanguageInfo>;  // LanguageInfo tipini əlavə edirik
+  language: Language;
+  t: (key: string, params?: Record<string, string | number>) => string;
+  setLanguage: (lang: Language) => void;
+  languages: { value: Language, label: string }[];
 }
-
-const translations = {
-  az,
-  en,
-  ru,
-  tr
-};
-
-const defaultLanguage: LanguageType = 'az';
-
-// Dillər haqqında məlumatları əlavə edirik
-const languages: Record<string, LanguageInfo> = {
-  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
-  en: { nativeName: 'English', flag: '🇬🇧' },
-  ru: { nativeName: 'Русский', flag: '🇷🇺' },
-  tr: { nativeName: 'Türkçe', flag: '🇹🇷' }
-};
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<LanguageType>(() => {
-    const savedLanguage = localStorage.getItem('language') as LanguageType;
-    return savedLanguage || defaultLanguage;
-  });
-  const [languageLoaded, setLanguageLoaded] = useState(false);
-
-  useEffect(() => {
-    // Dil seçimini yaddaşda saxla
-    localStorage.setItem('language', language);
-    setLanguageLoaded(true);
-  }, [language]);
-
-  const setLanguage = (lang: LanguageType) => {
-    setLanguageState(lang);
-    toast.success(`Dil ${lang.toUpperCase()} olaraq dəyişdirildi`);
-  };
-
-  const t = (key: string, params?: Record<string, string>): string => {
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  const [language, setLanguage] = useState<Language>(() => {
     try {
-      // Nested keys üçün dəstək (məs: "categories.title")
+      // Əvvəlcə localStoragedən oxumağa çalışırıq
+      const savedLanguage = localStorage.getItem('language');
+      if (savedLanguage && Object.values(Language).includes(savedLanguage as Language)) {
+        return savedLanguage as Language;
+      }
+      
+      // Əgər browser dilini təyin etmək istəyiriksə, onun əsasında dili seçirik
+      const browserLang = navigator.language.split('-')[0];
+      if (Object.values(Language).includes(browserLang as Language)) {
+        return browserLang as Language;
+      }
+      
+      return defaultLang;
+    } catch (e) {
+      console.warn('Dil seçimi xətası:', e);
+      return defaultLang;
+    }
+  });
+  
+  const languages = [
+    { value: 'az' as Language, label: 'Azərbaycan' },
+    { value: 'en' as Language, label: 'English' },
+    { value: 'ru' as Language, label: 'Русский' },
+    { value: 'tr' as Language, label: 'Türkçe' },
+  ];
+  
+  useEffect(() => {
+    try {
+      localStorage.setItem('language', language);
+      console.log(`Dil dəyişdirildi: ${language}`);
+      document.documentElement.setAttribute('lang', language);
+    } catch (e) {
+      console.warn('Dil saxlanması xətası:', e);
+    }
+  }, [language]);
+  
+  const t = (key: string, params?: Record<string, string | number>) => {
+    try {
       const keys = key.split('.');
-      let value = keys.reduce((obj, k) => obj?.[k], translations[language] as any);
-
-      // Əgər tərcümə tapılmadısa
-      if (!value) {
-        console.warn(`Translation missing for key: ${key} in ${language}`);
-        return key; // Açarın özünü qaytar
+      let text: any = translations[language];
+      
+      // Daxili açarlar üçün nöqtəli notasiya yoxlanılır
+      for (const k of keys) {
+        if (text && text[k]) {
+          text = text[k];
+        } else {
+          // Əgər tərcümə tapılmırsa, ilk olaraq defaultLanguage'ə baxaq
+          let defaultText = translations[defaultLang];
+          for (const dk of keys) {
+            if (defaultText && defaultText[dk]) {
+              defaultText = defaultText[dk];
+            } else {
+              defaultText = undefined;
+              break;
+            }
+          }
+          
+          // Əgər default dildə də yoxdursa, açarın özünü qaytaraq
+          text = defaultText || key;
+          break;
+        }
       }
-
-      // Parametrlər əsasında tərcüməni format et
-      if (params && typeof value === 'string') {
-        Object.keys(params).forEach(param => {
-          value = value.replace(new RegExp(`\\{${param}\\}`, 'g'), params[param]);
-        });
+      
+      if (typeof text === 'string' && params) {
+        // Parametrləri string'də əvəzləyirik, məs: {name} -> John
+        return Object.entries(params).reduce((result, [paramKey, value]) => {
+          const regex = new RegExp(`\\{${paramKey}\\}`, 'g');
+          return result.replace(regex, String(value));
+        }, text);
       }
-
-      return value;
-    } catch (error) {
-      console.error(`Error getting translation for ${key}:`, error);
+      
+      return typeof text === 'string' ? text : key;
+    } catch (e) {
+      console.warn(`Tərcümə xətası (${key}):`, e);
       return key;
     }
   };
-
+  
+  const handleSetLanguage = (newLang: Language) => {
+    if (newLang !== language) {
+      setLanguage(newLang);
+    }
+  };
+  
   return (
-    <LanguageContext.Provider value={{ 
-      language, 
-      setLanguage, 
-      t, 
-      translations: translations[language],
-      languageLoaded,
-      languages  // languages xüsusiyyətini əlavə edirik
-    }}>
+    <LanguageContext.Provider value={{ language, t, setLanguage: handleSetLanguage, languages }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -99,11 +108,28 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+  
+  if (context === undefined) {
+    console.error('useLanguage hook must be used within a LanguageProvider');
+    // Fallback funksiya təmin et, səhvləri azaltmaq üçün
+    return {
+      language: defaultLang,
+      t: (key: string) => key,
+      setLanguage: () => {},
+      languages: [
+        { value: 'az' as Language, label: 'Azərbaycan' },
+        { value: 'en' as Language, label: 'English' },
+        { value: 'ru' as Language, label: 'Русский' },
+        { value: 'tr' as Language, label: 'Türkçe' },
+      ]
+    };
   }
+  
   return context;
 };
 
-// useLanguageSafe funksiyası əlavə edirik - bu, eyni funksionallığı təmin edəcək
+// useLanguageSafe adı ilə eyni funksiyadan alias yaradırıq
+// Bu həlledici rol oynayır, DataEntryProgress komponenti bu altsözü istifadə edir
 export const useLanguageSafe = useLanguage;
+
+export const useTranslation = useLanguage;

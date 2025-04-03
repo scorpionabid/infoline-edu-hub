@@ -13,6 +13,8 @@ const Schools = () => {
   const { user } = useAuth();
   const { loading, error } = useSupabaseSchools();
 
+  console.log("Schools səhifəsi yüklənir. İstifadəçi:", user?.id, "Yüklənmə statusu:", loading);
+
   return (
     <>
       <Helmet>

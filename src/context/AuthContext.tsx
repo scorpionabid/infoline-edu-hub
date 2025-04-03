@@ -30,7 +30,8 @@ type AuthAction =
   | { type: 'SET_USER'; payload: FullUserData | null }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: Error | null }
-  | { type: 'CLEAR_ERROR' };
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'SET_SESSION'; payload: any | null };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -42,6 +43,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, error: action.payload, loading: false };
     case 'CLEAR_ERROR':
       return { ...state, error: null };
+    case 'SET_SESSION':
+      return { ...state, session: action.payload };
     default:
       return state;
   }
@@ -69,21 +72,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       try {
         console.log('Auth başlatılır...');
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: { session } } = await supabase.auth.getSession();
-        setSessionData(session);
-        console.log('Auth məlumatları alındı, istifadəçi:', user ? 'mövcuddur' : 'yoxdur');
         
-        if (user) {
+        // Əvvəlcə mövcud sessionu yoxla
+        const sessionResponse = await supabase.auth.getSession();
+        const session = sessionResponse.data?.session;
+        const sessionError = sessionResponse.error;
+        
+        // Session xəta yoxlaması
+        if (sessionError) {
+          console.error('Session alınarkən xəta:', sessionError);
+          throw sessionError;
+        }
+        
+        setSessionData(session);
+        dispatch({ type: 'SET_SESSION', payload: session });
+        
+        // İstifadəçi məlumatlarını əldə et
+        if (session?.user) {
+          console.log('Aktiv sessiya tapıldı, istifadəçi məlumatları alınır...');
           try {
-            const userData = await getUserData(user.id);
-            console.log('İstifadəçi məlumatları alındı:', userData ? 'uğurlu' : 'xəta');
+            const userData = await getUserData(session.user.id);
             
             if (userData) {
+              console.log('İstifadəçi məlumatları uğurla alındı:', userData.role);
               setCurrentUser(userData);
               dispatch({ type: 'SET_USER', payload: userData });
             } else {
-              console.error('İstifadəçi məlumatları tapılmadı!');
+              console.warn('İstifadəçi məlumatları tapılmadı!');
               setCurrentUser(null);
               dispatch({ type: 'SET_USER', payload: null });
             }
@@ -93,12 +108,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             dispatch({ type: 'SET_USER', payload: null });
           }
         } else {
-          console.log('İstifadəçi tapılmadı');
+          console.log('Aktiv sessiya tapılmadı');
           setCurrentUser(null);
           dispatch({ type: 'SET_USER', payload: null });
         }
       } catch (error) {
-        console.error('Auth inicializasiyası xətası:', error);
+        console.error('Auth inicializasiya xətası:', error);
         setError(error as Error);
         dispatch({ type: 'SET_ERROR', payload: error as Error });
       } finally {
@@ -113,22 +128,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.info('Auth vəziyyəti dəyişdi:', event);
       setSessionData(session);
+      dispatch({ type: 'SET_SESSION', payload: session });
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
           try {
             const userData = await getUserData(session.user.id);
             if (userData) {
+              console.log('Auth vəziyyəti dəyişdi: İstifadəçi məlumatları alındı');
               setCurrentUser(userData);
               dispatch({ type: 'SET_USER', payload: userData });
             } else {
               console.error('İstifadəçi məlumatları tapılmadı (onAuthStateChange)');
+              setCurrentUser(null);
+              dispatch({ type: 'SET_USER', payload: null });
             }
           } catch (userError) {
             console.error('İstifadəçi məlumatlarını alarkən xəta (onAuthStateChange):', userError);
+            setCurrentUser(null);
+            dispatch({ type: 'SET_USER', payload: null });
           }
         }
       } else if (event === 'SIGNED_OUT') {
+        console.log('Auth vəziyyəti dəyişdi: İstifadəçi çıxış etdi');
         setCurrentUser(null);
         dispatch({ type: 'SET_USER', payload: null });
       }
@@ -180,6 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setSessionData(null);
       dispatch({ type: 'SET_USER', payload: null });
+      dispatch({ type: 'SET_SESSION', payload: null });
     } catch (error) {
       console.error('Logout error:', error);
       setError(error as Error);
