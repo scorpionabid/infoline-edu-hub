@@ -57,3 +57,34 @@ export const getMockSchools = () => {
     { id: '3', name: '245 saylı məktəb', sectorId: '3' }
   ];
 };
+
+export const getMockCategories = () => {
+  return [
+    { 
+      id: '1',
+      name: 'Şagird məlumatları',
+      description: 'Şagirdlərlə bağlı əsas məlumatlar',
+      status: 'active',
+      priority: 1,
+      assignment: 'all',
+      deadline: new Date().toISOString(),
+      archived: false,
+      columnCount: 10,
+      order: 1,
+      completionRate: 85
+    },
+    {
+      id: '2',
+      name: 'Müəllim məlumatları',
+      description: 'Müəllimlərlə bağlı əsas məlumatlar',
+      status: 'active',
+      priority: 2,
+      assignment: 'all',
+      deadline: new Date().toISOString(),
+      archived: false,
+      columnCount: 8,
+      order: 2,
+      completionRate: 70
+    }
+  ];
+};

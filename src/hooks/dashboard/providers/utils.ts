@@ -1,75 +1,128 @@
 
-import { FormItem, FormStatus } from '@/types/dashboard';
-import { mockCategories } from '@/data/mock/mockCategories';
-import { MockCategory } from '@/types/category';
+import { ActivityItem } from '@/types/dashboard';
+import { FormItem, FormStatus } from '@/types/form';
+import { getMockCategories } from '@/data/mock/mockCategories';
 
-// Deadline-ı string formatına çevirmək üçün utility funksiyası
-export function transformDeadlineToString(deadline: string | Date | undefined): string {
-  if (!deadline) {
-    console.log('Deadline məlumatı təqdim edilməyib');
-    return '';
-  }
+/**
+ * Əsas kateqoriyaların tamamlanma statistikasını əldə edir
+ */
+export const getCategoryCompletionData = () => {
+  const categories = getMockCategories();
   
-  try {
-    return typeof deadline === 'string' ? deadline : deadline.toISOString();
-  } catch (error) {
-    console.error('Deadline çevirmə xətası:', error);
-    return '';
-  }
-}
+  return categories.map(category => ({
+    name: category.name,
+    completed: Math.floor(Math.random() * 100),
+    total: 100,
+    percentage: category.completionRate || 0
+  }));
+};
 
-// Kateqoriyaları FormItem-lərə çevirmək üçün təhlükəsiz funksiya
-export function createSafeFormItems(categoryList: MockCategory[]): FormItem[] {
-  if (!Array.isArray(categoryList)) {
-    console.warn('Kateqoriyalar massiv deyil', categoryList);
-    return [];
-  }
-  
-  if (categoryList.length === 0) {
-    console.warn('Kateqoriyalar massivi boşdur');
-    return [];
-  }
-  
-  console.log(`${categoryList.length} kateqoriya işlənir, ilk element:`, categoryList[0]);
-  
-  return categoryList.map(category => {
-    if (!category) {
-      console.error('Kateqoriya undefined və ya null', category);
-      return {
-        id: `temp-${Math.random().toString(36).substr(2, 9)}`,
-        title: 'Xəta: namə\'lum kateqoriya',
-        category: 'Namə\'lum',
-        status: 'pending' as FormStatus,
-        completionPercentage: 0,
-        deadline: ''
-      };
+/**
+ * Son aktivitələr üçün mock məlumatlar
+ */
+export const getMockActivityData = (): ActivityItem[] => {
+  return [
+    {
+      id: 'activity-1',
+      action: 'Yeni məktəb əlavə edildi',
+      actor: 'Admin İstifadəçi',
+      target: '158 saylı məktəb',
+      time: '10 dəqiqə əvvəl'
+    },
+    {
+      id: 'activity-2',
+      action: 'Kateqoriya yeniləndi',
+      actor: 'Region Admini',
+      target: 'Şagird məlumatları',
+      time: '30 dəqiqə əvvəl'
+    },
+    {
+      id: 'activity-3',
+      action: 'Məlumatlar təsdiqləndi',
+      actor: 'Sektor Admini',
+      target: '20 saylı məktəb',
+      time: '1 saat əvvəl'
     }
-    
-    const deadline = category.deadline ? transformDeadlineToString(category.deadline) : '';
-    console.log(`Kateqoriya "${category.name}" üçün deadline: ${deadline}`);
-    
-    return {
-      id: category.id || `temp-${Math.random().toString(36).substr(2, 9)}`,
-      title: category.name || 'Unnamed Category',
-      category: category.name || 'Unnamed Category',
-      status: 'pending' as FormStatus,
-      completionPercentage: Math.floor(Math.random() * 100),
-      deadline: deadline
-    };
-  });
-}
+  ];
+};
 
-// Mock məlumatlarını yoxlama funksiyası
-export function validateMockCategories(): boolean {
-  console.log('mockCategories tipi:', typeof mockCategories);
-  console.log('mockCategories massiv?', Array.isArray(mockCategories));
-  console.log('mockCategories uzunluğu:', mockCategories?.length || 'mövcud deyil');
-  
-  if (Array.isArray(mockCategories) && mockCategories.length > 0) {
-    console.log('İlk kateqoriya nümunəsi:', mockCategories[0]);
-    return true;
-  } else {
-    console.error('mockCategories data problemi');
-    return false;
-  }
-}
+/**
+ * Son tamamlanan tapşırıqlar üçün mock məlumatlar
+ */
+export const getMockRecentForms = (): FormItem[] => {
+  return [
+    {
+      id: 'form-1',
+      title: 'Şagird məlumatları',
+      status: 'approved' as FormStatus,
+      completionPercentage: 100,
+    },
+    {
+      id: 'form-2',
+      title: 'Müəllim məlumatları',
+      status: 'rejected' as FormStatus,
+      completionPercentage: 80,
+    },
+    {
+      id: 'form-3',
+      title: 'İnfrastruktur məlumatları',
+      status: 'pending' as FormStatus,
+      completionPercentage: 70,
+    }
+  ];
+};
+
+/**
+ * Pending forms üçün mock məlumatlar
+ */
+export const getMockPendingForms = (): FormItem[] => {
+  return [
+    {
+      id: 'pending-1',
+      title: 'Şagird məlumatları',
+      status: 'pending' as FormStatus,
+      completionPercentage: 90,
+    },
+    {
+      id: 'pending-2',
+      title: 'Maliyyə məlumatları',
+      status: 'pending' as FormStatus,
+      completionPercentage: 60,
+    },
+    {
+      id: 'pending-3',
+      title: 'Kitabxana məlumatları',
+      status: 'pending' as FormStatus,
+      completionPercentage: 50,
+    }
+  ];
+};
+
+/**
+ * Yaxınlaşan son tarixlər üçün mock məlumatlar
+ */
+export const getMockUpcomingDeadlines = (): FormItem[] => {
+  return [
+    {
+      id: 'deadline-1',
+      title: 'Şagird məlumatları',
+      status: 'dueSoon' as FormStatus,
+      completionPercentage: 70,
+      deadline: '2023-12-31'
+    },
+    {
+      id: 'deadline-2',
+      title: 'Müəllim məlumatları',
+      status: 'dueSoon' as FormStatus,
+      completionPercentage: 50,
+      deadline: '2023-12-25'
+    },
+    {
+      id: 'deadline-3',
+      title: 'İnfrastruktur məlumatları',
+      status: 'overdue' as FormStatus,
+      completionPercentage: 20,
+      deadline: '2023-12-10'
+    }
+  ];
+};

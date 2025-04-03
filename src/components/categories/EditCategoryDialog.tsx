@@ -1,7 +1,5 @@
-
 import React from 'react';
-import { CategoryWithOrder } from '@/types/category';
-import AddCategoryDialog from './AddCategoryDialog';
+import { AddCategoryDialog } from './AddCategoryDialog';
 
 export interface EditCategoryDialogProps {
   isOpen: boolean;
@@ -18,7 +16,6 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   onSubmit,
   onClose,
 }) => {
-  // Sadəcə mövcud AddCategoryDialog-dan istifadə edirik
   return (
     <AddCategoryDialog
       isOpen={isOpen}

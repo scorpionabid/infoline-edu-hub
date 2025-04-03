@@ -1,40 +1,53 @@
-import { DashboardData, FormStatus, SuperAdminDashboardData } from "@/types/dashboard";
-import { mockNotifications } from "../mockDashboardData";
-import { getBaseDashboardData } from "./baseProvider";
+
+import { FormItem, FormStatus } from '@/types/form';
+import { SuperAdminDashboardData } from '@/types/dashboard';
+import { getBaseDashboardData } from './baseProvider';
+import { 
+  getCategoryCompletionData, 
+  getMockRecentForms, 
+  getMockPendingForms 
+} from './utils';
 
 export const getSuperAdminDashboardData = (): SuperAdminDashboardData => {
-  // Base datanı əldə edirik
   const baseData = getBaseDashboardData();
-
-  // SuperAdmin-ə xas olan məlumatları əlavə edirik
+  
+  // Super Admin üçün əlavə məlumatlar
   return {
     ...baseData,
-    regions: 12,
-    sectors: 72,
-    schools: 586,
-    users: 1254,
-    completionRate: 74,
-    pendingApprovals: 156,
-    pendingSchools: 45,
-    approvedSchools: 538,
-    rejectedSchools: 3,
+    regions: 10,
+    sectors: 35,
+    schools: 650,
+    users: 720,
+    completionRate: 85,
+    pendingApprovals: 28,
+    pendingSchools: 15,
+    approvedSchools: 625,
+    rejectedSchools: 10,
     statusData: {
-      completed: 538,
-      pending: 45,
-      rejected: 3,
+      completed: 625,
+      pending: 15,
+      rejected: 10,
       notStarted: 0
     },
-    activityData: [
-      { id: "1", action: "Məlumatların təsdiqi", actor: "Nəsimi rayon admini", target: "28 saylı məktəb", time: "15 dəq əvvəl" },
-      { id: "2", action: "Yeni kateqoriya", actor: "SuperAdmin", target: "Bütün məktəblər", time: "2 saat əvvəl" },
-      { id: "3", action: "Məlumat redaktəsi", actor: "Yasamal rayon admini", target: "158 saylı məktəb", time: "3 saat əvvəl" },
-      { id: "4", action: "Admin əlavə edilməsi", actor: "SuperAdmin", target: "Nizami rayon", time: "5 saat əvvəl" }
-    ],
     categoryCompletionData: [
-      { name: "Müəllimlər", completed: 498 },
-      { name: "Şagirdlər", completed: 521 },
-      { name: "İnfrastruktur", completed: 312 },
-      { name: "Maliyyə", completed: 456 }
-    ]
+      { name: 'Şagird məlumatları', completed: 600, total: 650, percentage: 92 },
+      { name: 'Müəllim məlumatları', completed: 580, total: 650, percentage: 89 },
+      { name: 'İnfrastruktur', completed: 520, total: 650, percentage: 80 },
+      { name: 'Maliyyə', completed: 450, total: 650, percentage: 69 }
+    ],
+    recentForms: getMockRecentForms(),
+    pendingForms: getMockPendingForms(),
+    chartData: {
+      labels: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May'],
+      datasets: [
+        {
+          label: 'Məlumat toplayan məktəblər',
+          data: [450, 500, 580, 620, 650],
+          backgroundColor: ['rgba(59, 130, 246, 0.5)'],
+          borderColor: ['rgb(59, 130, 246)'],
+          borderWidth: 1,
+        },
+      ],
+    },
   };
 };

@@ -3,50 +3,12 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import NotificationItem from './NotificationItem';
 import { useLanguage } from '@/context/LanguageContext';
-import { Notification } from '@/types/notification';
+import { Notification, adaptNotification } from '@/types/notification';
 
 // NotificationsCard üçün əlavə interfeys
 interface NotificationsCardProps {
   notifications: Notification[];
 }
-
-// Əlavə olan adaptIfNeeded köməkçi funksiyası
-const adaptIfNeeded = (notification: Notification): Notification => {
-  // Əgər notification null və ya undefined isə, varsayılan dəyər qaytaraq
-  if (!notification) {
-    return {
-      id: 'default',
-      type: 'info',
-      title: 'Bildiriş',
-      message: '',
-      createdAt: new Date().toISOString(),
-      time: new Date().toISOString(),
-      isRead: false,
-      userId: '',
-      priority: 'normal',
-      read_status: false // Boolean tipinə dəyişdik
-    };
-  }
-  
-  // Əgər time xüsusiyyəti yoxdursa, lakin createdAt varsa, onu time kimi istifadə edək
-  if (notification.time === undefined && notification.createdAt) {
-    return {
-      ...notification,
-      time: notification.createdAt,
-      read_status: notification.isRead // Boolean tipinə təyin edilir
-    };
-  }
-  
-  // Ensure read_status is set
-  if (notification.read_status === undefined) {
-    return {
-      ...notification,
-      read_status: notification.isRead // Boolean tipinə təyin edilir
-    };
-  }
-  
-  return notification;
-};
 
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications = [] }) => {
   const { t } = useLanguage();
@@ -55,7 +17,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications = [
   const safeNotifications = notifications || [];
   
   // Bildirişləri uyğunlaşdırın
-  const adaptedNotifications = safeNotifications.map(notification => adaptIfNeeded(notification));
+  const adaptedNotifications = safeNotifications.map(notification => adaptNotification(notification));
   
   return (
     <Card>

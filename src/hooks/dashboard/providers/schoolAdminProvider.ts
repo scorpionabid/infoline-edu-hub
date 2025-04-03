@@ -1,52 +1,64 @@
-import { getBaseDashboardData } from "./baseProvider";
-import { DashboardData, FormStatus, SchoolAdminDashboardData } from "@/types/dashboard";
 
-export const getSchoolAdminDashboardData = (userId: string): SchoolAdminDashboardData => {
-  // Base datanı əldə edirik
+import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { FormItem, FormStatus } from '@/types/form';
+import { getBaseDashboardData } from './baseProvider';
+import { 
+  getMockRecentForms, 
+  getMockPendingForms, 
+  getMockUpcomingDeadlines 
+} from './utils';
+
+export const getSchoolAdminDashboardData = (schoolId?: string): SchoolAdminDashboardData => {
   const baseData = getBaseDashboardData();
-
+  const schoolName = getSchoolName(schoolId || '1');
+  
+  // School Admin için özelleştirilmiş dashboard verileri
   return {
     ...baseData,
-    schoolName: "Bakı 220 saylı orta məktəb",
-    sectorName: "Binəqədi rayonu",
-    regionName: "Bakı şəhəri",
+    schoolName,
+    sectorName: 'Binəqədi',
+    regionName: 'Bakı',
+    completionRate: 75,
+    completedForms: 9,
+    totalForms: 12,
     forms: {
-      pending: 4,
-      approved: 8,
-      rejected: 1,
-      dueSoon: 2,
-      overdue: 1
+      pending: 2,
+      approved: 9,
+      rejected: 0,
+      dueSoon: 1,
+      overdue: 0
     },
-    completionRate: 66,
-    pendingForms: [
-      {
-        id: "1",
-        title: "Müəllim məlumatları",
-        status: "pending" as FormStatus,
-        completionPercentage: 45,
-        category: "Kadrlar"
-      },
-      {
-        id: "2",
-        title: "İnfrastruktur məlumatları",
-        status: "pending" as FormStatus,
-        completionPercentage: 30,
-        category: "İnfrastruktur"
-      }
-    ],
-    recentForms: [
-      {
-        id: "5",
-        title: "Dərs saatları",
-        status: "approved" as FormStatus,
-        completionPercentage: 100,
-        category: "Dərs"
-      }
-    ],
-    totalCategories: 15,
-    completedCategories: 10,
-    pendingCategories: 5,
-    totalForms: 16,
-    completedForms: []
+    recentForms: getMockRecentForms(),
+    pendingForms: getMockPendingForms(),
+    upcomingDeadlines: getMockUpcomingDeadlines(),
+    statusData: {
+      completed: 9,
+      pending: 2,
+      rejected: 0,
+      notStarted: 1
+    },
+    chartData: {
+      labels: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May'],
+      datasets: [
+        {
+          label: 'Tamamlanma faizi',
+          data: [40, 55, 65, 70, 75],
+          backgroundColor: ['rgba(59, 130, 246, 0.5)'],
+          borderColor: ['rgb(59, 130, 246)'],
+          borderWidth: 1,
+        },
+      ],
+    }
   };
+};
+
+// Köməkçi funksiyalar
+const getSchoolName = (schoolId: string): string => {
+  const schoolsMap = {
+    '1': '20 saylı məktəb',
+    '2': '158 saylı məktəb',
+    '3': '245 saylı məktəb'
+  };
+  
+  return (schoolsMap as {[key: string]: string})[schoolId] || 'Unknown school';
 };

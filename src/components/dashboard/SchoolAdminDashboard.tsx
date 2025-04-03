@@ -9,11 +9,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import DataEntryProgress from '../dataEntry/DataEntryProgress';
 import { CalendarClock, Clock, FileText, PlusCircle } from 'lucide-react';
-import { Form, FormStatus } from '@/types/form';
+import { FormItem } from '@/types/form';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { FormItem } from '@/types/form';
 
 interface SchoolAdminDashboardProps {
   data: {
@@ -101,7 +100,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         category: item.category,
         deadline: item.date,
         daysLeft: Math.floor((new Date(item.date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)),
-        status: index % 2 === 0 ? 'inProgress' as FormStatus : 'pending' as FormStatus
+        status: index % 2 === 0 ? 'inProgress' : 'pending',
+        completionPercentage: Math.floor(Math.random() * 100)
       })).filter(item => item.daysLeft > 0).sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 3)
     : [];
   

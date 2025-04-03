@@ -1,72 +1,92 @@
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Category, CategoryAssignment } from '@/types/category';
-import { DatePicker } from '@/components/ui/date-picker';
-import { useLanguage } from '@/context/LanguageContext';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/context/LanguageContext';
+import { DatePicker } from '@/components/ui/date-picker';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { CategoryAssignment } from '@/types/category';
 
 interface AddCategoryDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: Omit<Category, "id" | "createdAt" | "updatedAt">) => Promise<void>;
-  initialData?: Partial<Category>;
-  isEdit?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddCategory: (categoryData: any) => Promise<boolean>;
 }
 
-export function AddCategoryDialog({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialData,
-  isEdit = false
-}: AddCategoryDialogProps) {
+export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({ 
+  open, 
+  onOpenChange,
+  onAddCategory 
+}) => {
   const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState(initialData?.name || '');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [assignment, setAssignment] = useState<CategoryAssignment>(initialData?.assignment as CategoryAssignment || 'all');
-  const [status, setStatus] = useState(initialData?.status || 'active');
-  const [deadline, setDeadline] = useState<Date | undefined>(
-    initialData?.deadline ? new Date(initialData.deadline) : undefined
-  );
-  const [priority, setPriority] = useState(initialData?.priority || 1);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [assignment, setAssignment] = useState<CategoryAssignment>('all');
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const [deadline, setDeadline] = useState<Date | undefined>(new Date());
+  const [priority, setPriority] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setAssignment('all');
+    setStatus('active');
+    setDeadline(new Date());
+    setPriority(0);
+    setIsSubmitting(false);
+  };
 
   const handleSubmit = async () => {
-    if (!name) return;
-    
-    setIsLoading(true);
-    
-    const categoryData = {
-      name,
-      description,
-      assignment,
-      status: status as "active" | "inactive",
-      deadline: deadline || null,
-      priority,
-      columnCount: initialData?.columnCount || 0,
-      order: initialData?.order || priority,
-      archived: initialData?.archived || false
-    };
-    
+    setIsSubmitting(true);
+
     try {
-      await onSubmit(categoryData as Omit<Category, "id" | "createdAt" | "updatedAt">);
-      onClose();
+      const categoryData = {
+        name,
+        description,
+        assignment,
+        status,
+        deadline: deadline ? deadline.toISOString() : null,
+        priority,
+        columnCount: 0,
+        order: priority,
+        archived: false
+      };
+
+      const success = await onAddCategory(categoryData);
+      
+      if (success) {
+        resetForm();
+        onOpenChange(false);
+        toast.success(t('categoryAddedSuccess'), {
+          description: t('categoryAddedSuccessDesc')
+        });
+      }
     } catch (error) {
-      console.error("Error submitting category:", error);
+      console.error('Error adding category:', error);
+      toast.error(t('categoryAddError'), {
+        description: t('categoryAddErrorDesc')
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) resetForm();
+      onOpenChange(isOpen);
+    }}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t('editCategory') : t('addCategory')}</DialogTitle>
+          <DialogTitle>{t('addNewCategory')}</DialogTitle>
         </DialogHeader>
+        
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
@@ -77,8 +97,10 @@ export function AddCategoryDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="col-span-3"
+              placeholder={t('categoryNamePlaceholder')}
             />
           </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               {t('description')}
@@ -88,77 +110,90 @@ export function AddCategoryDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="col-span-3"
+              placeholder={t('categoryDescPlaceholder')}
             />
           </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="assignment" className="text-right">
               {t('assignment')}
             </Label>
-            <select
-              id="assignment"
-              value={assignment}
-              onChange={(e) => setAssignment(e.target.value as CategoryAssignment)}
-              className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            <Select 
+              value={assignment} 
+              onValueChange={(value) => setAssignment(value as CategoryAssignment)}
             >
-              <option value="all">{t('allRegions')}</option>
-              <option value="sectors">{t('sectorsOnly')}</option>
-            </select>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder={t('selectAssignment')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all')}</SelectItem>
+                <SelectItem value="sectors">{t('sectors')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="status" className="text-right">
               {t('status')}
             </Label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="col-span-3 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            <Select 
+              value={status} 
+              onValueChange={(value) => setStatus(value as 'active' | 'inactive')}
             >
-              <option value="active">{t('active')}</option>
-              <option value="inactive">{t('inactive')}</option>
-            </select>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder={t('selectStatus')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="deadline" className="text-right">
               {t('deadline')}
             </Label>
-            <DatePicker
-              id="deadline"
-              value={deadline}
-              onValueChange={setDeadline}
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <DatePicker date={deadline} setDate={setDeadline} />
+            </div>
           </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="priority" className="text-right">
-              {t('priority')}</Label>
+              {t('priority')}
+            </Label>
             <Input
-              type="number"
               id="priority"
+              type="number"
+              min="0"
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value))}
               className="col-span-3"
             />
           </div>
         </div>
+        
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              resetForm();
+              onOpenChange(false);
+            }}
+          >
             {t('cancel')}
           </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <span className="animate-spin mr-2">
-                  ●
-                </span>
-                {t('submitting')}
-              </>
-            ) : (
-              t('save')
-            )}
+          <Button 
+            type="submit" 
+            onClick={handleSubmit} 
+            disabled={!name || isSubmitting}
+          >
+            {isSubmitting ? t('adding') : t('add')}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};

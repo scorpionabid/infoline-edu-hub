@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -39,6 +40,7 @@ export const useDataEntryActions = ({
 }: UseDataEntryActionsProps) => {
   const { t } = useLanguage();
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const fetchDataEntriesForCategory = useCallback(() => {
     // Implement logic to fetch data entries for the current category
@@ -113,13 +115,16 @@ export const useDataEntryActions = ({
     submitCategoryForApproval,
     setSubmitting,
     setUnsavedChanges,
-    setCategoryStatus
+    setCategoryStatus,
+    setErrors
   ]);
   
   return {
     handleDataChange,
     handleSubmitForApproval,
-    fetchDataEntriesForCategory
+    fetchDataEntriesForCategory,
+    errors,
+    setErrors
   };
 };
 

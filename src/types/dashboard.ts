@@ -1,5 +1,5 @@
 
-import { FormItem } from './form';
+import { FormItem, FormStatus } from './form';
 import { Notification } from './notification';
 
 export interface ActivityItem {
@@ -19,6 +19,7 @@ export interface ChartData {
     borderColor: string[];
     borderWidth: number;
   }[];
+  activityData?: any;
 }
 
 export interface StatusData {
@@ -51,6 +52,7 @@ export interface DashboardData {
   statusData?: StatusData;
   chartData?: ChartData;
   categoryCompletionData?: CategoryCompletionData[];
+  pendingForms?: FormItem[];
 }
 
 // SuperAdmin Dashboard Data
@@ -87,6 +89,7 @@ export interface RegionAdminDashboardData extends DashboardData {
 // SectorAdmin Dashboard Data
 export interface SectorAdminDashboardData extends DashboardData {
   sectorName: string;
+  regionName?: string;
   schools: number;
   users: number;
   completionRate: number;

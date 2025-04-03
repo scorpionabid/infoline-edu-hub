@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, ChangeEvent } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import SchoolFilters from './SchoolFilters';
@@ -110,37 +110,30 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [user, selectedRegion, handleRegionFilter]);
 
-  const handleExportClick = () => {
-    const exportSchools = schools?.map(school => ({ 
-      ...school,
-      region_id: school.regionId || school.region_id,
-      sector_id: school.sectorId || school.sector_id
-    })) || [];
-    
-    handleExportToExcel(exportSchools as any);
-  };
-
-  const handleImportClick = () => {
-    setIsImportDialogOpen(true);
-  };
-
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     handleSearch(e.target.value);
   };
 
-  const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
-  const userRole = user?.role as UserRole;
+  const handleDeleteConfirm = () => {
+    if (selectedSchool) {
+      handleDeleteConfirmHelper(selectedSchool);
+    }
+  };
 
-  const handleEditDialogOpenWrapper = (school: any) => {
-    handleEditDialogOpen(school as School);
+  const handleDeleteConfirmHelper = async (school: School) => {
+    closeDeleteDialog();
+  };
+
+  const handleEditDialogOpenWrapper = (school: School) => {
+    handleEditDialogOpen(school);
   };
   
-  const handleDeleteDialogOpenWrapper = (school: any) => {
-    handleDeleteDialogOpen(school as School);
+  const handleDeleteDialogOpenWrapper = (school: School) => {
+    handleDeleteDialogOpen(school);
   };
   
-  const handleAdminDialogOpenWrapper = (school: any) => {
-    handleAdminDialogOpen(school as School);
+  const handleAdminDialogOpenWrapper = (school: School) => {
+    handleAdminDialogOpen(school);
   };
   
   const handleAdminUpdateWrapper = (adminData: any) => {
@@ -148,6 +141,29 @@ const SchoolsContainer: React.FC = () => {
       handleAdminUpdate(adminData);
     }
   };
+
+  const handleEditSubmitWrapper = (data: Partial<School>) => {
+    if (selectedSchool) {
+      handleEditSubmit(data, selectedSchool);
+    }
+  };
+
+  const handleExportClick = () => {
+    const exportSchools = schools?.map(school => ({
+      ...school,
+      region_id: school.regionId || school.region_id,
+      sector_id: school.sectorId || school.sector_id
+    })) || [];
+    
+    handleExportToExcel(exportSchools as School[]);
+  };
+
+  const handleImportClick = () => {
+    setIsImportDialogOpen(true);
+  };
+
+  const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
+  const userRole = user?.role as UserRole;
 
   return (
     <div className="space-y-6">
@@ -206,9 +222,9 @@ const SchoolsContainer: React.FC = () => {
         closeEditDialog={closeEditDialog}
         closeAddDialog={closeAddDialog}
         closeAdminDialog={closeAdminDialog}
-        handleDeleteConfirm={() => handleDeleteConfirm()}
+        handleDeleteConfirm={handleDeleteConfirm}
         handleAddSubmit={handleAddSubmit}
-        handleEditSubmit={(data) => handleEditSubmit(data)}
+        handleEditSubmit={handleEditSubmitWrapper}
         handleAdminUpdate={handleAdminUpdateWrapper}
         handleResetPassword={handleResetPassword}
         formData={formData}
