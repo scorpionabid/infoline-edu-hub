@@ -12,13 +12,15 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, FileSpreadsheet, InfoIcon, LayoutGrid, Loader2 } from 'lucide-react';
 import { exportDataToExcel } from '@/utils/excelExport';
-import { DataEntry } from '@/types/dataEntry';
+import type { DataEntry } from '@/types/dataEntry';
 
 // Adapter funksiyası əlavə edildi
 const adaptDataForExport = (entries: DataEntry[]) => {
   return entries.map(entry => ({
     id: entry.id!,
-    columnId: entry.column_id,
+    category_id: entry.category_id,
+    column_id: entry.column_id,
+    school_id: entry.school_id, 
     value: entry.value || '',
     status: entry.status as 'pending' | 'approved' | 'rejected',
     errorMessage: entry.rejection_reason || ''

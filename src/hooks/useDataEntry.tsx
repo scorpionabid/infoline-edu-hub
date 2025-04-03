@@ -176,7 +176,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       setDataEntries(prev => ({
         ...prev,
         [columnId]: {
-          id: entryId,
+          id: entryId, // id təyin edilir
           column_id: columnId,
           category_id: categoryId,
           school_id: schoolId,

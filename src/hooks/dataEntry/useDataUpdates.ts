@@ -1,18 +1,18 @@
 
 import { useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData, DataEntryForm, ColumnValidationError, ColumnEntry } from '@/types/dataEntry';
+import { CategoryEntryData, DataEntryForm, ColumnValidationError, ColumnEntry, DataEntryStatus } from '@/types/dataEntry';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { v4 as uuid } from 'uuid'; // UUID əlavə edildi
+import { v4 as uuid } from 'uuid';
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
   formData: DataEntryForm;
   errors: ColumnValidationError[];
-  initializeForm: (entries: CategoryEntryData[], status: 'draft' | 'submitted' | 'approved' | 'rejected') => void;
+  initializeForm: (entries: CategoryEntryData[], status: DataEntryStatus) => void;
   validateForm: () => boolean;
   submitForm: (validateFn: () => boolean) => boolean;
   setCurrentCategoryIndex: (index: number) => void;
@@ -57,17 +57,17 @@ export const useDataUpdates = ({
             newEntries[categoryIndex].values[valueIndex] = {
               ...newEntries[categoryIndex].values[valueIndex],
               value,
-              status: 'pending',
+              status: 'pending' as DataEntryStatus,
             };
             
             // Xəta mesajını silirik
             delete newEntries[categoryIndex].values[valueIndex].errorMessage;
           } else {
             newEntries[categoryIndex].values.push({
-              id: uuid(), // UUID əlavə edildi
+              id: uuid(),
               columnId,
               value,
-              status: 'pending'
+              status: 'pending' as DataEntryStatus
             });
           }
         }
