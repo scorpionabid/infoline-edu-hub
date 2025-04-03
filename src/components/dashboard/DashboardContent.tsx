@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -38,9 +39,9 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
   
   return notifications.map(notification => ({
     id: notification.id,
-    type: notification.type,
-    title: notification.title,
-    message: notification.message,
+    type: notification.type || 'info',
+    title: notification.title || 'Bildiriş',
+    message: notification.message || '',
     createdAt: notification.createdAt || new Date().toISOString(),
     time: notification.time || notification.createdAt || new Date().toISOString(),
     isRead: notification.isRead || false,
@@ -120,36 +121,51 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         case 'superadmin': {
           console.log('Rendering SuperAdminDashboard');
           const superAdminData = dashboardData as SuperAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(superAdminData.notifications);
+          const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
           
           // For SuperAdminDashboard, make sure all required properties are present
           const adaptedSuperAdminData = {
             ...superAdminData,
-            notifications: adaptedNotifications
+            notifications: adaptedNotifications,
+            // Default dəyərlərin təyin edilməsi
+            regions: superAdminData.regions || 0,
+            sectors: superAdminData.sectors || 0,
+            schools: superAdminData.schools || 0,
+            users: superAdminData.users || 0,
+            completionRate: superAdminData.completionRate || 0,
+            pendingApprovals: superAdminData.pendingApprovals || 0
           };
           
           return <SuperAdminDashboard data={adaptedSuperAdminData} />;
         }
         case 'regionadmin': {
           const regionAdminData = dashboardData as RegionAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(regionAdminData.notifications);
+          const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
           
           // For RegionAdminDashboard, make sure all required properties are present
           const adaptedRegionAdminData = {
             ...regionAdminData,
-            notifications: adaptedNotifications
+            notifications: adaptedNotifications,
+            regionName: regionAdminData.regionName || 'Unknown Region',
+            sectors: regionAdminData.sectors || 0,
+            schools: regionAdminData.schools || 0,
+            approvalRate: regionAdminData.approvalRate || 0
           };
           
           return <RegionAdminDashboard data={adaptedRegionAdminData} />;
         }
         case 'sectoradmin': {
           const sectorAdminData = dashboardData as SectorAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(sectorAdminData.notifications);
+          const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
           
           // For SectorAdminDashboard, make sure all required properties are present
           const adaptedSectorAdminData = {
             ...sectorAdminData,
-            notifications: adaptedNotifications
+            notifications: adaptedNotifications,
+            sectorName: sectorAdminData.sectorName || 'Unknown Sector',
+            regionName: sectorAdminData.regionName || 'Unknown Region',
+            schools: sectorAdminData.schools || 0,
+            pendingApprovals: sectorAdminData.pendingApprovals || 0
           };
           
           return <SectorAdminDashboard data={adaptedSectorAdminData} />;
@@ -158,7 +174,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         default: {
           console.log('Rendering SchoolAdminDashboard (default)');
           const schoolAdminData = dashboardData as SchoolAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(schoolAdminData.notifications);
+          const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
           
           // Forms, pendingForms və recentForms məlumatlarını uyğunlaşdıraq
           const adaptedSchoolAdminData = {

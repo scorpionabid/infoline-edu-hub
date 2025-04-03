@@ -11,13 +11,13 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recha
 
 interface SuperAdminDashboardProps {
   data: {
-    regions: number;
-    sectors: number;
-    schools: number;
-    users: number;
-    completionRate: number;
-    pendingApprovals: number;
-    notifications: Notification[];
+    regions?: number;
+    sectors?: number;
+    schools?: number;
+    users?: number;
+    completionRate?: number;
+    pendingApprovals?: number;
+    notifications?: Notification[];
     activityData?: Array<{
       id: string;
       action: string;
@@ -91,16 +91,29 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { name: 'Müəllim heyəti', completed: 88 },
     { name: 'Şagird statistikası', completed: 79 }
   ];
+
+  // Default qiymətləri təyin edək
+  const regionCount = data.regions || 0;
+  const sectorCount = data.sectors || 0; 
+  const schoolCount = data.schools || 0;
+  const userCount = data.users || 0;
+  const completionRate = data.completionRate || 0;
+  const pendingApprovals = data.pendingApprovals || 0;
   
   return (
     <div className="space-y-6">
       {/* Əsas statistika kartları */}
-      <StatsRow stats={data} />
+      <StatsRow stats={{
+        regions: regionCount,
+        sectors: sectorCount,
+        schools: schoolCount,
+        users: userCount
+      }} />
       
       {/* Tamamlanma və təsdiq kartları */}
       <StatusCards 
-        completionRate={data.completionRate} 
-        pendingApprovals={data.pendingApprovals} 
+        completionRate={completionRate} 
+        pendingApprovals={pendingApprovals} 
       />
       
       {/* Region tamamlanma kartı */}

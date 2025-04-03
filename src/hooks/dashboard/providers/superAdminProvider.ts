@@ -9,7 +9,10 @@ export function getSuperAdminData(): SuperAdminDashboardData {
   const mockSectors = getMockSectors();
   const notifications = getMockNotifications().map(n => ({
     ...n, 
-    time: n.createdAt || new Date().toISOString() 
+    time: n.createdAt || new Date().toISOString(),
+    type: n.type || 'info',
+    title: n.title || 'Bildiriş',
+    message: n.message || ''
   }));
   
   return {
@@ -57,6 +60,8 @@ export function getSuperAdminData(): SuperAdminDashboardData {
       { name: 'Maddi-texniki baza', completed: 71 },
       { name: 'Müəllim heyəti', completed: 88 },
       { name: 'Şagird statistikası', completed: 79 }
-    ]
+    ],
+    pendingForms: [],
+    upcomingDeadlines: []
   };
 }

@@ -17,7 +17,7 @@ import {
   getRegionAdminData, 
   getSectorAdminData, 
   getSchoolAdminData 
-} from './dashboardDataProviders';
+} from './providers';
 import { getChartData } from './mockDashboardData';
 import { mockCategories } from '@/data/mock/mockCategories';
 
@@ -115,6 +115,20 @@ export const useDashboardData = () => {
         } else {
           // Default olaraq schooladmin data-sını göstərək
           dashboardResult = getSchoolAdminData();
+        }
+        
+        // Dashboard data-dan önəmli sahələrin mövcudluğunu yoxlayaq
+        // və əgər olmazsa boş massivlər təyin edək
+        if (!dashboardResult.pendingForms) {
+          dashboardResult.pendingForms = [];
+        }
+        
+        if (!dashboardResult.upcomingDeadlines) {
+          dashboardResult.upcomingDeadlines = [];
+        }
+        
+        if (!dashboardResult.notifications) {
+          dashboardResult.notifications = [];
         }
         
         logStatus('Dashboard data hazırlandı', { 

@@ -1,5 +1,4 @@
 
-export * from './utils';
 export * from './baseProvider';
 export * from './superAdminProvider';
 export * from './regionAdminProvider';
