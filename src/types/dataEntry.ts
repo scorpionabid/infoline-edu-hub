@@ -1,98 +1,72 @@
 
+import { Column } from '@/types/column';
+import { Category } from '@/types/category';
+
 export type DataEntryStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'pending';
 
-export interface ValidationRules {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  patternError?: string;
-  email?: boolean;
-  url?: boolean;
-  minDate?: string;
-  maxDate?: string;
-  [key: string]: any;
-}
-
 export interface ColumnEntry {
-  columnId: string;
-  value: string | number | boolean | Date | string[];
+  id: string;
+  columnId: string; 
+  value: string;
   status: DataEntryStatus;
   errorMessage?: string;
 }
 
 export interface CategoryEntryData {
+  id: string;
   categoryId: string;
-  entries: ColumnEntry[];
+  categoryName: string;
+  order: number;
   status: DataEntryStatus;
-  isCompleted: boolean;
+  progress: number;
   isSubmitted: boolean;
-  completionPercentage: number;
-  values?: any[]; // Köhnə kodla uyğunluq üçün lazımdır
-  submittedAt?: string; // Köhnə kodla uyğunluq üçün lazımdır
+  submittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  values: ColumnEntry[];
 }
 
-export interface DataEntryForm {
+export interface DataEntryFormState {
   status: DataEntryStatus;
   entries: CategoryEntryData[];
   lastSaved: string;
   overallProgress: number;
   schoolId?: string;
-  formId?: string; // useFormState üçün əlavə edildi
 }
 
-export interface CategoryFilter {
-  status?: string;
-  assignment?: 'all' | 'sectors';
-  search: string;
-  showArchived: boolean;
+export interface CategoryWithColumns {
+  category: Category;
+  columns: Column[];
 }
 
-export interface ColumnReport {
+export interface ColumnValidationError {
+  id: string; 
   columnId: string;
-  columnName: string;
   categoryId: string;
-  categoryName: string;
-  value: string | number | boolean;
-  status: DataEntryStatus;
+  message: string;
+  value: string;
 }
 
 export interface DataEntry {
-  id: string;
+  id?: string;
   category_id: string;
   column_id: string;
   school_id: string;
   value?: string;
   status?: string;
   created_by?: string;
-  created_at?: string;
   updated_at?: string;
-  approved_by?: string;
+  created_at?: string;
   approved_at?: string;
+  approved_by?: string;
   rejected_by?: string;
   rejection_reason?: string;
+  errorMessage?: string;
+  columnId?: string;
 }
 
-// ActionType tipini əlavə edirik
-export enum ActionType {
-  SET_FORM_DATA = 'SET_FORM_DATA',
-  UPDATE_FORM_STATUS = 'UPDATE_FORM_STATUS',
-  UPDATE_ENTRY = 'UPDATE_ENTRY',
-  ADD_ERROR = 'ADD_ERROR',
-  REMOVE_ERROR = 'REMOVE_ERROR',
-  CLEAR_ERRORS = 'CLEAR_ERRORS',
-  START_AUTO_SAVE = 'START_AUTO_SAVE',
-  STOP_AUTO_SAVE = 'STOP_AUTO_SAVE',
-  SET_FORM_SAVED = 'SET_FORM_SAVED'
+export interface ActionType {
+  type: string;
+  payload: any;
 }
-
-// ColumnValidationError interfeysi əlavə edirik
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-}
-
-// EntryValue tipi əlavə edirik
-export type EntryValue = string | number | boolean | Date | string[] | null;

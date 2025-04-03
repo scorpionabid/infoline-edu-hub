@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
@@ -20,6 +21,12 @@ interface AuthContextType {
   updateProfile: (userData: Partial<FullUserData>) => Promise<boolean>;
   updatePassword: (newPassword: string) => Promise<boolean>;
   getUserData: (userId: string) => Promise<FullUserData | null>;
+  // Autentifikasiya statusu əlavə et (əlaqəli komponentlər üçün)
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  // Auth əməliyyatları üçün alias funksiyalar
+  login: (email: string, password: string) => Promise<FullUserData | null>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -38,10 +45,27 @@ const AuthContext = createContext<AuthContextType>({
   confirmPasswordReset: async () => false,
   updateProfile: async () => false,
   updatePassword: async () => false,
-  getUserData: async () => null
+  getUserData: async () => null,
+  isAuthenticated: false,
+  isLoading: true,
+  login: async () => null,
+  logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+// useRole - istifadəçi rolunu yoxlamaq üçün köməkçi funksiya
+export const useRole = (roles: string | string[]): boolean => {
+  const { user } = useAuth();
+  
+  if (!user) return false;
+  
+  if (Array.isArray(roles)) {
+    return roles.includes(user.role);
+  }
+  
+  return user.role === roles;
+};
 
 // Session xətasını düzəltmək üçün session dəyişənini çıxarırıq
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -53,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
   const [confirmingPasswordReset, setConfirmingPasswordReset] = useState(false);
 
-  // Auth kontextini komponent boyunca istifadə etmək üçün hook
+  // Auth kontekstini komponent boyunca istifadə etmək üçün hook
   const { auth } = useSupabaseAuth();
 
   useEffect(() => {
@@ -264,6 +288,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Əlavə funksionallıq və qədim ad ilə uyğun olması üçün alias funksiyalar
+  const login = signIn;
+  const logout = signOut;
+  const isAuthenticated = !!user;
+  const isLoading = loading;
+
   const contextValue: AuthContextType = {
     user,
     loading,
@@ -280,7 +310,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     confirmPasswordReset,
     updateProfile,
     updatePassword,
-    getUserData
+    getUserData,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout
   };
 
   return (
@@ -289,4 +323,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-

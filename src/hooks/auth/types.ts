@@ -1,26 +1,30 @@
 
+import { User, Session } from '@supabase/supabase-js';
 import { FullUserData, Profile } from '@/types/supabase';
 
-// Auth state üçün tipimizi təyin edək
-export interface AuthState {
+export type AuthState = {
+  session: Session | null;
+  user: User | null;
+  profile: FullUserData | null;
   loading: boolean;
-  user: FullUserData | null;
-  session: any | null;
-  isAuthenticated: boolean;
-  error: string | null;
+};
+
+export type ActionType = 'LOGIN' | 'LOGOUT' | 'SESSION' | 'PROFILE' | 'LOADING';
+
+export interface AuthAction {
+  type: ActionType;
+  payload?: any;
 }
 
-// Auth funksiyaları üçün tipimizi təyin edək
-export interface AuthActions {
-  signIn: (email: string, password: string) => Promise<any>;
-  signOut: () => Promise<void>;
-  signUp: (email: string, password: string, userData: Partial<Profile>) => Promise<any>;
-  resetPassword: (email: string) => Promise<boolean>;
-  updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
-  updatePassword: (password: string) => Promise<boolean>;
-  fetchUserData: (userId: string) => Promise<FullUserData>;
-  refreshSession: () => Promise<any | null>; // refreshSession əlavə edildi
+export interface UseSupabaseAuthReturn {
+  auth: {
+    currentUser: User | null;
+    session: Session | null;
+  };
+  login: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
+  logout: () => Promise<{ error: Error | null }>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (password: string) => Promise<{ user: User | null; error: Error | null }>;
+  signUp: (email: string, password: string, userData?: any) => Promise<{ user: User | null; error: Error | null }>;
+  updateProfile: (profile: Partial<Profile>) => Promise<{ profile: Profile | null; error: Error | null }>;
 }
-
-// useSupabaseAuth hook-un return tipi
-export interface UseSupabaseAuthReturn extends AuthState, AuthActions {}
