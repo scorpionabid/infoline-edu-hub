@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,17 +41,31 @@ export const useCategories = () => {
     }
   };
 
-  const addCategory = async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>) => {
+  const addCategory = async (category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      // Convert the frontend model to Supabase format
+      const supabaseCategory = {
+        name: category.name,
+        description: category.description,
+        assignment: category.assignment,
+        priority: category.priority,
+        deadline: category.deadline,
+        status: category.status || 'active',
+        order: category.order || category.priority,
+        archived: category.archived || false
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .insert([category])
+        .insert([supabaseCategory])
         .select()
         .single();
 
       if (error) throw error;
       
-      setCategories(prev => [...prev, data as Category]);
+      const newCategory = adaptSupabaseCategory(data);
+      setCategories(prev => [...prev, newCategory]);
+      
       toast.success(t('categoryAdded'), {
         description: t('categoryAddedDesc')
       });
@@ -67,17 +82,30 @@ export const useCategories = () => {
 
   const updateCategory = async (id: string, updates: Partial<Category>) => {
     try {
+      // Convert the frontend model updates to Supabase format
+      const supabaseUpdates = {
+        name: updates.name,
+        description: updates.description,
+        assignment: updates.assignment,
+        priority: updates.priority,
+        deadline: updates.deadline,
+        status: updates.status,
+        order: updates.order || updates.priority,
+        archived: updates.archived
+      };
+
       const { data, error } = await supabase
         .from('categories')
-        .update(updates)
+        .update(supabaseUpdates)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
       
+      const updatedCategory = adaptSupabaseCategory(data);
       setCategories(prev => prev.map(category => 
-        category.id === id ? { ...category, ...data } as Category : category
+        category.id === id ? updatedCategory : category
       ));
       
       toast.success(t('categoryUpdated'), {

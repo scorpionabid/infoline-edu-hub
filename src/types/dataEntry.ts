@@ -1,141 +1,85 @@
-import { ColumnType } from "./column";
 
-export interface EntryValue {
-  columnId: string;
-  value: string | number | Date | boolean | string[];
-  status: 'pending' | 'approved' | 'rejected';
-  errorMessage?: string;
-  warningMessage?: string;
-  history?: ValueHistoryEntry[];
-  lastModified?: Date;
-  modifiedBy?: string;
-}
+import { ColumnType } from './column';
+import { Json } from './supabase';
 
-// Dəyər dəyişikliyi tarixçəsi
-export interface ValueHistoryEntry {
-  timestamp: Date;
-  userId: string;
-  userName: string;
-  previousValue: string | number | Date | boolean | string[] | null;
-  newValue: string | number | Date | boolean | string[] | null;
-  action: 'create' | 'update' | 'delete' | 'approve' | 'reject';
-  comment?: string;
-}
-
-export interface CategoryEntryData {
-  categoryId: string;
-  values: EntryValue[];
-  isCompleted: boolean;
-  isSubmitted: boolean;
-  completionPercentage: number;
-  approvalStatus?: 'pending' | 'approved' | 'rejected';
-  approvedBy?: string;
-  approvedAt?: Date;
-  rejectedBy?: string;
-  rejectedAt?: Date;
-  rejectionReason?: string;
-  lastModified?: Date;
-}
-
-export interface DataEntryForm {
-  formId: string;
-  schoolId: string;
-  entries: CategoryEntryData[];
-  lastSaved?: string;
-  overallProgress: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
-  version?: number;
-  lockedBy?: string;
-  lockedUntil?: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-  categoryId?: string;
-  type?: 'required' | 'format' | 'range' | 'dependency' | 'custom';
-  severity?: 'error' | 'warning' | 'info';
-}
-
-export interface DataEntryFormHistory {
-  timestamp: Date;
-  userId: string;
-  userName: string;
-  action: 'create' | 'update' | 'submit' | 'approve' | 'reject';
-  details?: string;
-  formState?: Partial<DataEntryForm>;
-}
-
-export interface ExcelImportResult {
-  success: boolean;
-  totalRows: number;
-  successfulRows: number;
-  errorRows: number;
-  warningRows: number;
-  errors: {
-    row: number;
-    column: string;
-    message: string;
-    value?: any;
-  }[];
-  warnings: {
-    row: number;
-    column: string;
-    message: string;
-    value?: any;
-  }[];
-}
-
-export interface AutoSaveConfig {
-  enabled: boolean;
-  interval: number;
-  maxRetries: number;
-  retryDelay: number;
-  successMessage: boolean;
-}
-
-// Validasiya qaydaları tipi - Column.validationRules tipi ilə uyğunlaşdırılıb
-export interface ValidationRules {
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
+// Type for validation rules
+export type ValidationRules = {
   minValue?: number;
   maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  required?: boolean;
   pattern?: string;
-  patternError?: string;
-  minDate?: string | Date;
-  maxDate?: string | Date;
-  warningThreshold?: {
-    min?: number;
-    max?: number;
-  };
-  format?: string;
-  regex?: string;
-  customValidator?: (value: any) => { valid: boolean; message?: string };
-}
+  patternMessage?: string;
+};
 
-// DataEntry tipini ixrac edək
-export interface DataEntry {
+// Type for a single value in a data entry
+export type EntryValue = string | number | boolean | null;
+
+// Type for a dependency condition
+export type DependsOnCondition = {
+  columnId: string;
+  equals?: string | string[];
+  notEquals?: string | string[];
+};
+
+// Type for a single data entry
+export type DataEntry = {
   id: string;
-  category_id: string;
-  column_id: string;
-  school_id: string;
-  value?: string;
-  status?: 'pending' | 'approved' | 'rejected';
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
-  version_history_id?: string;
-}
+  columnId: string;
+  value: EntryValue;
+  status: 'pending' | 'approved' | 'rejected';
+  errorMessage?: string;
+};
 
-// Əvvəlki versiya ilə uyğunluq üçün Supabase tipindən də export edək
-export { DataEntry as DataEntryFromSupabase } from '@/types/supabase';
+// Type for a category's data entries
+export type CategoryEntryData = {
+  categoryId: string;
+  entries: DataEntry[];
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+};
 
-// Xətanı düzəltmək üçün 'export type' istifadə edək
-export type { DataEntry }; // "export type" ilə re-export etməliyik
+// Type for the entire form data
+export type FormData = {
+  schoolId: string;
+  categories: CategoryEntryData[];
+  lastSaved: string;
+  overallProgress: number;
+};
+
+// Submit data type
+export type SubmitData = {
+  categoryId: string;
+  schoolId: string;
+  values: { [columnId: string]: string };
+};
+
+// Types for state management
+export type ActionType =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_CATEGORIES'; payload: any[] }
+  | { type: 'SET_CURRENT_CATEGORY'; payload: number }
+  | { type: 'SET_ERROR'; payload: Error | null }
+  | { type: 'UPDATE_VALUE'; payload: { columnId: string; value: EntryValue } }
+  | { type: 'SET_VALUE'; payload: { columnId: string; value: EntryValue; status: 'pending' | 'approved' | 'rejected' } }
+  | { type: 'SET_ERROR_MESSAGE'; payload: { columnId: string; message: string } }
+  | { type: 'CLEAR_ERROR_MESSAGE'; payload: { columnId: string } }
+  | { type: 'SET_IS_SUBMITTING'; payload: boolean }
+  | { type: 'SET_IS_AUTO_SAVING'; payload: boolean }
+  | { type: 'SET_STATUS'; payload: 'draft' | 'submitted' | 'approved' | 'rejected' }
+  | { type: 'SET_LAST_SAVED'; payload: string }
+  | { type: 'SET_PROGRESS'; payload: number };
+
+// For the DataEntryForm components
+export type DataEntryFormProps = {
+  categoryId: string;
+  schoolId: string;
+};
+
+// Re-exporting types for other modules
+export type { Category } from './category';
+export type { Column } from './column';
