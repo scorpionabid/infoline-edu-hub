@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
-import { useRegions } from '../useRegions';
-import { useSectors } from '../useSectors';
+import { useRegionsData } from '../useRegions';
+import { useSectorsData } from '../useSectors';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -26,11 +25,9 @@ export const useSchoolsStore = () => {
   const itemsPerPage = 10;
   const { t } = useLanguage();
   
-  // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
-  const { regions } = useRegions();
-  const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
+  const { regions } = useRegionsData();
+  const { sectors, loading: sectorsLoading } = useSectorsData(selectedRegion);
 
-  // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,7 +61,6 @@ export const useSchoolsStore = () => {
     }
   }, [selectedRegion, selectedSector, selectedStatus, t]);
 
-  // Filtrlənmiş məktəblər
   const filteredSchools = schools.filter(school => {
     const searchMatch = 
       school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,7 +72,6 @@ export const useSchoolsStore = () => {
     return searchMatch;
   });
 
-  // Sıralanmış məktəblər
   const sortedSchools = [...filteredSchools].sort((a, b) => {
     if (!sortConfig.key) return 0;
     
@@ -97,14 +92,12 @@ export const useSchoolsStore = () => {
     return 0;
   });
 
-  // Paginated məktəblər
   const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
   const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
   const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -148,7 +141,6 @@ export const useSchoolsStore = () => {
     setCurrentPage(1);
   }, []);
 
-  // Məlumatların ilkin yüklənməsi
   useEffect(() => {
     fetchSchools();
   }, [fetchSchools]);

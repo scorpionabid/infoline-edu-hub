@@ -6,12 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
 import { Loader2 } from 'lucide-react';
-import { useSupabaseSchools } from '@/hooks/useSupabaseSchools';
+import { useSchoolsData } from '@/hooks/useSchoolsData'; // useSupabaseSchools əvəzinə useSchoolsData istifadə edirik
 
 const Schools = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { loading, error } = useSupabaseSchools();
+  const { loading, error } = useSchoolsData(); // useSupabaseSchools əvəzinə useSchoolsData istifadə edirik
 
   console.log("Schools səhifəsi yüklənir. İstifadəçi:", user?.id, "Yüklənmə statusu:", loading);
 

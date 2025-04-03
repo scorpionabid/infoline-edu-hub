@@ -1,15 +1,14 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -18,10 +17,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  School as SchoolIcon, 
-  Pencil, 
-  Trash2, 
+import {
+  School as SchoolIcon,
+  Pencil,
+  Trash2,
   Eye,
   MoreHorizontal,
   Users,
@@ -35,8 +34,8 @@ import {
 } from 'lucide-react';
 import { SortConfig } from '@/hooks/useSupabaseSchools';
 import { School } from '@/types/supabase';
-import { useRegions } from '@/hooks/useRegions';
-import { useSectors } from '@/hooks/useSectors';
+import { useRegionsData } from '@/hooks/useRegions';
+import { useSectorsData } from '@/hooks/useSectors';
 
 interface SchoolTableProps {
   currentItems: School[];
@@ -60,8 +59,8 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
   handleAdminDialogOpen
 }) => {
   const navigate = useNavigate();
-  const { regions } = useRegions();
-  const { sectors } = useSectors();
+  const { regions } = useRegionsData();
+  const { sectors } = useSectorsData();
 
   const getSchoolInitial = (name: string) => {
     return name && name.length > 0 ? name.charAt(0).toUpperCase() : 'M';

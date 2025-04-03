@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/sector';
@@ -206,5 +207,5 @@ export const useSectorsData = () => {
   };
 };
 
-// Əlavə etdiyimiz alias export, komponentlərdə useSectors() kimi çağırılmasına imkan verir
+// Komponentlərdə useSectors() kimi çağırılmasına imkan verən alias export
 export const useSectors = useSectorsData;
