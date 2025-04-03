@@ -73,6 +73,12 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     try {
       const categoryData = {
         ...data,
+        name: data.name,
+        description: data.description,
+        assignment: data.assignment,
+        status: data.status,
+        deadline: data.deadline,
+        priority: data.priority,
         columnCount: category?.columnCount || 0,
         order: category?.order || data.priority,
         archived: category?.archived || false,
