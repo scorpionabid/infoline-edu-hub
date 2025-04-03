@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { getUsers, deleteUser, updateUser, createUser } from '@/services/userService';
-import { FullUserData, UserRole, CreateUserData, UpdateUserData } from '@/types/supabase';
+import { getUsers, deleteUser, updateUser, createUser } from '@/services/user';
+import { UserRole, CreateUserData, UpdateUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
