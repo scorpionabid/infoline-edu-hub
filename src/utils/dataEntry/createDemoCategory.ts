@@ -91,4 +91,20 @@ export const getOptionValue = (option: string | ColumnOption): string => {
   return option.value || '';
 };
 
+// Demo categories and utils
+export const createDemoCategories = (): CategoryWithColumns[] => {
+  const demoCategory = createDemoCategory();
+  const teachersDemoCategory = createDemoCategory();
+  teachersDemoCategory.id = 'teachers-category';
+  teachersDemoCategory.name = 'Müəllim heyəti';
+  return [demoCategory, teachersDemoCategory];
+};
+
+export const createTeachersDemoCategory = (): CategoryWithColumns => {
+  const teachersDemoCategory = createDemoCategory();
+  teachersDemoCategory.id = 'teachers-category';
+  teachersDemoCategory.name = 'Müəllim heyəti';
+  return teachersDemoCategory;
+};
+
 export default createDemoCategory;

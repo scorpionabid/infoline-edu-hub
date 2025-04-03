@@ -1,21 +1,6 @@
 
 import { CategoryWithColumns, Column } from '@/types/column';
-import { createDemoCategory } from './createDemoCategory';
-
-// Create a demo category for testing
-const demoCategory = createDemoCategory();
-const teachersDemoCategory = createDemoCategory();
-teachersDemoCategory.id = 'teachers-category';
-teachersDemoCategory.name = 'Müəllim heyəti';
-
-// Helper functions to create demo categories
-export const createDemoCategories = (): CategoryWithColumns[] => {
-  return [demoCategory, teachersDemoCategory];
-};
-
-export const createTeachersDemoCategory = (): CategoryWithColumns => {
-  return teachersDemoCategory;
-};
+import { createDemoCategory, createDemoCategories, createTeachersDemoCategory } from './createDemoCategory';
 
 // Function to sort categories by priority
 export const sortCategoriesByPriority = (categories: CategoryWithColumns[]): CategoryWithColumns[] => {

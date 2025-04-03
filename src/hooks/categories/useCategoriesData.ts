@@ -1,23 +1,21 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
+import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
-import { Category } from '@/types/category';
+import { Category } from '@/types/column';
 
 export const useCategoriesData = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
-  const { t } = useLanguage();
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   // Fetch all categories
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     setIsError(false);
+    
     try {
-      // Mock fetch - in a real app, this would call an API or DB service
+      // Mock data - in a real app, this would be an API call
       setTimeout(() => {
         const mockCategories: Category[] = [
           {
@@ -25,165 +23,164 @@ export const useCategoriesData = () => {
             name: 'Ümumi məlumatlar',
             description: 'Məktəb haqqında ümumi məlumatlar',
             assignment: 'all',
-            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-            status: 'active',
             priority: 1,
+            status: 'active',
+            deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+            archived: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            order: 1,
-            archived: false
+            order: 1
           },
           {
             id: 'cat2',
             name: 'Müəllim heyəti',
-            description: 'Müəllimlər haqqında məlumatlar',
+            description: 'Müəllim heyəti haqqında məlumatlar',
             assignment: 'sectors',
-            deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now
-            status: 'active',
             priority: 2,
+            status: 'active',
+            deadline: new Date(Date.now() + 20*24*60*60*1000).toISOString(),
+            archived: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            order: 2,
-            archived: false
-          },
-          {
-            id: 'cat3',
-            name: 'Şagird heyəti',
-            description: 'Şagirdlər haqqında məlumatlar',
-            assignment: 'all',
-            deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(), // 20 days from now
-            status: 'inactive',
-            priority: 3,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            order: 3,
-            archived: false
+            order: 2
           }
         ];
 
         setCategories(mockCategories);
         setIsLoading(false);
       }, 800);
-    } catch (err: any) {
-      console.error('Error fetching categories:', err);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
       setIsError(true);
       setIsLoading(false);
-      toast({
-        title: t('error'),
-        description: t('errorFetchingCategories'),
-        variant: 'destructive',
-      });
+      toast.error('Kateqoriyalar yüklənərkən xəta baş verdi');
     }
-  };
+  }, []);
 
-  // Fetch a single category by ID
-  const fetchSingleCategory = async (categoryId: string): Promise<Category | null> => {
+  // Fetch a single category
+  const fetchSingleCategory = useCallback(async (categoryId: string): Promise<Category | null> => {
+    setIsLoading(true);
+    
     try {
-      // Mock fetch for a single category - in a real app, this would call an API or DB service
-      const category = categories.find(cat => cat.id === categoryId);
-      if (!category) {
-        // If not found in local state, we could fetch it from the server
-        console.log(`Category ${categoryId} not found in local state`);
-      }
-      return category || null;
-    } catch (err: any) {
-      console.error('Error fetching category:', err);
-      toast({
-        title: t('error'),
-        description: t('errorFetchingCategory'),
-        variant: 'destructive',
+      // Mock data - in a real app, this would be an API call
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const mockCategory = categories.find(c => c.id === categoryId) || {
+            id: categoryId,
+            name: 'Test kateqoriyası',
+            description: 'Test təsviri',
+            assignment: 'all' as const,
+            priority: 1,
+            status: 'active',
+            deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+            archived: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            order: 1
+          };
+          
+          setIsLoading(false);
+          resolve(mockCategory);
+        }, 500);
       });
+    } catch (error) {
+      console.error('Error fetching category:', error);
+      setIsLoading(false);
+      toast.error('Kateqoriya yüklənərkən xəta baş verdi');
       return null;
     }
-  };
+  }, [categories]);
 
   // Create a new category
-  const createCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createCategory = useCallback(async (categoryData: Omit<Category, "id" | "createdAt" | "updatedAt">) => {
     try {
-      // Mock create - in a real app, this would call an API or DB service
       const newCategory: Category = {
         ...categoryData,
         id: uuid(),
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        order: categoryData.priority || 1 // Order xassəsini təminat altına alırıq
       };
-
+      
       setCategories(prev => [...prev, newCategory]);
       return newCategory;
-    } catch (err: any) {
-      console.error('Error creating category:', err);
-      toast({
-        title: t('error'),
-        description: t('errorCreatingCategory'),
-        variant: 'destructive',
-      });
-      throw err;
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast.error('Kateqoriya yaradılarkən xəta baş verdi');
+      throw error;
     }
-  };
+  }, []);
 
   // Update an existing category
-  const updateCategory = async (categoryData: Partial<Category> & { id: string }) => {
+  const updateCategory = useCallback(async (categoryData: Partial<Category> & { id: string }) => {
     try {
-      // Mock update - in a real app, this would call an API or DB service
-      setCategories(prev => prev.map(cat => 
-        cat.id === categoryData.id 
-          ? { ...cat, ...categoryData, updatedAt: new Date().toISOString() } 
-          : cat
-      ));
+      setCategories(prev => 
+        prev.map(cat => 
+          cat.id === categoryData.id 
+            ? { 
+                ...cat, 
+                ...categoryData, 
+                updatedAt: new Date().toISOString(),
+                // Əgər priority yenilənibsə, order-i də yeniləyirik
+                order: categoryData.priority !== undefined ? categoryData.priority : cat.order
+              } 
+            : cat
+        )
+      );
+      
       return categoryData;
-    } catch (err: any) {
-      console.error('Error updating category:', err);
-      toast({
-        title: t('error'),
-        description: t('errorUpdatingCategory'),
-        variant: 'destructive',
-      });
-      throw err;
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error('Kateqoriya yenilənərkən xəta baş verdi');
+      throw error;
     }
-  };
+  }, []);
 
   // Delete a category
-  const deleteCategory = async (categoryId: string) => {
+  const deleteCategory = useCallback(async (categoryId: string, categoryName: string) => {
     try {
-      // Mock delete - in a real app, this would call an API or DB service
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      toast.success(`"${categoryName}" kateqoriyası silindi`);
       return true;
-    } catch (err: any) {
-      console.error('Error deleting category:', err);
-      toast({
-        title: t('error'),
-        description: t('errorDeletingCategory'),
-        variant: 'destructive',
-      });
-      throw err;
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Kateqoriya silinərkən xəta baş verdi');
+      throw error;
     }
-  };
+  }, []);
 
   // Archive/unarchive a category
-  const archiveCategory = async (categoryId: string, archive: boolean) => {
+  const archiveCategory = useCallback(async (categoryId: string, archived: boolean) => {
     try {
-      // Mock archive - in a real app, this would call an API or DB service
-      setCategories(prev => prev.map(cat => 
-        cat.id === categoryId 
-          ? { ...cat, archived: archive, updatedAt: new Date().toISOString() } 
-          : cat
-      ));
+      setCategories(prev => 
+        prev.map(cat => 
+          cat.id === categoryId 
+            ? { 
+                ...cat, 
+                archived,
+                updatedAt: new Date().toISOString() 
+              } 
+            : cat
+        )
+      );
+      
       return true;
-    } catch (err: any) {
-      console.error('Error archiving category:', err);
-      toast({
-        title: t('error'),
-        description: archive ? t('errorArchivingCategory') : t('errorUnarchivingCategory'),
-        variant: 'destructive',
-      });
-      throw err;
+    } catch (error) {
+      console.error('Error changing archive status:', error);
+      toast.error('Kateqoriyanın arxiv statusu dəyişdirilkən xəta baş verdi');
+      throw error;
     }
-  };
-
-  // Load categories on mount
-  useEffect(() => {
-    fetchCategories();
   }, []);
+
+  // Initial data load
+  const initialize = useCallback(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Load data on mount
+  useState(() => {
+    initialize();
+  });
 
   return {
     categories,
@@ -197,3 +194,5 @@ export const useCategoriesData = () => {
     archiveCategory
   };
 };
+
+export default useCategoriesData;

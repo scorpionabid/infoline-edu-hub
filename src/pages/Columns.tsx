@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -11,37 +10,22 @@ import AddColumnDialog from '@/components/columns/AddColumnDialog';
 import ImportColumnsDialog from '@/components/columns/ImportColumnsDialog';
 import { useColumnsData } from '@/hooks/columns/useColumnsData';
 import { useCategoriesData } from '@/hooks/categories/useCategoriesData';
-import { Column, CategoryWithColumns } from '@/types/column';
-import { Category } from '@/types/category';
 
-const Columns: React.FC = () => {
+const Columns = () => {
   const { categoryId = '' } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // State
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
-  const [category, setCategory] = useState<Category | null>(null);
-  
+  const [selectedColumn, setSelectedColumn] = useState(null);
+  const [category, setCategory] = useState(null);
+
   // Fetch category and columns data
-  const { 
-    fetchSingleCategory, 
-    isLoading: isCategoryLoading, 
-    error: categoryError 
-  } = useCategoriesData();
-  
-  const { 
-    columns,
-    isLoading: isColumnsLoading,
-    error: columnsError,
-    fetchColumns,
-    createColumn,
-    updateColumn,
-    deleteColumn,
-  } = useColumnsData(categoryId);
-  
+  const { fetchSingleCategory, isLoading: isCategoryLoading, isError: isCategoryError } = useCategoriesData();
+  const { columns, isLoading: isColumnsLoading, error: columnsError, fetchColumns, createColumn, updateColumn, deleteColumn } = useColumnsData(categoryId);
+
   // Fetch category data
   useEffect(() => {
     const loadCategory = async () => {
@@ -53,24 +37,24 @@ const Columns: React.FC = () => {
           toast({
             title: 'Xəta',
             description: 'Kateqoriya tapılmadı',
-            variant: 'destructive',
+            variant: 'destructive'
           });
           navigate('/categories');
         }
       }
     };
-    
+
     loadCategory();
   }, [categoryId, fetchSingleCategory, navigate, toast]);
-  
+
   // Handle column creation
-  const handleColumnCreate = async (columnData: Omit<Column, 'id'>) => {
+  const handleColumnCreate = async (columnData) => {
     try {
       await createColumn(columnData);
       setIsAddDialogOpen(false);
       toast({
         title: 'Sütun əlavə edildi',
-        description: `${columnData.name} sütunu uğurla əlavə edildi.`,
+        description: `${columnData.name} sütunu uğurla əlavə edildi.`
       });
       return true;
     } catch (error) {
@@ -78,20 +62,20 @@ const Columns: React.FC = () => {
       toast({
         title: 'Xəta baş verdi',
         description: 'Sütun əlavə edilmədi. Xahiş edirik yenidən cəhd edin.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return false;
     }
   };
-  
+
   // Handle column update
-  const handleColumnUpdate = async (columnData: Column) => {
+  const handleColumnUpdate = async (columnData) => {
     try {
       await updateColumn(columnData);
       setIsAddDialogOpen(false);
       toast({
         title: 'Sütun yeniləndi',
-        description: `${columnData.name} sütunu uğurla yeniləndi.`,
+        description: `${columnData.name} sütunu uğurla yeniləndi.`
       });
       return true;
     } catch (error) {
@@ -99,19 +83,19 @@ const Columns: React.FC = () => {
       toast({
         title: 'Xəta baş verdi',
         description: 'Sütun yenilənmədi. Xahiş edirik yenidən cəhd edin.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return false;
     }
   };
-  
+
   // Handle column deletion
-  const handleColumnDelete = async (columnId: string) => {
+  const handleColumnDelete = async (columnId) => {
     try {
       await deleteColumn(columnId);
       toast({
         title: 'Sütun silindi',
-        description: 'Sütun uğurla silindi.',
+        description: 'Sütun uğurla silindi.'
       });
       return true;
     } catch (error) {
@@ -119,41 +103,41 @@ const Columns: React.FC = () => {
       toast({
         title: 'Xəta baş verdi',
         description: 'Sütun silinmədi. Xahiş edirik yenidən cəhd edin.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return false;
     }
   };
-  
+
   // Open edit dialog
-  const openEditDialog = (column: Column) => {
+  const openEditDialog = (column) => {
     setSelectedColumn(column);
     setIsAddDialogOpen(true);
   };
-  
+
   // Handle import from Excel
-  const handleImportFromExcel = async (data: any) => {
+  const handleImportFromExcel = async (data) => {
     // TODO: Implement Excel import functionality
     toast({
       title: 'Sütunlar idxal edildi',
-      description: 'Sütunlar uğurla idxal edildi.',
+      description: 'Sütunlar uğurla idxal edildi.'
     });
     setIsImportDialogOpen(false);
     return true;
   };
-  
+
   // Handle export to Excel
   const handleExportToExcel = () => {
     // TODO: Implement Excel export functionality
     toast({
       title: 'Sütunlar ixrac edildi',
-      description: 'Sütunlar Excel formatında ixrac edildi.',
+      description: 'Sütunlar Excel formatında ixrac edildi.'
     });
   };
-  
+
   const isLoading = isCategoryLoading || isColumnsLoading;
-  const error = categoryError || columnsError;
-  
+  const error = columnsError || isCategoryError;
+
   return (
     <SidebarLayout>
       <div className="space-y-4">
