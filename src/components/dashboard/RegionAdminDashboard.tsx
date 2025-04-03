@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
 import StatCard from './StatCard';
-import { Buildings, Users, School, CheckCircle } from 'lucide-react';
+import { Building, Users, School, CheckCircle } from 'lucide-react';
 import NotificationsCard from './NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
 
@@ -22,7 +22,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
             <CardTitle className="text-sm font-medium">
               {t('region')}
             </CardTitle>
-            <Buildings className="h-4 w-4 text-muted-foreground" />
+            <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.regionName}</div>
