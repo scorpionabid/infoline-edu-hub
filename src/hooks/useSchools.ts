@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
 
-const useSchools = () => {
+export const useSchools = () => {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -116,4 +117,5 @@ const useSchools = () => {
   };
 };
 
+// Əsas export üçün həm default export, həm də named export əlavə edirik
 export default useSchools;
