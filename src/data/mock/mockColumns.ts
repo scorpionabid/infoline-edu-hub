@@ -15,7 +15,8 @@ export const mockColumns: Record<string, Column[]> = {
       helpText: 'Rəsmi sənədlərdə göstərilən adı yazın',
       order: 1,
       orderIndex: 0,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-2',
@@ -28,7 +29,8 @@ export const mockColumns: Record<string, Column[]> = {
       helpText: '',
       order: 2,
       orderIndex: 1,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-3',
@@ -41,7 +43,8 @@ export const mockColumns: Record<string, Column[]> = {
       helpText: 'Məktəbin təsis olunduğu tarix',
       order: 3,
       orderIndex: 2,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-4',
@@ -66,82 +69,90 @@ export const mockColumns: Record<string, Column[]> = {
     {
       id: 'col-5',
       categoryId: 'cat-1',
-      name: 'Ünvan',
+      name: 'Əlavə qeydlər',
       type: 'textarea',
       isRequired: true,
       defaultValue: '',
-      placeholder: 'Məktəbin tam ünvanını daxil edin',
-      helpText: '',
+      placeholder: 'Əlavə məlumatları daxil edin',
+      helpText: 'Məktəb haqqında digər mühüm məlumatlar',
       order: 5,
       orderIndex: 4,
-      status: 'active'
+      status: 'active',
+      options: []
     }
   ],
   'cat-2': [
     {
       id: 'col-6',
       categoryId: 'cat-2',
-      name: 'Müəllimlərin ümumi sayı',
+      name: 'Ümumi şagird sayı',
       type: 'number',
       isRequired: true,
       defaultValue: '',
-      placeholder: '',
-      helpText: '',
+      placeholder: 'Şagird sayını daxil edin',
+      helpText: 'Bütün siniflər üzrə cəmi şagird sayı',
       order: 1,
       orderIndex: 0,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-7',
       categoryId: 'cat-2',
-      name: 'Qadın müəllimlərin sayı',
+      name: 'Oğlan şagird sayı',
       type: 'number',
       isRequired: true,
       defaultValue: '',
-      placeholder: '',
+      placeholder: 'Oğlan şagirdlərin sayını daxil edin',
       helpText: '',
       order: 2,
       orderIndex: 1,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-8',
       categoryId: 'cat-2',
-      name: 'Kişi müəllimlərin sayı',
+      name: 'Qız şagird sayı',
       type: 'number',
       isRequired: true,
       defaultValue: '',
-      placeholder: '',
+      placeholder: 'Qız şagirdlərin sayını daxil edin',
       helpText: '',
       order: 3,
       orderIndex: 2,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-9',
       categoryId: 'cat-2',
-      name: 'Ali təhsilli müəllimlərin sayı',
+      name: 'İbtidai sinif şagirdləri',
       type: 'number',
       isRequired: true,
       defaultValue: '',
-      placeholder: '',
+      placeholder: 'İbtidai siniflərdə oxuyan şagird sayını daxil edin',
       helpText: '',
       order: 4,
       orderIndex: 3,
-      status: 'active'
+      status: 'active',
+      options: []
     },
     {
       id: 'col-10',
       categoryId: 'cat-2',
-      name: 'Orta ixtisas təhsilli müəllimlərin sayı',
+      name: 'Xüsusi qayğıya ehtiyacı olan şagirdlər',
       type: 'number',
       isRequired: false,
-      defaultValue: '0',
-      placeholder: '',
-      helpText: '',
+      defaultValue: '',
+      placeholder: 'Sayı daxil edin',
+      helpText: 'Fiziki və ya əqli məhdudiyyətləri olan şagirdlərin sayı',
       order: 5,
       orderIndex: 4,
-      status: 'active'
+      status: 'active',
+      options: []
     }
-  ],
+  ]
 };
+
+export default mockColumns;

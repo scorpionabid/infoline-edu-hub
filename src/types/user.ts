@@ -38,11 +38,12 @@ export interface UserDetails extends User {
   schoolName?: string;
 }
 
-// UserFormData tipini əlavə edirik
+// UserFormData interfeysi
 export interface UserFormData {
   name: string;
   email: string;
   password?: string;
+  confirmPassword?: string;
   role: UserRole;
   regionId?: string;
   region_id?: string;

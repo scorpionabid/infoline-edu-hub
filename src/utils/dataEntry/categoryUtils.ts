@@ -1,150 +1,140 @@
-import { v4 as uuidv4 } from 'uuid';
+
 import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData, ColumnEntry, DataEntryStatus } from '@/types/dataEntry';
+import { DataEntryStatus, CategoryEntryData, ColumnEntry } from '@/types/dataEntry';
+import { FormItem } from '@/types/form';
 
-export const getCurrentCategory = (categories: CategoryWithColumns[], categoryId?: string): CategoryWithColumns | undefined => {
-  if (!categoryId || !categories.length) return undefined;
-  return categories.find(cat => cat.category?.id === categoryId);
-};
-
-export const getCategoryName = (categories: CategoryWithColumns[], categoryId?: string): string => {
-  const category = getCurrentCategory(categories, categoryId);
-  return category?.category?.name || 'Unnamed Category';
-};
-
-export const getRequiredColumnIds = (categories: CategoryWithColumns[], categoryId: string): string[] => {
-  const category = categories.find(c => c.id === categoryId);
-  if (!category) return [];
+// Helper funksiyası - boş sütun giriş məlumatlarını yaratmaq üçün
+export const createEmptyEntries = (category: CategoryWithColumns): Record<string, string> => {
+  if (!category || !category.columns) return {};
   
-  return category.columns
-    .filter(column => column.isRequired)
-    .map(column => column.id);
+  return category.columns.reduce((acc: Record<string, string>, column) => {
+    acc[column.id] = column.defaultValue || '';
+    return acc;
+  }, {});
 };
 
-export const findColumnById = (categories: CategoryWithColumns[], columnId: string) => {
-  for (const category of categories) {
-    const column = category.columns.find(c => c.id === columnId);
-    if (column) return column;
-  }
-  return null;
-};
-
-export const findCategoryForColumn = (categories: CategoryWithColumns[], columnId: string) => {
-  for (const category of categories) {
-    if (category.columns.some(c => c.id === columnId)) {
-      return category;
-    }
-  }
-  return null;
-};
-
-export const areRequiredFieldsComplete = (
-  categoryEntry: CategoryEntryData,
-  requiredColumnIds: string[]
-): boolean => {
-  if (!requiredColumnIds.length) return true;
+// Helper funksiyası - məlumatları doldurulma % hesablamaq üçün
+export const calculateCompletionPercentage = (
+  entries: Record<string, string>,
+  category: CategoryWithColumns
+): number => {
+  if (!category || !category.columns || category.columns.length === 0) return 0;
   
-  // İlk olaraq values massivini yoxla
-  if (categoryEntry.values && categoryEntry.values.length > 0) {
-    return requiredColumnIds.every(id => {
-      const entry = categoryEntry.values.find(v => v.columnId === id);
-      return entry && entry.value && entry.value.trim() !== '';
-    });
+  const columns = category.columns;
+  const requiredColumns = columns.filter(col => col.isRequired);
+  
+  if (requiredColumns.length === 0) {
+    // Əgər heç bir məcburi sütun yoxdursa, doldurulmuş sütunların faizini hesablayaq
+    const filledFields = columns.filter(col => entries[col.id]?.trim() !== '');
+    return Math.round((filledFields.length / columns.length) * 100);
   }
   
-  // Geri uyğunluq üçün entries massivini yoxla
-  if (categoryEntry.entries && categoryEntry.entries.length > 0) {
-    return requiredColumnIds.every(id => {
-      const entry = categoryEntry.entries.find(e => e.columnId === id);
-      return entry && entry.value && entry.value.trim() !== '';
-    });
-  }
-  
-  return false;
+  // Məcburi sütunlar üzərindən hesablama
+  const filledRequiredColumns = requiredColumns.filter(col => entries[col.id]?.trim() !== '');
+  return Math.round((filledRequiredColumns.length / requiredColumns.length) * 100);
 };
 
-export const initializeEmptyCategoryData = (
-  categories: CategoryWithColumns[]
-): CategoryEntryData[] => {
-  return categories.map(category => {
-    const emptyValues = category.columns.map(column => ({
-      id: uuidv4(),
+// Helper funksiyası - FormItem yaratmaq üçün
+export const createFormItem = (
+  category: CategoryWithColumns,
+  entries: Record<string, string>,
+  status: DataEntryStatus
+): FormItem => {
+  let completionPercentage = calculateCompletionPercentage(entries, category);
+  
+  const totalCount = category.columns.length;
+  const filledCount = Object.values(entries).filter(value => value?.trim() !== '').length;
+  
+  return {
+    id: category.category.id,
+    title: category.category.name,
+    status,
+    completionPercentage,
+    deadline: category.category.deadline || new Date().toISOString(),
+    categoryId: category.category.id,
+    filledCount,
+    totalCount
+  };
+};
+
+// Helper funksiyası - məlumatları GitHub'dan əldə etmək üçün
+export const fetchCategoryDataFromGitHub = async (): Promise<CategoryEntryData[]> => {
+  try {
+    // Nümunə data
+    const sampleData = [
+      {
+        id: "entry-1", 
+        categoryId: "cat-1",
+        categoryName: "Ümumi Məlumatlar",
+        status: "draft" as DataEntryStatus,
+        order: 1,
+        progress: 50,
+        values: [
+          {id: "val-1", columnId: "col-1", value: "Məktəb Adı", status: "draft" as DataEntryStatus},
+          {id: "val-2", columnId: "col-2", value: "1000", status: "draft" as DataEntryStatus}
+        ],
+        isSubmitted: false,
+        entries: {}
+      },
+      {
+        id: "entry-2",
+        categoryId: "cat-2",
+        categoryName: "Təhsil Məlumatları",
+        status: "pending" as DataEntryStatus,
+        order: 2,
+        progress: 75,
+        values: [
+          {id: "val-3", columnId: "col-3", value: "100", status: "pending" as DataEntryStatus},
+          {id: "val-4", columnId: "col-4", value: "120", status: "pending" as DataEntryStatus}
+        ],
+        isSubmitted: false,
+        entries: {}
+      }
+    ];
+    
+    return sampleData;
+  } catch (error) {
+    console.error("Failed to fetch category data:", error);
+    return [];
+  }
+};
+
+// Helper funksiyası - kateqoriya məlumatlarını tipin tələblərinə uyğunlaşdırmaq
+export const adaptCategoryEntryData = (categories: CategoryWithColumns[]): CategoryEntryData[] => {
+  return categories.map((category) => ({
+    id: category.category.id,
+    categoryId: category.category.id,
+    categoryName: category.category.name,
+    order: category.category.order || 0,
+    status: "draft" as DataEntryStatus,
+    progress: 0,
+    values: category.columns.map((column) => ({
+      id: column.id,
       columnId: column.id,
-      value: '',
-      status: 'draft' as DataEntryStatus
-    }));
-    
-    return {
-      id: uuidv4(),
-      categoryId: category.id,
-      categoryName: category.name,
-      status: 'draft' as DataEntryStatus,
-      order: category.order || 0,
-      progress: 0,
-      values: emptyValues,
-      isSubmitted: false
-    };
-  });
+      value: column.defaultValue || '',
+      status: "draft" as DataEntryStatus,
+      isValid: true // ColumnEntry tipinə uyğunlaşdırılmış
+    })),
+    isSubmitted: false,
+    entries: {} // Boş entries əlavə edildi
+  }));
 };
 
-export const convertToDisplayFormat = (
-  categories: CategoryWithColumns[],
-  data: any[],
-  status: DataEntryStatus = 'pending'
-): CategoryEntryData[] => {
-  // Create a map of column values by categoryId and columnId
-  const columnValueMap: Record<string, Record<string, any>> = {};
-  data.forEach(item => {
-    if (!columnValueMap[item.category_id]) {
-      columnValueMap[item.category_id] = {};
-    }
-    columnValueMap[item.category_id][item.column_id] = { 
-      value: item.value, 
-      status: item.status,
-      id: item.id
-    };
-  });
-  
-  // Convert to CategoryEntryData format
-  return categories.map(category => {
-    const valueData = columnValueMap[category.id] || {};
-    const values: ColumnEntry[] = category.columns.map(column => {
-      const entryData = valueData[column.id] || {};
-      return {
-        id: entryData.id || uuidv4(),
-        columnId: column.id,
-        value: entryData.value || '',
-        status: entryData.status || status,
-      };
-    });
-    
-    // Calculate progress
-    const requiredColumns = category.columns.filter(c => c.isRequired);
-    const requiredColumnIds = requiredColumns.map(c => c.id);
-    const completedRequired = requiredColumnIds.filter(id => {
-      const entry = values.find(v => v.columnId === id);
-      return entry && entry.value && entry.value.trim() !== '';
-    }).length;
-    
-    const progress = requiredColumns.length > 0 
-      ? Math.round((completedRequired / requiredColumns.length) * 100)
-      : 100;
-    
-    return {
-      id: uuidv4(),
-      categoryId: category.id,
-      categoryName: category.name,
-      order: category.order || 0,
-      status,
-      progress,
-      values,
-      isSubmitted: status !== 'draft',
-    };
-  });
-};
-
-export const prepareCategoryForSubmit = (category: CategoryWithColumns, data: any[]) => {
-  if (!category?.category?.id) return null;
-  
-  // ... keep existing code (function implementation)
+// Helper funksiyası - kateqoriya məlumatlarını CategoryEntryData formatına çevirmək üçün
+export const convertToCategoryEntryData = (
+  category: CategoryWithColumns,
+  entries: Record<string, string>,
+  status: DataEntryStatus = 'draft'
+): CategoryEntryData => {
+  return {
+    id: category.category.id,
+    categoryId: category.category.id,
+    categoryName: category.category.name,
+    order: category.category.order || 0,
+    status,
+    progress: calculateCompletionPercentage(entries, category),
+    values: [],
+    isSubmitted: status === 'approved' || status === 'pending',
+    entries: entries
+  };
 };

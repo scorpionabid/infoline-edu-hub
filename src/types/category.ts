@@ -30,6 +30,19 @@ export interface MockCategory extends Category {
   columnCount?: number;
 }
 
+// CategoryWithOrder tipini əlavə edirik
+export interface CategoryWithOrder {
+  id: string;
+  name: string;
+  description: string;
+  assignment: CategoryAssignment;
+  status: CategoryStatus;
+  priority: number;
+  order: number;
+  archived: boolean;
+  column_count: number;
+}
+
 // Supabase category-ni adaptasiya etmək üçün funksiya
 export const adaptSupabaseCategory = (category: any): Category => {
   return {

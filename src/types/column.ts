@@ -1,5 +1,7 @@
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea';
+import { Category } from "@/types/category";
+
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'textarea' | 'email' | 'phone' | 'multiselect';
 
 export interface ColumnOption {
   value: string;
@@ -13,6 +15,11 @@ export interface ColumnValidation {
   required?: boolean;
   minLength?: number;
   maxLength?: number;
+  patternMessage?: string;
+  warningThreshold?: number | { min?: number; max?: number };
+  minDate?: string;
+  maxDate?: string;
+  options?: string[] | ColumnOption[];
 }
 
 export interface Column {
@@ -36,6 +43,9 @@ export interface Column {
 export interface CategoryWithColumns {
   category: Category;
   columns: Column[];
+  id?: string;
+  name?: string;
+  deadline?: string;
 }
 
 // Supabase column-ni adaptasiya etmək üçün funksiya
@@ -76,5 +86,24 @@ export const adaptSupabaseColumn = (column: any): Column => {
     order: column.order_index || 0,
     parentColumnId: column.parent_column_id,
     dependsOn: column.depends_on,
+  };
+};
+
+// SupaBase üçün column-ni düzənləmə
+export const adaptColumnToSupabase = (column: Column) => {
+  return {
+    name: column.name,
+    category_id: column.categoryId,
+    type: column.type,
+    is_required: column.isRequired,
+    placeholder: column.placeholder || null,
+    help_text: column.helpText || null,
+    default_value: column.defaultValue || null,
+    order_index: column.orderIndex,
+    options: JSON.stringify(column.options || []),
+    validation: JSON.stringify(column.validation || {}),
+    status: column.status,
+    parent_column_id: column.parentColumnId || null,
+    depends_on: column.dependsOn || null,
   };
 };

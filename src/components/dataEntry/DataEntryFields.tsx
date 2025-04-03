@@ -1,24 +1,46 @@
 
-import React from 'react';
-import { Column } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import React, { useState, useEffect } from 'react';
+import { Column, ColumnType } from '@/types/column';
+import { 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { 
+  CalendarIcon, 
+  Check, 
+  FileQuestion, 
+  Image as ImageIcon,
+  Info 
+} from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/utils/cn';
+import { Button } from '@/components/ui/button';
 
 interface DataEntryFieldsProps {
   columns: Column[];
-  groupedColumns: Record<string, Column[]>;
+  groupedColumns: { [key: string]: Column[] };
   entries: { [key: string]: string };
   errors: { [key: string]: string };
   isReadOnly?: boolean;
@@ -34,286 +56,336 @@ const DataEntryFields: React.FC<DataEntryFieldsProps> = ({
   onChange
 }) => {
   const { t } = useLanguage();
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // Tarix seçimi üçün yardımçı funksiya
-  const handleDateChange = (date: Date | undefined, columnId: string) => {
-    if (date) {
-      onChange(columnId, date.toISOString());
-    }
+  const toggleGroupExpand = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
   };
 
-  // Checkbox seçimi üçün yardımçı funksiya
-  const handleCheckboxChange = (checked: boolean, columnId: string) => {
-    onChange(columnId, checked ? 'true' : 'false');
-  };
-
-  // Select seçimi üçün yardımçı funksiya
-  const handleSelectChange = (value: string, columnId: string) => {
-    onChange(columnId, value);
-  };
-
-  // Radio seçimi üçün yardımçı funksiya
-  const handleRadioChange = (value: string, columnId: string) => {
-    onChange(columnId, value);
-  };
-
-  // Sütunun tipinə görə uyğun input komponenti göstərir
   const renderField = (column: Column) => {
     const value = entries[column.id] || '';
     const error = errors[column.id];
-
-    switch (column.type) {
+    
+    switch (column.type as ColumnType) {
       case 'text':
       case 'email':
       case 'phone':
         return (
           <Input
             id={column.id}
-            type={column.type === 'email' ? 'email' : column.type === 'phone' ? 'tel' : 'text'}
-            placeholder={column.placeholder}
             value={value}
             onChange={(e) => onChange(column.id, e.target.value)}
-            disabled={isReadOnly}
-            className={cn(error ? "border-red-500" : "")}
+            placeholder={column.placeholder}
+            readOnly={isReadOnly}
+            className={error ? 'border-red-500' : ''}
           />
         );
-
+        
+      case 'textarea':
+        return (
+          <Textarea
+            id={column.id}
+            value={value}
+            onChange={(e) => onChange(column.id, e.target.value)}
+            placeholder={column.placeholder}
+            rows={4}
+            readOnly={isReadOnly}
+            className={error ? 'border-red-500' : ''}
+          />
+        );
+        
       case 'number':
         return (
           <Input
             id={column.id}
             type="number"
-            placeholder={column.placeholder}
             value={value}
             onChange={(e) => onChange(column.id, e.target.value)}
-            disabled={isReadOnly}
-            className={cn(error ? "border-red-500" : "")}
-          />
-        );
-
-      case 'textarea':
-        return (
-          <Textarea
-            id={column.id}
             placeholder={column.placeholder}
-            value={value}
-            onChange={(e) => onChange(column.id, e.target.value)}
-            disabled={isReadOnly}
-            className={cn(error ? "border-red-500" : "")}
+            min={column.validation?.min}
+            max={column.validation?.max}
+            readOnly={isReadOnly}
+            className={error ? 'border-red-500' : ''}
           />
         );
-
+        
       case 'select':
-        const options = Array.isArray(column.options) 
-          ? column.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
-          : [];
-
         return (
           <Select
-            value={value}
-            onValueChange={(newValue) => handleSelectChange(newValue, column.id)}
             disabled={isReadOnly}
+            value={value}
+            onValueChange={(val) => onChange(column.id, val)}
           >
-            <SelectTrigger className={cn(error ? "border-red-500" : "")}>
-              <SelectValue placeholder={column.placeholder || t('selectOption')} />
+            <SelectTrigger className={error ? 'border-red-500' : ''}>
+              <SelectValue placeholder={column.placeholder || t('selectAnOption')} />
             </SelectTrigger>
             <SelectContent>
-              {options.map((option, index) => (
-                <SelectItem key={`${option.value}-${index}`} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              {Array.isArray(column.options) && column.options.map((option, i) => {
+                const optionValue = typeof option === 'string' ? option : option.value;
+                const optionLabel = typeof option === 'string' ? option : option.label;
+                
+                return (
+                  <SelectItem key={i} value={optionValue}>
+                    {optionLabel}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         );
-
+        
       case 'multiselect':
-        // Multiselect burada daha mürəkkəb ola bilər, sadəlik üçün hələlik select kimi təmsil edirik
-        const multiselectOptions = Array.isArray(column.options) 
-          ? column.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
-          : [];
-
+        // Handle multiselect similar to select but with multiple values
         return (
-          <Select
-            value={value}
-            onValueChange={(newValue) => handleSelectChange(newValue, column.id)}
-            disabled={isReadOnly}
-          >
-            <SelectTrigger className={cn(error ? "border-red-500" : "")}>
-              <SelectValue placeholder={column.placeholder || t('selectMultipleOptions')} />
-            </SelectTrigger>
-            <SelectContent>
-              {multiselectOptions.map((option, index) => (
-                <SelectItem key={`${option.value}-${index}`} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-
-      case 'checkbox':
-        return (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={column.id}
-              checked={value === 'true'}
-              onCheckedChange={(checked) => handleCheckboxChange(checked as boolean, column.id)}
-              disabled={isReadOnly}
-              className={cn(error ? "border-red-500" : "")}
-            />
-            <label
-              htmlFor={column.id}
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {column.placeholder || column.name}
-            </label>
+          <div className={`border rounded-md p-2 ${error ? 'border-red-500' : ''}`}>
+            {Array.isArray(column.options) && column.options.map((option, i) => {
+              const optionValue = typeof option === 'string' ? option : option.value;
+              const optionLabel = typeof option === 'string' ? option : option.label;
+              const isSelected = value.split(',').includes(optionValue);
+              
+              return (
+                <div key={i} className="flex items-center space-x-2 mb-1">
+                  <Checkbox
+                    id={`${column.id}-${i}`}
+                    checked={isSelected}
+                    disabled={isReadOnly}
+                    onCheckedChange={(checked) => {
+                      const currentValues = value ? value.split(',') : [];
+                      let newValues = [];
+                      
+                      if (checked) {
+                        if (!currentValues.includes(optionValue)) {
+                          newValues = [...currentValues, optionValue];
+                        } else {
+                          newValues = currentValues;
+                        }
+                      } else {
+                        newValues = currentValues.filter(v => v !== optionValue);
+                      }
+                      
+                      onChange(column.id, newValues.join(','));
+                    }}
+                  />
+                  <label
+                    htmlFor={`${column.id}-${i}`}
+                    className={`text-sm leading-none peer-disabled:opacity-70 ${isReadOnly ? 'opacity-70' : ''}`}
+                  >
+                    {optionLabel}
+                  </label>
+                </div>
+              );
+            })}
           </div>
         );
-
+        
+      case 'checkbox':
+        return (
+          <Checkbox
+            id={column.id}
+            checked={value === 'true'}
+            disabled={isReadOnly}
+            onCheckedChange={(checked) => {
+              onChange(column.id, String(checked));
+            }}
+          />
+        );
+        
       case 'radio':
-        const radioOptions = Array.isArray(column.options) 
-          ? column.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
-          : [];
-
         return (
           <RadioGroup
             value={value}
-            onValueChange={(newValue) => handleRadioChange(newValue, column.id)}
+            onValueChange={(val) => onChange(column.id, val)}
             disabled={isReadOnly}
-            className="space-y-2"
+            className={`space-y-1 ${error ? 'text-red-500' : ''}`}
           >
-            {radioOptions.map((option, index) => (
-              <div key={`${option.value}-${index}`} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
-                <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
+            {Array.isArray(column.options) && column.options.map((option, i) => {
+              const optionValue = typeof option === 'string' ? option : option.value;
+              const optionLabel = typeof option === 'string' ? option : option.label;
+              
+              return (
+                <div key={i} className="flex items-center space-x-2">
+                  <RadioGroupItem value={optionValue} id={`${column.id}-${i}`} />
+                  <label htmlFor={`${column.id}-${i}`} className="text-sm cursor-pointer">
+                    {optionLabel}
+                  </label>
+                </div>
+              );
+            })}
           </RadioGroup>
         );
-
+        
       case 'date':
-        const dateValue = value ? new Date(value) : undefined;
         return (
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                disabled={isReadOnly}
                 className={cn(
                   "w-full justify-start text-left font-normal",
                   !value && "text-muted-foreground",
-                  error ? "border-red-500" : ""
+                  error && "border-red-500"
                 )}
+                disabled={isReadOnly}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {value ? format(dateValue as Date, 'PPP') : <span>{column.placeholder || t('selectDate')}</span>}
+                {value ? format(new Date(value), "PPP") : <span>{t('pickADate')}</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={dateValue}
-                onSelect={(date) => handleDateChange(date, column.id)}
-                disabled={(date) => isReadOnly}
+                selected={value ? new Date(value) : undefined}
+                onSelect={(date) => onChange(column.id, date ? date.toISOString() : '')}
                 initialFocus
+                disabled={isReadOnly}
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
         );
-
+        
+      case 'file':
+        return (
+          <div className="flex items-center space-x-2">
+            <Input
+              id={column.id}
+              type="file"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  onChange(column.id, e.target.files[0].name);
+                }
+              }}
+              disabled={isReadOnly}
+              className={error ? 'border-red-500' : ''}
+            />
+            {value && (
+              <div className="flex items-center text-sm text-blue-600">
+                <FileQuestion className="h-4 w-4 mr-1" />
+                <span>{value.split('/').pop()}</span>
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'image':
+        return (
+          <div>
+            <Input
+              id={column.id}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  onChange(column.id, e.target.files[0].name);
+                }
+              }}
+              disabled={isReadOnly}
+              className={error ? 'border-red-500' : ''}
+            />
+            {value && (
+              <div className="mt-2 border rounded p-2 flex items-center">
+                <ImageIcon className="h-5 w-5 mr-2 text-blue-600" />
+                <span className="text-sm">{value.split('/').pop()}</span>
+              </div>
+            )}
+          </div>
+        );
+        
       default:
         return (
           <Input
             id={column.id}
-            placeholder={column.placeholder}
             value={value}
             onChange={(e) => onChange(column.id, e.target.value)}
-            disabled={isReadOnly}
-            className={cn(error ? "border-red-500" : "")}
+            placeholder={column.placeholder}
+            readOnly={isReadOnly}
+            className={error ? 'border-red-500' : ''}
           />
         );
     }
   };
-
-  // Alt sütunları göstərmək üçün rekursiv funksiya
-  const renderNestedColumns = (parentId: string) => {
-    if (!groupedColumns[parentId]) return null;
-
-    return (
-      <div className="space-y-4 mt-2">
-        {groupedColumns[parentId].map((column) => (
-          <div key={column.id} className="space-y-2">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label
-                  htmlFor={column.id}
-                  className={cn(
-                    "block text-sm font-medium",
-                    column.isRequired ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""
-                  )}
-                >
-                  {column.name}
-                </Label>
-                {column.helpText && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{column.helpText}</p>
-                )}
-                <div className="mt-1">{renderField(column)}</div>
-                {errors[column.id] && (
-                  <p className="mt-1 text-xs text-red-500">{errors[column.id]}</p>
-                )}
-              </div>
+  
+  const renderAllColumns = (columns: Column[]) => {
+    return columns.map((column) => (
+      <FormField
+        key={column.id}
+        name={column.id}
+        render={() => (
+          <FormItem>
+            <div className="flex items-start justify-between">
+              <FormLabel className="flex items-start">
+                {column.name}
+                {column.isRequired && <span className="ml-1 text-red-500">*</span>}
+              </FormLabel>
+              
+              {column.helpText && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 rounded-full">
+                      <Info className="h-3 w-3" />
+                      <span className="sr-only">{t('info')}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <p className="text-sm">{column.helpText}</p>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
-
-            {/* Alt sütunlar üçün */}
-            {groupedColumns[column.id] && renderNestedColumns(column.id)}
-          </div>
-        ))}
-      </div>
-    );
+            
+            <FormControl>
+              {renderField(column)}
+            </FormControl>
+            
+            {errors[column.id] && (
+              <FormMessage>{errors[column.id]}</FormMessage>
+            )}
+            
+            {column.helpText && (
+              <FormDescription className="text-xs">
+                {column.helpText}
+              </FormDescription>
+            )}
+          </FormItem>
+        )}
+      />
+    ));
   };
-
+  
   return (
-    <div className="space-y-6">
-      {columns.map((column) => {
-        // Əgər bu sütun başqa bir sütunun alt sütunudursa, onu buraxırıq
-        if (column.parentColumnId) return null;
-
-        const hasChildren = groupedColumns[column.id] && groupedColumns[column.id].length > 0;
-
+    <div className="grid gap-6">
+      {/* Ana sütunlar */}
+      {renderAllColumns(columns)}
+      
+      {/* Əlavə sütun qrupları (əgər varsa) */}
+      {Object.keys(groupedColumns).filter(groupId => groupId !== 'main').map((groupId) => {
+        // Parent column'u tapırıq
+        const parentColumn = columns.find(col => col.id === groupId);
+        
+        if (!parentColumn) return null;
+        
+        const isExpanded = expandedGroups[groupId] || false;
+        const childColumns = groupedColumns[groupId];
+        
         return (
-          <div key={column.id} className="space-y-2">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label
-                  htmlFor={column.id}
-                  className={cn(
-                    "block text-sm font-medium",
-                    column.isRequired ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""
-                  )}
-                >
-                  {column.name}
-                </Label>
-                {column.helpText && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{column.helpText}</p>
-                )}
-                <div className="mt-1">{renderField(column)}</div>
-                {errors[column.id] && (
-                  <p className="mt-1 text-xs text-red-500">{errors[column.id]}</p>
-                )}
-              </div>
+          <div key={groupId} className="border rounded-md p-4">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => toggleGroupExpand(groupId)}
+            >
+              <h3 className="text-lg font-medium">{parentColumn.name}</h3>
+              <Button variant="ghost" size="sm">
+                {isExpanded ? t('collapse') : t('expand')}
+              </Button>
             </div>
-
-            {/* Əgər alt sütunlar varsa, onları accordion ilə göstəririk */}
-            {hasChildren && (
-              <Accordion type="single" collapsible className="mt-2">
-                <AccordionItem value="children">
-                  <AccordionTrigger className="text-sm">{t('showRelatedFields')}</AccordionTrigger>
-                  <AccordionContent>
-                    {renderNestedColumns(column.id)}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+            
+            {isExpanded && (
+              <div className="mt-4 grid gap-6">
+                {renderAllColumns(childColumns)}
+              </div>
             )}
           </div>
         );

@@ -1,247 +1,460 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types/user';
-import { createMockDashboardData } from './mockDashboardData';
-import {
-  SuperAdminDashboardData,
-  RegionAdminDashboardData,
-  SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  ChartData
-} from '@/types/dashboard';
 
-export const useSupabaseDashboardData = () => {
-  const [dashboardData, setDashboardData] = useState<any>({});
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { getMockCategoryCompletion } from './utils';
+
+// Dashboard data fetch hook
+export function useSupabaseDashboardData(userRole: string) {
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [chartData, setChartData] = useState<ChartData>({
-    categoryCompletionData: [],
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [chartData, setChartData] = useState<any>({
+    categoryCompletion: [],
+    statusDistribution: [],
     activityData: [],
     regionSchoolsData: [],
-    categoryCompletion: [],
-    statusDistribution: []
+    categoryCompletionData: []
   });
 
-  const refreshData = useCallback(() => {
-    console.log('Refreshing dashboard data');
-    // Implementasiya ediləcək
-  }, []);
-
-  // SuperAdmin Dashboard Data
-  const superAdminData = useCallback(async (user: User): Promise<SuperAdminDashboardData> => {
+  const fetchSuperAdminData = useCallback(async () => {
     try {
-      // Regionların sayı
+      setIsLoading(true);
+      
+      // Regionlar sayı
       const { count: regionsCount, error: regionsError } = await supabase
         .from('regions')
-        .select('id', { count: 'exact', head: true });
-        
-      if (regionsError) throw regionsError;
-      
-      // Sektorların sayı
+        .select('*', { count: 'exact', head: true });
+
+      // Sektorlar sayı
       const { count: sectorsCount, error: sectorsError } = await supabase
         .from('sectors')
-        .select('id', { count: 'exact', head: true });
-        
-      if (sectorsError) throw sectorsError;
-      
-      // Məktəblərin sayı
+        .select('*', { count: 'exact', head: true });
+
+      // Məktəblər sayı
       const { count: schoolsCount, error: schoolsError } = await supabase
         .from('schools')
-        .select('id', { count: 'exact', head: true });
-        
-      if (schoolsError) throw schoolsError;
-      
-      // İstifadəçilərin sayı
-      const { count: usersCount, error: usersError } = await supabase
-        .from('user_roles')
-        .select('id', { count: 'exact', head: true });
-        
-      if (usersError) throw usersError;
-      
-      // Məktəblər üzrə completion rate
-      let completionRate = 0;
-      
-      // Kateqoriyalar üzrə verilənlər
-      const categoriesQuery = supabase.from('categories')
-        .select('id, name, column_count')
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
-        
-      const { data: categories, error: categoriesError } = await categoriesQuery;
-      
-      if (categoriesError) throw categoriesError;
+        .select('*', { count: 'exact', head: true });
 
-      // Bildirişlər gətirildikdə useNotifications hook-dan əldə ediləcək
+      // İstifadəçilər sayı
+      const { count: usersCount, error: usersError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Son aktivliklər
+      const { data: activities, error: activitiesError } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Bildirişlər
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', 'all')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Kateqoriyalar tamamlanma dərəcəsi
+      const categoryCompletionData = getMockCategoryCompletion();
       
-      // Son aktivlikləri əldə etmək
-      // Real layihədə buradan activity_logs cədvəlindən məlumatlar gətirilərdi
-      
-      // Diaqram verilənləri - bu verilənlər real məlumatlardan əldə ediləcək
-      const categoryCompletion = categories.map(cat => ({
-        name: cat.name,
-        completion: Math.floor(Math.random() * 100)
-      }));
-      
+      if (regionsError || sectorsError || schoolsError || usersError || activitiesError || notificationsError) {
+        throw new Error("Data fetch error");
+      }
+
+      // Status paylanması - mocklanmış məlumatlar
       const statusDistribution = [
-        { status: 'Pending', count: Math.floor(Math.random() * 100) },
-        { status: 'Approved', count: Math.floor(Math.random() * 200) },
-        { status: 'Rejected', count: Math.floor(Math.random() * 50) }
+        { status: 'pending', count: 12 },
+        { status: 'approved', count: 45 },
+        { status: 'rejected', count: 8 },
+        { status: 'overdue', count: 3 }
       ];
-      
-      // Mock Dashboard data ilə birləşdirib qaytaraq
-      const mockData = createMockDashboardData('superadmin', user.id) as SuperAdminDashboardData;
-      
-      return {
-        ...mockData,
+
+      // Dashboard data obyektini yaradaq
+      const dashboard = {
         regions: regionsCount || 0,
         sectors: sectorsCount || 0, 
         schools: schoolsCount || 0,
         users: usersCount || 0,
-        completionRate,
-        categoryCompletion,
-        statusDistribution
+        completionRate: 72, // örnek bir değer
+        pendingApprovals: 15, // örnek bir değer
+        notifications: notifications || [],
+        activityData: activities || [],
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution,
+        pendingSchools: 18,
+        approvedSchools: 130,
+        rejectedSchools: 5,
+        dueSoonForms: 10,
+        overdueForms: 3
       };
+
+      // Chart məlumatlarını ayıraq
+      const charts = {
+        activityData: activities || [],
+        regionSchoolsData: [
+          { name: 'Bakı', value: 85 },
+          { name: 'Sumqayıt', value: 25 },
+          { name: 'Gəncə', value: 30 },
+          { name: 'Lənkəran', value: 15 },
+          { name: 'Şəki', value: 10 }
+        ],
+        categoryCompletionData: categoryCompletionData,
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution
+      };
+
+      setDashboardData(dashboard);
+      setChartData(charts);
+      setIsLoading(false);
+
     } catch (err) {
-      console.error('SuperAdmin dashboard data fetchində xəta:', err);
-      return createMockDashboardData('superadmin', user.id) as SuperAdminDashboardData;
+      console.error("Dashboard data fetching error:", err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      setIsLoading(false);
     }
   }, []);
 
-  // Region Admin Dashboard Data
-  const regionAdminData = useCallback(async (user: User): Promise<RegionAdminDashboardData> => {
+  const fetchRegionAdminData = useCallback(async (regionId?: string) => {
     try {
-      if (!user.region_id && !user.regionId) {
-        throw new Error('Region ID tapılmadı');
-      }
+      setIsLoading(true);
       
-      const regionId = user.region_id || user.regionId;
-      
-      // Region adını əldə et
+      // Region məlumatlarını əldə et
       const { data: regionData, error: regionError } = await supabase
         .from('regions')
-        .select('name')
-        .eq('id', regionId)
+        .select('*')
+        .eq('id', regionId || '1')
         .single();
-        
-      if (regionError) throw regionError;
-      
-      // Regionda sektorların sayı
+
+      // Bu region üçün sektorlar sayı
       const { count: sectorsCount, error: sectorsError } = await supabase
         .from('sectors')
-        .select('id', { count: 'exact', head: true })
-        .eq('region_id', regionId);
-        
-      if (sectorsError) throw sectorsError;
-      
-      // Regionda məktəblərin sayı
+        .select('*', { count: 'exact', head: true })
+        .eq('region_id', regionId || '1');
+
+      // Bu region üçün məktəblər sayı
       const { count: schoolsCount, error: schoolsError } = await supabase
         .from('schools')
-        .select('id', { count: 'exact', head: true })
-        .eq('region_id', regionId);
-        
-      if (schoolsError) throw schoolsError;
+        .select('*', { count: 'exact', head: true })
+        .eq('region_id', regionId || '1');
+
+      // Son aktivliklər
+      const { data: activities, error: activitiesError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('region_id', regionId || '1')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Bildirişlər
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.all,region_id.eq.${regionId || '1'}`)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Kateqoriyalar tamamlanma dərəcəsi
+      const categoryCompletionData = getMockCategoryCompletion();
       
-      // Mock data ilə birləşdirək
-      const mockData = createMockDashboardData('regionadmin', user.id) as RegionAdminDashboardData;
-      
-      return {
-        ...mockData,
+      if (regionError || sectorsError || schoolsError || activitiesError || notificationsError) {
+        throw new Error("Data fetch error");
+      }
+
+      // Status paylanması - mocklanmış məlumatlar
+      const statusDistribution = [
+        { status: 'pending', count: 8 },
+        { status: 'approved', count: 32 },
+        { status: 'rejected', count: 5 },
+        { status: 'overdue', count: 2 }
+      ];
+
+      // Dashboard data obyektini yaradaq
+      const dashboard = {
         regionName: regionData?.name || 'Unknown Region',
-        sectors: sectorsCount || 0,
-        schools: schoolsCount || 0
+        sectors: sectorsCount || 0, 
+        schools: schoolsCount || 0,
+        completionRate: 68, // örnek bir değer
+        approvalRate: 75, // örnek bir değer
+        pendingApprovals: 10, // örnek bir değer
+        notifications: notifications || [],
+        activityData: activities || [],
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution,
+        pendingSchools: 12,
+        approvedSchools: 85,
+        rejectedSchools: 3,
+        approvedSectors: 5,
+        rejectedSectors: 1,
+        users: 45 // Əlavə edildi
       };
+
+      // Chart məlumatlarını ayıraq
+      const charts = {
+        activityData: activities || [],
+        regionSchoolsData: [
+          { name: 'Sektor A', value: 35 },
+          { name: 'Sektor B', value: 22 },
+          { name: 'Sektor C', value: 28 },
+        ],
+        categoryCompletionData: categoryCompletionData,
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution
+      };
+
+      setDashboardData(dashboard);
+      setChartData(charts);
+      setIsLoading(false);
+
     } catch (err) {
-      console.error('RegionAdmin dashboard data fetchində xəta:', err);
-      return createMockDashboardData('regionadmin', user.id) as RegionAdminDashboardData;
+      console.error("Dashboard data fetching error:", err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      setIsLoading(false);
     }
   }, []);
 
-  // Sector Admin Dashboard Data
-  const sectorAdminData = useCallback(async (user: User): Promise<SectorAdminDashboardData> => {
+  const fetchSectorAdminData = useCallback(async (sectorId?: string) => {
     try {
-      if (!user.sector_id && !user.sectorId) {
-        throw new Error('Sector ID tapılmadı');
-      }
+      setIsLoading(true);
       
-      const sectorId = user.sector_id || user.sectorId;
-      
-      // Sektor adını əldə et
+      // Sektor məlumatlarını əldə et
       const { data: sectorData, error: sectorError } = await supabase
         .from('sectors')
-        .select('name, regions!inner(name)')
-        .eq('id', sectorId)
+        .select('*, regions(*)')
+        .eq('id', sectorId || '1')
         .single();
-        
-      if (sectorError) throw sectorError;
-      
-      // Sektorda məktəblərin sayı
+
+      // Bu sektor üçün məktəblər sayı
       const { count: schoolsCount, error: schoolsError } = await supabase
         .from('schools')
-        .select('id', { count: 'exact', head: true })
-        .eq('sector_id', sectorId);
-        
-      if (schoolsError) throw schoolsError;
+        .select('*', { count: 'exact', head: true })
+        .eq('sector_id', sectorId || '1');
+
+      // Son aktivliklər
+      const { data: activities, error: activitiesError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('sector_id', sectorId || '1')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Bildirişlər
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.all,sector_id.eq.${sectorId || '1'}`)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Kateqoriyalar tamamlanma dərəcəsi
+      const categoryCompletionData = getMockCategoryCompletion();
       
-      // Mock data ilə birləşdirək
-      const mockData = createMockDashboardData('sectoradmin', user.id) as SectorAdminDashboardData;
-      
-      return {
-        ...mockData,
+      if (sectorError || schoolsError || activitiesError || notificationsError) {
+        throw new Error("Data fetch error");
+      }
+
+      // Status paylanması - mocklanmış məlumatlar
+      const statusDistribution = [
+        { status: 'pending', count: 5 },
+        { status: 'approved', count: 20 },
+        { status: 'rejected', count: 3 },
+        { status: 'overdue', count: 1 }
+      ];
+
+      // Dashboard data obyektini yaradaq
+      const dashboard = {
         sectorName: sectorData?.name || 'Unknown Sector',
         regionName: sectorData?.regions?.name || 'Unknown Region',
-        schools: schoolsCount || 0
+        schools: schoolsCount || 0,
+        completionRate: 65, // örnek bir değer
+        pendingApprovals: 7, // örnek bir değer
+        notifications: notifications || [],
+        activityData: activities || [],
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution,
+        pendingSchools: 8,
+        approvedSchools: 52,
+        rejectedSchools: 2,
+        users: 30 // Əlavə edildi
       };
+
+      // Chart məlumatlarını ayıraq
+      const charts = {
+        activityData: activities || [],
+        regionSchoolsData: [
+          { name: 'Məktəb A', value: 20 },
+          { name: 'Məktəb B', value: 15 },
+          { name: 'Məktəb C', value: 17 },
+        ],
+        categoryCompletionData: categoryCompletionData,
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution
+      };
+
+      setDashboardData(dashboard);
+      setChartData(charts);
+      setIsLoading(false);
+
     } catch (err) {
-      console.error('SectorAdmin dashboard data fetchində xəta:', err);
-      return createMockDashboardData('sectoradmin', user.id) as SectorAdminDashboardData;
+      console.error("Dashboard data fetching error:", err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      setIsLoading(false);
     }
   }, []);
 
-  // School Admin Dashboard Data
-  const schoolAdminData = useCallback(async (user: User): Promise<SchoolAdminDashboardData> => {
+  const fetchSchoolAdminData = useCallback(async (schoolId?: string) => {
     try {
-      if (!user.school_id && !user.schoolId) {
-        throw new Error('School ID tapılmadı');
-      }
-      
-      const schoolId = user.school_id || user.schoolId;
+      setIsLoading(true);
       
       // Məktəb məlumatlarını əldə et
       const { data: schoolData, error: schoolError } = await supabase
         .from('schools')
-        .select(`
-          name,
-          sectors!inner(name, regions!inner(name))
-        `)
-        .eq('id', schoolId)
+        .select('*, sectors(*, regions(*))')
+        .eq('id', schoolId || '1')
         .single();
-        
-      if (schoolError) throw schoolError;
+
+      // Son aktivliklər
+      const { data: activities, error: activitiesError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('school_id', schoolId || '1')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Bildirişlər
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.all,school_id.eq.${schoolId || '1'}`)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Kateqoriyalar tamamlanma dərəcəsi
+      const categoryCompletionData = getMockCategoryCompletion();
       
-      // Mock data ilə birləşdirək
-      const mockData = createMockDashboardData('schooladmin', user.id) as SchoolAdminDashboardData;
-      
-      return {
-        ...mockData,
+      if (schoolError || activitiesError || notificationsError) {
+        throw new Error("Data fetch error");
+      }
+
+      // Status paylanması - mocklanmış məlumatlar
+      const statusDistribution = [
+        { status: 'pending', count: 3 },
+        { status: 'approved', count: 12 },
+        { status: 'rejected', count: 2 },
+        { status: 'overdue', count: 1 },
+        { status: 'dueSoon', count: 4 }
+      ];
+
+      // Dashboard data obyektini yaradaq
+      const dashboard = {
         schoolName: schoolData?.name || 'Unknown School',
         sectorName: schoolData?.sectors?.name || 'Unknown Sector',
-        regionName: schoolData?.sectors?.regions?.name || 'Unknown Region'
+        regionName: schoolData?.sectors?.regions?.name || 'Unknown Region',
+        completionRate: 62, // örnek bir değer
+        forms: {
+          pending: 3,
+          approved: 12,
+          rejected: 2,
+          dueSoon: 4,
+          overdue: 1
+        },
+        notifications: notifications || [],
+        activityData: activities || [],
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution,
+        pendingForms: [],
+        completedForms: [],
+        dueSoonForms: [],
+        overdueForms: [],
+        totalForms: 22 // Əlavə edildi
       };
+
+      // Chart məlumatlarını ayıraq
+      const charts = {
+        activityData: activities || [],
+        regionSchoolsData: [
+          { name: 'Kateqoriya A', value: 10 },
+          { name: 'Kateqoriya B', value: 8 },
+          { name: 'Kateqoriya C', value: 4 },
+        ],
+        categoryCompletionData: categoryCompletionData,
+        categoryCompletion: categoryCompletionData,
+        statusDistribution: statusDistribution
+      };
+
+      setDashboardData(dashboard);
+      setChartData(charts);
+      setIsLoading(false);
+
     } catch (err) {
-      console.error('SchoolAdmin dashboard data fetchində xəta:', err);
-      return createMockDashboardData('schooladmin', user.id) as SchoolAdminDashboardData;
+      console.error("Dashboard data fetching error:", err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      setIsLoading(false);
     }
   }, []);
+
+  // İstifadəçi rolundan asılı olaraq uyğun məlumatları əldə et
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!userRole) return;
+
+      switch (userRole) {
+        case 'superadmin':
+          await fetchSuperAdminData();
+          break;
+        case 'regionadmin':
+          await fetchRegionAdminData();
+          break;
+        case 'sectoradmin':
+          await fetchSectorAdminData();
+          break;
+        case 'schooladmin':
+          await fetchSchoolAdminData();
+          break;
+        default:
+          setError(new Error('Unknown user role'));
+          setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [userRole, fetchSuperAdminData, fetchRegionAdminData, fetchSectorAdminData, fetchSchoolAdminData]);
+
+  // Məlumatları yeniləmək üçün funksiya
+  const refreshData = useCallback(() => {
+    if (!userRole) return;
+
+    switch (userRole) {
+      case 'superadmin':
+        fetchSuperAdminData();
+        break;
+      case 'regionadmin':
+        fetchRegionAdminData();
+        break;
+      case 'sectoradmin':
+        fetchSectorAdminData();
+        break;
+      case 'schooladmin':
+        fetchSchoolAdminData();
+        break;
+    }
+  }, [userRole, fetchSuperAdminData, fetchRegionAdminData, fetchSectorAdminData, fetchSchoolAdminData]);
 
   return {
     dashboardData,
     isLoading,
     error,
-    chartData,
+    chartData: chartData || {
+      categoryCompletion: [],
+      statusDistribution: [],
+      activityData: [],
+      regionSchoolsData: [],
+      categoryCompletionData: []
+    },
     refreshData,
-    superAdminData,
-    regionAdminData,
-    sectorAdminData,
-    schoolAdminData
+    fetchSuperAdminData,
+    fetchRegionAdminData,
+    fetchSectorAdminData,
+    fetchSchoolAdminData
   };
-};
+}

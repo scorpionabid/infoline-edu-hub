@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Table, TableBody, TableCell, TableHead, 
@@ -6,12 +7,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import { Category, CategoryStatus, CategoryFilter } from "@/types/category";
 import { useLanguage } from '@/context/LanguageContext';
 import { format } from 'date-fns';
 import { 
   Plus, Search, Edit, Trash2, Archive, MoreVertical, 
-  AlertTriangle, Filter, SortAsc, SortDesc
+  AlertTriangle, Filter, SortAsc, SortDesc, Eye, EyeOff
 } from 'lucide-react';
 import { 
   DropdownMenu, DropdownMenuContent, 
@@ -20,6 +23,17 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CategoryListProps {
   categories: Category[];
