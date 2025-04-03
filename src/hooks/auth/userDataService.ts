@@ -14,8 +14,36 @@ export async function fetchUserData(userId: string): Promise<FullUserData | null
       return null;
     }
     
-    // Əldə edilmiş tam məlumatı qaytarırıq
-    return userData as FullUserData;
+    // Tipləri əgər doğrulaya bilmirsə, manual təyin edirik
+    if (userData) {
+      const fullUserData: FullUserData = {
+        id: userData.id || userId,
+        email: userData.email || '',
+        full_name: userData.full_name || '',
+        name: userData.full_name || userData.name || '',
+        role: userData.role || 'schooladmin',
+        regionId: userData.region_id || null,
+        sectorId: userData.sector_id || null,
+        schoolId: userData.school_id || null,
+        phone: userData.phone || '',
+        position: userData.position || '',
+        language: userData.language || 'az',
+        status: userData.status || 'active',
+        avatar: userData.avatar || null,
+        last_login: userData.last_login || null,
+        created_at: userData.created_at || '',
+        updated_at: userData.updated_at || '',
+        region_id: userData.region_id || null,
+        sector_id: userData.sector_id || null,
+        school_id: userData.school_id || null,
+        createdAt: userData.created_at || '',
+        updatedAt: userData.updated_at || '',
+        lastLogin: userData.last_login || null
+      };
+      return fullUserData;
+    }
+    
+    return null;
   } catch (error) {
     console.error('İstifadəçi məlumatı əldə edilərkən xəta baş verdi:', error);
     return null;
@@ -54,7 +82,7 @@ export async function fetchAllUsers(): Promise<FullUserData[]> {
     
     // Məlumatları birləşdiririk
     const users: FullUserData[] = profiles.map(profile => {
-      const userRole = roles.find(role => role.user_id === profile.id);
+      const userRole = roles?.find(role => role.user_id === profile.id);
       const email = emails?.find(e => e.id === profile.id)?.email || '';
       
       return {
@@ -74,12 +102,17 @@ export async function fetchAllUsers(): Promise<FullUserData[]> {
         last_login: profile.last_login || null,
         created_at: profile.created_at || '',
         updated_at: profile.updated_at || '',
+        region_id: userRole?.region_id || null,
+        sector_id: userRole?.sector_id || null,
+        school_id: userRole?.school_id || null,
+        createdAt: profile.created_at || '',
+        updatedAt: profile.updated_at || '',
+        lastLogin: profile.last_login || null,
+        twoFactorEnabled: false,
         notificationSettings: {
           email: true,
           system: true
-        },
-        twoFactorEnabled: false,
-        aud: 'authenticated'
+        }
       };
     });
     

@@ -67,7 +67,6 @@ export const useRole = (roles: string | string[]): boolean => {
   return user.role === roles;
 };
 
-// Session xətasını düzəltmək üçün session dəyişənini çıxarırıq
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FullUserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -77,8 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
   const [confirmingPasswordReset, setConfirmingPasswordReset] = useState(false);
 
-  // Auth kontekstini komponent boyunca istifadə etmək üçün hook
-  const { auth } = useSupabaseAuth();
+  // Auth hookunu tam obyekt olaraq əldə edirik 
+  const authHook = useSupabaseAuth();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -86,13 +85,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(true);
         setError(null);
 
-        if (auth.currentUser) {
-          const userData = await getUserData(auth.currentUser.id);
+        // supabase.auth.getUser() çağırmaqla cari istifadəçini əldə edirik
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        if (data.user) {
+          const userData = await getUserData(data.user.id);
           setUser(userData);
         } else {
           setUser(null);
         }
       } catch (err: any) {
+        console.error("Fetch user error:", err);
         setError(err);
         setUser(null);
       } finally {
@@ -101,7 +111,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchUser();
-  }, [auth.currentUser]);
+    
+    // Auth vəziyyətinin dəyişikliklərini izləmək üçün
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event);
+        if (session?.user) {
+          const userData = await getUserData(session.user.id);
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const clearError = () => setError(null);
 
@@ -231,13 +258,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
 
     try {
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !currentUser) {
+        throw userError || new Error("No authenticated user");
+      }
+
       const { error } = await supabase.auth.updateUser(userData);
 
       if (error) {
         throw error;
       }
 
-      const updatedUserData = await getUserData(auth.currentUser!.id);
+      const updatedUserData = await getUserData(currentUser.id);
       setUser(updatedUserData);
 
       return true;
@@ -281,9 +314,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      return data as FullUserData;
+      // Məlumat boş və ya tələb olunan sahələr olmadığında defaultları təyin edirik
+      const fullUserData: FullUserData = {
+        ...(data as any),
+        id: data?.id || userId,
+        email: data?.email || '',
+        name: data?.full_name || data?.name || '',
+        full_name: data?.full_name || data?.name || '',
+        role: data?.role || 'schooladmin', // default role
+        regionId: data?.region_id || null,
+        sectorId: data?.sector_id || null,
+        schoolId: data?.school_id || null,
+        status: data?.status || 'active'
+      };
+
+      return fullUserData;
     } catch (err: any) {
       setError(err);
+      console.error("Get user data error:", err);
       return null;
     }
   };

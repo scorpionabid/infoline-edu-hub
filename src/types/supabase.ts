@@ -26,17 +26,17 @@ export type Profile = {
 export interface FullUserData extends Profile {
   name?: string;
   role: UserRole;
-  regionId?: string;
-  region_id?: string;
-  sectorId?: string;
-  sector_id?: string;
-  schoolId?: string;
-  school_id?: string;
+  regionId?: string | null;
+  region_id?: string | null;
+  sectorId?: string | null;
+  sector_id?: string | null;
+  schoolId?: string | null;
+  school_id?: string | null;
   twoFactorEnabled?: boolean;
   notificationSettings?: any;
   createdAt?: string;
   updatedAt?: string;
-  lastLogin?: string;
+  lastLogin?: string | null;
   passwordResetDate?: string;
 }
 
@@ -108,7 +108,7 @@ export interface DataEntry {
   column_id: string;
   school_id: string;
   value?: string;
-  status?: DataEntryStatus;
+  status?: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -119,3 +119,13 @@ export interface DataEntry {
 }
 
 export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
+
+export type UpdateUserData = Partial<FullUserData>;
+
+export type CreateUserData = Omit<FullUserData, 'id' | 'created_at' | 'updated_at' | 'last_login'>;
+
+export interface Role {
+  id: string;
+  name: UserRole;
+  description?: string;
+}

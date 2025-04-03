@@ -1,6 +1,6 @@
 
 import { User, Session } from '@supabase/supabase-js';
-import { FullUserData, Profile } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
 
 export type AuthState = {
   session: Session | null;
@@ -26,5 +26,5 @@ export interface UseSupabaseAuthReturn {
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ user: User | null; error: Error | null }>;
   signUp: (email: string, password: string, userData?: any) => Promise<{ user: User | null; error: Error | null }>;
-  updateProfile: (profile: Partial<Profile>) => Promise<{ profile: Profile | null; error: Error | null }>;
+  updateProfile: (profile: Partial<FullUserData>) => Promise<{ profile: FullUserData | null; error: Error | null }>;
 }

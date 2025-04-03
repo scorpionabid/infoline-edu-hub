@@ -25,6 +25,10 @@ export interface CategoryEntryData {
   rejectedAt?: string;
   rejectionReason?: string;
   values: ColumnEntry[];
+  // Geri uyğunluq üçün əlavə sahələr
+  entries?: { columnId: string; value: string; status: DataEntryStatus }[];
+  isCompleted?: boolean;
+  completionPercentage?: number;
 }
 
 export interface DataEntryFormState {
@@ -54,7 +58,7 @@ export interface DataEntry {
   column_id: string;
   school_id: string;
   value?: string;
-  status?: string;
+  status?: DataEntryStatus | string;
   created_by?: string;
   updated_at?: string;
   created_at?: string;
@@ -69,4 +73,36 @@ export interface DataEntry {
 export interface ActionType {
   type: string;
   payload: any;
+}
+
+export interface ValidationRules {
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  options?: string[];
+}
+
+export interface EntryValue {
+  id: string;
+  value: string;
+  columnId: string;
+  status: DataEntryStatus;
+}
+
+export interface CategoryFilter {
+  search: string;
+  status: string;
+  assignment: string;
+  withDeadline: boolean;
+}
+
+export interface DataEntryForm {
+  status: DataEntryStatus;
+  entries: CategoryEntryData[];
+  lastSaved: string;
+  overallProgress: number;
+  schoolId?: string;
 }
