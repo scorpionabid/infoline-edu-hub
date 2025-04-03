@@ -158,17 +158,18 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       // Burada idempotent bir ID yaradaq və məlumatları yeniləyək
       const entryId = dataEntries[columnId]?.id || `temp-${uuidv4()}`;
       
+      // Əmin olaq ki, id həmişə təyin olunub və optional deyil
       setDataEntries(prev => ({
         ...prev,
         [columnId]: {
-          id: entryId, // id artıq optional deyil
+          id: entryId, 
           column_id: columnId,
           category_id: categoryId,
           school_id: schoolId,
           value: value,
           status: dataEntries[columnId]?.status || 'pending',
           created_by: user.id,
-        } as DataEntry,
+        } as DataEntry, // Tip düzəltməsi
       }));
 
       if (dataEntries[columnId] && dataEntries[columnId].id && !dataEntries[columnId].id.startsWith('temp-')) {
