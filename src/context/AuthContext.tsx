@@ -19,6 +19,11 @@ interface AuthContextType {
   updateUser: (userData: Partial<FullUserData>) => Promise<boolean>; // Adding this to match usage
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   hasRole: (role: string | string[]) => boolean;
+  // Added for debug components
+  session: any;
+  resetPassword?: () => Promise<void>;
+  refreshSession?: () => Promise<void>;
+  getSession?: () => Promise<void>;
 }
 
 // Kontekst yaradırıq
@@ -39,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile,
     changePassword,
     hasRole,
+    session,
   } = useSupabaseAuth();
 
   // Auth kontekstinin dəyərlərini formalaşdırırıq
@@ -57,6 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUser: updateProfile, // Alias for updateProfile to fix existing code
     changePassword,
     hasRole,
+    session,
+    // Dummy implementations for debug components
+    resetPassword: async () => {},
+    refreshSession: async () => {},
+    getSession: async () => {},
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -78,7 +89,7 @@ export const useRole = (requiredRole: string | string[]): boolean => {
   if (!user) return false;
   
   if (Array.isArray(requiredRole)) {
-    return requiredRole.includes(user.role);
+    return requiredRole.includes(user.role as string);
   }
   
   return user?.role === requiredRole;

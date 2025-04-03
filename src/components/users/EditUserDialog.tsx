@@ -4,15 +4,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { User, UserFormData } from '@/types/user';
-import { useAuth, useRole } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
+import { UpdateUserData } from '@/types/supabase';
 
 interface EditUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User;
-  onSave: (user: User) => void;
+  onSave: (user: UpdateUserData) => void;
 }
 
 const EditUserDialog: React.FC<EditUserDialogProps> = ({ 
@@ -25,7 +26,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [showPasswordReset, setShowPasswordReset] = React.useState(false);
-  const canResetPassword = useRole(['superadmin', 'regionadmin']) && 
+  const canResetPassword = (currentUser?.role === 'superadmin' || currentUser?.role === 'regionadmin') && 
                            currentUser?.role !== user.role &&
                            user.id !== currentUser?.id;
   
@@ -39,8 +40,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     schoolId: user.schoolId,
     status: user.status,
     avatar: user.avatar,
-    passwordResetDate: user.passwordResetDate,
-    twoFactorEnabled: user.twoFactorEnabled,
     language: user.language,
     notificationSettings: user.notificationSettings,
     password: ''  // Add empty password field for reset
@@ -61,15 +60,25 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     
     // Simulate API call
     setTimeout(() => {
-      const updatedUser: User = {
-        ...user,
-        ...formData,
-        updatedAt: new Date().toISOString(), // Date -> string
-        // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
-        ...(showPasswordReset && { passwordResetDate: new Date().toISOString() }) // Date -> string
+      const updatedUserData: UpdateUserData = {
+        full_name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        region_id: formData.regionId,
+        sector_id: formData.sectorId,
+        school_id: formData.schoolId,
+        status: formData.status as 'active' | 'inactive' | 'blocked',
+        language: formData.language,
+        phone: formData.phone,
+        position: formData.position,
+        avatar: formData.avatar,
       };
       
-      onSave(updatedUser);
+      if (showPasswordReset && formData.password) {
+        updatedUserData.password = formData.password;
+      }
+      
+      onSave(updatedUserData);
       
       if (showPasswordReset) {
         toast.success(t('passwordResetSuccess'), {

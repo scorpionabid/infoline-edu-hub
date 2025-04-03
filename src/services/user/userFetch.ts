@@ -1,11 +1,13 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserFetchFilters, UsersResponse } from './types';
 
 export const fetchUsers = async (
-  page: number,
-  pageSize: number,
-  filters: UserFetchFilters = {}
+  filters: UserFetchFilters = {},
+  pagination: { page: number; pageSize: number }
 ): Promise<UsersResponse> => {
+  const { page, pageSize } = pagination;
+  
   let query = supabase
     .from('profiles')
     .select(
@@ -14,6 +16,10 @@ export const fetchUsers = async (
       email,
       full_name,
       status,
+      avatar,
+      phone,
+      position,
+      language,
       last_login,
       created_at,
       updated_at,
@@ -61,16 +67,20 @@ export const fetchUsers = async (
 
   const users = data.map((userData: any) => {
     const roleData = userData.user_roles ? userData.user_roles[0] : null;
-
+    
     const user = {
       id: userData.id,
       email: userData.email,
       name: userData.full_name,
-      role: userData.role as unknown as string,
+      full_name: userData.full_name,
+      role: roleData?.role || 'schooladmin', // Default to schooladmin if no role
       status: userData.status,
-      regionId: userData.user_roles?.[0]?.region_id || null,
-      sectorId: userData.user_roles?.[0]?.sector_id || null,
-      schoolId: userData.user_roles?.[0]?.school_id || null,
+      regionId: roleData?.region_id || null,
+      sectorId: roleData?.sector_id || null,
+      schoolId: roleData?.school_id || null,
+      region_id: roleData?.region_id || null,
+      sector_id: roleData?.sector_id || null,
+      school_id: roleData?.school_id || null,
       avatar: userData.avatar,
       language: userData.language,
       phone: userData.phone,
@@ -78,8 +88,14 @@ export const fetchUsers = async (
       createdAt: userData.created_at,
       updatedAt: userData.updated_at,
       lastLogin: userData.last_login,
-      twoFactorEnabled: userData.twoFactorEnabled,
-      notificationSettings: userData.notificationSettings,
+      created_at: userData.created_at,
+      updated_at: userData.updated_at,
+      last_login: userData.last_login,
+      twoFactorEnabled: userData.twoFactorEnabled || false,
+      notificationSettings: userData.notificationSettings || {
+        email: true,
+        system: true
+      },
     };
 
     return user;
@@ -100,6 +116,10 @@ export const getUserById = async (userId: string): Promise<any | null> => {
       email,
       full_name,
       status,
+      avatar,
+      phone,
+      position,
+      language,
       last_login,
       created_at,
       updated_at,
@@ -130,11 +150,15 @@ export const getUserById = async (userId: string): Promise<any | null> => {
     id: userData.id,
     email: userData.email,
     name: userData.full_name,
-    role: userData.role as unknown as string,
+    full_name: userData.full_name,
+    role: roleData?.role || 'schooladmin', // Default to schooladmin if no role
     status: userData.status,
-    regionId: userData.user_roles?.[0]?.region_id || null,
-    sectorId: userData.user_roles?.[0]?.sector_id || null,
-    schoolId: userData.user_roles?.[0]?.school_id || null,
+    regionId: roleData?.region_id || null,
+    sectorId: roleData?.sector_id || null,
+    schoolId: roleData?.school_id || null,
+    region_id: roleData?.region_id || null,
+    sector_id: roleData?.sector_id || null,
+    school_id: roleData?.school_id || null,
     avatar: userData.avatar,
     language: userData.language,
     phone: userData.phone,
@@ -142,8 +166,14 @@ export const getUserById = async (userId: string): Promise<any | null> => {
     createdAt: userData.created_at,
     updatedAt: userData.updated_at,
     lastLogin: userData.last_login,
-    twoFactorEnabled: userData.twoFactorEnabled,
-    notificationSettings: userData.notificationSettings,
+    created_at: userData.created_at,
+    updated_at: userData.updated_at,
+    last_login: userData.last_login,
+    twoFactorEnabled: userData.twoFactorEnabled || false,
+    notificationSettings: userData.notificationSettings || {
+      email: true,
+      system: true
+    },
   };
 
   return user;
@@ -160,6 +190,10 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
       email,
       full_name,
       status,
+      avatar,
+      phone, 
+      position,
+      language,
       last_login,
       created_at,
       updated_at,
@@ -190,11 +224,15 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
     id: userData.id,
     email: userData.email,
     name: userData.full_name,
-    role: userData.role as unknown as string,
+    full_name: userData.full_name,
+    role: roleData?.role || 'schooladmin', // Default to schooladmin if no role
     status: userData.status,
-    regionId: userData.user_roles?.[0]?.region_id || null,
-    sectorId: userData.user_roles?.[0]?.sector_id || null,
-    schoolId: userData.user_roles?.[0]?.school_id || null,
+    regionId: roleData?.region_id || null,
+    sectorId: roleData?.sector_id || null,
+    schoolId: roleData?.school_id || null,
+    region_id: roleData?.region_id || null,
+    sector_id: roleData?.sector_id || null,
+    school_id: roleData?.school_id || null,
     avatar: userData.avatar,
     language: userData.language,
     phone: userData.phone,
@@ -202,8 +240,14 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
     createdAt: userData.created_at,
     updatedAt: userData.updated_at,
     lastLogin: userData.last_login,
-    twoFactorEnabled: userData.twoFactorEnabled,
-    notificationSettings: userData.notificationSettings,
+    created_at: userData.created_at,
+    updated_at: userData.updated_at,
+    last_login: userData.last_login,
+    twoFactorEnabled: userData.twoFactorEnabled || false,
+    notificationSettings: userData.notificationSettings || {
+      email: true,
+      system: true
+    },
   };
 
   return user;

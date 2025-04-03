@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
 
         <div className="flex flex-col items-center gap-4 py-4">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarImage src={user.avatar || ''} alt={user.name} />
             <AvatarFallback className="text-2xl bg-primary/10 text-primary">
               {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
             </AvatarFallback>
@@ -73,7 +74,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label className="text-muted-foreground">{t('role')}</Label>
-            <p className="font-medium">{t(user.role)}</p>
+            <p className="font-medium">{t(String(user.role))}</p>
           </div>
           
           {user.regionId && (

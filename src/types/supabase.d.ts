@@ -80,7 +80,7 @@ export interface RoleObject {
 export interface FullUserData {
   id: string;
   email: string;
-  role: UserRole | RoleObject;
+  role: UserRole; // Changed from UserRole | RoleObject to just UserRole
   full_name?: string;
   name?: string;
   phone?: string;
@@ -108,6 +108,7 @@ export interface FullUserData {
     email: boolean;
     system: boolean;
   };
+  passwordResetDate?: string; // Add this for EditUserDialog
   // User interfeysi ilə uyğunlaşmaq üçün əlavə edilmiş xüsusiyyətlər
   app_metadata?: any;
   user_metadata?: any;

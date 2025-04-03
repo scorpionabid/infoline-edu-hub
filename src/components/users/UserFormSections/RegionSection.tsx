@@ -4,14 +4,14 @@ import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
-import { Role } from '@/context/AuthContext';
+import { UserRole } from '@/types/supabase';
 
 interface RegionSectionProps {
   form: any;
   data: UserFormData;
   onFormChange: (fieldName: string, value: any) => void;
   isSuperAdmin: boolean;
-  currentUserRole?: Role;
+  currentUserRole?: UserRole;
   regions: { id: string; name: string }[];
   hideSection?: boolean;
 }
@@ -26,8 +26,17 @@ const RegionSection: React.FC<RegionSectionProps> = ({
   hideSection = false,
 }) => {
   const { t } = useLanguage();
-
-  if (hideSection || !(isSuperAdmin && (data.role === 'regionadmin' || data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
+  
+  // Only SuperAdmin or RegionAdmin need to pick a region
+  // or if the role is regionadmin, sectoradmin or schooladmin
+  const shouldShowRegion = !hideSection && 
+    (isSuperAdmin || 
+     currentUserRole === 'regionadmin' || 
+     data.role === 'regionadmin' ||
+     data.role === 'sectoradmin' ||
+     data.role === 'schooladmin');
+  
+  if (!shouldShowRegion) {
     return null;
   }
 
@@ -44,6 +53,7 @@ const RegionSection: React.FC<RegionSectionProps> = ({
               field.onChange(value === "none" ? undefined : value);
               onFormChange('regionId', value === "none" ? undefined : value);
             }}
+            disabled={currentUserRole === 'regionadmin' && !!data.regionId}
           >
             <FormControl>
               <SelectTrigger>

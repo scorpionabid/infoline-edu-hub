@@ -3,7 +3,8 @@ import React from 'react';
 import { UserFormData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
 import { Form } from '@/components/ui/form';
-import { Role, useRole } from '@/context/AuthContext';
+import { UserRole } from '@/types/supabase';
+import { Role } from '@/context/AuthContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Import custom hook
@@ -23,7 +24,7 @@ import NotificationSection from './UserFormSections/NotificationSection';
 interface UserFormProps {
   data: UserFormData;
   onChange: (data: UserFormData) => void;
-  currentUserRole?: Role;
+  currentUserRole?: UserRole;
   currentUserRegionId?: string;
   isEdit?: boolean;
   passwordRequired?: boolean;
@@ -40,7 +41,7 @@ const UserForm: React.FC<UserFormProps> = ({
   entityType,
 }) => {
   const { t } = useLanguage();
-  const isSuperAdmin = useRole('superadmin');
+  const isSuperAdmin = currentUserRole === 'superadmin';
   
   // Use our custom hook for form handling
   const { form, handleFieldChange } = useUserForm({
@@ -50,7 +51,7 @@ const UserForm: React.FC<UserFormProps> = ({
   });
   
   // Determine available roles based on current user role
-  const availableRoles = React.useMemo<Role[]>(() => {
+  const availableRoles = React.useMemo<UserRole[]>(() => {
     if (isSuperAdmin) {
       return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
     } else if (currentUserRole === 'regionadmin') {
@@ -72,7 +73,7 @@ const UserForm: React.FC<UserFormProps> = ({
   // If we're creating a specific entity-admin pair, automatically set the role
   React.useEffect(() => {
     if (entityType && !isEdit) {
-      let newRole: Role = 'schooladmin';
+      let newRole: UserRole = 'schooladmin';
       
       if (entityType === 'region') {
         newRole = 'regionadmin';

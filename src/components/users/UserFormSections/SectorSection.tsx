@@ -4,15 +4,15 @@ import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
-import { Role } from '@/context/AuthContext';
+import { UserRole } from '@/types/supabase';
 
 interface SectorSectionProps {
   form: any;
   data: UserFormData;
   onFormChange: (fieldName: string, value: any) => void;
   isSuperAdmin: boolean;
-  currentUserRole?: Role;
-  filteredSectors: { id: string; name: string }[];
+  currentUserRole?: UserRole;
+  filteredSectors: { id: string; name: string; regionId: string }[];
   hideSection?: boolean;
 }
 
@@ -26,12 +26,15 @@ const SectorSection: React.FC<SectorSectionProps> = ({
   hideSection = false,
 }) => {
   const { t } = useLanguage();
-
-  const shouldShow = !hideSection && 
-    (((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
-    (data.role === 'sectoradmin' || data.role === 'schooladmin'));
-
-  if (!shouldShow) {
+  
+  // Don't show if regionId is not selected
+  // or show only for sectoradmin and schooladmin roles
+  const shouldShowSector = !hideSection && 
+    data.regionId && 
+    (data.role === 'sectoradmin' || 
+     data.role === 'schooladmin');
+  
+  if (!shouldShowSector) {
     return null;
   }
 

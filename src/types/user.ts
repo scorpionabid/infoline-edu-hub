@@ -5,7 +5,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: UserRole;  // Use UserRole from supabase types instead of Role
+  role: UserRole;
   status: string;
   regionId?: string | null;
   sectorId?: string | null;
@@ -18,7 +18,7 @@ export type User = {
   updatedAt?: string;
   lastLogin?: string | null;
   twoFactorEnabled?: boolean;
-  passwordResetDate?: string; // Əlavə edirik
+  passwordResetDate?: string; // Added for EditUserDialog
   notificationSettings?: {
     email: boolean;
     system: boolean;
@@ -29,15 +29,15 @@ export type CreateUserData = {
   name: string;
   email: string;
   password: string;
-  role: UserRole;  // Use UserRole from supabase types
+  role: UserRole;
   status?: string;
   regionId?: string | null;
   sectorId?: string | null;
   schoolId?: string | null;
   language?: string;
-  avatar?: string;  // Əlavə edildi
-  phone?: string;   // Əlavə edildi
-  position?: string; // Əlavə edildi
+  avatar?: string;
+  phone?: string;
+  position?: string;
   notificationSettings?: {
     email: boolean;
     system: boolean;
@@ -45,23 +45,24 @@ export type CreateUserData = {
 };
 
 export type UpdateUserData = Partial<Omit<User, 'id'>> & {
-  password?: string;  // Əlavə edildi
+  password?: string;
 };
 
 export type UserFormData = {
   name: string;
   email: string;
   password?: string;
-  confirmPassword?: string; // Əlavə edildi
-  role: UserRole;  // Use UserRole from supabase types
+  confirmPassword?: string;
+  role: UserRole;
   status?: string;
   regionId?: string | null;
   sectorId?: string | null;
   schoolId?: string | null;
   language?: string;
-  avatar?: string; // Əlavə edildi
-  phone?: string;  // Əlavə edildi
-  position?: string; // Əlavə edildi
+  avatar?: string;
+  phone?: string;
+  position?: string;
+  passwordResetDate?: string; // Added for EditUserDialog
   notificationSettings?: {
     email: boolean;
     system: boolean;

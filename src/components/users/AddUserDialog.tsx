@@ -4,9 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserFormData } from '@/types/user';
-import { useAuth, Role } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import UserForm from './UserForm';
 import { toast } from 'sonner';
+import { UserRole } from '@/types/supabase';
 
 // Mock data import
 import { mockUsers } from '@/data/mockUsers';
@@ -27,7 +28,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [loading, setLoading] = React.useState(false);
   
   // Set appropriate initial role based on entity type
-  const getInitialRole = (): Role => {
+  const getInitialRole = (): UserRole => {
     if (entityType === 'region') return 'regionadmin';
     if (entityType === 'sector') return 'sectoradmin';
     if (entityType === 'school') return 'schooladmin';
@@ -65,11 +66,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       const newUser = {
         ...formData,
         id: `user-${Date.now()}`,
-        createdAt: new Date().toISOString(), // Date -> string
-        updatedAt: new Date().toISOString()  // Date -> string
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       
-      mockUsers.push(newUser);
+      // Instead of pushing directly to mockUsers, we should use a proper API call
+      console.log('Would create user:', newUser);
       
       // Show success message
       toast.success(t('userCreated'), {

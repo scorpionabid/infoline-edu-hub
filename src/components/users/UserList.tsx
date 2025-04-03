@@ -21,7 +21,7 @@ import { User } from '@/types/user';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/card';
-import { useRole, Role } from '@/context/AuthContext';
+import { useRole } from '@/context/AuthContext';
 import { FilterX, Search, MoreHorizontal, Edit, Trash2, UserCog } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -38,7 +38,7 @@ import { format } from 'date-fns';
 import { useUserList } from '@/hooks/useUserList';
 
 interface UserListProps {
-  currentUserRole?: Role;
+  currentUserRole?: UserRole;
   currentUserRegionId?: string;
 }
 
@@ -111,6 +111,30 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
     } catch (error) {
       return t('invalidDate');
     }
+  };
+
+  // Create a user object from FullUserData that matches User type
+  const adaptUserForDetailsDialog = (user: FullUserData): User => {
+    return {
+      id: user.id,
+      name: user.full_name || user.name || '',
+      email: user.email,
+      role: user.role,
+      status: user.status || 'active',
+      regionId: user.regionId || user.region_id,
+      sectorId: user.sectorId || user.sector_id,
+      schoolId: user.schoolId || user.school_id,
+      avatar: user.avatar,
+      language: user.language,
+      phone: user.phone,
+      position: user.position,
+      createdAt: user.createdAt || user.created_at,
+      updatedAt: user.updatedAt || user.updated_at,
+      lastLogin: user.lastLogin || user.last_login,
+      twoFactorEnabled: user.twoFactorEnabled,
+      passwordResetDate: user.passwordResetDate,
+      notificationSettings: user.notificationSettings
+    };
   };
 
   return (
@@ -220,12 +244,12 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusBadgeStyle(user.status)}>
-                      {t(user.status)}
+                    <Badge variant="outline" className={getStatusBadgeStyle(user.status || '')}>
+                      {t(user.status || 'active')}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatDate(user.last_login)}
+                    {formatDate(user.last_login || user.lastLogin)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -300,13 +324,13 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           <UserDetailsDialog
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser}
+            user={adaptUserForDetailsDialog(selectedUser)}
           />
           
           <EditUserDialog
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser}
+            user={adaptUserForDetailsDialog(selectedUser)}
             onSave={handleUpdateUserConfirm}
           />
           

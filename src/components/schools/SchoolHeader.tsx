@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { UserRole } from '@/types/supabase';
 
 export interface SchoolHeaderProps {
-  userRole?: UserRole;  // Use UserRole type instead of Role
+  userRole?: UserRole;
   onAddClick: () => void;
   onExportClick: () => void;
   onImportClick: () => void;

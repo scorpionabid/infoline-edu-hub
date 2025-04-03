@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { getUsers, deleteUser, updateUser, createUser } from '@/services/user';
-import { UserRole, CreateUserData, UpdateUserData } from '@/types/supabase';
+import { UserRole, CreateUserData, UpdateUserData, FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
@@ -41,20 +41,17 @@ export const useUserList = () => {
         regionFilter = currentUser.region_id;
       }
       
-      const response = await getUsers(
-        {
+      const response = await getUsers({
           role: filter.role as UserRole | undefined,
           region_id: regionFilter,
           sector_id: filter.sector,
           school_id: filter.school,
           status: filter.status,
           search: filter.search,
-        },
-        {
+        }, {
           page: currentPage,
           pageSize,
-        }
-      );
+        });
       
       setUsers(response.data);
       setTotalCount(response.count);

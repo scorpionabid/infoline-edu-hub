@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
+import { UserRole } from '@/types/supabase';
 
 interface SchoolSectionProps {
   form: any;
