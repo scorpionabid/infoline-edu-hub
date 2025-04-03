@@ -37,7 +37,7 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   const formSchema = z.object({
     name: z.string().min(1, { message: t('categoryNameRequired') }),
     description: z.string().optional(),
-    assignment: z.enum(['all', 'sectors'] as const), // Burada const assertion əlavə edilib
+    assignment: z.enum(['all', 'sectors', 'specific'] as const), // Burada const assertion əlavə edilib
     priority: z.number().int().optional(),
   });
 
@@ -62,8 +62,10 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
       description: values.description || "",
       assignment: values.assignment as CategoryAssignment, // Tip çevrilməsi əlavə edildi
       status: category?.status || "active",
-      priority: values.priority,
+      priority: values.priority || 0,
       order: category?.order || 0,
+      archived: category?.archived || false,
+      column_count: category?.column_count || 0
     };
 
     try {
@@ -135,6 +137,7 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                     <SelectContent>
                       <SelectItem value="all">{t('allSchools')}</SelectItem>
                       <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
+                      <SelectItem value="specific">{t('specificSchools')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -175,5 +178,3 @@ export const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     </Dialog>
   );
 };
-
-// Təkrar export silinib

@@ -12,66 +12,66 @@ export const fetchCategories = async (): Promise<Category[]> => {
       id: "1",
       name: "Təcili məlumatlar",
       assignment: "all",
-      createdAt: new Date("2023-01-15").toISOString(),
-      updatedAt: new Date("2023-02-10").toISOString(),
       status: "active",
       priority: 1,
       description: "Məktəbin ümumi təsviri və əsas məlumatları",
       column_count: 3,
       order: 1,
-      archived: false
+      archived: false,
+      created_at: new Date("2023-01-15").toISOString(),
+      updated_at: new Date("2023-02-10").toISOString()
     },
     {
       id: "2",
       name: "Tədris",
       assignment: "sectors",
-      createdAt: new Date("2023-01-20").toISOString(),
-      updatedAt: new Date("2023-03-05").toISOString(),
       status: "active",
       priority: 2,
       description: "Tədris planı və proqram məlumatları",
       column_count: 2,
       order: 2,
-      archived: false
+      archived: false,
+      created_at: new Date("2023-01-20").toISOString(),
+      updated_at: new Date("2023-03-05").toISOString()
     },
     {
       id: "3",
       name: "İnfrastruktur",
       assignment: "all",
-      createdAt: new Date("2023-02-01").toISOString(), 
-      updatedAt: new Date("2023-02-20").toISOString(),
-      status: "active",
+      status: "active", 
       priority: 3,
       description: "Məktəbin infrastruktur və texniki məlumatları",
       column_count: 3,
       order: 3,
-      archived: false
+      archived: false,
+      created_at: new Date("2023-02-01").toISOString(), 
+      updated_at: new Date("2023-02-20").toISOString()
     },
     {
       id: "4",
       name: "Davamiyyət",
       assignment: "sectors",
-      createdAt: new Date("2023-02-15").toISOString(),
-      updatedAt: new Date("2023-04-10").toISOString(),
       status: "active",
       priority: 4,
       description: "Davamiyyət haqqında məlumatlar",
       column_count: 3,
       order: 4,
-      archived: false
+      archived: false,
+      created_at: new Date("2023-02-15").toISOString(),
+      updated_at: new Date("2023-04-10").toISOString()
     },
     {
       id: "5",
       name: "Nailiyyət",
       assignment: "sectors",
-      createdAt: new Date("2023-03-01").toISOString(),
-      updatedAt: new Date("2023-03-25").toISOString(),
       status: "active",
       priority: 5,
       description: "Şagirdlərin akademik nailiyyətləri və statistikaları",
       column_count: 2,
       order: 5,
-      archived: false
+      archived: false,
+      created_at: new Date("2023-03-01").toISOString(),
+      updated_at: new Date("2023-03-25").toISOString()
     }
   ];
 };
@@ -86,7 +86,10 @@ export const addCategory = async (categoryData: Omit<Category, "id"> & { id?: st
     ...categoryData,
     id: categoryData.id || Date.now().toString(),
     order: categoryData.priority || Date.now(), // Əgər priority yoxdursa, bir standart dəyər təyin edirik
-    archived: categoryData.archived || false // Əlavə edildi
+    archived: categoryData.archived || false, // Əlavə edildi
+    column_count: categoryData.column_count || 0, // Əlavə edildi
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   } as Category;
 };
 

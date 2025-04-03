@@ -92,7 +92,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             categoryName: category.name,
             status,
             completionPercentage,
-            deadline: category.deadline,
+            deadline: category.deadline || "",
             dueDate: category.deadline,
             filledCount: filledCount || 0,
             totalCount: columnCount || 0,
@@ -101,7 +101,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
             data: {},
             userId: user?.id || '',
             schoolId: user?.schoolId || ''
-          } as Form;
+          } as FormItem;
         }));
         
         setForms(formsWithStats);

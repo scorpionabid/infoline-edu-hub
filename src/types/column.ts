@@ -26,12 +26,14 @@ export interface ColumnValidation {
   maxLength?: number;
   pattern?: string;
   patternError?: string;
+  patternMessage?: string; // useValidation.tsx üçün əlavə edildi
   format?: string;
   min?: number;
   max?: number;
   regex?: string;
   minDate?: string;
   maxDate?: string;
+  warningThreshold?: number | { min?: number; max?: number }; // useValidation.tsx üçün əlavə edildi
 }
 
 export interface Column {
@@ -49,7 +51,9 @@ export interface Column {
   validation?: ColumnValidation;
   status?: string;
   parentColumnId?: string;
+  parent_column_id?: string; // Uyğunluq üçün əlavə edildi
   dependsOn?: string;
+  depends_on?: string; // Uyğunluq üçün əlavə edildi
 }
 
 export interface CategoryWithColumns {
@@ -86,7 +90,52 @@ export const adaptColumnToSupabase = (column: Column) => {
     default_value: column.defaultValue || null,
     validation: column.validation ? JSON.stringify(column.validation) : null,
     status: column.status || 'active',
-    parent_column_id: column.parentColumnId || null,
-    depends_on: column.dependsOn || null
+    parent_column_id: column.parentColumnId || column.parent_column_id || null,
+    depends_on: column.dependsOn || column.depends_on || null
+  };
+};
+
+// Supabase-dən gələn sütun obyektini bizim istifadə etdiyimiz Column tipinə çevirmək üçün adapter
+export const adaptSupabaseColumn = (column: any): Column => {
+  let options: string[] | ColumnOption[] = [];
+  if (column.options) {
+    try {
+      options = typeof column.options === 'string' 
+        ? JSON.parse(column.options) 
+        : column.options;
+    } catch (e) {
+      console.error('Sütun seçimlərini parse edərkən xəta baş verdi:', e);
+    }
+  }
+
+  let validation: ColumnValidation | undefined;
+  if (column.validation) {
+    try {
+      validation = typeof column.validation === 'string'
+        ? JSON.parse(column.validation)
+        : column.validation;
+    } catch (e) {
+      console.error('Sütun validasiyasını parse edərkən xəta baş verdi:', e);
+    }
+  }
+
+  return {
+    id: column.id,
+    name: column.name,
+    type: column.type as ColumnType,
+    categoryId: column.category_id || column.categoryId,
+    isRequired: column.is_required || column.isRequired || false,
+    options: options,
+    orderIndex: column.order_index || column.orderIndex || 0,
+    order: column.order || column.order_index || column.orderIndex || 0,
+    placeholder: column.placeholder || '',
+    helpText: column.help_text || column.helpText || '',
+    defaultValue: column.default_value || column.defaultValue || '',
+    validation: validation,
+    status: column.status || 'active',
+    parentColumnId: column.parent_column_id || column.parentColumnId,
+    parent_column_id: column.parent_column_id || column.parentColumnId,
+    dependsOn: column.depends_on || column.dependsOn,
+    depends_on: column.depends_on || column.dependsOn
   };
 };

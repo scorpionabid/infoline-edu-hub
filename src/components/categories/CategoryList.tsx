@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Category, CategoryStatus, CategoryFilter } from "@/types/category";
+import { Category, CategoryStatus, CategoryFilter, CategoryAssignment } from "@/types/category";
 import { useLanguage } from '@/context/LanguageContext';
 import { format } from 'date-fns';
 import { 
@@ -139,10 +139,12 @@ const CategoryList: React.FC<CategoryListProps> = ({
     );
   };
 
-  const getAssignmentBadge = (assignment: 'all' | 'sectors') => {
+  const getAssignmentBadge = (assignment: CategoryAssignment) => {
     return assignment === 'all' 
       ? <Badge variant="secondary">{t('allRegions')}</Badge>
-      : <Badge variant="outline">{t('sectorsOnly')}</Badge>;
+      : assignment === 'sectors' 
+        ? <Badge variant="outline">{t('sectorsOnly')}</Badge>
+        : <Badge variant="outline">{t('specificSchools')}</Badge>;
   };
 
   if (isLoading) {

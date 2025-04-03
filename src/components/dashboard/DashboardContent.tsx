@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,11 +8,12 @@ import {
   SuperAdminDashboardData, 
   RegionAdminDashboardData,
   SectorAdminDashboardData,
-  SchoolAdminDashboardData
+  SchoolAdminDashboardData,
+  ActivityItem
 } from '@/types/dashboard';
 import { FormItem } from '@/types/form';
 import { FormStatus } from '@/types/form';
-import { adaptNotifications, adaptFormItems, adaptActivityItems } from '@/hooks/dashboard/utils';
+import { Notification, adaptNotification } from '@/types/notification';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
@@ -28,52 +30,13 @@ interface DashboardContentProps {
   isLoading: boolean;
 }
 
-const adaptNotifications = (notifications: any[]): Notification[] => {
-  if (!notifications || !Array.isArray(notifications)) {
-    console.warn('Notifications is not an array:', notifications);
-    return [];
-  }
-  
-  return notifications.map(notification => adaptNotification(notification));
-};
-
-const adaptFormItems = (formItems: any[]): FormItem[] => {
-  if (!formItems || !Array.isArray(formItems)) {
-    console.warn('FormItems is not an array:', formItems);
-    return [];
-  }
-  
-  return formItems.map(item => ({
-    id: item.id || '',
-    title: item.title || '',
-    categoryId: item.categoryId || '',
-    status: (item.status as FormStatus) || 'draft',
-    completionPercentage: item.completionPercentage || 0,
-    deadline: item.deadline || '',
-    filledCount: item.filledCount || 0,
-    totalCount: item.totalCount || 0
-  }));
-};
-
-const adaptActivityItems = (activityItems: any[]): ActivityItem[] => {
-  if (!activityItems || !Array.isArray(activityItems)) {
-    console.warn('ActivityItems is not an array:', activityItems);
-    return [];
-  }
-  
-  return activityItems.map(item => ({
-    id: item.id || '',
-    type: item.type || '',
-    title: item.title || '',
-    description: item.description || '',
-    timestamp: item.timestamp || '',
-    userId: item.userId || '',
-    action: item.action || '',
-    actor: item.actor || '',
-    target: item.target || '',
-    time: item.time || ''
-  }));
-};
+// İdxal edilən adaptNotifications, adaptFormItems və adaptActivityItems 
+// funksiyalarını burada yenidən təyin etmək əvəzinə utils.ts-dən istifadə edəcəyik
+import { 
+  adaptNotifications, 
+  adaptFormItems, 
+  adaptActivityItems 
+} from '@/hooks/dashboard/utils';
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
   userRole,
@@ -129,7 +92,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const superAdminData = dashboardData as SuperAdminDashboardData;
           const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
           
-          const adaptedSuperAdminData = {
+          const adaptedSuperAdminData: SuperAdminDashboardData = {
             ...superAdminData,
             notifications: adaptedNotifications,
             regions: superAdminData.regions || 0,
@@ -141,18 +104,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingSchools: superAdminData.pendingSchools || 0,
             approvedSchools: superAdminData.approvedSchools || 0,
             rejectedSchools: superAdminData.rejectedSchools || 0,
-            activityData: (superAdminData.activityData || []).map(item => ({
-              id: item.id || '',
-              type: item.type || '',
-              title: item.title || '',
-              description: item.description || '',
-              timestamp: item.timestamp || '',
-              userId: item.userId || '',
-              action: item.action || '',
-              actor: item.actor || '',
-              target: item.target || '',
-              time: item.time || ''
-            }))
+            activityData: adaptActivityItems(superAdminData.activityData || []),
+            categoryCompletionData: chartData.categoryCompletionData
           };
           
           return <SuperAdminDashboard data={adaptedSuperAdminData} />;
@@ -161,7 +114,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const regionAdminData = dashboardData as RegionAdminDashboardData;
           const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
           
-          const adaptedRegionAdminData = {
+          const adaptedRegionAdminData: RegionAdminDashboardData = {
             ...regionAdminData,
             notifications: adaptedNotifications,
             regionName: regionAdminData.regionName || 'Unknown Region',
@@ -173,18 +126,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingSchools: regionAdminData.pendingSchools || 0,
             approvedSchools: regionAdminData.approvedSchools || 0,
             rejectedSchools: regionAdminData.rejectedSchools || 0,
-            activityData: (regionAdminData.activityData || []).map(item => ({
-              id: item.id || '',
-              type: item.type || '',
-              title: item.title || '',
-              description: item.description || '',
-              timestamp: item.timestamp || '',
-              userId: item.userId || '',
-              action: item.action || '',
-              actor: item.actor || '',
-              target: item.target || '',
-              time: item.time || ''
-            }))
+            activityData: adaptActivityItems(regionAdminData.activityData || []),
+            categoryCompletion: regionAdminData.categoryCompletion || chartData.categoryCompletionData,
+            statusDistribution: regionAdminData.statusDistribution || []
           };
           
           return <RegionAdminDashboard data={adaptedRegionAdminData} />;
@@ -193,7 +137,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const sectorAdminData = dashboardData as SectorAdminDashboardData;
           const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
           
-          const adaptedSectorAdminData = {
+          const adaptedSectorAdminData: SectorAdminDashboardData = {
             ...sectorAdminData,
             notifications: adaptedNotifications,
             sectorName: sectorAdminData.sectorName || 'Unknown Sector',
@@ -204,18 +148,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             pendingSchools: sectorAdminData.pendingSchools || 0,
             approvedSchools: sectorAdminData.approvedSchools || 0,
             rejectedSchools: sectorAdminData.rejectedSchools || 0,
-            activityData: (sectorAdminData.activityData || []).map(item => ({
-              id: item.id || '',
-              type: item.type || '',
-              title: item.title || '',
-              description: item.description || '',
-              timestamp: item.timestamp || '',
-              userId: item.userId || '',
-              action: item.action || '',
-              actor: item.actor || '',
-              target: item.target || '',
-              time: item.time || ''
-            }))
+            activityData: adaptActivityItems(sectorAdminData.activityData || [])
           };
           
           return <SectorAdminDashboard data={adaptedSectorAdminData} />;
@@ -238,7 +171,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             completedForms = [];
           }
           
-          const adaptedSchoolAdminData = {
+          const adaptedSchoolAdminData: SchoolAdminDashboardData = {
             ...schoolAdminData,
             notifications: adaptedNotifications,
             pendingForms: pendingForms,
@@ -260,18 +193,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               adaptFormItems(schoolAdminData.dueSoonForms) : [],
             overdueForms: schoolAdminData.overdueForms ? 
               adaptFormItems(schoolAdminData.overdueForms) : [],
-            activityData: (schoolAdminData.activityData || []).map(item => ({
-              id: item.id || '',
-              type: item.type || '',
-              title: item.title || '',
-              description: item.description || '',
-              timestamp: item.timestamp || '',
-              userId: item.userId || '',
-              action: item.action || '',
-              actor: item.actor || '',
-              target: item.target || '',
-              time: item.time || ''
-            }))
+            activityData: adaptActivityItems(schoolAdminData.activityData || [])
           };
           
           return (

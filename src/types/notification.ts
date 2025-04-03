@@ -1,6 +1,14 @@
 
-export type NotificationType = 'info' | 'warning' | 'success' | 'error';
-export type NotificationEntityType = 'category' | 'column' | 'school' | 'region' | 'sector' | 'user' | 'form';
+export type NotificationType = 
+  'info' | 'warning' | 'success' | 'error' |
+  'approval' | 'rejection' | 'deadline' | 'system' |
+  'approvalRequest' | 'approved' | 'rejected' | 
+  'formApproved' | 'formRejected' | 'systemUpdate' | 
+  'dueDateReminder' | 'newCategory';
+
+export type NotificationEntityType = 
+  'category' | 'column' | 'school' | 'region' | 
+  'sector' | 'user' | 'form' | 'entry' | 'system';
 
 export interface Notification {
   id: string;
@@ -28,8 +36,8 @@ export const adaptNotification = (notification: any): Notification => {
     isRead: notification.isRead || notification.is_read || false,
     userId: notification.userId || notification.user_id || '',
     relatedEntityId: notification.relatedEntityId || notification.related_entity_id,
-    relatedEntityType: notification.relatedEntityType || notification.related_entity_type,
+    relatedEntityType: notification.relatedEntityType || notification.related_entity_type as NotificationEntityType,
     read_status: notification.read_status,
-    time: notification.time // Vaxt xüsusiyyətini əlavə edirik
+    time: notification.time || notification.createdAt || notification.created_at // Vaxt xüsusiyyətini əlavə edirik
   };
 };

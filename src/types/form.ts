@@ -1,5 +1,5 @@
 
-export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon';
+export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'submitted';
 
 export interface FormItem {
   id: string;
