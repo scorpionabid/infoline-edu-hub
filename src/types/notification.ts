@@ -1,32 +1,34 @@
 
 export type NotificationType = 
-  | 'newCategory' 
+  | 'info' 
+  | 'warning' 
+  | 'error' 
+  | 'success' 
+  | 'new_category' 
   | 'deadline' 
-  | 'approvalRequest' 
+  | 'completed' 
   | 'approved' 
-  | 'rejected' 
-  | 'systemUpdate' 
-  | 'reminder'
-  | 'info'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'formApproved'
-  | 'formRejected'
-  | 'dueDateReminder';
+  | 'rejected'
+  | 'system';
 
-export type NotificationPriority = 'normal' | 'high' | 'critical';
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
 
 export interface Notification {
   id: string;
-  type: NotificationType;
   title: string;
   message: string;
-  userId?: string;
-  isRead?: boolean;
+  type: NotificationType;
+  priority: NotificationPriority;
+  userId: string;
   createdAt: string;
-  time: string; // Bu xüsusiyyəti məcburi edirik
-  priority?: NotificationPriority;
+  isRead: boolean;
+  time?: string;
+  is_read?: boolean; // Əlavə edildi
   relatedEntityId?: string;
-  relatedEntityType?: 'category' | 'column' | 'data' | 'user' | 'school';
+  relatedEntityType?: string;
+  read_status?: string; // Bu sahə əsas interfeysə əlavə edildi
+  related_entity_id?: string; // Əlavə edildi
+  related_entity_type?: string; // Əlavə edildi
+  user_id?: string; // Əlavə edildi
+  created_at?: string; // Əlavə edildi
 }

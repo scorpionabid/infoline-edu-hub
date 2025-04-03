@@ -52,7 +52,7 @@ export interface ColumnValidationError {
 }
 
 export interface DataEntry {
-  id: string; // id daima məcburidir, optional deyil
+  id: string; 
   category_id: string;
   column_id: string;
   school_id: string;
@@ -66,7 +66,21 @@ export interface DataEntry {
   rejected_by?: string;
   rejection_reason?: string;
   errorMessage?: string;
+  // Əlavə edilmiş sahələr uyğunluq üçün
   columnId?: string;
+  categoryId?: string;
+  schoolId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  // Digər sahələr
+  categoryName?: string;
+  schoolName?: string;
+  deadline?: string;
 }
 
 export interface ActionType {

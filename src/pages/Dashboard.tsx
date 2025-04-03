@@ -1,150 +1,81 @@
 
-import React, { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import SidebarLayout from '@/components/layout/SidebarLayout';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardContent from '@/components/dashboard/DashboardContent';
-import { useSupabaseDashboardData } from '@/hooks/dashboard/useSupabaseDashboardData';
-import { ChartData } from '@/types/dashboard';
+import React, { useEffect } from 'react';
+import { Helmet } from 'react-helmet';
+import { Loader2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import SidebarLayout from '@/components/layout/SidebarLayout';
+import DashboardContent from '@/components/dashboard/DashboardContent';
+import { useDashboardData } from '@/hooks/dashboard/useDashboardData';
 
-const Dashboard: React.FC = () => {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { dashboardData, isLoading, error, chartData, userRole, refreshData } = useSupabaseDashboardData();
-  const [fallbackLoaded, setFallbackLoaded] = useState(false);
-  const navigate = useNavigate();
-  
-  // Sistem vəziyyətinin diaqnostikası
-  useEffect(() => {
-    console.group('Dashboard komponent diaqnostikası');
-    console.log('Authentication vəziyyəti:', { 
-      isAuthenticated, 
-      authLoading, 
-      user: user ? `${user.email} (${user.role})` : 'yoxdur' 
-    });
-    
-    if (!isAuthenticated && !authLoading) {
-      console.log('İstifadəçi autentifikasiya olmayıb, login səhifəsinə yönləndirilir');
-    }
-    
-    console.groupEnd();
-  }, [user, isAuthenticated, authLoading]);
-  
-  // Əlavə diaqnostik log - yalnız məlumatlar yükləndikdə bir dəfə işləsin
-  useEffect(() => {
-    if (dashboardData && !isLoading) {
-      console.log('Dashboard məlumat vəziyyəti:', { 
-        isLoading, 
-        error: error ? error.message : 'xəta yoxdur', 
-        dataLoaded: !!dashboardData 
-      });
-      console.log('userRole:', userRole);
-      console.log('Fallback vəziyyəti:', fallbackLoaded);
-      
-      if (dashboardData.pendingForms && dashboardData.upcomingDeadlines) {
-        console.log('Dashboard data tipləri:', {
-          pendingForms: Array.isArray(dashboardData.pendingForms) ? 'array' : typeof dashboardData.pendingForms,
-          pendingFormsCount: Array.isArray(dashboardData.pendingForms) ? dashboardData.pendingForms.length : 'N/A',
-          upcomingDeadlines: Array.isArray(dashboardData.upcomingDeadlines) ? 'array' : typeof dashboardData.upcomingDeadlines,
-          deadlinesCount: Array.isArray(dashboardData.upcomingDeadlines) ? dashboardData.upcomingDeadlines.length : 'N/A'
-        });
-      }
-    }
-  }, [dashboardData, isLoading, error, fallbackLoaded, userRole]);
-  
-  // Fallback məlumat göstərmək üçün effekt
-  useEffect(() => {
-    let timer: number | undefined;
-    
-    if (isLoading) {
-      timer = window.setTimeout(() => {
-        console.log('5 saniyə keçdi, fallback data göstəriləcək');
-        setFallbackLoaded(true);
-      }, 5000);
-    }
-    
-    return () => {
-      if (timer !== undefined) {
-        clearTimeout(timer);
-      }
-    };
-  }, [isLoading]);
-  
-  // Əgər istifadəçi autentifikasiya olmayıbsa, login səhifəsinə yönləndirək
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
-  
-  // Xəta olduqda bildiriş göstərək
-  useEffect(() => {
-    if (error) {
-      console.error('Dashboard data error:', error);
-      toast.error('Məlumatları yükləmək mümkün olmadı', {
-        description: `Xəta: ${error.message || 'Naməlum xəta'}`
-      });
-    }
-  }, [error]);
+/**
+ * Dashboard Səhifəsi
+ * İstifadəçinin roluna görə fərqli dashboard məzmunu göstərir.
+ */
+const Dashboard = () => {
+  const { t } = useLanguage();
+  const { user, isLoading: authLoading } = useAuth();
+  const { dashboardData, isLoading, error, chartData, refreshData, userRole } = useDashboardData();
 
-  // Fallback data
-  const emptyChartData: ChartData = {
-    activityData: [
-      { name: 'Yan', value: 20 },
-      { name: 'Fev', value: 45 },
-      { name: 'Mar', value: 28 }
-    ],
-    regionSchoolsData: [
-      { name: 'Bakı', value: 120 },
-      { name: 'Sumqayıt', value: 75 }
-    ],
-    categoryCompletionData: [
-      { name: 'Ümumi məlumat', completed: 78 },
-      { name: 'Müəllim heyəti', completed: 65 }
-    ]
-  };
-  
-  // Auth yüklənməsi davam edirsə
-  if (authLoading) {
+  // Komponent yükləndikdə və user dəyişdikdə məlumatları yükləyək
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log('Dashboard məlumatları yüklənir, İstifadəçi:', user?.id);
+      refreshData();
+    }
+  }, [user, authLoading]);
+
+  // İcazəsi olmayan istifadəçiləri yoxlayaq
+  if (!user || !userRole) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        <p className="mt-4 text-muted-foreground">İstifadəçi məlumatları yüklənir...</p>
-      </div>
-    );
-  }
-  
-  // İstifadəçi authenticated deyilsə, login component onsuz da yönləndirəcək
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        <p className="mt-4 text-muted-foreground">Login səhifəsinə yönləndirilir...</p>
-      </div>
-    );
-  }
-  
-  return (
-    <SidebarLayout>
-      <div className="space-y-4">
-        <DashboardHeader refreshData={refreshData} />
-        
-        {isLoading && !fallbackLoaded ? (
-          <div className="flex flex-col items-center justify-center h-[60vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            <p className="mt-4 text-muted-foreground">Məlumatlar yüklənir...</p>
+      <>
+        <Helmet>
+          <title>{t('dashboard')} | InfoLine</title>
+        </Helmet>
+        <SidebarLayout>
+          <div className="container mx-auto py-6">
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
           </div>
-        ) : (
-          <DashboardContent 
-            userRole={userRole || (user?.role as string) || 'schooladmin'}
-            dashboardData={dashboardData}
-            chartData={chartData || emptyChartData}
-            isLoading={isLoading && !fallbackLoaded}
-          />
-        )}
-      </div>
-    </SidebarLayout>
+        </SidebarLayout>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Helmet>
+        <title>{t('dashboard')} | InfoLine</title>
+      </Helmet>
+      <SidebarLayout>
+        <div className="container mx-auto py-6">
+          {isLoading || !dashboardData ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="border border-red-200 rounded-md p-4 bg-red-50 text-red-500">
+              <h3 className="font-semibold">{t('errorLoading')}</h3>
+              <p>{t('tryAgainLater')}</p>
+              <button 
+                className="mt-2 px-3 py-1 bg-red-100 rounded-md hover:bg-red-200"
+                onClick={() => refreshData()}
+              >
+                {t('refreshData')}
+              </button>
+            </div>
+          ) : (
+            <DashboardContent 
+              userRole={userRole} 
+              dashboardData={dashboardData} 
+              chartData={chartData}
+              isLoading={isLoading}
+            />
+          )}
+        </div>
+      </SidebarLayout>
+    </>
   );
 };
 

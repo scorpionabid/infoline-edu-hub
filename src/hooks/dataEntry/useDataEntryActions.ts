@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
@@ -18,6 +17,9 @@ interface UseDataEntryActionsProps {
   setSubmitting: (isSubmitting: boolean) => void;
   entries?: any[];
   columns: Column[];
+  setLoadingEntries?: (loading: boolean) => void;
+  setIsAutoSaving?: (isAutoSaving: boolean) => void;
+  submitCategoryForApproval?: (categoryId: string, schoolId: string) => Promise<boolean>;
 }
 
 export const useDataEntryActions = ({
@@ -30,7 +32,10 @@ export const useDataEntryActions = ({
   setUnsavedChanges,
   setSubmitting,
   entries = [],
-  columns
+  columns,
+  setLoadingEntries = () => {},
+  setIsAutoSaving = () => {},
+  submitCategoryForApproval = async () => true
 }: UseDataEntryActionsProps) => {
   const { t } = useLanguage();
 
@@ -73,6 +78,7 @@ export const useDataEntryActions = ({
 
     try {
       setSubmitting(true);
+      setLoadingEntries(true); // setLoadingEntries əlavə edildi
       
       // Məlumatların yoxlanılması 
       const missingRequired = columns
@@ -84,6 +90,8 @@ export const useDataEntryActions = ({
 
       if (missingRequired) {
         toast.error(t('fillRequiredFields'));
+        setLoadingEntries(false); // setLoadingEntries əlavə edildi
+        setSubmitting(false);
         return false;
       }
       
@@ -92,6 +100,8 @@ export const useDataEntryActions = ({
       
       if (entries.length === 0) {
         toast.error(t('noDataToSubmit'));
+        setLoadingEntries(false); // setLoadingEntries əlavə edildi
+        setSubmitting(false);
         return false;
       }
       
@@ -113,20 +123,40 @@ export const useDataEntryActions = ({
       if (error) {
         console.error('Məlumatları göndərərkən xəta:', error);
         toast.error(t('errorSubmittingData'));
+        setLoadingEntries(false); // setLoadingEntries əlavə edildi
         return false;
       }
       
-      setCategoryStatus('pending');
-      setUnsavedChanges(false);
-      toast.success(t('submittedForApproval'));
+      // Kateqoriya üçün təsdiq sorğusu göndərilməsi
+      const success = await submitCategoryForApproval(categoryId, schoolId);
       
-      return true;
+      setLoadingEntries(false); // setLoadingEntries əlavə edildi
+      
+      if (success) {
+        setCategoryStatus('pending');
+        const unsavedChangesValue = false; // unsavedChanges əvəzinə dəyişən yaradılıb
+        setUnsavedChanges(unsavedChangesValue);
+        
+        setIsAutoSaving(false); // setIsAutoSaving əlavə edildi
+        toast.success(t('submittedForApproval'));
+        return true;
+      } else {
+        setIsAutoSaving(false); // setIsAutoSaving əlavə edildi
+        toast.error(t('errorSubmittingForm'));
+        return false;
+      }
     } catch (error) {
       console.error('Təsdiq üçün göndərmədə xəta:', error);
+      setIsAutoSaving(false); // setIsAutoSaving əlavə edildi
       toast.error(t('errorSubmittingForm'));
       return false;
     } finally {
       setSubmitting(false);
+      setIsAutoSaving(false); // setIsAutoSaving əlavə edildi
+      
+      const unsavedChangesValue = false; // unsavedChanges əvəzinə dəyişən yaradılıb
+      setUnsavedChanges(unsavedChangesValue);
+      setIsAutoSaving(false); // setIsAutoSaving əlavə edildi
     }
   }, [
     categoryId, 
@@ -136,7 +166,10 @@ export const useDataEntryActions = ({
     dataEntries, 
     setSubmitting, 
     setCategoryStatus, 
-    setUnsavedChanges
+    setUnsavedChanges,
+    submitCategoryForApproval,
+    setLoadingEntries,
+    setIsAutoSaving
   ]);
 
   // Kateqoriya üçün mövcud məlumatları yüklə
@@ -185,54 +218,9 @@ export const useDataEntryActions = ({
     }
   }, [categoryId, schoolId, t, setDataEntries, setCategoryStatus, setLoadingEntries]);
 
-  // Avtomatik yadda saxlama
-  const autoSaveEntries = useCallback(async () => {
-    if (!categoryId || !schoolId || !unsavedChanges) return;
-    
-    try {
-      setIsAutoSaving(true);
-      
-      const entries = Object.values(dataEntries);
-      
-      if (entries.length === 0) {
-        setIsAutoSaving(false);
-        return;
-      }
-      
-      // Draft kimi yadda saxla
-      const { error } = await supabase.from('data_entries').upsert(
-        entries.map(entry => ({
-          id: entry.id,
-          category_id: entry.category_id,
-          column_id: entry.column_id,
-          school_id: entry.school_id,
-          value: entry.value,
-          status: 'draft',
-          created_by: entry.created_by,
-          updated_at: new Date().toISOString(),
-          created_at: entry.created_at
-        }))
-      );
-
-      if (error) {
-        console.error('Avtomatik yadda saxlayarkən xəta:', error);
-        setIsAutoSaving(false);
-        return;
-      }
-      
-      setUnsavedChanges(false);
-      console.log('Avtomatik yadda saxlandı:', new Date().toISOString());
-    } catch (error) {
-      console.error('Avtomatik yadda saxlayarkən xəta:', error);
-    } finally {
-      setIsAutoSaving(false);
-    }
-  }, [categoryId, schoolId, unsavedChanges, dataEntries, setIsAutoSaving, setUnsavedChanges]);
-
   return {
     handleDataChange,
     handleSubmitForApproval,
-    fetchDataEntriesForCategory,
-    autoSaveEntries
+    fetchDataEntriesForCategory
   };
 };

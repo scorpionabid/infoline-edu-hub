@@ -1,3 +1,4 @@
+
 export interface School {
   id: string;
   name: string;
@@ -5,6 +6,7 @@ export interface School {
   phone?: string;
   email?: string;
   directorName?: string;
+  principalName?: string;  // əlavə edildi
   studentCount?: number;
   teacherCount?: number;
   schoolType?: 'elementary' | 'middle' | 'high' | 'vocational' | 'special';
@@ -12,7 +14,7 @@ export interface School {
   regionId: string;
   sectorId: string;
   status: 'active' | 'inactive';
-  admin_id?: string; // admin_id əlavə edildi
+  admin_id?: string; 
   adminEmail?: string;
   adminCount?: number;
   createdAt?: string;
@@ -26,8 +28,11 @@ export interface School {
   language?: string;
   type?: string;
   completion_rate?: number;
+  completionRate?: number; // əlavə edildi
   logo?: string;
   admin_email?: string;
+  regionName?: string; // əlavə edildi
+  sectorName?: string; // əlavə edildi
 }
 
 export interface CreateSchoolParams {

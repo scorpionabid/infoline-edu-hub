@@ -30,7 +30,7 @@ interface AdminDialogProps {
   school: any | null;
   admin: SchoolAdmin | null;
   onSubmit: (adminData: any) => void;
-  onResetPassword: () => void;
+  onResetPassword: (newPassword: string) => void;
 }
 
 export const AdminDialog: React.FC<AdminDialogProps> = ({
@@ -65,7 +65,7 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
     toast.success(t('passwordResetSuccess'));
     setShowPasswordReset(false);
     setNewPassword('');
-    onResetPassword();
+    onResetPassword(newPassword);
   };
 
   return (

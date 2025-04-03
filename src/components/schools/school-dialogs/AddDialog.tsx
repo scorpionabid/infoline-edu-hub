@@ -47,13 +47,13 @@ export const AddDialog = ({
         <form onSubmit={handleFormSubmit}>
           <Tabs value={currentTab} onValueChange={handleTabChange}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="general">{t('generalInfo')}</TabsTrigger>
-              <TabsTrigger value="additional">{t('additionalInfo')}</TabsTrigger>
+              <TabsTrigger value="school">{t('generalInfo')}</TabsTrigger>
+              <TabsTrigger value="admin">{t('additionalInfo')}</TabsTrigger>
             </TabsList>
-            <TabsContent value="general">
+            <TabsContent value="school">
               <SchoolForm 
                 formData={formData}
-                onChange={(field, value) => onChange(field, value)} // field və value parameterlərini tək tək keçiririk
+                onChange={onChange}
                 currentTab={currentTab}
                 setCurrentTab={onTabChange}
                 filteredSectors={filteredSectors}
@@ -62,7 +62,7 @@ export const AddDialog = ({
             <TabsContent value="additional">
               <SchoolForm 
                 formData={formData}
-                onChange={(field, value) => onChange(field, value)} // field və value parameterlərini tək tək keçiririk
+                onChange={onChange}
                 currentTab={currentTab}
                 setCurrentTab={onTabChange}
                 filteredSectors={filteredSectors}

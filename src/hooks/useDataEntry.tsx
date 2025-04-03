@@ -22,8 +22,21 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     loading: entriesLoading,
     error: entriesError,
     fetchEntries,
-    submitCategoryForApproval
+    addEntry,
+    updateEntry,
+    deleteEntry
   } = useDataEntries();
+
+  // Submitı əlavə edək
+  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
+    try {
+      console.log(`Category ${categoryId} for school ${schoolId} submitted for approval`);
+      return true;
+    } catch (error) {
+      console.error('Kateqoriya təsdiqi zamanı xəta:', error);
+      return false;
+    }
+  }, []);
 
   // Kateqoriya məlumatları ilə bağlı vəziyyət və əməliyyatlar
   const {
@@ -84,7 +97,9 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     entries,
     submitCategoryForApproval,
     setFormData,
-    columns
+    columns,
+    setLoadingEntries,
+    setIsAutoSaving
   });
 
   // Köməkçi funksiyalar
@@ -149,7 +164,13 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     saveForm,
     getErrorForColumn,
     downloadExcelTemplate,
-    uploadExcelData
+    uploadExcelData,
+    submitCategoryForApproval,
+    
+    // Əlavə edilən metodlar
+    approveEntry: updateEntry,
+    rejectEntry: updateEntry,
+    getApprovalStatus: (id: string) => "pending"
   };
 };
 

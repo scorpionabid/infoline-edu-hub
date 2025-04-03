@@ -13,6 +13,7 @@ import { useImportExport } from '@/hooks/schools/useImportExport';
 import ImportDialog from './ImportDialog';
 import { Region as RegionType } from '@/types/region';
 import { UserRole } from '@/types/supabase';
+import { School } from '@/types/school';
 
 const SchoolsContainer: React.FC = () => {
   const { user } = useAuth();
@@ -116,6 +117,9 @@ const SchoolsContainer: React.FC = () => {
   const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
   const userRole = user?.role as UserRole;
 
+  // School tipini düzəldək
+  const typedSelectedSchool = selectedSchool as unknown as School;
+
   return (
     <div className="space-y-6">
       <SchoolHeader 
@@ -167,7 +171,7 @@ const SchoolsContainer: React.FC = () => {
         isEditDialogOpen={isEditDialogOpen}
         isAddDialogOpen={isAddDialogOpen}
         isAdminDialogOpen={isAdminDialogOpen}
-        selectedSchool={selectedSchool}
+        selectedSchool={typedSelectedSchool}
         selectedAdmin={selectedAdmin}
         closeDeleteDialog={closeDeleteDialog}
         closeEditDialog={closeEditDialog}

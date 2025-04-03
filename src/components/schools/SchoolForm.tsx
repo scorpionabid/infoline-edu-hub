@@ -6,9 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SchoolFormData } from '@/types/school-form';
 import { useAuth } from '@/context/AuthContext';
 
-interface SchoolFormProps {
+export interface SchoolFormProps {
   formData: SchoolFormData;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onChange: (field: string, value: any) => void; // onChange prop'u interface'ə əlavə edildi
+  handleFormChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void; // əlavə edildi
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   filteredSectors: Array<{ id: string; name: string; regionId: string }>;
@@ -17,6 +18,7 @@ interface SchoolFormProps {
 
 const SchoolForm: React.FC<SchoolFormProps> = ({
   formData,
+  onChange,
   handleFormChange,
   currentTab,
   setCurrentTab,
@@ -24,6 +26,15 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
   isEdit = false
 }) => {
   const { user } = useAuth();
+  
+  // İstifadəçi ya onChange, ya da handleFormChange funksiyasından istifadə edə bilər
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (handleFormChange) {
+      handleFormChange(e);
+    } else if (onChange) {
+      onChange(e.target.name, e.target.value);
+    }
+  };
   
   return (
     <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
@@ -40,7 +51,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 id="name"
                 name="name"
                 value={formData.name}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 placeholder="Məktəb adı daxil edin"
                 required
               />
@@ -51,7 +62,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 id="principalName"
                 name="principalName"
                 value={formData.principalName}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 placeholder="Direktor adı daxil edin"
               />
             </div>
@@ -64,7 +75,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               id="sectorId"
               name="sectorId"
               value={formData.sectorId}
-              onChange={handleFormChange}
+              onChange={handleChange}
               className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
               required
             >
@@ -81,7 +92,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               id="address"
               name="address"
               value={formData.address}
-              onChange={handleFormChange}
+              onChange={handleChange}
               placeholder="Məktəb ünvanı daxil edin"
             />
           </div>
@@ -94,7 +105,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 name="email"
                 type="email" 
                 value={formData.email}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 placeholder="E-poçt ünvanı daxil edin"
               />
             </div>
@@ -104,7 +115,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 id="phone"
                 name="phone"
                 value={formData.phone}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 placeholder="Telefon nömrəsi daxil edin"
               />
             </div>
@@ -118,7 +129,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 name="studentCount"
                 type="number"
                 value={formData.studentCount}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 placeholder="Şagird sayı daxil edin"
               />
             </div>
@@ -129,7 +140,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 name="teacherCount"
                 type="number"
                 value={formData.teacherCount}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 placeholder="Müəllim sayı daxil edin"
               />
             </div>
@@ -142,7 +153,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 id="type"
                 name="type"
                 value={formData.type}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
               >
                 <option value="full_secondary">Tam orta</option>
@@ -158,7 +169,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
                 id="language"
                 name="language"
                 value={formData.language}
-                onChange={handleFormChange}
+                onChange={handleChange}
                 className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
               >
                 <option value="az">Azərbaycan</option>
@@ -175,7 +186,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               id="status"
               name="status"
               value={formData.status}
-              onChange={handleFormChange}
+              onChange={handleChange}
               className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
             >
               <option value="active">Aktiv</option>
@@ -193,7 +204,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               id="adminFullName"
               name="adminFullName"
               value={formData.adminFullName}
-              onChange={handleFormChange}
+              onChange={handleChange}
               placeholder="Admin adı və soyadı daxil edin"
             />
           </div>
@@ -205,7 +216,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               name="adminEmail"
               type="email"
               value={formData.adminEmail}
-              onChange={handleFormChange}
+              onChange={handleChange}
               placeholder="Admin e-poçt ünvanı daxil edin"
             />
           </div>
@@ -217,7 +228,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               name="adminPassword"
               type="password"
               value={formData.adminPassword}
-              onChange={handleFormChange}
+              onChange={handleChange}
               placeholder="Şifrə daxil edin"
               minLength={6}
             />
@@ -230,7 +241,7 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
               id="adminStatus"
               name="adminStatus"
               value={formData.adminStatus}
-              onChange={handleFormChange}
+              onChange={handleChange}
               className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
             >
               <option value="active">Aktiv</option>

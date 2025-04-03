@@ -1,212 +1,93 @@
 
 import React from 'react';
-import { School, Users, Map, Globe, CheckCircle, AlertCircle, Clock, FileBarChart, Database, Layers } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
-import StatsCard from './StatsCard';
-import CompletionRateCard from './CompletionRateCard';
-import PendingApprovalsCard from './PendingApprovalsCard';
+import StatCard from './StatCard';
+import { Buildings, Users, School, CheckCircle } from 'lucide-react';
 import NotificationsCard from './NotificationsCard';
-import { Notification } from '@/types/notification';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useNavigate } from 'react-router-dom';
+import { RegionAdminDashboardData } from '@/types/dashboard';
 
 interface RegionAdminDashboardProps {
-  data: {
-    sectors: number;
-    schools: number;
-    users: number;
-    completionRate: number;
-    pendingApprovals: number;
-    pendingSchools: number;
-    approvedSchools: number;
-    rejectedSchools: number;
-    notifications: Notification[];
-    categories?: {
-      name: string;
-      completionRate: number;
-      color: string;
-    }[];
-    sectorCompletions?: {
-      name: string;
-      completionRate: number;
-    }[];
-  };
+  data: RegionAdminDashboardData;
 }
 
 const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  
-  // Massivlərin undefined olmamasını təmin edirik
-  const categories = data.categories || [];
-  const sectorCompletions = data.sectorCompletions || [];
-  
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard 
+    <div className="grid gap-4 md:gap-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('region')}
+            </CardTitle>
+            <Buildings className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.regionName}</div>
+            <p className="text-xs text-muted-foreground">
+              {t('regionalDashboard')}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <StatCard 
           title={t('sectors')}
           value={data.sectors}
-          icon={<Globe className="h-5 w-5 text-purple-500" />}
-          color="purple"
-          onClick={() => navigate('/sectors')}
+          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+          description={t('totalSectors')}
         />
-        <StatsCard 
+        
+        <StatCard 
           title={t('schools')}
           value={data.schools}
-          icon={<School className="h-5 w-5 text-green-500" />}
-          color="green"
-          onClick={() => navigate('/schools')}
+          icon={<School className="h-4 w-4 text-muted-foreground" />}
+          description={t('totalSchools')}
         />
-        <StatsCard 
-          title={t('users')}
-          value={data.users}
-          icon={<Users className="h-5 w-5 text-amber-500" />}
-          color="amber"
-          onClick={() => navigate('/users')}
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <CompletionRateCard 
-          completionRate={data.completionRate} 
-          description={t('regionDataSubmissionRate')}
-        />
-        <PendingApprovalsCard 
-          pendingApprovals={data.pendingApprovals}
-          todayCount={6}
-          weekCount={10}
+        
+        <StatCard 
+          title={t('approvalRate')}
+          value={`${data.approvalRate}%`}
+          icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+          description={t('approvedDataRate')}
+          valueColor={data.approvalRate > 80 ? "text-green-500" : data.approvalRate > 50 ? "text-amber-500" : "text-red-500"}
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard 
-          title={t('pendingSchools')}
-          value={data.pendingSchools}
-          icon={<Clock className="h-5 w-5 text-amber-500" />}
-          color="amber"
-        />
-        <StatsCard 
-          title={t('approvedSchools')}
-          value={data.approvedSchools}
-          icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-          color="green"
-        />
-        <StatsCard 
-          title={t('rejectedSchools')}
-          value={data.rejectedSchools}
-          icon={<AlertCircle className="h-5 w-5 text-red-500" />}
-          color="red"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Kateqoriyalar üzrə tamamlanma statistikası */}
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-medium">{t('categoryCompletion')}</CardTitle>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs" 
-                onClick={() => navigate('/categories')}
-              >
-                <Layers className="h-4 w-4 mr-1" />
-                {t('viewAll')}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {categories.map((category, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{category.name}</span>
-                    <span className="text-sm text-muted-foreground">{category.completionRate}%</span>
-                  </div>
-                  <Progress value={category.completionRate} className={`h-2 ${category.color}`} />
-                </div>
-              ))}
-              {categories.length === 0 && (
-                <div className="py-4 text-center text-muted-foreground">
-                  {t('noCategoriesFound')}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sektorlar üzrə tamamlanma statistikası */}
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-medium">{t('sectorCompletion')}</CardTitle>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs" 
-                onClick={() => navigate('/sectors')}
-              >
-                <Globe className="h-4 w-4 mr-1" />
-                {t('viewAll')}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {sectorCompletions.map((sector, index) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{sector.name}</span>
-                    <span className="text-sm text-muted-foreground">{sector.completionRate}%</span>
-                  </div>
-                  <Progress value={sector.completionRate} className="h-2" />
-                </div>
-              ))}
-              {sectorCompletions.length === 0 && (
-                <div className="py-4 text-center text-muted-foreground">
-                  {t('noSectorsFound')}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-medium">{t('quickActions')}</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/schools')}>
-                <School className="h-6 w-6 mb-2" />
-                <span>{t('manageSchools')}</span>
-              </Button>
-              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/users')}>
-                <Users className="h-6 w-6 mb-2" />
-                <span>{t('manageUsers')}</span>
-              </Button>
-              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/categories')}>
-                <Layers className="h-6 w-6 mb-2" />
-                <span>{t('manageCategories')}</span>
-              </Button>
-              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/reports')}>
-                <FileBarChart className="h-6 w-6 mb-2" />
-                <span>{t('viewReports')}</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Notifications */}
+      {data.notifications && data.notifications.length > 0 && (
+        <NotificationsCard notifications={data.notifications} />
+      )}
       
-      <NotificationsCard notifications={data.notifications} />
+      {/* Additional content specific to Region Admin */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('popularCategories')}</CardTitle>
+            <CardDescription>
+              {t('mostPopularCategories')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Region-specific content here */}
+            <p className="text-sm text-muted-foreground">{t('noDataAvailable')}</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('schoolActivity')}</CardTitle>
+            <CardDescription>
+              {t('schoolActivityDescription')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* More region-specific content here */}
+            <p className="text-sm text-muted-foreground">{t('comingSoon')}</p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
