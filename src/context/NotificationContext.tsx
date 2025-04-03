@@ -7,15 +7,15 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   loading: boolean;
-  isLoading: boolean; // Alias for loading
-  error: Error | null; // Added error field
+  isLoading: boolean;
+  error: Error | null;
   fetchNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (notificationId: string) => Promise<void>;
   deleteAllNotifications: () => Promise<void>;
-  clearAll: () => Promise<void>; // Alias for deleteAllNotifications
-  refreshNotifications: () => Promise<void>; // Alias for fetchNotifications
+  clearAll: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -46,20 +46,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       notifications,
       unreadCount,
       loading,
-      isLoading: loading, // Alias for consistency
-      error, // Added error field
+      isLoading: loading,
+      error,
       fetchNotifications,
       markAsRead,
       markAllAsRead,
       deleteNotification,
       deleteAllNotifications,
-      clearAll: deleteAllNotifications, // Alias function
-      refreshNotifications: fetchNotifications, // Alias function
+      clearAll: deleteAllNotifications,
+      refreshNotifications: fetchNotifications,
     }}>
       {children}
     </NotificationContext.Provider>
   );
 };
 
-// Re-exporting for easier import
 export default NotificationProvider;
