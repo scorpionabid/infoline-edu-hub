@@ -2,35 +2,38 @@
 import React from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Trash } from 'lucide-react';
+import { CategoryWithOrder } from '@/types/category';
 
 export interface DeleteCategoryDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onDelete: (id: string) => Promise<boolean>;
-  categoryId: string;
-  categoryName: string;
+  onConfirm: () => Promise<boolean>;
+  onClose: () => void;
+  category: CategoryWithOrder;
 }
 
 const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
   isOpen,
   onOpenChange,
-  onDelete,
-  categoryId,
-  categoryName
+  onConfirm,
+  onClose,
+  category
 }) => {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await onDelete(categoryId);
+      await onConfirm();
     } catch (error) {
       console.error('Error deleting category:', error);
     } finally {
       setIsDeleting(false);
-      onOpenChange(false);
+      onClose();
     }
   };
+
+  if (!category) return null;
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
@@ -42,13 +45,13 @@ const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
           </AlertDialogTitle>
           <AlertDialogDescription>
             <p>
-              <strong>{categoryName}</strong> kateqoriyasını silmək istədiyinizi təsdiqləyin.
+              <strong>{category.name}</strong> kateqoriyasını silmək istədiyinizi təsdiqləyin.
               Bu əməliyyat geri qaytarıla bilməz və bütün əlaqəli məlumatlar silinəcək.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose}>Ləğv et</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}

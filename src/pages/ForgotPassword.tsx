@@ -7,12 +7,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
-export const ForgotPasswordProps = {
-  title: string,
-  description: string,
-};
+interface ForgotPasswordProps {
+  title?: string;
+  description?: string;
+}
 
-const ForgotPassword: React.FC = () => {
+const ForgotPassword: React.FC<ForgotPasswordProps> = () => {
   const { t } = useLanguage();
   
   return (
