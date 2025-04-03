@@ -1,20 +1,19 @@
 
 // Bütün istifadəçi xidmətlərini bir nöqtədən ixrac edirik
-export * from './userFetch';
-export * from './types';
-
-// userDelete faylından deleteUser funksiyasını konkret ixrac edirik
+import { fetchUsers, getUserById, getUserByEmail } from './userFetch';
+import { updateUser } from './userUpdate';
 import { deleteUser } from './userDelete';
-export { deleteUser };
-
-// userUpdate faylından yalnız updateUser funksiyasını ixrac edirik, deleteUser deyil
-import { updateUser, createUser as updateCreateUser } from './userUpdate';
-export { updateUser };
-
-// userCreate.ts faylından gələn ixracı əlavə edirik
 import { createUser as createUserFunc } from './userCreate';
+
+// Konkret ixraclar
+export { fetchUsers, getUserById, getUserByEmail };
+export { updateUser };
+export { deleteUser };
 export { createUserFunc as createUser };
 
 // fetchUsers funksiyasını getUsers olaraq yenidən ixrac edir
-import { fetchUsers } from './userFetch';
 export { fetchUsers as getUsers };
+
+// Tipləri ixrac edirik
+export * from './types';
+
