@@ -1,6 +1,9 @@
 
-// Məktəb üçün statuslar
-export type SchoolStatus = 'active' | 'inactive' | 'archived' | 'pending';
+export type SchoolStatus = "active" | "inactive" | "archived" | "pending" | string;
+
+export type SchoolType = "full" | "general" | "primary" | string;
+
+export type SchoolLanguage = "az" | "ru" | "en" | string;
 
 export interface School {
   id: string;
@@ -9,69 +12,90 @@ export interface School {
   regionName?: string;
   sectorId: string;
   sectorName?: string;
-  status: SchoolStatus;
   address?: string;
   phone?: string;
   email?: string;
-  principalName?: string;
+  principalName?: string; // directorName əvəzinə principalName istifadə et
   studentCount?: number;
   teacherCount?: number;
+  type?: SchoolType;
+  language?: SchoolLanguage;
+  status: SchoolStatus;
+  admin?: string;
+  adminEmail?: string;
   createdAt?: string;
   updatedAt?: string;
-  language?: string; // Əlavə edildi
-  type?: string; // Əlavə edildi
-  adminEmail?: string; // Əlavə edildi
+  logo?: string;
+  completionRate?: number;
 }
 
-// Admin əşyası interfeysi
-export interface SchoolAdmin {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  schoolId: string;
-  schoolName?: string;
-  createdAt?: string;
-}
-
-// Məktəb yaratma parametrləri
 export interface CreateSchoolParams {
   name: string;
   regionId: string;
   sectorId: string;
-  status: SchoolStatus;
   address?: string;
   phone?: string;
   email?: string;
-  principalName?: string;
+  principalName?: string; // directorName əvəzinə
   studentCount?: number;
   teacherCount?: number;
+  type?: SchoolType;
+  language?: SchoolLanguage;
+  status?: SchoolStatus;
   adminEmail?: string;
-  language?: string;
-  schoolType?: string;
-  teachingLanguage?: string;
+  logo?: string;
+  completionRate?: number;
 }
 
-// Supabase məlumatlarını School tipinə uyğunlaşdırmaq üçün adapter
-export const adaptSupabaseSchool = (data: any): School => {
+export interface SchoolFilter {
+  searchTerm: string;
+  regionId: string;
+  sectorId: string;
+  status: string;
+}
+
+export const adaptSchoolData = (rawData: any): School => {
   return {
-    id: data.id,
-    name: data.name,
-    regionId: data.region_id,
-    regionName: data.region_name,
-    sectorId: data.sector_id,
-    sectorName: data.sector_name,
-    status: data.status as SchoolStatus,
-    address: data.address,
-    phone: data.phone,
-    email: data.email,
-    principalName: data.principal_name,
-    studentCount: data.student_count,
-    teacherCount: data.teacher_count,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    language: data.language,
-    type: data.type,
-    adminEmail: data.admin_email
+    id: rawData.id || '',
+    name: rawData.name || '',
+    regionId: rawData.region_id || '',
+    regionName: rawData.region_name || '',
+    sectorId: rawData.sector_id || '',
+    sectorName: rawData.sector_name || '',
+    address: rawData.address || '',
+    phone: rawData.phone || '',
+    email: rawData.email || '',
+    principalName: rawData.principal_name || '',
+    studentCount: rawData.student_count || 0,
+    teacherCount: rawData.teacher_count || 0,
+    type: rawData.type || '',
+    language: rawData.language || 'az',
+    status: rawData.status || 'active',
+    admin: rawData.admin || '',
+    adminEmail: rawData.admin_email || '',
+    createdAt: rawData.created_at || '',
+    updatedAt: rawData.updated_at || '',
+    logo: rawData.logo || '',
+    completionRate: rawData.completion_rate || 0
+  };
+};
+
+export const adaptSchoolToApi = (school: Partial<School>) => {
+  return {
+    name: school.name,
+    region_id: school.regionId,
+    sector_id: school.sectorId,
+    address: school.address,
+    phone: school.phone,
+    email: school.email,
+    principal_name: school.principalName,
+    student_count: school.studentCount,
+    teacher_count: school.teacherCount,
+    type: school.type,
+    language: school.language,
+    status: school.status || 'active',
+    admin_email: school.adminEmail,
+    logo: school.logo,
+    completion_rate: school.completionRate
   };
 };

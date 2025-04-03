@@ -16,6 +16,8 @@ export type NotificationType =
 
 export type NotificationPriority = 'normal' | 'high' | 'critical';
 
+export type NotificationEntityType = 'category' | 'column' | 'data' | 'user' | 'school';
+
 export interface Notification {
   id: string;
   type: NotificationType;
@@ -26,9 +28,9 @@ export interface Notification {
   isRead: boolean;
   userId: string;
   priority: NotificationPriority;
-  read_status: boolean; // boolean tipinə dəyişdirildi
+  read_status: boolean;
   relatedEntityId?: string;
-  relatedEntityType?: 'category' | 'column' | 'data' | 'user' | 'school';
+  relatedEntityType?: NotificationEntityType;
 }
 
 // adaptSupabaseNotification əvəzinə adaptNotification istifadə etmək üçün
@@ -43,7 +45,7 @@ export const adaptNotification = (rawData: any): Notification => {
     isRead: rawData.is_read ?? rawData.isRead ?? false,
     userId: rawData.user_id || rawData.userId || '',
     priority: rawData.priority || 'normal',
-    read_status: rawData.is_read ?? rawData.isRead ?? false, // boolean olaraq
+    read_status: Boolean(rawData.is_read ?? rawData.isRead ?? rawData.read_status ?? false),
     relatedEntityId: rawData.related_entity_id || rawData.relatedEntityId,
     relatedEntityType: rawData.related_entity_type || rawData.relatedEntityType,
   };

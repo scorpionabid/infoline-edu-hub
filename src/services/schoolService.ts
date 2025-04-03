@@ -1,276 +1,158 @@
+import { adaptSchoolData } from '@/types/school';
 import { supabase } from '@/integrations/supabase/client';
-import { School, CreateSchoolParams } from '@/types/school';
+import { CreateSchoolParams, School } from '@/types/school';
 
-// Bu funksiyanı faylın əvvəlinə əlavə edək
-const mapSchool = (schoolData: any): School => {
-  return {
-    id: schoolData.id,
-    name: schoolData.name,
-    address: schoolData.address,
-    phone: schoolData.phone,
-    email: schoolData.email,
-    directorName: schoolData.principal_name,
-    studentCount: schoolData.student_count,
-    teacherCount: schoolData.teacher_count,
-    status: schoolData.status || 'active',
-    regionId: schoolData.region_id,
-    sectorId: schoolData.sector_id,
-    adminEmail: schoolData.admin_email,
-    createdAt: schoolData.created_at,
-    updatedAt: schoolData.updated_at,
-    // Supabase ilə uyğunluq üçün əlavə sahələr
-    region_id: schoolData.region_id,
-    sector_id: schoolData.sector_id,
-    principal_name: schoolData.principal_name,
-    created_at: schoolData.created_at,
-    updated_at: schoolData.updated_at,
-    type: schoolData.type,
-    language: schoolData.language,
-    completion_rate: schoolData.completion_rate,
-    logo: schoolData.logo,
-    admin_id: schoolData.admin_id,
-    admin_email: schoolData.admin_email
-  };
-};
-
-// Məktəbləri yükləmək üçün funksiya
-export const fetchSchools = async (regionId?: string, sectorId?: string): Promise<School[]> => {
+export const fetchSchools = async (): Promise<School[]> => {
   try {
-    console.log('Məktəblər sorğusu göndərilir...');
-
-    let query = supabase
-      .from('schools')
-      .select('*')
-      .order('name');
-
-    // Əgər regionId varsa, filtrlə
-    if (regionId) {
-      query = query.eq('region_id', regionId);
-    }
-
-    // Əgər sectorId varsa, filtrlə
-    if (sectorId) {
-      query = query.eq('sector_id', sectorId);
-    }
-
-    const { data: schools, error } = await query;
-
-    if (error) {
-      console.error('Məktəbləri yükləmə xətası:', error);
-      return [];
-    }
-
-    if (!schools || schools.length === 0) {
-      console.log('Heç bir məktəb tapılmadı');
-      return [];
-    }
-
-    console.log(`${schools.length} məktəb tapıldı, admin emailləri əldə edilir...`);
-
-    // Məktəbləri admin emailləri ilə formalaşdır
-    const formattedSchools = schools.map(school => ({
-      ...school,
-      adminEmail: school.admin_email || '', 
-      studentCount: school.student_count || 0,
-      teacherCount: school.teacher_count || 0,
-      adminCount: school.admin_email ? 1 : 0
+    const { data, error } = await supabase.from('schools').select('*');
+    
+    if (error) throw new Error(error.message);
+    
+    const schools: School[] = data.map(school => ({
+      id: school.id,
+      name: school.name,
+      regionId: school.region_id,
+      sectorId: school.sector_id,
+      address: school.address,
+      phone: school.phone,
+      email: school.email,
+      principalName: school.principal_name,
+      studentCount: school.student_count,
+      teacherCount: school.teacher_count,
+      type: school.type,
+      language: school.language,
+      status: school.status,
+      logo: school.logo,
+      adminEmail: school.admin_email,
+      completionRate: school.completion_rate || 0,
+      createdAt: school.created_at,
+      updatedAt: school.updated_at
     }));
-
-    console.log('Formatlanmış məktəblər:', formattedSchools.map(s => ({ name: s.name, adminEmail: s.adminEmail })));
-    return formattedSchools.map(mapSchool);
+    
+    return schools;
   } catch (error) {
-    console.error('Məktəbləri əldə edərkən ümumi xəta:', error);
-    return [];
+    throw error;
   }
 };
 
-// Məktəbi ID-ə görə yükləmək
 export const getSchoolById = async (schoolId: string): Promise<School | null> => {
   try {
-    console.log(`Məktəb ID ${schoolId} sorğusu göndərilir...`);
-
-    const { data: school, error } = await supabase
+    const { data, error } = await supabase
       .from('schools')
       .select('*')
       .eq('id', schoolId)
       .single();
 
     if (error) {
-      console.error(`Məktəb ID ${schoolId} yükləmə xətası:`, error);
+      console.error("Error fetching school by ID:", error);
       return null;
     }
 
-    if (!school) {
-      console.log(`Məktəb ID ${schoolId} tapılmadı`);
-      return null;
-    }
-
-    console.log(`Məktəb ID ${schoolId} tapıldı, admin emaili əldə edilir...`);
-
-    // Məktəbi admin emaili ilə formalaşdır
-    const formattedSchool = {
-      ...school,
-      adminEmail: school.admin_email || '',
-      studentCount: school.student_count || 0,
-      teacherCount: school.teacher_count || 0,
-      adminCount: school.admin_email ? 1 : 0
-    };
-
-    console.log('Formatlanmış məktəb:', { name: formattedSchool.name, adminEmail: formattedSchool.adminEmail });
-    return mapSchool(school);
+    return adaptSchoolData(data);
   } catch (error) {
-    console.error(`Məktəb ID ${schoolId} əldə edərkən ümumi xəta:`, error);
+    console.error("Unexpected error fetching school by ID:", error);
     return null;
   }
 };
 
-// Məktəbi yaratmaq
-export const addSchool = async (schoolData: CreateSchoolParams): Promise<School> => {
+export const createSchool = async (schoolData: CreateSchoolParams): Promise<School> => {
   try {
-    console.log('Məktəb əlavə edilir:', schoolData);
-
-    // Eyni adlı məktəbin olub-olmadığını yoxlayaq
-    const { data: nameCheck, error: nameCheckError } = await supabase
-      .from('schools')
-      .select('id')
-      .eq('name', schoolData.name);
-    
-    if (!nameCheckError && nameCheck && nameCheck.length > 0) {
-      throw new Error(`${schoolData.name} adı ilə məktəb artıq mövcuddur`);
-    }
-    
-    // Admin e-poçtu varsa, onun mövcud olub-olmadığını yoxlayaq
+    // E-poçt ünvanının mövcudluğunu yoxlayaq
     if (schoolData.adminEmail) {
-      const { data: adminCheck, error: adminCheckError } = await supabase
-        .from('schools')
-        .select('id, name')
-        .eq('admin_email', schoolData.adminEmail);
-      
-      if (!adminCheckError && adminCheck && adminCheck.length > 0) {
-        throw new Error(`${schoolData.adminEmail} e-poçtu ilə admin artıq mövcuddur (${adminCheck[0].name} məktəbi)`);
-      }
-    }
-
-    // Edge function vasitəsilə məktəbi və admini yaradaq
-    const response = await supabase.functions.invoke('school-operations', {
-      body: {
-        action: 'create',
-        ...schoolData
-      }
-    });
-
-    const { data, error } = response;
-
-    if (error) {
-      console.error('Məktəb yaratma sorğusu xətası:', error);
-      throw error;
-    }
-
-    if (!data.success) {
-      console.error('Server xətası:', data.error);
-      throw new Error(data.error || 'Məktəb yaratma əməliyyatı uğursuz oldu');
-    }
-
-    console.log('Məktəb yaratma nəticəsi:', data);
-
-    // Edge function-dan qaytarılan məlumatları formalaşdır
-    if (data && data.data && data.data.school) {
-      console.log('Yaradılan məktəb:', data.data.school);
-      
-      if (data.data.admin) {
-        console.log('Admin yaradılmışdır:', data.data.admin.email);
-      } else if (schoolData.adminEmail) {
-        console.warn('Admin yaradılmamışdır, admin məlumatlarını yoxlayın!');
+      const { data: existingUsers, error: emailCheckErr } = await supabase
+        .from('auth.users')
+        .select('email')
+        .eq('email', schoolData.adminEmail)
+        .single();
+        
+      if (emailCheckErr && emailCheckErr.code !== 'PGRST116') {
+        throw new Error(`Error checking email: ${emailCheckErr.message}`);
       }
       
-      return mapSchool(data.data.school);
-    } else {
-      // Xəta halında 
-      throw new Error('Məktəb yaradıldı, amma məlumatlar qaytarılmadı');
+      if (existingUsers) {
+        throw new Error(`User with email ${schoolData.adminEmail} already exists`);
+      }
     }
+    
+    // Məktəb yaradılır
+    const { data: newSchool, error } = await supabase
+      .from('schools')
+      .insert({
+        name: schoolData.name,
+        region_id: schoolData.regionId,
+        sector_id: schoolData.sectorId,
+        address: schoolData.address,
+        phone: schoolData.phone,
+        email: schoolData.email,
+        principal_name: schoolData.principalName,
+        student_count: schoolData.studentCount,
+        teacher_count: schoolData.teacherCount,
+        type: schoolData.type,
+        language: schoolData.language,
+        status: schoolData.status || 'active',
+        admin_email: schoolData.adminEmail,
+        logo: schoolData.logo,
+        completion_rate: schoolData.completionRate || 0
+      })
+      .select()
+      .single();
+      
+    if (error) throw new Error(`Error creating school: ${error.message}`);
+    
+    return adaptSchoolData(newSchool);
   } catch (error) {
-    console.error('Məktəb əlavə etmə xətası:', error);
     throw error;
   }
 };
 
-// Məktəbi yeniləmək
-export const updateSchool = async (schoolId: string, schoolData: Partial<CreateSchoolParams>): Promise<School | null> => {
+export const updateSchool = async (schoolId: string, schoolData: Partial<CreateSchoolParams>): Promise<School> => {
   try {
-    console.log(`Məktəb ID ${schoolId} yenilənir:`, schoolData);
-
-    // Supabase tipləri ilə uyğunlaşdıraq
-    const supabaseData = {
-      name: schoolData.name,
-      principal_name: schoolData.principalName || schoolData.directorName,
-      address: schoolData.address,
-      phone: schoolData.phone,
-      email: schoolData.email,
-      region_id: schoolData.regionId || schoolData.region_id, // Hər iki formatı dəstəkləyirik
-      sector_id: schoolData.sectorId || schoolData.sector_id, // Hər iki formatı dəstəkləyirik
-      student_count: schoolData.studentCount ? Number(schoolData.studentCount) : undefined,
-      teacher_count: schoolData.teacherCount ? Number(schoolData.teacherCount) : undefined,
-      status: schoolData.status,
-      type: schoolData.schoolType || schoolData.type,
-      language: schoolData.teachingLanguage || schoolData.language,
-      admin_email: schoolData.adminEmail
-    };
-
+    const updateData: any = {};
+    
+    // Yalnız təqdim edilən sahələri yeniləyək
+    if (schoolData.name !== undefined) updateData.name = schoolData.name;
+    if (schoolData.regionId !== undefined) updateData.region_id = schoolData.regionId;
+    if (schoolData.sectorId !== undefined) updateData.sector_id = schoolData.sectorId;
+    if (schoolData.address !== undefined) updateData.address = schoolData.address;
+    if (schoolData.phone !== undefined) updateData.phone = schoolData.phone;
+    if (schoolData.email !== undefined) updateData.email = schoolData.email;
+    if (schoolData.principalName !== undefined) updateData.principal_name = schoolData.principalName;
+    if (schoolData.studentCount !== undefined) updateData.student_count = schoolData.studentCount;
+    if (schoolData.teacherCount !== undefined) updateData.teacher_count = schoolData.teacherCount;
+    if (schoolData.type !== undefined) updateData.type = schoolData.type;
+    if (schoolData.language !== undefined) updateData.language = schoolData.language;
+    if (schoolData.adminEmail !== undefined) updateData.admin_email = schoolData.adminEmail;
+    if (schoolData.status !== undefined) updateData.status = schoolData.status;
+    if (schoolData.logo !== undefined) updateData.logo = schoolData.logo;
+    if (schoolData.completionRate !== undefined) updateData.completion_rate = schoolData.completionRate;
+    
     const { data: updatedSchool, error } = await supabase
       .from('schools')
-      .update(supabaseData)
+      .update(updateData)
       .eq('id', schoolId)
       .select()
       .single();
-
-    if (error) {
-      console.error(`Məktəb ID ${schoolId} yeniləmə xətası:`, error);
-      return null;
-    }
-
-    if (!updatedSchool) {
-      console.log(`Məktəb ID ${schoolId} tapılmadı`);
-      return null;
-    }
-
-    console.log(`Məktəb ID ${schoolId} yeniləndi:`, updatedSchool);
-
-    return mapSchool(updatedSchool);
+      
+    if (error) throw new Error(`Error updating school: ${error.message}`);
+    
+    return adaptSchoolData(updatedSchool);
   } catch (error) {
-    console.error(`Məktəb ID ${schoolId} yeniləmə xətası:`, error);
-    return null;
+    throw error;
   }
 };
 
-// Məktəbi silmək
-export const deleteSchool = async (schoolId: string): Promise<any> => {
+export const deleteSchool = async (schoolId: string): Promise<boolean> => {
   try {
-    console.log(`Məktəb ID ${schoolId} silinir...`);
-
-    // Edge function vasitəsilə məktəbi və admini siləcəyik
-    const response = await supabase.functions.invoke('school-operations', {
-      body: {
-        action: 'delete',
-        schoolId: schoolId
-      }
-    });
-
-    const { data, error } = response;
-
-    if (error) {
-      console.error(`Məktəb ID ${schoolId} silmə xətası:`, error);
-      throw error;
-    }
-
-    if (!data.success) {
-      console.error('Server xətası:', data.error);
-      throw new Error(data.error || 'Məktəb silmə əməliyyatı uğursuz oldu');
-    }
-
-    console.log(`Məktəb ID ${schoolId} uğurla silindi`);
-    return { success: true, message: 'Məktəb uğurla silindi' };
+    const { error } = await supabase
+      .from('schools')
+      .delete()
+      .eq('id', schoolId);
+      
+    if (error) throw new Error(error.message);
+    
+    return true;
   } catch (error) {
-    console.error(`Məktəb ID ${schoolId} silmə xətası:`, error);
-    throw error;
+    console.error("Error deleting school:", error);
+    return false;
   }
 };

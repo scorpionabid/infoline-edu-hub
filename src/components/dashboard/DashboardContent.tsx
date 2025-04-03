@@ -35,18 +35,7 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
     return [];
   }
   
-  return notifications.map(notification => ({
-    id: notification.id || '',
-    type: notification.type || 'info',
-    title: notification.title || 'Bildiriş',
-    message: notification.message || '',
-    createdAt: notification.createdAt || new Date().toISOString(),
-    time: notification.time || notification.createdAt || new Date().toISOString(),
-    isRead: notification.isRead || false,
-    userId: notification.userId || '',
-    priority: notification.priority || 'normal',
-    read_status: notification.isRead || false // Boolean tipinə dəyişdik
-  }));
+  return notifications.map(notification => adaptNotification(notification));
 };
 
 // FormItem-ləri Form formatına çevirmək üçün helper funksiya

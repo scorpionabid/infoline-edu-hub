@@ -2,22 +2,30 @@
 import { Notification } from './notification';
 
 // Form status-u və Form əşya interfeysi
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'due';
+
 export interface FormItem {
   id: string;
   title: string; 
-  status: 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'due';
+  status: FormStatus;
   completionPercentage: number;
   deadline?: string;
   category?: string;
 }
-
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'due';
 
 // Diaqram məlumatları üçün interfeyslər
 export interface ChartData {
   activityData: { name: string; value: number }[];
   regionSchoolsData: { name: string; value: number }[];
   categoryCompletionData: { name: string; completed: number }[];
+}
+
+// Status data interfeysi
+export interface StatusData {
+  completed: number;
+  pending: number;
+  rejected: number;
+  notStarted: number;
 }
 
 // Əsas Dashboard məlumatları
@@ -28,6 +36,7 @@ export interface DashboardData {
   totalSchools?: number;
   activeSchools?: number;
   pendingForms?: FormItem[];
+  upcomingDeadlines?: FormItem[];
 }
 
 // SuperAdmin Dashboard məlumatları
@@ -41,7 +50,9 @@ export interface SuperAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  statusData?: { name: string; value: number }[];
+  statusData?: StatusData; // Tipi düzəltdik
+  activityData?: { id: string; action: string; actor: string; target: string; time: string; }[];
+  categoryCompletionData?: { name: string; completed: number }[];
 }
 
 // Region Admin Dashboard məlumatları
@@ -49,6 +60,7 @@ export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
   sectors: number;
   schools: number;
+  users?: number; // Əlavə edildi
   approvalRate: number;
   completionRate: number;
   pendingApprovals: number;
@@ -68,6 +80,7 @@ export interface SectorAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
+  totalForms?: number; // Əlavə edildi
 }
 
 // Məktəb Admin Dashboard məlumatları
@@ -83,9 +96,10 @@ export interface SchoolAdminDashboardData extends DashboardData {
     overdue: number;
   };
   completionRate: number;
-  pendingForms: FormItem[]; // Məcburi sahə əlavə edildi
+  pendingForms: FormItem[]; // Məcburi sahə
   recentForms?: FormItem[];
   totalCategories?: number;
   completedCategories?: number;
   pendingCategories?: number;
+  totalForms?: number; // Əlavə edildi
 }

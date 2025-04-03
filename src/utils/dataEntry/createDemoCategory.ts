@@ -1,23 +1,26 @@
 
-import { CategoryWithColumns, Column, ColumnOption } from '@/types/column';
+import { CategoryWithColumns } from "@/types/column";
 
-// Function to create a demo category for testing
-export const createDemoCategory = (): CategoryWithColumns => {
+// Demo kateqoriya və sütun yaratmaq üçün köməkçi funksiya
+export function createDemoCategory(): CategoryWithColumns {
+  // Demo kateqoriyanı yaradırıq
   return {
-    id: 'demo-category',
-    name: 'Ümumi məlumatlar',
-    description: 'Məktəb haqqında ümumi məlumatlar',
-    assignment: 'all',
-    priority: 1,
-    deadline: new Date().toISOString(),
-    status: 'active',
-    order: 1,
+    category: {
+      id: 'demo-cat-1',
+      name: 'Demo Məktəb Məlumatları',
+      description: 'Bu demo məlumatlar kateqoriyasıdır',
+      order: 1,
+      priority: 1,
+      status: 'active',
+      assignment: 'all',
+      deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() // 1 həftə sonra
+    },
     columns: [
       {
-        id: 'col1',
-        categoryId: 'demo-category',
+        id: 'demo-col-1',
         name: 'Şagird sayı',
         type: 'number',
+        categoryId: 'demo-cat-1',
         isRequired: true,
         order: 1,
         orderIndex: 1,
@@ -28,83 +31,48 @@ export const createDemoCategory = (): CategoryWithColumns => {
         }
       },
       {
-        id: 'col2',
-        categoryId: 'demo-category',
-        name: 'Müəllim sayı',
-        type: 'number',
+        id: 'demo-col-2',
+        name: 'Məktəb növü',
+        type: 'select',
+        categoryId: 'demo-cat-1',
         isRequired: true,
+        options: [
+          { value: 'tam', label: 'Tam orta məktəb' },
+          { value: 'umumi', label: 'Ümumi orta məktəb' },
+          { value: 'ibtidai', label: 'İbtidai məktəb' }
+        ],
         order: 2,
         orderIndex: 2,
         status: 'active',
-        validation: {
-          min: 0,
-          max: 1000
-        }
       },
       {
-        id: 'col3',
-        categoryId: 'demo-category',
-        name: 'Məktəb tipi',
-        type: 'select',
+        id: 'demo-col-3',
+        name: 'İnternet mövcuddur',
+        type: 'checkbox',
+        categoryId: 'demo-cat-1',
         isRequired: true,
         order: 3,
         orderIndex: 3,
-        status: 'active',
-        options: [
-          { label: 'İbtidai məktəb', value: 'primary' },
-          { label: 'Orta məktəb', value: 'middle' },
-          { label: 'Tam orta məktəb', value: 'high' }
-        ]
-      },
-      {
-        id: 'col4',
-        categoryId: 'demo-category',
-        name: 'Kompüter otağı varmı?',
-        type: 'checkbox',
-        isRequired: true,
-        order: 4,
-        orderIndex: 4,
         status: 'active'
       },
       {
-        id: 'col5',
-        categoryId: 'demo-category',
-        name: 'Direktoru haqqında məlumat',
+        id: 'demo-col-4',
+        name: 'Qeydlər',
         type: 'textarea',
+        categoryId: 'demo-cat-1',
         isRequired: false,
-        order: 5,
-        orderIndex: 5,
-        status: 'active',
-        validation: {
-          maxLength: 500
-        }
+        order: 4,
+        orderIndex: 4,
+        status: 'active'
       }
-    ]
+    ],
+    id: 'demo-cat-1',
+    name: 'Demo Məktəb Məlumatları',
+    description: 'Bu demo məlumatlar kateqoriyasıdır',
+    assignment: 'all',
+    priority: 1,
+    deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    order: 1
   };
-};
-
-// Helper function to safely get the value of an option
-export const getOptionValue = (option: string | ColumnOption): string => {
-  if (typeof option === 'string') {
-    return option;
-  }
-  return option.value || '';
-};
-
-// Demo categories and utils
-export const createDemoCategories = (): CategoryWithColumns[] => {
-  const demoCategory = createDemoCategory();
-  const teachersDemoCategory = createDemoCategory();
-  teachersDemoCategory.id = 'teachers-category';
-  teachersDemoCategory.name = 'Müəllim heyəti';
-  return [demoCategory, teachersDemoCategory];
-};
-
-export const createTeachersDemoCategory = (): CategoryWithColumns => {
-  const teachersDemoCategory = createDemoCategory();
-  teachersDemoCategory.id = 'teachers-category';
-  teachersDemoCategory.name = 'Müəllim heyəti';
-  return teachersDemoCategory;
-};
-
-export default createDemoCategory;
+}

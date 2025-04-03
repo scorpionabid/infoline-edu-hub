@@ -8,7 +8,7 @@ export type ColumnType =
   | "phone" 
   | "date" 
   | "select" 
-  | "multiselect" // Əlavə məlumat tipi
+  | "multiselect"
   | "checkbox"
   | "radio"
   | "textarea"
@@ -34,9 +34,9 @@ export interface Column {
   options?: string[] | ColumnOption[];
   validation?: ColumnValidation;
   status?: string;
-  order: number; // Əlavə edildi
-  dependsOn?: string; // asılılıq üçün əlavə edildi
-  parentColumnId?: string; // Əlavə edildi
+  order: number;
+  dependsOn?: string;
+  parentColumnId?: string;
   // Supabase uyğunluğu üçün
   category_id?: string;
   is_required?: boolean;
@@ -73,17 +73,17 @@ export interface CategoryWithColumns {
     order: number;
     priority: number;
     status?: string;
-    assignment?: string; // CategoryAssignment
+    assignment?: string;
     deadline?: string;
   };
   columns: Column[];
-  id?: string; // Uyğunluq üçün əlavə edildi
-  name?: string; // Uyğunluq üçün əlavə edildi
-  priority?: number; // Uyğunluq üçün əlavə edildi
-  description?: string; // Uyğunluq üçün əlavə edildi
-  status?: string; // Uyğunluq üçün əlavə edildi
-  assignment?: string; // Uyğunluq üçün əlavə edildi
-  order?: number; // Uyğunluq üçün əlavə edildi
+  id?: string;
+  name?: string;
+  priority?: number;
+  description?: string;
+  status?: string;
+  assignment?: string;
+  order?: number;
   deadline?: string;
 }
 
@@ -102,11 +102,11 @@ export const adaptSupabaseColumn = (rawData: any): Column => {
     options: rawData.options || [],
     validation: rawData.validation || {},
     status: rawData.status || 'active',
-    order: rawData.order || rawData.order_index || 0,
+    order: rawData.order_index || 0,
     created_at: rawData.created_at,
     updated_at: rawData.updated_at,
     parentColumnId: rawData.parent_column_id,
-    parent_column_id: rawData.parent_column_id, // Uyğunluq üçün 
+    parent_column_id: rawData.parent_column_id, 
     dependsOn: rawData.depends_on,
   };
 };

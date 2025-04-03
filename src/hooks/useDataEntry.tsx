@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Category } from '@/types/category';
 import { useDataEntries } from './useDataEntries';

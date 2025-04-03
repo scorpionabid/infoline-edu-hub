@@ -2,9 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, Column, ColumnType } from '@/types/column';
 
-// Export funksiyanı export default kimi ixrac edək
 export const useSchoolColumnReport = (initialCategoryId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(initialCategoryId || '');
@@ -25,7 +24,7 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
           .from('categories')
           .select('*')
           .eq('status', 'active')
-          .order('order', { ascending: true });
+          .order('priority', { ascending: true });
           
         if (categoryError) throw categoryError;
         
@@ -46,7 +45,7 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
               id: cat.id,
               name: cat.name,
               description: cat.description,
-              order: cat.order || cat.priority || 0,
+              order: cat.priority || 0, // order yoxdursa priority istifadə et
               priority: cat.priority || 0,
               status: cat.status,
               assignment: cat.assignment
@@ -54,10 +53,10 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
             columns: columnsData.map(col => ({
               id: col.id,
               name: col.name,
-              type: col.type,
+              type: col.type as ColumnType, // Type əlavə edildi
               categoryId: col.category_id,
               isRequired: col.is_required || false,
-              order: col.order || col.order_index || 0,
+              order: col.order_index || 0, // order istifadə et
               options: col.options || [],
               status: col.status || 'active'
             })),
@@ -194,7 +193,6 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
   };
   
   return {
-    // Return CategoryWithColumns fixed properties
     categories,
     selectedCategoryId,
     setSelectedCategoryId,
@@ -211,5 +209,4 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
   };
 };
 
-// Default export əlavə edək
 export default useSchoolColumnReport;
