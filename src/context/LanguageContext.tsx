@@ -1,14 +1,17 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { translations, defaultLang, Language } from '@/translations';
-import { LanguageType } from '@/types/language';
+import translations from '@/translations';
+import { Language } from '@/types/language';
 
 interface LanguageContextType {
   language: Language;
   t: (key: string, params?: Record<string, string | number>) => string;
   setLanguage: (lang: Language) => void;
-  languages: { value: Language, label: string }[];
+  languages: { value: Language, label: string, flag: string, nativeName: string }[];
 }
+
+// Default dil təyin edirik
+export const defaultLang: Language = 'az';
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
@@ -17,13 +20,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Əvvəlcə localStoragedən oxumağa çalışırıq
       const savedLanguage = localStorage.getItem('language');
-      if (savedLanguage && Object.values(Language).includes(savedLanguage as Language)) {
+      if (savedLanguage && Object.values(['az', 'en', 'ru', 'tr']).includes(savedLanguage as Language)) {
         return savedLanguage as Language;
       }
       
       // Əgər browser dilini təyin etmək istəyiriksə, onun əsasında dili seçirik
       const browserLang = navigator.language.split('-')[0];
-      if (Object.values(Language).includes(browserLang as Language)) {
+      if (Object.values(['az', 'en', 'ru', 'tr']).includes(browserLang as Language)) {
         return browserLang as Language;
       }
       
@@ -35,10 +38,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const languages = [
-    { value: 'az' as Language, label: 'Azərbaycan' },
-    { value: 'en' as Language, label: 'English' },
-    { value: 'ru' as Language, label: 'Русский' },
-    { value: 'tr' as Language, label: 'Türkçe' },
+    { value: 'az' as Language, label: 'Azərbaycan', flag: '🇦🇿', nativeName: 'Azərbaycan' },
+    { value: 'en' as Language, label: 'English', flag: '🇬🇧', nativeName: 'English' },
+    { value: 'ru' as Language, label: 'Русский', flag: '🇷🇺', nativeName: 'Русский' },
+    { value: 'tr' as Language, label: 'Türkçe', flag: '🇹🇷', nativeName: 'Türkçe' },
   ];
   
   useEffect(() => {
@@ -117,10 +120,10 @@ export const useLanguage = () => {
       t: (key: string) => key,
       setLanguage: () => {},
       languages: [
-        { value: 'az' as Language, label: 'Azərbaycan' },
-        { value: 'en' as Language, label: 'English' },
-        { value: 'ru' as Language, label: 'Русский' },
-        { value: 'tr' as Language, label: 'Türkçe' },
+        { value: 'az' as Language, label: 'Azərbaycan', flag: '🇦🇿', nativeName: 'Azərbaycan' },
+        { value: 'en' as Language, label: 'English', flag: '🇬🇧', nativeName: 'English' },
+        { value: 'ru' as Language, label: 'Русский', flag: '🇷🇺', nativeName: 'Русский' },
+        { value: 'tr' as Language, label: 'Türkçe', flag: '🇹🇷', nativeName: 'Türkçe' },
       ]
     };
   }

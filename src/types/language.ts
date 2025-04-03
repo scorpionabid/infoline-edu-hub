@@ -16,5 +16,5 @@ export interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: TranslateFunction;
-  languages: Record<Language, LanguageInfo>;
+  languages: { value: Language, label: string, flag: string, nativeName: string }[];
 }
