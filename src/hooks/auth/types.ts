@@ -1,30 +1,32 @@
 
-import { User, Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { FullUserData } from '@/types/supabase';
 
-export type AuthState = {
-  session: Session | null;
-  user: User | null;
-  profile: FullUserData | null;
+export interface AuthState {
+  user: FullUserData | null;
   loading: boolean;
-};
-
-export type ActionType = 'LOGIN' | 'LOGOUT' | 'SESSION' | 'PROFILE' | 'LOADING';
-
-export interface AuthAction {
-  type: ActionType;
-  payload?: any;
+  error?: Error | null;
+  session: Session | null;
+  profile: any | null;
 }
 
+export type AuthAction =
+  | { type: 'SET_USER'; payload: FullUserData | null }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: Error | null }
+  | { type: 'CLEAR_ERROR' };
+
 export interface UseSupabaseAuthReturn {
-  auth: {
-    currentUser: User | null;
-    session: Session | null;
-  };
-  login: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
-  logout: () => Promise<{ error: Error | null }>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  updatePassword: (password: string) => Promise<{ user: User | null; error: Error | null }>;
-  signUp: (email: string, password: string, userData?: any) => Promise<{ user: User | null; error: Error | null }>;
-  updateProfile: (profile: Partial<FullUserData>) => Promise<{ profile: FullUserData | null; error: Error | null }>;
+  user: FullUserData | null;
+  loading: boolean;
+  error: Error | null;
+  login: (email: string, password: string) => Promise<{ user: FullUserData | null; error: Error | null }>;
+  logout: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<boolean>;
+  updatePassword: (newPassword: string) => Promise<boolean>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  session: Session | null;
+  confirmPasswordReset: (newPassword: string) => Promise<boolean>;
+  clearError: () => void;
 }

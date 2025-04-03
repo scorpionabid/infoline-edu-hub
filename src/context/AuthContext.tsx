@@ -10,6 +10,10 @@ export type Role = UserRole;
 type AuthContextType = {
   user: FullUserData | null;
   loading: boolean;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: Error | null;
+  session: any | null; // Supabase sessiyası
   login: (email: string, password: string) => Promise<{ user: FullUserData | null; error: Error | null }>;
   logout: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<boolean>;
@@ -17,6 +21,8 @@ type AuthContextType = {
   updateProfile: (data: Partial<FullUserData>) => Promise<{ profile: FullUserData | null; error: Error | null }>;
   isRole: (roles: UserRole[]) => boolean;
   useRole: (role: UserRole | UserRole[], fallback?: JSX.Element | null) => boolean | JSX.Element | null;
+  confirmPasswordReset: (newPassword: string) => Promise<boolean>;
+  clearError: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +30,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 type AuthAction = 
   | { type: 'SET_USER'; payload: FullUserData | null }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: Error | null };
+  | { type: 'SET_ERROR'; payload: Error | null }
+  | { type: 'CLEAR_ERROR' };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -34,6 +41,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, loading: action.payload };
     case 'SET_ERROR':
       return { ...state, error: action.payload, loading: false };
+    case 'CLEAR_ERROR':
+      return { ...state, error: null };
     default:
       return state;
   }
@@ -50,15 +59,20 @@ const initialState: AuthState = {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const [currentUser, setCurrentUser] = useState<FullUserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sessionData, setSessionData] = useState<any | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   
   useEffect(() => {
     const initializeAuth = async () => {
       dispatch({ type: 'SET_LOADING', payload: true });
+      setIsLoading(true);
       
       try {
         // Get the current user and session
         const { data: { user } } = await supabase.auth.getUser();
         const { data: { session } } = await supabase.auth.getSession();
+        setSessionData(session);
         
         // If we have a user, fetch their profile data
         if (user) {
@@ -68,15 +82,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(userData);
             dispatch({ type: 'SET_USER', payload: userData });
           } else {
+            setCurrentUser(null);
             dispatch({ type: 'SET_USER', payload: null });
           }
         } else {
+          setCurrentUser(null);
           dispatch({ type: 'SET_USER', payload: null });
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        setError(error as Error);
         dispatch({ type: 'SET_ERROR', payload: error as Error });
       } finally {
+        setIsLoading(false);
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
@@ -86,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.info('Auth state changed:', event);
+      setSessionData(session);
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
@@ -106,6 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const login = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       dispatch({ type: 'SET_LOADING', payload: true });
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -114,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
+        setError(error);
         throw error;
       }
       
@@ -128,8 +149,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { user: null, error: new Error('User data could not be fetched') };
     } catch (error) {
       console.error('Login error:', error);
-      dispatch({ type: 'SET_LOADING', payload: false });
+      setError(error as Error);
+      dispatch({ type: 'SET_ERROR', payload: error as Error });
       return { user: null, error: error as Error };
+    } finally {
+      setIsLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
   
@@ -137,9 +162,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await supabase.auth.signOut();
       setCurrentUser(null);
+      setSessionData(null);
       dispatch({ type: 'SET_USER', payload: null });
     } catch (error) {
       console.error('Logout error:', error);
+      setError(error as Error);
     }
   };
   
@@ -150,12 +177,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
+        setError(error);
         throw error;
       }
       
       return true;
     } catch (error) {
       console.error('Password reset error:', error);
+      setError(error as Error);
       return false;
     }
   };
@@ -167,14 +196,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
+        setError(error);
         throw error;
       }
       
       return true;
     } catch (error) {
       console.error('Update password error:', error);
+      setError(error as Error);
       return false;
     }
+  };
+  
+  const confirmPasswordReset = async (newPassword: string) => {
+    return updatePassword(newPassword);
+  };
+  
+  const clearError = () => {
+    setError(null);
+    dispatch({ type: 'CLEAR_ERROR' });
   };
   
   const updateProfile = async (profileData: Partial<FullUserData>) => {
@@ -198,6 +238,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select();
       
       if (error) {
+        setError(error);
         throw error;
       }
       
@@ -208,6 +249,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         
         if (updateAuthError) {
+          setError(updateAuthError);
           throw updateAuthError;
         }
       }
@@ -223,6 +265,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { profile: updatedUserData, error: null };
     } catch (error) {
       console.error('Update profile error:', error);
+      setError(error as Error);
       return { profile: null, error: error as Error };
     }
   };
@@ -235,7 +278,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const useRole = (role: UserRole | UserRole[], fallback: JSX.Element | null = null) => {
     const roles = Array.isArray(role) ? role : [role];
     
-    if (state.loading) return fallback;
+    if (isLoading) return fallback;
     if (!currentUser) return fallback;
     
     const hasPermission = roles.includes(currentUser.role);
@@ -244,7 +287,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = {
     user: currentUser,
-    loading: state.loading,
+    loading: isLoading,
+    isLoading,
+    isAuthenticated: !!currentUser,
     login,
     logout,
     sendPasswordReset,
@@ -252,6 +297,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateProfile,
     isRole,
     useRole,
+    error,
+    session: sessionData,
+    confirmPasswordReset,
+    clearError,
   };
   
   return (
@@ -269,4 +318,20 @@ export const useAuth = () => {
   }
   
   return context;
+};
+
+// Rol yoxlanışı üçün köməkçi funksiya
+export const useRole = (
+  role: UserRole | UserRole[], 
+  fallback: JSX.Element | null = null
+): boolean | JSX.Element | null => {
+  const { user, loading } = useAuth();
+  
+  const roles = Array.isArray(role) ? role : [role];
+  
+  if (loading) return fallback;
+  if (!user) return fallback;
+  
+  const hasPermission = roles.includes(user.role);
+  return hasPermission ? true : fallback;
 };

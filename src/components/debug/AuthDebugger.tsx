@@ -1,54 +1,53 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
-const AuthDebugger: React.FC = () => {
-  const auth = useAuth();
-  const [sessionData, setSessionData] = React.useState<any>(null);
-  
-  const getSession = async () => {
-    const { data } = await supabase.auth.getSession();
-    setSessionData(data.session);
-  };
-  
-  React.useEffect(() => {
-    getSession();
-  }, []);
-  
+interface AuthDebuggerProps {
+  visible: boolean;
+}
+
+const AuthDebugger: React.FC<AuthDebuggerProps> = ({ visible }) => {
+  const { user, loading, error, session, isAuthenticated } = useAuth();
+
+  if (!visible || process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Auth Debugger</CardTitle>
-        <CardDescription>Debug information about current authentication state</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <h3 className="font-medium">Current User</h3>
-          <pre className="p-4 bg-muted rounded-md overflow-auto max-h-64 text-xs">
-            {JSON.stringify(auth.user, null, 2)}
+    <div className="fixed bottom-0 right-0 bg-gray-800 text-white p-4 max-w-sm opacity-75 hover:opacity-100 transition-opacity z-50 overflow-auto max-h-96 text-xs">
+      <h3 className="font-bold mb-2">Auth Debug Info:</h3>
+      <div className="mb-2">
+        <span className="font-bold">Status: </span>
+        {loading && 'Loading...'}
+        {!loading && isAuthenticated && 'Authenticated'}
+        {!loading && !isAuthenticated && 'Not Authenticated'}
+      </div>
+
+      {error && (
+        <div className="mb-2 text-red-400">
+          <span className="font-bold">Error: </span>
+          {error.message}
+        </div>
+      )}
+
+      {user && (
+        <div className="mb-2">
+          <span className="font-bold">User: </span>
+          <pre className="whitespace-pre-wrap overflow-x-auto">
+            {JSON.stringify(user, null, 2)}
           </pre>
         </div>
-        
-        <div className="space-y-2">
-          <h3 className="font-medium">Current Session</h3>
-          <pre className="p-4 bg-muted rounded-md overflow-auto max-h-64 text-xs">
-            {JSON.stringify(sessionData, null, 2)}
+      )}
+
+      {session && (
+        <div className="mb-2">
+          <span className="font-bold">Session: </span>
+          <pre className="whitespace-pre-wrap overflow-x-auto">
+            {JSON.stringify(session, null, 2)}
           </pre>
         </div>
-        
-        <div className="flex space-x-2">
-          <Button onClick={() => auth.logout()} variant="destructive" size="sm">
-            Logout
-          </Button>
-          <Button onClick={getSession} variant="outline" size="sm">
-            Refresh Session
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 

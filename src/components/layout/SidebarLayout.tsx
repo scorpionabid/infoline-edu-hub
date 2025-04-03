@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -78,10 +77,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     setOpen(false);
   }, [pathname]);
   
-  // Rolu dəqiqləşdirək
   const userRole = user?.role || '';
   
-  // Hər bir naviqasiya elementi üçün göstərilmə şərtlərini təyin edirik
   const navItems = [
     {
       href: "/dashboard",
@@ -145,7 +142,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     }
   ];
   
-  // İstifadəçinin roluna əsasən filtrlənmiş naviqasiya elementləri
   const filteredNavItems = navItems.filter(item => 
     item.roles.includes(userRole)
   );
@@ -153,7 +149,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const handleLogout = async () => {
     try {
       await logout();
-      // AuthContext logout funksiyası yönləndirməni özü edir
     } catch (error) {
       console.error('Çıxış zamanı xəta:', error);
     }
@@ -251,8 +246,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         
         <main className="p-4 lg:p-6">
           {children}
-          {/* Auth Debugger - only visible in development mode */}
-          <AuthDebugger visible={true} />
+          <AuthDebugger visible={process.env.NODE_ENV === 'development'} />
         </main>
       </div>
     </div>

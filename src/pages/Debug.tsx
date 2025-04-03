@@ -1,35 +1,39 @@
 import React from 'react';
-import AuthTester from '@/components/debug/AuthTester';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useAuth } from '@/context/AuthContext';
 import AuthDebugger from '@/components/debug/AuthDebugger';
+import AuthTester from '@/components/debug/AuthTester';
 
-/**
- * Debug page containing various debugging tools.
- * Only accessible in development mode.
- */
-const Debug: React.FC = () => {
-  // Only show in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Debug Page</h1>
-          <p>Debug tools are only available in development mode.</p>
-        </div>
-      </div>
-    );
-  }
+const Debug = () => {
+  const { user, loading, error, session } = useAuth();
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Debug Tools</h1>
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-4">Debug Panel</h1>
       
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Authentication Testing</h2>
-        <AuthTester />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Tester</CardTitle>
+            <CardDescription>Test authentication operations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AuthTester />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Auth State</CardTitle>
+            <CardDescription>Current authentication state</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AuthDebugger visible={true} />
+          </CardContent>
+        </Card>
+        
+        {/* Additional debug cards can be added here */}
       </div>
-      
-      {/* Always show the AuthDebugger on this page */}
-      <AuthDebugger visible={true} />
     </div>
   );
 };
