@@ -1,37 +1,69 @@
 
-import { User } from '@/context/AuthContext';
+import { User } from "@/types/user";
+import { Category } from '@/types/category';
+import { School } from '@/types/school';
 import { DashboardData, FormItem } from '@/types/dashboard';
 
-/**
- * Bütün dashboard növləri üçün əsas məlumatları əldə edir
- */
-export const getBaseData = async (user: User): Promise<DashboardData> => {
-  // Baza məlumatları burada əldə edilir
+export const getBaseData = async (user: User) => {
+  // Əsas məlumatları burada yüklə
   return {
-    // Əsas məlumatlar burada ola bilər
+    userId: user.id,
+    userName: user.full_name || user.email,
+    isLoading: false,
+    error: null
   };
 };
 
-/**
- * Form items üçün güvənli obyektlər yaradır
- */
-export const createSafeFormItems = (items: any[]): FormItem[] => {
-  return items.map(item => ({
-    id: item.id || crypto.randomUUID(),
-    title: item.title || 'Form',
-    status: item.status || 'pending',
-    deadline: item.deadline ? transformDeadlineToString(item.deadline) : undefined,
-    completionRate: item.completionRate || 0
-  }));
+export const createSafeFormItems = (forms: any[]): FormItem[] => {
+  if (!forms || !Array.isArray(forms)) {
+    return [];
+  }
+
+  return forms.map(form => {
+    return {
+      id: form.id || `form-${Math.random().toString(36).substring(7)}`,
+      title: form.title || "Untitled Form",
+      status: form.status || "pending",
+      completionPercentage: form.completionPercentage || Math.floor(Math.random() * 100),
+      deadline: form.deadline || new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
+    };
+  });
 };
 
-/**
- * Tarix tipini string-ə çevirir
- */
-export const transformDeadlineToString = (deadline: Date | string): string => {
-  if (typeof deadline === 'string') {
-    return deadline;
-  }
+export const transformDeadlineToString = (date: string | Date | undefined): string => {
+  if (!date) return '';
   
-  return deadline.toISOString();
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString();
+  } catch (e) {
+    console.error('Invalid date format', e);
+    return '';
+  }
+};
+
+export const getSuperAdminData = async () => {
+  return {
+    // SuperAdmin məlumatları
+  };
+};
+
+export const getRegionAdminData = async () => {
+  return {
+    // Region admin məlumatları
+    approvalRate: 85, // Add approvalRate for RegionAdminDashboard
+  };
+};
+
+export const getSectorAdminData = async () => {
+  return {
+    // Sektor admin məlumatları
+  };
+};
+
+export const getSchoolAdminData = async () => {
+  return {
+    // Məktəb admin məlumatları
+    pendingForms: 5, // Add pendingForms for SchoolAdminDashboard
+  };
 };

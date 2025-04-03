@@ -9,7 +9,13 @@ export type NotificationType =
   | 'completed' 
   | 'approved' 
   | 'rejected'
-  | 'system';
+  | 'system'
+  | 'newCategory'
+  | 'formApproved'
+  | 'formRejected'
+  | 'dueDateReminder'
+  | 'systemUpdate'
+  | 'approvalRequest';
 
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
 
@@ -23,12 +29,12 @@ export interface Notification {
   createdAt: string;
   isRead: boolean;
   time?: string;
-  is_read?: boolean; // Əlavə edildi
+  is_read?: boolean; 
   relatedEntityId?: string;
   relatedEntityType?: string;
-  read_status?: string; // Bu sahə əsas interfeysə əlavə edildi
-  related_entity_id?: string; // Əlavə edildi
-  related_entity_type?: string; // Əlavə edildi
-  user_id?: string; // Əlavə edildi
-  created_at?: string; // Əlavə edildi
+  read_status: string; 
+  related_entity_id?: string; 
+  related_entity_type?: string; 
+  user_id?: string; 
+  created_at?: string; 
 }

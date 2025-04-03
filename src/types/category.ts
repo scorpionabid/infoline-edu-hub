@@ -28,5 +28,48 @@ export interface CategoryListItem {
   assignment: CategoryAssignment;
   deadline?: string;
   columnCount: number;
-  order: number;  // Əlavə edildi
+  order: number;  
+}
+
+export type CategoryWithOrder = Category & {
+  order: number;
+}
+
+export type MockCategory = {
+  id: string;
+  name: string;
+  assignment: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  priority: number;
+  completionRate: number;
+  deadline: string;
+}
+
+// Supabase tiplərini uyğunlaşdırmaq üçün adaptor funksiyaları
+export const adaptSupabaseCategory = (rawData: any): Category => {
+  return {
+    id: rawData.id,
+    name: rawData.name,
+    description: rawData.description || "",
+    assignment: rawData.assignment as CategoryAssignment,
+    deadline: rawData.deadline,
+    status: rawData.status || "active",
+    archived: rawData.archived || false,
+    priority: rawData.priority || 1,
+    order: rawData.order || rawData.priority || 1,
+    columnCount: rawData.column_count || 0,
+    createdAt: rawData.created_at,
+    updatedAt: rawData.updated_at,
+  };
+};
+
+// Category Filtirləmə interfeysi
+export interface CategoryFilter {
+  search: string;
+  status: string;
+  assignment: string;
+  withDeadline: boolean;
+  showArchived: boolean;
 }
