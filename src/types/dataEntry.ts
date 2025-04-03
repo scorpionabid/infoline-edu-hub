@@ -1,4 +1,3 @@
-
 import { ColumnType } from "./column";
 
 export interface EntryValue {
@@ -137,3 +136,6 @@ export interface DataEntry {
 
 // Əvvəlki versiya ilə uyğunluq üçün Supabase tipindən də export edək
 export { DataEntry as DataEntryFromSupabase } from '@/types/supabase';
+
+// Xətanı düzəltmək üçün 'export type' istifadə edək
+export type { DataEntry }; // "export type" ilə re-export etməliyik

@@ -1,68 +1,94 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData } from "@/types/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
-// Supabase URL-ni mühit dəyişənlərdən əldə edirik
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-
-/**
- * İstifadəçi məlumatlarını Supabase-dən əldə edir
- * @param userId İstifadəçi ID-si
- * @returns İstifadəçi məlumatları
- */
-export const fetchUserData = async (userId: string): Promise<FullUserData | null> => {
+// İstifadəçi məlumatlarını əldə etmək üçün funksiya
+export async function fetchUserData(userId: string): Promise<FullUserData | null> {
   try {
-    // Profil məlumatlarını əldə edirik
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    // Full user data'nı əldə edirik
+    const { data: userData, error: userError } = await supabase
+      .rpc('get_full_user_data', { user_id_param: userId });
     
-    if (profileError) throw profileError;
+    if (userError) {
+      console.error('İstifadəçi məlumatı əldə edilərkən xəta baş verdi:', userError);
+      return null;
+    }
     
-    // İstifadəçi rollarını əldə edirik
-    const { data: userRole, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (roleError && roleError.code !== 'PGRST116') throw roleError;
-    
-    // Email məlumatını simulyasiya edirik - real tətbiqdə auth API istifadə ediləcək
-    const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
-    
-    // İstifadəçi məlumatlarını birləşdiririk
-    const userFullData: FullUserData = {
-      id: userId,
-      email: profile?.email || mockEmail,
-      full_name: profile?.full_name || '',
-      name: profile?.full_name || '',
-      phone: profile?.phone || '',
-      position: profile?.position || '',
-      language: profile?.language as any || 'az',
-      avatar: profile?.avatar || '',
-      status: profile?.status as any || 'active',
-      role: userRole?.role || 'schooladmin',
-      region_id: userRole?.region_id || null,
-      sector_id: userRole?.sector_id || null,
-      school_id: userRole?.school_id || null,
-      created_at: profile?.created_at || '',
-      updated_at: profile?.updated_at || '',
-      last_login: profile?.last_login || '',
-      app_metadata: {},
-      user_metadata: {},
-      aud: 'authenticated'
-    };
-    
-    return userFullData;
+    // Əldə edilmiş tam məlumatı qaytarırıq
+    return userData as FullUserData;
   } catch (error) {
-    console.error('İstifadəçi məlumatları əldə edilərkən xəta baş verdi:', error);
+    console.error('İstifadəçi məlumatı əldə edilərkən xəta baş verdi:', error);
     return null;
   }
-};
+}
 
-// getUserData funksiyasını əlavə edirik - fetchUserData ilə eyni funksionallıq
+// İstifadəçilərin siyahısını əldə etmək üçün funksiya
+export async function fetchAllUsers(): Promise<FullUserData[]> {
+  try {
+    // İstifadəçilərin müxtəlif atributlarını əldə edirik
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*');
+    
+    if (profilesError) {
+      throw profilesError;
+    }
+    
+    // User roles cədvəlindən rol məlumatlarını əldə edirik
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('*');
+      
+    if (rolesError) {
+      throw rolesError;
+    }
+    
+    // Auth istifadəçilərinin email məlumatlarını əldə etmək üçün funksiya çağırırıq
+    const userIds = profiles.map(profile => profile.id);
+    const { data: emails, error: emailsError } = await supabase
+      .rpc('get_user_emails_by_ids', { user_ids: userIds });
+      
+    if (emailsError) {
+      throw emailsError;
+    }
+    
+    // Məlumatları birləşdiririk
+    const users: FullUserData[] = profiles.map(profile => {
+      const userRole = roles.find(role => role.user_id === profile.id);
+      const email = emails?.find(e => e.id === profile.id)?.email || '';
+      
+      return {
+        id: profile.id,
+        email,
+        full_name: profile.full_name,
+        name: profile.full_name,
+        role: userRole?.role || 'schooladmin',
+        regionId: userRole?.region_id || null,
+        sectorId: userRole?.sector_id || null,
+        schoolId: userRole?.school_id || null,
+        phone: profile.phone || '',
+        position: profile.position || '',
+        language: profile.language || 'az',
+        avatar: profile.avatar || null,
+        status: profile.status || 'active',
+        last_login: profile.last_login || null,
+        created_at: profile.created_at || '',
+        updated_at: profile.updated_at || '',
+        notificationSettings: {
+          email: true,
+          system: true
+        },
+        twoFactorEnabled: false,
+        aud: 'authenticated'
+      };
+    });
+    
+    return users;
+  } catch (error) {
+    console.error('İstifadəçi məlumatları əldə edilərkən xəta baş verdi:', error);
+    return [];
+  }
+}
+
+// Exported alias for compatibility
 export const getUserData = fetchUserData;

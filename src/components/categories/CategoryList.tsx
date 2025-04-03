@@ -245,7 +245,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      <DropdownMenuItem onClick={() => handleArchiveToggle(category.id, category.archived)}>
+                      <DropdownMenuItem onClick={() => handleArchiveToggle(category.id, !!category.archived)}>
                         {category.archived ? (
                           <>
                             <Eye className="mr-2 h-4 w-4" />
@@ -271,4 +271,3 @@ const CategoryList: React.FC<CategoryListProps> = ({
 };
 
 export default CategoryList;
-

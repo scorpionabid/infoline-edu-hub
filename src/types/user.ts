@@ -1,58 +1,75 @@
 
-import { Role } from '@/context/AuthContext';
+import { UserRole } from './supabase';
 
-export interface User {
+export type User = {
   id: string;
   name: string;
   email: string;
-  role: Role;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  avatar?: string;
+  role: UserRole;  // Use UserRole from supabase types instead of Role
+  status: string;
+  regionId?: string | null;
+  sectorId?: string | null;
+  schoolId?: string | null;
+  avatar?: string | null;
+  language?: string;
   phone?: string;
   position?: string;
-  language?: string;
-  lastLogin?: string;  // Date -> string
+  createdAt?: string;
+  updatedAt?: string;
+  lastLogin?: string | null;
   twoFactorEnabled?: boolean;
   notificationSettings?: {
     email: boolean;
     system: boolean;
   };
-  createdAt?: string;  // Date -> string
-  updatedAt?: string;  // Date -> string
-  status?: 'active' | 'inactive' | 'blocked';
-  passwordResetDate?: string; // Əlavə edildi
-}
+};
 
-export interface UserFormData {
-  id?: string;
+export type CreateUserData = {
   name: string;
   email: string;
-  password?: string;
-  confirmPassword?: string;
-  role: Role;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  phone?: string;
-  position?: string;
+  password: string;
+  role: UserRole;  // Use UserRole from supabase types
+  status?: string;
+  regionId?: string | null;
+  sectorId?: string | null;
+  schoolId?: string | null;
   language?: string;
-  avatar?: string;
-  status?: 'active' | 'inactive' | 'blocked'; // Əlavə edildi
-  twoFactorEnabled?: boolean; // Əlavə edildi
-  passwordResetDate?: string; // Əlavə edildi
+  avatar?: string;  // Adding avatar property to fix error
   notificationSettings?: {
     email: boolean;
     system: boolean;
   };
-}
+};
 
-export interface UserFilter {
-  role?: Role;
+export type UpdateUserData = Partial<Omit<User, 'id'>> & {
+  password?: string;  // Adding password for update operations
+};
+
+export type UserFormData = {
+  name: string;
+  email: string;
+  password?: string;
+  role: UserRole;  // Use UserRole from supabase types
   status?: string;
-  region?: string;
-  sector?: string;
-  school?: string;
+  regionId?: string | null;
+  sectorId?: string | null;
+  schoolId?: string | null;
+  language?: string;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
+};
+
+export type UserFilter = {
+  role?: UserRole;
+  status?: string;
   search?: string;
-}
+  regionId?: string;
+  sectorId?: string;
+};
+
+export type PaginatedUsers = {
+  users: User[];
+  totalCount: number;
+};

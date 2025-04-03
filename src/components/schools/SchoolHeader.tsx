@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, FileDown, FileUp } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Badge } from '@/components/ui/badge';
-import { Role } from '@/context/AuthContext';
+import { UserRole } from '@/types/supabase';
 
 export interface SchoolHeaderProps {
-  userRole?: Role;
+  userRole?: UserRole;  // Use UserRole type instead of Role
   onAddClick: () => void;
   onExportClick: () => void;
   onImportClick: () => void;

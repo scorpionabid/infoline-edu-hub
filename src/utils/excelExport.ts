@@ -2,7 +2,8 @@
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { DataEntry } from '@/types/dataEntry';
-import { Column, Category } from '@/types/column';
+import { Column } from '@/types/column';
+import { Category } from '@/types/category';
 
 export const exportToExcel = (data: any[], fileName: string = 'data-export') => {
   const worksheet = XLSX.utils.json_to_sheet(data);
@@ -39,20 +40,20 @@ export const exportColumnsToExcel = (columns: Column[], categories: Category[] =
   // Hazırladığımız məlumatları saxlayacağımız massivin təyin edilməsi
   const formattedData = columns.map(column => {
     // Kateqoriya adını tapmaq
-    const category = categories.find(cat => cat.id === column.category_id);
+    const category = categories.find(cat => cat.id === column.categoryId);
     
     return {
-      CategoryId: column.category_id,
+      CategoryId: column.categoryId,
       CategoryName: category ? category.name : 'Unknown Category',
       ColumnId: column.id,
       ColumnName: column.name,
       Type: column.type,
-      Required: column.is_required ? 'Yes' : 'No',
-      DefaultValue: column.default_value || '',
+      Required: column.isRequired ? 'Yes' : 'No',
+      DefaultValue: column.defaultValue || '',
       Placeholder: column.placeholder || '',
-      HelpText: column.help_text || '',
+      HelpText: column.helpText || '',
       Status: column.status || 'active',
-      OrderIndex: column.order_index || 0,
+      OrderIndex: column.orderIndex || 0,
       Options: column.options ? (Array.isArray(column.options) ? column.options.join(', ') : JSON.stringify(column.options)) : ''
     };
   });
@@ -75,8 +76,8 @@ export const exportCategoriesToExcel = (categories: Category[]) => {
     Status: category.status || 'active',
     Priority: category.priority || 0,
     Deadline: category.deadline ? new Date(String(category.deadline)).toLocaleDateString() : '',
-    CreatedAt: category.created_at ? new Date(category.created_at).toLocaleDateString() : '',
-    UpdatedAt: category.updated_at ? new Date(category.updated_at).toLocaleDateString() : '',
+    CreatedAt: category.createdAt ? new Date(category.createdAt).toLocaleDateString() : '',
+    UpdatedAt: category.updatedAt ? new Date(category.updatedAt).toLocaleDateString() : '',
     ColumnCount: category.columnCount || 0
   }));
   

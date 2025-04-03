@@ -14,6 +14,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: 'Məktəbin tam adını daxil edin',
       helpText: 'Rəsmi sənədlərdə göstərilən adı yazın',
       order: 1,
+      orderIndex: 0,
       status: 'active'
     },
     {
@@ -26,6 +27,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: 'Direktorun ad və soyadı',
       helpText: '',
       order: 2,
+      orderIndex: 1,
       status: 'active'
     },
     {
@@ -38,6 +40,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: '',
       helpText: 'Məktəbin təsis olunduğu tarix',
       order: 3,
+      orderIndex: 2,
       status: 'active'
     },
     {
@@ -50,13 +53,14 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: 'Məktəb növünü seçin',
       helpText: '',
       options: [
-        { label: 'Tam orta məktəb', value: 'Tam orta məktəb' },
-        { label: 'Ümumi orta məktəb', value: 'Ümumi orta məktəb' },
-        { label: 'İbtidai məktəb', value: 'İbtidai məktəb' },
-        { label: 'Lisey', value: 'Lisey' },
-        { label: 'Gimnaziya', value: 'Gimnaziya' }
+        'Tam orta məktəb',
+        'Ümumi orta məktəb',
+        'İbtidai məktəb',
+        'Lisey',
+        'Gimnaziya'
       ],
       order: 4,
+      orderIndex: 3,
       status: 'active'
     },
     {
@@ -69,6 +73,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: 'Məktəbin tam ünvanını daxil edin',
       helpText: '',
       order: 5,
+      orderIndex: 4,
       status: 'active'
     }
   ],
@@ -83,6 +88,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: '',
       helpText: '',
       order: 1,
+      orderIndex: 0,
       status: 'active'
     },
     {
@@ -95,6 +101,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: '',
       helpText: '',
       order: 2,
+      orderIndex: 1,
       status: 'active'
     },
     {
@@ -107,6 +114,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: '',
       helpText: '',
       order: 3,
+      orderIndex: 2,
       status: 'active'
     },
     {
@@ -119,6 +127,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: '',
       helpText: '',
       order: 4,
+      orderIndex: 3,
       status: 'active'
     },
     {
@@ -131,6 +140,7 @@ export const mockColumns: Record<string, Column[]> = {
       placeholder: '',
       helpText: '',
       order: 5,
+      orderIndex: 4,
       status: 'active'
     }
   ],

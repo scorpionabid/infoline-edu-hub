@@ -87,7 +87,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         status: (dataEntries[col.id]?.status || 'pending') as 'pending' | 'approved' | 'rejected'
       })),
       isCompleted: categoryStatus === 'approved',
-      isSubmitted: categoryStatus !== 'draft',
+      isSubmitted: categoryStatus === 'pending', // Fix: use 'pending' instead of 'submitted'
       completionPercentage: categoryStatus === 'approved' ? 100 : categoryStatus === 'pending' ? 50 : 0,
     })) || [],
     lastSaved: new Date().toISOString(),
@@ -319,7 +319,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                   description={currentCategory.description || ''}
                   deadline={typeof currentCategory.deadline === 'string' ? currentCategory.deadline : currentCategory.deadline?.toISOString()}
                   completionPercentage={getCurrentCategoryCompletion()}
-                  isSubmitted={formData.status === 'submitted'}
+                  isSubmitted={formData.status === 'pending'} // Fix: use 'pending' instead of 'submitted'
                 />
                 <Separator className="my-4" />
                 
@@ -344,7 +344,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                         label={column.name}
                         type={column.type}
                         required={column.isRequired}
-                        disabled={formData.status === 'submitted' || categoryStatus === 'approved'}
+                        disabled={formData.status === 'pending' || categoryStatus === 'approved'} // Fix: use 'pending'
                         options={column.options as string[]}
                         placeholder={column.placeholder}
                         helpText={column.helpText}
@@ -379,7 +379,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           <Button 
             variant="outline" 
             onClick={saveForm}
-            disabled={isSubmitting || isAutoSaving || formData.status === 'submitted' || isCategoryApproved()}
+            disabled={isSubmitting || isAutoSaving || formData.status === 'pending' || isCategoryApproved()}
             className="gap-1"
           >
             <Save className="h-4 w-4" />
@@ -387,11 +387,11 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           </Button>
           <Button 
             onClick={submitForApproval}
-            disabled={isSubmitting || formData.status === 'submitted' || isCategoryApproved()}
+            disabled={isSubmitting || formData.status === 'pending' || isCategoryApproved()}
             className="gap-1"
           >
             {isSubmitting ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div> : <Send className="h-4 w-4" />}
-            {formData.status === 'submitted' ? t('submitted') : t('submitForApproval')}
+            {formData.status === 'pending' ? t('submitted') : t('submitForApproval')}
           </Button>
         </div>
       </CardFooter>

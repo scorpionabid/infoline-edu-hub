@@ -27,7 +27,7 @@ type SettingsFormData = z.infer<typeof settingsFormSchema>;
 
 const PreferencesForm: React.FC = () => {
   const { t } = useLanguage();
-  const { user, updateUser } = useAuth();
+  const { user, updateProfile } = useAuth(); // fix: use updateProfile instead of updateUser
   
   // Hesab parametrləri forması
   const settingsForm = useForm<SettingsFormData>({
@@ -49,7 +49,7 @@ const PreferencesForm: React.FC = () => {
     
     // İstifadəçi məlumatlarını yenilə - User tipində yalnız mövcud olan xüsusiyyətləri istifadə et
     if (user) {
-      updateUser({
+      updateProfile({ // fix: use updateProfile
         ...user,
         twoFactorEnabled: data.twoFactorEnabled,
         notificationSettings: {

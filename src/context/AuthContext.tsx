@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 
 // Auth konteksti üçün tip təriflərini əlavə edirik
 interface AuthContextType {
@@ -16,6 +16,7 @@ interface AuthContextType {
   sendPasswordResetEmail: (email: string) => Promise<void>;
   confirmPasswordReset: (password: string) => Promise<void>;
   updateProfile: (userData: Partial<FullUserData>) => Promise<boolean>;
+  updateUser: (userData: Partial<FullUserData>) => Promise<boolean>; // Adding this to match usage
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   hasRole: (role: string | string[]) => boolean;
 }
@@ -53,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendPasswordResetEmail,
     confirmPasswordReset,
     updateProfile,
+    updateUser: updateProfile, // Alias for updateProfile to fix existing code
     changePassword,
     hasRole,
   };
@@ -96,12 +98,12 @@ export const withRole = (requiredRole: string | string[], Component: React.FC<an
 };
 
 // UserRole tipini eksport edirik
-export type UserRole = "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin";
+export type { UserRole };
 
-// UserRole tipi üçün göstərici
-export const Role: Record<string, UserRole> = {
-  SUPER_ADMIN: "superadmin",
-  REGION_ADMIN: "regionadmin",
-  SECTOR_ADMIN: "sectoradmin",
-  SCHOOL_ADMIN: "schooladmin",
+// UserRole tipi üçün göstərici  
+export const Role = {
+  SUPER_ADMIN: "superadmin" as UserRole,
+  REGION_ADMIN: "regionadmin" as UserRole,
+  SECTOR_ADMIN: "sectoradmin" as UserRole,
+  SCHOOL_ADMIN: "schooladmin" as UserRole,
 };
