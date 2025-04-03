@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -47,6 +48,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({ open, onOpenChange, c
     }
   };
 
+  // Ensure we have a valid array of categories
   const categoryOptions = [
     { id: '1', name: 'Kateqoriya 1' },
     { id: '2', name: 'Kateqoriya 2' },
@@ -106,7 +108,8 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({ open, onOpenChange, c
                   <FormLabel>{t('category')}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={categoryId || field.value}>
+                    defaultValue={categoryId || field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t('selectCategory')} />

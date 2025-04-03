@@ -10,9 +10,7 @@ interface SectorSectionProps {
   form: any;
   data: UserFormData;
   onFormChange: (fieldName: string, value: any) => void;
-  isSuperAdmin: boolean;
-  currentUserRole?: UserRole;
-  filteredSectors: { id: string; name: string; regionId: string }[];
+  filteredSectors: { id: string; name: string }[];
   hideSection?: boolean;
 }
 
@@ -20,21 +18,13 @@ const SectorSection: React.FC<SectorSectionProps> = ({
   form,
   data,
   onFormChange,
-  isSuperAdmin,
-  currentUserRole,
   filteredSectors,
   hideSection = false,
 }) => {
   const { t } = useLanguage();
   
-  // Don't show if regionId is not selected
-  // or show only for sectoradmin and schooladmin roles
-  const shouldShowSector = !hideSection && 
-    data.regionId && 
-    (data.role === 'sectoradmin' || 
-     data.role === 'schooladmin');
-  
-  if (!shouldShowSector) {
+  // Don't show sector for superadmin or if region is not selected or if section is hidden
+  if (hideSection || data.role === 'superadmin' || data.role === 'regionadmin' || !data.regionId) {
     return null;
   }
 
@@ -50,6 +40,10 @@ const SectorSection: React.FC<SectorSectionProps> = ({
             onValueChange={(value) => {
               field.onChange(value === "none" ? undefined : value);
               onFormChange('sectorId', value === "none" ? undefined : value);
+              // Reset school when sector changes
+              if (data.schoolId) {
+                onFormChange('schoolId', undefined);
+              }
             }}
             disabled={filteredSectors.length === 0}
           >
