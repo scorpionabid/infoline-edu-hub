@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/hooks/useSupabaseAuth';
+import { useAuth } from '@/context/AuthContext';
 import { DashboardData } from '@/types/dashboard';
 import { UserRole } from '@/types/supabase';
 

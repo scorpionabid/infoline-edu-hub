@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -8,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useSupabaseAuth } from '@/hooks/auth';
 import { toast } from 'sonner';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -27,7 +26,6 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registerInProgress, setRegisterInProgress] = useState(false);
   
-  // Daxil olmuş istifadəçini yönləndirmə
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       navigate('/dashboard', { replace: true });
@@ -37,7 +35,6 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasiya
     if (!fullName || !email || !password || !confirmPassword) {
       toast.error(t('missingFields'), {
         description: t('fillAllRequiredFields')
@@ -78,7 +75,6 @@ const Register = () => {
     }
   };
   
-  // Yüklənmə zamanı göstəriləcək
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -89,11 +85,9 @@ const Register = () => {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden grid-pattern">
-      {/* Background decorations */}
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-infoline-100/30 rounded-bl-full -z-10" />
       <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-infoline-100/30 rounded-tr-full -z-10" />
       
-      {/* Theme and language toggles */}
       <div className="absolute top-4 right-4 flex space-x-2">
         <ThemeToggle />
         <LanguageSelector />

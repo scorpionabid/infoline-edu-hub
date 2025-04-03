@@ -1,3 +1,3 @@
 
-export { useSupabaseAuth } from './useSupabaseAuth';
+export { default as useSupabaseAuth } from './useSupabaseAuth';
 export * from './types';

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/hooks/useSupabaseAuth';
+import { useAuth } from '@/context/AuthContext';
 import LoginForm from '@/components/auth/LoginForm';
 import LoginHeader from '@/components/auth/LoginHeader';
 import LoginBackgroundDecorations from '@/components/auth/LoginBackgroundDecorations';
