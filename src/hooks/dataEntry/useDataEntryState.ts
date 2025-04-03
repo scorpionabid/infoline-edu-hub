@@ -19,7 +19,7 @@ export const useDataEntryState = () => {
   });
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [errors, setErrors] = useState<Array<{columnId: string, message: string}>>([]);
-  const [isReady, setIsReady] = useState(false); // Yeni state: komponent yüklənməyə hazır olduğunu göstərir
+  const [isReady, setIsReady] = useState(false); // Komponent yüklənməyə hazır olduğunu göstərir
 
   return {
     dataEntries,

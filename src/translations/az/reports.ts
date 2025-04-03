@@ -1,87 +1,71 @@
 
-/**
- * Hesabatlar və Analizlər üçün tərcümələr
- */
 const reports = {
-  // Hesabat növləri
-  reportTitle: "Hesabatlar",
-  reportDescription: "Məlumatları analiz edin və hesabatlar yaradın",
-  schoolColumnReportTitle: "Məktəb Məlumatları Hesabatı",
-  categoryCompletionReport: "Kateqoriya Tamamlanma Hesabatı",
-  schoolComparisonReport: "Məktəb Müqayisə Hesabatı",
-  timeSeriesReport: "Zaman Seriyası Hesabatı",
-  customReport: "Fərdi Hesabat",
+  // Hesabat başlıqları və digər ümumi
+  reports: 'Hesabatlar',
+  reportsList: 'Hesabat siyahısı',
+  createReport: 'Hesabat yarat',
+  editReport: 'Hesabatı redaktə et',
+  deleteReport: 'Hesabatı sil',
+  exportReport: 'Hesabatı ixrac et',
+  previewReport: 'Hesabata bax',
+  generateReport: 'Hesabat hazırla',
   
-  // Filtirlər və seçimlər
-  selectCategory: "Kateqoriya seçin",
-  selectRegion: "Region seçin",
-  selectSector: "Sektor seçin",
-  selectSchool: "Məktəb seçin",
-  filters: "Filtrlər",
-  showFilters: "Filtrləri göstər",
-  hideFilters: "Filtrləri gizlət",
-  resetFilters: "Filtrləri sıfırla",
-  searchSchool: "Məktəb axtar",
-  enterSchoolName: "Məktəb adını daxil edin",
+  // Filtrlər və parametrlər
+  filters: 'Filtrlər',
+  dateRange: 'Tarix aralığı',
+  startDate: 'Başlanğıc tarixi',
+  endDate: 'Son tarix',
+  selectRegion: 'Region seçin',
+  selectSector: 'Sektor seçin',
+  selectSchool: 'Məktəb seçin',
+  selectCategory: 'Kateqoriya seçin',
+  selectColumns: 'Sütunları seçin',
+  compareTo: 'Müqayisə et',
   
-  // Ümumi mətnlər
-  schoolName: "Məktəb adı",
-  region: "Region",
-  sector: "Sektor",
-  exportReport: "Hesabatı ixrac et",
-  createReport: "Hesabat yarat",
-  viewReport: "Hesabata bax",
-  downloadReport: "Hesabatı yüklə",
-  noDataAvailable: "Məlumat mövcud deyil",
-  selectAnotherCategory: "Başqa kateqoriya seçin və ya filtrləri dəyişin",
-  viewAll: "Hamısına bax",
-  excelExport: "Excel-ə ixrac et",
-  fileDownloaded: "Fayl yükləndi",
+  // Hesabat tipləri
+  reportTypes: 'Hesabat tipləri',
+  completionReport: 'Tamamlama hesabatı',
+  statisticsReport: 'Statistika hesabatı',
+  comparisonReport: 'Müqayisə hesabatı',
+  timeSeriesReport: 'Zaman seriyası hesabatı',
+  customReport: 'Xüsusi hesabat',
   
-  // Hesabat nəticələri
-  totalSchools: "Ümumi məktəb sayı",
-  averageStudents: "Orta şagird sayı",
-  averageTeachers: "Orta müəllim sayı",
-  completionRate: "Tamamlanma faizi",
-  submissionRate: "Təqdim etmə faizi",
+  // Hesabat parametrləri
+  parameters: 'Parametrlər',
+  groupBy: 'Qruplaşdır',
+  aggregateBy: 'Toplanmış',
+  orderBy: 'Sırala',
+  limit: 'Limit',
   
-  // Xəbərdarlıqlar və bildirişlər
-  noDataToExport: "İxrac etmək üçün məlumat yoxdur",
-  exportSuccess: "Məlumatlar uğurla ixrac edildi",
-  exportError: "İxrac zamanı xəta baş verdi",
-  tryAgainLater: "Bir az sonra yenidən cəhd edin",
-  categoryNotFound: "Kateqoriya tapılmadı",
-  errorLoading: "Məlumatlar yüklənərkən xəta baş verdi",
+  // Cədvəl və qrafik
+  table: 'Cədvəl',
+  chart: 'Qrafik',
+  pieChart: 'Dairəvi qrafik',
+  barChart: 'Bar qrafik',
+  lineChart: 'Xətti qrafik',
+  chartTitle: 'Qrafik başlığı',
+  chartDescription: 'Qrafik təsviri',
   
-  // Dashboard elementləri
-  categoryCompletion: "Kateqoriyalar üzrə tamamlanma",
-  sectorCompletion: "Sektorlar üzrə tamamlanma",
-  regionDataSubmissionRate: "Region məlumatları təqdim etmə faizi",
-  quickActions: "Sürətli əməliyyatlar",
-  manageSchools: "Məktəbləri idarə et",
-  manageUsers: "İstifadəçiləri idarə et",
-  manageCategories: "Kateqoriyaları idarə et",
-  viewReports: "Hesabatlara bax",
-
-  // Təsdiq/rədd etmə əməliyyatları
-  approve: "Təsdiqlə",
-  reject: "Rədd et",
-  confirmApproval: "Təsdiq əməliyyatını təsdiqləyin",
-  confirmRejection: "Rədd etmə əməliyyatını təsdiqləyin",
-  rejectionReason: "Rədd etmə səbəbi",
-  enterRejectionReason: "Rədd etmə səbəbini daxil edin",
-  processing: "Əməliyyat yerinə yetirilir...",
-  cancel: "Ləğv et",
-  status: "Status",
-  actions: "Əməliyyatlar",
-  viewDetails: "Ətraflı bax",
-  unexpectedError: "Gözlənilməz xəta baş verdi",
-  schoolsSelected: "məktəb seçilib",
-  approveSelected: "Seçilənləri təsdiqlə",
-  rejectSelected: "Seçilənləri rədd et",
-  selectAll: "Hamısını seç",
-  deselectAll: "Seçimi ləğv et",
-  noSchoolsSelected: "Heç bir məktəb seçilməyib"
+  // Ixrac formatları
+  exportAs: 'İxrac formatı',
+  exportAsExcel: 'Excel kimi ixrac et',
+  exportAsPDF: 'PDF kimi ixrac et',
+  exportAsCSV: 'CSV kimi ixrac et',
+  
+  // Mesajlar
+  noReportsFound: 'Hesabat tapılmadı',
+  reportGenerated: 'Hesabat hazırlandı',
+  reportGenerationFailed: 'Hesabat hazırlanma uğursuz oldu',
+  confirmDeleteReport: 'Bu hesabatı silmək istədiyinizə əminsiniz?',
+  reportSaved: 'Hesabat yadda saxlanıldı',
+  
+  // Hesabat metrikləri
+  metrics: 'Metriklər',
+  averageCompletion: 'Orta tamamlanma',
+  totalSchools: 'Ümumi məktəb sayı',
+  completedSchools: 'Tamamlanan məktəblər',
+  pendingSchools: 'Gözləyən məktəblər',
+  completionRate: 'Tamamlanma dərəcəsi',
 };
 
 export default reports;

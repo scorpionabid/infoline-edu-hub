@@ -53,7 +53,7 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       {/* Məktəbi silmək üçün dialog */}
       <DeleteDialog
         open={isDeleteDialogOpen}
-        onOpenChange={closeDeleteDialog}
+        onOpenChange={() => closeDeleteDialog()}
         school={selectedSchool}
         onDelete={handleDeleteConfirm}
       />
@@ -61,7 +61,7 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       {/* Məktəbi redaktə etmək üçün dialog */}
       <EditDialog
         open={isEditDialogOpen}
-        onOpenChange={closeEditDialog}
+        onOpenChange={() => closeEditDialog()}
         school={selectedSchool}
         onSubmit={handleEditSubmit}
         formData={formData}
@@ -74,7 +74,7 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       {/* Yeni məktəb əlavə etmək üçün dialog */}
       <AddDialog
         open={isAddDialogOpen}
-        onOpenChange={closeAddDialog}
+        onOpenChange={() => closeAddDialog()}
         onSubmit={handleAddSubmit}
         formData={formData}
         onChange={handleFormChange}
@@ -86,7 +86,7 @@ const SchoolDialogs: React.FC<SchoolDialogsProps> = ({
       {/* Məktəb admini idarə etmək üçün dialog */}
       <AdminDialog
         open={isAdminDialogOpen}
-        onOpenChange={closeAdminDialog}
+        onOpenChange={() => closeAdminDialog()}
         school={selectedSchool}
         admin={selectedAdmin}
         onSubmit={handleAdminUpdate}

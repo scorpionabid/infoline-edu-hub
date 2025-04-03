@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Column } from "@/types/column";
 import { ColumnFormValues } from './useColumnForm';
+import { useLanguage } from '@/context/LanguageContext';
 
 export interface BasicColumnFieldsProps {
   form: UseFormReturn<ColumnFormValues>;
@@ -27,16 +28,18 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   handleTypeChange,
   categoryId = ''
 }) => {
+  const { t } = useLanguage();
+
   const columnTypes = [
-    { value: "text", label: "Mətn" },
-    { value: "number", label: "Rəqəm" },
-    { value: "date", label: "Tarix" },
-    { value: "select", label: "Seçim" },
-    { value: "checkbox", label: "İşarələmə" },
-    { value: "radio", label: "Radio" },
-    { value: "textarea", label: "Mətn sahəsi" },
-    { value: "email", label: "E-mail" },
-    { value: "phone", label: "Telefon" }
+    { value: "text", label: t('text') },
+    { value: "number", label: t('number') },
+    { value: "date", label: t('date') },
+    { value: "select", label: t('select') },
+    { value: "checkbox", label: t('checkbox') },
+    { value: "radio", label: t('radio') },
+    { value: "textarea", label: t('textarea') },
+    { value: "email", label: t('email') },
+    { value: "phone", label: t('phone') }
   ];
 
   return (
@@ -46,9 +49,9 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sütun adı</FormLabel>
+            <FormLabel>{t('columnName')}</FormLabel>
             <FormControl>
-              <Input placeholder="Sütunun adını daxil edin" {...field} />
+              <Input placeholder={t('enterColumnName')} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -60,7 +63,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="categoryId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Kateqoriya</FormLabel>
+            <FormLabel>{t('category')}</FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value || categoryId}
@@ -68,7 +71,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Kateqoriya seçin" />
+                  <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -89,7 +92,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sütun tipi</FormLabel>
+            <FormLabel>{t('columnType')}</FormLabel>
             <Select
               onValueChange={(value) => {
                 field.onChange(value);
@@ -100,7 +103,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tip seçin" />
+                  <SelectValue placeholder={t('selectType')} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -121,7 +124,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="isRequired"
         render={({ field }) => (
           <FormItem className="flex flex-row items-center justify-between">
-            <FormLabel>Məcburidir</FormLabel>
+            <FormLabel>{t('isRequired')}</FormLabel>
             <FormControl>
               <Switch
                 checked={field.value}
@@ -138,9 +141,9 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="placeholder"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Placeholder</FormLabel>
+            <FormLabel>{t('placeholder')}</FormLabel>
             <FormControl>
-              <Input placeholder="Placeholder mətnini daxil edin" {...field} />
+              <Input placeholder={t('enterPlaceholder')} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -152,9 +155,9 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="helpText"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Köməkçi mətn</FormLabel>
+            <FormLabel>{t('helpText')}</FormLabel>
             <FormControl>
-              <Input placeholder="Köməkçi mətn daxil edin" {...field} />
+              <Input placeholder={t('enterHelpText')} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -166,7 +169,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="order"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sıra nömrəsi</FormLabel>
+            <FormLabel>{t('orderNumber')}</FormLabel>
             <FormControl>
               <Input
                 type="number"

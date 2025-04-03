@@ -111,6 +111,7 @@ export const useDataUpdates = ({
     // Həmçinin Excel məlumatlarını serverdə də saxlayaq
     if (user?.schoolId && categoryId) {
       try {
+        // Hər bir sütun məlumatı üçün data entries-i yenilə
         for (const [columnId, value] of Object.entries(excelData)) {
           // Bu sütün və məktəb üçün mövcud məlumat olub-olmadığını yoxlayaq
           const { data: existingData, error: fetchError } = await supabase
@@ -153,8 +154,10 @@ export const useDataUpdates = ({
             if (insertError) throw insertError;
           }
         }
+        
+        toast.success(t('excelDataSaved'));
       } catch (err) {
-        console.error('Error saving Excel data to server:', err);
+        console.error('Excel məlumatlarını serverdə saxlayarkən xəta:', err);
         toast.error(t('errorOccurred'), {
           description: t('someDataMayNotBeSaved')
         });
@@ -171,7 +174,7 @@ export const useDataUpdates = ({
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
-      saveForm(); // <-- Manual olaraq saxlayırıq
+      saveForm(); // Manual olaraq saxlayırıq
       
       // İndi kateqoriyanı dəyişək
       setCurrentCategoryIndex(index);

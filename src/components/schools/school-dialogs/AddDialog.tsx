@@ -9,54 +9,81 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { School } from '@/types/school';
 import SchoolForm from '../SchoolForm';
-import { SchoolFormData } from '@/types/school-form';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AddDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: () => void;
-  formData: SchoolFormData;
-  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: Omit<School, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  formData: any;
+  onChange: (field: string, value: any) => void;
   currentTab: string;
-  setCurrentTab: (tab: string) => void;
+  onTabChange: (tab: string) => void;
   filteredSectors: Array<{ id: string; name: string; regionId: string }>;
 }
 
 export const AddDialog: React.FC<AddDialogProps> = ({ 
-  isOpen, 
-  onClose, 
+  open, 
+  onOpenChange, 
   onSubmit, 
   formData, 
-  handleFormChange, 
-  currentTab, 
-  setCurrentTab, 
-  filteredSectors 
+  onChange,
+  currentTab,
+  onTabChange,
+  filteredSectors
 }) => {
+  const { t } = useLanguage();
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Yeni məktəb əlavə et</DialogTitle>
+          <DialogTitle>{t('addSchool')}</DialogTitle>
           <DialogDescription>
-            Məktəb məlumatlarını daxil edin. Bütün zəruri sahələri (*) doldurun.
+            {t('addSchoolDescription')}
           </DialogDescription>
         </DialogHeader>
         
-        <SchoolForm
-          formData={formData}
-          handleFormChange={handleFormChange}
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
-          filteredSectors={filteredSectors}
-        />
+        <Tabs value={currentTab} onValueChange={onTabChange} className="w-full">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="basic">{t('basicInfo')}</TabsTrigger>
+            <TabsTrigger value="advanced">{t('additionalInfo')}</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="basic" className="space-y-4 pt-4">
+            <SchoolForm
+              formData={formData}
+              handleFormChange={(e) => {
+                const { name, value } = e.target;
+                onChange(name, value);
+              }}
+              currentTab="basic"
+              filteredSectors={filteredSectors}
+            />
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="space-y-4 pt-4">
+            <SchoolForm
+              formData={formData}
+              handleFormChange={(e) => {
+                const { name, value } = e.target;
+                onChange(name, value);
+              }}
+              currentTab="advanced"
+              filteredSectors={filteredSectors}
+            />
+          </TabsContent>
+        </Tabs>
         
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Ləğv et
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t('cancel')}
           </Button>
-          <Button onClick={onSubmit}>
-            Əlavə et
+          <Button onClick={() => onSubmit(formData)}>
+            {t('add')}
           </Button>
         </DialogFooter>
       </DialogContent>
