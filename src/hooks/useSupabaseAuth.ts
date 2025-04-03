@@ -1,7 +1,8 @@
-// Əvvəlcədən daxil edilmiş useAuth hook-unu istifadə edin, bu fayl saxlanılır
-// yalnız geriyə uyğunluq üçün
+
+// Mövcud kodu import edib düzgün export edək
 import { useAuth } from '@/context/AuthContext';
 import { FullUserData, UserRole } from '@/types/supabase';
+import useSupabaseAuth from '@/hooks/auth/useSupabaseAuth';
 
-export { useAuth };
+export { useAuth, useSupabaseAuth };
 export type { FullUserData, UserRole };

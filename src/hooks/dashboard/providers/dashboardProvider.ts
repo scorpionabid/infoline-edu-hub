@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useSupabaseAuth';
 import { DashboardData } from '@/types/dashboard';
 import { UserRole } from '@/types/supabase';
 
@@ -42,7 +42,7 @@ export const createDashboardProvider = (role: UserRole): DashboardProvider => {
  * Hook to use the appropriate dashboard provider based on authenticated user role
  */
 export const useDashboardProvider = (): DashboardProvider => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   
   if (!currentUser) {
     return {
