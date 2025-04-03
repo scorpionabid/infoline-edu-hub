@@ -11,7 +11,7 @@ interface UseDataEntryActionsProps {
   schoolId?: string;
   user: any;
   dataEntries: Record<string, DataEntry>;
-  setDataEntries: (entries: Record<string, DataEntry>) => void;
+  setDataEntries: React.Dispatch<React.SetStateAction<Record<string, DataEntry>>>;
   setCategoryStatus: (status: DataEntryStatus) => void;
   setUnsavedChanges: (hasChanges: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
@@ -170,3 +170,4 @@ export const useDataEntryActions = ({
     fetchDataEntriesForCategory
   };
 };
+
