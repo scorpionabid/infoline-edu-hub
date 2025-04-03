@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: Error | null;
+  clearError: () => void;
   login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
   signUp: (email: string, password: string, metadata: any) => Promise<any>;
@@ -16,7 +17,7 @@ interface AuthContextType {
   confirmPasswordReset: (password: string) => Promise<void>;
   updateProfile: (userData: Partial<FullUserData>) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  hasRole: (role: string) => boolean;
+  hasRole: (role: string | string[]) => boolean;
 }
 
 // Kontekst yaradırıq
@@ -28,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading: isLoading,
     error,
+    clearError,
     signIn,
     signOut,
     signUp: registerUser,
@@ -44,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user,
     isLoading,
     error,
+    clearError,
     login: signIn,
     logout: signOut,
     signUp: registerUser,
@@ -67,7 +70,38 @@ export const useAuth = () => {
 };
 
 // Rol yoxlanışı üçün utility hook
-export const useRole = (requiredRole: string): boolean => {
+export const useRole = (requiredRole: string | string[]): boolean => {
   const { user } = useAuth();
+  
+  if (!user) return false;
+  
+  if (Array.isArray(requiredRole)) {
+    return requiredRole.includes(user.role);
+  }
+  
   return user?.role === requiredRole;
+};
+
+// Rol görünürlüyü üçün HOC (Higher Order Component)
+export const withRole = (requiredRole: string | string[], Component: React.FC<any>) => {
+  return (props: any) => {
+    const hasRequiredRole = useRole(requiredRole);
+    
+    if (!hasRequiredRole) {
+      return null;
+    }
+    
+    return <Component {...props} />;
+  };
+};
+
+// UserRole tipini eksport edirik
+export type UserRole = "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin";
+
+// UserRole tipi üçün göstərici
+export const Role: Record<string, UserRole> = {
+  SUPER_ADMIN: "superadmin",
+  REGION_ADMIN: "regionadmin",
+  SECTOR_ADMIN: "sectoradmin",
+  SCHOOL_ADMIN: "schooladmin",
 };

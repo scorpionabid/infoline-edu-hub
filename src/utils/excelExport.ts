@@ -2,6 +2,7 @@
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import { DataEntry } from '@/types/dataEntry';
+import { Column, Category } from '@/types/column';
 
 export const exportToExcel = (data: any[], fileName: string = 'data-export') => {
   const worksheet = XLSX.utils.json_to_sheet(data);
@@ -31,4 +32,53 @@ export const exportDataToExcel = (entries: DataEntry[]) => {
   }));
   
   exportToExcel(formattedData, 'data-entries');
+};
+
+// Sütunları Excel formatında ixrac etmək üçün funksiya
+export const exportColumnsToExcel = (columns: Column[], categories: Category[] = []) => {
+  // Hazırladığımız məlumatları saxlayacağımız massivin təyin edilməsi
+  const formattedData = columns.map(column => {
+    // Kateqoriya adını tapmaq
+    const category = categories.find(cat => cat.id === column.category_id);
+    
+    return {
+      CategoryId: column.category_id,
+      CategoryName: category ? category.name : 'Unknown Category',
+      ColumnId: column.id,
+      ColumnName: column.name,
+      Type: column.type,
+      Required: column.is_required ? 'Yes' : 'No',
+      DefaultValue: column.default_value || '',
+      Placeholder: column.placeholder || '',
+      HelpText: column.help_text || '',
+      Status: column.status || 'active',
+      OrderIndex: column.order_index || 0,
+      Options: column.options ? (Array.isArray(column.options) ? column.options.join(', ') : JSON.stringify(column.options)) : ''
+    };
+  });
+  
+  exportToExcel(formattedData, 'columns-export');
+};
+
+// Məktəblərin sütun məlumatlarını Excel formatında ixrac etmək üçün funksiya 
+export const exportSchoolColumnsToExcel = (data: any[]) => {
+  exportToExcel(data, 'school-columns-report');
+};
+
+// Kateqoriyaları Excel formatında ixrac etmək üçün funksiya
+export const exportCategoriesToExcel = (categories: Category[]) => {
+  const formattedData = categories.map(category => ({
+    Id: category.id,
+    Name: category.name,
+    Description: category.description || '',
+    Assignment: category.assignment || 'all',
+    Status: category.status || 'active',
+    Priority: category.priority || 0,
+    Deadline: category.deadline ? new Date(String(category.deadline)).toLocaleDateString() : '',
+    CreatedAt: category.created_at ? new Date(category.created_at).toLocaleDateString() : '',
+    UpdatedAt: category.updated_at ? new Date(category.updated_at).toLocaleDateString() : '',
+    ColumnCount: category.columnCount || 0
+  }));
+  
+  exportToExcel(formattedData, 'categories-export');
 };

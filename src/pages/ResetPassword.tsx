@@ -1,120 +1,182 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import LoginBackgroundDecorations from '@/components/auth/LoginBackgroundDecorations';
-import LoginHeader from '@/components/auth/LoginHeader';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, EyeOff, Lock } from 'lucide-react';
+import LoginBackgroundDecorations from '@/components/auth/LoginBackgroundDecorations';
 
 const ResetPassword = () => {
-  const { confirmPasswordReset, isAuthenticated, loading: authLoading } = useAuth();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { confirmPasswordReset, error, isLoading, clearError } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   
-  useEffect(() => {
-    // İstifadəçi daxil olubsa, yönləndirək
-    if (isAuthenticated && !authLoading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, authLoading, navigate]);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetInProgress, setResetInProgress] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
   
-  const handleResetPassword = async (e: React.FormEvent) => {
+  // Xəta olduqda və istifadəçi form-a dəyişiklik etdikdə xətanı təmizləyək
+  useEffect(() => {
+    if (error) {
+      clearError();
+    }
+  }, [password, confirmPassword, error, clearError]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    clearError();
+    
+    if (!password || !confirmPassword) {
+      toast.error(t('passwordRequired'));
+      return;
+    }
+    
     if (password !== confirmPassword) {
-      toast.error('Şifrələr uyğun deyil');
+      toast.error(t('passwordsDoNotMatch'));
       return;
     }
     
     if (password.length < 6) {
-      toast.error('Şifrə ən az 6 simvol olmalıdır');
+      toast.error(t('passwordTooShort'));
       return;
     }
     
+    setResetInProgress(true);
+    
     try {
-      setLoading(true);
       await confirmPasswordReset(password);
-      toast.success('Şifrəniz yeniləndi');
-      navigate('/login', { state: { passwordReset: true } });
-    } catch (error: any) {
-      toast.error('Şifrə yeniləmə xətası', {
-        description: error.message
+      setResetSuccess(true);
+      toast.success(t('passwordResetSuccess'), {
+        description: t('passwordResetSuccessDescription')
       });
+      
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
     } finally {
-      setLoading(false);
+      setResetInProgress(false);
     }
   };
-  
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden grid-pattern">
-      <LoginBackgroundDecorations />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="glass-panel rounded-lg w-full max-w-md p-8 shadow-xl"
-      >
-        <LoginHeader title="Yeni şifrə yaradın" description="Yeni şifrənizi daxil edin" />
-        
-        <form className="space-y-6 mt-8" onSubmit={handleResetPassword}>
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium">Yeni şifrə</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              minLength={6}
+    <>
+      <div className="container relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+        <Link
+          to="/login"
+          className="absolute left-4 top-4 md:left-8 md:top-8 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
+        >
+          {t('backToLogin')}
+        </Link>
+        <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+          <div className="absolute inset-0 bg-black/80" />
+          <LoginBackgroundDecorations />
+          <div className="relative z-20 flex items-center text-lg font-medium">
+            <img
+              src="/placeholder.svg"
+              alt="Logo"
+              className="h-8 w-auto mr-2"
             />
+            InfoLine
           </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="block text-sm font-medium">Şifrəni təsdiqlə</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              minLength={6}
-            />
+          <div className="relative z-20 mt-auto">
+            <blockquote className="space-y-2">
+              <p className="text-lg">
+                {t('welcomeMessage')}
+              </p>
+              <footer className="text-sm">InfoLine Education System</footer>
+            </blockquote>
           </div>
-          
-          <button
-            type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-            disabled={loading}
-          >
-            {loading ? 'Yenilənir...' : 'Şifrəni yenilə'}
-          </button>
-          
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium focus:outline-none"
-            >
-              Giriş səhifəsinə qayıt
-            </button>
+        </div>
+        <div className="lg:p-8">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div>
+              <div className="mb-6 text-center">
+                <h1 className="text-2xl font-bold tracking-tight">{t('resetPassword')}</h1>
+                <p className="text-muted-foreground mt-2">{t('resetPasswordDescription')}</p>
+              </div>
+              
+              {resetSuccess ? (
+                <Alert variant="default" className="bg-green-50 border-green-200">
+                  <AlertDescription>{t('passwordResetSuccess')}. {t('redirectingToLogin')}...</AlertDescription>
+                </Alert>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertDescription>{error.toString()}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">{t('newPassword')}</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={resetInProgress}>
+                    {resetInProgress ? t('resettingPassword') : t('resetPassword')}
+                  </Button>
+                </form>
+              )}
+            </div>
           </div>
-        </form>
-      </motion.div>
-    </div>
+        </div>
+      </div>
+    </>
   );
 };
 

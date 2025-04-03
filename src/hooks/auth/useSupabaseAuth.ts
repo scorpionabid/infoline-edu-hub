@@ -21,6 +21,11 @@ export const useSupabaseAuth = () => {
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   
+  // Error state silmək üçün funksiya
+  const clearError = () => {
+    setError(null);
+  };
+  
   // Oturum durumunu izlə
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -326,14 +331,21 @@ export const useSupabaseAuth = () => {
   };
 
   // Təyin edilmiş rolun olub-olmadığını yoxla
-  const hasRole = (role: string): boolean => {
-    return user?.role === role;
+  const hasRole = (role: string | string[]): boolean => {
+    if (!user) return false;
+    
+    if (Array.isArray(role)) {
+      return role.includes(user.role);
+    }
+    
+    return user.role === role;
   };
   
   return {
     user,
     loading,
     error,
+    clearError,
     signingIn,
     signingUp,
     sendingPasswordReset,
