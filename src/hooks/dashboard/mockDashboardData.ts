@@ -1,78 +1,59 @@
-import { NotificationType } from "@/types/notification";
-import { FormItem, FormStatus, ChartData } from "@/types/dashboard";
 
-// Demo bildirişlər
-export const mockNotifications = [
+import { Notification, NotificationType } from '@/types/notification';
+
+// Demo bildirisləri
+export const mockNotifications: Notification[] = [
   {
-    id: "1",
-    type: 'deadline' as NotificationType,
-    title: "Son tarix xatırlatması",
-    message: "\"Müəllim kadrları\" bölməsinin son təqdim etmə tarixi bu gündür.",
-    createdAt: "2023-09-15T08:30:00Z",
-    time: "2023-09-15T08:30:00Z",
+    id: '1',
+    type: 'newCategory' as NotificationType,
+    title: 'Yeni kateqoriya əlavə edildi',
+    message: 'Şagird məlumatları kateqoriyası sistem inzibatçısı tərəfindən əlavə edildi.',
+    createdAt: new Date().toISOString(),
+    time: '15 dəq əvvəl',
     isRead: false,
-    userId: "user123",
-    priority: "normal",
-    read_status: false
+    userId: 'user-1',
+    priority: 'normal',
+    read_status: false,
+    relatedEntityType: 'category'
   },
   {
-    id: "2",
-    type: 'approved' as NotificationType,
-    title: "Məlumatlar təsdiqləndi",
-    message: "\"Şagird sayı\" bölməsi üzrə məlumatlarınız təsdiqləndi.",
-    createdAt: "2023-09-14T15:45:00Z",
-    time: "2023-09-14T15:45:00Z",
+    id: '2',
+    type: 'deadline' as NotificationType,
+    title: 'Son tarix yaxınlaşır',
+    message: 'Müəllim məlumatları formasının doldurulması üçün 2 gün qalıb.',
+    createdAt: new Date().toISOString(),
+    time: '1 saat əvvəl',
     isRead: true,
-    userId: "user123",
-    priority: "high",
-    read_status: true
+    userId: 'user-1',
+    priority: 'high',
+    read_status: true,
+    relatedEntityType: 'category'
   }
 ];
 
-// Demo form elementləri
-export const mockFormItems: FormItem[] = [
-  {
-    id: "1",
-    title: "Müəllim məlumatları",
-    status: "pending" as FormStatus,
-    completionPercentage: 45,
-    deadline: "2023-09-20T23:59:59Z",
-    category: "Kadrlar"
-  },
-  {
-    id: "2",
-    title: "Infrastruktur məlumatları",
-    status: "approved" as FormStatus,
-    completionPercentage: 80,
-    deadline: "2023-09-22T23:59:59Z",
-    category: "İnfrastruktur"
-  },
-  {
-    id: "3",
-    title: "Şagird məlumatları",
-    status: "rejected" as FormStatus,
-    completionPercentage: 20,
-    deadline: "2023-09-25T23:59:59Z",
-    category: "Şagirdlər"
-  }
-];
+// Demo məlumatlar üçün köməkçi funksiyalar 
+export const getMockNotifications = () => mockNotifications;
 
-// Demo chart məlumatları
-export const mockChartData: ChartData = {
-  activityData: [
-    { name: "Sentyabr", value: 45 },
-    { name: "Oktyabr", value: 60 },
-    { name: "Noyabr", value: 35 },
-    { name: "Dekabr", value: 70 }
-  ],
-  regionSchoolsData: [
-    { name: "Bakı", value: 120 },
-    { name: "Gəncə", value: 80 },
-    { name: "Sumqayıt", value: 50 }
-  ],
-  categoryCompletionData: [
-    { name: "Müəllimlər", completed: 75 },
-    { name: "Şagirdlər", completed: 60 },
-    { name: "İnfrastruktur", completed: 90 }
-  ]
+export const getMockRegions = () => {
+  return [
+    { id: '1', name: 'Bakı', schoolCount: 120 },
+    { id: '2', name: 'Sumqayıt', schoolCount: 45 },
+    { id: '3', name: 'Gəncə', schoolCount: 36 }
+  ];
+};
+
+export const getMockSectors = () => {
+  return [
+    { id: '1', name: 'Binəqədi', schoolCount: 28, regionId: '1' },
+    { id: '2', name: 'Yasamal', schoolCount: 24, regionId: '1' },
+    { id: '3', name: 'Xətai', schoolCount: 22, regionId: '1' }
+  ];
+};
+
+export const getMockSchools = () => {
+  return [
+    { id: '1', name: '20 saylı məktəb', sectorId: '1' },
+    { id: '2', name: '158 saylı məktəb', sectorId: '2' },
+    { id: '3', name: '245 saylı məktəb', sectorId: '3' }
+  ];
 };

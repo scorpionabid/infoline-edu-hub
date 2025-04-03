@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -50,7 +49,7 @@ export const useCategories = () => {
         description: category.description,
         assignment: category.assignment,
         priority: category.priority,
-        deadline: typeof category.deadline === 'object' ? category.deadline.toISOString() : category.deadline,
+        deadline: category.deadline ? (typeof category.deadline === 'object' ? category.deadline.toISOString() : category.deadline) : null,
         status: category.status || 'active',
         order: category.order || category.priority,
         archived: category.archived || false
