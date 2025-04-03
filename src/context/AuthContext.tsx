@@ -1,7 +1,7 @@
 
 import React, { createContext, ReactNode, useContext } from 'react';
 import { FullUserData, UserRole } from '@/types/supabase';
-import { useAuth as useAuthHook } from '@/hooks/useAuth';
+import { useAuth as useAuthHook, useRole as useRoleHook } from '@/hooks/useAuth';
 
 // Default auth konteksti dəyərləri
 export const defaultAuthContext = {
@@ -35,3 +35,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 // Auth kontekstini istifadə etmək üçün hook
 export const useAuth = () => useContext(AuthContext);
+
+// Re-export useRole hookunun əlavə edilməsi
+export const useRole = useRoleHook;
