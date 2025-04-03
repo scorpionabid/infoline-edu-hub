@@ -70,10 +70,11 @@ export const fetchUsers = async (
       ? userData.user_roles[0] 
       : { role: 'schooladmin', region_id: null, sector_id: null, school_id: null };
     
-    const role = typeof roleData === 'string' ? 'schooladmin' : roleData.role || 'schooladmin';
-    const regionId = typeof roleData === 'string' ? null : roleData.region_id;
-    const sectorId = typeof roleData === 'string' ? null : roleData.sector_id;
-    const schoolId = typeof roleData === 'string' ? null : roleData.school_id;
+    // Typescript xətalarını həll etmək üçün yoxlamaları gücləndirilmiş şəkildə yazırıq
+    const role = typeof roleData === 'object' && roleData !== null ? roleData.role || 'schooladmin' : 'schooladmin';
+    const regionId = typeof roleData === 'object' && roleData !== null ? roleData.region_id : null;
+    const sectorId = typeof roleData === 'object' && roleData !== null ? roleData.sector_id : null;
+    const schoolId = typeof roleData === 'object' && roleData !== null ? roleData.school_id : null;
     
     const user = {
       id: userData.id,
@@ -155,10 +156,11 @@ export const getUserById = async (userId: string): Promise<any | null> => {
     ? userData.user_roles[0] 
     : { role: 'schooladmin', region_id: null, sector_id: null, school_id: null };
 
-  const role = typeof roleData === 'string' ? 'schooladmin' : roleData.role || 'schooladmin';
-  const regionId = typeof roleData === 'string' ? null : roleData.region_id;
-  const sectorId = typeof roleData === 'string' ? null : roleData.sector_id;
-  const schoolId = typeof roleData === 'string' ? null : roleData.school_id;
+  // Burada da tip yoxlamalarını gücləndirilmiş şəkildə yazmaq lazımdır
+  const role = typeof roleData === 'object' && roleData !== null ? roleData.role || 'schooladmin' : 'schooladmin';
+  const regionId = typeof roleData === 'object' && roleData !== null ? roleData.region_id : null;
+  const sectorId = typeof roleData === 'object' && roleData !== null ? roleData.sector_id : null;
+  const schoolId = typeof roleData === 'object' && roleData !== null ? roleData.school_id : null;
   
   const user = {
     id: userData.id,
@@ -236,19 +238,25 @@ export const getUserByEmail = async (email: string): Promise<any | null> => {
     ? userData.user_roles[0] 
     : { role: 'schooladmin', region_id: null, sector_id: null, school_id: null };
 
+  // Bu dəyişənlər artıq obyekt kimi yoxlanır
+  const role = typeof roleData === 'object' && roleData !== null ? roleData.role || 'schooladmin' : 'schooladmin';
+  const regionId = typeof roleData === 'object' && roleData !== null ? roleData.region_id : null;
+  const sectorId = typeof roleData === 'object' && roleData !== null ? roleData.sector_id : null;
+  const schoolId = typeof roleData === 'object' && roleData !== null ? roleData.school_id : null;
+
   const user = {
     id: userData.id,
     email: userData.email,
     name: userData.full_name,
     full_name: userData.full_name,
-    role: roleData?.role || 'schooladmin', // Default to schooladmin if no role
+    role: role,
     status: userData.status,
-    regionId: roleData?.region_id || null,
-    sectorId: roleData?.sector_id || null,
-    schoolId: roleData?.school_id || null,
-    region_id: roleData?.region_id || null,
-    sector_id: roleData?.sector_id || null,
-    school_id: roleData?.school_id || null,
+    regionId: regionId,
+    sectorId: sectorId,
+    schoolId: schoolId,
+    region_id: regionId,
+    sector_id: sectorId,
+    school_id: schoolId,
     avatar: userData.avatar,
     language: userData.language,
     phone: userData.phone,

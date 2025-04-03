@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { Category } from '@/types/category';
 import { Column } from '@/types/column';
@@ -36,7 +35,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
   const { user } = useAuth();
 
-  // useDataEntries hooku istifadə edirik
   const { 
     entries, 
     loading: entriesLoading, 
@@ -50,13 +48,11 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     submitCategoryForApproval
   } = useDataEntries();
 
-  // Kategoriya məlumatlarını əldə et
   const fetchCategoryData = useCallback(async () => {
     if (!categoryId) return;
 
     setLoading(true);
     try {
-      // Kategoriya əldə et (mock data olaraq istifadə edirik)
       const mockCategory: Category = {
         id: categoryId,
         name: 'Demo Kategoria',
@@ -66,13 +62,12 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
         deadline: new Date().toISOString(),
         status: 'active',
         columnCount: 5,
-        order: 1, // order əlavə edildi
+        order: 1,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       setCategory(mockCategory);
 
-      // Sütunları əldə et (mock data olaraq istifadə edirik)
       const mockColumns: Column[] = Array.from({ length: 5 }, (_, i) => ({
         id: `column-${i + 1}`,
         name: `Sütun ${i + 1}`,
@@ -81,7 +76,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
         isRequired: i < 3,
         orderIndex: i,
         status: 'active',
-        order: i, // order əlavə edildi
+        order: i,
         options: i % 3 === 2 ? ['Seçim 1', 'Seçim 2', 'Seçim 3'] : undefined,
         helpText: `Sütun ${i + 1} üçün kömək mətni`,
         placeholder: `Sütun ${i + 1} üçün nümunə`,
@@ -89,7 +84,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
       setColumns(mockColumns);
       setFilteredColumns(mockColumns);
 
-      // Mock categories üçün
       setCategories([
         {
           ...mockCategory,
@@ -103,18 +97,15 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     }
   }, [categoryId]);
 
-  // Data entries əldə et
   const fetchDataEntriesForCategory = useCallback(async () => {
     if (!categoryId || !schoolId) return;
 
     setLoadingEntries(true);
     try {
-      // Burada mockup data istifadə edirik. Real tətbiqdə supabase sorğusu olacaq
       const categoryEntries = entries.filter(
         entry => entry.category_id === categoryId && entry.school_id === schoolId
       );
 
-      // Map entries by column_id for easy access
       const entriesMap: Record<string, DataEntry> = {};
       categoryEntries.forEach(entry => {
         entriesMap[entry.column_id] = {
@@ -125,18 +116,12 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
       setDataEntries(entriesMap);
 
-      // Determine category status based on entries
       if (categoryEntries.length > 0) {
-        // If any entry is rejected, category is rejected
         if (categoryEntries.some(entry => entry.status === 'rejected')) {
           setCategoryStatus('rejected');
-        }
-        // If all required entries are approved, category is approved
-        else if (categoryEntries.every(entry => entry.status === 'approved')) {
+        } else if (categoryEntries.every(entry => entry.status === 'approved')) {
           setCategoryStatus('approved');
-        }
-        // Otherwise it's pending
-        else {
+        } else {
           setCategoryStatus('pending');
         }
       } else {
@@ -159,7 +144,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     }
   }, [fetchDataEntriesForCategory, entriesLoading]);
 
-  // Yeni data entry əlavə et
   const handleDataChange = useCallback(
     async (columnId: string, value: string) => {
       if (!categoryId || !schoolId || !user) {
@@ -169,14 +153,12 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
       setUnsavedChanges(true);
 
-      // Generate a unique ID for new entries
       const entryId = dataEntries[columnId]?.id || uuidv4();
       
-      // Update local state immediately for UI feedback
       setDataEntries(prev => ({
         ...prev,
         [columnId]: {
-          id: entryId, // id təyin edilir
+          id: entryId,
           column_id: columnId,
           category_id: categoryId,
           school_id: schoolId,
@@ -186,9 +168,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
         } as DataEntry,
       }));
 
-      // Decide whether to update or create a new entry
       if (dataEntries[columnId] && dataEntries[columnId].id && !dataEntries[columnId].id.startsWith('temp-')) {
-        // Update existing entry
         try {
           await updateEntry(dataEntries[columnId].id!, { value });
           setUnsavedChanges(false);
@@ -198,7 +178,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
           return null;
         }
       } else {
-        // Create new entry
         try {
           const newEntryData = {
             column_id: columnId,
@@ -230,14 +209,12 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     [categoryId, schoolId, user, dataEntries, updateEntry, addEntry]
   );
 
-  // Kateqoriya dəyişmək
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       setCurrentCategoryIndex(index);
     }
   }, [categories]);
 
-  // Formu yadda saxla
   const saveForm = useCallback(() => {
     console.log('Form saxlanıldı');
     setFormData(prev => ({
@@ -246,7 +223,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     }));
   }, []);
 
-  // Kateqoriyani təsdiqə göndər
   const handleSubmitForApproval = useCallback(async () => {
     if (!categoryId || !schoolId) {
       console.error('Təsdiq üçün lazımi məlumatlar çatışmır');
@@ -255,7 +231,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
 
     setSubmitting(true);
     try {
-      // Check if all required fields have entries
       const requiredColumns = columns.filter(col => col.isRequired);
       const allRequiredFilled = requiredColumns.every(col => 
         dataEntries[col.id] && dataEntries[col.id].value && dataEntries[col.id].value.trim() !== ''
@@ -282,17 +257,14 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     }
   }, [categoryId, schoolId, columns, dataEntries, submitCategoryForApproval]);
 
-  // Excel şablonunu yüklə
   const downloadExcelTemplate = useCallback((categoryId: string) => {
     console.log(`Excel şablonu yüklənir: ${categoryId}`);
   }, []);
 
-  // Excel məlumatları yüklə
   const uploadExcelData = useCallback((file: File, categoryId: string) => {
     console.log(`Excel məlumatları yüklənir: ${file.name}, categoryId: ${categoryId}`);
   }, []);
 
-  // Sütun səhvini əldə et
   const getErrorForColumn = useCallback((columnId: string) => {
     const error = errors.find(e => e.columnId === columnId);
     return error ? error.message : undefined;
@@ -309,7 +281,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     categoryStatus,
     error: error || entriesError,
     unsavedChanges,
-    // DataEntryForm üçün vacib parametrlər
     categories,
     currentCategoryIndex,
     formData,
@@ -320,7 +291,6 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     handleDataChange,
     handleSubmitForApproval,
     refreshData: fetchDataEntriesForCategory,
-    // DataEntryForm komponenti üçün əlavə parametrlər
     changeCategory,
     updateValue: handleDataChange,
     submitForApproval: handleSubmitForApproval,
