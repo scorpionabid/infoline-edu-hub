@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -10,7 +9,7 @@ import {
   SectorAdminDashboardData,
   SchoolAdminDashboardData
 } from '@/types/dashboard';
-import { Notification, adaptSupabaseNotification } from '@/types/notification';
+import { Notification, adaptNotification } from '@/types/notification';
 import { FormItem, FormStatus } from '@/types/form';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
@@ -37,7 +36,7 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
   }
   
   return notifications.map(notification => ({
-    id: notification.id,
+    id: notification.id || '',
     type: notification.type || 'info',
     title: notification.title || 'Bildiriş',
     message: notification.message || '',
@@ -46,7 +45,7 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
     isRead: notification.isRead || false,
     userId: notification.userId || '',
     priority: notification.priority || 'normal',
-    read_status: notification.isRead ? 'read' : 'unread' // Əlavə edildi
+    read_status: notification.isRead || false // Boolean tipinə dəyişdik
   }));
 };
 
@@ -59,7 +58,7 @@ const adaptFormItems = (formItems: FormItem[]) => {
   
   return formItems.map(item => ({
     ...item,
-    status: item.status as FormStatus | unknown as 'pending' | 'approved' | 'rejected' | 'overdue'
+    status: item.status as FormStatus
   }));
 };
 

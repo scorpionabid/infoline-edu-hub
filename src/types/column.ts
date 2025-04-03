@@ -8,7 +8,7 @@ export type ColumnType =
   | "phone" 
   | "date" 
   | "select" 
-  | "multiselect"
+  | "multiselect" // Əlavə məlumat tipi
   | "checkbox"
   | "radio"
   | "textarea"
@@ -34,8 +34,9 @@ export interface Column {
   options?: string[] | ColumnOption[];
   validation?: ColumnValidation;
   status?: string;
-  order: number; // əlavə edildi
+  order: number; // Əlavə edildi
   dependsOn?: string; // asılılıq üçün əlavə edildi
+  parentColumnId?: string; // Əlavə edildi
   // Supabase uyğunluğu üçün
   category_id?: string;
   is_required?: boolean;
@@ -44,7 +45,6 @@ export interface Column {
   order_index?: number;
   created_at?: string;
   updated_at?: string;
-  parentColumnId?: string;
   parent_column_id?: string;
 }
 
@@ -74,7 +74,7 @@ export interface CategoryWithColumns {
     priority: number;
     status?: string;
     assignment?: string; // CategoryAssignment
-    deadline?: string; // Əlavə edildi
+    deadline?: string;
   };
   columns: Column[];
   id?: string; // Uyğunluq üçün əlavə edildi
@@ -84,9 +84,10 @@ export interface CategoryWithColumns {
   status?: string; // Uyğunluq üçün əlavə edildi
   assignment?: string; // Uyğunluq üçün əlavə edildi
   order?: number; // Uyğunluq üçün əlavə edildi
-  deadline?: string; // Əlavə edildi
+  deadline?: string;
 }
 
+// Adapters
 export const adaptSupabaseColumn = (rawData: any): Column => {
   return {
     id: rawData.id,
@@ -105,11 +106,16 @@ export const adaptSupabaseColumn = (rawData: any): Column => {
     created_at: rawData.created_at,
     updated_at: rawData.updated_at,
     parentColumnId: rawData.parent_column_id,
+    parent_column_id: rawData.parent_column_id, // Uyğunluq üçün 
     dependsOn: rawData.depends_on,
   };
 };
 
 export const adaptColumnToSupabase = (column: Partial<Column>) => {
+  // Column JSON formatını SupaBase formatına dəyişirik
+  const safeOptions = Array.isArray(column.options) ? column.options : [];
+  const safeValidation = column.validation || {};
+
   return {
     name: column.name,
     type: column.type,
@@ -119,8 +125,8 @@ export const adaptColumnToSupabase = (column: Partial<Column>) => {
     help_text: column.helpText || column.help_text,
     default_value: column.defaultValue || column.default_value,
     order_index: column.orderIndex || column.order_index || 0,
-    options: column.options || [],
-    validation: column.validation || {},
+    options: safeOptions,
+    validation: safeValidation,
     status: column.status || 'active',
     parent_column_id: column.parentColumnId || column.parent_column_id,
     depends_on: column.dependsOn

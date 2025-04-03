@@ -1,6 +1,20 @@
 
-export type NotificationType = 'info' | 'warning' | 'error' | 'success' | 'system' | string;
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical' | string;
+export type NotificationType = 
+  | 'info' 
+  | 'warning' 
+  | 'error' 
+  | 'success'
+  | 'newCategory'
+  | 'deadline'
+  | 'approvalRequest'
+  | 'approved'
+  | 'rejected'
+  | 'systemUpdate'
+  | 'formApproved'
+  | 'formRejected'
+  | 'dueDateReminder';
+
+export type NotificationPriority = 'normal' | 'high' | 'critical';
 
 export interface Notification {
   id: string;
@@ -12,50 +26,25 @@ export interface Notification {
   isRead: boolean;
   userId: string;
   priority: NotificationPriority;
+  read_status: boolean; // boolean tipinə dəyişdirildi
   relatedEntityId?: string;
-  relatedEntityType?: string;
-  read_status: boolean; // Əlavə edildi
+  relatedEntityType?: 'category' | 'column' | 'data' | 'user' | 'school';
 }
 
-// DB-dən gələn notification məlumatlarını Frontend formatına çevirmək üçün adaptor
-export const adaptNotification = (dbNotification: any): Notification => {
+// adaptSupabaseNotification əvəzinə adaptNotification istifadə etmək üçün
+export const adaptNotification = (rawData: any): Notification => {
   return {
-    id: dbNotification.id || '',
-    type: dbNotification.type || 'info',
-    title: dbNotification.title || '',
-    message: dbNotification.message || '',
-    createdAt: dbNotification.created_at || new Date().toISOString(),
-    time: formatTimeAgo(dbNotification.created_at) || '',
-    isRead: dbNotification.is_read || false,
-    userId: dbNotification.user_id || '',
-    priority: dbNotification.priority || 'normal',
-    relatedEntityId: dbNotification.related_entity_id || null,
-    relatedEntityType: dbNotification.related_entity_type || null,
-    read_status: dbNotification.is_read || false // Əlavə edildi
+    id: rawData.id || '',
+    type: rawData.type || 'info',
+    title: rawData.title || '',
+    message: rawData.message || '',
+    createdAt: rawData.created_at || rawData.createdAt || new Date().toISOString(),
+    time: rawData.time || rawData.created_at || rawData.createdAt || new Date().toISOString(),
+    isRead: rawData.is_read ?? rawData.isRead ?? false,
+    userId: rawData.user_id || rawData.userId || '',
+    priority: rawData.priority || 'normal',
+    read_status: rawData.is_read ?? rawData.isRead ?? false, // boolean olaraq
+    relatedEntityId: rawData.related_entity_id || rawData.relatedEntityId,
+    relatedEntityType: rawData.related_entity_type || rawData.relatedEntityType,
   };
 };
-
-// Vaxt formatını xoş görünüşlü şəkildə formatlamaq üçün funksiya
-function formatTimeAgo(dateString?: string): string {
-  if (!dateString) return '';
-
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.round(diffMs / 1000);
-  const diffMin = Math.round(diffSec / 60);
-  const diffHour = Math.round(diffMin / 60);
-  const diffDay = Math.round(diffHour / 24);
-
-  if (diffSec < 60) {
-    return `${diffSec} saniyə əvvəl`;
-  } else if (diffMin < 60) {
-    return `${diffMin} dəqiqə əvvəl`;
-  } else if (diffHour < 24) {
-    return `${diffHour} saat əvvəl`;
-  } else if (diffDay < 7) {
-    return `${diffDay} gün əvvəl`;
-  } else {
-    return date.toLocaleDateString('az-AZ');
-  }
-}

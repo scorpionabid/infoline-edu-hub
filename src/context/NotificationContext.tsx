@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Notification, NotificationType, NotificationPriority } from '@/types/notification';
 import { useAuth } from '@/context/AuthContext';
@@ -85,11 +84,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       userId: user.id,
       isRead: false,
       createdAt,
-      time: createdAt, // time xüsusiyyətini əlavə edirik
+      time: createdAt,
       priority,
       relatedEntityId,
       relatedEntityType,
-      read_status: 'unread' // read_status əlavə edildi
+      read_status: false
     };
     
     setNotifications(prev => [newNotification, ...prev]);
@@ -99,7 +98,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications(prev =>
       prev.map(notification =>
         notification.id === id
-          ? { ...notification, isRead: true, read_status: 'read' }
+          ? { ...notification, isRead: true, read_status: true }
           : notification
       )
     );
@@ -107,7 +106,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   
   const markAllAsRead = () => {
     setNotifications(prev =>
-      prev.map(notification => ({ ...notification, isRead: true, read_status: 'read' }))
+      prev.map(notification => ({ ...notification, isRead: true, read_status: true }))
     );
   };
   

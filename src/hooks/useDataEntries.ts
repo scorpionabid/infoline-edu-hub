@@ -1,390 +1,354 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/dataEntry';
-import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
-export const useDataEntries = (categoryId?: string, schoolId?: string) => {
+const useDataEntries = (categoryId?: string, schoolId?: string) => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
 
+  // Fetch data entries with optional filtering
   const fetchEntries = useCallback(async (filters?: Partial<DataEntry>) => {
     setLoading(true);
+    setError(null);
+    
     try {
-      let query = supabase.from('data_entries').select(`
-        *,
-        schools (id, name),
-        categories (id, name, deadline)
-      `);
-
-      switch (user?.role) {
-        case 'superadmin':
-          break;
-        case 'regionadmin':
-          if (user.regionId) {
-            query = query.in('school_id', 
-              supabase.from('schools')
-                .select('id')
-                .eq('region_id', user.regionId)
-            );
-          }
-          break;
-        case 'sectoradmin':
-          if (user.sectorId) {
-            query = query.in('school_id', 
-              supabase.from('schools')
-                .select('id')
-                .eq('sector_id', user.sectorId)
-            );
-          }
-          break;
-        case 'schooladmin':
-          if (user.schoolId) {
-            query = query.eq('school_id', user.schoolId);
-          }
-          break;
-      }
-
+      let query = supabase
+        .from('data_entries')
+        .select(`
+          id, 
+          category_id, 
+          column_id, 
+          school_id, 
+          value, 
+          status, 
+          created_at, 
+          updated_at, 
+          created_by,
+          approved_at,
+          approved_by,
+          rejected_by,
+          rejection_reason
+        `);
+        
+      // Əgər categoryId varsa, filtrdə istifadə et
       if (categoryId) {
         query = query.eq('category_id', categoryId);
       }
       
+      // Əgər schoolId varsa, istifadə et
       if (schoolId) {
         query = query.eq('school_id', schoolId);
       }
-
+      
+      // Əlavə filtrləri tətbiq et
       if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined) {
-            const fieldName = key === 'categoryId' ? 'category_id' : 
-                            key === 'columnId' ? 'column_id' :
-                            key === 'schoolId' ? 'school_id' :
-                            key === 'createdBy' ? 'created_by' :
-                            key === 'approvedBy' ? 'approved_by' :
-                            key === 'rejectedBy' ? 'rejected_by' : key;
-            
-            query = query.eq(fieldName, value);
+        Object.keys(filters).forEach(key => {
+          // Fikir verin - burada `key` və onun dəyəri tip təhlükəsizliyi üçün yoxlanılmalıdır
+          const value = (filters as any)[key];
+          if (value !== undefined && value !== null) {
+            query = query.eq(key, value);
           }
         });
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      const formattedEntries = data?.map(entry => {
-        const formattedEntry: DataEntry = {
-          id: entry.id,
-          categoryId: entry.category_id,
-          category_id: entry.category_id,
-          categoryName: entry.categories?.name || '',
-          columnId: entry.column_id,
-          column_id: entry.column_id,
-          schoolId: entry.school_id,
-          school_id: entry.school_id,
-          value: entry.value || '',
-          status: entry.status || 'pending',
-          createdAt: entry.created_at,
-          updatedAt: entry.updated_at,
-          createdBy: entry.created_by,
-          approvedAt: entry.approved_at,
-          approvedBy: entry.approved_by,
-          rejectedBy: entry.rejected_by,
-          rejectionReason: entry.rejection_reason || '',
-          deadline: entry.categories?.deadline
-        };
-        return formattedEntry;
-      }) || [];
-
+      
+      // Sorğunu icra et
+      const { data, error: fetchError } = await query.order('updated_at', { ascending: false });
+      
+      if (fetchError) throw fetchError;
+      
+      // Məlumatları formatlaşdır
+      const formattedEntries: DataEntry[] = (data || []).map(entry => ({
+        id: entry.id,
+        category_id: entry.category_id,
+        column_id: entry.column_id,
+        school_id: entry.school_id,
+        categoryId: entry.category_id,
+        columnId: entry.column_id,
+        schoolId: entry.school_id,
+        value: entry.value || "",
+        status: entry.status || "pending",
+        createdAt: entry.created_at,
+        updatedAt: entry.updated_at,
+        createdBy: entry.created_by,
+        approvedAt: entry.approved_at,
+        approvedBy: entry.approved_by,
+        rejectedBy: entry.rejected_by,
+        rejectionReason: entry.rejection_reason
+      }));
+      
       setEntries(formattedEntries);
-      setLoading(false);
     } catch (err: any) {
-      console.error('Məlumatları yükləyərkən xəta:', err);
+      console.error("Failed to fetch data entries:", err);
       setError(err);
+    } finally {
       setLoading(false);
-      toast.error('Məlumatları yükləyərkən xəta baş verdi');
     }
-  }, [user, categoryId, schoolId]);
+  }, [categoryId, schoolId]);
 
-  const addEntry = useCallback(async (entryData: Omit<DataEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
+  // Add a new entry
+  const addEntry = useCallback(async (entryData: Omit<DataEntry, "id" | "createdAt" | "updatedAt">) => {
     try {
-      const supabaseEntryData = {
-        category_id: entryData.categoryId || entryData.category_id,
-        column_id: entryData.columnId || entryData.column_id,
-        school_id: entryData.schoolId || entryData.school_id || user?.schoolId,
-        value: entryData.value,
-        status: entryData.status || 'pending',
-        created_by: user?.id,
-      };
-
       const { data, error } = await supabase
         .from('data_entries')
-        .insert(supabaseEntryData)
-        .select(`
-          *,
-          schools (id, name),
-          categories (id, name, deadline)
-        `)
+        .insert({
+          category_id: entryData.category_id || entryData.categoryId,
+          column_id: entryData.column_id || entryData.columnId,
+          school_id: entryData.school_id || entryData.schoolId,
+          value: entryData.value || "",
+          status: entryData.status || "pending",
+          created_by: user?.id || entryData.createdBy
+        })
+        .select()
         .single();
-
+      
       if (error) throw error;
-
+      
       const newEntry: DataEntry = {
         id: data.id,
-        categoryId: data.category_id,
         category_id: data.category_id,
-        categoryName: data.categories?.name || '',
-        columnId: data.column_id,
         column_id: data.column_id,
-        schoolId: data.school_id,
         school_id: data.school_id,
-        value: data.value || '',
-        status: data.status || 'pending',
+        categoryId: data.category_id,
+        columnId: data.column_id,
+        schoolId: data.school_id,
+        value: data.value || "",
+        status: data.status || "pending",
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        createdBy: data.created_by,
-        approvedAt: data.approved_at,
-        approvedBy: data.approved_by,
-        rejectedBy: data.rejected_by,
-        rejectionReason: data.rejection_reason || '',
-        deadline: data.categories?.deadline
+        createdBy: data.created_by
       };
-
-      setEntries(prev => [...prev, newEntry]);
-      toast.success('Məlumat uğurla əlavə edildi');
       
-      await updateSchoolCompletionRate(data.school_id);
-      
+      setEntries(prev => [newEntry, ...prev]);
       return newEntry;
     } catch (err: any) {
-      console.error('Məlumat əlavə edərkən xəta:', err);
-      toast.error('Məlumat əlavə edərkən xəta baş verdi');
+      console.error("Failed to add data entry:", err);
       throw err;
     }
   }, [user]);
 
+  // Update an existing entry
   const updateEntry = useCallback(async (entryId: string, updateData: Partial<DataEntry>) => {
     try {
-      const supabaseUpdateData: any = {};
+      const supabaseData: any = {};
       
-      if (updateData.value !== undefined) supabaseUpdateData.value = updateData.value;
-      if (updateData.status !== undefined) supabaseUpdateData.status = updateData.status;
+      // Convert from column/category/school id to *_id format
+      if (updateData.categoryId) supabaseData.category_id = updateData.categoryId;
+      if (updateData.columnId) supabaseData.column_id = updateData.columnId;
+      if (updateData.schoolId) supabaseData.school_id = updateData.schoolId;
       
-      if (updateData.status === 'approved') {
-        supabaseUpdateData.approved_at = new Date().toISOString();
-        supabaseUpdateData.approved_by = user?.id;
-      } else if (updateData.status === 'rejected') {
-        supabaseUpdateData.rejected_by = user?.id;
-        if (updateData.rejectionReason) {
-          supabaseUpdateData.rejection_reason = updateData.rejectionReason;
-        }
-      }
-
+      // Copy over direct matches
+      if (updateData.category_id) supabaseData.category_id = updateData.category_id;
+      if (updateData.column_id) supabaseData.column_id = updateData.column_id;
+      if (updateData.school_id) supabaseData.school_id = updateData.school_id;
+      if (updateData.value !== undefined) supabaseData.value = updateData.value;
+      if (updateData.status) supabaseData.status = updateData.status;
+      
+      // Update the entry
       const { data, error } = await supabase
         .from('data_entries')
-        .update(supabaseUpdateData)
+        .update({
+          ...supabaseData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', entryId)
-        .select(`
-          *,
-          schools (id, name),
-          categories (id, name, deadline)
-        `)
+        .select()
         .single();
-
+      
       if (error) throw error;
-
+      
       const updatedEntry: DataEntry = {
         id: data.id,
-        categoryId: data.category_id,
         category_id: data.category_id,
-        categoryName: data.categories?.name || '',
-        columnId: data.column_id,
         column_id: data.column_id,
-        schoolId: data.school_id,
         school_id: data.school_id,
-        value: data.value || '',
-        status: data.status || 'pending',
+        categoryId: data.category_id,
+        columnId: data.column_id,
+        schoolId: data.school_id,
+        value: data.value || "",
+        status: data.status || "pending",
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         createdBy: data.created_by,
         approvedAt: data.approved_at,
         approvedBy: data.approved_by,
         rejectedBy: data.rejected_by,
-        rejectionReason: data.rejection_reason || '',
-        deadline: data.categories?.deadline
+        rejectionReason: data.rejection_reason
       };
-
-      setEntries(prev => prev.map(entry => 
-        entry.id === entryId ? updatedEntry : entry
-      ));
       
-      if (updateData.status === 'approved') {
-        toast.success('Məlumat təsdiqləndi');
-      } else if (updateData.status === 'rejected') {
-        toast.success('Məlumat rədd edildi');
-      } else {
-        toast.success('Məlumat uğurla yeniləndi');
-      }
-      
-      await updateSchoolCompletionRate(data.school_id);
+      // Update state
+      setEntries(prev =>
+        prev.map(entry => entry.id === entryId ? updatedEntry : entry)
+      );
       
       return updatedEntry;
     } catch (err: any) {
-      console.error('Məlumat yenilənərkən xəta:', err);
-      toast.error('Məlumat yenilənərkən xəta baş verdi');
+      console.error("Failed to update data entry:", err);
       throw err;
     }
-  }, [user]);
+  }, []);
 
+  // Delete an entry
   const deleteEntry = useCallback(async (entryId: string) => {
     try {
-      const { data: entryData } = await supabase
-        .from('data_entries')
-        .select('school_id')
-        .eq('id', entryId)
-        .single();
-      
       const { error } = await supabase
         .from('data_entries')
         .delete()
         .eq('id', entryId);
-
+      
       if (error) throw error;
-
+      
+      // Update state
       setEntries(prev => prev.filter(entry => entry.id !== entryId));
-      toast.success('Məlumat uğurla silindi');
-      
-      if (entryData?.school_id) {
-        await updateSchoolCompletionRate(entryData.school_id);
-      }
-      
       return true;
     } catch (err: any) {
-      console.error('Məlumat silinərkən xəta:', err);
-      toast.error('Məlumat silinərkən xəta baş verdi');
+      console.error("Failed to delete data entry:", err);
       throw err;
     }
   }, []);
 
-  // Approval funksiyaları
+  // Təsdiqləmə funksiyası
   const approveEntry = useCallback(async (entryId: string) => {
-    return updateEntry(entryId, { status: 'approved' });
-  }, [updateEntry]);
-
-  const rejectEntry = useCallback(async (entryId: string, rejectionReason?: string) => {
-    return updateEntry(entryId, { 
-      status: 'rejected',
-      rejectionReason: rejectionReason || 'Məlumat yanlışdır.'
-    });
-  }, [updateEntry]);
-
-  // Məktəbin tamamlanma faizini yeniləmək üçün funksiya
-  const updateSchoolCompletionRate = async (schoolId: string) => {
     try {
-      // Məktəbin bütün kateqoriyalar üzrə ümumi sütun sayını əldə et
-      const { count: totalColumns } = await supabase
-        .from('columns')
-        .select('id', { count: 'exact', head: true });
-      
-      // Məktəbin daxil edilmiş məlumatlarının sayını əldə et
-      const { count: filledEntries } = await supabase
+      const { error } = await supabase
         .from('data_entries')
-        .select('id', { count: 'exact', head: true })
-        .eq('school_id', schoolId);
-      
-      // Tamamlanma faizini hesabla
-      const completionRate = totalColumns && totalColumns > 0 
-        ? Math.round((filledEntries || 0) / totalColumns * 100) 
-        : 0;
-      
-      // Məktəbin tamamlanma faizini yenilə
-      await supabase
-        .from('schools')
-        .update({ completion_rate: completionRate })
-        .eq('id', schoolId);
-        
-    } catch (err) {
-      console.error('Məktəbin tamamlanma faizini yeniləyərkən xəta:', err);
-    }
-  };
-
-  // Kateqoriyanın təsdiq vəziyyətini əldə etmək üçün funksiya
-  const getApprovalStatus = useCallback(async (categoryId: string, schoolId: string) => {
-    try {
-      // Kateqoriya üzrə sütun sayını əldə et
-      const { count: columnCount } = await supabase
-        .from('columns')
-        .select('id', { count: 'exact', head: true })
-        .eq('category_id', categoryId);
-      
-      // Kateqoriya və məktəb üzrə təsdiqlənmiş məlumatların sayını əldə et
-      const { count: approvedCount } = await supabase
-        .from('data_entries')
-        .select('id', { count: 'exact', head: true })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', 'approved');
-      
-      // Kateqoriya və məktəb üzrə rədd edilmiş məlumatların sayını əldə et
-      const { count: rejectedCount } = await supabase
-        .from('data_entries')
-        .select('id', { count: 'exact', head: true })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', 'rejected');
-      
-      // Təsdiq vəziyyətini təyin et
-      if (rejectedCount && rejectedCount > 0) {
-        return 'rejected';
-      } else if (approvedCount === columnCount && columnCount > 0) {
-        return 'approved';
-      } else {
-        return 'pending';
-      }
-    } catch (err) {
-      console.error('Təsdiq vəziyyətini əldə edərkən xəta:', err);
-      return 'pending';
-    }
-  }, []);
-
-  // Kateqoriyanın təsdiq üçün göndərilməsi
-  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
-    try {
-      // Kateqoriya üzrə bütün daxil edilmiş məlumatları təsdiq üçün göndər
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({ status: 'pending' })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: user?.id
+        })
+        .eq('id', entryId);
       
       if (error) throw error;
       
-      // Bildiriş göndər
-      await supabase.from('notifications').insert({
-        type: 'info',
-        title: 'Kateqoriya təsdiqə göndərildi',
-        message: `${categoryId} kateqoriyası təsdiq üçün göndərildi`,
-        user_id: user?.id,
-        priority: 'normal',
-        related_entity_id: categoryId,
-        related_entity_type: 'category'
-      });
+      // Update state
+      setEntries(prev =>
+        prev.map(entry => 
+          entry.id === entryId 
+            ? { 
+                ...entry, 
+                status: 'approved', 
+                approvedAt: new Date().toISOString(), 
+                approvedBy: user?.id 
+              } 
+            : entry
+        )
+      );
       
-      toast.success('Kateqoriya təsdiq üçün uğurla göndərildi');
       return true;
-    } catch (err) {
-      console.error('Kateqoriyanı təsdiqə göndərərkən xəta:', err);
-      toast.error('Kateqoriyanı təsdiqə göndərərkən xəta baş verdi');
-      return false;
+    } catch (err: any) {
+      console.error("Failed to approve data entry:", err);
+      throw err;
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
+  // Rədd etmə funksiyası
+  const rejectEntry = useCallback(async (entryId: string, reason: string) => {
+    try {
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason,
+          rejected_by: user?.id
+        })
+        .eq('id', entryId);
+      
+      if (error) throw error;
+      
+      // Update state
+      setEntries(prev =>
+        prev.map(entry => 
+          entry.id === entryId 
+            ? { 
+                ...entry, 
+                status: 'rejected', 
+                rejectionReason: reason, 
+                rejectedBy: user?.id 
+              } 
+            : entry
+        )
+      );
+      
+      return true;
+    } catch (err: any) {
+      console.error("Failed to reject data entry:", err);
+      throw err;
+    }
+  }, [user]);
+
+  // Təsdiq üçün göndərmə funksiyası
+  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
+    try {
+      // Əvvəlcə bütün gözləmə məlumatlarını əldə et
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId)
+        .eq('status', 'pending');
+      
+      if (error) throw error;
+      
+      // Yoxlayın ki, məlumatlar varmı
+      if (!data || data.length === 0) {
+        throw new Error("No pending entries found for this category and school");
+      }
+      
+      // Status update function for multiple entries
+      const updateStatus = async () => {
+        const { error } = await supabase
+          .rpc('submit_category_for_approval', {
+            p_category_id: categoryId,
+            p_school_id: schoolId,
+            p_user_id: user?.id || null
+          });
+        
+        if (error) throw error;
+      };
+      
+      // Update all entries
+      await updateStatus();
+      
+      // Update local state
+      await fetchEntries({ category_id: categoryId, school_id: schoolId });
+      
+      return true;
+    } catch (err: any) {
+      console.error("Failed to submit category for approval:", err);
+      throw err;
+    }
+  }, [fetchEntries, user]);
+
+  // Təsdiq statusunu əldə etmək üçün funksiya
+  const getApprovalStatus = useCallback(async (catId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('status')
+        .eq('category_id', catId)
+        .eq('school_id', schoolId || '')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        // Məlumat tapılmadısa, "pending" qaytarın
+        if (error.code === 'PGRST116') {
+          return "pending";
+        }
+        throw error;
+      }
+      
+      return data?.status || "pending";
+    } catch (err: any) {
+      console.error("Failed to get approval status:", err);
+      return "pending";
+    }
+  }, [schoolId]);
 
   return {
     entries,
@@ -400,3 +364,5 @@ export const useDataEntries = (categoryId?: string, schoolId?: string) => {
     getApprovalStatus
   };
 };
+
+export { useDataEntries };

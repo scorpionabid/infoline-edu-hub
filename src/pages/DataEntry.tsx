@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -11,10 +10,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, FileSpreadsheet, InfoIcon, LayoutGrid, Loader2 } from 'lucide-react';
-import { exportDataToExcel } from '@/utils/excelExport';
+import { exportDataToExcel } from '@/utils/exportUtils';
 import type { DataEntry } from '@/types/dataEntry';
 
-// Adapter funksiyası əlavə edildi
 const adaptDataForExport = (entries: DataEntry[]) => {
   return entries.map(entry => ({
     id: entry.id!,
@@ -143,7 +141,7 @@ const DataEntry: React.FC = () => {
           </TabsList>
           <TabsContent value="form">
             <DataEntryForm 
-              categoryId={categoryFilter !== "all" ? categoryFilter : undefined}
+              category={categoryFilter !== "all" ? { id: categoryFilter } : undefined}
               statusFilter={statusFilter !== "all" ? statusFilter : undefined}
             />
           </TabsContent>

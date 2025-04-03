@@ -65,7 +65,7 @@ const SchoolsContainer: React.FC = () => {
     currentTab,
     setCurrentTab,
     handleFormChange,
-    setFormData, // Əlavə edildi
+    setFormData, // Add this prop explicitly
   } = useSchoolDialogHandlers();
 
   const {

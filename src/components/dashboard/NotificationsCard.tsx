@@ -24,7 +24,7 @@ const adaptIfNeeded = (notification: Notification): Notification => {
       isRead: false,
       userId: '',
       priority: 'normal',
-      read_status: 'unread'
+      read_status: false // Boolean tipinə dəyişdik
     };
   }
   
@@ -32,15 +32,16 @@ const adaptIfNeeded = (notification: Notification): Notification => {
   if (notification.time === undefined && notification.createdAt) {
     return {
       ...notification,
-      time: notification.createdAt
+      time: notification.createdAt,
+      read_status: notification.isRead // Boolean tipinə təyin edilir
     };
   }
   
   // Ensure read_status is set
-  if (!notification.read_status) {
+  if (notification.read_status === undefined) {
     return {
       ...notification,
-      read_status: notification.isRead ? 'read' : 'unread'
+      read_status: notification.isRead // Boolean tipinə təyin edilir
     };
   }
   

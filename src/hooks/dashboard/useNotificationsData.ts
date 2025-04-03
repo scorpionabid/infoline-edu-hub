@@ -36,7 +36,7 @@ export const useNotificationsData = (): UseNotificationsDataReturn => {
       // Supabase formasından bizə lazım olan formata uyğunlaşdırmaq
       const adaptedNotifications: Notification[] = data.map((item) => ({
         id: item.id,
-        type: item.type as any, // TypeScript ilə uyğunlaşdırmaq üçün
+        type: item.type as any, 
         title: item.title,
         message: item.message,
         priority: item.priority as any,
@@ -46,7 +46,7 @@ export const useNotificationsData = (): UseNotificationsDataReturn => {
         time: item.created_at,
         relatedEntityId: item.related_entity_id,
         relatedEntityType: item.related_entity_type,
-        read_status: item.is_read ? 'read' : 'unread' // Çevirmə
+        read_status: item.is_read // Boolean kimi təyin edilir
       }));
 
       setNotifications(adaptedNotifications);
@@ -70,7 +70,7 @@ export const useNotificationsData = (): UseNotificationsDataReturn => {
       // Lokal vəziyyəti yeniləyin
       setNotifications(prev =>
         prev.map(n =>
-          n.id === notificationId ? { ...n, isRead: true, read_status: 'read' } : n
+          n.id === notificationId ? { ...n, isRead: true, read_status: true } : n
         )
       );
     } catch (err: any) {
@@ -80,16 +80,20 @@ export const useNotificationsData = (): UseNotificationsDataReturn => {
 
   const markAllAsRead = useCallback(async () => {
     try {
+      const notificationIds = notifications.filter(n => !n.isRead).map(n => n.id);
+      
+      if (notificationIds.length === 0) return;
+      
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .in('id', notifications.filter(n => !n.isRead).map(n => n.id));
+        .in('id', notificationIds);
 
       if (error) throw error;
 
       // Lokal vəziyyəti yeniləyin
       setNotifications(prev =>
-        prev.map(n => ({ ...n, isRead: true, read_status: 'read' }))
+        prev.map(n => ({ ...n, isRead: true, read_status: true }))
       );
     } catch (err: any) {
       console.error('Bütün bildirişləri oxunmuş kimi qeyd edərkən xəta:', err);

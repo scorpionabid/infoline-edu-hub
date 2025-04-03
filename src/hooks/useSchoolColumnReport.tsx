@@ -1,401 +1,247 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { Column } from "@/types/column";
-import { CategoryWithColumns } from "@/types/column";
-import { SchoolColumnData } from "@/types/report";
-import { toast } from "sonner";
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { CategoryWithColumns } from '@/types/column';
 
-export interface ColumnReport {
-  schoolId: string;
-  categoryId: string;
-  categoryName: string;
-  columns: {
-    column: Column;
-    value: string | number | null;
-    status: string;
-  }[];
-}
-
-export interface SchoolColumnReportHookResult {
-  report: ColumnReport[];
-  loading: boolean;
-  error: Error | null;
-  fetchColumnReport: () => Promise<void>;
-  getColumnValue: (colId: string) => string | number | null;
-  getColumnStatus: (colId: string) => string | null;
-  // Əlavə edilmiş xassələr
-  categories: CategoryWithColumns[];
-  selectedCategoryId: string;
-  setSelectedCategoryId: (id: string) => void;
-  schoolColumnData: SchoolColumnData[];
-  sectors: string[];
-  isCategoriesLoading: boolean;
-  isCategoriesError: boolean;
-  isDataLoading: boolean;
-  exportData: (options?: any) => void;
-  toggleSchoolSelection: (schoolId: string) => void;
-  selectAllSchools: () => void;
-  deselectAllSchools: () => void;
-  getSelectedSchoolsData: () => SchoolColumnData[];
-}
-
-export const useSchoolColumnReport = (schoolId: string, categoryId?: string): SchoolColumnReportHookResult => {
-  const [report, setReport] = useState<ColumnReport[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-  
-  // Əlavə state-lər
+const useSchoolColumnReport = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(categoryId || "");
-  const [schoolColumnData, setSchoolColumnData] = useState<SchoolColumnData[]>([]);
-  const [sectors, setSectors] = useState<string[]>([]);
-  const [isCategoriesLoading, setIsCategoriesLoading] = useState<boolean>(true);
-  const [isCategoriesError, setIsCategoriesError] = useState<boolean>(false);
-  const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
-  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const fetchColumnReport = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      // Bu mock məlumatlar real api sorğusu ilə əvəz edilməlidir
-      // Bu nümunə məlumatlar göstərmək üçündür
-      const mockReport: ColumnReport[] = [
-        {
-          schoolId,
-          categoryId: categoryId || "",
-          categoryName: "Məktəb haqqında məlumatlar",
-          columns: [
-            {
-              column: {
-                id: "col-1",
-                categoryId: categoryId || "",
-                name: "Şagird sayı",
-                type: "number",
-                isRequired: true,
-                order: 1,
-                orderIndex: 1,
-                status: "active"
-              },
-              value: 450,
-              status: "approved"
-            },
-            {
-              column: {
-                id: "col-2",
-                categoryId: categoryId || "",
-                name: "Müəllim sayı",
-                type: "number",
-                isRequired: true,
-                order: 2,
-                orderIndex: 2,
-                status: "active"
-              },
-              value: 35,
-              status: "approved"
-            },
-            {
-              column: {
-                id: "col-3",
-                categoryId: categoryId || "",
-                name: "Sinif otaqlarının sayı",
-                type: "number",
-                isRequired: true,
-                order: 3,
-                orderIndex: 3,
-                status: "active"
-              },
-              value: 25,
-              status: "approved"
-            }
-          ]
-        },
-        {
-          schoolId,
-          categoryId: "category-2",
-          categoryName: "Təhsil göstəriciləri",
-          columns: [
-            {
-              column: {
-                id: "col-4",
-                categoryId: "category-2",
-                name: "Olimpiada nəticələri",
-                type: "number",
-                isRequired: true,
-                order: 1,
-                orderIndex: 4,
-                status: "active"
-              },
-              value: 12,
-              status: "pending"
-            }
-          ]
-        },
-        {
-          schoolId,
-          categoryId: "category-3",
-          categoryName: "İnfrastruktur",
-          columns: [
-            {
-              column: {
-                id: "col-5",
-                categoryId: "category-3",
-                name: "Kompüter otağı",
-                type: "checkbox",
-                isRequired: true,
-                order: 1,
-                orderIndex: 5,
-                status: "active"
-              },
-              value: "true", // String kimi qaytarılır
-              status: "approved"
-            },
-            {
-              column: {
-                id: "col-6",
-                categoryId: "category-3",
-                name: "İdman zalı",
-                type: "checkbox",
-                isRequired: true,
-                order: 2,
-                orderIndex: 6,
-                status: "active"
-              },
-              value: "true", // String kimi qaytarılır
-              status: "approved"
-            }
-          ]
-        }
-      ];
-      
-      // Mock məlumatlar üçün kateqoriyalar
-      const mockCategories: CategoryWithColumns[] = [
-        {
-          id: categoryId || "category-1",
-          name: "Məktəb haqqında məlumatlar",
-          description: "Əsas məktəb məlumatları",
-          assignment: "all",
-          priority: 1,
-          deadline: "2023-12-31",
-          status: "active",
-          order: 1,
-          columns: [
-            {
-              id: "col-1",
-              categoryId: categoryId || "category-1",
-              name: "Şagird sayı",
-              type: "number",
-              isRequired: true,
-              order: 1,
-              orderIndex: 1,
-              status: "active"
-            },
-            {
-              id: "col-2",
-              categoryId: categoryId || "category-1",
-              name: "Müəllim sayı",
-              type: "number",
-              isRequired: true,
-              order: 2,
-              orderIndex: 2,
-              status: "active"
-            },
-            {
-              id: "col-3",
-              categoryId: categoryId || "category-1",
-              name: "Sinif otaqlarının sayı",
-              type: "number",
-              isRequired: true,
-              order: 3,
-              orderIndex: 3,
-              status: "active"
-            }
-          ]
-        },
-        {
-          id: "category-2",
-          name: "Təhsil göstəriciləri",
-          description: "Təhsil nəticələri",
-          assignment: "all",
-          priority: 2,
-          status: "active",
-          order: 2,
-          columns: [
-            {
-              id: "col-4",
-              categoryId: "category-2",
-              name: "Olimpiada nəticələri",
-              type: "number",
-              isRequired: true,
-              order: 1,
-              orderIndex: 4,
-              status: "active"
-            }
-          ]
-        },
-        {
-          id: "category-3",
-          name: "İnfrastruktur",
-          description: "Məktəbin infrastrukturu",
-          assignment: "all",
-          priority: 3,
-          status: "active",
-          order: 3,
-          columns: [
-            {
-              id: "col-5",
-              categoryId: "category-3",
-              name: "Kompüter otağı",
-              type: "checkbox",
-              isRequired: true,
-              order: 1,
-              orderIndex: 5,
-              status: "active"
-            },
-            {
-              id: "col-6",
-              categoryId: "category-3",
-              name: "İdman zalı",
-              type: "checkbox",
-              isRequired: true,
-              order: 2,
-              orderIndex: 6,
-              status: "active"
-            }
-          ]
-        }
-      ];
-      
-      // Mock məlumatlar üçün məktəblər
-      const mockSchoolData: SchoolColumnData[] = [
-        {
-          schoolId: "school-1",
-          schoolName: "28 nömrəli məktəb",
-          region: "Bakı",
-          sector: "Binəqədi",
-          status: "Gözləmədə",
-          columnData: [
-            { columnId: "col-1", value: 450 },
-            { columnId: "col-2", value: 35 },
-            { columnId: "col-3", value: 25 }
-          ]
-        },
-        {
-          schoolId: "school-2",
-          schoolName: "132 nömrəli məktəb",
-          region: "Bakı",
-          sector: "Nəsimi",
-          status: "Təsdiqləndi",
-          columnData: [
-            { columnId: "col-1", value: 600 },
-            { columnId: "col-2", value: 42 },
-            { columnId: "col-3", value: 30 }
-          ]
-        },
-        {
-          schoolId: "school-3",
-          schoolName: "220 nömrəli məktəb",
-          region: "Bakı",
-          sector: "Sabunçu",
-          status: "Rədd edildi",
-          rejectionReason: "Məlumatlar natamamdır",
-          columnData: [
-            { columnId: "col-1", value: 350 },
-            { columnId: "col-2", value: 28 },
-            { columnId: "col-3", value: 18 }
-          ]
-        }
-      ];
-      
-      // Mock sektorlar
-      const mockSectors = ["Binəqədi", "Nəsimi", "Sabunçu", "Xətai"];
-      
-      setTimeout(() => {
-        setReport(mockReport);
-        setCategories(mockCategories);
-        setSchoolColumnData(mockSchoolData);
-        setSectors(mockSectors);
-        setLoading(false);
-        setIsCategoriesLoading(false);
-        setIsDataLoading(false);
-      }, 500); // Mock loading delay
-      
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Məlumatlar əldə edilərkən xəta baş verdi'));
+  const fetchCategoriesWithColumns = useCallback(async () => {
+    if (!schoolId) {
       setLoading(false);
-      setIsCategoriesError(true);
+      return;
     }
-  }, [schoolId, categoryId]);
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Kateqoriyaları əldə et
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('priority', { ascending: true });
+
+      if (categoriesError) throw categoriesError;
+
+      const categoriesWithColumnsPromises = categoriesData.map(async (cat) => {
+        // Hər kateqoriya üçün sütunları əldə et
+        const { data: columnsData, error: columnsError } = await supabase
+          .from('columns')
+          .select('*')
+          .eq('category_id', cat.id)
+          .order('order_index', { ascending: true });
+
+        if (columnsError) throw columnsError;
+
+        // Kateqoriya və sütun məlumatlarını birləşdir
+        const formattedColumns = columnsData.map(col => {
+          // Ensure column order is properly set
+          const order = col.order || col.order_index || 0;
+          
+          return {
+            id: col.id,
+            name: col.name,
+            type: col.type,
+            categoryId: col.category_id,
+            isRequired: col.is_required,
+            order,
+            orderIndex: col.order_index,
+            status: col.status || 'active',
+            options: col.options || []
+          };
+        });
+
+        return {
+          category: {
+            id: cat.id,
+            name: cat.name,
+            description: cat.description || '',
+            order: cat.order || cat.priority || 1,
+            priority: cat.priority || 1,
+            status: cat.status || 'active',
+            assignment: cat.assignment || 'all',
+            deadline: cat.deadline
+          },
+          columns: formattedColumns
+        };
+      });
+
+      const categoriesWithColumns = await Promise.all(categoriesWithColumnsPromises);
+      setCategories(categoriesWithColumns);
+    } catch (err: any) {
+      console.error('Error fetching categories with columns:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [schoolId]);
+
+  const fetchSchoolDataEntries = useCallback(async (categoryId: string) => {
+    if (!schoolId) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('school_id', schoolId)
+        .eq('category_id', categoryId);
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (err: any) {
+      console.error('Error fetching school data entries:', err);
+      return [];
+    }
+  }, [schoolId]);
+
+  // Cari kateqoriyanın təsdiqlənmə statusunu əldə et
+  const getCategoryStatus = useCallback(async (categoryId: string) => {
+    if (!schoolId) return 'pending';
+
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('status, updated_at')
+        .eq('school_id', schoolId)
+        .eq('category_id', categoryId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      
+      if (!data || data.length === 0) return 'pending';
+      
+      return data[0].status;
+    } catch (err: any) {
+      console.error('Error fetching category status:', err);
+      return 'pending';
+    }
+  }, [schoolId]);
+
+  // Lazım olan test məlumatları
+  const getMockSchoolData = useCallback(() => {
+    const defaultCategories: CategoryWithColumns[] = [
+      {
+        id: 'cat-1',
+        name: 'Məktəb məlumatları',
+        description: 'Əsas məktəb məlumatları',
+        assignment: 'all',
+        priority: 1,
+        deadline: new Date().toISOString(),
+        status: 'active',
+        order: 1,
+        category: {
+          id: 'cat-1',
+          name: 'Məktəb məlumatları',
+          description: 'Əsas məktəb məlumatları',
+          order: 1,
+          priority: 1
+        },
+        columns: [
+          {
+            id: 'col-1',
+            categoryId: 'cat-1',
+            name: 'Şagird sayı',
+            type: 'number',
+            isRequired: true,
+            order: 1,
+            orderIndex: 1,
+            status: 'active'
+          },
+          {
+            id: 'col-2',
+            categoryId: 'cat-1',
+            name: 'Müəllim sayı',
+            type: 'number',
+            isRequired: true,
+            order: 2,
+            orderIndex: 2,
+            status: 'active'
+          }
+        ]
+      },
+      {
+        id: 'cat-2',
+        name: 'İnfrastruktur',
+        description: 'Məktəbin infrastrukturu barədə məlumatlar',
+        assignment: 'sectors',
+        priority: 2,
+        status: 'active',
+        order: 2,
+        category: {
+          id: 'cat-2',
+          name: 'İnfrastruktur',
+          description: 'Məktəbin infrastrukturu barədə məlumatlar',
+          order: 2,
+          priority: 2
+        },
+        columns: [
+          {
+            id: 'col-3',
+            categoryId: 'cat-2',
+            name: 'Sinif otaqlarının sayı',
+            type: 'number',
+            isRequired: true,
+            order: 1,
+            orderIndex: 1,
+            status: 'active'
+          }
+        ]
+      },
+      {
+        id: 'cat-3',
+        name: 'Əlavə məlumatlar',
+        description: 'Əlavə məlumatlar',
+        assignment: 'all',
+        priority: 3,
+        status: 'active',
+        order: 3,
+        category: {
+          id: 'cat-3',
+          name: 'Əlavə məlumatlar',
+          description: 'Əlavə məlumatlar',
+          order: 3,
+          priority: 3
+        },
+        columns: [
+          {
+            id: 'col-4',
+            categoryId: 'cat-3',
+            name: 'İdman zalı mövcuddur',
+            type: 'checkbox',
+            isRequired: true,
+            order: 1,
+            orderIndex: 1,
+            status: 'active'
+          }
+        ]
+      }
+    ];
+
+    return defaultCategories;
+  }, []);
 
   useEffect(() => {
-    fetchColumnReport();
-  }, [fetchColumnReport]);
-
-  const getColumnValue = useCallback((colId: string): string | number | null => {
-    for (const category of report) {
-      const column = category.columns.find(c => c.column.id === colId);
-      if (column) return column.value;
+    if (schoolId) {
+      fetchCategoriesWithColumns();
+    } else {
+      // Test məlumatlarını yüklə
+      setCategories(getMockSchoolData());
+      setLoading(false);
     }
-    return null;
-  }, [report]);
-
-  const getColumnStatus = useCallback((colId: string): string | null => {
-    for (const category of report) {
-      const column = category.columns.find(c => c.column.id === colId);
-      if (column) return column.status;
-    }
-    return null;
-  }, [report]);
-  
-  // Əlavə edilmiş funksiyalar
-  const exportData = useCallback((options?: any) => {
-    toast.success('Məlumatlar ixrac edildi');
-  }, []);
-  
-  const toggleSchoolSelection = useCallback((schoolId: string) => {
-    setSelectedSchools(prev => {
-      if (prev.includes(schoolId)) {
-        return prev.filter(id => id !== schoolId);
-      } else {
-        return [...prev, schoolId];
-      }
-    });
-  }, []);
-  
-  const selectAllSchools = useCallback(() => {
-    const allSchoolIds = schoolColumnData.map(school => school.schoolId);
-    setSelectedSchools(allSchoolIds);
-  }, [schoolColumnData]);
-  
-  const deselectAllSchools = useCallback(() => {
-    setSelectedSchools([]);
-  }, []);
-  
-  const getSelectedSchoolsData = useCallback(() => {
-    return schoolColumnData.filter(school => selectedSchools.includes(school.schoolId));
-  }, [schoolColumnData, selectedSchools]);
+  }, [schoolId, fetchCategoriesWithColumns, getMockSchoolData]);
 
   return {
-    report,
+    categories,
     loading,
     error,
-    fetchColumnReport,
-    getColumnValue,
-    getColumnStatus,
-    // Əlavə qaytarılan xassələr
-    categories,
-    selectedCategoryId,
-    setSelectedCategoryId,
-    schoolColumnData,
-    sectors,
-    isCategoriesLoading,
-    isCategoriesError,
-    isDataLoading,
-    exportData,
-    toggleSchoolSelection,
-    selectAllSchools,
-    deselectAllSchools,
-    getSelectedSchoolsData
+    fetchCategoriesWithColumns,
+    fetchSchoolDataEntries,
+    getCategoryStatus
   };
 };
 

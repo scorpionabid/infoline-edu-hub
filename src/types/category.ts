@@ -11,7 +11,7 @@ export interface Category {
   status: string;
   archived?: boolean;
   priority: number;
-  order: number;  // Bu məcburi sahədir
+  order: number;
   columnCount?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -58,7 +58,7 @@ export const adaptSupabaseCategory = (rawData: any): Category => {
     status: rawData.status || "active",
     archived: rawData.archived || false,
     priority: rawData.priority || 1,
-    order: rawData.order || rawData.priority || 1,
+    order: rawData.order || rawData.priority || 1, 
     columnCount: rawData.column_count || 0,
     createdAt: rawData.created_at,
     updatedAt: rawData.updated_at,
@@ -71,5 +71,5 @@ export interface CategoryFilter {
   status: string;
   assignment: string;
   withDeadline: boolean;
-  showArchived: boolean;
+  showArchived: boolean; // Əlavə edildi
 }

@@ -13,6 +13,24 @@ export interface CategoryWithData extends Category {
   columns: import('@/types/column').Column[];
 }
 
+// useDataEntryActions-ın interfeysinə setFormData əlavə edək
+interface UseDataEntryActionsProps {
+  categoryId?: string;
+  schoolId?: string;
+  user: any;
+  dataEntries: { [columnId: string]: string };
+  setDataEntries: React.Dispatch<React.SetStateAction<{ [columnId: string]: string }>>;
+  setCategoryStatus: React.Dispatch<React.SetStateAction<string>>;
+  setUnsavedChanges: React.Dispatch<React.SetStateAction<boolean>>;
+  setSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
+  entries: any[];
+  submitCategoryForApproval: (categoryId: string, schoolId: string) => Promise<boolean>;
+  columns: any[];
+  setLoadingEntries: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsAutoSaving: React.Dispatch<React.SetStateAction<boolean>>;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+}
+
 export const useDataEntry = (categoryId?: string, schoolId?: string) => {
   const { user } = useAuth();
 
@@ -102,7 +120,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     setUnsavedChanges,
     setSubmitting,
     entries,
-    submitCategoryForApproval,
+    submitCategoryForApproval: submitCategoryForApprovalFn || (() => Promise.resolve(false)),
     columns,
     setLoadingEntries,
     setIsAutoSaving,
@@ -175,7 +193,7 @@ export const useDataEntry = (categoryId?: string, schoolId?: string) => {
     // Təsdiq əməliyyatları
     approveEntry: approveEntryFn,
     rejectEntry: rejectEntryFn,
-    submitCategoryForApproval,
+    submitCategoryForApproval: submitCategoryForApprovalFn,
     getApprovalStatus: getApprovalStatusFn || ((id: string) => "pending")
   };
 };
