@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/supabase';
 
-const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
+export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -145,6 +146,53 @@ const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: strin
     }
   };
 
+  const getApprovalStatus = async (schoolId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('status')
+        .eq('school_id', schoolId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Hesablama əməliyyatlarını yerinə yetirək
+      const status = data.reduce((acc: Record<string, number>, curr) => {
+        if (!acc[curr.status]) {
+          acc[curr.status] = 0;
+        }
+        acc[curr.status]++;
+        return acc;
+      }, { pending: 0, approved: 0, rejected: 0 });
+
+      return status;
+    } catch (error) {
+      console.error('Məlumat status tələbində xəta:', error);
+      return { pending: 0, approved: 0, rejected: 0 };
+    }
+  };
+
+  const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
+    try {
+      // Kateqoriya məlumatlarını pending statusuna yeniləyək
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update({ status: 'pending' })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Kateqoriya təsdiqi tələbində xəta:', error);
+      return false;
+    }
+  };
+
   return {
     entries,
     loading,
@@ -153,7 +201,9 @@ const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: strin
     addEntry,
     updateEntry,
     deleteEntry,
-    addEntries
+    addEntries,
+    getApprovalStatus,
+    submitCategoryForApproval
   };
 };
 
