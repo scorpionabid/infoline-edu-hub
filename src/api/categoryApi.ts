@@ -18,6 +18,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       priority: 1,
       description: "Məktəbin ümumi təsviri və əsas məlumatları",
       columnCount: 3,
+      order: 1
     },
     {
       id: "2",
@@ -29,6 +30,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       priority: 2,
       description: "Tədris planı və proqram məlumatları",
       columnCount: 2,
+      order: 2
     },
     {
       id: "3",
@@ -40,6 +42,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       priority: 3,
       description: "Məktəbin infrastruktur və texniki məlumatları",
       columnCount: 3,
+      order: 3
     },
     {
       id: "4",
@@ -51,6 +54,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       priority: 4,
       description: "Davamiyyət haqqında məlumatlar",
       columnCount: 3,
+      order: 4
     },
     {
       id: "5",
@@ -62,6 +66,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       priority: 5,
       description: "Şagirdlərin akademik nailiyyətləri və statistikaları",
       columnCount: 2,
+      order: 5
     }
   ];
 };
@@ -75,6 +80,7 @@ export const addCategory = async (categoryData: Omit<Category, "id"> & { id?: st
   return {
     ...categoryData,
     id: categoryData.id || Date.now().toString(),
+    order: categoryData.order || Date.now() // Əgər order yoxdursa, bir standart dəyər təyin edirik
   } as Category;
 };
 

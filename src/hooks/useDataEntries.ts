@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntry } from '@/types/supabase';
@@ -136,43 +135,26 @@ export const useDataEntries = () => {
     }
   };
 
-  // Təsdiq statuslarını əldə etmək üçün yeni funksiya
-  const getApprovalStatus = async (schoolId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('status, count')
-        .eq('school_id', schoolId)
-        .group('status');
-
-      if (error) {
-        throw error;
-      }
-
-      // Status saylarını qaytarırıq
-      const statusCounts: {[key: string]: number} = {
-        pending: 0,
-        approved: 0,
-        rejected: 0
-      };
-      
-      data.forEach((item: {status: string, count: number}) => {
-        if (item.status in statusCounts) {
-          statusCounts[item.status] = parseInt(item.count as any);
-        }
-      });
-      
-      return statusCounts;
-    } catch (error) {
-      console.error('Təsdiq statuslarını əldə edərkən xəta:', error);
-      return { pending: 0, approved: 0, rejected: 0 };
+  const getApprovalStatus = (categoryId: string, schoolId: string) => {
+    const categoryEntries = entries.filter(
+      entry => entry.category_id === categoryId && entry.school_id === schoolId
+    );
+    
+    if (categoryEntries.length === 0) return 'pending';
+    
+    if (categoryEntries.every(entry => entry.status === 'approved')) {
+      return 'approved';
     }
+    
+    if (categoryEntries.some(entry => entry.status === 'rejected')) {
+      return 'rejected';
+    }
+    
+    return 'pending';
   };
 
   const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
     try {
-      // Bu funksiyanın implementasiyası backend və edge funksiyalarında olmalıdır
-      // İmitasiya üçün simulyasiya edirik
       console.log(`Kateqoriya ID: ${categoryId} və Məktəb ID: ${schoolId} təsdiqə göndərildi`);
       return true;
     } catch (error) {
@@ -191,10 +173,9 @@ export const useDataEntries = () => {
     deleteEntry,
     approveEntry,
     rejectEntry,
-    getApprovalStatus,
-    submitCategoryForApproval
+    submitCategoryForApproval,
+    getApprovalStatus
   };
 };
 
-// Həm default export, həm də named export əlavə edirik
 export default useDataEntries;

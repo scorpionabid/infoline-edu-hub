@@ -65,10 +65,22 @@ export interface Region {
   adminEmail?: string;
 }
 
+// RoleObject interfeysi əlavə edək
+export interface RoleObject {
+  id: string;
+  user_id: string;
+  role: string;
+  region_id: string;
+  sector_id: string;
+  school_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FullUserData {
   id: string;
   email: string;
-  role: UserRole;
+  role: UserRole | RoleObject;
   full_name?: string;
   name?: string;
   phone?: string;

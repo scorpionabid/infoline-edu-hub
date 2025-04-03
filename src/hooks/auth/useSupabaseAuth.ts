@@ -1,14 +1,14 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserById } from './userDataService';
-import { User } from '@/types/user';
-import { FullUserData } from '@/types/supabase';
+import { getUserData } from './userDataService';
 import { toast } from 'sonner';
-import { UserRole } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
+
+// Supabase URL-ni mühit dəyişənlərdən əldə edirik
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 
 export const useSupabaseAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FullUserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
@@ -26,10 +26,10 @@ export const useSupabaseAuth = () => {
       async (event, session) => {
         if (session?.user) {
           try {
-            const userData = await fetchUserById(session.user.id);
+            const userData = await getUserData(session.user.id);
             if (userData) {
               // FullUserData və User tiplərini uyğunlaşdırmaq üçün tiplərini çevirək
-              const authUser: User = {
+              const authUser: FullUserData = {
                 ...userData,
                 id: userData.id,
                 email: userData.email || '',
@@ -65,9 +65,9 @@ export const useSupabaseAuth = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          const userData = await fetchUserById(session.user.id);
+          const userData = await getUserData(session.user.id);
           if (userData) {
-            const authUser: User = {
+            const authUser: FullUserData = {
               ...userData,
               id: userData.id,
               email: userData.email || '',
@@ -112,9 +112,9 @@ export const useSupabaseAuth = () => {
       if (error) throw error;
       
       if (data.user) {
-        const userData = await fetchUserById(data.user.id);
+        const userData = await getUserData(data.user.id);
         if (userData) {
-          const authUser: User = {
+          const authUser: FullUserData = {
             ...userData,
             id: userData.id,
             email: userData.email || '',
@@ -274,9 +274,9 @@ export const useSupabaseAuth = () => {
       
       // İstifadəçi məlumatlarını yeniləmək
       if (user) {
-        const updatedUserData = await fetchUserById(user.id);
+        const updatedUserData = await getUserData(user.id);
         if (updatedUserData) {
-          const authUser: User = {
+          const authUser: FullUserData = {
             ...updatedUserData,
             id: updatedUserData.id,
             email: updatedUserData.email || '',
@@ -357,7 +357,7 @@ export const useSupabaseAuth = () => {
     updateProfile,
     changePassword,
     hasRole,
-    fetchUserById
+    getUserData
   };
 };
 

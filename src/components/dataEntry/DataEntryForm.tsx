@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -53,28 +52,33 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   const { t } = useLanguage();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  // useDataEntry hookundan məlumatları alırıq
   const {
+    category,
+    columns,
+    filteredColumns,
+    dataEntries,
+    loading,
+    loadingEntries,
+    submitting,
+    errors,
     categories,
     currentCategoryIndex,
     formData,
     isAutoSaving,
     isSubmitting,
     isLoading,
-    errors,
     changeCategory,
     updateValue,
     submitForApproval,
     saveForm,
     getErrorForColumn,
     downloadExcelTemplate,
-    uploadExcelData
+    uploadExcelData,
+    refreshData
   } = useDataEntry(initialCategoryId);
 
-  // Faylı yükləmək üçün referens
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  // Əgər kateqoriya olmasa və data yüklənmişsə, "Kateqoriya tapılmadı" mesajı göstəririk
   if (categories.length === 0 && !isLoading) {
     return (
       <Card>
@@ -94,7 +98,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     );
   }
 
-  // Yüklənir vəziyyəti
   if (isLoading) {
     return (
       <Card>
@@ -114,7 +117,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
 
   const currentCategory = categories[currentCategoryIndex];
   
-  // Kateqoriyanın tamamlanma vəziyyətini hesablayırıq
   const getCurrentCategoryCompletion = () => {
     if (!currentCategory) return 0;
     
@@ -122,19 +124,16 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return entry ? entry.completionPercentage : 0;
   };
   
-  // Kateqoriya təsdiq edilib mi?
   const isCategoryApproved = () => {
     if (!currentCategory) return false;
     return currentCategory.status === 'approved';
   };
 
-  // Kateqoriya rədd edilib mi?
   const isCategoryRejected = () => {
     if (!currentCategory) return false;
     return currentCategory.status === 'rejected';
   };
   
-  // Kateqoriyanın son tarixi yaxınlaşır?
   const isCategoryDueSoon = () => {
     if (!currentCategory || !currentCategory.deadline) return false;
     
@@ -145,7 +144,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return diffDays >= 0 && diffDays <= 3;
   };
   
-  // Kateqoriyanın son tarixi keçib?
   const isCategoryOverdue = () => {
     if (!currentCategory || !currentCategory.deadline) return false;
     
@@ -155,21 +153,18 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return deadline < today;
   };
   
-  // Excel şablonunu yükləmək
   const handleDownloadTemplate = () => {
     if (currentCategory) {
       downloadExcelTemplate(currentCategory.id);
     }
   };
   
-  // Excel faylını seçmək
   const handleSelectExcelFile = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
   
-  // Excel faylını yükləmək
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0 && currentCategory) {
       const file = e.target.files[0];
@@ -189,7 +184,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         console.error('Excel upload error:', error);
       }
       
-      // Input-u sıfırlayırıq ki, eyni faylı təkrar seçə bilək
       e.target.value = '';
     }
   };
@@ -281,7 +275,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 
                 <div className="space-y-4 mt-4">
                   {currentCategory.columns.map((column) => {
-                    // Sütuna aid dəyər və xəta mesajını tapırıq
                     const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
                     const valueObj = entry?.values.find(v => v.columnId === column.id);
                     const error = getErrorForColumn(column.id);

@@ -1,344 +1,170 @@
-
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import DataEntryForm from '@/components/dataEntry/DataEntryForm';
-import { Helmet } from 'react-helmet';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
-import { useLanguageSafe } from '@/context/LanguageContext'; 
-import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, Upload, AlertCircle, ArrowLeft, Info } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
-import FormStatusSection from '@/components/dashboard/school-admin/FormStatusSection';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDataEntries } from '@/hooks/useDataEntries';
-import { useAuth } from '@/context/AuthContext';
+import DataEntryForm from '@/components/dataEntry/DataEntryForm';
+import DataEntryHeader from '@/components/dataEntry/DataEntryHeader';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Database, FileSpreadsheet, InfoIcon, LayoutGrid, Loader2 } from 'lucide-react';
+import { exportDataToExcel } from '@/utils/excelExport';
 
-const DataEntry = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { toast: legacyToast } = useToast();
-  const { t } = useLanguageSafe();
-  const { user } = useAuth();
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const { getApprovalStatus } = useDataEntries();
-  const [formStatistics, setFormStatistics] = useState({
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    dueSoon: 0,
-    overdue: 0
-  });
-  
-  // Məlumatların statistikasını əldə edirik
-  const fetchStats = async () => {
-    try {
-      if (!user?.schoolId) {
-        toast.error(t('errorOccurred'), {
-          description: t('notAuthenticated')
-        });
-        return;
-      }
-      
-      const status = await getApprovalStatus(user.schoolId);
-      
-      // Statusu formStatistics formatına çeviririk
-      setFormStatistics({
-        pending: status.pending || 0,
-        approved: status.approved || 0,
-        rejected: status.rejected || 0,
-        dueSoon: 2, // Bu məlumatlar faktiki olaraq deadline-lara baxaraq hesablanmalıdır
-        overdue: 1  // Bu məlumatlar faktiki olaraq deadline-lara baxaraq hesablanmalıdır
-      });
-    } catch (err) {
-      console.error('Error fetching statistics:', err);
+const DataEntry: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const { t } = useLanguage();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get("category") || "all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("form");
+
+  // useDataEntries hook'undan əldə edilən dəyərləri yenidən işləyək
+  const {
+    entries,
+    loading,
+    error,
+    fetchEntries,
+    addEntry,
+    updateEntry,
+    deleteEntry,
+    approveEntry,
+    rejectEntry,
+    submitCategoryForApproval,
+    getApprovalStatus
+  } = useDataEntries();
+
+  // URL parametrlərinə əsasən kateqoriya filtrini yeniləyirik
+  useEffect(() => {
+    const categoryId = searchParams.get("category");
+    if (categoryId) {
+      setCategoryFilter(categoryId);
+    }
+  }, [searchParams]);
+
+  // Məlumatların yüklənmə vəziyyətini və xətalarını izləyirik
+  useEffect(() => {
+    if (error) {
+      console.error('Məlumatları əldə edərkən xəta baş verdi:', error);
       toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadStatistics')
+        description: t('couldNotLoadData')
       });
     }
-  };
-  
-  useEffect(() => {
-    if (user?.schoolId) {
-      fetchStats();
-    }
-  }, [user]);
-  
-  const queryParams = new URLSearchParams(location.search);
-  const categoryId = queryParams.get('categoryId');
-  const showAlert = queryParams.get('alert');
-  const statusParam = queryParams.get('status');
-  
-  useEffect(() => {
-    if (statusParam) {
-      setSelectedStatus(statusParam);
-    }
-  }, [statusParam]);
-  
-  useEffect(() => {
-    if (showAlert === 'deadline') {
-      legacyToast({
-        title: t('deadlineApproaching'),
-        description: t('deadlineApproachingDesc'),
-        variant: "default",
-      });
-      
-      const newParams = new URLSearchParams(queryParams);
-      newParams.delete('alert');
-      navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
-    } else if (showAlert === 'newcategory') {
-      legacyToast({
-        title: t('newCategoryAdded'),
-        description: t('newCategoryAddedDesc'),
-        variant: "default",
-      });
-      
-      const newParams = new URLSearchParams(queryParams);
-      newParams.delete('alert');
-      navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
-    } else if (showAlert === 'rejected') {
-      legacyToast({
-        title: t('formRejected'),
-        description: t('formRejectedDesc'),
-        variant: "destructive",
-      });
-      
-      const newParams = new URLSearchParams(queryParams);
-      newParams.delete('alert');
-      navigate({ pathname: location.pathname, search: newParams.toString() }, { replace: true });
-    }
-  }, [legacyToast, showAlert, t, navigate, location.pathname, queryParams]);
+  }, [error, t]);
 
-  const handleDownloadTemplate = () => {
-    // Bu məntiq DataEntryForm-a köçürülüb
-    toast.success(t('excelTemplateDownloaded'), {
-      description: t('excelTemplateDownloadedDesc')
-    });
+  // Məlumatların statistikası
+  const stats = React.useMemo(() => {
+    return {
+      totalEntries: entries.length,
+      pendingEntries: entries.filter(entry => entry.status === 'pending').length,
+      approvedEntries: entries.filter(entry => entry.status === 'approved').length,
+      rejectedEntries: entries.filter(entry => entry.status === 'rejected').length,
+      completionRate: entries.length > 0 ? 
+        Math.round((entries.filter(entry => entry.status === 'approved').length / entries.length) * 100) : 0
+    };
+  }, [entries]);
+
+  // Excel ixracı
+  const handleExportData = () => {
+    exportDataToExcel(entries);
   };
 
-  const handleGoBack = () => {
-    navigate('/dashboard');
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-          file.type === 'application/vnd.ms-excel') {
-        setSelectedFile(file);
-      } else {
-        toast.error(t('invalidFileType'), {
-          description: t('pleaseSelectExcel')
-        });
-      }
-    }
-  };
-
-  const handleUpload = () => {
-    if (!selectedFile) {
-      toast.error(t('noFileSelected'));
-      return;
-    }
-
-    setIsUploading(true);
-
-    // Burada faktiki yükləmə əməliyyatı edilər
-    // dataEntryForm-da uploadExcelData funksiyasını çağırmaq lazımdır
-    
-    setTimeout(() => {
-      setIsUploading(false);
-      setUploadDialogOpen(false);
-      setSelectedFile(null);
-      toast.success(t('uploadSuccess'), {
-        description: t('dataUploadedSuccessfully')
-      });
-      fetchStats(); // Statistikanı yeniləmək
-    }, 2000);
-  };
-
-  const navigateToDataEntryWithStatus = (status: string | null) => {
-    const newStatus = status === selectedStatus ? null : status;
-    setSelectedStatus(newStatus);
-    
-    const newParams = new URLSearchParams(queryParams);
-    if (newStatus) {
-      newParams.set('status', newStatus);
-    } else {
-      newParams.delete('status');
-    }
-    
-    navigate({ 
-      pathname: location.pathname, 
-      search: newParams.toString() 
-    }, { replace: true });
-  };
-
-  const handleDataChanged = () => {
-    // Məlumatlar dəyişdikdə statistikanı yeniləyirik
-    fetchStats();
-  };
-
-  // Əgər istifadəçi login olmayıbsa, login səhifəsinə yönləndirək
-  useEffect(() => {
-    if (!user) {
-      navigate('/login', { replace: true });
-      toast.error(t('notAuthenticated'), {
-        description: t('pleaseLoginToAccessData')
-      });
-    }
-  }, [user, navigate, t]);
-
-  if (!user) {
-    return null; // İstifadəçi login olmayıbsa, heç nə göstərmirik
-  }
+  // Mini statistika kartları
+  const MinimalisticStats = () => (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{loading ? "..." : stats.totalEntries}</div>
+          <p className="text-gray-400">Ümumi məlumatlar</p>
+        </CardContent>
+      </Card>
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{loading ? "..." : stats.pendingEntries}</div>
+          <p className="text-gray-400">Gözləyən məlumatlar</p>
+        </CardContent>
+      </Card>
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{loading ? "..." : stats.approvedEntries}</div>
+          <p className="text-gray-400">Təsdiqlənmiş məlumatlar</p>
+        </CardContent>
+      </Card>
+      <Card className="border-0 bg-black text-white">
+        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
+          <div className="text-4xl font-bold mb-2">{loading ? "..." : `${stats.completionRate}%`}</div>
+          <Progress value={loading ? 0 : stats.completionRate} className="w-4/5 mt-2" />
+          <p className="text-gray-400 mt-2">Tamamlanma</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   return (
-    <>
-      <Helmet>
-        <title>{t('dataEntry')} | InfoLine</title>
-      </Helmet>
-      <SidebarLayout>
-        <div className="container mx-auto py-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleGoBack} 
-                className="mb-2"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t('backToDashboard')}
-              </Button>
-              <h1 className="text-3xl font-bold">{t('dataEntry')}</h1>
-              <p className="text-muted-foreground mt-1">{t('schoolInfoInstructions')}</p>
-            </div>
-            <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2"
-                onClick={() => setUploadDialogOpen(true)}
-              >
-                <Upload size={16} />
-                {t('uploadExcel')}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2"
-                onClick={handleDownloadTemplate}
-              >
-                <FileSpreadsheet size={16} />
-                {t('excelTemplate')}
-              </Button>
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <FormStatusSection 
-              forms={formStatistics} 
-              navigateToDataEntry={navigateToDataEntryWithStatus} 
-              activeStatus={selectedStatus}
-              compact
+    <SidebarLayout>
+      <div className="space-y-6">
+        <DataEntryHeader
+          onSearchChange={setSearchQuery}
+          searchQuery={searchQuery}
+          categoryFilter={categoryFilter}
+          onCategoryFilterChange={setCategoryFilter}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          onExportData={handleExportData}
+        />
+
+        <MinimalisticStats />
+
+        <Tabs defaultValue="form" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="form">
+              <Database className="h-4 w-4 mr-2" />
+              Məlumat forması
+            </TabsTrigger>
+            <TabsTrigger value="grid">
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Məlumat şəbəkəsi
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="form">
+            <DataEntryForm 
+              categoryId={categoryFilter !== "all" ? categoryFilter : undefined}
+              statusFilter={statusFilter !== "all" ? statusFilter : undefined}
             />
-          </div>
-          
-          {!categoryId && !selectedStatus && (
-            <Alert className="mb-6 bg-blue-50 border-blue-100 text-blue-800">
-              <Info className="h-4 w-4" />
-              <AlertTitle>{t('chooseCategory')}</AlertTitle>
-              <AlertDescription>
-                {t('chooseCategoryDescription')}
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <DataEntryForm 
-            initialCategoryId={categoryId}
-            statusFilter={selectedStatus}
-            onDataChanged={handleDataChanged}
-          />
-        </div>
-        
-        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t('uploadExcelFile')}</DialogTitle>
-              <DialogDescription>
-                {t('uploadExcelDescription')}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6">
-                <label className="flex flex-col items-center space-y-2 cursor-pointer">
-                  <FileSpreadsheet className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-sm font-medium">{selectedFile ? selectedFile.name : t('dragAndDropExcel')}</span>
-                  <span className="text-xs text-muted-foreground">{t('or')}</span>
-                  <Button 
-                    type="button" 
-                    variant="secondary" 
-                    size="sm"
-                  >
-                    {t('browseFiles')}
-                  </Button>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".xlsx,.xls"
-                    onChange={handleFileChange}
-                  />
-                </label>
+          </TabsContent>
+          <TabsContent value="grid">
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
               </div>
-              
-              {!selectedFile && (
-                <div className="flex items-center text-sm">
-                  <AlertCircle className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="text-muted-foreground">{t('onlyExcelSupported')}</span>
-                </div>
-              )}
-            </div>
-            
-            <DialogFooter className="sm:justify-between">
-              <Button 
-                variant="outline" 
-                size="sm"
-                type="button"
-                onClick={handleDownloadTemplate}
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                {t('downloadTemplate')}
-              </Button>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setUploadDialogOpen(false)}
-                >
-                  {t('cancel')}
-                </Button>
-                <Button 
-                  type="button" 
-                  disabled={!selectedFile || isUploading}
-                  onClick={handleUpload}
-                >
-                  {isUploading ? t('uploading') : t('upload')}
-                </Button>
+            ) : error ? (
+              <div className="text-center py-12 text-destructive">
+                <InfoIcon className="mx-auto h-12 w-12" />
+                <h3 className="mt-4 text-lg font-medium">{t("errorLoadingData")}</h3>
+                <p className="text-muted-foreground">{t("tryAgainLater")}</p>
               </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </SidebarLayout>
-    </>
+            ) : entries.length === 0 ? (
+              <div className="text-center py-12">
+                <InfoIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">{t("noDataFound")}</h3>
+                <p className="text-muted-foreground">{t("useFormToAddData")}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Burada məlumatların şəbəkə görünüşü olacaq */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold text-lg mb-4">Məlumat şəbəkəsi</h3>
+                    <p className="text-muted-foreground">Bu bölmə hazırlanır...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </SidebarLayout>
   );
 };
 
