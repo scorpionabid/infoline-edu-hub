@@ -1,4 +1,3 @@
-
 import { mockCategories } from '@/data/mock/mockCategories';
 import { 
   getMockNotifications, 
@@ -80,3 +79,47 @@ export function getBaseData(): DashboardData {
   console.log('getBaseData bitdi, nəticə hazırdır');
   return result;
 }
+
+export const getBaseDashboardData = (): DashboardData => {
+  return {
+    notifications: mockNotifications,
+    isLoading: false,
+    error: null,
+    totalSchools: 0,
+    activeSchools: 0,
+    pendingForms: [
+      {
+        id: "1",
+        title: "Müəllim məlumatları",
+        status: "pending" as FormStatus,
+        completionPercentage: 45,
+        category: "Kadrlar"
+      },
+      {
+        id: "2",
+        title: "Infrastruktur məlumatları",
+        status: "pending" as FormStatus,
+        completionPercentage: 30,
+        category: "İnfrastruktur"
+      }
+    ],
+    upcomingDeadlines: [
+      {
+        id: "3",
+        title: "Şagird məlumatları",
+        status: "dueSoon" as FormStatus,
+        completionPercentage: 75,
+        category: "Şagirdlər",
+        deadline: "2023-09-20T23:59:59Z"
+      },
+      {
+        id: "4",
+        title: "Maliyyə məlumatları",
+        status: "due" as FormStatus,
+        completionPercentage: 15,
+        category: "Maliyyə",
+        deadline: "2023-09-25T23:59:59Z"
+      }
+    ]
+  };
+};

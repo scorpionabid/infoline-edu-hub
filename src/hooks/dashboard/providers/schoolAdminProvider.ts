@@ -1,38 +1,52 @@
+import { getBaseDashboardData } from "./baseProvider";
+import { DashboardData, FormStatus, SchoolAdminDashboardData } from "@/types/dashboard";
 
-import { getBaseData } from './baseProvider';
-import { getMockNotifications, getMockRecentForms } from '../mockDashboardData';
-import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+export const getSchoolAdminDashboardData = (userId: string): SchoolAdminDashboardData => {
+  // Base datanı əldə edirik
+  const baseData = getBaseDashboardData();
 
-export function getSchoolAdminData(): SchoolAdminDashboardData {
-  const baseData = getBaseData();
-  const notifications = getMockNotifications().map(n => ({
-    ...n, 
-    time: n.createdAt || new Date().toISOString() 
-  }));
-  
-  const recentForms = getMockRecentForms();
-  
   return {
     ...baseData,
-    schoolName: "Şəhər Məktəbi #1",
-    sectorName: "Nəsimi",
-    regionName: "Bakı",
+    schoolName: "Bakı 220 saylı orta məktəb",
+    sectorName: "Binəqədi rayonu",
+    regionName: "Bakı şəhəri",
     forms: {
-      pending: 3,
-      approved: 10,
+      pending: 4,
+      approved: 8,
       rejected: 1,
       dueSoon: 2,
-      overdue: 0
+      overdue: 1
     },
-    completionRate: 80,
-    notifications,
-    totalForms: 15,
-    completedForms: 10,
-    rejectedForms: 2,
-    dueDates: [
-      { category: "Tədris planı", date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() },
-      { category: "Maliyyə hesabatı", date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }
+    completionRate: 66,
+    pendingForms: [
+      {
+        id: "1",
+        title: "Müəllim məlumatları",
+        status: "pending" as FormStatus,
+        completionPercentage: 45,
+        category: "Kadrlar"
+      },
+      {
+        id: "2",
+        title: "İnfrastruktur məlumatları",
+        status: "pending" as FormStatus,
+        completionPercentage: 30,
+        category: "İnfrastruktur"
+      }
     ],
-    recentForms
+    recentForms: [
+      {
+        id: "5",
+        title: "Dərs saatları",
+        status: "approved" as FormStatus,
+        completionPercentage: 100,
+        category: "Dərs"
+      }
+    ],
+    totalCategories: 15,
+    completedCategories: 10,
+    pendingCategories: 5,
+    totalForms: 16,
+    completedForms: []
   };
-}
+};

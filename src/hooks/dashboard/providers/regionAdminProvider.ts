@@ -1,4 +1,3 @@
-
 import { getBaseData } from './baseProvider';
 import { getMockNotifications } from '../mockDashboardData';
 import { RegionAdminDashboardData } from '@/types/dashboard';
@@ -36,3 +35,28 @@ export function getRegionAdminData(): RegionAdminDashboardData {
     ]
   };
 }
+
+export const getRegionAdminDashboardData = (userId: string): RegionAdminDashboardData => {
+  // Base data əldə edirik
+  const baseData = getBaseDashboardData();
+
+  // Region Admin xüsusi dataları əlavə edirik
+  return {
+    ...baseData,
+    regionName: "Bakı şəhəri",
+    sectors: 5,
+    schools: 72,
+    users: 86,
+    approvalRate: 67,
+    completionRate: 72,
+    pendingApprovals: 18,
+    pendingSchools: 6,
+    approvedSchools: 66,
+    rejectedSchools: 0,
+    categories: [
+      { name: "Şagirdlər", completionRate: 84, color: "#10B981" },
+      { name: "Müəllimlər", completionRate: 65, color: "#F59E0B" },
+      { name: "İnfrastruktur", completionRate: 42, color: "#8B5CF6" }
+    ]
+  };
+};

@@ -1,15 +1,16 @@
+
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
-import { School } from '@/data/schoolsData';
+import { School } from '@/types/school';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseSchoolOperationsReturn {
   handleAddSubmit: (formData: SchoolFormData) => Promise<void>;
   handleEditSubmit: (formData: SchoolFormData, selectedSchool: School | null) => Promise<void>;
   handleDeleteConfirm: (selectedSchool: School | null) => Promise<void>;
-  handleAdminUpdate: () => void;
+  handleAdminUpdate: (adminData: any) => void;
   handleResetPassword: (newPassword: string) => void;
 }
 

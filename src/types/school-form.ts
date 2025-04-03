@@ -1,19 +1,20 @@
 
 export interface SchoolFormData {
   name: string;
-  principalName: string;
-  address: string;
   regionId: string;
   sectorId: string;
-  phone: string;
-  email: string;
-  studentCount: string;
-  teacherCount: string;
-  status: string;
-  type: string;
-  language: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principalName?: string;
+  studentCount?: number;
+  teacherCount?: number;
+  type?: string;
+  language?: string;
+  status?: string;
   adminEmail?: string;
   adminFullName?: string;
   adminPassword?: string;
   adminStatus?: string;
+  logo?: string;
 }

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import SchoolFilters from './SchoolFilters';
@@ -65,7 +65,7 @@ const SchoolsContainer: React.FC = () => {
     currentTab,
     setCurrentTab,
     handleFormChange,
-    setFormData, // Add this prop explicitly
+    setFormData,
   } = useSchoolDialogHandlers();
 
   const {
@@ -112,17 +112,47 @@ const SchoolsContainer: React.FC = () => {
   }, [user, selectedRegion, handleRegionFilter]);
 
   const handleExportClick = () => {
-    handleExportToExcel(schools);
+    // Tip uyğunsuzluğunu aradan qaldırmaq üçün School tipinə konvertasiya
+    const exportSchools = schools?.map(school => ({ 
+      ...school,
+      region_id: school.regionId || school.region_id,
+      sector_id: school.sectorId || school.sector_id
+    })) || [];
+    
+    handleExportToExcel(exportSchools as any);
   };
 
   const handleImportClick = () => {
     setIsImportDialogOpen(true);
   };
 
+  // Axtarış üçün wrapper funksiya
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    handleSearch(e.target.value);
+  };
+
   const regionsForFilters: RegionType[] = regions as unknown as RegionType[];
   const userRole = user?.role as UserRole;
 
-  const typedSelectedSchool = selectedSchool as unknown as School;
+  // Tipləri uyğunlaşdır
+  const handleEditDialogOpenWrapper = (school: any) => {
+    handleEditDialogOpen(school as School);
+  };
+  
+  const handleDeleteDialogOpenWrapper = (school: any) => {
+    handleDeleteDialogOpen(school as School);
+  };
+  
+  const handleAdminDialogOpenWrapper = (school: any) => {
+    handleAdminDialogOpen(school as School);
+  };
+  
+  const handleAdminUpdateWrapper = (adminData: any) => {
+    if (typeof adminData === 'object' && adminData !== null) {
+      handleAdminUpdate(adminData.userId || '', adminData.role || '', 
+        adminData.regionId || null, adminData.sectorId || null, adminData.schoolId || null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -142,7 +172,7 @@ const SchoolsContainer: React.FC = () => {
             selectedStatus={selectedStatus}
             filteredSectors={filteredSectors}
             regions={regionsForFilters}
-            handleSearch={handleSearch}
+            handleSearch={handleSearchChange}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}
             handleStatusFilter={handleStatusFilter}
@@ -150,13 +180,13 @@ const SchoolsContainer: React.FC = () => {
           />
           
           <SchoolTable 
-            currentItems={currentItems}
+            currentItems={currentItems as any}
             searchTerm={searchTerm}
-            sortConfig={sortConfig}
+            sortConfig={sortConfig || { key: '', direction: 'ascending' }}
             handleSort={handleSort}
-            handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={handleDeleteDialogOpen}
-            handleAdminDialogOpen={handleAdminDialogOpen}
+            handleEditDialogOpen={handleEditDialogOpenWrapper}
+            handleDeleteDialogOpen={handleDeleteDialogOpenWrapper}
+            handleAdminDialogOpen={handleAdminDialogOpenWrapper}
             userRole={userRole}
           />
           
@@ -175,7 +205,7 @@ const SchoolsContainer: React.FC = () => {
         isEditDialogOpen={isEditDialogOpen}
         isAddDialogOpen={isAddDialogOpen}
         isAdminDialogOpen={isAdminDialogOpen}
-        selectedSchool={typedSelectedSchool}
+        selectedSchool={selectedSchool as School}
         selectedAdmin={selectedAdmin}
         closeDeleteDialog={closeDeleteDialog}
         closeEditDialog={closeEditDialog}
@@ -184,7 +214,7 @@ const SchoolsContainer: React.FC = () => {
         handleDeleteConfirm={handleDeleteConfirm}
         handleAddSubmit={handleAddSubmit}
         handleEditSubmit={handleEditSubmit}
-        handleAdminUpdate={handleAdminUpdate}
+        handleAdminUpdate={handleAdminUpdateWrapper}
         handleResetPassword={handleResetPassword}
         formData={formData}
         handleFormChange={handleInputChange}

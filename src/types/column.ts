@@ -34,9 +34,9 @@ export interface Column {
   options?: string[] | ColumnOption[];
   validation?: ColumnValidation;
   status?: string;
-  order: number;
-  dependsOn?: string;
+  order?: number; // order_index ilə eyni
   parentColumnId?: string;
+  dependsOn?: string;
   // Supabase uyğunluğu üçün
   category_id?: string;
   is_required?: boolean;
@@ -46,6 +46,7 @@ export interface Column {
   created_at?: string;
   updated_at?: string;
   parent_column_id?: string;
+  depends_on?: string;
 }
 
 export interface ColumnValidation {
@@ -70,7 +71,7 @@ export interface CategoryWithColumns {
     id: string;
     name: string;
     description?: string;
-    order: number;
+    order?: number;
     priority: number;
     status?: string;
     assignment?: string;
@@ -94,11 +95,16 @@ export const adaptSupabaseColumn = (rawData: any): Column => {
     name: rawData.name,
     type: rawData.type as ColumnType,
     categoryId: rawData.category_id,
+    category_id: rawData.category_id,
     isRequired: rawData.is_required ?? true,
+    is_required: rawData.is_required ?? true,
     placeholder: rawData.placeholder,
     helpText: rawData.help_text,
+    help_text: rawData.help_text,
     defaultValue: rawData.default_value,
+    default_value: rawData.default_value,
     orderIndex: rawData.order_index || 0,
+    order_index: rawData.order_index || 0,
     options: rawData.options || [],
     validation: rawData.validation || {},
     status: rawData.status || 'active',
@@ -108,12 +114,17 @@ export const adaptSupabaseColumn = (rawData: any): Column => {
     parentColumnId: rawData.parent_column_id,
     parent_column_id: rawData.parent_column_id, 
     dependsOn: rawData.depends_on,
+    depends_on: rawData.depends_on
   };
 };
 
 export const adaptColumnToSupabase = (column: Partial<Column>) => {
   // Column JSON formatını SupaBase formatına dəyişirik
-  const safeOptions = Array.isArray(column.options) ? column.options : [];
+  // Json tipinə uyğunlaşdırmaq üçün əməliyyatlar
+  const safeOptions = Array.isArray(column.options) 
+    ? column.options.map(o => typeof o === 'string' ? o : { value: o.value, label: o.label })
+    : [];
+    
   const safeValidation = column.validation || {};
 
   return {
@@ -124,11 +135,11 @@ export const adaptColumnToSupabase = (column: Partial<Column>) => {
     placeholder: column.placeholder,
     help_text: column.helpText || column.help_text,
     default_value: column.defaultValue || column.default_value,
-    order_index: column.orderIndex || column.order_index || 0,
+    order_index: column.orderIndex || column.order_index || column.order || 0,
     options: safeOptions,
     validation: safeValidation,
     status: column.status || 'active',
     parent_column_id: column.parentColumnId || column.parent_column_id,
-    depends_on: column.dependsOn
+    depends_on: column.dependsOn || column.depends_on
   };
 };

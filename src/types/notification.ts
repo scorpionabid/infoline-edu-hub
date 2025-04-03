@@ -12,11 +12,12 @@ export type NotificationType =
   | 'systemUpdate'
   | 'formApproved'
   | 'formRejected'
-  | 'dueDateReminder';
+  | 'dueDateReminder'
+  | string;
 
-export type NotificationPriority = 'normal' | 'high' | 'critical';
+export type NotificationPriority = 'normal' | 'high' | 'critical' | string;
 
-export type NotificationEntityType = 'category' | 'column' | 'data' | 'user' | 'school';
+export type NotificationEntityType = 'category' | 'column' | 'data' | 'user' | 'school' | string;
 
 export interface Notification {
   id: string;
@@ -33,7 +34,6 @@ export interface Notification {
   relatedEntityType?: NotificationEntityType;
 }
 
-// adaptSupabaseNotification əvəzinə adaptNotification istifadə etmək üçün
 export const adaptNotification = (rawData: any): Notification => {
   return {
     id: rawData.id || '',

@@ -1,5 +1,6 @@
-import { create, StateCreator } from 'zustand';
-import { useState, useMemo } from 'react';
+
+import { create } from 'zustand';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSchoolsData } from './useSchoolsData';
 import { useRegionsData } from './../regions/useRegionsData';
 import { useSectorsData } from './../sectors/useSectorsData';
@@ -28,9 +29,9 @@ interface SchoolsState {
 }
 
 export const useSchoolsStore = () => {
-  const { schools, isLoading: schoolsLoading, error: schoolsError, fetchSchools } = useSchoolsData();
-  const { regions, isLoading: regionsLoading, error: regionsError, fetchRegions } = useRegionsData();
-  const { sectors, isLoading: sectorsLoading, error: sectorsError, fetchSectors } = useSectorsData();
+  const { schools, loading: schoolsLoading, error: schoolsError, fetchSchools } = useSchoolsData();
+  const { regions, loading: regionsLoading, error: regionsError, fetchRegions } = useRegionsData();
+  const { sectors, loading: sectorsLoading, error: sectorsError, fetchSectors } = useSectorsData();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
@@ -41,47 +42,47 @@ export const useSchoolsStore = () => {
   const itemsPerPage = 10;
   const [isOperationComplete, setIsOperationComplete] = useState(false);
 
-  const handleSearch = (term: string) => {
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleRegionFilter = (regionId: string) => {
+  const handleRegionFilter = useCallback((regionId: string) => {
     setSelectedRegion(regionId);
     setSelectedSector('');
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleSectorFilter = (sectorId: string) => {
+  const handleSectorFilter = useCallback((sectorId: string) => {
     setSelectedSector(sectorId);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleStatusFilter = (status: string) => {
+  const handleStatusFilter = useCallback((status: string) => {
     setSelectedStatus(status);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleSort = (key: string) => {
+  const handleSort = useCallback((key: string) => {
     let direction = 'ascending';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
     }
-    setSortConfig({ key, direction });
-  };
+    setSortConfig({ key, direction } as SortConfig);
+  }, [sortConfig]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
-  };
+  }, []);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedRegion('');
     setSelectedSector('');
     setSelectedStatus('');
     setSortConfig(null);
     setCurrentPage(1);
-  };
+  }, []);
 
   const sortedItems = useMemo(() => {
     if (!schools || schools.length === 0 || !sortConfig) return schools;
@@ -114,33 +115,41 @@ export const useSchoolsStore = () => {
     let result = sortedItems;
 
     if (searchTerm) {
-      result = result.filter(item =>
+      result = result?.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (selectedRegion) {
-      result = result.filter(item => item.regionId === selectedRegion);
+      result = result?.filter(item => item.regionId === selectedRegion || item.region_id === selectedRegion);
     }
 
     if (selectedSector) {
-      result = result.filter(item => item.sectorId === selectedSector);
+      result = result?.filter(item => item.sectorId === selectedSector || item.sector_id === selectedSector);
     }
 
     if (selectedStatus) {
-      result = result.filter(item => item.status === selectedStatus);
+      result = result?.filter(item => item.status === selectedStatus);
     }
 
-    return result;
+    return result || [];
   }, [sortedItems, searchTerm, selectedRegion, selectedSector, selectedStatus]);
 
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const totalPages = useMemo(() => {
+    return Math.ceil((filteredItems?.length || 0) / itemsPerPage);
+  }, [filteredItems, itemsPerPage]);
 
   const currentItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return filteredItems.slice(start, end);
+    return filteredItems?.slice(start, end) || [];
   }, [filteredItems, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    fetchSchools();
+    fetchRegions();
+    fetchSectors();
+  }, [fetchSchools, fetchRegions, fetchSectors]);
 
   return {
     schools,

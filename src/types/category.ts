@@ -1,75 +1,48 @@
 
-export type CategoryAssignment = "all" | "sectors";
-export type CategoryStatus = "active" | "inactive" | "archived";
+export type CategoryAssignment = 'all' | 'sectors' | string;
 
 export interface Category {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   assignment: CategoryAssignment;
-  deadline?: string | Date;
   status: string;
-  archived?: boolean;
+  deadline?: string;
+  archived: boolean;
   priority: number;
   order: number;
-  columnCount?: number;
+  columnCount: number;
   createdAt?: string;
   updatedAt?: string;
-  // Supabase ilə uyğunluq üçün
-  created_at?: string;
-  updated_at?: string;
-  column_count?: number;
 }
 
-export interface CategoryListItem {
-  id: string;
-  name: string;
-  status: string;
-  assignment: CategoryAssignment;
-  deadline?: string;
-  columnCount: number;
-  order: number;  
-}
-
-export type CategoryWithOrder = Category & {
-  order: number;
-}
-
-export type MockCategory = {
-  id: string;
-  name: string;
-  assignment: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  priority: number;
-  completionRate: number;
-  deadline: string;
-}
-
-// Supabase tiplərini uyğunlaşdırmaq üçün adaptor funksiyaları
-export const adaptSupabaseCategory = (rawData: any): Category => {
+export const adaptCategory = (rawData: any): Category => {
   return {
-    id: rawData.id,
-    name: rawData.name,
-    description: rawData.description || "",
-    assignment: rawData.assignment as CategoryAssignment,
-    deadline: rawData.deadline,
-    status: rawData.status || "active",
+    id: rawData.id || '',
+    name: rawData.name || '',
+    description: rawData.description || '',
+    assignment: rawData.assignment || 'all',
+    status: rawData.status || 'active',
+    deadline: rawData.deadline || undefined,
     archived: rawData.archived || false,
-    priority: rawData.priority || 1,
-    order: rawData.order || rawData.priority || 1, 
+    priority: rawData.priority || 0,
+    order: rawData.priority || 0,
     columnCount: rawData.column_count || 0,
     createdAt: rawData.created_at,
-    updatedAt: rawData.updated_at,
+    updatedAt: rawData.updated_at
   };
 };
 
-// Category Filtirləmə interfeysi
-export interface CategoryFilter {
-  search: string;
-  status: string;
-  assignment: string;
-  withDeadline: boolean;
-  showArchived: boolean; // Əlavə edildi
-}
+export const adaptCategoryToApi = (category: Category) => {
+  return {
+    name: category.name,
+    description: category.description,
+    assignment: category.assignment,
+    status: category.status,
+    deadline: category.deadline,
+    archived: category.archived,
+    priority: category.priority,
+    column_count: category.columnCount,
+    updated_at: new Date().toISOString()
+  };
+};

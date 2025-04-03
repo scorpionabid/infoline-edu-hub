@@ -1,16 +1,13 @@
 
-// Burda əlavə yenilək və order məlumatını əlavə edək
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryAssignment, adaptSupabaseCategory } from '@/types/category';
-import { toast } from 'sonner';
+import { Category, CategoryAssignment } from '@/types/category';
 
 export const useCategoriesData = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch all categories
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -19,17 +16,25 @@ export const useCategoriesData = () => {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('priority', { ascending: true });
+        .order('priority', { ascending: false });
       
       if (error) throw error;
-
-      const formattedCategories = data.map(category => {
-        // Make sure order is set properly
-        const order = category.order || category.priority || 1;
-        
+      
+      const formattedCategories: Category[] = data.map(category => {
         return {
-          ...adaptSupabaseCategory(category),
-          order
+          id: category.id,
+          name: category.name,
+          description: category.description || '',
+          assignment: category.assignment as CategoryAssignment,
+          status: category.status || 'active',
+          deadline: category.deadline,
+          archived: category.archived || false,
+          priority: category.priority || 0,
+          // Əgər order əlavə edirikse, order_index-i istifadə edirik
+          order: category.priority || 0,
+          columnCount: category.column_count || 0,
+          createdAt: category.created_at,
+          updatedAt: category.updated_at
         };
       });
       
@@ -42,42 +47,43 @@ export const useCategoriesData = () => {
     }
   }, []);
 
-  // Create a new category
   const createCategory = useCallback(async (categoryData: Omit<Category, "id" | "createdAt" | "updatedAt">) => {
     try {
-      // Ensure the assignment is valid
-      const validAssignment: CategoryAssignment = (categoryData.assignment === 'all' || categoryData.assignment === 'sectors') 
-        ? categoryData.assignment 
-        : 'all';
-      
-      // Convert Date to ISO string if needed
-      let deadline = categoryData.deadline;
-      if (deadline instanceof Date) {
-        deadline = deadline.toISOString();
-      }
-      
       const { data, error } = await supabase
         .from('categories')
-        .insert([{
+        .insert({
           name: categoryData.name,
-          description: categoryData.description || '',
-          assignment: validAssignment,
+          description: categoryData.description,
+          assignment: categoryData.assignment,
           status: categoryData.status || 'active',
-          deadline: deadline,
+          deadline: categoryData.deadline,
           archived: categoryData.archived || false,
-          priority: categoryData.priority || 1,
-          order: categoryData.order || categoryData.priority || 1,
+          priority: categoryData.priority || 0,
           column_count: categoryData.columnCount || 0
-        }])
+        })
         .select()
         .single();
       
       if (error) throw error;
-
-      const newCategory = adaptSupabaseCategory(data);
-      newCategory.order = data.order || data.priority || 1;
+      
+      const newCategory: Category = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        assignment: data.assignment as CategoryAssignment,
+        status: data.status || 'active',
+        deadline: data.deadline,
+        archived: data.archived || false,
+        priority: data.priority || 0,
+        // Əgər order əlavə edirikse, priority-ni istifadə edirik
+        order: data.priority || 0,
+        columnCount: data.column_count || 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
       
       setCategories(prev => [...prev, newCategory]);
+      
       return newCategory;
     } catch (err: any) {
       console.error('Error creating category:', err);
@@ -85,27 +91,18 @@ export const useCategoriesData = () => {
     }
   }, []);
 
-  // Update an existing category
   const updateCategory = useCallback(async (categoryData: Category) => {
     try {
-      // Convert Date to ISO string if needed
-      let deadline = categoryData.deadline;
-      if (deadline instanceof Date) {
-        deadline = deadline.toISOString();
-      }
-      
       const { error } = await supabase
         .from('categories')
         .update({
-          id: categoryData.id,
           name: categoryData.name,
           description: categoryData.description,
           assignment: categoryData.assignment,
           status: categoryData.status,
-          deadline: deadline,
+          deadline: categoryData.deadline,
           archived: categoryData.archived,
           priority: categoryData.priority,
-          order: categoryData.order,
           column_count: categoryData.columnCount,
           updated_at: new Date().toISOString()
         })
@@ -126,21 +123,18 @@ export const useCategoriesData = () => {
     }
   }, []);
 
-  // Archive a category instead of deleting
   const archiveCategory = useCallback(async (categoryId: string) => {
     try {
       const { error } = await supabase
         .from('categories')
-        .update({ archived: true, status: 'inactive' })
+        .update({ archived: true })
         .eq('id', categoryId);
       
       if (error) throw error;
       
       setCategories(prev => 
         prev.map(cat => 
-          cat.id === categoryId 
-            ? { ...cat, archived: true, status: 'inactive' } 
-            : cat
+          cat.id === categoryId ? { ...cat, archived: true } : cat
         )
       );
       
@@ -151,17 +145,25 @@ export const useCategoriesData = () => {
     }
   }, []);
 
-  // Permanently delete a category
   const deleteCategory = useCallback(async (categoryId: string) => {
     try {
-      const { error } = await supabase
+      // İlk öncə əlaqəli column-ları silib sonra kateqoriyanı silməliyik
+      const { error: columnsError } = await supabase
+        .from('columns')
+        .delete()
+        .eq('category_id', categoryId);
+      
+      if (columnsError) throw columnsError;
+      
+      const { error: categoryError } = await supabase
         .from('categories')
         .delete()
         .eq('id', categoryId);
       
-      if (error) throw error;
+      if (categoryError) throw categoryError;
       
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      
       return true;
     } catch (err: any) {
       console.error('Error deleting category:', err);

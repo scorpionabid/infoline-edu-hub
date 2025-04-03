@@ -50,7 +50,7 @@ export interface SuperAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  statusData?: StatusData; // Tipi düzəltdik
+  statusData?: StatusData;
   activityData?: { id: string; action: string; actor: string; target: string; time: string; }[];
   categoryCompletionData?: { name: string; completed: number }[];
 }
@@ -60,7 +60,7 @@ export interface RegionAdminDashboardData extends DashboardData {
   regionName: string;
   sectors: number;
   schools: number;
-  users?: number; // Əlavə edildi
+  users?: number;
   approvalRate: number;
   completionRate: number;
   pendingApprovals: number;
@@ -68,6 +68,7 @@ export interface RegionAdminDashboardData extends DashboardData {
   approvedSchools: number;
   rejectedSchools: number;
   categories?: { name: string; completionRate: number; color: string }[];
+  sectorCompletions?: { name: string; completionRate: number }[];
 }
 
 // Sektor Admin Dashboard məlumatları
@@ -80,7 +81,7 @@ export interface SectorAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  totalForms?: number; // Əlavə edildi
+  totalForms?: number;
 }
 
 // Məktəb Admin Dashboard məlumatları
@@ -96,10 +97,11 @@ export interface SchoolAdminDashboardData extends DashboardData {
     overdue: number;
   };
   completionRate: number;
-  pendingForms: FormItem[]; // Məcburi sahə
+  pendingForms: FormItem[];
   recentForms?: FormItem[];
   totalCategories?: number;
   completedCategories?: number;
   pendingCategories?: number;
-  totalForms?: number; // Əlavə edildi
+  totalForms?: number;
+  completedForms?: FormItem[];
 }

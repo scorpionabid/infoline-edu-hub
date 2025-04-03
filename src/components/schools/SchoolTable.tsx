@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -32,7 +33,7 @@ import {
   XCircle,
   Mail,
 } from 'lucide-react';
-import { SortConfig } from '@/hooks/schools/useSchoolsStore';
+import { SortConfig } from '@/types/sorting';
 import { School } from '@/types/supabase';
 import { useRegionsData } from '@/hooks/regions';
 import { useSectorsData } from '@/hooks/sectors';

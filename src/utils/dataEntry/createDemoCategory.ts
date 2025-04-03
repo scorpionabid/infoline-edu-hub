@@ -76,3 +76,61 @@ export function createDemoCategory(): CategoryWithColumns {
     order: 1
   };
 }
+
+// Müəllimlər demosu
+export function createTeachersDemoCategory(): CategoryWithColumns {
+  return {
+    category: {
+      id: 'demo-cat-teachers',
+      name: 'Demo Müəllim Məlumatları',
+      description: 'Demo müəllim məlumatları kateqoriyası',
+      order: 2,
+      priority: 2,
+      status: 'active',
+      assignment: 'all',
+      deadline: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() // 2 həftə sonra
+    },
+    columns: [
+      {
+        id: 'demo-col-t1',
+        name: 'Müəllim sayı',
+        type: 'number',
+        categoryId: 'demo-cat-teachers',
+        isRequired: true,
+        order: 1,
+        orderIndex: 1,
+        status: 'active',
+        validation: {
+          min: 0,
+          max: 500
+        }
+      },
+      {
+        id: 'demo-col-t2',
+        name: 'Ali təhsilli müəllim sayı',
+        type: 'number',
+        categoryId: 'demo-cat-teachers',
+        isRequired: true,
+        order: 2,
+        orderIndex: 2,
+        status: 'active',
+        validation: {
+          min: 0,
+          max: 500
+        }
+      }
+    ],
+    id: 'demo-cat-teachers',
+    name: 'Demo Müəllim Məlumatları',
+    description: 'Demo müəllim məlumatları kateqoriyası',
+    assignment: 'all',
+    priority: 2,
+    deadline: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    order: 2
+  };
+}
+
+export function createDemoCategories(): CategoryWithColumns[] {
+  return [createDemoCategory(), createTeachersDemoCategory()];
+}

@@ -1,12 +1,24 @@
+
 import { useState, useCallback } from 'react';
 import { School } from '@/types/school';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolOperations } from './useSchoolOperations';
 
+interface UseSchoolOperationsReturn {
+  handleAddSubmit: (formData: any) => Promise<void>;
+  handleEditSubmit: (formData: any, selectedSchool: School | null) => Promise<void>;
+  handleDeleteConfirm: (selectedSchool: School | null) => Promise<void>;
+  handleAdminUpdate: (adminData: any) => void;
+  handleResetPassword: (newPassword: string) => void;
+}
+
 export const useSchoolDialogHandlers = () => {
   const { t } = useLanguage();
-  const { createSchool, updateSchool, deleteSchool, resetPassword: resetPasswordOperation } = useSchoolOperations();
+  const { handleAddSubmit: addSchool, handleEditSubmit: editSchool, handleDeleteConfirm: deleteSchool, handleResetPassword: resetPassword, handleAdminUpdate: updateAdmin } = useSchoolOperations(
+    () => setIsOperationComplete(true),
+    (type: 'add' | 'edit' | 'delete' | 'admin') => closeDialog(type)
+  );
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -32,6 +44,28 @@ export const useSchoolDialogHandlers = () => {
     adminEmail: ''
   });
   
+  const closeDialog = (type: 'add' | 'edit' | 'delete' | 'admin') => {
+    switch (type) {
+      case 'add':
+        setIsAddDialogOpen(false);
+        break;
+      case 'edit':
+        setIsEditDialogOpen(false);
+        break;
+      case 'delete':
+        setIsDeleteDialogOpen(false);
+        break;
+      case 'admin':
+        setIsAdminDialogOpen(false);
+        break;
+    }
+  };
+  
+  const closeAddDialog = () => closeDialog('add');
+  const closeEditDialog = () => closeDialog('edit');
+  const closeDeleteDialog = () => closeDialog('delete');
+  const closeAdminDialog = () => closeDialog('admin');
+  
   const handleDeleteDialogOpen = useCallback((school: School) => {
     setSelectedSchool(school);
     setIsDeleteDialogOpen(true);
@@ -41,18 +75,18 @@ export const useSchoolDialogHandlers = () => {
     setSelectedSchool(school);
     setFormData({
       name: school.name,
-      regionId: school.regionId,
-      sectorId: school.sectorId,
+      regionId: school.regionId || school.region_id,
+      sectorId: school.sectorId || school.sector_id,
       address: school.address,
       email: school.email,
       phone: school.phone,
-      principalName: school.principalName,
-      studentCount: school.studentCount,
-      teacherCount: school.teacherCount,
+      principalName: school.principalName || school.principal_name,
+      studentCount: school.studentCount || school.student_count,
+      teacherCount: school.teacherCount || school.teacher_count,
       type: school.type,
       language: school.language,
       status: school.status,
-      adminEmail: school.adminEmail
+      adminEmail: school.adminEmail || school.admin_email
     });
     setIsEditDialogOpen(true);
     setCurrentTab('basicInfo');
@@ -83,61 +117,6 @@ export const useSchoolDialogHandlers = () => {
     setIsAdminDialogOpen(true);
   }, []);
 
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!selectedSchool) return;
-    try {
-      await deleteSchool(selectedSchool.id);
-      toast.success(t('schoolDeleted', { schoolName: selectedSchool.name }));
-      setIsDeleteDialogOpen(false);
-      setIsOperationComplete(true);
-    } catch (error: any) {
-      toast.error(t('schoolDeleteError', { message: error.message }));
-    }
-  }, [deleteSchool, selectedSchool, t]);
-
-  const handleEditSubmit = useCallback(async () => {
-    if (!selectedSchool) return;
-    try {
-      await updateSchool(selectedSchool.id, formData);
-      toast.success(t('schoolUpdated', { schoolName: formData.name }));
-      setIsEditDialogOpen(false);
-      setIsOperationComplete(true);
-    } catch (error: any) {
-      toast.error(t('schoolUpdateError', { message: error.message }));
-    }
-  }, [updateSchool, formData, selectedSchool, t]);
-
-  const handleAddSubmit = useCallback(async () => {
-    try {
-      await createSchool(formData);
-      toast.success(t('schoolCreated', { schoolName: formData.name }));
-      setIsAddDialogOpen(false);
-      setIsOperationComplete(true);
-    } catch (error: any) {
-      toast.error(t('schoolCreateError', { message: error.message }));
-    }
-  }, [createSchool, formData, t]);
-
-  const handleAdminUpdate = useCallback(async (userId: string, role: string, regionId: string | null = null, sectorId: string | null = null, schoolId: string | null = null) => {
-    try {
-      //await updateAdminRole(userId, role, regionId, sectorId, schoolId);
-      toast.success(t('adminRoleUpdated'));
-      setIsAdminDialogOpen(false);
-      setIsOperationComplete(true);
-    } catch (error: any) {
-      toast.error(t('adminRoleUpdateError', { message: error.message }));
-    }
-  }, [t]);
-
-  const handleResetPassword = useCallback(async (email: string) => {
-    try {
-      await resetPasswordOperation(email);
-      toast.success(t('passwordResetLinkSent'));
-    } catch (error: any) {
-      toast.error(t('passwordResetError', { message: error.message }));
-    }
-  }, [resetPasswordOperation, t]);
-  
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
@@ -150,24 +129,24 @@ export const useSchoolDialogHandlers = () => {
     selectedSchool,
     selectedAdmin,
     isOperationComplete,
-    closeDeleteDialog: () => setIsDeleteDialogOpen(false),
-    closeEditDialog: () => setIsEditDialogOpen(false),
-    closeAddDialog: () => setIsAddDialogOpen(false),
-    closeAdminDialog: () => setIsAdminDialogOpen(false),
+    closeDeleteDialog,
+    closeEditDialog,
+    closeAddDialog,
+    closeAdminDialog,
     handleDeleteDialogOpen,
     handleEditDialogOpen,
     handleAddDialogOpen,
     handleAdminDialogOpen,
-    handleDeleteConfirm,
-    handleEditSubmit,
-    handleAddSubmit,
-    handleAdminUpdate,
-    handleResetPassword,
+    handleDeleteConfirm: deleteSchool,
+    handleEditSubmit: editSchool,
+    handleAddSubmit: addSchool,
+    handleAdminUpdate: updateAdmin,
+    handleResetPassword: resetPassword,
     formData,
     handleFormChange,
     currentTab,
     setCurrentTab,
-    setFormData, // Add this explicitly
+    setFormData,
     setIsOperationComplete
   };
 };
