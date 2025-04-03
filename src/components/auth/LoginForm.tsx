@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
 
 interface LoginFormProps {
   directLoginError: string | null;
@@ -55,19 +54,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
     try {
       console.log('Login prosesi başladı');
       
-      // Əvvəlcə mövcud sessiyaları təmizləyək
-      await supabase.auth.signOut();
+      const { error } = await login(email, password);
       
-      // Birbaşa standart Supabase login metodunu istifadə edirik
-      console.log('Normal login cəhdi edilir');
-      await login(email, password);
+      if (error) {
+        console.error('Login xətası:', error);
+        toast.error(t('loginFailed'), {
+          description: error.message
+        });
+        return;
+      }
       
-      console.log('Normal login uğurlu oldu');
+      console.log('Login uğurlu oldu');
       toast.success(t('loginSuccess'));
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
-      // Xətaları context vasitəsilə idarə edirik
+      toast.error(t('loginFailed'), {
+        description: error.message
+      });
     } finally {
       setLoginInProgress(false);
     }
@@ -77,7 +81,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ directLoginError, setDirectLoginE
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error.toString()}</AlertDescription>
+          <AlertDescription>{error.message}</AlertDescription>
         </Alert>
       )}
       

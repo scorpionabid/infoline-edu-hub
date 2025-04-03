@@ -1,5 +1,5 @@
 
-export * from './baseProvider';
+export * from './dashboardProvider';
 export * from './superAdminProvider';
 export * from './regionAdminProvider';
 export * from './sectorAdminProvider';

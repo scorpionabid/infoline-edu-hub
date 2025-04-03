@@ -1,7 +1,6 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth, useRole } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -30,10 +29,10 @@ interface ProtectedRouteProps {
 
 // Protected Route Component
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
   
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
@@ -63,9 +62,9 @@ interface PublicRouteProps {
 
 // Public Route Component (redirects to dashboard if already logged in)
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>

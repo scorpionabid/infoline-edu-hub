@@ -1,8 +1,7 @@
-
-// Bu fayl sadəcə auth/useSupabaseAuth faylını yenidən ixrac edir
-import { useSupabaseAuth } from './auth/useSupabaseAuth';
+// Əvvəlcədən daxil edilmiş useAuth hook-unu istifadə edin, bu fayl saxlanılır
+// yalnız geriyə uyğunluq üçün
+import { useAuth } from '@/context/AuthContext';
 import { FullUserData, UserRole } from '@/types/supabase';
-import { AuthState, AuthAction, UseSupabaseAuthReturn } from './auth/types';
 
-export { useSupabaseAuth };
-export type { AuthState, AuthAction, UseSupabaseAuthReturn, FullUserData, UserRole };
+export { useAuth };
+export type { FullUserData, UserRole };
