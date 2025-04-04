@@ -1,7 +1,16 @@
 
-export type NotificationType = 'info' | 'warning' | 'success' | 'error' | 'system';
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type NotificationEntityType = 'system' | 'category' | 'column' | 'school' | 'user' | 'region' | 'sector' | 'form' | 'report';
+export type NotificationType = 
+  'info' | 'warning' | 'success' | 'error' | 'system' | 
+  'newCategory' | 'deadline' | 'dueDateReminder' | 
+  'approval' | 'approvalRequest' | 'approved' | 'formApproved' | 
+  'rejection' | 'rejected' | 'formRejected' | 
+  'systemUpdate' | 'entry';
+
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent' | 'critical';
+
+export type NotificationEntityType = 
+  'system' | 'category' | 'column' | 'school' | 'user' | 
+  'region' | 'sector' | 'form' | 'report' | 'entry';
 
 export interface Notification {
   id: string;

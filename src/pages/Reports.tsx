@@ -1,41 +1,37 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Helmet } from 'react-helmet';
 import SidebarLayout from '@/components/layout/SidebarLayout';
+import { useLanguage } from '@/context/LanguageContext';
 import ReportHeader from '@/components/reports/ReportHeader';
 import ReportList from '@/components/reports/ReportList';
 import SchoolColumnTable from '@/components/reports/SchoolColumnTable';
-import { useLanguage } from '@/context/LanguageContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const Reports: React.FC = () => {
+/**
+ * Hesabatlar Səhifəsi
+ */
+const Reports = () => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("schools-columns");
-  
+
   return (
-    <SidebarLayout>
-      <div className="space-y-6">
-        <ReportHeader />
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="schools-columns">
-              {t("schoolColumnReportTitle")}
-            </TabsTrigger>
-            <TabsTrigger value="templates">
-              {t("allReports")}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="schools-columns" className="mt-6">
-            <SchoolColumnTable />
-          </TabsContent>
-          
-          <TabsContent value="templates" className="mt-6">
-            <ReportList />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </SidebarLayout>
+    <>
+      <Helmet>
+        <title>{t('reports')} | InfoLine</title>
+      </Helmet>
+      <SidebarLayout>
+        <div className="container mx-auto py-6">
+          <ReportHeader />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1">
+              <ReportList />
+            </div>
+            <div className="md:col-span-2">
+              <SchoolColumnTable categories={[]} schoolData={[]} />
+            </div>
+          </div>
+        </div>
+      </SidebarLayout>
+    </>
   );
 };
 

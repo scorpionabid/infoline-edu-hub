@@ -1,42 +1,27 @@
 
 import React from 'react';
+import { Helmet } from 'react-helmet';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import UserList from '@/components/users/UserList';
-import UserHeader from '@/components/users/UserHeader';
-import { useAuth, useRole } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
+import { UserList } from '@/components/users/UserList';
 
+/**
+ * İstifadəçilər Səhifəsi
+ */
 const Users = () => {
   const { t } = useLanguage();
-  const isSuperOrRegionAdmin = useRole(['superadmin', 'regionadmin']);
-  const isSuperAdmin = useRole('superadmin');
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  
-  // Redirect if not allowed to access this page
-  React.useEffect(() => {
-    if (!isSuperOrRegionAdmin) {
-      navigate('/dashboard');
-    }
-  }, [isSuperOrRegionAdmin, navigate]);
-
-  if (!isSuperOrRegionAdmin) {
-    return null;
-  }
-
-  // SuperAdmin bütün entity növlərinə çıxışı var, RegionAdmin yalnız sektor və məktəblərə
-  const entityTypes: Array<'region' | 'sector' | 'school'> = isSuperAdmin 
-    ? ['region', 'sector', 'school'] 
-    : ['sector', 'school'];
 
   return (
-    <SidebarLayout>
-      <div className="container mx-auto py-6 space-y-6">
-        <UserHeader entityTypes={entityTypes} />
-        <UserList currentUserRole={user?.role} currentUserRegionId={user?.regionId} />
-      </div>
-    </SidebarLayout>
+    <>
+      <Helmet>
+        <title>{t('users')} | InfoLine</title>
+      </Helmet>
+      <SidebarLayout>
+        <div className="container mx-auto py-6">
+          <UserList />
+        </div>
+      </SidebarLayout>
+    </>
   );
 };
 

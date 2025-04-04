@@ -1,182 +1,106 @@
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useLanguage } from '@/context/LanguageContext';
-import { toast } from 'sonner';
-import { useDataEntries } from '@/hooks/useDataEntries';
-import DataEntryForm from '@/components/dataEntry/DataEntryForm';
 import DataEntryHeader from '@/components/dataEntry/DataEntryHeader';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, FileSpreadsheet, InfoIcon, LayoutGrid, Loader2 } from 'lucide-react';
-import { exportDataToExcel } from '@/utils/exportUtils';
-import type { DataEntry } from '@/types/dataEntry';
+import DataEntryForm from '@/components/dataEntry/DataEntryForm';
+import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
+import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
+import { CategoryWithColumns } from '@/types/category';
+import { useAuth } from '@/context/AuthContext';
+import LoadingSection from '@/components/common/LoadingSection';
+import NoDataFound from '@/components/common/NoDataFound';
 
-const adaptDataForExport = (entries: DataEntry[]) => {
-  return entries.map(entry => ({
-    id: entry.id!,
-    category_id: entry.category_id,
-    column_id: entry.column_id,
-    school_id: entry.school_id, 
-    value: entry.value || '',
-    status: entry.status as 'pending' | 'approved' | 'rejected',
-    errorMessage: entry.rejectionReason || entry.rejection_reason || ''
-  }));
-};
-
-const DataEntry: React.FC = () => {
-  const [searchParams] = useSearchParams();
+/**
+ * DataEntry Səhifəsi
+ * Məlumatların daxil edilməsi və redaktəsi üçün səhifə
+ */
+const DataEntry = () => {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState(searchParams.get("category") || "all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState("form");
-
-  const {
-    entries,
-    loading,
-    error,
-    fetchEntries,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    approveEntry,
-    rejectEntry,
-    submitCategoryForApproval,
-    getApprovalStatus
-  } = useDataEntries();
-
+  const location = useLocation();
+  const { user } = useAuth();
+  const queryParams = new URLSearchParams(location.search);
+  const categoryId = queryParams.get('categoryId');
+  const status = queryParams.get('status');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryId);
+  const { categories, isLoading, error } = useCategoryData(user?.schoolId);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<'submit' | 'approve' | 'reject'>('submit');
+  
   useEffect(() => {
-    const categoryId = searchParams.get("category");
-    if (categoryId) {
-      setCategoryFilter(categoryId);
+    // Qeyd: URLdən seçilən kateqoriya dəyişdikdə state-i yeniləyirik
+    if (categoryId !== selectedCategory) {
+      setSelectedCategory(categoryId);
     }
-  }, [searchParams]);
+  }, [categoryId]);
 
-  useEffect(() => {
-    if (error) {
-      console.error('Məlumatları əldə edərkən xəta baş verdi:', error);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadData')
-      });
-    }
-  }, [error, t]);
-
-  const stats = React.useMemo(() => {
-    return {
-      totalEntries: entries.length,
-      pendingEntries: entries.filter(entry => entry.status === 'pending').length,
-      approvedEntries: entries.filter(entry => entry.status === 'approved').length,
-      rejectedEntries: entries.filter(entry => entry.status === 'rejected').length,
-      completionRate: entries.length > 0 ? 
-        Math.round((entries.filter(entry => entry.status === 'approved').length / entries.length) * 100) : 0
-    };
-  }, [entries]);
-
-  const handleExportData = () => {
-    if (entries && entries.length > 0) {
-      const exportableEntries = adaptDataForExport(entries);
-      exportDataToExcel(exportableEntries);
-    } else {
-      toast.warning(t('noDataToExport'));
-    }
+  const handleCategorySelect = (id: string) => {
+    setSelectedCategory(id);
+  };
+  
+  const handleDialogOpen = (type: 'submit' | 'approve' | 'reject') => {
+    setDialogType(type);
+    setIsDialogOpen(true);
   };
 
-  const MinimalisticStats = () => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <Card className="border-0 bg-black text-white">
-        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
-          <div className="text-4xl font-bold mb-2">{loading ? "..." : stats.totalEntries}</div>
-          <p className="text-gray-400">Ümumi məlumatlar</p>
-        </CardContent>
-      </Card>
-      <Card className="border-0 bg-black text-white">
-        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
-          <div className="text-4xl font-bold mb-2">{loading ? "..." : stats.pendingEntries}</div>
-          <p className="text-gray-400">Gözləyən məlumatlar</p>
-        </CardContent>
-      </Card>
-      <Card className="border-0 bg-black text-white">
-        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
-          <div className="text-4xl font-bold mb-2">{loading ? "..." : stats.approvedEntries}</div>
-          <p className="text-gray-400">Təsdiqlənmiş məlumatlar</p>
-        </CardContent>
-      </Card>
-      <Card className="border-0 bg-black text-white">
-        <CardContent className="flex flex-col items-center justify-center p-6 h-32">
-          <div className="text-4xl font-bold mb-2">{loading ? "..." : `${stats.completionRate}%`}</div>
-          <Progress value={loading ? 0 : stats.completionRate} className="w-4/5 mt-2" />
-          <p className="text-gray-400 mt-2">Tamamlanma</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+  };
+
+  const selectedCategoryData = selectedCategory 
+    ? categories.find(cat => cat.category.id === selectedCategory) 
+    : null;
 
   return (
-    <SidebarLayout>
-      <div className="space-y-6">
-        <DataEntryHeader
-          onSearchChange={setSearchQuery}
-          searchQuery={searchQuery}
-          categoryFilter={categoryFilter}
-          onCategoryFilterChange={setCategoryFilter}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          onExportData={handleExportData}
-        />
+    <>
+      <Helmet>
+        <title>{t('dataEntry')} | InfoLine</title>
+      </Helmet>
+      <SidebarLayout>
+        <div className="container mx-auto py-6">
+          <DataEntryHeader 
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategorySelect={handleCategorySelect}
+            selectedStatus={status}
+          />
 
-        <MinimalisticStats />
-
-        <Tabs defaultValue="form" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="form">
-              <Database className="h-4 w-4 mr-2" />
-              Məlumat forması
-            </TabsTrigger>
-            <TabsTrigger value="grid">
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Məlumat şəbəkəsi
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="form">
-            <DataEntryForm 
-              category={categoryFilter !== "all" ? { id: categoryFilter } : undefined}
-              statusFilter={statusFilter !== "all" ? statusFilter : undefined}
+          {isLoading ? (
+            <LoadingSection />
+          ) : error ? (
+            <div className="border border-red-200 rounded-md p-4 bg-red-50 text-red-500">
+              <h3 className="font-semibold">{t('errorLoading')}</h3>
+              <p>{t('dataEntryLoadError')}</p>
+            </div>
+          ) : categories.length === 0 ? (
+            <NoDataFound 
+              title={t('noCategoriesFound')} 
+              description={t('dataEntryNoCategories')} 
             />
-          </TabsContent>
-          <TabsContent value="grid">
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-              </div>
-            ) : error ? (
-              <div className="text-center py-12 text-destructive">
-                <InfoIcon className="mx-auto h-12 w-12" />
-                <h3 className="mt-4 text-lg font-medium">{t("errorLoadingData")}</h3>
-                <p className="text-muted-foreground">{t("tryAgainLater")}</p>
-              </div>
-            ) : entries.length === 0 ? (
-              <div className="text-center py-12">
-                <InfoIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">{t("noDataFound")}</h3>
-                <p className="text-muted-foreground">{t("useFormToAddData")}</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold text-lg mb-4">Məlumat şəbəkəsi</h3>
-                    <p className="text-muted-foreground">Bu bölmə hazırlanır...</p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </SidebarLayout>
+          ) : !selectedCategory ? (
+            <div className="mt-8 text-center">
+              <p className="text-muted-foreground">{t('selectCategoryPrompt')}</p>
+            </div>
+          ) : (
+            <DataEntryForm 
+              category={selectedCategoryData as CategoryWithColumns} 
+              onSubmit={() => handleDialogOpen('submit')}
+              onApprove={() => handleDialogOpen('approve')}
+              onReject={() => handleDialogOpen('reject')}
+            />
+          )}
+          
+          <DataEntryDialogs 
+            isOpen={isDialogOpen} 
+            type={dialogType}
+            onClose={handleDialogClose}
+            categoryName={selectedCategoryData?.category.name || ''}
+          />
+        </div>
+      </SidebarLayout>
+    </>
   );
 };
 

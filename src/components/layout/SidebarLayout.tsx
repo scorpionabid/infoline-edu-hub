@@ -6,7 +6,6 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLanguage } from '@/context/LanguageContext';
-// SideBarNavItem tipini import edirik
 import { SideBarNavItem } from '@/types/supabase';
 import { UserRole } from '@/types/supabase';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -159,7 +158,7 @@ export const Sidebar = ({ t, role, isCollapsed, pathname, onToggleCollapse, onLi
   const location = useLocation();
 
   // Get the sidebar items based on the user's role
-  const sidebarItems = sideBarConfig.find(config => config.role === (role || 'user'))?.items || [];
+  const roleItems = sideBarConfig[role as keyof typeof sideBarConfig] || [];
   // Get the help item that's common for all roles
   const helpItem = sideBarHelp;
 
@@ -208,7 +207,7 @@ export const Sidebar = ({ t, role, isCollapsed, pathname, onToggleCollapse, onLi
           isCollapsed ? "items-center" : "items-start"
         )}>
           <SidebarNav
-            items={sidebarItems}
+            items={roleItems}
             isCollapsed={isCollapsed}
             pathname={pathname}
             onLinkClick={onLinkClick}
@@ -318,3 +317,25 @@ export const Sidebar = ({ t, role, isCollapsed, pathname, onToggleCollapse, onLi
   );
 };
 
+// İndi əsas layout komponentini yaradaq
+const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
+  const { t } = useLanguage();
+  const location = useLocation();
+  const { user } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar
+        t={t}
+        role={user?.role}
+        isCollapsed={isCollapsed}
+        pathname={location.pathname}
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+      />
+      <main className="flex-1">{children}</main>
+    </div>
+  );
+};
+
+export default SidebarLayout;
