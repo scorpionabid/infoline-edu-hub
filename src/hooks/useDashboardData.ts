@@ -63,7 +63,7 @@ export interface SuperAdminDashboardData {
   users: number;
   completionRate: number;
   pendingApprovals: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   activityData?: {
     id: string;
     action: string;
@@ -94,7 +94,7 @@ export interface RegionAdminDashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   categories?: CategoryCompletion[];
   sectorCompletions?: SectorCompletion[];
   stats?: StatsItem[];
@@ -109,7 +109,7 @@ export interface SectorAdminDashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   stats?: StatsItem[];
   recentForms?: FormItem[];
   schoolList?: {
@@ -129,7 +129,7 @@ export interface SchoolAdminDashboardData {
     overdue: number;
   };
   completionRate: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   categories?: number;
   totalForms?: number;
   pendingForms?: FormItem[];
@@ -153,7 +153,7 @@ export interface ChartData {
 }
 
 export const useDashboardData = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -175,15 +175,11 @@ export const useDashboardData = () => {
         // Simulate API call with delay
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Generate mock data based on user role
-        if (!user) {
-          throw new Error('İstifadəçi məlumatı yoxdur');
-        }
-        
-        const role = user.role;
+        // Əgər istifadəçi yoxdursa, default olaraq 'schooladmin' rolu təyin edək
+        const role = user?.role || 'schooladmin';
         console.log(`Dashboard yüklənir: ${role} rolu üçün`);
         
-        // Generate mock data
+        // Generate mock data based on role
         const mockData = generateMockDashboardData(role);
         setDashboardData(mockData);
         
@@ -201,15 +197,16 @@ export const useDashboardData = () => {
     };
     
     // İstifadəçi yüklənibsə, dashboard məlumatlarını əldə et
-    if (!authLoading && user) {
+    if (!authLoading) {
       fetchDashboardData();
-    } else if (!authLoading && !user) {
-      // Əgər istifadəçi yoxdursa, boş data göstər
-      setDashboardData(null);
-      setChartData(null);
-      setIsLoading(false);
     }
   }, [user, authLoading]);
   
-  return { dashboardData, isLoading, error, chartData, userRole: user?.role };
+  return { 
+    dashboardData, 
+    isLoading, 
+    error, 
+    chartData, 
+    userRole: user?.role 
+  };
 };

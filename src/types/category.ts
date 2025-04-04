@@ -1,57 +1,61 @@
 
-// Category tipi
+// Category tipləri
+
 export interface Category {
   id: string;
   name: string;
-  description?: string;
-  status: 'active' | 'inactive' | 'draft';
-  priority: number;
-  deadline?: string;
   assignment: 'all' | 'sectors';
   createdAt: string;
   updatedAt: string;
+  status: 'active' | 'inactive' | 'draft';
+  priority: number;
+  description?: string;
   columnCount?: number;
   archived: boolean;
 }
 
-// Kateqoriya filtri
 export interface CategoryFilter {
-  status?: 'active' | 'inactive' | 'draft';
-  assignment?: 'all' | 'sectors';
-  search?: string;
-  showArchived?: boolean;
+  status: 'all' | 'active' | 'inactive';
+  assignment: 'all' | 'allOnly' | 'sectorsOnly';
+  search: string;
 }
 
-// Supabase-dən gələn kateqoriya məlumatlarını adaptasiya et
-export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
+export interface CategoryStats {
+  totalCategories: number;
+  activeCategories: number;
+  inactiveCategories: number;
+  allAssignment: number;
+  sectorsAssignment: number;
+}
+
+// Supabase-dən gələn datanı Category formatına çevirmək üçün adapter
+export const adaptSupabaseCategory = (data: any): Category => {
   return {
-    id: supabaseCategory.id || '',
-    name: supabaseCategory.name || '',
-    description: supabaseCategory.description || '',
-    status: supabaseCategory.status || 'active',
-    priority: supabaseCategory.priority || 0,
-    deadline: supabaseCategory.deadline || undefined,
-    assignment: supabaseCategory.assignment || 'all',
-    createdAt: supabaseCategory.created_at || new Date().toISOString(),
-    updatedAt: supabaseCategory.updated_at || new Date().toISOString(),
-    columnCount: supabaseCategory.column_count || 0,
-    archived: supabaseCategory.archived || false
+    id: data.id || '',
+    name: data.name || '',
+    assignment: data.assignment || 'all',
+    createdAt: data.created_at || new Date().toISOString(),
+    updatedAt: data.updated_at || new Date().toISOString(),
+    status: data.status || 'draft',
+    priority: data.priority || 0,
+    description: data.description || '',
+    columnCount: data.column_count || 0,
+    archived: data.archived || false
   };
 };
 
-// Kateqoriyaları Supabase formatına çevirmək
+// Category-ni Supabase formatına çevirmək üçün adapter
 export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
-  const {
-    createdAt,
-    updatedAt,
-    columnCount,
-    ...rest
-  } = category;
-
   return {
-    ...rest,
-    created_at: createdAt,
-    updated_at: updatedAt,
-    column_count: columnCount,
+    id: category.id,
+    name: category.name,
+    assignment: category.assignment,
+    created_at: category.createdAt,
+    updated_at: new Date().toISOString(),
+    status: category.status,
+    priority: category.priority,
+    description: category.description,
+    column_count: category.columnCount,
+    archived: category.archived
   };
 };

@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useSupabaseAuth } from '@/hooks/auth/useSupabaseAuth';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 
@@ -117,8 +117,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       // Remove undefined values
-      Object.keys(profileUpdates).forEach(key => {
-        if (profileUpdates[key as keyof typeof profileUpdates] === undefined) {
+      Object.entries(profileUpdates).forEach(([key, value]) => {
+        if (value === undefined) {
           delete profileUpdates[key as keyof typeof profileUpdates];
         }
       });
