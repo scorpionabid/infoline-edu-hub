@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useLanguage } from '@/context/LanguageContext';
 import RegionHeader from '@/components/regions/RegionHeader';
-import { useRegions } from '@/hooks/regions';
 
 /**
  * Regionlar Səhifəsi

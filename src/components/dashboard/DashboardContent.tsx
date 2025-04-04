@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -18,6 +17,7 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
+import { adaptFormStatus } from '@/utils/dashboardUtils';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -29,30 +29,6 @@ interface DashboardContentProps {
   };
   isLoading: boolean;
 }
-
-// Dashboard utils tipindəki adapter funksiyaları
-const adaptFormStatus = (status: string): FormStatus => {
-  switch (status.toLowerCase()) {
-    case 'approved':
-    case 'təsdiqlənib': 
-      return 'approved';
-    case 'rejected': 
-    case 'rədd edilib':
-      return 'rejected';
-    case 'pending': 
-    case 'gözləmədə':
-      return 'pending';
-    case 'overdue':
-    case 'gecikmiş':
-      return 'overdue';
-    case 'duesoon':
-    case 'due_soon':
-    case 'müddəti yaxınlaşır':
-      return 'dueSoon';
-    default:
-      return 'pending';
-  }
-};
 
 // Form items üçün adapter
 const adaptFormItems = (items: any[]): FormItem[] => {

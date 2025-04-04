@@ -11,7 +11,6 @@ import SchoolsContainer from '@/components/schools/SchoolsContainer';
  */
 const Schools = () => {
   const { t } = useLanguage();
-  const { user } = useAuth();
   
   return (
     <>

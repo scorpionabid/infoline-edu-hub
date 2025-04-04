@@ -23,7 +23,7 @@ const Dashboard = () => {
       console.log('Dashboard məlumatları yüklənir, İstifadəçi:', user?.id);
       refreshData();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, refreshData]);
 
   // İcazəsi olmayan istifadəçiləri yoxlayaq
   if (!user || !userRole) {
