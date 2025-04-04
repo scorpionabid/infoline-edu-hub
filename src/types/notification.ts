@@ -10,7 +10,13 @@ export interface Notification {
   isRead?: boolean;
   createdAt: string;
   priority?: 'normal' | 'high' | 'critical';
+  relatedEntityId?: string;
+  relatedEntityType?: string;
 }
+
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'system' | 'deadline' | 'approval';
+
+export type NotificationPriority = 'normal' | 'high' | 'critical';
 
 export const adaptNotification = (data: any): Notification => {
   return {
@@ -22,6 +28,8 @@ export const adaptNotification = (data: any): Notification => {
     userId: data.user_id,
     isRead: data.is_read ?? false,
     createdAt: data.created_at || new Date().toISOString(),
-    priority: data.priority || 'normal'
+    priority: data.priority || 'normal',
+    relatedEntityId: data.related_entity_id,
+    relatedEntityType: data.related_entity_type
   };
 };

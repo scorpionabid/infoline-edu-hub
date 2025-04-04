@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Category, adaptSupabaseCategory } from '@/types/category';
+import { Category, adaptSupabaseCategory, adaptCategoryToSupabase } from '@/types/category';
 
 // Bütün kateqoriyaları əldə etmək üçün API funksiyası
 export const fetchCategories = async (): Promise<Category[]> => {
@@ -85,6 +85,74 @@ export const fetchCategories = async (): Promise<Category[]> => {
     return data.map(adaptSupabaseCategory);
   } catch (error) {
     console.error('Kateqoriyaları əldə edərkən xəta:', error);
+    throw error;
+  }
+};
+
+// Kateqoriya əlavə etmək və ya yeniləmək üçün funksiya
+export const addCategory = async (categoryData: Omit<Category, "id"> & { id?: string }): Promise<Category> => {
+  try {
+    const supabaseData = adaptCategoryToSupabase(categoryData);
+    
+    // Yeni kateqoriya yaratma və ya mövcud olanı yeniləmə
+    const { data, error } = categoryData.id 
+      ? await supabase
+          .from('categories')
+          .update(supabaseData)
+          .eq('id', categoryData.id)
+          .select()
+          .single()
+      : await supabase
+          .from('categories')
+          .insert(supabaseData)
+          .select()
+          .single();
+
+    if (error) {
+      console.error('Kateqoriya əməliyyatı zamanı xəta:', error);
+      throw error;
+    }
+
+    return adaptSupabaseCategory(data);
+  } catch (error) {
+    console.error('Kateqoriya əlavə etmə/yeniləmə zamanı xəta:', error);
+    throw error;
+  }
+};
+
+// Kateqoriyanı silmək üçün funksiya
+export const deleteCategory = async (id: string): Promise<void> => {
+  try {
+    // Əslində silmək yerinə arxivləşdiririk
+    const { error } = await supabase
+      .from('categories')
+      .update({ archived: true, status: 'inactive' })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Kateqoriya silinərkən xəta:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Kateqoriya silinərkən xəta:', error);
+    throw error;
+  }
+};
+
+// Kateqoriya statusunu yeniləmək üçün funksiya
+export const updateCategoryStatus = async (id: string, status: 'active' | 'inactive'): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('categories')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Kateqoriya statusu yeniləndikdə xəta:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Kateqoriya statusu yeniləndikdə xəta:', error);
     throw error;
   }
 };

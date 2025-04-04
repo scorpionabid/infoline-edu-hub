@@ -40,7 +40,7 @@ const adaptToNotifications = (dashboardNotifications: DashboardNotification[]): 
     type: notification.type,
     time: notification.time,
     isRead: notification.read || false,
-    createdAt: notification.time,
+    createdAt: notification.time || new Date().toISOString(),
     userId: '',
     priority: 'normal'
   })) || [];
