@@ -1,6 +1,5 @@
 
 import { FormStatus } from '@/types/form';
-import { formatTimeFromNow } from './formatTimeFromNow';
 
 /**
  * FormStatus adapterini konvert edir
@@ -28,8 +27,29 @@ export const adaptFormStatus = (status: string): FormStatus => {
   }
 };
 
-// formatTimeFromNow funksiyasını ixrac edirik
-export { formatTimeFromNow };
+/**
+ * Zaman önçə formatlanır
+ * @param dateString İSO tarix string
+ * @returns İnsan tərəfindən oxunabilən zaman
+ */
+export const formatTimeFromNow = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.round(diffMs / 60000); // millisecond -> minute
+  
+  if (diffMins < 1) {
+    return 'indicə';
+  } else if (diffMins < 60) {
+    return `${diffMins} dəqiqə əvvəl`;
+  } else if (diffMins < 24 * 60) {
+    const diffHours = Math.round(diffMins / 60);
+    return `${diffHours} saat əvvəl`;
+  } else {
+    const diffDays = Math.round(diffMins / (60 * 24));
+    return `${diffDays} gün əvvəl`;
+  }
+};
 
 /**
  * Faizin təqdim edilməsi
@@ -52,4 +72,19 @@ export const abbreviateNumber = (num: number): string => {
     return (num / 1000).toFixed(1) + 'K';
   }
   return num.toString();
+};
+
+/**
+ * Kateqoriyalar tamamlanma dərəcəsi üçün mocklanmış data
+ * @returns Mock category data
+ */
+export const getMockCategoryCompletion = () => {
+  return [
+    { name: "Statistikalar", completed: 85 },
+    { name: "Müəllimlər", completed: 72 },
+    { name: "Şagirdlər", completed: 92 },
+    { name: "Tədris planı", completed: 64 },
+    { name: "İnfrastruktur", completed: 58 },
+    { name: "Sənədlər", completed: 90 }
+  ];
 };

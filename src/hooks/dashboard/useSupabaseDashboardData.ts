@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getMockCategoryCompletion } from './utils';
+import { getMockCategoryCompletion } from '@/utils/dashboardUtils';
 
 // Dashboard data fetch hook
 export function useSupabaseDashboardData(userRole: string) {
