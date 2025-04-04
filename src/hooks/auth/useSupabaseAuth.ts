@@ -54,47 +54,15 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
             setUser(userData);
           } catch (userError) {
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            // Sessiya var amma user data yoxdur - default istifadəçi yaradaq
-            console.log('Default SuperAdmin istifadəçisi yaradılır');
-            
-            const defaultUserData: FullUserData = {
-              id: currentSession.user.id,
-              email: currentSession.user.email || 'superadmin@infoline.az',
-              full_name: 'SuperAdmin',
-              role: 'superadmin',
-              region_id: null,
-              sector_id: null,
-              school_id: null,
-              phone: null,
-              position: null,
-              language: 'az',
-              avatar: null,
-              status: 'active',
-              last_login: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              name: 'SuperAdmin',
-              regionId: null,
-              sectorId: null,
-              schoolId: null,
-              lastLogin: null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              twoFactorEnabled: false,
-              notificationSettings: {
-                email: true,
-                system: true
-              }
-            };
-            
-            setUser(defaultUserData);
-          } finally {
-            setLoading(false);
+            // Sessiya var amma user data yoxdur - silək
+            if (currentSession) {
+              await supabase.auth.signOut();
+              setSession(null);
+            }
           }
-        } else {
-          setLoading(false);
         }
         
+        setLoading(false);
       } catch (error) {
         console.error('Auth inisializasiya xətası:', error);
         setLoading(false);
@@ -107,56 +75,16 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       setSession(newSession);
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        setLoading(true);
         if (newSession?.user) {
           try {
             const userData = await fetchUserData(newSession.user.id);
             setUser(userData);
           } catch (userError) {
             console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            // Default istifadəçi yaradaq
-            console.log('Token yeniləndi - Default SuperAdmin yaradılır');
-            
-            const defaultUserData: FullUserData = {
-              id: newSession.user.id,
-              email: newSession.user.email || 'superadmin@infoline.az',
-              full_name: 'SuperAdmin',
-              role: 'superadmin',
-              region_id: null,
-              sector_id: null,
-              school_id: null,
-              phone: null,
-              position: null,
-              language: 'az',
-              avatar: null,
-              status: 'active',
-              last_login: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              name: 'SuperAdmin',
-              regionId: null,
-              sectorId: null,
-              schoolId: null,
-              lastLogin: null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              twoFactorEnabled: false,
-              notificationSettings: {
-                email: true,
-                system: true
-              }
-            };
-            
-            setUser(defaultUserData);
-          } finally {
-            setLoading(false);
           }
-        } else {
-          setLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setLoading(false);
       }
     });
     

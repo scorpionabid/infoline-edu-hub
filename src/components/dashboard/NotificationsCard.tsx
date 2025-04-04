@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import NotificationItem from './NotificationItem';
 import { useLanguage } from '@/context/LanguageContext';
 import { Notification as TypedNotification } from '@/types/notification';
-import { DashboardNotification } from '@/hooks/useDashboardData';
 
 export interface Notification {
   id: number | string;
@@ -15,25 +14,47 @@ export interface Notification {
 }
 
 interface NotificationsCardProps {
-  notifications: Notification[] | TypedNotification[] | DashboardNotification[];
+  notifications: Notification[];
 }
 
 // Notification tipi uyğunlaşdırma köməkçi funksiyası
-const adaptNotification = (notification: any): Notification => {
+const adaptNotification = (notification: TypedNotification): Notification => {
+  return {
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    time: notification.createdAt,
+  };
+};
+
+// Əlavə olan adaptIfNeeded köməkçi funksiyası
+const adaptIfNeeded = (notification: any): Notification => {
+  // Əgər artıq uyğun formatdadırsa, birbaşa qaytarın
+  if (notification.time !== undefined) {
+    return notification as Notification;
+  }
+  
+  // TypedNotification formatında olduqda uyğunlaşdırın
+  if (notification.createdAt !== undefined) {
+    return adaptNotification(notification as TypedNotification);
+  }
+  
+  // Əgər heç bir şərt uyğun gəlmirsə, xəta vermək əvəzinə varsayılan dəyərlər təyin edin
   return {
     id: notification.id || 0,
     type: notification.type || 'info',
     title: notification.title || 'Bildiriş',
     message: notification.message || '',
-    time: notification.time || notification.createdAt || new Date().toISOString(),
+    time: notification.createdAt || new Date().toISOString(),
   };
 };
 
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
   const { t } = useLanguage();
   
-  // Bildirişləri Notification tipinə uyğunlaşdıraq
-  const adaptedNotifications = notifications.map(notification => adaptNotification(notification));
+  // Bildirişləri uyğunlaşdırın
+  const adaptedNotifications = notifications.map(notification => adaptIfNeeded(notification));
   
   return (
     <Card>
