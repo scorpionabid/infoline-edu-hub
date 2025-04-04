@@ -1,8 +1,8 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth'; // auth qovluğunu istifadə etdik
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 // User roles
 export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         id: user.id, 
         email: user.email, 
         role: user.role,
-        full_obj: JSON.stringify(user)
+        full_name: user.full_name
       } : null,
       error
     });

@@ -1,60 +1,40 @@
 
-// Category tipi
+// Kategoriya status tipi
+export type CategoryStatus = 'active' | 'inactive' | 'draft';
+
+// Kategoriya modeli
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  status: 'active' | 'inactive' | 'draft';
-  priority: number;
+  assignment?: 'all' | 'sectors';
+  status: CategoryStatus;
   deadline?: string;
-  assignment: 'all' | 'sectors';
+  priority?: number;
+  columnCount?: number;
   createdAt: string;
   updatedAt: string;
-  columnCount?: number;
-  archived: boolean;
+  archived?: boolean;
 }
 
-// Kateqoriya filtri
+// Kategoriya filtirləməsi üçün model
 export interface CategoryFilter {
-  status?: 'active' | 'inactive' | 'draft';
-  assignment?: 'all' | 'sectors';
   search?: string;
-  showArchived?: boolean;
+  status?: CategoryStatus | 'all';
+  assignment?: 'all' | 'sectors' | '';
+  deadline?: 'upcoming' | 'past' | 'all' | '';
 }
 
-// Supabase-dən gələn kateqoriya məlumatlarını adaptasiya et
-export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
-  return {
-    id: supabaseCategory.id || '',
-    name: supabaseCategory.name || '',
-    description: supabaseCategory.description || '',
-    status: supabaseCategory.status || 'active',
-    priority: supabaseCategory.priority || 0,
-    deadline: supabaseCategory.deadline || undefined,
-    assignment: supabaseCategory.assignment || 'all',
-    createdAt: supabaseCategory.created_at || new Date().toISOString(),
-    updatedAt: supabaseCategory.updated_at || new Date().toISOString(),
-    columnCount: supabaseCategory.column_count || 0,
-    archived: supabaseCategory.archived || false
-  };
-};
+// Form status tipi
+export type FormStatus = 'completed' | 'pending' | 'rejected' | 'dueSoon' | 'overdue' | 'draft' | 'approved';
 
-// Kateqoriyaları Supabase formatına çevirmək
-export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
-  // Əgər category yoxdursa boş obyekt qaytar
-  if (!category) return {};
-  
-  const {
-    createdAt,
-    updatedAt,
-    columnCount,
-    ...rest
-  } = category;
-
-  return {
-    ...rest,
-    created_at: createdAt,
-    updated_at: updatedAt,
-    column_count: columnCount,
-  };
-};
+// Form elementləri üçün model
+export interface FormItem {
+  id: string;
+  title: string;
+  description?: string;
+  status: FormStatus;
+  deadline?: string;
+  completedAt?: string;
+  rejectionReason?: string;
+}

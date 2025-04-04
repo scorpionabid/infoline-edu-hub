@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
 
@@ -80,16 +81,19 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .eq('user_id', userId)
       .single();
     
-    // Əgər rol tapılmadısa
+    // Əgər rol tapılmadısa və ya xəta varsa, xəta mesajı yazdıraq və yeni rol yaratma əməliyyatını başlataq
     if (roleError || !roleData) {
-      console.log('Rol məlumatları tapılmadı, superadmin rolunu yaradırıq');
+      console.warn('Rol məlumatları tapılmadı, yeni rol yaradılacaq:', roleError?.message);
+      
+      // Default rol və məlumatlar
+      const defaultRole: UserRole = 'schooladmin';
       
       // Yeni rol məlumatları yaradırıq
       const { data: newRoleData, error: createRoleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: 'superadmin',
+          role: defaultRole,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -104,8 +108,12 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       roleData = newRoleData;
     }
     
+    if (!roleData) {
+      throw new Error('İstifadəçi üçün rol məlumatları əldə edilə bilmədi');
+    }
+    
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
-    const normalizedRole = normalizeRole(roleData.role || 'superadmin');
+    const normalizedRole = normalizeRole(roleData.role || 'schooladmin');
     
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,17 +43,19 @@ const categorySchema = z.object({
 
 export type CategoryFormValues = z.infer<typeof categorySchema>;
 
-export interface AddCategoryDialogProps {
+export interface EditCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddCategory: (categoryData: Omit<Category, 'id'> & { id?: string }) => Promise<boolean>;
+  onEditCategory: (categoryData: Category) => Promise<boolean>;
+  category: Category | null;
   isSubmitting: boolean;
 }
 
-const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
+const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   isOpen,
   onClose,
-  onAddCategory,
+  onEditCategory,
+  category,
   isSubmitting
 }) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -71,32 +73,46 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     }
   });
   
+  // Kategoriyanın məlumatlarını forma yüklə
+  useEffect(() => {
+    if (category) {
+      form.reset({
+        name: category.name,
+        description: category.description || '',
+        assignment: (category.assignment as 'all' | 'sectors') || 'all',
+        status: category.status,
+        deadline: category.deadline || null,
+        priority: category.priority || null,
+      });
+    }
+  }, [category, form]);
+  
   const handleSubmit = async (values: CategoryFormValues) => {
+    if (!category) return;
+    
     setSubmitError(null);
     
     try {
       // Prepare category data
-      const categoryData: Omit<Category, 'id'> = {
+      const updatedCategory: Category = {
+        ...category,
         name: values.name,
         description: values.description || '',
         assignment: values.assignment,
         status: values.status as CategoryStatus,
         deadline: values.deadline || undefined,
         priority: values.priority || undefined,
-        columnCount: 0,
-        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
       
-      const success = await onAddCategory(categoryData);
+      const success = await onEditCategory(updatedCategory);
       
       if (success) {
-        form.reset();
         onClose();
       }
     } catch (error: any) {
-      console.error('Kateqoriya əlavə etmə xətası:', error);
-      setSubmitError(error.message || 'Kateqoriya əlavə edilərkən xəta baş verdi');
+      console.error('Kateqoriya redaktə etmə xətası:', error);
+      setSubmitError(error.message || 'Kateqoriya redaktə edilərkən xəta baş verdi');
     }
   };
   
@@ -104,9 +120,9 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Yeni Kateqoriya</DialogTitle>
+          <DialogTitle>Kateqoriyanı Redaktə Et</DialogTitle>
           <DialogDescription>
-            Məlumat toplama üçün yeni kateqoriya əlavə edin
+            Kateqoriya məlumatlarını redaktə edin
           </DialogDescription>
         </DialogHeader>
         
@@ -160,7 +176,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                     <FormLabel>Təyinat</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -185,7 +201,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                     <FormLabel>Status</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -248,7 +264,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
                 Ləğv et
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Əlavə edilir...' : 'Əlavə et'}
+                {isSubmitting ? 'Yadda saxlanılır...' : 'Yadda saxla'}
               </Button>
             </DialogFooter>
           </form>
@@ -258,4 +274,4 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   );
 };
 
-export default AddCategoryDialog;
+export default EditCategoryDialog;

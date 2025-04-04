@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, Profile } from '@/types/supabase';
@@ -29,6 +30,8 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   
   // Sessiya dəyişikliklərinə qulaq asaq və yeniləyək
   useEffect(() => {
+    let unsubscribe: { data?: { subscription: { unsubscribe: () => void } } } = {};
+    
     // İlkin yükləmə
     const initializeAuth = async () => {
       try {
@@ -45,6 +48,46 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         
         console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
         setSession(currentSession);
+        
+        // Auth state dəyişikliklərinə abunə olaq - ilk olaraq bunu təyin edirik (sıra vacibdir)
+        unsubscribe = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          console.log('Auth state dəyişdi:', event);
+          
+          // Sinxron əməliyyatlar əvvəlcə
+          setSession(newSession);
+          
+          // Sonra asinxron əməliyyatlar
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (newSession?.user) {
+              try {
+                const userData = await fetchUserData(newSession.user.id);
+                setUser(userData);
+              } catch (userError: any) {
+                console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+                
+                // Bu xətanı emal et və istifadəçini logout et
+                if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                    userError.message?.includes('rol təyin edilə bilmədi') ||
+                    userError.message?.includes('İstifadəçi profili tapılmadı') ||
+                    userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
+                  console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
+                  await supabase.auth.signOut();
+                  setSession(null);
+                  setUser(null);
+                }
+              } finally {
+                setLoading(false);
+              }
+            } else {
+              setLoading(false);
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setLoading(false);
+          } else {
+            setLoading(false);
+          }
+        });
         
         // Əgər sessiya varsa, istifadəçi məlumatlarını əldə edək
         if (currentSession?.user) {
@@ -74,42 +117,14 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       }
     };
     
-    // Auth state dəyişikliklərinə abunə olaq
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('Auth state dəyişdi:', event);
-      setSession(newSession);
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (newSession?.user) {
-          try {
-            const userData = await fetchUserData(newSession.user.id);
-            setUser(userData);
-          } catch (userError: any) {
-            console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            
-            // Bu xətanı emal et və istifadəçini logout et
-            if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
-                userError.message?.includes('rol təyin edilə bilmədi') ||
-                userError.message?.includes('İstifadəçi profili tapılmadı') ||
-                userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
-              console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
-              await supabase.auth.signOut();
-              setSession(null);
-              setUser(null);
-            }
-          }
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-    
     // İnisializasiya edək
     initializeAuth();
     
     // Cleanup
     return () => {
-      subscription.unsubscribe();
+      if (unsubscribe.data?.subscription) {
+        unsubscribe.data.subscription.unsubscribe();
+      }
     };
   }, [setLoading, setSession, setUser]);
   

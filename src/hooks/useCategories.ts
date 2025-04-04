@@ -1,111 +1,102 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Category, CategoryFilter, adaptSupabaseCategory } from '@/types/category';
+import { useState, useEffect } from 'react';
+import { Category } from '@/types/category';
 
-export const useCategories = (filter?: CategoryFilter) => {
+export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
+      // Burada real Supabase sorğusu olacaq
+      // const { data, error } = await supabase.from('categories').select('*');
       
-      let query = supabase.from('categories').select('*');
+      // Fake API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Apply filters if provided
-      if (filter) {
-        if (filter.status) {
-          query = query.eq('status', filter.status);
+      // Fake data
+      const mockCategories: Category[] = [
+        {
+          id: '1',
+          name: 'Təhsil statistikası',
+          description: 'Ümumi təhsil statistikası',
+          assignment: 'all',
+          status: 'active',
+          deadline: '2023-10-15',
+          priority: 1,
+          columnCount: 8,
+          createdAt: '2023-06-10T12:00:00Z',
+          updatedAt: '2023-06-10T12:00:00Z'
+        },
+        {
+          id: '2',
+          name: 'Şagird məlumatları',
+          description: 'Şagirdlər haqqında məlumatlar',
+          assignment: 'sectors',
+          status: 'active',
+          deadline: '2023-09-20',
+          priority: 2,
+          columnCount: 12,
+          createdAt: '2023-06-12T14:30:00Z',
+          updatedAt: '2023-06-12T14:30:00Z'
+        },
+        {
+          id: '3',
+          name: 'Müəllim məlumatları',
+          description: 'Müəllim heyəti haqqında məlumatlar',
+          assignment: 'all',
+          status: 'inactive',
+          deadline: '2023-08-30',
+          priority: 3,
+          columnCount: 10,
+          createdAt: '2023-06-15T10:45:00Z',
+          updatedAt: '2023-06-15T10:45:00Z'
+        },
+        {
+          id: '4',
+          name: 'İnfrastruktur',
+          description: 'Məktəb binası və təchizat',
+          assignment: 'all',
+          status: 'draft',
+          priority: 4,
+          columnCount: 6,
+          createdAt: '2023-07-01T09:15:00Z',
+          updatedAt: '2023-07-01T09:15:00Z'
+        },
+        {
+          id: '5',
+          name: 'Tədris proqramı',
+          description: 'Tədris proqramı və fənlər haqqında məlumatlar',
+          assignment: 'sectors',
+          status: 'active',
+          deadline: '2023-11-05',
+          priority: 0,
+          columnCount: 7,
+          createdAt: '2023-07-05T11:20:00Z',
+          updatedAt: '2023-07-05T11:20:00Z'
         }
-        
-        if (filter.assignment) {
-          query = query.eq('assignment', filter.assignment);
-        }
-        
-        if (filter.search) {
-          query = query.or(`name.ilike.%${filter.search}%,description.ilike.%${filter.search}%`);
-        }
-        
-        // By default don't show archived categories unless explicitly requested
-        if (!filter.showArchived) {
-          query = query.eq('archived', false);
-        }
-      } else {
-        // Default behavior: don't show archived categories
-        query = query.eq('archived', false);
-      }
+      ];
       
-      query = query.order('priority', { ascending: true }).order('name');
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      // Mock data if no data returned
-      if (!data || data.length === 0) {
-        const mockCategories = [
-          {
-            id: '1',
-            name: 'Ümumi məlumat',
-            description: 'Məktəbin ümumi məlumatları',
-            status: 'active',
-            priority: 1,
-            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            assignment: 'all',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            column_count: 5,
-            archived: false
-          },
-          {
-            id: '2',
-            name: 'Müəllim heyəti',
-            description: 'Müəllim heyəti haqqında məlumatlar',
-            status: 'active',
-            priority: 2,
-            deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            assignment: 'all',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            column_count: 8,
-            archived: false
-          },
-          {
-            id: '3',
-            name: 'Şagirdlər',
-            description: 'Şagirdlər haqqında məlumatlar',
-            status: 'active',
-            priority: 3,
-            deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-            assignment: 'all',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            column_count: 6,
-            archived: false
-          }
-        ];
-        
-        // Convert mock data to proper Category objects
-        setCategories(mockCategories.map(cat => adaptSupabaseCategory(cat)));
-      } else {
-        // Convert Supabase data to proper Category objects
-        setCategories(data.map(cat => adaptSupabaseCategory(cat)));
-      }
-      
-      setError(null);
+      setCategories(mockCategories);
     } catch (err: any) {
-      console.error('Error fetching categories:', err);
+      console.error('Categories fetch error:', err);
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  };
   
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, []);
   
-  return { categories, loading, error, refetch: fetchCategories };
-};
+  const refetch = async () => {
+    await fetchCategories();
+  };
+  
+  return { categories, loading, error, refetch };
+}

@@ -1,274 +1,297 @@
 
-import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from '@/components/ui/table';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Category, CategoryFilter } from '@/types/category';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, 
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger 
-} from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Edit, Trash, Archive, Eye, EyeOff } from 'lucide-react';
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Category, CategoryStatus, FormStatus } from '@/types/category';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { az } from 'date-fns/locale';
 
-interface CategoryListProps {
+export interface CategoryListProps {
   categories: Category[];
-  onEditCategory: (category: Category) => void;
-  filter: CategoryFilter;
-  isLoading?: boolean;
-  isError?: boolean;
-  onDeleteCategory?: (id: string) => Promise<boolean>;
-  onUpdateStatus?: (id: string, status: 'active' | 'inactive') => Promise<boolean>;
+  isLoading: boolean;
+  onEdit?: (category: Category) => void;
+  onDelete?: (category: Category) => void;
+  handleStatusChange?: (id: string, status: CategoryStatus) => Promise<boolean>;
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ 
-  categories, 
-  onEditCategory,
-  filter,
-  isLoading = false,
-  isError = false,
-  onDeleteCategory,
-  onUpdateStatus
+  categories,
+  isLoading,
+  onEdit,
+  onDelete,
+  handleStatusChange
 }) => {
-  const { t } = useLanguage();
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  
-  // Filtered categories based on current filter
-  const filteredCategories = categories.filter(category => {
-    // Filter by status if specified
-    if (filter.status && category.status !== filter.status) {
-      return false;
+  const navigate = useNavigate();
+
+  // Kategoriyaları prioritet və deadlineə görə sıralayaq
+  const sortedCategories = [...categories].sort((a, b) => {
+    // Əvvəlcə prioritet üzrə
+    if (a.priority !== b.priority) {
+      return (b.priority || 0) - (a.priority || 0);
     }
     
-    // Filter by archived status
-    if (!filter.showArchived && category.archived) {
-      return false;
+    // Sonra deadline üzrə
+    if (a.deadline && b.deadline) {
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     }
     
-    // Filter by search term if specified
-    if (filter.search && !category.name.toLowerCase().includes(filter.search.toLowerCase())) {
-      return false;
-    }
+    // deadline olmayan kategoriyalar sonda olsun
+    if (a.deadline && !b.deadline) return -1;
+    if (!a.deadline && b.deadline) return 1;
     
-    // Filter by assignment if specified
-    if (filter.assignment && category.assignment !== filter.assignment) {
-      return false;
-    }
-    
-    return true;
+    // son olaraq ad üzrə
+    return a.name.localeCompare(b.name);
   });
   
-  // Handle category status toggle
-  const handleStatusToggle = async (categoryId: string, currentStatus: string) => {
-    // Əgər status aktiv və ya qeyri-aktiv deyilsə, əməliyyatı dayandırırıq
-    if (currentStatus !== 'active' && currentStatus !== 'inactive') {
-      toast.error(t('cannotToggleSpecialStatus'));
-      return;
+  const handleEditClick = (category: Category) => {
+    if (onEdit) {
+      onEdit(category);
     }
+  };
+  
+  const handleDeleteClick = (category: Category) => {
+    if (onDelete) {
+      onDelete(category);
+    }
+  };
+  
+  const handleStatusClick = async (categoryId: string, newStatus: CategoryStatus) => {
+    if (handleStatusChange) {
+      await handleStatusChange(categoryId, newStatus);
+    }
+  };
+  
+  // Deadline formatlaması
+  const formatDeadline = (deadline?: string) => {
+    if (!deadline) return '';
     
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      const date = new Date(deadline);
+      return format(date, 'd MMMM yyyy', { locale: az });
+    } catch (error) {
+      console.error('Tarix formatı xətası:', error);
+      return deadline;
+    }
+  };
+  
+  // Deadline statusunu hesablayaq (yaxınlaşan, keçmiş və s.)
+  const getDeadlineStatus = (deadline?: string): 'upcoming' | 'today' | 'past' | null => {
+    if (!deadline) return null;
     
-    // Call onUpdateStatus if provided, otherwise use the demo toast
-    if (onUpdateStatus) {
-      const success = await onUpdateStatus(categoryId, newStatus);
-      if (success) {
-        toast.success(
-          currentStatus === 'active' 
-            ? t('categoryDeactivated')
-            : t('categoryActivated')
+    try {
+      const deadlineDate = new Date(deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const deadlineOnly = new Date(deadlineDate);
+      deadlineOnly.setHours(0, 0, 0, 0);
+      
+      if (deadlineOnly.getTime() === today.getTime()) {
+        return 'today';
+      } else if (deadlineOnly > today) {
+        return 'upcoming';
+      } else {
+        return 'past';
+      }
+    } catch (error) {
+      console.error('Tarix hesablama xətası:', error);
+      return null;
+    }
+  };
+
+  // Status üçün badge komponentini qaytaraq
+  const renderStatusBadge = (status: CategoryStatus) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="success">Aktiv</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">Deaktiv</Badge>;
+      case 'draft':
+        return <Badge variant="outline">Qaralama</Badge>;
+      default:
+        return null;
+    }
+  };
+  
+  // Form statusu üçün badge
+  const renderFormStatusBadge = (status: FormStatus) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="success">Tamamlanıb</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Gözləmədə</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rədd edilib</Badge>;
+      case 'dueSoon':
+        return <Badge variant="warning">Tezliklə</Badge>;
+      case 'overdue':
+        return <Badge variant="destructive">Gecikib</Badge>;
+      case 'approved':
+        return <Badge variant="success">Təsdiqlənib</Badge>;
+      case 'draft':
+        return <Badge variant="outline">Qaralama</Badge>;
+      default:
+        return null;
+    }
+  };
+  
+  // Assignment (təyinat) üçün badge
+  const renderAssignmentBadge = (assignment?: string) => {
+    switch (assignment) {
+      case 'sectors':
+        return <Badge variant="outline">Sektorlar</Badge>;
+      case 'all':
+      default:
+        return <Badge variant="outline">Hamısı</Badge>;
+    }
+  };
+  
+  // Deadline badge-i
+  const renderDeadlineBadge = (deadline?: string) => {
+    const status = getDeadlineStatus(deadline);
+    
+    if (!deadline || !status) return null;
+    
+    switch (status) {
+      case 'today':
+        return (
+          <Badge variant="warning" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Bu gün
+          </Badge>
         );
-      } else {
-        toast.error(t('statusUpdateFailed'));
-      }
-    } else {
-      // For demonstration only: in a real app, this would be an API call
-      toast.success(
-        currentStatus === 'active' 
-          ? t('categoryDeactivated')
-          : t('categoryActivated')
-      );
+      case 'upcoming':
+        return (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <CalendarClock className="h-3 w-3" />
+            {formatDeadline(deadline)}
+          </Badge>
+        );
+      case 'past':
+        return (
+          <Badge variant="destructive" className="flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {formatDeadline(deadline)}
+          </Badge>
+        );
+      default:
+        return null;
     }
   };
   
-  // Handle category deletion
-  const handleDelete = async (categoryId: string) => {
-    // Call onDeleteCategory if provided, otherwise use the demo toast
-    if (onDeleteCategory) {
-      const success = await onDeleteCategory(categoryId);
-      if (success) {
-        toast.success(t('categoryDeleted'));
-      } else {
-        toast.error(t('deleteFailed'));
-      }
-    } else {
-      // For demonstration only: in a real app, this would be an API call
-      toast.success(t('categoryDeleted'));
-    }
-    
-    setConfirmDelete(null);
-  };
-  
-  // Handle category archive toggle
-  const handleArchiveToggle = async (categoryId: string, isArchived: boolean) => {
-    // For demonstration only: in a real app, this would be an API call
-    toast.success(
-      isArchived 
-        ? t('categoryUnarchived')
-        : t('categoryArchived')
-    );
-  };
-  
-  const getAssignmentBadge = (assignment: 'all' | 'sectors') => {
-    return assignment === 'all' 
-      ? <Badge variant="secondary">{t('allRegions')}</Badge>
-      : <Badge variant="outline">{t('sectorsOnly')}</Badge>;
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-60">
-        <p>{t('loading')}...</p>
-      </div>
-    );
-  }
-  
-  if (isError) {
-    return (
-      <div className="flex justify-center items-center h-60">
-        <p className="text-red-500">{t('errorLoadingData')}</p>
-      </div>
-    );
-  }
-  
+  // Kategoriya kartları
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[250px]">{t('name')}</TableHead>
-            <TableHead>{t('description')}</TableHead>
-            <TableHead>{t('assignment')}</TableHead>
-            <TableHead>{t('status')}</TableHead>
-            <TableHead className="text-right">{t('actions')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredCategories.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
-                {t('noMatchingRecordsFound')}
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredCategories.map((category) => (
-              <TableRow key={category.id} className={category.archived ? 'bg-muted/50' : ''}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <span>{category.name}</span>
-                    {category.archived && <Badge variant="outline">{t('archived')}</Badge>}
+    <div className="space-y-3">
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : sortedCategories.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">Kateqoriya tapılmadı</p>
+          </CardContent>
+        </Card>
+      ) : (
+        sortedCategories.map((category) => (
+          <Card key={category.id} className={cn(
+            "hover:bg-accent/5 transition-colors",
+            category.status === 'inactive' && "opacity-70"
+          )}>
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row justify-between">
+                <div className="flex-1 space-y-1 mb-2 md:mb-0">
+                  <div className="flex items-center justify-between md:justify-start gap-2">
+                    <h3 className="text-lg font-semibold">{category.name}</h3>
+                    <div className="flex items-center gap-1">
+                      {renderStatusBadge(category.status)}
+                      {renderAssignmentBadge(category.assignment)}
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell>{category.description}</TableCell>
-                <TableCell>{getAssignmentBadge(category.assignment)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={category.status === 'active'}
-                      onCheckedChange={() => handleStatusToggle(
-                        category.id, 
-                        category.status
-                      )}
-                      disabled={category.status !== 'active' && category.status !== 'inactive'}
-                    />
-                    {category.status !== 'active' && category.status !== 'inactive' && (
-                      <Badge 
-                        variant={
-                          category.status === 'approved' ? 'default' :
-                          category.status === 'pending' ? 'secondary' :
-                          category.status === 'rejected' ? 'destructive' :
-                          category.status === 'dueSoon' ? 'outline' :
-                          category.status === 'overdue' ? 'destructive' :
-                          'default'
-                        }
-                      >
-                        {t(category.status)}
+                  
+                  {category.description && (
+                    <p className="text-sm text-muted-foreground">{category.description}</p>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {renderDeadlineBadge(category.deadline)}
+                    {category.columnCount !== undefined && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        Sütunlar: {category.columnCount}
                       </Badge>
                     )}
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate(`/columns?categoryId=${category.id}`)}
+                  >
+                    Sütunlar
+                  </Button>
+                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">{t('openMenu')}</span>
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEditCategory(category)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>{t('edit')}</span>
+                      <DropdownMenuItem 
+                        onClick={() => handleEditClick(category)}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Redaktə et
                       </DropdownMenuItem>
-                      <AlertDialog open={confirmDelete === category.id} onOpenChange={(open) => {
-                        if (!open) setConfirmDelete(null);
-                      }}>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem onSelect={(e) => {
-                            e.preventDefault();
-                            setConfirmDelete(category.id);
-                          }}>
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>{t('delete')}</span>
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>{t('areYouSure')}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t('deleteConfirmationMessage')}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(category.id)}>
-                              {t('confirm')}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <DropdownMenuItem onClick={() => handleArchiveToggle(category.id, category.archived)}>
-                        {category.archived ? (
-                          <>
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>{t('unarchive')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <EyeOff className="mr-2 h-4 w-4" />
-                            <span>{t('archive')}</span>
-                          </>
-                        )}
+                      
+                      {category.status === 'active' ? (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusClick(category.id, 'inactive')}
+                          className="flex items-center gap-2"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Deaktiv et
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusClick(category.id, 'active')}
+                          className="flex items-center gap-2"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Aktiv et
+                        </DropdownMenuItem>
+                      )}
+                      
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteClick(category)}
+                        className="flex items-center gap-2 text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Sil
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
     </div>
   );
 };
 
 export default CategoryList;
-

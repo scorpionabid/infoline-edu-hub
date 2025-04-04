@@ -1,6 +1,5 @@
 
-import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,59 +9,51 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+} from '@/components/ui/alert-dialog';
+import { Category } from '@/types/category';
 
 interface DeleteCategoryDialogProps {
   isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  categoryName?: string;
+  onClose: () => void;
+  onConfirm: (id: string) => Promise<boolean>;
+  category: Category | null;
+  isSubmitting: boolean;
 }
 
 const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
   isOpen,
-  onOpenChange,
+  onClose,
   onConfirm,
-  categoryName
+  category,
+  isSubmitting
 }) => {
-  const { t } = useLanguage();
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleConfirm = () => {
-    setIsDeleting(true);
-    // API çağrışı simyulasiyası
-    setTimeout(() => {
-      onConfirm();
-      setIsDeleting(false);
-    }, 500);
+  const handleConfirm = async () => {
+    if (!category) return;
+    await onConfirm(category.id);
+    onClose();
   };
-
+  
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            {categoryName 
-              ? t('deleteCategoryConfirmationName').replace('{name}', categoryName) 
-              : t('deleteCategoryConfirmation')}
-          </AlertDialogTitle>
+          <AlertDialogTitle>Kateqoriyanı silmək istədiyinizə əminsiniz?</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteCategoryWarning')}
+            <span className="font-medium">{category?.name}</span> kateqoriyasını silmək istədiyinizə əminsiniz?
+            <br />
+            <br />
+            Bu əməliyyat geri qaytarıla bilməz. Bu kateqoriyaya aid bütün məlumatlar silinəcək.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-          <Button 
-            onClick={handleConfirm}
-            variant="destructive"
-            className="gap-2"
-            disabled={isDeleting}
+          <AlertDialogCancel disabled={isSubmitting}>Ləğv et</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={handleConfirm} 
+            disabled={isSubmitting}
+            className="bg-destructive hover:bg-destructive/90"
           >
-            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {t('delete')}
-          </Button>
+            {isSubmitting ? 'Silinir...' : 'Bəli, sil'}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
