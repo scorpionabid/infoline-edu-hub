@@ -1,84 +1,23 @@
 
-export interface DataEntry {
-  id: string;
-  category_id: string;
-  column_id: string;
-  school_id: string;
-  categoryId?: string;
-  columnId?: string;
-  schoolId?: string;
-  value: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: string;
-  approvedAt?: string;
-  approvedBy?: string;
-  rejectedBy?: string;
-  rejectionReason?: string;
-  rejection_reason?: string; // uyğunluq üçün
-  errorMessage?: string;
-  read_status?: boolean; // Added for NotificationContext compatibility
-}
+import { Column } from './column';
 
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'overdue' | 'dueSoon' | 'submitted';
+export type DataEntryStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
 
-export interface CategoryFilter {
-  assignment: 'all' | 'sectors' | '';
-  status: string;
-  archived: boolean;
-  showArchived?: boolean;
-  search?: string; 
-}
-
-export interface ColumnValidationError {
+export interface ColumnEntry {
+  id?: string;
   columnId: string;
-  message: string;
+  value: string | number | boolean | string[] | null;
+  status?: string;
+  validation?: any;
+  errorMessage?: string;
 }
 
 export interface CategoryEntryData {
-  id?: string;
-  categoryId: string;
-  entries: Record<string, string>;
-  status: DataEntryStatus;
-  categoryName?: string;
-  order?: number;
-  progress?: number;
-  values?: any[];
-  isSubmitted?: boolean;
-  isCompleted?: boolean;
-  completionPercentage?: number;
-  columnId?: string;
-  value?: string;
-}
-
-export interface ColumnEntry {
   columnId: string;
-  value: string;
-  isValid: boolean;
+  value: string | number | boolean | string[] | null;
+  status?: string;
+  validation?: any;
   errorMessage?: string;
-  id?: string;
-  status?: DataEntryStatus;
-}
-
-export interface ValidationRules {
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  min?: number;
-  max?: number;
-  pattern?: string;
-  patternMessage?: string;
-  minDate?: string;
-  maxDate?: string;
-  minValue?: number; // Added for useValidation.tsx
-  maxValue?: number; // Added for useValidation.tsx
-  warningThreshold?: number | {
-    min?: number;
-    max?: number;
-  };
-  options?: string[] | { label: string; value: any }[];
-  customValidation?: (value: any) => boolean | string;
 }
 
 export interface DataEntryForm {
@@ -86,8 +25,24 @@ export interface DataEntryForm {
   schoolId: string;
   entries: Record<string, ColumnEntry>;
   status: DataEntryStatus;
-  lastSaved: string;
   hasUnsavedChanges: boolean;
+  lastSaved: string;
   validationErrors: Record<string, string>;
   overallProgress?: number;
+}
+
+export interface DataEntry {
+  id: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  value?: string;
+  status?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
 }

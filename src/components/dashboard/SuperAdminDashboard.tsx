@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
 import { SuperAdminDashboardData } from '@/types/dashboard';
-import NotificationList from './NotificationList';
+import { NotificationList } from '@/components/notifications'; // Notification komponentini düzgün import edirik
 import ActivityList from './ActivityList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, School, Layers, Award, Check, Clock, XCircle } from 'lucide-react';

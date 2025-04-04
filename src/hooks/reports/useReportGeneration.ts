@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
@@ -46,7 +45,7 @@ export const useReportGeneration = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('reports')
+        .from('data_entries')
         .insert({
           name: reportInfo.name,
           description: reportInfo.description,
@@ -75,7 +74,7 @@ export const useReportGeneration = () => {
     try {
       setLoading(true);
       const { error } = await supabase
-        .from('reports')
+        .from('data_entries')
         .delete()
         .eq('id', reportId);
 

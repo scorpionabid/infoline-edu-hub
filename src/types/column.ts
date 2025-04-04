@@ -1,17 +1,20 @@
 
+import { Json } from './supabase';
+
 export type ColumnType = 
-  | 'text'
-  | 'number'
-  | 'date'
-  | 'select'
-  | 'multiselect'
-  | 'checkbox'
-  | 'radio'
-  | 'file'
-  | 'image'
-  | 'email'
-  | 'phone'
-  | 'textarea';
+  'text' | 
+  'number' | 
+  'date' | 
+  'select' | 
+  'checkbox' | 
+  'radio' | 
+  'file' | 
+  'image' | 
+  'textarea' | 
+  'email' | 
+  'phone' | 
+  'url' |
+  'time';
 
 export interface ColumnOption {
   label: string;
@@ -20,20 +23,18 @@ export interface ColumnOption {
 
 export interface ColumnValidation {
   required?: boolean;
-  minValue?: number;
-  maxValue?: number;
+  min?: number;
+  max?: number;
   minLength?: number;
   maxLength?: number;
   pattern?: string;
-  patternError?: string;
-  patternMessage?: string;
-  format?: string;
-  min?: number;
-  max?: number;
-  regex?: string;
-  minDate?: string;
-  maxDate?: string;
-  warningThreshold?: number | { min?: number; max?: number };
+  email?: boolean;
+  url?: boolean;
+  date?: boolean;
+  number?: boolean;
+  integer?: boolean;
+  positive?: boolean;
+  message?: string;
 }
 
 export interface Column {
@@ -42,105 +43,64 @@ export interface Column {
   type: ColumnType;
   categoryId: string;
   isRequired: boolean;
-  options: string[] | ColumnOption[];
-  orderIndex: number;
-  order?: number;
   placeholder?: string;
   helpText?: string;
   defaultValue?: string;
+  orderIndex: number; // orderIndex olmalıdır, order yox
+  options: string[] | ColumnOption[];
   validation?: ColumnValidation;
   status?: string;
   parentColumnId?: string;
-  parent_column_id?: string; // Uyğunluq üçün əlavə edildi
   dependsOn?: string;
-  depends_on?: string; // Uyğunluq üçün əlavə edildi
 }
 
-export interface CategoryWithColumns {
-  category: {
-    id: string;
-    name: string;
-    description?: string;
-    status: CategoryStatus;
-    assignment: CategoryAssignment;
-    priority: number;
-    archived: boolean;
-    column_count: number;
-    deadline?: string;
+// Adapter funksiyası 
+export function adaptDatabaseColumn(dbColumn: any): Column {
+  return {
+    id: dbColumn.id,
+    name: dbColumn.name,
+    type: dbColumn.type as ColumnType,
+    categoryId: dbColumn.category_id,
+    isRequired: dbColumn.is_required,
+    placeholder: dbColumn.placeholder || '',
+    helpText: dbColumn.help_text || '',
+    defaultValue: dbColumn.default_value || '',
+    orderIndex: dbColumn.order_index || 0,
+    // Options və validation JSON olaraq gəlirsə, onları parse edirik
+    options: parseOptions(dbColumn.options),
+    validation: parseValidation(dbColumn.validation),
+    status: dbColumn.status || 'active',
+    parentColumnId: dbColumn.parent_column_id || '',
+    dependsOn: dbColumn.depends_on || ''
   };
-  columns: Column[];
-  deadline?: string;
-  id?: string; // CategoryWithColumns obyektinə birbaşa müraciət üçün
-  name?: string; // CategoryWithColumns obyektinə birbaşa müraciət üçün
 }
 
-import { CategoryStatus, CategoryAssignment } from './category';
-
-// Supabase-dən gələn sütun obyektini Column tipinə çevirmək üçün
-export const adaptColumnToSupabase = (column: Column) => {
-  return {
-    id: column.id,
-    name: column.name,
-    category_id: column.categoryId,
-    type: column.type,
-    is_required: column.isRequired,
-    options: Array.isArray(column.options) ? JSON.stringify(column.options) : column.options,
-    order_index: column.orderIndex || column.order || 0,
-    placeholder: column.placeholder || null,
-    help_text: column.helpText || null,
-    default_value: column.defaultValue || null,
-    validation: column.validation ? JSON.stringify(column.validation) : null,
-    status: column.status || 'active',
-    parent_column_id: column.parentColumnId || column.parent_column_id || null,
-    depends_on: column.dependsOn || column.depends_on || null
-  };
-};
-
-// Supabase-dən gələn sütun obyektini bizim istifadə etdiyimiz Column tipinə çevirmək üçün adapter
-export const adaptSupabaseColumn = (column: any): Column => {
-  let options: string[] | ColumnOption[] = [];
-  if (column.options) {
+// JSON options və validation-u parse edən funksiyalar
+function parseOptions(options: any): string[] | ColumnOption[] {
+  if (!options) return [];
+  
+  if (typeof options === 'string') {
     try {
-      options = typeof column.options === 'string' 
-        ? JSON.parse(column.options) 
-        : column.options;
+      const parsed = JSON.parse(options);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.error('Sütun seçimlərini parse edərkən xəta baş verdi:', e);
-      // Əgər parse edilə bilmirsə, boş array istifadə et
-      options = [];
+      return [];
     }
   }
+  
+  return Array.isArray(options) ? options : [];
+}
 
-  let validation: ColumnValidation | undefined;
-  if (column.validation) {
+function parseValidation(validation: any): ColumnValidation | undefined {
+  if (!validation) return undefined;
+  
+  if (typeof validation === 'string') {
     try {
-      validation = typeof column.validation === 'string'
-        ? JSON.parse(column.validation)
-        : column.validation;
+      return JSON.parse(validation);
     } catch (e) {
-      console.error('Sütun validasiyasını parse edərkən xəta baş verdi:', e);
-      // Əgər parse edilə bilmirsə, boş validasiya istifadə et
-      validation = {};
+      return undefined;
     }
   }
-
-  return {
-    id: column.id,
-    name: column.name,
-    type: column.type as ColumnType,
-    categoryId: column.category_id || column.categoryId,
-    isRequired: column.is_required || column.isRequired || false,
-    options: options || [],
-    orderIndex: column.order_index || column.orderIndex || 0,
-    order: column.order || column.order_index || column.orderIndex || 0,
-    placeholder: column.placeholder || '',
-    helpText: column.help_text || column.helpText || '',
-    defaultValue: column.default_value || column.defaultValue || '',
-    validation: validation,
-    status: column.status || 'active',
-    parentColumnId: column.parent_column_id || column.parentColumnId,
-    parent_column_id: column.parent_column_id || column.parentColumnId,
-    dependsOn: column.depends_on || column.dependsOn,
-    depends_on: column.depends_on || column.dependsOn
-  };
-};
+  
+  return validation as ColumnValidation;
+}

@@ -9,7 +9,7 @@ import { Search } from 'lucide-react';
 import { FormStatus, FormItem, Form } from '@/types/form';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { adaptFormStatus } from '@/hooks/dashboard/utils';
+import { adaptFormStatus } from '@/utils/dashboardUtils';
 
 interface FormTabsProps {
   recentForms: FormItem[];

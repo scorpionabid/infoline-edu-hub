@@ -1,341 +1,898 @@
-
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from "@/utils/cn";
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useLanguage } from '@/context/LanguageContext';
-import { SideBarNavItem } from '@/types/supabase';
-import { UserRole } from '@/types/supabase';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronRight,
-  LogOut,
-  Menu,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
+  Home,
+  LayoutDashboard,
   Settings,
-  User
-} from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { sideBarConfig, sideBarHelp } from '@/config/sidebar';
-
-interface SidebarProps {
-  t: (key: string, args?: any) => string;
-  role: UserRole | undefined;
-  isCollapsed: boolean;
-  pathname: string;
-  onToggleCollapse: () => void;
-  onLinkClick?: () => void;
-}
-
-const SidebarNav = ({ className, items, isCollapsed, pathname, onLinkClick }: {
-  className?: string;
-  items: SideBarNavItem[];
-  isCollapsed: boolean;
-  pathname: string;
-  onLinkClick?: () => void;
-}) => {
-  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
-
-  const toggleItem = (title: string) => {
-    setOpenItems((prev) => ({
-      ...prev,
-      [title]: !prev[title],
-    }));
-  };
-
-  return (
-    <nav className={cn("flex flex-col gap-2", className)}>
-      {items.map((item, index) => {
-        // Detect if the item is active
-        const isActive = item.href ? pathname === item.href : false;
-        // Detect if this item has children and if any of them is active
-        const hasChildren = item.items && item.items.length > 0;
-        const isChildrenActive = hasChildren && item.items?.some(child => child.href ? pathname === child.href : false);
-        const isOpen = openItems[item.title] || isChildrenActive;
-
-        if (hasChildren) {
-          return (
-            <div key={`${item.title}-${index}`}>
-              <Button
-                variant={isChildrenActive ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-between px-2 mb-1", 
-                  isCollapsed ? "h-9 px-2" : "px-2",
-                  isChildrenActive && "bg-muted"
-                )}
-                onClick={() => toggleItem(item.title)}
-              >
-                <div className="flex items-center">
-                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
-                  {!isCollapsed && <span>{item.title}</span>}
-                </div>
-                {!isCollapsed && (
-                  isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
-                )}
-              </Button>
-              {isOpen && !isCollapsed && item.items && (
-                <div className="ml-4 border-l pl-2 space-y-1">
-                  {item.items.map((child, childIndex) => (
-                    <Button
-                      key={`${child.title}-${childIndex}`}
-                      variant={pathname === child.href ? "secondary" : "ghost"}
-                      size="sm"
-                      asChild
-                      className={cn(
-                        "w-full justify-start",
-                        pathname === child.href ? "bg-muted" : "transparent"
-                      )}
-                      onClick={onLinkClick}
-                    >
-                      <Link to={child.href || '#'}>
-                        {child.icon && <child.icon className="mr-2 h-3.5 w-3.5" />}
-                        <span>{child.title}</span>
-                      </Link>
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        }
-
-        return (
-          <TooltipProvider key={`${item.title}-${index}`} delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size={isCollapsed ? "icon" : "default"}
-                  asChild
-                  className={cn(
-                    "w-full justify-start",
-                    isCollapsed ? "h-9 px-2" : "px-2",
-                    isActive && "bg-muted"
-                  )}
-                  onClick={onLinkClick}
-                >
-                  <Link to={item.href || '#'}>
-                    {item.icon && <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />}
-                    {!isCollapsed && <span>{item.title}</span>}
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right" className="flex items-center gap-4">
-                  {item.title}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        );
-      })}
-    </nav>
-  );
-};
-
-export const Sidebar = ({ t, role, isCollapsed, pathname, onToggleCollapse, onLinkClick }: SidebarProps) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const location = useLocation();
-
-  // Get the sidebar items based on the user's role
-  const roleItems = sideBarConfig[role as keyof typeof sideBarConfig] || [];
-  // Get the help item that's common for all roles
-  const helpItem = sideBarHelp;
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  // Close mobile sidebar when route changes
-  React.useEffect(() => {
-    if (isMobileOpen) {
-      setIsMobileOpen(false);
-    }
-  }, [location, isMobileOpen]);
-
-  // Handle content based on viewport
-  const sidebarContent = (
-    <div className={cn(
-      "flex flex-col h-full",
-      isCollapsed ? "w-[60px]" : "w-[240px]"
-    )}>
-      {/* Sidebar Header */}
-      <div className={cn(
-        "flex h-14 items-center px-4 py-2",
-        isCollapsed ? "justify-center" : "justify-between"
-      )}>
-        {!isCollapsed && (
-          <span className="text-lg font-semibold">InfoLine</span>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleCollapse}
-          className={cn(
-            "h-7 w-7",
-            isCollapsed ? "rotate-180" : ""
-          )}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-      </div>
-      
-      {/* Sidebar Content */}
-      <ScrollArea className="flex-1">
-        <div className={cn(
-          "flex flex-col gap-6 p-2",
-          isCollapsed ? "items-center" : "items-start"
-        )}>
-          <SidebarNav
-            items={roleItems}
-            isCollapsed={isCollapsed}
-            pathname={pathname}
-            onLinkClick={onLinkClick}
-          />
-            
-          {/* Divider */}
-          <div className={cn(
-            "h-px bg-muted",
-            isCollapsed ? "w-4" : "w-full"
-          )} />
-
-          {/* Help section */}
-          <SidebarNav
-            items={[helpItem]}
-            isCollapsed={isCollapsed}
-            pathname={pathname}
-            onLinkClick={onLinkClick}
-          />
-        </div>
-      </ScrollArea>
-
-      {/* User Section */}
-      <div className={cn(
-        "p-2 border-t",
-        isCollapsed ? "flex justify-center" : ""
-      )}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full flex items-center gap-2 p-2",
-                isCollapsed ? "justify-center" : "justify-start"
-              )}
-            >
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={user?.avatar} />
-                <AvatarFallback className="text-xs">
-                  {user?.full_name?.split(' ').map(name => name[0]).join('') || user?.email?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
-                <div className="flex flex-col text-left overflow-hidden">
-                  <span className="text-sm truncate font-medium">{user?.full_name || user?.email || t('user')}</span>
-                  <span className="text-xs text-muted-foreground truncate">
-                    {t(user?.role || 'user')}
-                  </span>
-                </div>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              {t('myAccount')}
-            </DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link to="/profile">
-                <User className="mr-2 h-4 w-4" />
-                {t('profile')}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings">
-                <Settings className="mr-2 h-4 w-4" />
-                {t('settings')}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              {t('logout')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-
-  // Render based on viewport
-  return (
-    <>
-      {isMobile ? (
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            className="md:hidden fixed top-4 left-4 z-40"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-            <SheetContent side="left" className="p-0">
-              {sidebarContent}
-            </SheetContent>
-          </Sheet>
-        </>
-      ) : (
-        <div className={cn(
-          "hidden md:block border-r bg-background transition-width duration-300 ease-in-out overflow-hidden h-screen sticky top-0",
-          isCollapsed ? "w-[60px]" : "w-[240px]"
-        )}>
-          {sidebarContent}
-        </div>
-      )}
-    </>
-  );
-};
-
-// İndi əsas layout komponentini yaradaq
-const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
-  const { t } = useLanguage();
-  const location = useLocation();
-  const { user } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  return (
-    <div className="flex min-h-screen">
-      <Sidebar
-        t={t}
-        role={user?.role}
-        isCollapsed={isCollapsed}
-        pathname={location.pathname}
-        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-      />
-      <main className="flex-1">{children}</main>
-    </div>
-  );
-};
-
-export default SidebarLayout;
+  Users,
+  School,
+  Layers,
+  Activity,
+  Bell,
+  Menu,
+  ChevronDown,
+  LogOut,
+  HelpCircle,
+  Info,
+  QuestionMarkCircle,
+  MessageSquare,
+  Mail,
+  User,
+  Building2,
+  Building,
+  MapPin,
+  Archive,
+  ListChecks,
+  FileText,
+  File,
+  Folder,
+  FolderInput,
+  FolderPlus,
+  Plus,
+  PlusCircle,
+  PlusSquare,
+  Plus,
+  CircleUserRound,
+  Contact2,
+  Contact,
+  Book,
+  BookOpen,
+  BookText,
+  BookUser,
+  BookMarked,
+  BookCopy,
+  BookOpenCheck,
+  BookOpenList,
+  BookOpenText,
+  BookUpload,
+  BookA,
+  BookAudio,
+  BookASection,
+  BookCopyCheck,
+  BookCopyList,
+  BookCopyText,
+  BookHeart,
+  BookKey,
+  BookLock,
+  BookMinus,
+  BookNews,
+  BookOpenGraph,
+  BookOpenListCheck,
+  BookOpenQuestion,
+  BookOpenTextCheck,
+  BookQuestion,
+  BookSearch,
+  BookSignature,
+  BookTextCheck,
+  BookTextGraph,
+  BookTextList,
+  BookTextX,
+  BookType,
+  BookUserCheck,
+  BookUserRound,
+  BookX,
+  Books,
+  BooksVertical,
+  Bookmark,
+  BookmarkCheck,
+  BookmarkEdit,
+  BookmarkMinus,
+  BookmarkPlus,
+  BookmarkQuestion,
+  BookmarkX,
+  Bookmarks,
+  BookmarksOff,
+  Bot,
+  Box,
+  BoxAlignBottom,
+  BoxAlignLeft,
+  BoxAlignRight,
+  BoxAlignTop,
+  BoxOff,
+  BoxSelect,
+  Boxes,
+  Braces,
+  BracesVertical,
+  Brain,
+  BrainCircuit,
+  Branch,
+  Briefcase,
+  BriefcaseCheck,
+  BriefcaseClock,
+  BriefcaseDownload,
+  BriefcaseEdit,
+  BriefcaseMinus,
+  BriefcasePlus,
+  BriefcaseSearch,
+  BriefcaseUpload,
+  Brush,
+  Bug,
+  BugOff,
+  Building2,
+  Building,
+  BuildingSkyscraper,
+  Bus,
+  Calculator,
+  Calendar,
+  CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  CalendarHeart,
+  CalendarMinus,
+  CalendarOff,
+  CalendarPlus,
+  CalendarRange,
+  CalendarSearch,
+  CalendarX,
+  Calligraphy,
+  Camera,
+  CameraOff,
+  CandlestickChart,
+  Car,
+  Caravan,
+  CardboardBox,
+  Cards,
+  Carrot,
+  Cart,
+  CaseSensitive,
+  Cast,
+  CastOff,
+  CCTV,
+  Check,
+  CheckCheck,
+  CheckCircle,
+  CheckCircle2,
+  CheckSquare,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronsUp,
+  Chrome,
+  Circle,
+  Circle0,
+  Circle1,
+  Circle2,
+  Circle3,
+  Circle4,
+  Circle5,
+  Circle6,
+  Circle7,
+  Circle8,
+  Circle9,
+  CircleAlerted,
+  CircleAsterisk,
+  CircleCheck,
+  CircleCheck2,
+  CircleDashed,
+  CircleDollarSign,
+  CircleDot,
+  CircleDown,
+  CircleDownLeft,
+  CircleDownRight,
+  CircleEllipsis,
+  CircleEqual,
+  CircleOff,
+  CirclePause,
+  CirclePlus,
+  CircleSlash,
+  CircleUp,
+  CircleUpLeft,
+  CircleUpRight,
+  CircleUser,
+  CircleX,
+  CircleX2,
+  CircuitBoard,
+  Clipboard,
+  ClipboardCheck,
+  ClipboardCopy,
+  ClipboardEdit,
+  ClipboardList,
+  ClipboardMinus,
+  ClipboardPlus,
+  ClipboardSignature,
+  ClipboardType,
+  ClipboardX,
+  Clock,
+  Clock1,
+  Clock10,
+  Clock11,
+  Clock12,
+  Clock2,
+  Clock3,
+  Clock4,
+  Clock5,
+  Clock6,
+  Clock7,
+  Clock8,
+  Clock9,
+  ClockCheck,
+  ClockClockwise,
+  ClockCounterClockwise,
+  Cloud,
+  CloudCog,
+  CloudDrizzle,
+  CloudFog,
+  CloudHail,
+  CloudLightning,
+  CloudMoon,
+  CloudOff,
+  CloudRain,
+  CloudRainWind,
+  CloudSnow,
+  CloudSun,
+  Cloudy,
+  Clubs,
+  Code,
+  Code2,
+  Codepen,
+  Codesandbox,
+  Coffee,
+  Cog,
+  Coins,
+  Columns,
+  Combine,
+  Command,
+  Compass,
+  Component,
+  ConciergeBell,
+  Construction,
+  Contact2,
+  Contact,
+  Contrast,
+  Cookie,
+  Copy,
+  CopyCheck,
+  CopyMinus,
+  CopyPlus,
+  Copyright,
+  CornerDownLeft,
+  CornerDownRight,
+  CornerLeftDown,
+  CornerLeftUp,
+  CornerRightDown,
+  CornerRightUp,
+  CornerUpLeft,
+  CornerUpRight,
+  Cpu,
+  CreditCard,
+  Crop,
+  Cross,
+  Crosshair,
+  Crown,
+  Currency,
+  Cursor,
+  CursorText,
+  Database,
+  DatabaseBackup,
+  DatabaseImport,
+  DatabaseOff,
+  Delete,
+  Diamond,
+  Dice1,
+  Dice2,
+  Dice3,
+  Dice4,
+  Dice5,
+  Dice6,
+  Dices,
+  Diff,
+  Disc,
+  Divide,
+  Dog,
+  DollarSign,
+  Download,
+  DownloadCloud,
+  Dribbble,
+  Droplet,
+  DropletFilled,
+  Ear,
+  EarOff,
+  Edit,
+  Edit2,
+  Edit3,
+  Egg,
+  EggFried,
+  Eject,
+  Elevator,
+  Ellipse,
+  EllipsisHorizontal,
+  EllipsisVertical,
+  Email,
+  Embed,
+  Emoji,
+  Equal,
+  Eraser,
+  Euro,
+  Expand,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Facebook,
+  Factory,
+  Fan,
+  FastForward,
+  Feather,
+  Figma,
+  File,
+  FileArchive,
+  FileAudio,
+  FileAxis3d,
+  FileBadge,
+  FileBarChart2,
+  FileBarChart,
+  FileBox,
+  FileCheck,
+  FileCode,
+  FileCog,
+  FileContract,
+  FileCsv,
+  FileDatabase,
+  FileDiff,
+  FileDigit,
+  FileDown,
+  FileEdit,
+  FileHeart,
+  FileImage,
+  FileInput,
+  FileJson,
+  FileKey,
+  FileLineChart,
+  FileLock,
+  FileMagnifyingGlass,
+  FileMinus,
+  FileOutput,
+  FilePanels,
+  FilePieChart,
+  FilePlus,
+  FilePresentation,
+  FileSearch,
+  FileSettings,
+  FileSignature,
+  FileSpreadsheet,
+  FileText,
+  FileType,
+  FileUp,
+  FileVideo,
+  FileVolume,
+  FileWarning,
+  FileX,
+  Files,
+  Film,
+  Filter,
+  FilterX,
+  Fingerprint,
+  FireExtinguisher,
+  Flag,
+  FlagOff,
+  Flame,
+  Flashlight,
+  FlashlightOff,
+  FlaskConical,
+  FlaskConicalOff,
+  FlaskRound,
+  FlipHorizontal,
+  FlipVertical,
+  Flower,
+  Flower2,
+  Focus,
+  Folder,
+  FolderArchive,
+  FolderCheck,
+  FolderClock,
+  FolderCode,
+  FolderCog,
+  FolderDown,
+  FolderEdit,
+  FolderHeart,
+  FolderImage,
+  FolderInput,
+  FolderKey,
+  FolderLock,
+  FolderMagnifyingGlass,
+  FolderMinus,
+  FolderPanels,
+  FolderPlus,
+  FolderSearch,
+  FolderSettings,
+  FolderText,
+  FolderUp,
+  FolderX,
+  Folders,
+  FormInput,
+  Forward,
+  Frame,
+  Framer,
+  Frown,
+  Fuel,
+  FunctionSquare,
+  Gamepad,
+  Gamepad2,
+  Gauge,
+  GaugeCircle,
+  Gem,
+  Ghost,
+  Gift,
+  GitBranch,
+  GitCommit,
+  GitFork,
+  GitMerge,
+  GitPullRequest,
+  Github,
+  Gitlab,
+  GlassWater,
+  Globe,
+  Globe2,
+  Google,
+  GoogleDrive,
+  GraduationCap,
+  Graph,
+  Grip,
+  GripHorizontal,
+  GripVertical,
+  Hammer,
+  Hand,
+  HandMetal,
+  HardDrive,
+  HardHat,
+  Hash,
+  Haze,
+  Heading,
+  Heading1,
+  Heading2,
+  Heading3,
+  Heading4,
+  Heading5,
+  Heading6,
+  Headphones,
+  Heart,
+  HeartCrack,
+  HeartHandshake,
+  HeartOff,
+  HelpCircle,
+  Hexagon,
+  Highlighter,
+  History,
+  Home,
+  Icons,
+  IdCard,
+  Image,
+  ImageMinus,
+  ImageOff,
+  ImagePlus,
+  Inbox,
+  InboxCheck,
+  InboxDown,
+  InboxMinus,
+  InboxPlus,
+  InboxUp,
+  Info,
+  Inspect,
+  Instagram,
+  Italic,
+  IterationCcw,
+  IterationCw,
+  Joystick,
+  Key,
+  Keyboard,
+  Lamp,
+  LampCeiling,
+  LampDesk,
+  LampFloor,
+  LampWallDown,
+  LampWallUp,
+  Landmark,
+  Languages,
+  Laptop,
+  Laptop2,
+  Layout,
+  LayoutDashboard,
+  LayoutList,
+  LayoutTemplate,
+  Layers,
+  LayersOff,
+  Leaf,
+  Library,
+  LifeBuoy,
+  Lightbulb,
+  LightbulbOff,
+  LineChart,
+  Link,
+  Link2,
+  Link2Off,
+  Linkedin,
+  List,
+  ListChecks,
+  ListOrdered,
+  ListPlus,
+  ListRestart,
+  ListTree,
+  ListUnordered,
+  Loader,
+  Locate,
+  LocateFixed,
+  Lock,
+  LogIn,
+  LogOut,
+  Mail,
+  MailCheck,
+  MailMinus,
+  MailOpen,
+  MailPlus,
+  MailQuestion,
+  MailSearch,
+  MailWarning,
+  MailX,
+  Mails,
+  Map,
+  MapPin,
+  Maximize,
+  Maximize2,
+  Medal,
+  Megaphone,
+  MegaphoneOff,
+  Menu,
+  MessageCircle,
+  MessageSquare,
+  Mic,
+  Mic2,
+  MicOff,
+  Microscope,
+  Microwave,
+  Milestone,
+  Minimize,
+  Minimize2,
+  Minus,
+  MinusCircle,
+  MinusSquare,
+  Monitor,
+  MonitorOff,
+  Moon,
+  MoreHorizontal,
+  MoreVertical,
+  Mountain,
+  MountainSnow,
+  Mouse,
+  Move,
+  Move3d,
+  Music,
+  Navigation,
+  Navigation2,
+  Network,
+  Newspaper,
+  Notification,
+  NotificationOff,
+  Nut,
+  Octagon,
+  Option,
+  Orbit,
+  Outbox,
+  Package,
+  Package2,
+  PackageCheck,
+  PackageMinus,
+  PackageOpen,
+  PackagePlus,
+  PackageSearch,
+  PageBreak,
+  PaintBucket,
+  Palette,
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  PanelTop,
+  Paperclip,
+  Paragraph,
+  Pause,
+  PauseCircle,
+  PawPrint,
+  PenTool,
+  Pencil,
+  PencilLine,
+  Pentagon,
+  Percent,
+  PersonStanding,
+  Phone,
+  PhoneCall,
+  PhoneForwarded,
+  PhoneIncoming,
+  PhoneMissed,
+  PhoneOff,
+  PhoneOutgoing,
+  PieChart,
+  PiggyBank,
+  Pilcrow,
+  Pin,
+  PinOff,
+  Plane,
+  PlaneLanding,
+  PlaneTakeoff,
+  Plant,
+  Play,
+  PlayCircle,
+  Plug,
+  Plug2,
+  PlugZap,
+  Plus,
+  PlusCircle,
+  PlusSquare,
+  Pocket,
+  Podcast,
+  Pointer,
+  Popcorn,
+  Power,
+  Ppt,
+  Presentation,
+  Printer,
+  Product,
+  Puzzle,
+  Qrcode,
+  Quote,
+  Radio,
+  RadioReceiver,
+  RectangleHorizontal,
+  RectangleVertical,
+  Recycle,
+  Redo,
+  Redo2,
+  RefreshCcw,
+  RefreshCw,
+  Registered,
+  Repeat,
+  Repeat2,
+  Replace,
+  Reply,
+  ReplyAll,
+  Rewind,
+  Road,
+  Robot,
+  Rocket,
+  RotateCcw,
+  RotateCw,
+  Rss,
+  Ruler,
+  RussianRuble,
+  Save,
+  Scale,
+  Scan,
+  ScanFace,
+  Scissors,
+  ScreenShare,
+  ScreenShareOff,
+  Scroll,
+  Search,
+  SearchCheck,
+  SearchCode,
+  SearchX,
+  Send,
+  SeparatorHorizontal,
+  SeparatorVertical,
+  Server,
+  ServerCog,
+  ServerCrash,
+  ServerOff,
+  Settings,
+  Share,
+  Share2,
+  Share2Off,
+  ShareOff,
+  Sheet,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldClose,
+  ShieldOff,
+  ShieldQuestion,
+  Ship,
+  Shirt,
+  ShoppingBag,
+  ShoppingCart,
+  Shovel,
+  Shrink,
+  SidebarClose,
+  SidebarOpen,
+   सिग्मा,
+  Signature,
+  Sitemap,
+  SkipBack,
+  SkipForward,
+  Slack,
+  Slash,
+  Slice,
+  Sliders,
+  SlidersHorizontal,
+  Smile,
+  SmilePlus,
+  Snowflake,
+  SortAsc,
+  SortDesc,
+  Space,
+   স্পार्कल्स,
+  Speaker,
+   স্প्रेडशीट,
+  Square,
+  Square0,
+  Square1,
+  Square2,
+  Square3,
+  Square4,
+  Square5,
+  Square6,
+  Square7,
+  Square8,
+  Square9,
+  SquareAlert,
+  SquareAsterisk,
+  SquareCheck,
+  SquareCode,
+  SquareDashedBottomCode,
+  SquareDashed,
+  SquareDollarSign,
+  SquareDown,
+  SquareEqual,
+  SquareGantt,
+  SquareKanban,
+  SquareOff,
+  SquarePause,
+  SquarePen,
+  SquarePlus,
+  SquareRight,
+  SquareSlash,
+  SquareUp,
+  SquareUser,
+  SquareX,
+  SquaresDiagonal,
+  Stamp,
+  Star,
+  StarHalf,
+  StarOff,
+   স্টেটোস্কোপ,
+  Sticker,
+  ストップ,
+  ストップサークル,
+  ストップサークル2,
+  ストップスクエア,
+  ストップスクエア2,
+  ストップスクエアオフ,
+  ストップスクエアオフ2,
+  ストップスクエアオフサークル,
+  ストップスクエアオフサークル2,
+  ストップスクエアオフスクエア,
+  ストップスクエアオフスクエア2,
+  ストップスクエアオフストップ,
+  ストップスクエアオフストップ2,
+  ストップスクエアオフストップサークル,
+  ストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフ2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフサークル2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフスクエア2,
+  ストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップスクエアオフストップ

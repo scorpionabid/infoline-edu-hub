@@ -1,34 +1,38 @@
 
-import { Notification, NotificationType, NotificationEntityType } from '@/types/notification';
+import { ActivityItem, NotificationEntityType } from '@/types/dashboard';
+import { NotificationType } from '@/types/notification';
 
-// Demo bildirisləri
-export const mockNotifications: Notification[] = [
+// Nümunə bildirişlər
+export const mockNotifications = [
   {
     id: '1',
-    type: 'newCategory' as NotificationType,
-    title: 'Yeni kateqoriya əlavə edildi',
-    message: 'Şagird məlumatları kateqoriyası sistem inzibatçısı tərəfindən əlavə edildi.',
-    createdAt: new Date().toISOString(),
-    time: '15 dəq əvvəl',
+    type: 'warning' as NotificationType,
+    title: 'Son tarix yaxınlaşır',
+    message: 'Şagird məlumatları formu son tarixinə 2 gün qalıb',
+    createdAt: '2023-05-01T10:30:00Z',
+    time: '2 gün əvvəl',
     isRead: false,
     userId: 'user-1',
     priority: 'normal',
     read_status: false,
-    relatedEntityType: 'category' as NotificationEntityType
+    relatedEntityId: 'form-1', // relatedEntityId əlavə etdik
+    relatedEntityType: 'form' as NotificationEntityType
   },
   {
     id: '2',
-    type: 'deadline' as NotificationType,
-    title: 'Son tarix yaxınlaşır',
-    message: 'Müəllim məlumatları formasının doldurulması üçün 2 gün qalıb.',
-    createdAt: new Date().toISOString(),
-    time: '1 saat əvvəl',
+    type: 'success' as NotificationType,
+    title: 'Təsdiqləndi',
+    message: 'Şagird məlumatları təsdiqləndi',
+    createdAt: '2023-04-28T14:15:00Z',
+    time: '5 gün əvvəl',
     isRead: true,
     userId: 'user-1',
     priority: 'high',
     read_status: true,
-    relatedEntityType: 'category' as NotificationEntityType
-  }
+    relatedEntityId: 'form-2', // relatedEntityId əlavə etdik
+    relatedEntityType: 'form' as NotificationEntityType
+  },
+  // ... digər bildirişlər
 ];
 
 // Demo məlumatlar üçün köməkçi funksiyalar 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useLanguage } from '@/context/LanguageContext';
@@ -10,6 +10,11 @@ import RegionHeader from '@/components/regions/RegionHeader';
  */
 const Regions = () => {
   const { t } = useLanguage();
+  
+  const handleAddRegion = () => {
+    // Yeni region əlavə etmə məntiqi
+    console.log('Yeni region əlavə edilir...');
+  };
 
   return (
     <>
@@ -18,7 +23,7 @@ const Regions = () => {
       </Helmet>
       <SidebarLayout>
         <div className="container mx-auto py-6">
-          <RegionHeader />
+          <RegionHeader t={t} onAddRegion={handleAddRegion} />
         </div>
       </SidebarLayout>
     </>
