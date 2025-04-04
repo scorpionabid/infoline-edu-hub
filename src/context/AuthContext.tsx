@@ -1,8 +1,8 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth'; // auth qovluğunu istifadə etdik
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // User roles
 export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Derive auth state from Supabase user
   const authState: AuthState = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
     isLoading: loading,
     error,
   };
@@ -55,7 +55,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       console.log(`AuthContext: ${email} ilə giriş edilir...`);
-      const data = await signIn(email, password);
+      const { data, error } = await signIn(email, password);
+      
+      if (error) {
+        console.error('AuthContext: Giriş uğursuz oldu:', error);
+        throw error; // Xətanı irəli ötürək
+      }
       
       if (!data || !data.user) {
         console.error('AuthContext: Giriş uğursuz oldu - istifadəçi məlumatları yoxdur');
@@ -68,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error('AuthContext: Login error:', error);
       
-      // Daha detallı xəta mesajlarını saxlayaq
+      // Daha detallı xəta mesajlarını təyin edək
       if (error.status === 500) {
         setError('Server xətası: verilənlər bazasında problem var');
       } else if (error.status === 401) {
@@ -77,6 +82,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError('Yanlış giriş məlumatları: e-poçt və ya şifrə səhvdir');
       } else if (error.message?.includes('Email not confirmed')) {
         setError('E-poçt təsdiqlənməyib');
+      } else if (error.message?.includes('İstifadəçi profili tapılmadı')) {
+        setError('Bu hesab üçün profil tapılmadı, zəhmət olmasa adminə müraciət edin');
+      } else if (error.message?.includes('rol təyin edilməyib')) {
+        setError('Bu hesab üçün rol təyin edilməyib, zəhmət olmasa adminə müraciət edin');
       } else {
         setError(error.message || 'Bilinməyən giriş xətası');
       }
@@ -138,9 +147,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Hər dəfə auth vəziyyəti dəyişdikdə log edək
   useEffect(() => {
     console.log('Auth vəziyyəti dəyişdi:', {
-      isAuthenticated: !!user,
+      isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
       isLoading: loading,
-      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      user: user ? { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role,
+        full_obj: JSON.stringify(user)
+      } : null,
       error
     });
   }, [user, loading, error]);

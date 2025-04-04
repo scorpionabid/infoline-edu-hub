@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
 
@@ -7,65 +6,69 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
   try {
     console.log(`Profil məlumatlarını alarikən, istifadəçi ID: ${userId}`);
     
+    // Auth istifadəçi məlumatlarını əldə et
+    const { data: authData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Auth istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+      throw new Error('İstifadəçi avtorizasiyası xətası');
+    }
+    
     // Profil məlumatlarını əldə et
     let { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    
-    if (profileError) {
-      console.warn('Profil məlumatlarını əldə edərkən xəta:', profileError);
+
+    if (profileError && profileError.code === 'PGRST116') {
+      console.log('Profil tapılmadı, yenisini yaradırıq');
       
-      // Profil tapılmadı - avtomatik yaradaq
-      if (profileError.code === 'PGRST116') {
-        console.log('Profil tapılmadı, yenisini yaradırıq');
-        
-        // Auth istifadəçi məlumatlarını əldə et
-        const { data: authData } = await supabase.auth.getUser();
-        
-        // İstifadəçi email-i və ya default ad
-        const email = authData?.user?.email || '';
-        const defaultName = email.split('@')[0] || 'İstifadəçi';
-        
-        // Yeni profil yarat
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: defaultName,
-            language: 'az',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select('*')
-          .single();
-        
-        if (createError) {
-          console.error('Profil yaradarkən xəta:', createError);
-          throw createError;
-        }
-        
-        profileData = newProfile;
-      } else {
-        // Başqa xəta baş verdi
-        throw profileError;
+      // İstifadəçi email-i və ya default ad
+      const email = authData?.user?.email || '';
+      const defaultName = email.split('@')[0] || 'İstifadəçi';
+      
+      // Yeni profil yarat
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: defaultName,
+          language: 'az',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('*')
+        .single();
+      
+      if (createError) {
+        console.error('Profil yaradarkən xəta:', createError);
+        throw new Error('İstifadəçi profili yaradıla bilmədi');
       }
+      
+      profileData = newProfile;
+    } else if (profileError) {
+      console.error('Profil məlumatlarını əldə edərkən xəta:', profileError);
+      throw new Error('Profil məlumatları əldə edilə bilmədi');
+    }
+    
+    if (!profileData) {
+      throw new Error('İstifadəçi profili tapılmadı');
     }
     
     // Default profil məlumatları
     const profile: Profile = {
       id: userId,
-      full_name: profileData?.full_name || '',
-      avatar: profileData?.avatar || null,
-      phone: profileData?.phone || null,
-      position: profileData?.position || null,
-      language: profileData?.language || 'az',
-      last_login: profileData?.last_login || null,
-      status: (profileData?.status as 'active' | 'inactive' | 'blocked') || 'active',
-      created_at: profileData?.created_at || new Date().toISOString(),
-      updated_at: profileData?.updated_at || new Date().toISOString()
+      full_name: profileData.full_name || '',
+      avatar: profileData.avatar || null,
+      phone: profileData.phone || null,
+      position: profileData.position || null,
+      language: profileData.language || 'az',
+      last_login: profileData.last_login || null,
+      status: (profileData.status as 'active' | 'inactive' | 'blocked') || 'active',
+      created_at: profileData.created_at || new Date().toISOString(),
+      updated_at: profileData.updated_at || new Date().toISOString()
     };
     
     console.log('Rol məlumatları alınır...');
@@ -77,33 +80,28 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .eq('user_id', userId)
       .single();
     
-    // Əgər user_roles-da tapılmadısa, mock data istifadə edək
+    // Əgər rol tapılmadısa
     if (roleError || !roleData) {
-      console.log('user_roles cədvəlində rol tapılmadı, mock data istifadə edilir');
+      console.log('Rol məlumatları tapılmadı, superadmin rolunu yaradırıq');
       
-      // Mock rol data - default olaraq superadmin təyin edilir
-      roleData = {
-        id: '1',
-        user_id: userId,
-        role: 'superadmin' as UserRole,
-        region_id: null,
-        sector_id: null,
-        school_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-    }
-    
-    if (!roleData) {
-      throw new Error('İstifadəçi üçün rol məlumatları tapılmadı');
-    }
-    
-    // Auth istifadəçi məlumatlarını əldə et
-    const { data: authData, error: userError } = await supabase.auth.getUser();
-    
-    if (userError) {
-      console.warn('Auth istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-      throw userError;
+      // Yeni rol məlumatları yaradırıq
+      const { data: newRoleData, error: createRoleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: 'superadmin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('*')
+        .single();
+      
+      if (createRoleError) {
+        console.error('Rol yaradarkən xəta:', createRoleError);
+        throw new Error('İstifadəçi üçün rol təyin edilə bilmədi');
+      }
+      
+      roleData = newRoleData;
     }
     
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
@@ -153,45 +151,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     return fullUserData;
   } catch (error) {
     console.error('İstifadəçi məlumatlarını əldə edərkən xəta baş verdi:', error);
-    
-    // Default istifadəçi məlumatları qaytaraq ki, sistem crash etməsin
-    const defaultUserData: FullUserData = {
-      id: userId,
-      email: 'superadmin@infoline.az',
-      full_name: 'SuperAdmin',
-      role: 'superadmin',
-      region_id: null,
-      sector_id: null,
-      school_id: null,
-      phone: null,
-      position: null,
-      language: 'az',
-      avatar: null,
-      status: 'active',
-      last_login: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      
-      // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-      name: 'SuperAdmin',
-      regionId: null,
-      sectorId: null,
-      schoolId: null,
-      lastLogin: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      
-      // Əlavə tətbiq xüsusiyyətləri
-      twoFactorEnabled: false,
-      notificationSettings: {
-        email: true,
-        system: true
-      }
-    };
-    
-    console.log('Default istifadəçi məlumatları istifadə edilir');
-    
-    return defaultUserData;
+    throw error;
   }
 };
 

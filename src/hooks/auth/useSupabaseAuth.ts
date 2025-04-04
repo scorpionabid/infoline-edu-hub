@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, Profile } from '@/types/supabase';
@@ -52,12 +51,18 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           try {
             const userData = await fetchUserData(currentSession.user.id);
             setUser(userData);
-          } catch (userError) {
+          } catch (userError: any) {
             console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            // Sessiya var amma user data yoxdur - silək
-            if (currentSession) {
+            
+            // Xəta mesajını yoxlayaraq məqsədli qərarlar verək
+            if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                userError.message?.includes('rol təyin edilə bilmədi') ||
+                userError.message?.includes('İstifadəçi profili tapılmadı') ||
+                userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
+              console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
               await supabase.auth.signOut();
               setSession(null);
+              setUser(null);
             }
           }
         }
@@ -79,8 +84,19 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           try {
             const userData = await fetchUserData(newSession.user.id);
             setUser(userData);
-          } catch (userError) {
+          } catch (userError: any) {
             console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+            
+            // Bu xətanı emal et və istifadəçini logout et
+            if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                userError.message?.includes('rol təyin edilə bilmədi') ||
+                userError.message?.includes('İstifadəçi profili tapılmadı') ||
+                userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
+              console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
+              await supabase.auth.signOut();
+              setSession(null);
+              setUser(null);
+            }
           }
         }
       } else if (event === 'SIGNED_OUT') {
