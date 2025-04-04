@@ -9,14 +9,14 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  FormItem
+  FormItem,
+  DashboardNotification
 } from '@/hooks/useDashboardData';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
-import { Notification as DashboardNotification } from './NotificationsCard';
 import { Notification } from '@/types/notification';
 import { FormStatus } from '@/types/form';
 
@@ -31,14 +31,18 @@ interface DashboardContentProps {
   isLoading: boolean;
 }
 
-// Notification formatını uyğunlaşdırma funksiyası
-const adaptNotifications = (notifications: Notification[]): DashboardNotification[] => {
-  return notifications?.map(notification => ({
+// DashboardNotification-dan Notification-a adaptasiya
+const adaptToNotifications = (dashboardNotifications: DashboardNotification[]): Notification[] => {
+  return dashboardNotifications?.map(notification => ({
     id: notification.id,
-    type: notification.type,
     title: notification.title,
     message: notification.message,
-    time: notification.createdAt
+    type: notification.type,
+    time: notification.time,
+    isRead: notification.read || false,
+    createdAt: notification.time,
+    userId: '',
+    priority: 'normal'
   })) || [];
 };
 
@@ -84,63 +88,30 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
+  if (!dashboardData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p>Məlumat yoxdur.</p>
+      </div>
+    );
+  }
+
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
     switch (userRole) {
       case 'superadmin': {
-        const superAdminData = dashboardData as SuperAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
-        const preparedData = {
-          ...superAdminData,
-          notifications: adaptedNotifications
-        };
-        return <SuperAdminDashboard data={preparedData} />;
+        return <SuperAdminDashboard data={dashboardData} />;
       }
       case 'regionadmin': {
-        const regionAdminData = dashboardData as RegionAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
-        // RegionAdminDashboard-a ötürülən data-nın tam olduğundan əmin olaq
-        const preparedData = {
-          ...regionAdminData,
-          notifications: adaptedNotifications,
-          categories: regionAdminData.categories || [],
-          sectorCompletions: regionAdminData.sectorCompletions || []
-        };
-        return <RegionAdminDashboard data={preparedData} />;
+        return <RegionAdminDashboard data={dashboardData} />;
       }
       case 'sectoradmin': {
-        const sectorAdminData = dashboardData as SectorAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
-        const preparedData = {
-          ...sectorAdminData,
-          notifications: adaptedNotifications
-        };
-        return <SectorAdminDashboard data={preparedData} />;
+        return <SectorAdminDashboard data={dashboardData} />;
       }
       case 'schooladmin': {
-        const schoolAdminData = dashboardData as SchoolAdminDashboardData;
-        const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
-        
-        // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
-        const pendingFormsData = Array.isArray(schoolAdminData.pendingForms) 
-          ? schoolAdminData.pendingForms 
-          : [];
-
-        // recentForms-ları da uyğunlaşdırırıq
-        const recentFormsData = Array.isArray(schoolAdminData.recentForms) 
-          ? adaptFormItems(schoolAdminData.recentForms)
-          : [];
-        
-        const preparedData = {
-          ...schoolAdminData,
-          notifications: adaptedNotifications,
-          pendingForms: pendingFormsData,
-          recentForms: recentFormsData
-        };
-        
         return (
           <SchoolAdminDashboard 
-            data={preparedData}
+            data={dashboardData}
             navigateToDataEntry={navigateToDataEntry}
             handleFormClick={handleFormClick}
           />

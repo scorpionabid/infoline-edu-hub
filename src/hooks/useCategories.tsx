@@ -1,13 +1,15 @@
 
+import { useState, useCallback } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/context/LanguageContext";
 import { Category } from "@/types/category";
 import { useFiltering } from "./useFiltering";
 import { fetchCategories } from "@/api/categoryApi";
-import { useCategoryActions } from "./useCategoryActions";
 
 export const useCategories = () => {
   const { t } = useLanguage();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   // Fetch categories data
   const {
@@ -27,24 +29,22 @@ export const useCategories = () => {
     filteredData: filteredCategories
   } = useFiltering(categories, ["name", "description"]);
 
-  // Kateqoriya əməliyyatları üçün hook-u istifadə edirik
-  const {
-    isActionLoading,
-    handleAddCategory,
-    handleDeleteCategory,
-    handleUpdateCategoryStatus
-  } = useCategoryActions(refetch);
+  // Yeniləmə funksiyası
+  const refreshCategories = useCallback(async () => {
+    try {
+      await refetch();
+    } catch (err: any) {
+      setError(err);
+    }
+  }, [refetch]);
 
   return {
     categories,
     filteredCategories,
     isLoading,
-    isError,
-    isActionLoading,
+    error,
     searchQuery,
     setSearchQuery,
-    handleAddCategory,
-    handleDeleteCategory,
-    handleUpdateCategoryStatus,
+    refetch: refreshCategories,
   };
 };

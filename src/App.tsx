@@ -9,7 +9,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './App.css';
 
 function App() {
-  const router = createBrowserRouter(AppRoutes);
+  // AppRoutes-dan yolu alaq
+  const routes = AppRoutes;
+  const router = createBrowserRouter(routes);
   
   // React Query üçün yeni QueryClient yaradaq
   const queryClient = new QueryClient({

@@ -1,243 +1,267 @@
 
-import { 
-  SuperAdminDashboardData, 
-  RegionAdminDashboardData, 
-  SectorAdminDashboardData,
-  SchoolAdminDashboardData,
-  StatsItem,
-  FormItem,
-  DashboardNotification,
-  CategoryCompletion,
-  SectorCompletion,
-  ChartData
-} from '@/hooks/useDashboardData';
+import { FormItem, StatsItem, DashboardNotification, DashboardData, ChartData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData } from '@/hooks/useDashboardData';
 
-// Mock stats yaratmaq üçün funksiya
-export const generateMockStats = (role: string): StatsItem[] => {
-  switch (role) {
-    case 'superadmin':
-      return [
-        { id: '1', title: 'Ümumi məktəb', value: 634, change: 5, changeType: 'increase' },
-        { id: '2', title: 'Aktiv istifadəçi', value: 912, change: 12, changeType: 'increase' },
-        { id: '3', title: 'Tamamlanma faizi', value: '76%', change: 8, changeType: 'increase' },
-        { id: '4', title: 'Kateqoriyalar', value: 18, change: 2, changeType: 'increase' }
-      ];
-    case 'regionadmin':
-      return [
-        { id: '1', title: 'Region məktəbləri', value: 126, change: 3, changeType: 'increase' },
-        { id: '2', title: 'Aktiv istifadəçi', value: 158, change: 7, changeType: 'increase' },
-        { id: '3', title: 'Tamamlanma faizi', value: '72%', change: 5, changeType: 'increase' },
-        { id: '4', title: 'Sektorlar', value: 6, change: 0, changeType: 'neutral' }
-      ];
-    case 'sectoradmin':
-      return [
-        { id: '1', title: 'Sektor məktəbləri', value: 24, change: 1, changeType: 'increase' },
-        { id: '2', title: 'Qəbul gözləyən', value: 8, change: 2, changeType: 'decrease' },
-        { id: '3', title: 'Tamamlanma faizi', value: '68%', change: 4, changeType: 'increase' },
-        { id: '4', title: 'Tam tamamlanan', value: 12, change: 3, changeType: 'increase' }
-      ];
-    default: // schooladmin
-      return [
-        { id: '1', title: 'Kateqoriyalar', value: 12, change: 0, changeType: 'neutral' },
-        { id: '2', title: 'Tamamlanma faizi', value: '85%', change: 10, changeType: 'increase' },
-        { id: '3', title: 'Gözləmədə', value: 3, change: -2, changeType: 'decrease' },
-        { id: '4', title: 'Təsdiqlənmiş', value: 9, change: 2, changeType: 'increase' }
-      ];
-  }
-};
+// Mock data generatoru - istifadəçi tipinə görə dashboard məlumatlarını yaradır
+export const generateMockDashboardData = (role: string): DashboardData => {
+  const stats: StatsItem[] = [
+    {
+      id: '1',
+      title: 'Ümumi Məktəblər',
+      value: 650,
+      change: 5,
+      changeType: 'increase',
+      icon: 'Building'
+    },
+    {
+      id: '2',
+      title: 'Tamamlanma dərəcəsi',
+      value: '76%',
+      change: 2.5,
+      changeType: 'increase',
+      icon: 'CheckCircle'
+    },
+    {
+      id: '3',
+      title: 'Gözləyən təsdiqləmə',
+      value: 42,
+      change: -8,
+      changeType: 'decrease',
+      icon: 'Clock'
+    },
+    {
+      id: '4',
+      title: 'Son 24 saat aktivlik',
+      value: 128,
+      change: 12,
+      changeType: 'increase',
+      icon: 'Activity'
+    }
+  ];
 
-// Mock notifications yaratmaq üçün funksiya
-export const generateMockNotifications = (): DashboardNotification[] => {
-  return [
+  const notifications: DashboardNotification[] = [
     {
       id: '1',
       title: 'Yeni kateqoriya',
-      message: 'Müəllim məlumatları kateqoriyası əlavə edilib',
-      time: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      message: 'Əsas məktəb məlumatları kateqoriyası əlavə edildi',
+      time: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
       type: 'info',
       read: false
     },
     {
       id: '2',
-      title: 'Son tarix xəbərdarlığı',
-      message: 'Şagird nailiyyətləri formu üçün son 2 gün qalıb',
-      time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      title: 'Təcili bildiriş',
+      message: '5 məktəbin məlumatları təsdiq üçün gözləyir',
+      time: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
       type: 'warning',
       read: false
     },
     {
       id: '3',
-      title: 'Təsdiq tələbi',
-      message: '5 məktəbin təqdim etdiyi məlumatlar təsdiq gözləyir',
-      time: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-      type: 'task',
+      title: 'Sistem yeniləməsi',
+      message: 'InfoLine sistemi v2.1 versiyasına yeniləndi',
+      time: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+      type: 'info',
       read: true
     },
     {
       id: '4',
-      title: 'Sistem yenilənməsi',
-      message: 'InfoLine sistemi v1.2 versiyasına yeniləndi',
-      time: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-      type: 'system',
-      read: true
+      title: 'Son tarix xəbərdarlığı',
+      message: 'Müəllim məlumatları kateqoriyası üçün son tarixə 2 gün qalıb',
+      time: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+      type: 'error',
+      read: false
     }
   ];
-};
 
-// Mock forms yaratmaq üçün funksiya
-export const generateMockForms = (count: number, type: string = 'recent'): FormItem[] => {
-  const statuses = type === 'pending' 
-    ? ['pending', 'overdue', 'dueSoon'] 
-    : ['approved', 'rejected', 'pending', 'draft'];
-  
-  const forms = [];
-  for (let i = 0; i < count; i++) {
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const completionPercentage = status === 'approved' ? 100 : Math.floor(Math.random() * 100);
-    forms.push({
-      id: `form-${i+1}`,
-      title: `Form ${i+1}`,
-      category: ['Ümumi məlumat', 'Müəllim heyəti', 'Şagirdlər', 'Maddi-texniki baza'][i % 4],
-      status,
-      completionPercentage,
-      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * (i + 1)).toISOString()
-    });
-  }
-  
-  return forms;
-};
-
-// Mock category completions yaratmaq üçün funksiya
-export const generateMockCategoryCompletions = (count: number): CategoryCompletion[] => {
-  const categories = [];
-  for (let i = 0; i < count; i++) {
-    categories.push({
-      id: `cat-${i+1}`,
-      name: ['Ümumi məlumat', 'Müəllim heyəti', 'Şagirdlər', 'Maddi-texniki baza', 'Tədris planı'][i % 5],
-      completionPercentage: Math.floor(Math.random() * 100),
-      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * (i + 3)).toISOString(),
-      status: ['active', 'pending', 'completed'][i % 3]
-    });
-  }
-  
-  return categories;
-};
-
-// Mock sektor tamamlanma məlumatları yaratmaq üçün funksiya
-export const generateMockSectorCompletions = (count: number): SectorCompletion[] => {
-  const sectors = [];
-  for (let i = 0; i < count; i++) {
-    sectors.push({
-      id: `sector-${i+1}`,
-      name: `Sektor ${i+1}`,
-      schoolCount: 10 + Math.floor(Math.random() * 20),
-      completionPercentage: Math.floor(Math.random() * 100)
-    });
-  }
-  
-  return sectors;
-};
-
-// Mock məktəb məlumatları yaratmaq üçün funksiya
-export const generateMockSchools = (count: number, includeRegion: boolean = false) => {
-  const schools = [];
-  for (let i = 0; i < count; i++) {
-    const school = {
-      id: `school-${i+1}`,
-      name: `Məktəb №${i+1}`,
-      completionPercentage: Math.floor(Math.random() * 100)
-    };
-    
-    if (includeRegion) {
-      Object.assign(school, { region: `Region ${Math.floor(i / 3) + 1}` });
+  const recentForms: FormItem[] = [
+    {
+      id: '1',
+      title: 'Əsas məktəb məlumatları',
+      category: 'Məktəb məlumatları',
+      status: 'approved',
+      completionPercentage: 100
+    },
+    {
+      id: '2',
+      title: 'Müəllim statistikası',
+      category: 'Kadr məlumatları',
+      status: 'pending',
+      completionPercentage: 75,
+      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString()
+    },
+    {
+      id: '3',
+      title: 'İnfrastruktur məlumatları',
+      category: 'Maddi baza',
+      status: 'rejected',
+      completionPercentage: 60
     }
-    
-    schools.push(school);
-  }
-  
-  return schools;
-};
+  ];
 
-// SuperAdmin üçün mock data yaratmaq üçün funksiya
-export const generateSuperAdminData = (): SuperAdminDashboardData => {
-  return {
-    stats: generateMockStats('superadmin'),
-    notifications: generateMockNotifications(),
-    recentForms: generateMockForms(5),
-    pendingApprovals: generateMockForms(4, 'pending'),
-    topSchools: generateMockSchools(5, true)
-  };
-};
-
-// RegionAdmin üçün mock data yaratmaq üçün funksiya
-export const generateRegionAdminData = (): RegionAdminDashboardData => {
-  return {
-    stats: generateMockStats('regionadmin'),
-    notifications: generateMockNotifications(),
-    recentForms: generateMockForms(5),
-    pendingApprovals: generateMockForms(3, 'pending'),
-    sectorCompletions: generateMockSectorCompletions(5),
-    categories: generateMockCategoryCompletions(4)
-  };
-};
-
-// SectorAdmin üçün mock data yaratmaq üçün funksiya
-export const generateSectorAdminData = (): SectorAdminDashboardData => {
-  return {
-    stats: generateMockStats('sectoradmin'),
-    notifications: generateMockNotifications(),
-    recentForms: generateMockForms(5),
-    pendingApprovals: generateMockForms(4, 'pending'),
-    schools: generateMockSchools(8)
-  };
-};
-
-// SchoolAdmin üçün mock data yaratmaq üçün funksiya
-export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
-  return {
-    stats: generateMockStats('schooladmin'),
-    notifications: generateMockNotifications(),
-    recentForms: generateMockForms(5),
-    pendingForms: generateMockForms(3, 'pending'),
-    completedCategories: generateMockCategoryCompletions(6)
-  };
-};
-
-// Ümumi dashboard data generatoru
-export const generateMockDashboardData = (role: string) => {
-  switch (role) {
+  // Role-a görə müxtəlif data döndəriririk
+  switch (role.toLowerCase()) {
     case 'superadmin':
-      return generateSuperAdminData();
+      const superAdminData: SuperAdminDashboardData = {
+        regions: 12,
+        sectors: 42,
+        schools: 650,
+        users: 800,
+        completionRate: 76,
+        pendingApprovals: 42,
+        pendingSchools: 120,
+        approvedSchools: 450,
+        rejectedSchools: 80,
+        notifications,
+        stats,
+        recentForms,
+        topSchools: [
+          { id: '1', name: 'Bakı şəhəri 6 nömrəli məktəb', completionPercentage: 98, region: 'Bakı' },
+          { id: '2', name: 'Sumqayıt şəhəri 2 nömrəli məktəb', completionPercentage: 96, region: 'Sumqayıt' },
+          { id: '3', name: 'Şəki şəhəri 7 nömrəli məktəb', completionPercentage: 94, region: 'Şəki' },
+          { id: '4', name: 'Gəncə şəhəri 3 nömrəli məktəb', completionPercentage: 92, region: 'Gəncə' },
+          { id: '5', name: 'Naxçıvan şəhəri 5 nömrəli məktəb', completionPercentage: 90, region: 'Naxçıvan' }
+        ]
+      };
+      return superAdminData;
+      
     case 'regionadmin':
-      return generateRegionAdminData();
+      const regionAdminData: RegionAdminDashboardData = {
+        sectors: 10,
+        schools: 120,
+        users: 200,
+        completionRate: 72,
+        pendingApprovals: 18,
+        pendingSchools: 40,
+        approvedSchools: 75,
+        rejectedSchools: 5,
+        notifications,
+        stats,
+        recentForms,
+        sectorCompletions: [
+          { id: '1', name: 'Nəsimi rayonu', schoolCount: 25, completionPercentage: 85 },
+          { id: '2', name: 'Nərimanov rayonu', schoolCount: 22, completionPercentage: 78 },
+          { id: '3', name: 'Yasamal rayonu', schoolCount: 18, completionPercentage: 92 },
+          { id: '4', name: 'Nizami rayonu', schoolCount: 20, completionPercentage: 65 },
+          { id: '5', name: 'Xətai rayonu', schoolCount: 15, completionPercentage: 70 }
+        ],
+        categories: [
+          { id: '1', name: 'Əsas məktəb məlumatları', completionPercentage: 96, status: 'active' },
+          { id: '2', name: 'Müəllim statistikası', completionPercentage: 78, status: 'active', deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString() },
+          { id: '3', name: 'Şagird məlumatları', completionPercentage: 62, status: 'active', deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString() },
+          { id: '4', name: 'İnfrastruktur', completionPercentage: 85, status: 'active' }
+        ]
+      };
+      return regionAdminData;
+      
     case 'sectoradmin':
-      return generateSectorAdminData();
-    default: // schooladmin
-      return generateSchoolAdminData();
+      const sectorAdminData: SectorAdminDashboardData = {
+        schools: 25,
+        completionRate: 68,
+        pendingApprovals: 12,
+        pendingSchools: 8,
+        approvedSchools: 15,
+        rejectedSchools: 2,
+        notifications,
+        stats,
+        recentForms,
+        schoolList: [
+          { id: '1', name: '6 nömrəli məktəb', completionPercentage: 95 },
+          { id: '2', name: '12 nömrəli məktəb', completionPercentage: 87 },
+          { id: '3', name: '25 nömrəli məktəb', completionPercentage: 72 },
+          { id: '4', name: '34 nömrəli məktəb', completionPercentage: 58 },
+          { id: '5', name: '42 nömrəli məktəb', completionPercentage: 43 }
+        ]
+      };
+      return sectorAdminData;
+      
+    case 'schooladmin':
+      const schoolAdminData: SchoolAdminDashboardData = {
+        forms: {
+          pending: 3,
+          approved: 8,
+          rejected: 1,
+          dueSoon: 2,
+          overdue: 0
+        },
+        completionRate: 75,
+        categories: 6,
+        totalForms: 12,
+        notifications,
+        stats,
+        pendingForms: [
+          {
+            id: '1',
+            title: 'Müəllim statistikası',
+            category: 'Kadr məlumatları',
+            status: 'pending',
+            completionPercentage: 75,
+            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString()
+          },
+          {
+            id: '2',
+            title: 'Şagird məlumatları',
+            category: 'Şagirdlər',
+            status: 'pending',
+            completionPercentage: 60,
+            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString()
+          },
+          {
+            id: '3',
+            title: 'İnfrastruktur məlumatları',
+            category: 'Maddi baza',
+            status: 'pending',
+            completionPercentage: 30,
+            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString()
+          }
+        ],
+        recentForms,
+        completedCategories: [
+          { id: '1', name: 'Əsas məktəb məlumatları', completionPercentage: 100, status: 'approved' },
+          { id: '2', name: 'Müəllim statistikası', completionPercentage: 75, status: 'pending', deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString() }
+        ]
+      };
+      return schoolAdminData;
+      
+    default:
+      return {
+        regions: 0,
+        sectors: 0,
+        schools: 0,
+        users: 0,
+        completionRate: 0,
+        pendingApprovals: 0,
+        notifications: [],
+        stats: []
+      } as SuperAdminDashboardData;
   }
 };
 
-// Mock chart data generatoru
+// Chart data generatoru - qrafiklər üçün məlumat yaradır
 export const generateMockChartData = (): ChartData => {
   return {
     activityData: [
-      { name: 'Baxış', value: 400 },
-      { name: 'Form doldurmağa başlama', value: 300 },
-      { name: 'Form tamamlanması', value: 230 },
-      { name: 'Form təsdiqi', value: 180 }
+      { name: 'B.e.', value: 24 },
+      { name: 'C.a.', value: 18 },
+      { name: 'Ç.a.', value: 32 },
+      { name: 'C.', value: 42 },
+      { name: 'Ş.', value: 37 },
+      { name: 'B.', value: 12 },
+      { name: 'B.', value: 8 }
     ],
     regionSchoolsData: [
-      { name: 'Bakı', value: 120 },
-      { name: 'Sumqayıt', value: 80 },
-      { name: 'Gəncə', value: 70 },
-      { name: 'Lənkəran', value: 50 },
-      { name: 'Şəki', value: 40 }
+      { name: 'Bakı', value: 210 },
+      { name: 'Sumqayıt', value: 85 },
+      { name: 'Gəncə', value: 72 },
+      { name: 'Şəki', value: 48 },
+      { name: 'Mingəçevir', value: 35 },
+      { name: 'Digər', value: 200 }
     ],
     categoryCompletionData: [
-      { name: 'Ümumi məlumat', completed: 85 },
-      { name: 'Müəllim heyəti', completed: 76 },
-      { name: 'Şagirdlər', completed: 65 },
-      { name: 'Maddi-texniki baza', completed: 58 }
+      { name: 'Məktəb məlumatları', completed: 92 },
+      { name: 'Müəllim statistikası', completed: 78 },
+      { name: 'Şagird məlumatları', completed: 65 },
+      { name: 'İnfrastruktur', completed: 86 },
+      { name: 'Maddi-texniki baza', completed: 72 }
     ]
   };
 };

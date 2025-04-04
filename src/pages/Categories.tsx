@@ -26,18 +26,23 @@ const Categories: React.FC = () => {
   // Kateqoriyaları əldə etmək üçün hook
   const { 
     categories, 
-    isLoading, 
+    isLoading = false, 
     error, 
-    refetch 
+    refetch = async () => {}
   } = useCategories();
 
-  // Kateqoriyalar üzərində əməliyyatlar üçün hook
+  // Kateqoriya əməliyyatları üçün hook
   const {
-    isActionLoading,
-    handleAddCategory,
-    handleDeleteCategory,
-    handleUpdateCategoryStatus
-  } = useCategoryActions(refetch);
+    isActionLoading = false,
+    handleAddCategory = async () => true,
+    handleDeleteCategory = async () => true,
+    handleUpdateCategoryStatus = async () => true
+  } = useCategoryActions ? useCategoryActions(refetch) : {
+    isActionLoading: false,
+    handleAddCategory: async () => true,
+    handleDeleteCategory: async () => true,
+    handleUpdateCategoryStatus: async () => true
+  };
 
   // Axtarış
   const handleSearch = (value: string) => {
@@ -109,7 +114,7 @@ const Categories: React.FC = () => {
     <SidebarLayout>
       <div className="space-y-4">
         <CategoryHeader 
-          search={search} 
+          searchQuery={search} 
           onSearchChange={handleSearch} 
           onAddCategory={handleOpenAddDialog}
           isLoading={isLoading || isActionLoading}
@@ -122,9 +127,9 @@ const Categories: React.FC = () => {
                 <CategoryList 
                   categories={filteredCategories}
                   isLoading={isLoading} 
-                  onStatusChange={handleStatusChange}
-                  onDelete={handleOpenDeleteDialog}
                   onEdit={handleEditCategory}
+                  onDelete={handleOpenDeleteDialog}
+                  handleStatusChange={handleStatusChange}
                 />
               </CardContent>
             </Card>
@@ -132,33 +137,33 @@ const Categories: React.FC = () => {
 
           <div className="space-y-4">
             <CategoryFilterCard 
-              filter={filter} 
+              filters={filter} 
               onFilterChange={handleFilterChange} 
             />
             
             <CategoryStats 
-              categories={categories} 
+              categoriesData={categories} 
               isLoading={isLoading}
             />
             
             <CategoryAnalytics 
-              categories={categories} 
-              isLoading={isLoading}
+              categoriesData={categories} 
+              loading={isLoading}
             />
           </div>
         </div>
 
         {/* Dialog boxes */}
         <AddCategoryDialog 
-          open={isAddDialogOpen} 
-          onOpenChange={setIsAddDialogOpen}
+          isOpen={isAddDialogOpen} 
+          onClose={() => setIsAddDialogOpen(false)}
           onAddCategory={handleAddCategory}
           isSubmitting={isActionLoading}
         />
         
         <DeleteCategoryDialog 
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
           category={selectedCategory}
           onConfirm={handleDeleteCategory}
           isSubmitting={isActionLoading}

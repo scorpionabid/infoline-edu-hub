@@ -6,6 +6,7 @@ import {
   generateMockDashboardData, 
   generateMockChartData 
 } from '@/utils/dashboardUtils';
+import { Notification } from '@/types/notification';
 
 // Form item interface
 export interface FormItem {
@@ -56,11 +57,26 @@ export interface SectorCompletion {
 
 // SuperAdmin dashboard data
 export interface SuperAdminDashboardData {
-  stats: StatsItem[];
-  notifications: DashboardNotification[];
-  recentForms: FormItem[];
-  pendingApprovals: FormItem[];
-  topSchools: {
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
+  notifications: Notification[];
+  activityData?: {
+    id: string;
+    action: string;
+    actor: string;
+    target: string;
+    time: string;
+  }[];
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
+  stats?: StatsItem[];
+  recentForms?: FormItem[];
+  topSchools?: {
     id: string;
     name: string;
     completionPercentage: number;
@@ -70,21 +86,33 @@ export interface SuperAdminDashboardData {
 
 // RegionAdmin dashboard data
 export interface RegionAdminDashboardData {
-  stats: StatsItem[];
-  notifications: DashboardNotification[];
-  recentForms: FormItem[];
-  pendingApprovals: FormItem[];
-  sectorCompletions: SectorCompletion[];
-  categories: CategoryCompletion[];
+  sectors: number;
+  schools: number;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
+  notifications: Notification[];
+  categories?: CategoryCompletion[];
+  sectorCompletions?: SectorCompletion[];
+  stats?: StatsItem[];
+  recentForms?: FormItem[];
 }
 
 // SectorAdmin dashboard data
 export interface SectorAdminDashboardData {
-  stats: StatsItem[];
-  notifications: DashboardNotification[];
-  recentForms: FormItem[];
-  pendingApprovals: FormItem[];
-  schools: {
+  schools: number;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools: number;
+  approvedSchools: number;
+  rejectedSchools: number;
+  notifications: Notification[];
+  stats?: StatsItem[];
+  recentForms?: FormItem[];
+  schoolList?: {
     id: string;
     name: string;
     completionPercentage: number;
@@ -93,11 +121,21 @@ export interface SectorAdminDashboardData {
 
 // SchoolAdmin dashboard data
 export interface SchoolAdminDashboardData {
-  stats: StatsItem[];
-  notifications: DashboardNotification[];
-  recentForms: FormItem[];
-  pendingForms: FormItem[];
-  completedCategories: CategoryCompletion[];
+  forms: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+  };
+  completionRate: number;
+  notifications: Notification[];
+  categories?: number;
+  totalForms?: number;
+  pendingForms?: FormItem[];
+  completedCategories?: CategoryCompletion[];
+  stats?: StatsItem[];
+  recentForms?: FormItem[];
 }
 
 // Dashboard data union type

@@ -10,24 +10,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface CategoryHeaderProps {
   onAddCategory: () => void;
-  searchQuery: string;
+  searchQuery?: string;
   onSearchChange: (value: string) => void;
   statusFilter?: string;
   onStatusFilterChange?: (value: string) => void;
   assignmentFilter?: string;
   onAssignmentFilterChange?: (value: string) => void;
   onImportExport?: () => void;
+  isLoading?: boolean;
 }
 
 const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   onAddCategory,
-  searchQuery,
+  searchQuery = "",
   onSearchChange,
   statusFilter = "all",
   onStatusFilterChange,
   assignmentFilter = "all",
   onAssignmentFilterChange,
   onImportExport,
+  isLoading = false
 }) => {
   const { t } = useLanguage();
   const canManageCategories = useRole(["superadmin", "regionadmin"]);
@@ -44,7 +46,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={onImportExport}>
+                  <Button variant="outline" onClick={onImportExport} disabled={isLoading}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
                     {t("importExport")}
                   </Button>
@@ -57,7 +59,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
           )}
           
           {canManageCategories && (
-            <Button onClick={onAddCategory}>
+            <Button onClick={onAddCategory} disabled={isLoading}>
               <Plus className="mr-2 h-4 w-4" />
               {t("addCategory")}
             </Button>
@@ -74,6 +76,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
             className="pl-8"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            disabled={isLoading}
           />
         </div>
         
@@ -81,6 +84,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
           <Select
             value={statusFilter}
             onValueChange={onStatusFilterChange}
+            disabled={isLoading}
           >
             <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder={t("filterByStatus")} />
@@ -89,6 +93,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
               <SelectItem value="all">{t("allStatuses")}</SelectItem>
               <SelectItem value="active">{t("active")}</SelectItem>
               <SelectItem value="inactive">{t("inactive")}</SelectItem>
+              <SelectItem value="draft">{t("draft")}</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -97,6 +102,7 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
           <Select
             value={assignmentFilter}
             onValueChange={onAssignmentFilterChange}
+            disabled={isLoading}
           >
             <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder={t("filterByAssignment")} />

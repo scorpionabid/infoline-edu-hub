@@ -1,24 +1,27 @@
 
-export type NotificationType = 
-  | 'newCategory' 
-  | 'deadline' 
-  | 'approvalRequest' 
-  | 'approved' 
-  | 'rejected' 
-  | 'systemUpdate' 
-  | 'reminder';
-
-export type NotificationPriority = 'normal' | 'high' | 'critical';
-
+// Notification interface
 export interface Notification {
   id: string;
-  type: NotificationType;
   title: string;
   message: string;
-  userId: string;
-  isRead: boolean;
+  type: 'info' | 'success' | 'warning' | 'error' | string;
+  time?: string;
+  userId?: string;
+  isRead?: boolean;
   createdAt: string;
-  priority: NotificationPriority;
-  relatedEntityId?: string;
-  relatedEntityType?: 'category' | 'column' | 'data' | 'user' | 'school';
+  priority?: 'normal' | 'high' | 'critical';
 }
+
+export const adaptNotification = (data: any): Notification => {
+  return {
+    id: data.id || '',
+    title: data.title || '',
+    message: data.message || '',
+    type: data.type || 'info',
+    time: data.time || data.created_at || new Date().toISOString(),
+    userId: data.user_id,
+    isRead: data.is_read ?? false,
+    createdAt: data.created_at || new Date().toISOString(),
+    priority: data.priority || 'normal'
+  };
+};

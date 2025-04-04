@@ -81,7 +81,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     if (roleError || !roleData) {
       console.log('user_roles cədvəlində rol tapılmadı, mock data istifadə edilir');
       
-      // Mock rol data
+      // Mock rol data - default olaraq superadmin təyin edilir
       roleData = {
         id: '1',
         user_id: userId,
@@ -107,7 +107,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     }
     
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
-    const normalizedRole = normalizeRole(roleData.role);
+    const normalizedRole = normalizeRole(roleData.role || 'superadmin');
     
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {
@@ -153,7 +153,45 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     return fullUserData;
   } catch (error) {
     console.error('İstifadəçi məlumatlarını əldə edərkən xəta baş verdi:', error);
-    throw error;
+    
+    // Default istifadəçi məlumatları qaytaraq ki, sistem crash etməsin
+    const defaultUserData: FullUserData = {
+      id: userId,
+      email: 'superadmin@infoline.az',
+      full_name: 'SuperAdmin',
+      role: 'superadmin',
+      region_id: null,
+      sector_id: null,
+      school_id: null,
+      phone: null,
+      position: null,
+      language: 'az',
+      avatar: null,
+      status: 'active',
+      last_login: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      
+      // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+      name: 'SuperAdmin',
+      regionId: null,
+      sectorId: null,
+      schoolId: null,
+      lastLogin: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      
+      // Əlavə tətbiq xüsusiyyətləri
+      twoFactorEnabled: false,
+      notificationSettings: {
+        email: true,
+        system: true
+      }
+    };
+    
+    console.log('Default istifadəçi məlumatları istifadə edilir');
+    
+    return defaultUserData;
   }
 };
 

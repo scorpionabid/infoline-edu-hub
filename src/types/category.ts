@@ -25,15 +25,15 @@ export interface CategoryFilter {
 // Supabase-dən gələn kateqoriya məlumatlarını adaptasiya et
 export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
   return {
-    id: supabaseCategory.id,
-    name: supabaseCategory.name,
+    id: supabaseCategory.id || '',
+    name: supabaseCategory.name || '',
     description: supabaseCategory.description || '',
     status: supabaseCategory.status || 'active',
     priority: supabaseCategory.priority || 0,
-    deadline: supabaseCategory.deadline,
+    deadline: supabaseCategory.deadline || undefined,
     assignment: supabaseCategory.assignment || 'all',
-    createdAt: supabaseCategory.created_at,
-    updatedAt: supabaseCategory.updated_at,
+    createdAt: supabaseCategory.created_at || new Date().toISOString(),
+    updatedAt: supabaseCategory.updated_at || new Date().toISOString(),
     columnCount: supabaseCategory.column_count || 0,
     archived: supabaseCategory.archived || false
   };
