@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,11 +7,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
+import { Category, CategoryAssignment, CategoryStatus, CategoryFilter } from '@/types/category';
 import { ArchiveIcon, Edit, EyeIcon, Plus, Search, Trash } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
-import { CategoryFilter } from '@/types/category';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface CategoryListProps {
   categories: Category[];
@@ -51,7 +59,8 @@ const CategoryList: React.FC<CategoryListProps> = ({
       
       let assignmentMatch = true;
       if (filters.assignment) {
-        assignmentMatch = category.assignment === filters.assignment as CategoryAssignment;
+        // "specific" statusunu filterdən çıxartmaq və yalnız "all" və "sectors" ilə filtirləmək
+        assignmentMatch = filters.assignment === '' || category.assignment === filters.assignment;
       }
       
       const archivedMatch = filters.showArchived ? true : !category.archived;
@@ -135,7 +144,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
             
             <Select
               value={filters.assignment || ''}
-              onValueChange={(value) => updateFilter({ assignment: value as CategoryAssignment })}
+              onValueChange={(value) => updateFilter({ assignment: value as '' | 'all' | 'sectors' })}
             >
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder={t('selectAssignment')} />
@@ -144,7 +153,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
                 <SelectItem value="">{t('allAssignments')}</SelectItem>
                 <SelectItem value="all">{t('all')}</SelectItem>
                 <SelectItem value="sectors">{t('sectors')}</SelectItem>
-                <SelectItem value="specific">{t('specific')}</SelectItem>
               </SelectContent>
             </Select>
             
@@ -190,7 +198,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                     <TableCell className="pl-8">
                       <Checkbox
                         checked={!category.archived}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={() => {
                           if (onArchiveCategory) {
                             onArchiveCategory(category.id);
                           }
@@ -229,8 +237,8 @@ const CategoryList: React.FC<CategoryListProps> = ({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="show-archived"
-              checked={filters.showArchived || false}
-              onCheckedChange={(checked) => updateFilter({ showArchived: checked })}
+              checked={Boolean(filters.showArchived)}
+              onCheckedChange={(checked) => updateFilter({ showArchived: !!checked })}
             />
             <Label htmlFor="show-archived" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
               {t('showArchived')}

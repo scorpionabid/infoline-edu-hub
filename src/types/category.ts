@@ -54,8 +54,18 @@ export const adaptSupabaseCategory = (category: any): Category => {
 // Kateqoriya süzgəci üçün tipi əlavə edirik
 export interface CategoryFilter {
   status: string;
-  assignment: 'all' | 'sectors' | '';
+  assignment: '' | 'all' | 'sectors';
   archived: boolean;
   showArchived?: boolean;
   search?: string;
+}
+
+// Sadələşdirilmiş kateqoriya tipi (mock məlumatlar üçün)
+export type MockCategory = Omit<Category, 'archived' | 'column_count'>;
+
+// CategoryEntryData tipini əlavə edirik (form hooks üçün)
+export interface CategoryEntryData {
+  categoryId: string;
+  columnId: string;
+  value: string;
 }

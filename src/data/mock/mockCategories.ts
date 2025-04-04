@@ -1,59 +1,47 @@
 
-import { Category, MockCategory } from "@/types/category";
+import { v4 as uuidv4 } from 'uuid';
+import { Category } from '@/types/category';
 
-// Nümunə kateqoriyalar
-export const getMockCategories = (): MockCategory[] => [
+// Mock kateqoriyalar
+export const mockCategories: Category[] = [
   {
-    id: "cat-1",
-    name: "Ümumi Məlumatlar",
-    description: "Məktəb haqqında əsas məlumatlar",
-    assignment: "all",
-    status: "active",
+    id: uuidv4(),
+    name: 'Məktəb məlumatları',
+    description: 'Məktəblə bağlı əsas məlumatlar',
+    status: 'active',
+    assignment: 'all',
     priority: 1,
-    column_count: 5,
     archived: false,
-    completionRate: 85
+    column_count: 5
   },
   {
-    id: "teacher-data",
-    name: "Müəllim məlumatları",
-    description: "Məktəbdəki müəllimlər haqqında statistika",
-    assignment: "sectors",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    status: "active",
+    id: uuidv4(),
+    name: 'Təhsil müəssisəsinin fəaliyyəti',
+    description: 'Təhsil müəssisəsinin fəaliyyəti ilə bağlı məlumatlar',
+    status: 'active',
+    assignment: 'all',
     priority: 2,
-    column_count: 5,
-    order: 2,
     archived: false,
-    completionRate: 65
+    column_count: 8
   },
   {
-    id: "cat-3",
-    name: "İnfrastruktur",
-    description: "Məktəbin maddi-texniki bazası haqqında məlumatlar",
-    assignment: "all",
-    status: "active",
+    id: uuidv4(),
+    name: 'İnfrastruktur',
+    description: 'Məktəb infrastrukturu haqqında məlumatlar',
+    status: 'active',
+    assignment: 'sectors',
     priority: 3,
-    column_count: 8,
     archived: false,
-    completionRate: 40
+    column_count: 10
+  },
+  {
+    id: uuidv4(),
+    name: 'Şagird kontingenti',
+    description: 'Şagird kontingenti haqqında məlumatlar',
+    status: 'inactive',
+    assignment: 'all',
+    priority: 4,
+    archived: false,
+    column_count: 6
   }
 ];
-
-export const createTeachersDemoCategory = (): MockCategory => ({
-  id: "teacher-data",
-  name: "Müəllim məlumatları",
-  description: "Məktəbdəki müəllimlər haqqında statistika",
-  assignment: "sectors",
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  status: "active",
-  priority: 2,
-  column_count: 5,
-  order: 2,
-  archived: false,
-  completionRate: 65
-});
-
-export const createDemoCategories = (): MockCategory[] => getMockCategories();

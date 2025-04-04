@@ -1,92 +1,249 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  AlertCircle, 
+  Check, 
+  Clock, 
+  FileCheck, 
+  FileX, 
+  Layers, 
+  Percent, 
+  School, 
+  Users, 
+  AlertTriangle, 
+  Building, 
+  CheckCircle, 
+  XCircle
+} from "lucide-react";
 import { useLanguage } from '@/context/LanguageContext';
 
 interface StatusCardProps {
   title: string;
   value: number | string;
+  icon: React.ReactNode;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+  bgClass?: string;
   description?: string;
-  icon?: React.ReactNode;
-  className?: string;
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
 }
 
-export const StatusCard = ({
-  title,
-  value,
-  description,
-  icon,
-  className = '',
-  variant = 'default',
-}: StatusCardProps) => {
-  const variantClasses = {
-    default: 'bg-card border-border',
-    success: 'bg-green-50 border-green-200 text-green-800',
-    warning: 'bg-orange-50 border-orange-200 text-orange-800',
-    danger: 'bg-red-50 border-red-200 text-red-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-  };
-
-  const valueClasses = {
-    default: 'text-foreground',
-    success: 'text-green-800',
-    warning: 'text-orange-800',
-    danger: 'text-red-800',
-    info: 'text-blue-800',
-  };
-
+export const StatusCard: React.FC<StatusCardProps> = ({ 
+  title, 
+  value, 
+  icon, 
+  trend, 
+  bgClass = "bg-primary/5", 
+  description 
+}) => {
+  const { t } = useLanguage();
+  
   return (
-    <Card className={`${variantClasses[variant]} ${className}`}>
-      <CardContent className="p-4 flex items-center space-x-4">
-        {icon && <div className="flex-shrink-0">{icon}</div>}
-        <div className="flex-1">
-          <h3 className="text-sm font-medium">{title}</h3>
-          <div className={`text-2xl font-bold ${valueClasses[variant]}`}>
-            {value}
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <div className="flex items-baseline mt-1">
+              <h4 className="text-2xl font-bold">{value}</h4>
+              {trend && (
+                <span 
+                  className={`ml-2 text-xs font-medium ${
+                    trend.isPositive ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+                </span>
+              )}
+            </div>
+            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
           </div>
-          {description && <p className="text-xs mt-1">{description}</p>}
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${bgClass}`}>
+            {icon}
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-export const StatusCardRow = ({
-  cards,
-  className = '',
-}: {
-  cards: StatusCardProps[];
-  className?: string;
+interface RegionStatusCardsProps {
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
+}
+
+export const RegionStatusCards: React.FC<RegionStatusCardsProps> = ({
+  regions,
+  sectors,
+  schools,
+  users,
 }) => {
+  const { t } = useLanguage();
+  
   return (
-    <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 ${className}`}>
-      {cards.map((card, index) => (
-        <StatusCard key={index} {...card} />
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatusCard
+        title={t('regions')}
+        value={regions}
+        icon={<Building className="h-5 w-5 text-primary" />}
+        bgClass="bg-primary/10"
+      />
+      <StatusCard
+        title={t('sectors')}
+        value={sectors}
+        icon={<Layers className="h-5 w-5 text-indigo-600" />}
+        bgClass="bg-indigo-600/10"
+      />
+      <StatusCard
+        title={t('schools')}
+        value={schools}
+        icon={<School className="h-5 w-5 text-blue-500" />}
+        bgClass="bg-blue-500/10"
+      />
+      <StatusCard
+        title={t('users')}
+        value={users}
+        icon={<Users className="h-5 w-5 text-violet-500" />}
+        bgClass="bg-violet-500/10"
+      />
+    </div>
+  );
+};
+
+interface DataStatusCardsProps {
+  completionRate: number;
+  pendingApprovals: number;
+}
+
+export const DataStatusCards: React.FC<DataStatusCardsProps> = ({
+  completionRate,
+  pendingApprovals,
+}) => {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatusCard
+        title={t('completionRate')}
+        value={`${completionRate}%`}
+        icon={<Percent className="h-5 w-5 text-emerald-600" />}
+        bgClass="bg-emerald-600/10"
+      />
+      <StatusCard
+        title={t('pendingApprovals')}
+        value={pendingApprovals}
+        icon={<Clock className="h-5 w-5 text-amber-500" />}
+        bgClass="bg-amber-500/10"
+      />
+    </div>
+  );
+};
+
+interface SchoolStatusCardsProps {
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  dueSoonCount: number;
+}
+
+export const SchoolStatusCards: React.FC<SchoolStatusCardsProps> = ({
+  pendingCount,
+  approvedCount,
+  rejectedCount,
+  dueSoonCount,
+}) => {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatusCard
+        title={t('pending')}
+        value={pendingCount}
+        icon={<AlertCircle className="h-5 w-5 text-amber-500" />}
+        bgClass="bg-amber-500/10"
+      />
+      <StatusCard
+        title={t('approved')}
+        value={approvedCount}
+        icon={<CheckCircle className="h-5 w-5 text-emerald-600" />}
+        bgClass="bg-emerald-600/10"
+      />
+      <StatusCard
+        title={t('rejected')}
+        value={rejectedCount}
+        icon={<XCircle className="h-5 w-5 text-red-500" />}
+        bgClass="bg-red-500/10"
+      />
+      <StatusCard
+        title={t('dueSoon')}
+        value={dueSoonCount}
+        icon={<AlertTriangle className="h-5 w-5 text-orange-500" />}
+        bgClass="bg-orange-500/10"
+      />
     </div>
   );
 };
 
 interface StatusCardsProps {
-  items: StatusCardProps[];
+  schools?: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  data?: {
+    completionRate: number;
+    pendingApprovals: number;
+  };
+  regions?: {
+    count: number;
+    sectors: number;
+    schools: number;
+    users: number;
+  };
 }
 
-const StatusCards: React.FC<StatusCardsProps> = ({ items }) => {
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {items.map((item, index) => (
-        <StatusCard
-          key={index}
-          title={item.title}
-          value={item.value}
-          description={item.description}
-          icon={item.icon}
-          variant={item.variant}
-        />
-      ))}
-    </div>
-  );
+export const StatusCards: React.FC<StatusCardsProps> = ({
+  schools,
+  data,
+  regions,
+}) => {
+  if (regions) {
+    return (
+      <RegionStatusCards
+        regions={regions.count}
+        sectors={regions.sectors}
+        schools={regions.schools}
+        users={regions.users}
+      />
+    );
+  }
+  
+  if (data) {
+    return (
+      <DataStatusCards
+        completionRate={data.completionRate}
+        pendingApprovals={data.pendingApprovals}
+      />
+    );
+  }
+  
+  if (schools) {
+    return (
+      <SchoolStatusCards
+        pendingCount={schools.pending}
+        approvedCount={schools.approved}
+        rejectedCount={schools.rejected}
+        dueSoonCount={0} // Default value
+      />
+    );
+  }
+  
+  return null;
 };
 
 export default StatusCards;

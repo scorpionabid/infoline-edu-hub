@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FormField } from '@/components/ui/form';
 import { FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -7,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import FormFieldHelp from '@/components/dataEntry/components/FormFieldHelp';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from "@/components/ui/date-picker";
 import { useLanguage } from '@/context/LanguageContext';
 
 interface DataEntryFieldProps {

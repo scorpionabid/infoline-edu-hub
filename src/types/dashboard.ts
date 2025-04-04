@@ -34,6 +34,7 @@ export interface SuperAdminDashboardData extends DashboardData {
   rejectedSchools: number;
   statusData?: any;
   categoryCompletionData?: any[];
+  recentForms?: FormItem[];
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
@@ -50,6 +51,7 @@ export interface RegionAdminDashboardData extends DashboardData {
   statusDistribution?: any[];
   users?: number;
   statusData?: any;
+  chartData?: any;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
@@ -63,6 +65,7 @@ export interface SectorAdminDashboardData extends DashboardData {
   rejectedSchools: number;
   users?: number;
   statusData?: any;
+  recentForms?: FormItem[];
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
@@ -84,4 +87,5 @@ export interface SchoolAdminDashboardData extends DashboardData {
   completedForms: FormItem[] | number;
   totalForms?: number;
   upcomingDeadlines?: any[];
+  statusData?: any;
 }
