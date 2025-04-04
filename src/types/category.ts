@@ -12,10 +12,22 @@ export interface Category {
   archived: boolean;
   column_count: number;
   deadline?: string;
-  // order xüsusiyyəti buraya əlavə etməməliyik
+  created_at?: string;
+  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export function adaptCategoryFromDatabase(dbData: any): Category {
+export interface CategoryWithOrder extends Category {
+  order?: number;
+}
+
+/**
+ * Verilənlər bazasından gələn kateqoriya məlumatlarını tətbiq formatına çevirir
+ * @param dbData Supabase-dən gələn kateqoriya məlumatı
+ * @returns Kateqoriya obyekti
+ */
+export function adaptSupabaseCategory(dbData: any): CategoryWithOrder {
   return {
     id: dbData.id || '',
     name: dbData.name || '',
@@ -25,7 +37,10 @@ export function adaptCategoryFromDatabase(dbData: any): Category {
     priority: dbData.priority || 0,
     archived: dbData.archived || false,
     column_count: dbData.column_count || 0,
-    deadline: dbData.deadline || undefined
+    deadline: dbData.deadline || undefined,
+    created_at: dbData.created_at || new Date().toISOString(),
+    updated_at: dbData.updated_at || new Date().toISOString(),
+    order: dbData.order || dbData.priority || 0
   };
 }
 
