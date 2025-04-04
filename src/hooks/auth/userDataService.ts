@@ -81,31 +81,11 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       .eq('user_id', userId)
       .single();
     
-    // Əgər rol tapılmadısa və ya xəta varsa, xəta mesajı yazdıraq və yeni rol yaratma əməliyyatını başlataq
+    // Əgər rol tapılmadısa və ya xəta varsa, sadəcə xəta mesajı yazdıraq,
+    // amma yeni rol yaratma prosesindən imtina edək, çünki rol yaradarkən təkrar açar xətası alınır
     if (roleError || !roleData) {
-      console.warn('Rol məlumatları tapılmadı, yeni rol yaradılacaq:', roleError?.message);
-      
-      // Default rol və məlumatlar
-      const defaultRole: UserRole = 'schooladmin';
-      
-      // Yeni rol məlumatları yaradırıq
-      const { data: newRoleData, error: createRoleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: defaultRole,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select('*')
-        .single();
-      
-      if (createRoleError) {
-        console.error('Rol yaradarkən xəta:', createRoleError);
-        throw new Error('İstifadəçi üçün rol təyin edilə bilmədi');
-      }
-      
-      roleData = newRoleData;
+      console.warn('Rol məlumatları tapılmadı:', roleError?.message);
+      throw new Error('İstifadəçi üçün rol təyin edilməyib');
     }
     
     if (!roleData) {

@@ -60,22 +60,30 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             if (newSession?.user) {
               try {
-                const userData = await fetchUserData(newSession.user.id);
-                setUser(userData);
-              } catch (userError: any) {
-                console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-                
-                // Bu xətanı emal et və istifadəçini logout et
-                if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
-                    userError.message?.includes('rol təyin edilə bilmədi') ||
-                    userError.message?.includes('İstifadəçi profili tapılmadı') ||
-                    userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
-                  console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
-                  await supabase.auth.signOut();
-                  setSession(null);
-                  setUser(null);
-                }
-              } finally {
+                // İstifadəçi məlumatlarını əldə etmək prosesini sonsuz dövrəyə girməsin deyə
+                // fetchUserData funksiyasını çağırma prosesini bir mikro task ilə ayıraq
+                setTimeout(async () => {
+                  try {
+                    const userData = await fetchUserData(newSession.user.id);
+                    setUser(userData);
+                  } catch (userError: any) {
+                    console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+                    
+                    // Bu xətanı emal et və istifadəçini logout et
+                    if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                        userError.message?.includes('rol təyin edilə bilmədi') ||
+                        userError.message?.includes('İstifadəçi profili tapılmadı') ||
+                        userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
+                      console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
+                      await supabase.auth.signOut();
+                      setSession(null);
+                      setUser(null);
+                    }
+                  } finally {
+                    setLoading(false);
+                  }
+                }, 0);
+              } catch (error) {
                 setLoading(false);
               }
             } else {
@@ -92,25 +100,34 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         // Əgər sessiya varsa, istifadəçi məlumatlarını əldə edək
         if (currentSession?.user) {
           try {
-            const userData = await fetchUserData(currentSession.user.id);
-            setUser(userData);
-          } catch (userError: any) {
-            console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
-            
-            // Xəta mesajını yoxlayaraq məqsədli qərarlar verək
-            if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
-                userError.message?.includes('rol təyin edilə bilmədi') ||
-                userError.message?.includes('İstifadəçi profili tapılmadı') ||
-                userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
-              console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
-              await supabase.auth.signOut();
-              setSession(null);
-              setUser(null);
-            }
+            // Burada da eyni şəkildə setTimeout ilə sonsuz dövrədən qaçaq
+            setTimeout(async () => {
+              try {
+                const userData = await fetchUserData(currentSession.user.id);
+                setUser(userData);
+              } catch (userError: any) {
+                console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
+                
+                // Xəta mesajını yoxlayaraq məqsədli qərarlar verək
+                if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                    userError.message?.includes('rol təyin edilə bilmədi') ||
+                    userError.message?.includes('İstifadəçi profili tapılmadı') ||
+                    userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
+                  console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
+                  await supabase.auth.signOut();
+                  setSession(null);
+                  setUser(null);
+                }
+              } finally {
+                setLoading(false);
+              }
+            }, 0);
+          } catch (error) {
+            setLoading(false);
           }
+        } else {
+          setLoading(false);
         }
-        
-        setLoading(false);
       } catch (error) {
         console.error('Auth inisializasiya xətası:', error);
         setLoading(false);

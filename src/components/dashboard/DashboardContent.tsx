@@ -98,27 +98,35 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
-    switch (userRole) {
-      case 'superadmin': {
-        return <SuperAdminDashboard data={dashboardData} />;
-      }
-      case 'regionadmin': {
-        return <RegionAdminDashboard data={dashboardData} />;
-      }
-      case 'sectoradmin': {
-        return <SectorAdminDashboard data={dashboardData} />;
-      }
-      case 'schooladmin': {
+    // İstifadəçi rolunu daha düzgün müəyyən edək
+    // userRole-u string kimi qəbul edirik və lowercase edirik
+    const normalizedRole = typeof userRole === 'string' ? userRole.toLowerCase() : '';
+
+    switch (normalizedRole) {
+      case 'superadmin':
+        return <SuperAdminDashboard data={dashboardData as SuperAdminDashboardData} />;
+      case 'regionadmin':
+        return <RegionAdminDashboard data={dashboardData as RegionAdminDashboardData} />;
+      case 'sectoradmin':
+        return <SectorAdminDashboard data={dashboardData as SectorAdminDashboardData} />;
+      case 'schooladmin':
         return (
           <SchoolAdminDashboard 
-            data={dashboardData}
+            data={dashboardData as SchoolAdminDashboardData}
             navigateToDataEntry={navigateToDataEntry}
             handleFormClick={handleFormClick}
           />
         );
-      }
       default:
-        return null;
+        // Əgər naməlum bir rol gəlirsə, istifadəçinin hansı rolda olduğunu konsola yazaq
+        console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
+        return (
+          <SchoolAdminDashboard 
+            data={dashboardData as SchoolAdminDashboardData}
+            navigateToDataEntry={navigateToDataEntry}
+            handleFormClick={handleFormClick}
+          />
+        );
     }
   };
 
