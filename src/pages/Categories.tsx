@@ -1,293 +1,170 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import { Helmet } from 'react-helmet';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { useAuth } from '@/context/AuthContext';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Calendar, Eye, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useCategories } from '@/hooks/useCategories';
-import { Category, CategoryFilter } from '@/types/category';
-import { format } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
+import CategoryList from '@/components/categories/CategoryList';
+import CategoryHeader from '@/components/categories/CategoryHeader';
 import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
+import CategoryStats from '@/components/categories/CategoryStats';
+import CategoryAnalytics from '@/components/categories/CategoryAnalytics';
 import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
-import CategoryList from '@/components/categories/CategoryList';
+import { useCategories } from '@/hooks/useCategories';
+import { Category, CategoryFilter } from '@/types/category';
+import { useCategoryActions } from '@/hooks/useCategoryActions';
 
-const Categories = () => {
-  const { t } = useLanguageSafe();
-  const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
+const Categories: React.FC = () => {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<CategoryFilter>({});
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    description: '',
-    assignment: 'all',
-    deadline: '',
-    status: 'active'
-  });
-  
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+
+  // Kateqoriyaları əldə etmək üçün hook
   const { 
     categories, 
-    loading, 
+    isLoading, 
     error, 
-    addCategory, 
-    updateCategory, 
-    deleteCategory,
-    fetchCategories
+    refetch 
   } = useCategories();
-  
-  const filteredCategories = categories.filter(category => 
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setCategoryForm(prev => ({ ...prev, [name]: value }));
+
+  // Kateqoriyalar üzərində əməliyyatlar üçün hook
+  const {
+    isActionLoading,
+    handleAddCategory,
+    handleDeleteCategory,
+    handleUpdateCategoryStatus
+  } = useCategoryActions(refetch);
+
+  // Axtarış
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setFilter((prev) => ({ ...prev, search: value }));
   };
-  
-  const handleSelectChange = (name: string, value: string) => {
-    setCategoryForm(prev => ({ ...prev, [name]: value }));
+
+  // Filter dəyişdirmə
+  const handleFilterChange = (newFilter: CategoryFilter) => {
+    setFilter((prev) => ({ ...prev, ...newFilter }));
   };
-  
-  const handleEditCategory = (category: Category) => {
-    setSelectedCategoryId(category.id);
-    setCategoryForm({
-      name: category.name,
-      description: category.description || '',
-      assignment: category.assignment || 'all',
-      deadline: category.deadline ? new Date(category.deadline).toISOString().split('T')[0] : '',
-      status: category.status || 'active'
-    });
+
+  // Kateqoriya əlavə etmə
+  const handleOpenAddDialog = () => {
     setIsAddDialogOpen(true);
   };
-  
-  const handleDeleteClick = (id: string) => {
-    setSelectedCategoryId(id);
+
+  // Kateqoriya silmə
+  const handleOpenDeleteDialog = (category: Category) => {
+    setSelectedCategory(category);
     setIsDeleteDialogOpen(true);
   };
-  
-  const confirmDelete = async () => {
-    if (selectedCategoryId) {
-      try {
-        await deleteCategory(selectedCategoryId);
-        setIsDeleteDialogOpen(false);
-        setSelectedCategoryId(null);
-      } catch (error) {
-        console.error('Error deleting category:', error);
-      }
-    }
-  };
-  
-  const handleSubmitCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+
+  // Kateqoriya statusunu dəyişmə
+  const handleStatusChange = async (id: string, status: 'active' | 'inactive' | 'draft') => {
     try {
-      const categoryData = {
-        name: categoryForm.name,
-        description: categoryForm.description || null,
-        assignment: categoryForm.assignment as 'all' | 'sectors',
-        deadline: categoryForm.deadline ? new Date(categoryForm.deadline).toISOString() : null,
-        status: categoryForm.status,
-        priority: 0
-      };
-      
-      if (selectedCategoryId) {
-        await updateCategory(selectedCategoryId, categoryData);
-      } else {
-        await addCategory(categoryData);
-      }
-      
-      setCategoryForm({
-        name: '',
-        description: '',
-        assignment: 'all',
-        deadline: '',
-        status: 'active'
-      });
-      
-      setIsAddDialogOpen(false);
-      setSelectedCategoryId(null);
-    } catch (error) {
-      console.error('Error with category operation:', error);
+      await handleUpdateCategoryStatus(id, status);
+      toast.success('Kateqoriya statusu uğurla yeniləndi');
+    } catch (error: any) {
+      toast.error(`Xəta: ${error.message}`);
     }
   };
-  
-  const handleDialogClose = () => {
-    setCategoryForm({
-      name: '',
-      description: '',
-      assignment: 'all',
-      deadline: '',
-      status: 'active'
-    });
-    setSelectedCategoryId(null);
+
+  // Kateqoriya düzəlişi
+  const handleEditCategory = (category: Category) => {
+    navigate(`/columns?categoryId=${category.id}`);
   };
-  
-  const handleViewCategory = (id: string) => {
-    window.location.href = `/columns?category=${id}`;
-  };
-  
+
+  // Filtrlənmiş kateqoriyalar
+  const filteredCategories = categories.filter(category => {
+    let matches = true;
+    
+    if (filter.status && filter.status !== category.status) {
+      matches = false;
+    }
+    
+    if (filter.assignment && filter.assignment !== category.assignment) {
+      matches = false;
+    }
+    
+    if (filter.search) {
+      const searchLower = filter.search.toLowerCase();
+      if (
+        !category.name.toLowerCase().includes(searchLower) &&
+        (!category.description || !category.description.toLowerCase().includes(searchLower))
+      ) {
+        matches = false;
+      }
+    }
+    
+    if (!filter.showArchived && category.archived) {
+      matches = false;
+    }
+    
+    return matches;
+  });
+
   return (
-    <>
-      <Helmet>
-        <title>{t('categories')} | InfoLine</title>
-      </Helmet>
-      <SidebarLayout>
-        <div className="container mx-auto py-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold">{t('categories')}</h1>
-              <p className="text-muted-foreground mt-1">{t('categoriesDescription')}</p>
-            </div>
+    <SidebarLayout>
+      <div className="space-y-4">
+        <CategoryHeader 
+          search={search} 
+          onSearchChange={handleSearch} 
+          onAddCategory={handleOpenAddDialog}
+          isLoading={isLoading || isActionLoading}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2 space-y-4">
+            <Card>
+              <CardContent className="p-0">
+                <CategoryList 
+                  categories={filteredCategories}
+                  isLoading={isLoading} 
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleOpenDeleteDialog}
+                  onEdit={handleEditCategory}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-4">
+            <CategoryFilterCard 
+              filter={filter} 
+              onFilterChange={handleFilterChange} 
+            />
             
-            <AddCategoryDialog 
-              isOpen={isAddDialogOpen}
-              onOpenChange={(open) => {
-                setIsAddDialogOpen(open);
-                if (!open) handleDialogClose();
-              }}
-              categoryForm={categoryForm}
-              handleFormChange={handleFormChange}
-              handleSelectChange={handleSelectChange}
-              handleSubmit={handleSubmitCategory}
-              selectedCategoryId={selectedCategoryId}
+            <CategoryStats 
+              categories={categories} 
+              isLoading={isLoading}
+            />
+            
+            <CategoryAnalytics 
+              categories={categories} 
+              isLoading={isLoading}
             />
           </div>
-          
-          <CategoryFilterCard 
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onRefresh={fetchCategories}
-          />
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>{t('categoryList')}</CardTitle>
-              <CardDescription>
-                {filteredCategories.length} {t('categoryFound')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-8 text-destructive">
-                  {t('errorLoadingCategories')}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('categoryName')}</TableHead>
-                      <TableHead>{t('assignment')}</TableHead>
-                      <TableHead>{t('deadline')}</TableHead>
-                      <TableHead className="text-center">{t('columnsCount')}</TableHead>
-                      <TableHead>{t('status')}</TableHead>
-                      <TableHead className="text-right">{t('actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCategories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell className="font-medium">
-                          {category.name}
-                          <div className="text-xs text-muted-foreground mt-1">{category.description}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {category.assignment === 'all' ? t('allSchools') : t('onlySectors')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {category.deadline ? (
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              {format(new Date(category.deadline), 'dd.MM.yyyy')}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">{category.column_count || 0}</TableCell>
-                        <TableCell>
-                          <div className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            category.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {category.status === 'active' ? t('active') : t('inactive')}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              size="icon" 
-                              variant="ghost"
-                              onClick={() => handleViewCategory(category.id)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost"
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="text-destructive"
-                              onClick={() => handleDeleteClick(category.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-              
-              {!loading && filteredCategories.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  {t('noCategoriesFound')}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
-      </SidebarLayout>
-      
-      <DeleteCategoryDialog 
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={confirmDelete}
-      />
-    </>
+
+        {/* Dialog boxes */}
+        <AddCategoryDialog 
+          open={isAddDialogOpen} 
+          onOpenChange={setIsAddDialogOpen}
+          onAddCategory={handleAddCategory}
+          isSubmitting={isActionLoading}
+        />
+        
+        <DeleteCategoryDialog 
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          category={selectedCategory}
+          onConfirm={handleDeleteCategory}
+          isSubmitting={isActionLoading}
+        />
+      </div>
+    </SidebarLayout>
   );
 };
 
