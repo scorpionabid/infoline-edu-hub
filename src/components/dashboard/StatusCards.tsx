@@ -7,13 +7,15 @@ import { Progress } from '@/components/ui/progress';
 
 interface StatusCardsProps {
   data: {
-    completionRate: number;
-    pendingApprovals: number;
+    completionRate?: number;
+    pendingApprovals?: number;
   };
 }
 
 export const StatusCards: React.FC<StatusCardsProps> = ({ data }) => {
   const { t } = useLanguage();
+  const completionRate = data?.completionRate ?? 0;
+  const pendingApprovals = data?.pendingApprovals ?? 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -26,11 +28,11 @@ export const StatusCards: React.FC<StatusCardsProps> = ({ data }) => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-2">
-            <div className="text-2xl font-bold">{data.completionRate}%</div>
+            <div className="text-2xl font-bold">{completionRate}%</div>
             <p className="text-xs text-muted-foreground">
               {t('completionRateDescription')}
             </p>
-            <Progress value={data.completionRate} className="h-2" />
+            <Progress value={completionRate} className="h-2" />
           </div>
         </CardContent>
       </Card>
@@ -44,7 +46,7 @@ export const StatusCards: React.FC<StatusCardsProps> = ({ data }) => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-2">
-            <div className="text-2xl font-bold">{data.pendingApprovals}</div>
+            <div className="text-2xl font-bold">{pendingApprovals}</div>
             <p className="text-xs text-muted-foreground">
               {t('pendingApprovalsDescription')}
             </p>

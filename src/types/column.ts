@@ -74,8 +74,7 @@ export interface CategoryWithColumns {
   name?: string; // CategoryWithColumns obyektinə birbaşa müraciət üçün
 }
 
-export type CategoryStatus = 'active' | 'inactive' | 'archived';
-export type CategoryAssignment = 'all' | 'sectors' | 'specific';
+import { CategoryStatus, CategoryAssignment } from './category';
 
 // Supabase-dən gələn sütun obyektini Column tipinə çevirmək üçün
 export const adaptColumnToSupabase = (column: Column) => {
@@ -85,7 +84,7 @@ export const adaptColumnToSupabase = (column: Column) => {
     category_id: column.categoryId,
     type: column.type,
     is_required: column.isRequired,
-    options: Array.isArray(column.options) ? JSON.stringify(column.options) : null,
+    options: Array.isArray(column.options) ? JSON.stringify(column.options) : column.options,
     order_index: column.orderIndex || column.order || 0,
     placeholder: column.placeholder || null,
     help_text: column.helpText || null,
@@ -107,6 +106,8 @@ export const adaptSupabaseColumn = (column: any): Column => {
         : column.options;
     } catch (e) {
       console.error('Sütun seçimlərini parse edərkən xəta baş verdi:', e);
+      // Əgər parse edilə bilmirsə, boş array istifadə et
+      options = [];
     }
   }
 
@@ -118,6 +119,8 @@ export const adaptSupabaseColumn = (column: any): Column => {
         : column.validation;
     } catch (e) {
       console.error('Sütun validasiyasını parse edərkən xəta baş verdi:', e);
+      // Əgər parse edilə bilmirsə, boş validasiya istifadə et
+      validation = {};
     }
   }
 
@@ -127,7 +130,7 @@ export const adaptSupabaseColumn = (column: any): Column => {
     type: column.type as ColumnType,
     categoryId: column.category_id || column.categoryId,
     isRequired: column.is_required || column.isRequired || false,
-    options: options,
+    options: options || [],
     orderIndex: column.order_index || column.orderIndex || 0,
     order: column.order || column.order_index || column.orderIndex || 0,
     placeholder: column.placeholder || '',

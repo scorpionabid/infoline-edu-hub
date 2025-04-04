@@ -1,4 +1,4 @@
-// Komponentdən NotificationSystem-i çıxaraq
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from "@/utils/cn";
@@ -6,8 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLanguage } from '@/context/LanguageContext';
-// SideBarnav tipini import edirik
-import { SideBarNavItem } from '@/types/ui';
+// SideBarNavItem tipini import edirik
+import { SideBarNavItem } from '@/types/supabase';
 import { UserRole } from '@/types/supabase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -53,335 +53,268 @@ const SidebarNav = ({ className, items, isCollapsed, pathname, onLinkClick }: {
   pathname: string;
   onLinkClick?: () => void;
 }) => {
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+
+  const toggleItem = (title: string) => {
+    setOpenItems((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
   return (
-    <nav className={cn("flex flex-col space-y-1", className)}>
-      {items?.map(
-        (item, index) =>
-          item.href ? (
-            <Link
-              key={index}
-              to={item.href}
-              onClick={onLinkClick}
-              className={cn(
-                "group flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                pathname === item.href
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground",
-                isCollapsed && "justify-center"
+    <nav className={cn("flex flex-col gap-2", className)}>
+      {items.map((item, index) => {
+        // Detect if the item is active
+        const isActive = item.href ? pathname === item.href : false;
+        // Detect if this item has children and if any of them is active
+        const hasChildren = item.items && item.items.length > 0;
+        const isChildrenActive = hasChildren && item.items?.some(child => child.href ? pathname === child.href : false);
+        const isOpen = openItems[item.title] || isChildrenActive;
+
+        if (hasChildren) {
+          return (
+            <div key={`${item.title}-${index}`}>
+              <Button
+                variant={isChildrenActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-between px-2 mb-1", 
+                  isCollapsed ? "h-9 px-2" : "px-2",
+                  isChildrenActive && "bg-muted"
+                )}
+                onClick={() => toggleItem(item.title)}
+              >
+                <div className="flex items-center">
+                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                  {!isCollapsed && <span>{item.title}</span>}
+                </div>
+                {!isCollapsed && (
+                  isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+              {isOpen && !isCollapsed && item.items && (
+                <div className="ml-4 border-l pl-2 space-y-1">
+                  {item.items.map((child, childIndex) => (
+                    <Button
+                      key={`${child.title}-${childIndex}`}
+                      variant={pathname === child.href ? "secondary" : "ghost"}
+                      size="sm"
+                      asChild
+                      className={cn(
+                        "w-full justify-start",
+                        pathname === child.href ? "bg-muted" : "transparent"
+                      )}
+                      onClick={onLinkClick}
+                    >
+                      <Link to={child.href || '#'}>
+                        {child.icon && <child.icon className="mr-2 h-3.5 w-3.5" />}
+                        <span>{child.title}</span>
+                      </Link>
+                    </Button>
+                  ))}
+                </div>
               )}
-            >
-              <item.icon className="h-4 w-4" />
-              {!isCollapsed && <span>{item.title}</span>}
-            </Link>
-          ) : item.items ? (
-            <AccordionNav
-              key={index}
-              item={item}
-              isCollapsed={isCollapsed}
-              pathname={pathname}
-              onLinkClick={onLinkClick}
-            />
-          ) : null
-      )}
+            </div>
+          );
+        }
+
+        return (
+          <TooltipProvider key={`${item.title}-${index}`} delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  size={isCollapsed ? "icon" : "default"}
+                  asChild
+                  className={cn(
+                    "w-full justify-start",
+                    isCollapsed ? "h-9 px-2" : "px-2",
+                    isActive && "bg-muted"
+                  )}
+                  onClick={onLinkClick}
+                >
+                  <Link to={item.href || '#'}>
+                    {item.icon && <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />}
+                    {!isCollapsed && <span>{item.title}</span>}
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              {isCollapsed && (
+                <TooltipContent side="right" className="flex items-center gap-4">
+                  {item.title}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      })}
     </nav>
-  )
-}
+  );
+};
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+export const Sidebar = ({ t, role, isCollapsed, pathname, onToggleCollapse, onLinkClick }: SidebarProps) => {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
-interface AccordionNavProps {
-  item: {
-    title: string
-    items: SideBarNavItem[]
-  }
-  isCollapsed: boolean
-  pathname: string
-  onLinkClick?: () => void
-}
+  // Get the sidebar items based on the user's role
+  const sidebarItems = sideBarConfig.find(config => config.role === (role || 'user'))?.items || [];
+  // Get the help item that's common for all roles
+  const helpItem = sideBarHelp;
 
-const AccordionNav = ({ item, isCollapsed, pathname, onLinkClick }: AccordionNavProps) => {
-  const [isOpen, setIsOpen] = React.useState(false)
+  const handleLogout = () => {
+    logout();
+  };
 
+  // Close mobile sidebar when route changes
   React.useEffect(() => {
-    // Check if any of the child items' href matches the pathname
-    const childMatch = item.items.some((child) => child.href === pathname)
-    setIsOpen(childMatch)
-  }, [pathname, item.items])
+    if (isMobileOpen) {
+      setIsMobileOpen(false);
+    }
+  }, [location, isMobileOpen]);
 
-  return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem value={item.title}>
-        <AccordionTrigger
+  // Handle content based on viewport
+  const sidebarContent = (
+    <div className={cn(
+      "flex flex-col h-full",
+      isCollapsed ? "w-[60px]" : "w-[240px]"
+    )}>
+      {/* Sidebar Header */}
+      <div className={cn(
+        "flex h-14 items-center px-4 py-2",
+        isCollapsed ? "justify-center" : "justify-between"
+      )}>
+        {!isCollapsed && (
+          <span className="text-lg font-semibold">InfoLine</span>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleCollapse}
           className={cn(
-            "group flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            isOpen
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground",
-            isCollapsed && "justify-center"
+            "h-7 w-7",
+            isCollapsed ? "rotate-180" : ""
           )}
         >
-          <div className="flex items-center space-x-3">
-            {item.icon && <item.icon className="h-4 w-4" />}
-            {!isCollapsed && <span>{item.title}</span>}
-          </div>
-          {!isCollapsed && (isOpen ? <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" /> : <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200" />)}
-        </AccordionTrigger>
-        <AccordionContent className="space-y-1">
-          <nav className="flex flex-col space-y-1">
-            {item.items.map((subItem, index) => (
-              <Link
-                key={index}
-                to={subItem.href}
-                onClick={onLinkClick}
-                className={cn(
-                  "group flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                  pathname === subItem.href
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground",
-                  isCollapsed && "justify-center"
-                )}
-              >
-                {subItem.icon && <subItem.icon className="h-4 w-4" />}
-                {!isCollapsed && <span>{subItem.title}</span>}
-              </Link>
-            ))}
-          </nav>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  )
-}
-
-const Sidebar = ({ t, role, isCollapsed, pathname, onToggleCollapse, onLinkClick }: SidebarProps) => {
-  const getSidebarItems = (role: UserRole | undefined) => {
-    switch (role) {
-      case 'superadmin':
-        return sideBarConfig.superadmin;
-      case 'regionadmin':
-        return sideBarConfig.regionadmin;
-      case 'sectoradmin':
-        return sideBarConfig.sectoradmin;
-      case 'schooladmin':
-        return sideBarConfig.schooladmin;
-      default:
-        return sideBarHelp;
-    }
-  };
-
-  const sidebarItems = getSidebarItems(role);
-
-  return (
-    <div className="space-y-4">
-      <SidebarNav
-        className="mt-4"
-        items={sidebarItems}
-        isCollapsed={isCollapsed}
-        pathname={pathname}
-        onLinkClick={onLinkClick}
-      />
-    </div>
-  );
-};
-
-interface UserMenuDropdownProps {
-  user: any;
-  onLogout: () => void;
-  t: (key: string, args?: any) => string;
-}
-
-const UserMenuDropdown: React.FC<UserMenuDropdownProps> = ({ user, onLogout, t }) => {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.avatar} alt={user?.full_name} />
-            <AvatarFallback>{user?.full_name?.slice(0, 2)}</AvatarFallback>
-          </Avatar>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <span className="text-sm font-medium leading-none">{user?.full_name}</span>
-            <span className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </span>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
-            <span>{t('myProfile')}</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings" className="flex items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>{t('settings')}</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>{t('logout')}</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+      </div>
+      
+      {/* Sidebar Content */}
+      <ScrollArea className="flex-1">
+        <div className={cn(
+          "flex flex-col gap-6 p-2",
+          isCollapsed ? "items-center" : "items-start"
+        )}>
+          <SidebarNav
+            items={sidebarItems}
+            isCollapsed={isCollapsed}
+            pathname={pathname}
+            onLinkClick={onLinkClick}
+          />
+            
+          {/* Divider */}
+          <div className={cn(
+            "h-px bg-muted",
+            isCollapsed ? "w-4" : "w-full"
+          )} />
 
-const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout } = useAuth();
-  const { t } = useLanguage();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const pathname = useLocation().pathname;
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  const [open, setOpen] = React.useState(false);
-
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-  };
-
-  return (
-    <div className="flex min-h-screen w-full bg-background">
-      {/* Mobile sidebar triggers */}
-      <div className="flex z-50 md:hidden items-center h-16 px-4 border-b bg-background">
-        <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>
-          <Menu className="h-5 w-5" />
-        </Button>
-        <div className="ml-auto flex items-center space-x-4">
-          {/* NotificationControl komponenti əvəz edirik */}
-          <Button variant="ghost" size="icon">
-            <Link to="/settings">
-              <Settings className="h-5 w-5" />
-            </Link>
-          </Button>
-          <UserMenuDropdown 
-            user={user}
-            onLogout={handleLogout}
-            t={t}
+          {/* Help section */}
+          <SidebarNav
+            items={[helpItem]}
+            isCollapsed={isCollapsed}
+            pathname={pathname}
+            onLinkClick={onLinkClick}
           />
         </div>
-      </div>
+      </ScrollArea>
 
-      {/* Mobile sidebar */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-[240px] sm:w-[270px] p-0">
-          <div className="flex flex-col h-full">
-            <div className="h-16 flex items-center px-6 font-bold text-xl border-b">
-              InfoLine
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="px-4 py-2">
-                <Sidebar 
-                  t={t}
-                  role={user?.role}
-                  isCollapsed={false}
-                  pathname={pathname}
-                  onToggleCollapse={() => {}} // Mobile sidebar has no collapse mode
-                  onLinkClick={() => setOpen(false)}
-                />
-              </div>
-            </ScrollArea>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Desktop sidebar */}
-      <div 
-        className={cn(
-          "hidden md:flex flex-col border-r",
-          isCollapsed ? "w-[80px]" : "w-[240px]",
-          "transition-width duration-300 ease-in-out"
-        )}
-      >
-        <div className={cn(
-          "h-16 flex items-center px-6 font-bold text-xl border-b",
-          isCollapsed && "justify-center px-0"
-        )}>
-          {isCollapsed ? "IL" : "InfoLine"}
-        </div>
-        <div className="flex flex-col h-[calc(100vh-4rem)] justify-between">
-          <ScrollArea className="flex-1">
-            <div className={cn("py-2", isCollapsed ? "px-2" : "px-4")}>
-              <Sidebar 
-                t={t}
-                role={user?.role}
-                isCollapsed={isCollapsed}
-                pathname={pathname}
-                onToggleCollapse={toggleCollapse}
-              />
-            </div>
-          </ScrollArea>
-          
-          <div className={cn(
-            "flex items-center p-4 border-t",
-            isCollapsed && "justify-center p-2"
-          )}>
-            {isCollapsed ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={toggleCollapse} 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-9 w-9"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{t('expandSidebar')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <Button 
-                onClick={toggleCollapse} 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-start"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t('collapseSidebar')}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main content area */}
-      <div className="flex flex-col flex-1">
-        {/* Desktop header */}
-        <header className="hidden md:flex h-16 items-center px-6 border-b">
-          <div className="ml-auto flex items-center space-x-4">
-            <UserMenuDropdown
-              user={user}
-              onLogout={handleLogout}
-              t={t}
-            />
-          </div>
-        </header>
-
-        {/* Əsas məzmun və NotificationSystem-i ayırmaq */}
-        <main className="flex flex-col flex-1 overflow-auto">
-          {children}
-        </main>
+      {/* User Section */}
+      <div className={cn(
+        "p-2 border-t",
+        isCollapsed ? "flex justify-center" : ""
+      )}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full flex items-center gap-2 p-2",
+                isCollapsed ? "justify-center" : "justify-start"
+              )}
+            >
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={user?.avatar} />
+                <AvatarFallback className="text-xs">
+                  {user?.full_name?.split(' ').map(name => name[0]).join('') || user?.email?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {!isCollapsed && (
+                <div className="flex flex-col text-left overflow-hidden">
+                  <span className="text-sm truncate font-medium">{user?.full_name || user?.email || t('user')}</span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {t(user?.role || 'user')}
+                  </span>
+                </div>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              {t('myAccount')}
+            </DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link to="/profile">
+                <User className="mr-2 h-4 w-4" />
+                {t('profile')}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                {t('settings')}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              {t('logout')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
+
+  // Render based on viewport
+  return (
+    <>
+      {isMobile ? (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            className="md:hidden fixed top-4 left-4 z-40"
+            onClick={() => setIsMobileOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+            <SheetContent side="left" className="p-0">
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
+        </>
+      ) : (
+        <div className={cn(
+          "hidden md:block border-r bg-background transition-width duration-300 ease-in-out overflow-hidden h-screen sticky top-0",
+          isCollapsed ? "w-[60px]" : "w-[240px]"
+        )}>
+          {sidebarContent}
+        </div>
+      )}
+    </>
+  );
 };
 
-export default SidebarLayout;

@@ -48,6 +48,8 @@ export interface CategoryEntryData {
   isSubmitted?: boolean;
   isCompleted?: boolean;
   completionPercentage?: number;
+  columnId?: string;
+  value?: string;
 }
 
 export interface ColumnEntry {

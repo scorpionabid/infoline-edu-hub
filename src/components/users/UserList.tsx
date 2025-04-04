@@ -1,367 +1,397 @@
+
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { User } from '@/types/user';
-import { FullUserData, UserRole } from '@/types/supabase';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card } from '@/components/ui/card';
-import { useRole } from '@/context/AuthContext';
-import { FilterX, Search, MoreHorizontal, Edit, Trash2, UserCog } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import EditUserDialog from './EditUserDialog';
-import DeleteUserDialog from './DeleteUserDialog';
-import UserDetailsDialog from './UserDetailsDialog';
-import { format } from 'date-fns';
-import { useUserList } from '@/hooks/useUserList';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  CheckCircle, 
+  DotsHorizontal, 
+  Edit, 
+  Eye, 
+  Lock, 
+  MoreHorizontal, 
+  Pencil, 
+  Plus, 
+  RefreshCw, 
+  Trash, 
+  UserCog, 
+  Users, 
+  XCircle 
+} from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { UserStatus } from '@/types/supabase';
 
-interface UserListProps {
-  currentUserRole?: UserRole;
-  currentUserRegionId?: string;
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  status: UserStatus;
+  avatar?: string;
+  regionName?: string;
+  sectorName?: string;
+  schoolName?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }
 
-const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionId }) => {
-  const { t } = useLanguage();
-  const isSuperAdmin = useRole('superadmin');
-  
-  const {
-    users,
-    loading,
-    filter,
-    currentPage,
-    totalPages,
-    selectedUser,
-    isEditDialogOpen,
-    isDeleteDialogOpen,
-    isDetailsDialogOpen,
-    updateFilter,
-    resetFilter,
-    handlePageChange,
-    handleEditUser,
-    handleDeleteUser,
-    handleViewDetails,
-    handleUpdateUserConfirm,
-    handleDeleteUserConfirm,
-    setIsEditDialogOpen,
-    setIsDeleteDialogOpen,
-    setIsDetailsDialogOpen,
-  } = useUserList();
+interface UserListProps {
+  users: User[];
+  isLoading: boolean;
+  onDelete: (userId: string) => void;
+  onEdit: (user: User) => void;
+  onView: (userId: string) => void;
+  onAdd: () => void;
+  onStatusChange: (userId: string, status: UserStatus) => void;
+  onResetPassword: (email: string) => void;
+}
 
-  const getRoleBadgeStyle = (role: UserRole) => {
-    switch (role) {
-      case 'superadmin':
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
-      case 'regionadmin':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
-      case 'sectoradmin':
-        return 'bg-green-100 text-green-800 hover:bg-green-100';
-      case 'schooladmin':
-        return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
+export function UserList({
+  users,
+  isLoading,
+  onDelete,
+  onEdit,
+  onView,
+  onAdd,
+  onStatusChange,
+  onResetPassword
+}: UserListProps) {
+  const { t } = useLanguage();
+  const { user: currentUser } = useAuth();
+  const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<UserStatus | ''>('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // Update filtered users when users prop changes or filters change
+  useEffect(() => {
+    let filtered = [...users];
+
+    // Apply role filter
+    if (selectedRole) {
+      filtered = filtered.filter(user => user.role === selectedRole);
+    }
+
+    // Apply status filter
+    if (selectedStatus) {
+      filtered = filtered.filter(user => user.status === selectedStatus);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(user => 
+        user.name.toLowerCase().includes(lowerQuery) || 
+        user.email.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    setFilteredUsers(filtered);
+  }, [users, selectedRole, selectedStatus, searchQuery]);
+
+  // Extract unique roles from users
+  const roles = [...new Set(users.map(user => user.role))];
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedRole('');
+    setSelectedStatus('');
+  };
+
+  // Handle delete confirmation
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = () => {
+    if (selectedUser) {
+      onDelete(selectedUser.id);
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+      toast.success(t('userDeleted'));
     }
   };
 
-  const getStatusBadgeStyle = (status: string) => {
+  // Handle reset password
+  const handleResetPassword = (user: User) => {
+    setSelectedUser(user);
+    setResetPasswordDialogOpen(true);
+  };
+
+  // Confirm reset password
+  const confirmResetPassword = () => {
+    if (selectedUser && selectedUser.email) {
+      onResetPassword(selectedUser.email);
+      setResetPasswordDialogOpen(false);
+      setSelectedUser(null);
+      toast.success(t('resetPasswordEmailSent'), {
+        description: t('resetPasswordEmailDescription')
+      });
+    }
+  };
+
+  // Get status badge variant
+  const getStatusBadge = (status: UserStatus) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 hover:bg-green-100';
+        return <Badge variant="success">{t('active')}</Badge>;
       case 'inactive':
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
+        return <Badge variant="secondary">{t('inactive')}</Badge>;
       case 'blocked':
-        return 'bg-red-100 text-red-800 hover:bg-red-100';
+        return <Badge variant="destructive">{t('blocked')}</Badge>;
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
+        return <Badge variant="outline">{status}</Badge>;
     }
-  };
-
-  const getUserStatus = (status: string): "active" | "inactive" | "blocked" => {
-    switch (status) {
-      case "active":
-        return "active";
-      case "inactive":
-        return "inactive";
-      case "blocked":
-        return "blocked";
-      default:
-        return "inactive"; // Default status əgər bilinməzsə
-    }
-  };
-
-  const canEditUser = (user: FullUserData) => {
-    if (isSuperAdmin) return true;
-    if (currentUserRole === 'regionadmin' && currentUserRegionId === user.region_id) return true;
-    return false;
-  };
-
-  const formatDate = (dateStr: string | undefined) => {
-    if (!dateStr) return t('never');
-    try {
-      return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
-    } catch (error) {
-      return t('invalidDate');
-    }
-  };
-
-  const adaptUserForDetailsDialog = (user: FullUserData): User => {
-    return {
-      id: user.id,
-      name: user.full_name || user.name || '',
-      email: user.email,
-      role: user.role,
-      status: user.status || 'active',
-      regionId: user.regionId || user.region_id,
-      sectorId: user.sectorId || user.sector_id,
-      schoolId: user.schoolId || user.school_id,
-      avatar: user.avatar,
-      language: user.language,
-      phone: user.phone,
-      position: user.position,
-      createdAt: user.createdAt || user.created_at,
-      updatedAt: user.updatedAt || user.updated_at,
-      lastLogin: user.lastLogin || user.last_login,
-      twoFactorEnabled: user.twoFactorEnabled,
-      passwordResetDate: user.passwordResetDate,
-      notificationSettings: user.notificationSettings
-    };
-  };
-
-  const handleUpdateUser = async (userId: string, data: Partial<User>) => {
-    // Make sure status is one of the allowed values
-    if (data.status && !['active', 'inactive', 'blocked'].includes(data.status as string)) {
-      data.status = 'active'; // Default to active if invalid
-    }
-    
-    // ... rest of the function
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex flex-1 items-center w-full sm:w-auto">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('searchUsers')}
-              value={filter.search || ''}
-              onChange={(e) => updateFilter({ search: e.target.value })}
-              className="w-full pl-9"
-            />
-          </div>
+    <div className="space-y-4">
+      {/* Filter and search controls */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex flex-1 items-center space-x-2">
+          <input
+            type="text"
+            placeholder={t('searchUsers')}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <Select
-            value={filter.role || "all"}
-            onValueChange={(value) => updateFilter({ role: value !== "all" ? value as UserRole : undefined })}
+
+        <div className="flex flex-wrap gap-2">
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
           >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder={t('selectRole')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allRoles')}</SelectItem>
-              <SelectItem value="superadmin">{t('superadmin')}</SelectItem>
-              <SelectItem value="regionadmin">{t('regionadmin')}</SelectItem>
-              <SelectItem value="sectoradmin">{t('sectoradmin')}</SelectItem>
-              <SelectItem value="schooladmin">{t('schooladmin')}</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select
-            value={filter.status || "all"}
-            onValueChange={(value) => updateFilter({ status: value !== "all" ? value : undefined })}
+            <option value="">{t('allRoles')}</option>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {t(role)}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value as UserStatus)}
           >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder={t('selectStatus')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allStatuses')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-              <SelectItem value="blocked">{t('blocked')}</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={resetFilter}
-            disabled={!filter.role && !filter.status && !filter.search}
-          >
-            <FilterX className="h-4 w-4" />
+            <option value="">{t('allStatuses')}</option>
+            <option value="active">{t('active')}</option>
+            <option value="inactive">{t('inactive')}</option>
+            <option value="blocked">{t('blocked')}</option>
+          </select>
+
+          <Button variant="outline" size="sm" onClick={resetFilters}>
+            <RefreshCw className="h-4 w-4 mr-1" /> {t('reset')}
           </Button>
         </div>
       </div>
-      
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('user')}</TableHead>
-              <TableHead>{t('email')}</TableHead>
-              <TableHead>{t('role')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead>{t('lastLogin')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-4">
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-                    <span className="ml-2">{t('loading')}</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                  {t('noUsersFound')}
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
-                        <AvatarImage src={user.avatar} alt={user.full_name || ''} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {(user.full_name || '').split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="font-medium">{user.full_name}</div>
+
+      {/* Add User Button */}
+      <div className="flex justify-end">
+        <Button onClick={onAdd}>
+          <Plus className="h-4 w-4 mr-2" /> {t('addUser')}
+        </Button>
+      </div>
+
+      {/* Users Table */}
+      <div className="rounded-md border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 border-b">
+                <th className="h-10 px-4 text-left font-medium">{t('user')}</th>
+                <th className="h-10 px-4 text-left font-medium">{t('email')}</th>
+                <th className="h-10 px-4 text-left font-medium">{t('role')}</th>
+                <th className="h-10 px-4 text-left font-medium">{t('region')}</th>
+                <th className="h-10 px-4 text-left font-medium">{t('sector')}</th>
+                <th className="h-10 px-4 text-left font-medium">{t('school')}</th>
+                <th className="h-10 px-4 text-left font-medium">{t('status')}</th>
+                <th className="h-10 px-4 text-right font-medium">{t('actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-10">
+                    <div className="flex flex-col items-center justify-center">
+                      <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <p className="mt-2 text-muted-foreground">{t('loading')}</p>
                     </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getRoleBadgeStyle(user.role)}>
-                      {t(user.role)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusBadgeStyle(user.status || '')}>
-                      {t(user.status || 'active')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(user.last_login || user.lastLogin)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleViewDetails(user)}
-                        >
-                          <UserCog className="h-4 w-4 mr-2" />
-                          {t('viewDetails')}
-                        </DropdownMenuItem>
-                        
-                        {canEditUser(user) && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              {t('edit')}
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDeleteUser(user)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              {t('delete')}
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-10">
+                    <div className="flex flex-col items-center justify-center">
+                      <Users className="h-8 w-8 text-muted-foreground" />
+                      <p className="mt-2 text-muted-foreground">{t('noUsers')}</p>
+                      <Button
+                        variant="outline" 
+                        size="sm"
+                        className="mt-4"
+                        onClick={onAdd}
+                      >
+                        <Plus className="h-4 w-4 mr-2" /> {t('addUser')}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-muted/50 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={user.avatar} />
+                          <AvatarFallback className="bg-primary/10">
+                            {user.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <p className="text-muted-foreground">{user.email}</p>
+                    </td>
+                    <td className="p-4">
+                      <Badge variant="outline">{t(user.role)}</Badge>
+                    </td>
+                    <td className="p-4">{user.regionName || '-'}</td>
+                    <td className="p-4">{user.sectorName || '-'}</td>
+                    <td className="p-4">{user.schoolName || '-'}</td>
+                    <td className="p-4">
+                      {getStatusBadge(user.status)}
+                    </td>
+                    <td className="p-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <DotsHorizontal className="h-4 w-4" />
+                            <span className="sr-only">{t('openMenu')}</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onView(user.id)}>
+                            <Eye className="h-4 w-4 mr-2" /> {t('view')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit(user)}>
+                            <Edit className="h-4 w-4 mr-2" /> {t('edit')}
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                            <Lock className="h-4 w-4 mr-2" /> {t('resetPassword')}
+                          </DropdownMenuItem>
+                          
+                          {user.id !== currentUser?.id && (
+                            <>
+                              {user.status === 'active' && (
+                                <DropdownMenuItem onClick={() => onStatusChange(user.id, 'inactive')}>
+                                  <XCircle className="h-4 w-4 mr-2" /> {t('deactivate')}
+                                </DropdownMenuItem>
+                              )}
+                              {user.status === 'inactive' && (
+                                <DropdownMenuItem onClick={() => onStatusChange(user.id, 'active')}>
+                                  <CheckCircle className="h-4 w-4 mr-2" /> {t('activate')}
+                                </DropdownMenuItem>
+                              )}
+                              {user.status !== 'blocked' && (
+                                <DropdownMenuItem onClick={() => onStatusChange(user.id, 'blocked')}>
+                                  <Lock className="h-4 w-4 mr-2" /> {t('block')}
+                                </DropdownMenuItem>
+                              )}
+                              
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => handleDeleteUser(user)}
+                              >
+                                <Trash className="h-4 w-4 mr-2" /> {t('delete')}
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1 || loading}
-          >
-            {t('previous')}
-          </Button>
-          <div className="text-sm">
-            {t('page')} {currentPage} {t('of')} {totalPages}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || loading}
-          >
-            {t('next')}
-          </Button>
-        </div>
-      )}
-      
-      {selectedUser && (
-        <>
-          <UserDetailsDialog
-            open={isDetailsDialogOpen}
-            onOpenChange={setIsDetailsDialogOpen}
-            user={adaptUserForDetailsDialog(selectedUser)}
-          />
-          
-          <EditUserDialog
-            open={isEditDialogOpen}
-            onOpenChange={setIsEditDialogOpen}
-            user={adaptUserForDetailsDialog(selectedUser)}
-            onSave={handleUpdateUserConfirm}
-          />
-          
-          <DeleteUserDialog
-            open={isDeleteDialogOpen}
-            onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser}
-            onDelete={handleDeleteUserConfirm}
-          />
-        </>
-      )}
-    </Card>
-  );
-};
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteUserConfirmation', {
+                name: selectedUser?.name || '',
+                email: selectedUser?.email || ''
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 hover:bg-red-700" 
+              onClick={confirmDelete}
+            >
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-export default UserList;
+      {/* Reset Password Confirmation Dialog */}
+      <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('confirmResetPassword')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('resetPasswordConfirmation', {
+                email: selectedUser?.email || ''
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmResetPassword}>
+              {t('sendResetLink')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

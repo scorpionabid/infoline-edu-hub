@@ -53,6 +53,7 @@ export interface RegionAdminDashboardData extends DashboardData {
   users?: number;
   statusData?: any;
   chartData?: any;
+  categoryCompletionData?: any[];
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
@@ -68,6 +69,7 @@ export interface SectorAdminDashboardData extends DashboardData {
   statusData?: any;
   recentForms?: FormItem[];
   upcomingDeadlines?: any[];
+  chartData?: any;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {

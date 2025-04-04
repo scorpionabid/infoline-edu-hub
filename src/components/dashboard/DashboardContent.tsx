@@ -45,7 +45,7 @@ const adaptFormStatus = (status: string): FormStatus => {
     case 'overdue':
     case 'gecikmiş':
       return 'overdue';
-    case 'dueSoon':
+    case 'duesoon':
     case 'due_soon':
     case 'müddəti yaxınlaşır':
       return 'dueSoon';
@@ -56,6 +56,7 @@ const adaptFormStatus = (status: string): FormStatus => {
 
 // Form items üçün adapter
 const adaptFormItems = (items: any[]): FormItem[] => {
+  if (!items) return [];
   return items.map(item => ({
     id: item.id || '',
     title: item.title || '',
@@ -70,6 +71,7 @@ const adaptFormItems = (items: any[]): FormItem[] => {
 
 // Notification items üçün adapter
 const adaptNotifications = (notifications: any[]): Notification[] => {
+  if (!notifications) return [];
   return notifications.map(notification => ({
     id: notification.id || '',
     type: notification.type || 'info',
@@ -87,6 +89,7 @@ const adaptNotifications = (notifications: any[]): Notification[] => {
 
 // Activity items üçün adapter
 const adaptActivityItems = (items: any[]): ActivityItem[] => {
+  if (!items) return [];
   return items.map(item => ({
     id: item.id || '',
     type: item.type || 'action',
@@ -250,11 +253,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             completedForms = adaptFormItems(schoolAdminData.completedForms);
           }
           
-          const adaptedSchoolAdminData: SchoolAdminDashboardData = {
-            ...schoolAdminData,
-            notifications: adaptedNotifications,
-            pendingForms: pendingForms,
-            completedForms: completedForms,
+          const adaptedSchoolAdminData = {
+            schoolName: schoolAdminData.schoolName || "Unknown School",
+            sectorName: schoolAdminData.sectorName || "Unknown Sector",
+            regionName: schoolAdminData.regionName || "Unknown Region",
             forms: schoolAdminData.forms || {
               pending: 0,
               approved: 0,
@@ -262,10 +264,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
               dueSoon: 0,
               overdue: 0
             },
-            schoolName: schoolAdminData.schoolName || "Unknown School",
-            sectorName: schoolAdminData.sectorName || "Unknown Sector",
-            regionName: schoolAdminData.regionName || "Unknown Region",
             completionRate: schoolAdminData.completionRate || 0,
+            notifications: adaptedNotifications,
+            pendingForms: pendingForms,
+            completedForms: completedForms,
             recentForms: schoolAdminData.recentForms ? 
               adaptFormItems(schoolAdminData.recentForms) : [],
             dueSoonForms: schoolAdminData.dueSoonForms ? 

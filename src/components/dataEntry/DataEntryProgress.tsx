@@ -3,60 +3,60 @@ import React from 'react';
 
 interface DataEntryProgressProps {
   percentage: number;
+  size?: number;
   strokeWidth?: number;
 }
 
-const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ percentage, strokeWidth = 4 }) => {
-  const radius = 50 - (strokeWidth / 2);
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (percentage / 100) * circumference;
-
-  // İrəliləmə faizinə görə rəngin təyin edilməsi
-  const getProgressColor = (value: number) => {
-    if (value >= 75) return "#22C55E"; // yaşıl
-    if (value >= 50) return "#3B82F6"; // mavi
-    if (value >= 25) return "#F59E0B"; // sarı
-    return "#EF4444"; // qırmızı
+const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ 
+  percentage, 
+  size = 24, 
+  strokeWidth = 2 
+}) => {
+  // Ensure percentage is between 0 and 100
+  const normalizedPercentage = Math.min(100, Math.max(0, percentage));
+  
+  // Calculate circle dimensions
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (normalizedPercentage / 100) * circumference;
+  
+  // Determine color based on percentage
+  const getColor = () => {
+    if (normalizedPercentage < 30) return '#ef4444'; // red
+    if (normalizedPercentage < 70) return '#f59e0b'; // amber
+    return '#10b981'; // green
   };
-
+  
   return (
-    <svg width="100%" height="100%" viewBox="0 0 100 100">
-      {/* Arxa fon dairəsi */}
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox={`0 0 ${size} ${size}`}
+      className="transform -rotate-90"
+    >
+      {/* Background circle */}
       <circle
-        cx="50"
-        cy="50"
+        cx={size / 2}
+        cy={size / 2}
         r={radius}
-        fill="transparent"
-        stroke="#e6e6e6"
+        fill="none"
+        stroke="currentColor"
         strokeWidth={strokeWidth}
+        strokeOpacity={0.2}
       />
       
-      {/* İrəliləmə dairəsi */}
+      {/* Progress circle */}
       <circle
-        cx="50"
-        cy="50"
+        cx={size / 2}
+        cy={size / 2}
         r={radius}
-        fill="transparent"
-        stroke={getProgressColor(percentage)}
+        fill="none"
+        stroke={getColor()}
         strokeWidth={strokeWidth}
         strokeDasharray={circumference}
-        strokeDashoffset={dashOffset}
-        transform="rotate(-90 50 50)"
+        strokeDashoffset={strokeDashoffset}
         strokeLinecap="round"
       />
-      
-      {/* İrəliləmə faizinin göstərilməsi */}
-      <text
-        x="50"
-        y="50"
-        dominantBaseline="middle"
-        textAnchor="middle"
-        fontSize="20"
-        fontWeight="bold"
-        fill={getProgressColor(percentage)}
-      >
-        {percentage}%
-      </text>
     </svg>
   );
 };

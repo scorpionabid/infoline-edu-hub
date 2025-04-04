@@ -28,16 +28,18 @@ interface SchoolAdminDashboardProps {
     };
     completionRate: number;
     notifications: Notification[];
-    categories?: number;
-    totalForms?: number;
-    completedForms?: number;
     pendingForms: FormItem[]; 
-    rejectedForms?: number;
+    completedForms: FormItem[];
+    recentForms?: FormItem[];
+    dueSoonForms?: FormItem[];
+    overdueForms?: FormItem[];
     dueDates?: Array<{
       category: string;
       date: string;
     }>;
-    recentForms?: Array<FormItem>;
+    totalForms?: number;
+    categories?: number;
+    activityData?: any[];
   };
   navigateToDataEntry?: () => void;
   handleFormClick?: (formId: string) => void;
