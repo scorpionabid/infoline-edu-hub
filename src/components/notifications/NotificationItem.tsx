@@ -16,10 +16,10 @@ import { Notification, NotificationType } from '@/types/notification';
 
 interface NotificationItemProps {
   notification: Notification;
-  onRead?: (id: string) => void;
+  onMarkAsRead?: (id: string) => void;
 }
 
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRead }) => {
+const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
   const renderIcon = () => {
     switch (notification.type) {
       case 'category':
@@ -55,8 +55,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onRea
   };
 
   const handleRead = () => {
-    if (onRead && !notification.isRead) {
-      onRead(notification.id);
+    if (onMarkAsRead && !notification.isRead) {
+      onMarkAsRead(notification.id);
     }
   };
 

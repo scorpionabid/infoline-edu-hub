@@ -44,6 +44,30 @@ export interface Notification {
   created_at: string;
 }
 
+// Audit log interfeysi
+export interface AuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  entity_type: string;
+  entity_id?: string;
+  old_value?: Record<string, any>;
+  new_value?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+// Admin entity interfeysi
+export interface AdminEntity {
+  type: 'region' | 'sector' | 'school';
+  name: string;
+  status?: string;
+  regionName?: string;
+  sectorName?: string;
+  schoolType?: string;
+}
+
 // Auth ilə bağlı tiplər
 export interface AuthSession {
   access_token: string;
@@ -122,6 +146,9 @@ export interface FullUserData {
   createdAt: string; // created_at ilə eyni
   updatedAt: string; // updated_at ilə eyni
   
+  // Admin entity məlumatları
+  adminEntity?: AdminEntity;
+  
   // Əlavə tətbiq xüsusiyyətləri
   twoFactorEnabled?: boolean;
   notificationSettings?: {
@@ -141,6 +168,7 @@ export interface School {
   email?: string;
   principal_name?: string;
   admin_email?: string;
+  admin_id?: string;
   student_count?: number;
   teacher_count?: number;
   type?: string;
@@ -159,6 +187,8 @@ export interface Region {
   id: string;
   name: string;
   description?: string;
+  admin_email?: string;
+  admin_id?: string;
   status?: string;
   created_at: string;
   updated_at: string;
@@ -170,6 +200,8 @@ export interface Sector {
   name: string;
   region_id: string;
   description?: string;
+  admin_email?: string;
+  admin_id?: string;
   status?: string;
   created_at: string;
   updated_at: string;

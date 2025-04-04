@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          old_value: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           archived: boolean | null
@@ -298,6 +337,7 @@ export type Database = {
         Row: {
           address: string | null
           admin_email: string | null
+          admin_id: string | null
           completion_rate: number | null
           created_at: string
           email: string | null
@@ -318,6 +358,7 @@ export type Database = {
         Insert: {
           address?: string | null
           admin_email?: string | null
+          admin_id?: string | null
           completion_rate?: number | null
           created_at?: string
           email?: string | null
@@ -338,6 +379,7 @@ export type Database = {
         Update: {
           address?: string | null
           admin_email?: string | null
+          admin_id?: string | null
           completion_rate?: number | null
           created_at?: string
           email?: string | null
@@ -375,6 +417,7 @@ export type Database = {
       sectors: {
         Row: {
           admin_email: string | null
+          admin_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -385,6 +428,7 @@ export type Database = {
         }
         Insert: {
           admin_email?: string | null
+          admin_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -395,6 +439,7 @@ export type Database = {
         }
         Update: {
           admin_email?: string | null
+          admin_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -563,6 +608,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_of_entity: {
+        Args: {
+          user_id_param: string
+          entity_type: string
+          entity_id_param: string
+        }
+        Returns: boolean
+      }
       is_regionadmin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -612,6 +665,10 @@ export type Database = {
         }[]
       }
       update_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_admin_emails_and_ids: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

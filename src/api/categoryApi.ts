@@ -90,9 +90,24 @@ export const fetchCategories = async (): Promise<Category[]> => {
 };
 
 // Kateqoriya əlavə etmək və ya yeniləmək üçün funksiya
-export const addCategory = async (categoryData: Omit<Category, "id"> & { id?: string }): Promise<Category> => {
+export const addCategory = async (categoryData: Partial<Category> & { name: string }): Promise<Category> => {
   try {
-    const supabaseData = adaptCategoryToSupabase(categoryData);
+    // Type compatibility üçün id öncədən təyin edək
+    const categoryWithId: Category = {
+      id: categoryData.id || '',
+      name: categoryData.name,
+      description: categoryData.description,
+      assignment: categoryData.assignment || 'all',
+      status: categoryData.status || 'active',
+      deadline: categoryData.deadline,
+      priority: categoryData.priority,
+      columnCount: categoryData.columnCount || 0,
+      createdAt: categoryData.createdAt || new Date().toISOString(),
+      updatedAt: categoryData.updatedAt || new Date().toISOString(),
+      archived: categoryData.archived || false
+    };
+    
+    const supabaseData = adaptCategoryToSupabase(categoryWithId);
     
     // Yeni kateqoriya yaratma və ya mövcud olanı yeniləmə
     const { data, error } = categoryData.id 

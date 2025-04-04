@@ -36,7 +36,7 @@ const adaptToNotifications = (dashboardNotifications: DashboardNotification[]): 
   return dashboardNotifications?.map(notification => ({
     id: notification.id,
     title: notification.title,
-    message: notification.message,
+    message: notification.message || '',
     type: notification.type as NotificationType,
     time: notification.time,
     isRead: notification.read || false,
@@ -96,23 +96,41 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
+  // Bildirişləri adaptasiya edək
+  const adaptDashboardData = (data: any) => {
+    if (!data) return data;
+    
+    // Bildirişləri standart formata çeviririk
+    if (data.notifications) {
+      data = {
+        ...data,
+        notifications: adaptToNotifications(data.notifications)
+      };
+    }
+    
+    return data;
+  };
+
   // Render appropriate dashboard based on user role
   const renderDashboard = () => {
     // İstifadəçi rolunu daha düzgün müəyyən edək
     // userRole-u string kimi qəbul edirik və lowercase edirik
     const normalizedRole = typeof userRole === 'string' ? userRole.toLowerCase() : '';
+    
+    // Dashboardı göstərməzdən əvvəl dataları adaptasiya edirik
+    const adaptedData = adaptDashboardData(dashboardData);
 
     switch (normalizedRole) {
       case 'superadmin':
-        return <SuperAdminDashboard data={dashboardData as SuperAdminDashboardData} />;
+        return <SuperAdminDashboard data={adaptedData as SuperAdminDashboardData} />;
       case 'regionadmin':
-        return <RegionAdminDashboard data={dashboardData as RegionAdminDashboardData} />;
+        return <RegionAdminDashboard data={adaptedData as RegionAdminDashboardData} />;
       case 'sectoradmin':
-        return <SectorAdminDashboard data={dashboardData as SectorAdminDashboardData} />;
+        return <SectorAdminDashboard data={adaptedData as SectorAdminDashboardData} />;
       case 'schooladmin':
         return (
           <SchoolAdminDashboard 
-            data={dashboardData as SchoolAdminDashboardData}
+            data={adaptedData as SchoolAdminDashboardData}
             navigateToDataEntry={navigateToDataEntry}
             handleFormClick={handleFormClick}
           />
@@ -122,7 +140,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
         return (
           <SchoolAdminDashboard 
-            data={dashboardData as SchoolAdminDashboardData}
+            data={adaptedData as SchoolAdminDashboardData}
             navigateToDataEntry={navigateToDataEntry}
             handleFormClick={handleFormClick}
           />

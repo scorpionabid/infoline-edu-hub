@@ -95,6 +95,57 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     // Rolun adını normalize et - case-sensitive problemləri həll etmək üçün
     const normalizedRole = normalizeRole(roleData.role || 'schooladmin');
     
+    // Admin idarə etdiyi müəssisə məlumatlarını əldə etmək
+    let adminEntityData: any = null;
+    
+    if (normalizedRole === 'regionadmin' && roleData.region_id) {
+      const { data: regionData } = await supabase
+        .from('regions')
+        .select('name, status')
+        .eq('id', roleData.region_id)
+        .single();
+      
+      if (regionData) {
+        adminEntityData = {
+          type: 'region',
+          name: regionData.name,
+          status: regionData.status
+        };
+      }
+    } else if (normalizedRole === 'sectoradmin' && roleData.sector_id) {
+      const { data: sectorData } = await supabase
+        .from('sectors')
+        .select('name, status, regions(name)')
+        .eq('id', roleData.sector_id)
+        .single();
+      
+      if (sectorData) {
+        adminEntityData = {
+          type: 'sector',
+          name: sectorData.name,
+          status: sectorData.status,
+          regionName: sectorData.regions?.name
+        };
+      }
+    } else if (normalizedRole === 'schooladmin' && roleData.school_id) {
+      const { data: schoolData } = await supabase
+        .from('schools')
+        .select('name, status, type, sectors(name), regions(name)')
+        .eq('id', roleData.school_id)
+        .single();
+      
+      if (schoolData) {
+        adminEntityData = {
+          type: 'school',
+          name: schoolData.name,
+          status: schoolData.status,
+          schoolType: schoolData.type,
+          sectorName: schoolData.sectors?.name,
+          regionName: schoolData.regions?.name
+        };
+      }
+    }
+    
     // Tam istifadəçi datası
     const fullUserData: FullUserData = {
       id: userId,
@@ -122,6 +173,9 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,
       
+      // Admin entitysi haqqında məlumatlar
+      adminEntity: adminEntityData,
+      
       // Əlavə tətbiq xüsusiyyətləri
       twoFactorEnabled: false,
       notificationSettings: {
@@ -133,7 +187,8 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     console.log('İstifadəçi məlumatları uğurla əldə edildi:', {
       id: fullUserData.id,
       email: fullUserData.email,
-      role: fullUserData.role
+      role: fullUserData.role,
+      adminEntity: fullUserData.adminEntity?.name
     });
     
     return fullUserData;
@@ -168,4 +223,31 @@ const normalizeRole = (role: string): string => {
   
   // Xəritəmizdə uyğun olan rolu qaytar, yoxdursa default olaraq schooladmin
   return roleMap[roleStr] || 'schooladmin';
+};
+
+// Yeni: Audit loq əlavə etmək üçün funksiya
+export const addAuditLog = async (
+  action: string, 
+  entityType: string, 
+  entityId?: string, 
+  oldValue?: any, 
+  newValue?: any
+): Promise<void> => {
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return;
+    
+    await supabase.from('audit_logs').insert({
+      user_id: authData.user.id,
+      action,
+      entity_type: entityType,
+      entity_id: entityId,
+      old_value: oldValue ? JSON.stringify(oldValue) : null,
+      new_value: newValue ? JSON.stringify(newValue) : null,
+      ip_address: '', // Client-side bu məlumatı almaq olmur,
+      user_agent: navigator.userAgent
+    });
+  } catch (error) {
+    console.error('Audit loq əlavə edilərkən xəta:', error);
+  }
 };

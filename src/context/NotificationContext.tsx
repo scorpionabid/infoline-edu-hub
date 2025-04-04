@@ -15,6 +15,7 @@ interface NotificationContextProps {
   markAllAsRead: () => void;
   removeNotification: (id: string) => void;
   clearAllNotifications: () => void;
+  clearAll: () => void; // clearAllNotifications için alias
 }
 
 // Default context values
@@ -25,7 +26,8 @@ const defaultContext: NotificationContextProps = {
   markAsRead: () => {},
   markAllAsRead: () => {},
   removeNotification: () => {},
-  clearAllNotifications: () => {}
+  clearAllNotifications: () => {},
+  clearAll: () => {} // clearAllNotifications için alias
 };
 
 // Create context
@@ -60,11 +62,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
               id: item.id,
               userId: item.user_id,
               title: item.title,
-              message: item.message || undefined,
+              message: item.message || '',
               type: item.type as NotificationType,
               createdAt: item.created_at,
               isRead: item.is_read,
-              priority: item.priority || 'normal'
+              priority: (item.priority || 'normal') as 'low' | 'normal' | 'high' | 'urgent'
             }));
             
             setNotifications(formattedNotifications);
@@ -87,7 +89,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       id,
       userId: user?.id,
       title: notification.title,
-      message: notification.message,
+      message: notification.message || '',
       type: notification.type,
       createdAt: now,
       isRead: false,
@@ -208,6 +210,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
   
+  // clearAll alias for clearAllNotifications
+  const clearAll = clearAllNotifications;
+  
   return (
     <NotificationContext.Provider
       value={{
@@ -217,7 +222,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         markAsRead,
         markAllAsRead,
         removeNotification,
-        clearAllNotifications
+        clearAllNotifications,
+        clearAll
       }}
     >
       {children}

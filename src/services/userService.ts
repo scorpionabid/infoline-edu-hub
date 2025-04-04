@@ -7,6 +7,7 @@ import {
   UserRole 
 } from '@/types/supabase';
 import { toast } from 'sonner';
+import { addAuditLog } from '@/hooks/auth/userDataService';
 
 // İstifadəçiləri əldə et (filtirlərlə)
 export const getUsers = async (
@@ -207,6 +208,57 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       ? statusValue as 'active' | 'inactive' | 'blocked'
       : 'active' as 'active' | 'inactive' | 'blocked';
     
+    // Admin entity məlumatları
+    let adminEntityData: any = null;
+    
+    if (roleData.role === 'regionadmin' && roleData.region_id) {
+      const { data: regionData } = await supabase
+        .from('regions')
+        .select('name, status')
+        .eq('id', roleData.region_id)
+        .single();
+      
+      if (regionData) {
+        adminEntityData = {
+          type: 'region',
+          name: regionData.name,
+          status: regionData.status
+        };
+      }
+    } else if (roleData.role === 'sectoradmin' && roleData.sector_id) {
+      const { data: sectorData } = await supabase
+        .from('sectors')
+        .select('name, status, regions(name)')
+        .eq('id', roleData.sector_id)
+        .single();
+      
+      if (sectorData) {
+        adminEntityData = {
+          type: 'sector',
+          name: sectorData.name,
+          status: sectorData.status,
+          regionName: sectorData.regions?.name
+        };
+      }
+    } else if (roleData.role === 'schooladmin' && roleData.school_id) {
+      const { data: schoolData } = await supabase
+        .from('schools')
+        .select('name, status, type, sectors(name), regions(name)')
+        .eq('id', roleData.school_id)
+        .single();
+      
+      if (schoolData) {
+        adminEntityData = {
+          type: 'school',
+          name: schoolData.name,
+          status: schoolData.status,
+          schoolType: schoolData.type,
+          sectorName: schoolData.sectors?.name,
+          regionName: schoolData.regions?.name
+        };
+      }
+    }
+    
     // Tam istifadəçi məlumatlarını birləşdiririk
     const fullUserData: FullUserData = {
       id: userId,
@@ -234,6 +286,9 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       createdAt: profile.created_at,
       updatedAt: profile.updated_at,
       
+      // Admin entitysi haqqında məlumatlar
+      adminEntity: adminEntityData,
+      
       // Əlavə tətbiq xüsusiyyətləri
       twoFactorEnabled: false,
       notificationSettings: {
@@ -252,6 +307,9 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
 // Yeni istifadəçi yarat
 export const createUser = async (userData: CreateUserData): Promise<FullUserData | null> => {
   try {
+    // Əvvəlki məlumatları saxlayaq audit üçün
+    const oldData = null;
+    
     // Supabase admin funksiyasını simulyasiya edirik
     // Həqiqi layihədə bu Edge Function vasitəsilə yerinə yetirilməlidir
     const mockUserId = `${Math.random().toString(36).substring(2, 15)}`;
@@ -290,6 +348,21 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
     // Yeni yaradılmış istifadəçini əldə et
     const newUser = await getUser(mockUserId);
     
+    // Audit log əlavə et
+    await addAuditLog(
+      'create',
+      'user',
+      mockUserId,
+      oldData,
+      {
+        full_name: userData.full_name,
+        role: userData.role,
+        region_id: userData.region_id,
+        sector_id: userData.sector_id,
+        school_id: userData.school_id
+      }
+    );
+    
     toast.success('İstifadəçi uğurla yaradıldı', {
       description: `${userData.full_name} adlı istifadəçi yaradıldı`
     });
@@ -309,6 +382,9 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
 // İstifadəçini yenilə
 export const updateUser = async (userId: string, updates: UpdateUserData): Promise<FullUserData | null> => {
   try {
+    // Əvvəlki məlumatları əldə edək audit üçün
+    const oldUser = await getUser(userId);
+    
     // Profilə aid yeniləmələr
     const profileUpdates: any = {};
     if (updates.full_name !== undefined) profileUpdates.full_name = updates.full_name;
@@ -330,7 +406,10 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
     if (Object.keys(profileUpdates).length > 0) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .update(profileUpdates)
+        .update({
+          ...profileUpdates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
       
       if (profileError) throw profileError;
@@ -346,7 +425,10 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
       
       const { error: roleError } = await supabase
         .from('user_roles')
-        .update(roleUpdates)
+        .update({
+          ...roleUpdates,
+          updated_at: new Date().toISOString()
+        })
         .eq('user_id', userId);
       
       if (roleError) throw roleError;
@@ -360,6 +442,15 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
     
     // Yenilənmiş istifadəçini əldə et
     const updatedUser = await getUser(userId);
+    
+    // Audit log əlavə et
+    await addAuditLog(
+      'update',
+      'user',
+      userId,
+      oldUser,
+      updatedUser
+    );
     
     toast.success('İstifadəçi uğurla yeniləndi', {
       description: `İstifadəçi məlumatları yeniləndi`
@@ -380,6 +471,9 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
 // İstifadəçini sil
 export const deleteUser = async (userId: string): Promise<boolean> => {
   try {
+    // Əvvəlki məlumatları əldə edək audit üçün
+    const oldUser = await getUser(userId);
+    
     // Həqiqi layihədə bu edge function ilə edilməlidir
     // Burada süni arxa plan əməliyyatları təqlid edirik
     
@@ -390,6 +484,15 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
       .eq('id', userId);
     
     if (error) throw error;
+    
+    // Audit log əlavə et
+    await addAuditLog(
+      'delete',
+      'user',
+      userId,
+      oldUser,
+      null
+    );
     
     toast.success('İstifadəçi uğurla silindi', {
       description: 'İstifadəçi sistemdən silindi'
@@ -413,6 +516,15 @@ export const resetUserPassword = async (userId: string, newPassword: string): Pr
     // Həqiqi layihədə bu edge function ilə edilməlidir
     console.log('İstifadəçi parolu sıfırlanır:', userId);
     
+    // Audit log əlavə et
+    await addAuditLog(
+      'reset_password',
+      'user',
+      userId,
+      null,
+      null // Təhlükəsizlik səbəbindən parolları logda saxlamırıq
+    );
+    
     toast.success('İstifadəçi şifrəsi sıfırlandı', {
       description: 'Yeni şifrə təyin edildi'
     });
@@ -426,5 +538,18 @@ export const resetUserPassword = async (userId: string, newPassword: string): Pr
     });
     
     return false;
+  }
+};
+
+// İstifadəçinin admin funksiyaları üçün müəssisəsini müəyyən et
+export const getAdminEntity = async (userId: string): Promise<any> => {
+  try {
+    const user = await getUser(userId);
+    if (!user) return null;
+    
+    return user.adminEntity;
+  } catch (error) {
+    console.error('Admin entity məlumatlarını əldə edərkən xəta:', error);
+    return null;
   }
 };
