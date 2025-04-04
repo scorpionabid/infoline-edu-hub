@@ -8,6 +8,17 @@ import { School } from '@/types/school';
 import { useSchools } from './useSchools';
 import { Notification, NotificationType } from '@/types/notification';
 import { FormStatus } from '@/types/form';
+import { 
+  getMockCategoryCompletion,
+  getMockRegionSchoolsData, 
+  getMockActivityData,
+  getMockNotifications,
+  getMockForms,
+  getMockSchools,
+  getMockRegionalStats,
+  getMockSectorStats,
+  getMockDeadlines
+} from '@/utils/dashboardUtils';
 
 export interface FormItem {
   id: string;
@@ -148,12 +159,7 @@ export const useDashboardData = () => {
   const { dataEntries } = useDataEntries();
   const schoolsData = useSchools();
   
-  const mockSchools: School[] = [
-    { id: "1", name: "Şəhər Məktəbi #1", regionId: "1", sectorId: "1", status: "active" },
-    { id: "2", name: "Şəhər Məktəbi #2", regionId: "1", sectorId: "1", status: "active" },
-    { id: "3", name: "Kənd Məktəbi #1", regionId: "2", sectorId: "2", status: "active" },
-    { id: "4", name: "Kənd Məktəbi #2", regionId: "2", sectorId: "2", status: "inactive" }
-  ];
+  const mockSchools: School[] = getMockSchools(4);
 
   const mockRegions = [
     { id: "1", name: "Bakı" },
@@ -167,28 +173,7 @@ export const useDashboardData = () => {
     { id: "3", name: "28 May", region_id: "3" }
   ];
 
-  const mockNotifications: Notification[] = [
-    {
-      id: "1",
-      type: "newCategory" as NotificationType,
-      title: "Yeni kateqoriya yaradıldı",
-      message: "Tədris məlumatları kateqoriyası yaradıldı",
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      userId: "1",
-      priority: "normal"
-    },
-    {
-      id: "2",
-      type: "deadline" as NotificationType,
-      title: "Məlumat tələb olunur",
-      message: "Maliyyə məlumatlarını doldurmağınız xahiş olunur",
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      isRead: true,
-      userId: "1",
-      priority: "high"
-    }
-  ];
+  const mockNotifications: Notification[] = getMockNotifications(2);
 
   const transformDeadlineToString = (deadline: string | Date | undefined): string => {
     if (!deadline) return '';
@@ -224,43 +209,12 @@ export const useDashboardData = () => {
           date: transformDeadlineToString(category.deadline)
         }));
 
-      let regionalStats = mockRegions.map(region => {
-        return {
-          region: region.name,
-          approved: Math.floor(Math.random() * 50),
-          pending: Math.floor(Math.random() * 30),
-          rejected: Math.floor(Math.random() * 10)
-        };
-      });
+      let regionalStats = getMockRegionalStats(mockRegions.map(r => r.name));
+      let sectorStats = getMockSectorStats(mockSectors.map(s => s.name));
 
-      let sectorStats = mockSectors.map(sector => {
-        return {
-          sector: sector.name,
-          approved: Math.floor(Math.random() * 30),
-          pending: Math.floor(Math.random() * 20),
-          rejected: Math.floor(Math.random() * 5)
-        };
-      });
-
-      const activityData = [
-        { name: t('approved'), value: 65 },
-        { name: t('pending'), value: 25 },
-        { name: t('rejected'), value: 10 }
-      ];
-
-      const regionSchoolsData = mockRegions.map(region => {
-        return {
-          name: region.name,
-          value: mockSchools.filter(school => school.regionId === region.id).length
-        };
-      });
-
-      const categoryCompletionData = categories.slice(0, 5).map(category => {
-        return {
-          name: category.name,
-          completed: Math.floor(Math.random() * 100)
-        };
-      });
+      const activityData = getMockActivityData();
+      const regionSchoolsData = getMockRegionSchoolsData();
+      const categoryCompletionData = getMockCategoryCompletion();
 
       setChartData({
         activityData,
@@ -347,22 +301,7 @@ export const useDashboardData = () => {
         };
         setDashboardData(sectorAdminData);
       } else if (userRole === 'schooladmin') {
-        const recentFormItems: FormItem[] = [
-          {
-            id: "form-1",
-            title: "Tədris planı",
-            category: "Tədris",
-            status: 'pending',
-            completionPercentage: 75
-          },
-          {
-            id: "form-2",
-            title: "Müəllim məlumatları",
-            category: "Kadr",
-            status: 'approved',
-            completionPercentage: 100
-          }
-        ];
+        const recentFormItems = getMockForms(2);
         
         const schoolAdminData: SchoolAdminDashboardData = {
           ...dashboardData,

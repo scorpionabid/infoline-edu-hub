@@ -223,6 +223,7 @@ export type Database = {
         Row: {
           avatar: string | null
           created_at: string
+          email: string | null
           full_name: string
           id: string
           language: string | null
@@ -235,6 +236,7 @@ export type Database = {
         Insert: {
           avatar?: string | null
           created_at?: string
+          email?: string | null
           full_name: string
           id: string
           language?: string | null
@@ -247,6 +249,7 @@ export type Database = {
         Update: {
           avatar?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           language?: string | null
@@ -260,6 +263,8 @@ export type Database = {
       }
       regions: {
         Row: {
+          admin_email: string | null
+          admin_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -268,6 +273,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_email?: string | null
+          admin_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -276,6 +283,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_email?: string | null
+          admin_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -365,6 +374,7 @@ export type Database = {
       }
       sectors: {
         Row: {
+          admin_email: string | null
           created_at: string
           description: string | null
           id: string
@@ -374,6 +384,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_email?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -383,6 +394,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_email?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -461,6 +473,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_auth_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_full_user_data: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: Json
+      }
+      get_regions_with_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          status: string
+          created_at: string
+          updated_at: string
+          admin_email: string
+        }[]
+      }
+      get_sector_admin_email: {
+        Args: {
+          sector_id_param: string
+        }
+        Returns: string
+      }
+      get_user_emails_by_ids: {
+        Args: {
+          user_ids: string[]
+        }
+        Returns: {
+          id: string
+          email: string
+        }[]
+      }
+      get_user_region_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_role: {
+        Args: {
+          user_id: string
+        }
+        Returns: string
+      }
+      get_user_role_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       has_access_to_region: {
         Args: {
           _user_id: string
@@ -475,12 +538,82 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_region_access: {
+        Args: {
+          region_id_param: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      has_role_safe: {
+        Args: {
+          role_to_check: string
+        }
+        Returns: boolean
+      }
+      has_sector_access: {
+        Args: {
+          sector_id_param: string
+        }
+        Returns: boolean
+      }
+      is_regionadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_superadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      safe_get_user_by_email: {
+        Args: {
+          _email: string
+        }
+        Returns: {
+          id: string
+          aud: string
+          role: string
+          email: string
+          encrypted_password: string
+          email_confirmed_at: string
+          invited_at: string
+          confirmation_token: string
+          confirmation_sent_at: string
+          recovery_token: string
+          recovery_sent_at: string
+          email_change: string
+          email_change_token_new: string
+          email_change_token_current: string
+          email_change_confirm_status: number
+          banned_until: string
+          reauthentication_token: string
+          reauthentication_sent_at: string
+          is_super_admin: boolean
+          created_at: string
+          updated_at: string
+          phone: string
+          phone_confirmed_at: string
+          phone_change: string
+          phone_change_token: string
+          phone_change_sent_at: string
+          confirmed_at: string
+          email_change_sent_at: string
+          raw_app_meta_data: Json
+          raw_user_meta_data: Json
+          is_sso_user: boolean
+          deleted_at: string
+          is_anonymous: boolean
+        }[]
+      }
+      update_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       uuid_generate_v4: {
         Args: Record<PropertyKey, never>

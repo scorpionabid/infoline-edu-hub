@@ -1,127 +1,111 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import { Category, adaptSupabaseCategory } from '@/types/category';
+import { Category, CategoryFilter, adaptSupabaseCategory } from '@/types/category';
 
-export const useCategories = () => {
+export const useCategories = (filter?: CategoryFilter) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { t } = useLanguage();
-
-  const fetchCategories = async () => {
-    setLoading(true);
+  
+  const fetchCategories = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('priority');
-
+      setLoading(true);
+      
+      let query = supabase.from('categories').select('*');
+      
+      // Apply filters if provided
+      if (filter) {
+        if (filter.status) {
+          query = query.eq('status', filter.status);
+        }
+        
+        if (filter.assignment) {
+          query = query.eq('assignment', filter.assignment);
+        }
+        
+        if (filter.search) {
+          query = query.or(`name.ilike.%${filter.search}%,description.ilike.%${filter.search}%`);
+        }
+        
+        // By default don't show archived categories unless explicitly requested
+        if (!filter.showArchived) {
+          query = query.eq('archived', false);
+        }
+      } else {
+        // Default behavior: don't show archived categories
+        query = query.eq('archived', false);
+      }
+      
+      query = query.order('priority', { ascending: true }).order('name');
+      
+      const { data, error } = await query;
+      
       if (error) throw error;
       
-      // Adapter vasitəsi ilə məlumatları daha təhlükəsiz çeviririk
-      setCategories(data.map(category => adaptSupabaseCategory(category)));
+      // Mock data if no data returned
+      if (!data || data.length === 0) {
+        const mockCategories = [
+          {
+            id: '1',
+            name: 'Ümumi məlumat',
+            description: 'Məktəbin ümumi məlumatları',
+            status: 'active',
+            priority: 1,
+            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            assignment: 'all',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            column_count: 5,
+            archived: false
+          },
+          {
+            id: '2',
+            name: 'Müəllim heyəti',
+            description: 'Müəllim heyəti haqqında məlumatlar',
+            status: 'active',
+            priority: 2,
+            deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            assignment: 'all',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            column_count: 8,
+            archived: false
+          },
+          {
+            id: '3',
+            name: 'Şagirdlər',
+            description: 'Şagirdlər haqqında məlumatlar',
+            status: 'active',
+            priority: 3,
+            deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+            assignment: 'all',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            column_count: 6,
+            archived: false
+          }
+        ];
+        
+        // Convert mock data to proper Category objects
+        setCategories(mockCategories.map(cat => adaptSupabaseCategory(cat)));
+      } else {
+        // Convert Supabase data to proper Category objects
+        setCategories(data.map(cat => adaptSupabaseCategory(cat)));
+      }
+      
+      setError(null);
     } catch (err: any) {
       console.error('Error fetching categories:', err);
       setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadCategories')
-      });
     } finally {
       setLoading(false);
     }
-  };
-
-  const addCategory = async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([category])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setCategories(prev => [...prev, data as Category]);
-      toast.success(t('categoryAdded'), {
-        description: t('categoryAddedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error adding category:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotAddCategory')
-      });
-      throw err;
-    }
-  };
-
-  const updateCategory = async (id: string, updates: Partial<Category>) => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setCategories(prev => prev.map(category => 
-        category.id === id ? { ...category, ...data } as Category : category
-      ));
-      
-      toast.success(t('categoryUpdated'), {
-        description: t('categoryUpdatedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error updating category:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotUpdateCategory')
-      });
-      throw err;
-    }
-  };
-
-  const deleteCategory = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setCategories(prev => prev.filter(category => category.id !== id));
-      
-      toast.success(t('categoryDeleted'), {
-        description: t('categoryDeletedDesc')
-      });
-    } catch (err: any) {
-      console.error('Error deleting category:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteCategory')
-      });
-      throw err;
-    }
-  };
-
+  }, [filter]);
+  
   useEffect(() => {
     fetchCategories();
-  }, []);
-
-  return {
-    categories,
-    loading,
-    error,
-    fetchCategories,
-    addCategory,
-    updateCategory,
-    deleteCategory
-  };
+  }, [fetchCategories]);
+  
+  return { categories, loading, error, refetch: fetchCategories };
 };
