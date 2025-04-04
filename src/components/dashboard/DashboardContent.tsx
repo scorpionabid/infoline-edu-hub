@@ -9,11 +9,11 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  ActivityItem
+  ActivityItem,
+  FormItem
 } from '@/types/dashboard';
-import { FormItem } from '@/types/form';
 import { FormStatus } from '@/types/form';
-import { Notification, adaptNotification } from '@/types/notification';
+import { Notification } from '@/types/notification';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
@@ -30,13 +30,96 @@ interface DashboardContentProps {
   isLoading: boolean;
 }
 
-// İdxal edilən adaptNotifications, adaptFormItems və adaptActivityItems 
-// funksiyalarını burada yenidən təyin etmək əvəzinə utils.ts-dən istifadə edəcəyik
-import { 
-  adaptNotifications, 
-  adaptFormItems, 
-  adaptActivityItems 
-} from '@/hooks/dashboard/utils';
+// Dashboard utils tipindəki adapter funksiyaları
+const adaptFormStatus = (status: string): FormStatus => {
+  switch (status.toLowerCase()) {
+    case 'approved':
+    case 'təsdiqlənib': 
+      return 'approved';
+    case 'rejected': 
+    case 'rədd edilib':
+      return 'rejected';
+    case 'pending': 
+    case 'gözləmədə':
+      return 'pending';
+    case 'overdue':
+    case 'gecikmiş':
+      return 'overdue';
+    case 'dueSoon':
+    case 'due_soon':
+    case 'müddəti yaxınlaşır':
+      return 'dueSoon';
+    default:
+      return 'pending';
+  }
+};
+
+// Form items üçün adapter
+const adaptFormItems = (items: any[]): FormItem[] => {
+  return items.map(item => ({
+    id: item.id || '',
+    title: item.title || '',
+    status: adaptFormStatus(item.status || 'pending'),
+    completionPercentage: item.completionPercentage || item.completion_percentage || 0,
+    deadline: item.deadline || null,
+    categoryId: item.categoryId || item.category_id || '',
+    filledCount: item.filledCount || item.filled_count || 0,
+    totalCount: item.totalCount || item.total_count || 0,
+  }));
+};
+
+// Notification items üçün adapter
+const adaptNotifications = (notifications: any[]): Notification[] => {
+  return notifications.map(notification => ({
+    id: notification.id || '',
+    type: notification.type || 'info',
+    title: notification.title || '',
+    message: notification.message || '',
+    priority: notification.priority || 'normal',
+    userId: notification.userId || notification.user_id || '',
+    createdAt: notification.createdAt || notification.created_at || new Date().toISOString(),
+    isRead: notification.isRead || notification.is_read || false,
+    time: notification.time || formatTimeFromNow(notification.created_at || notification.createdAt),
+    relatedEntityId: notification.relatedEntityId || notification.related_entity_id || '',
+    relatedEntityType: notification.relatedEntityType || notification.related_entity_type || 'system',
+  }));
+};
+
+// Activity items üçün adapter
+const adaptActivityItems = (items: any[]): ActivityItem[] => {
+  return items.map(item => ({
+    id: item.id || '',
+    type: item.type || 'action',
+    title: item.title || '',
+    description: item.description || '',
+    timestamp: item.timestamp || new Date().toISOString(),
+    userId: item.userId || item.user_id || '',
+    action: item.action || '',
+    actor: item.actor || '',
+    target: item.target || '',
+    time: item.time || formatTimeFromNow(item.timestamp || item.created_at),
+  }));
+};
+
+// Tarix formatını şəkilləndirmə funksiyası
+const formatTimeFromNow = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.round(diffMs / 60000); // millisecond -> minute
+  
+  if (diffMins < 1) {
+    return 'indicə';
+  } else if (diffMins < 60) {
+    return `${diffMins} dəqiqə əvvəl`;
+  } else if (diffMins < 24 * 60) {
+    const diffHours = Math.round(diffMins / 60);
+    return `${diffHours} saat əvvəl`;
+  } else {
+    const diffDays = Math.round(diffMins / (60 * 24));
+    return `${diffDays} gün əvvəl`;
+  }
+};
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
   userRole,
@@ -162,13 +245,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           const pendingForms = schoolAdminData.pendingForms ? 
             adaptFormItems(schoolAdminData.pendingForms) : [];
           
-          let completedForms: FormItem[] | number;
+          let completedForms: FormItem[] = [];
           if (Array.isArray(schoolAdminData.completedForms)) {
             completedForms = adaptFormItems(schoolAdminData.completedForms);
-          } else if (typeof schoolAdminData.completedForms === 'number') {
-            completedForms = schoolAdminData.completedForms;
-          } else {
-            completedForms = [];
           }
           
           const adaptedSchoolAdminData: SchoolAdminDashboardData = {

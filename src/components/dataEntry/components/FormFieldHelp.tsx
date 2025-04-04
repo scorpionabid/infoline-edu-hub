@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 import {
   Tooltip,
@@ -13,18 +13,23 @@ interface FormFieldHelpProps {
 }
 
 const FormFieldHelp: React.FC<FormFieldHelpProps> = ({ text }) => {
-  if (!text) return null;
-  
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <TooltipProvider>
-      <Tooltip>
+      <Tooltip open={isOpen} onOpenChange={setIsOpen}>
         <TooltipTrigger asChild>
-          <div className="inline-flex ml-1 text-muted-foreground cursor-help">
-            <HelpCircle size={14} />
-          </div>
+          <button 
+            type="button" 
+            onClick={() => setIsOpen(prev => !prev)}
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
+          >
+            <HelpCircle className="h-3 w-3 mr-1" />
+            Kömək
+          </button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-sm">
-          <p className="text-sm">{text}</p>
+        <TooltipContent side="top" className="max-w-[300px] text-sm">
+          {text}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

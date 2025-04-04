@@ -61,7 +61,7 @@ export interface CategoryFilter {
 }
 
 // Sadələşdirilmiş kateqoriya tipi (mock məlumatlar üçün)
-export type MockCategory = Omit<Category, 'archived' | 'column_count'>;
+export type MockCategory = Category;
 
 // CategoryEntryData tipini əlavə edirik (form hooks üçün)
 export interface CategoryEntryData {

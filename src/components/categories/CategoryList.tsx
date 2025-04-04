@@ -1,255 +1,193 @@
 
 import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Category, CategoryAssignment, CategoryStatus, CategoryFilter } from '@/types/category';
-import { ArchiveIcon, Edit, EyeIcon, Plus, Search, Trash } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
-import { cn } from '@/lib/utils';
+import { Category, CategoryAssignment, CategoryFilter } from '@/types/category';
 import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 interface CategoryListProps {
   categories: Category[];
-  onAddCategory?: () => void;
-  onEditCategory?: (category: Category) => void;
-  onDeleteCategory?: (categoryId: string) => void;
-  onArchiveCategory?: (categoryId: string) => void;
-  onViewCategory?: (categoryId: string) => void;
+  onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
+  onEdit: (category: Category) => void;
+  onViewColumns: (categoryId: string) => void;
   loading?: boolean;
+  filter?: CategoryFilter;
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({
   categories,
-  onAddCategory,
-  onEditCategory,
-  onDeleteCategory,
-  onArchiveCategory,
-  onViewCategory,
+  onDelete,
+  onArchive,
+  onEdit,
+  onViewColumns,
   loading = false,
+  filter = { 
+    status: 'active', 
+    assignment: '', 
+    archived: false, 
+    showArchived: false 
+  }
 }) => {
   const { t } = useLanguage();
-  const [filters, setFilters] = useState<CategoryFilter>({
-    status: '',
-    assignment: '',
-    archived: false,
-    showArchived: false,
-    search: ''
-  });
+  const navigate = useNavigate();
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
 
-  // Filter metodları
-  const filterCategories = (categories: Category[], filters: CategoryFilter): Category[] => {
-    return categories.filter(category => {
-      const searchMatch = !filters.search || 
-        category.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        (category.description && category.description.toLowerCase().includes(filters.search.toLowerCase()));
-      
-      const statusMatch = !filters.status || category.status === filters.status;
-      
-      let assignmentMatch = true;
-      if (filters.assignment) {
-        // "specific" statusunu filterdən çıxartmaq və yalnız "all" və "sectors" ilə filtirləmək
-        assignmentMatch = filters.assignment === '' || category.assignment === filters.assignment;
+  useEffect(() => {
+    // Filtreləmə funksiyasını tətbiq edirik
+    const filtered = categories.filter(category => {
+      // Status filter
+      if (filter.status && filter.status !== 'all' && category.status !== filter.status) {
+        return false;
       }
       
-      const archivedMatch = filters.showArchived ? true : !category.archived;
+      // Assignment filter
+      if (
+        filter.assignment && 
+        filter.assignment !== '' && 
+        category.assignment !== filter.assignment
+      ) {
+        return false;
+      }
       
-      return searchMatch && statusMatch && assignmentMatch && archivedMatch;
+      // Archived filter
+      if ((filter.archived === true || filter.showArchived === true) && category.archived !== true) {
+        return false;
+      }
+      
+      if ((filter.archived === false || filter.showArchived === false) && category.archived === true) {
+        return false;
+      }
+      
+      // Search filter
+      if (filter.search && filter.search.trim() !== '') {
+        const searchLower = filter.search.toLowerCase();
+        return (
+          category.name.toLowerCase().includes(searchLower) ||
+          (category.description?.toLowerCase().includes(searchLower) || false)
+        );
+      }
+      
+      return true;
     });
-  };
 
-  const filteredCategories = filterCategories(categories, filters);
+    setFilteredCategories(filtered);
+  }, [categories, filter]);
 
-  const updateFilter = (newFilters: Partial<CategoryFilter>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const resetFilter = () => {
-    setFilters({
-      status: '',
-      assignment: '',
-      archived: false,
-      showArchived: false,
-      search: ''
-    });
-  };
-
-  // Category status sinfini əldə etmək
-  const getCategoryStatusClassName = (status: CategoryStatus, archived: boolean) => {
-    if (archived) {
-      return 'bg-gray-200 text-gray-700';
-    }
-    
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return <Badge variant="default">{t('active')}</Badge>;
       case 'inactive':
-        return 'bg-yellow-100 text-yellow-800';
+        return <Badge variant="secondary">{t('inactive')}</Badge>;
+      case 'archived':
+        return <Badge variant="outline">{t('archived')}</Badge>;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
+  const getAssignmentBadge = (assignment: CategoryAssignment) => {
+    switch (assignment) {
+      case 'all':
+        return <Badge variant="success">{t('allUsers')}</Badge>;
+      case 'sectors':
+        return <Badge variant="warning">{t('sectorsOnly')}</Badge>;
+      case 'specific':
+        return <Badge variant="info">{t('specific')}</Badge>;
+      default:
+        return <Badge variant="outline">{assignment}</Badge>;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="py-4 text-center">
+        <p>{t('loading')}</p>
+      </div>
+    );
+  }
+
+  if (filteredCategories.length === 0) {
+    return (
+      <div className="py-4 text-center">
+        <p>{t('noCategoriesFound')}</p>
+      </div>
+    );
+  }
+
   return (
-    <Card className="p-6">
-      <CardHeader className="pb-4">
-        <div className="flex flex-wrap items-center justify-between">
-          <CardTitle className="text-2xl font-bold">{t('categories')}</CardTitle>
-          <Button onClick={onAddCategory}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t('addCategory')}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex flex-1 items-center w-full sm:w-auto">
-            <div className="relative w-full sm:w-96">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('searchCategories')}
-                value={filters.search || ''}
-                onChange={(e) => updateFilter({ search: e.target.value })}
-                className="w-full pl-9"
-              />
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <Select
-              value={filters.status || ''}
-              onValueChange={(value) => updateFilter({ status: value as CategoryStatus })}
-            >
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder={t('selectStatus')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t('allStatuses')}</SelectItem>
-                <SelectItem value="active">{t('active')}</SelectItem>
-                <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                <SelectItem value="archived">{t('archived')}</SelectItem>
-              </SelectContent>
-            </Select>
+    <div className="overflow-hidden rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[300px]">{t('categoryName')}</TableHead>
+            <TableHead className="hidden md:table-cell">{t('description')}</TableHead>
+            <TableHead>{t('status')}</TableHead>
+            <TableHead>{t('assignment')}</TableHead>
+            <TableHead>{t('priority')}</TableHead>
+            <TableHead className="text-right">{t('actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredCategories.map((category) => {
+            const isArchived = category.archived === true;
+            const isActive = category.status === 'active';
+            const isInactive = category.status === 'inactive';
             
-            <Select
-              value={filters.assignment || ''}
-              onValueChange={(value) => updateFilter({ assignment: value as '' | 'all' | 'sectors' })}
-            >
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder={t('selectAssignment')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t('allAssignments')}</SelectItem>
-                <SelectItem value="all">{t('all')}</SelectItem>
-                <SelectItem value="sectors">{t('sectors')}</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={resetFilter}
-              disabled={!filters.status && !filters.assignment && !filters.search}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="overflow-auto">
-          <Table className="min-w-full">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead>{t('name')}</TableHead>
-                <TableHead>{t('description')}</TableHead>
-                <TableHead>{t('status')}</TableHead>
-                <TableHead>{t('assignment')}</TableHead>
-                <TableHead className="text-right">{t('actions')}</TableHead>
+            return (
+              <TableRow key={category.id}>
+                <TableCell className="font-medium">{category.name}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {category.description || '-'}
+                </TableCell>
+                <TableCell>{getStatusBadge(category.status)}</TableCell>
+                <TableCell>{getAssignmentBadge(category.assignment)}</TableCell>
+                <TableCell>{category.priority}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => onViewColumns(category.id)}
+                      className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    >
+                      {t('columns')}
+                    </button>
+                    <button
+                      onClick={() => onEdit(category)}
+                      className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                    >
+                      {t('edit')}
+                    </button>
+                    {!isArchived && (
+                      <button
+                        onClick={() => onArchive(category.id)}
+                        className="px-2 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
+                      >
+                        {t('archive')}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onDelete(category.id)}
+                      className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    >
+                      {t('delete')}
+                    </button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    {t('loading')}...
-                  </TableCell>
-                </TableRow>
-              ) : filteredCategories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    {t('noCategoriesFound')}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredCategories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="pl-8">
-                      <Checkbox
-                        checked={!category.archived}
-                        onCheckedChange={() => {
-                          if (onArchiveCategory) {
-                            onArchiveCategory(category.id);
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{category.description}</TableCell>
-                    <TableCell>
-                      <Badge className={cn(getCategoryStatusClassName(category.status, category.archived))}>
-                        {t(category.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{t(category.assignment)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => onViewCategory && onViewCategory(category.id)}>
-                          <EyeIcon className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onEditCategory && onEditCategory(category)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onDeleteCategory && onDeleteCategory(category.id)}>
-                          <Trash className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="show-archived"
-              checked={Boolean(filters.showArchived)}
-              onCheckedChange={(checked) => updateFilter({ showArchived: !!checked })}
-            />
-            <Label htmlFor="show-archived" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
-              {t('showArchived')}
-            </Label>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {filteredCategories.length} {t('categories')}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
