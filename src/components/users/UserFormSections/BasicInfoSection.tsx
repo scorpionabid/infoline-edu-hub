@@ -1,19 +1,32 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
+import { 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormMessage 
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserFormData } from '@/types/user';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { UserRole } from '@/types/supabase';
+import { UseFormReturn } from 'react-hook-form';
 
 interface BasicInfoSectionProps {
-  form: any;
-  data: UserFormData;
-  onFormChange: (fieldName: string, value: any) => void;
+  form: UseFormReturn<any>;
+  data: any;
+  onFormChange: (field: string, value: any) => void;
   availableRoles: UserRole[];
-  isEdit?: boolean;
-  passwordRequired?: boolean;
+  isEdit: boolean;
+  passwordRequired: boolean;
+  hideRoleSelector?: boolean;
 }
 
 const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
@@ -21,13 +34,16 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   data,
   onFormChange,
   availableRoles,
-  isEdit = false,
-  passwordRequired = false,
+  isEdit,
+  passwordRequired,
+  hideRoleSelector = false
 }) => {
   const { t } = useLanguage();
   
   return (
-    <>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">{t('basicInfo')}</h3>
+      
       <FormField
         control={form.control}
         name="name"
@@ -37,12 +53,10 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormControl>
               <Input 
                 {...field} 
-                value={data.name || ''} 
                 onChange={(e) => {
                   field.onChange(e);
                   onFormChange('name', e.target.value);
-                }} 
-                placeholder={t('enterFullName')} 
+                }}
               />
             </FormControl>
             <FormMessage />
@@ -59,14 +73,11 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormControl>
               <Input 
                 {...field} 
-                type="email" 
-                value={data.email || ''} 
+                type="email"
                 onChange={(e) => {
                   field.onChange(e);
                   onFormChange('email', e.target.value);
-                }} 
-                placeholder={t('enterEmail')} 
-                disabled={isEdit}
+                }}
               />
             </FormControl>
             <FormMessage />
@@ -74,7 +85,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         )}
       />
       
-      {(!isEdit || !passwordRequired) && (
+      {(!isEdit || passwordRequired) && (
         <FormField
           control={form.control}
           name="password"
@@ -84,27 +95,20 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
               <FormControl>
                 <Input 
                   {...field} 
-                  type="password" 
-                  value={data.password || ''} 
+                  type="password"
                   onChange={(e) => {
                     field.onChange(e);
                     onFormChange('password', e.target.value);
-                  }} 
-                  placeholder={isEdit ? t('leaveBlankToKeep') : t('enterPassword')} 
+                  }}
                 />
               </FormControl>
-              {isEdit && (
-                <FormDescription>
-                  {t('passwordChangeHint')}
-                </FormDescription>
-              )}
               <FormMessage />
             </FormItem>
           )}
         />
       )}
       
-      {availableRoles && availableRoles.length > 0 && (
+      {!hideRoleSelector && (
         <FormField
           control={form.control}
           name="role"
@@ -112,12 +116,11 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormItem>
               <FormLabel>{t('role')}</FormLabel>
               <Select
-                value={data.role || availableRoles[0]}
-                onValueChange={(value: UserRole) => {
+                value={field.value}
+                onValueChange={(value) => {
                   field.onChange(value);
                   onFormChange('role', value);
                 }}
-                disabled={isEdit}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -125,7 +128,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {availableRoles.map((role) => (
+                  {availableRoles.map(role => (
                     <SelectItem key={role} value={role}>
                       {t(role)}
                     </SelectItem>
@@ -137,7 +140,36 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           )}
         />
       )}
-    </>
+      
+      <FormField
+        control={form.control}
+        name="status"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t('status')}</FormLabel>
+            <Select
+              value={field.value}
+              onValueChange={(value) => {
+                field.onChange(value);
+                onFormChange('status', value);
+              }}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('selectStatus')} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                <SelectItem value="blocked">{t('blocked')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };
 

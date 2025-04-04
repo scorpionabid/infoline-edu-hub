@@ -1,227 +1,92 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
-import { 
-  Building, 
-  Users, 
-  FileText, 
-  BarChart4,
-  School,
-  CheckCircle,
-  XCircle,
-  Clock
-} from 'lucide-react';
 
 interface StatusCardProps {
   title: string;
   value: number | string;
-  icon: React.ReactNode;
   description?: string;
-  trend?: {
-    value: number;
-    label: string;
-    increasing: boolean;
-  };
+  icon?: React.ReactNode;
   className?: string;
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
 }
 
-export const StatusCard: React.FC<StatusCardProps> = ({
+export const StatusCard = ({
   title,
   value,
-  icon,
   description,
-  trend,
-  className = ""
-}) => {
+  icon,
+  className = '',
+  variant = 'default',
+}: StatusCardProps) => {
+  const variantClasses = {
+    default: 'bg-card border-border',
+    success: 'bg-green-50 border-green-200 text-green-800',
+    warning: 'bg-orange-50 border-orange-200 text-orange-800',
+    danger: 'bg-red-50 border-red-200 text-red-800',
+    info: 'bg-blue-50 border-blue-200 text-blue-800',
+  };
+
+  const valueClasses = {
+    default: 'text-foreground',
+    success: 'text-green-800',
+    warning: 'text-orange-800',
+    danger: 'text-red-800',
+    info: 'text-blue-800',
+  };
+
   return (
-    <Card className={`${className}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="h-4 w-4 text-muted-foreground">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
-        {trend && (
-          <div className="flex items-center text-xs mt-1">
-            <span className={trend.increasing ? "text-green-500" : "text-red-500"}>
-              {trend.increasing ? "↑" : "↓"} {trend.value}%
-            </span>
-            <span className="text-muted-foreground ml-1">{trend.label}</span>
+    <Card className={`${variantClasses[variant]} ${className}`}>
+      <CardContent className="p-4 flex items-center space-x-4">
+        {icon && <div className="flex-shrink-0">{icon}</div>}
+        <div className="flex-1">
+          <h3 className="text-sm font-medium">{title}</h3>
+          <div className={`text-2xl font-bold ${valueClasses[variant]}`}>
+            {value}
           </div>
-        )}
+          {description && <p className="text-xs mt-1">{description}</p>}
+        </div>
       </CardContent>
     </Card>
   );
 };
 
-export const RegionsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
+export const StatusCardRow = ({
+  cards,
+  className = '',
+}: {
+  cards: StatusCardProps[];
+  className?: string;
+}) => {
   return (
-    <StatusCard 
-      title={t("regions")} 
-      value={value} 
-      icon={<Building />} 
-      description={t("totalRegionsDesc")}
-    />
+    <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 ${className}`}>
+      {cards.map((card, index) => (
+        <StatusCard key={index} {...card} />
+      ))}
+    </div>
   );
 };
 
-export const SectorsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
+interface StatusCardsProps {
+  items: StatusCardProps[];
+}
+
+const StatusCards: React.FC<StatusCardsProps> = ({ items }) => {
   return (
-    <StatusCard 
-      title={t("sectors")} 
-      value={value} 
-      icon={<Building className="h-4 w-4" />} 
-      description={t("totalSectorsDesc")}
-    />
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {items.map((item, index) => (
+        <StatusCard
+          key={index}
+          title={item.title}
+          value={item.value}
+          description={item.description}
+          icon={item.icon}
+          variant={item.variant}
+        />
+      ))}
+    </div>
   );
 };
 
-export const SchoolsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("schools")} 
-      value={value} 
-      icon={<School className="h-4 w-4" />} 
-      description={t("totalSchoolsDesc")}
-    />
-  );
-};
-
-export const UsersCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("users")} 
-      value={value} 
-      icon={<Users className="h-4 w-4" />} 
-      description={t("totalUsersDesc")}
-    />
-  );
-};
-
-export const CompletionRateCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("completionRate")} 
-      value={`${value}%`} 
-      icon={<BarChart4 className="h-4 w-4" />} 
-      description={t("completionRateDesc")}
-    />
-  );
-};
-
-export const ApprovalRateCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("approvalRate")} 
-      value={`${value}%`} 
-      icon={<CheckCircle className="h-4 w-4" />} 
-      description={t("approvalRateDesc")}
-    />
-  );
-};
-
-export const PendingApprovalsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("pendingApprovals")} 
-      value={value} 
-      icon={<Clock className="h-4 w-4" />} 
-      description={t("pendingApprovalsDesc")}
-    />
-  );
-};
-
-export const PendingSchoolsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("pendingSchools")} 
-      value={value} 
-      icon={<School className="h-4 w-4" />} 
-      description={t("pendingSchoolsDesc")}
-    />
-  );
-};
-
-export const ApprovedSchoolsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("approvedSchools")} 
-      value={value} 
-      icon={<CheckCircle className="h-4 w-4" />} 
-      description={t("approvedSchoolsDesc")}
-    />
-  );
-};
-
-export const RejectedSchoolsCard: React.FC<{value: number}> = ({value}) => {
-  const { t } = useLanguage();
-  return (
-    <StatusCard 
-      title={t("rejectedSchools")} 
-      value={value} 
-      icon={<XCircle className="h-4 w-4" />} 
-      description={t("rejectedSchoolsDesc")}
-    />
-  );
-};
-
-export const FormsCard: React.FC<{value: number, type: string}> = ({value, type}) => {
-  const { t } = useLanguage();
-  
-  let icon = <FileText className="h-4 w-4" />;
-  let title = t("forms");
-  let description = t("formsDesc");
-  
-  switch (type) {
-    case 'pending':
-      title = t("pendingForms");
-      description = t("pendingFormsDesc");
-      icon = <Clock className="h-4 w-4" />;
-      break;
-    case 'approved':
-      title = t("approvedForms");
-      description = t("approvedFormsDesc");
-      icon = <CheckCircle className="h-4 w-4" />;
-      break;
-    case 'rejected':
-      title = t("rejectedForms");
-      description = t("rejectedFormsDesc");
-      icon = <XCircle className="h-4 w-4" />;
-      break;
-    case 'dueSoon':
-      title = t("dueSoonForms");
-      description = t("dueSoonFormsDesc");
-      icon = <Clock className="h-4 w-4" />;
-      break;
-    case 'overdue':
-      title = t("overdueForms");
-      description = t("overdueFormsDesc");
-      icon = <XCircle className="h-4 w-4" />;
-      break;
-  }
-  
-  return (
-    <StatusCard 
-      title={title} 
-      value={value} 
-      icon={icon} 
-      description={description}
-    />
-  );
-};
-
-// Bütün kartları bir yerdə ixrac etmək üçün
-export { StatusCard };
+export default StatusCards;

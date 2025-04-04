@@ -32,8 +32,8 @@ export interface SuperAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  statusData?: any; // superAdminProvider.ts üçün əlavə edildi
-  categoryCompletionData?: any[]; // DashboardContent.tsx üçün əlavə edildi
+  statusData?: any;
+  categoryCompletionData?: any[];
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
@@ -46,9 +46,10 @@ export interface RegionAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  categoryCompletion?: any[]; // RegionAdminDashboard.tsx üçün əlavə edildi
-  statusDistribution?: any[]; // RegionAdminDashboard.tsx üçün əlavə edildi
-  users?: number; // regionAdminProvider.ts üçün əlavə edildi
+  categoryCompletion?: any[];
+  statusDistribution?: any[];
+  users?: number;
+  statusData?: any;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
@@ -60,7 +61,8 @@ export interface SectorAdminDashboardData extends DashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  users?: number; // sectorAdminProvider.ts üçün əlavə edildi
+  users?: number;
+  statusData?: any;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
@@ -79,6 +81,7 @@ export interface SchoolAdminDashboardData extends DashboardData {
   dueSoonForms?: FormItem[];
   overdueForms?: FormItem[];
   pendingForms: FormItem[];
-  completedForms: FormItem[] | number; // Burası ya FormItem[] ya da number olabilir
-  totalForms?: number; // schoolAdminProvider.ts üçün əlavə edildi
+  completedForms: FormItem[] | number;
+  totalForms?: number;
+  upcomingDeadlines?: any[];
 }

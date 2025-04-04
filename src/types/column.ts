@@ -26,14 +26,14 @@ export interface ColumnValidation {
   maxLength?: number;
   pattern?: string;
   patternError?: string;
-  patternMessage?: string; // useValidation.tsx üçün əlavə edildi
+  patternMessage?: string;
   format?: string;
   min?: number;
   max?: number;
   regex?: string;
   minDate?: string;
   maxDate?: string;
-  warningThreshold?: number | { min?: number; max?: number }; // useValidation.tsx üçün əlavə edildi
+  warningThreshold?: number | { min?: number; max?: number };
 }
 
 export interface Column {
@@ -70,6 +70,8 @@ export interface CategoryWithColumns {
   };
   columns: Column[];
   deadline?: string;
+  id?: string; // CategoryWithColumns obyektinə birbaşa müraciət üçün
+  name?: string; // CategoryWithColumns obyektinə birbaşa müraciət üçün
 }
 
 export type CategoryStatus = 'active' | 'inactive' | 'archived';

@@ -1,13 +1,13 @@
-
-import React from "react";
-import { FormField } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
-import { FormFieldHelp } from "@/components/dataEntry/components/FormFieldHelp";
-import { Column } from "@/types/column";
+import React from 'react';
+import { FormField } from '@/components/ui/form';
+import { FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Column } from '@/types/column';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import FormFieldHelp from '@/components/dataEntry/components/FormFieldHelp';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DataEntryFieldProps {
   column: Column;
