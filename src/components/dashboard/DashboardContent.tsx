@@ -17,7 +17,7 @@ import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
-import { Notification } from '@/types/notification';
+import { Notification, NotificationType } from '@/types/notification';
 import { FormStatus } from '@/types/form';
 
 interface DashboardContentProps {
@@ -37,7 +37,7 @@ const adaptToNotifications = (dashboardNotifications: DashboardNotification[]): 
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type,
+    type: notification.type as NotificationType,
     time: notification.time,
     isRead: notification.read || false,
     createdAt: notification.time || new Date().toISOString(),

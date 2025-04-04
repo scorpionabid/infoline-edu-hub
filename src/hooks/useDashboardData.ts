@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  generateMockDashboardData, 
+  generateDashboardDataByRole, 
   generateMockChartData 
 } from '@/utils/dashboardUtils';
 import { Notification } from '@/types/notification';
@@ -31,8 +32,8 @@ export interface StatsItem {
 export interface DashboardNotification {
   id: string;
   title: string;
-  message: string;
-  time: string;
+  message?: string;
+  time?: string;
   type: string;
   read?: boolean;
 }
@@ -131,10 +132,22 @@ export interface SchoolAdminDashboardData {
   notifications: Notification[];
   categories?: number;
   totalForms?: number;
-  pendingForms?: FormItem[];
-  completedCategories?: CategoryCompletion[];
+  completedForms?: number;
+  pendingForms?: any[];
+  rejectedForms?: number;
+  dueDates?: Array<{
+    category: string;
+    date: string;
+  }>;
+  recentForms?: Array<{
+    id: string;
+    title: string;
+    category: string;
+    status: string;
+    completionPercentage: number;
+    deadline?: string;
+  }>;
   stats?: StatsItem[];
-  recentForms?: FormItem[];
 }
 
 // Dashboard data union type
@@ -174,7 +187,7 @@ export const useDashboardData = () => {
         console.log(`Dashboard yüklənir: ${role} rolu üçün`);
         
         // Mock data generasiya etmək
-        const mockData = generateMockDashboardData(role);
+        const mockData = generateDashboardDataByRole(role);
         setDashboardData(mockData);
         
         // Qrafik datanı generasiya etmək
