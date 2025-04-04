@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   DropdownMenu, 
@@ -12,11 +11,10 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { 
   CheckCircle, 
-  DotsHorizontal, 
+  MoreHorizontal, 
   Edit, 
   Eye, 
   Lock, 
-  MoreHorizontal, 
   Pencil, 
   Plus, 
   RefreshCw, 
@@ -85,21 +83,17 @@ export function UserList({
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // Update filtered users when users prop changes or filters change
   useEffect(() => {
     let filtered = [...users];
 
-    // Apply role filter
     if (selectedRole) {
       filtered = filtered.filter(user => user.role === selectedRole);
     }
 
-    // Apply status filter
     if (selectedStatus) {
       filtered = filtered.filter(user => user.status === selectedStatus);
     }
 
-    // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
       filtered = filtered.filter(user => 
@@ -111,23 +105,19 @@ export function UserList({
     setFilteredUsers(filtered);
   }, [users, selectedRole, selectedStatus, searchQuery]);
 
-  // Extract unique roles from users
   const roles = [...new Set(users.map(user => user.role))];
 
-  // Reset all filters
   const resetFilters = () => {
     setSearchQuery('');
     setSelectedRole('');
     setSelectedStatus('');
   };
 
-  // Handle delete confirmation
   const handleDeleteUser = (user: User) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };
 
-  // Confirm delete
   const confirmDelete = () => {
     if (selectedUser) {
       onDelete(selectedUser.id);
@@ -137,13 +127,11 @@ export function UserList({
     }
   };
 
-  // Handle reset password
   const handleResetPassword = (user: User) => {
     setSelectedUser(user);
     setResetPasswordDialogOpen(true);
   };
 
-  // Confirm reset password
   const confirmResetPassword = () => {
     if (selectedUser && selectedUser.email) {
       onResetPassword(selectedUser.email);
@@ -155,7 +143,6 @@ export function UserList({
     }
   };
 
-  // Get status badge variant
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
       case 'active':
@@ -171,7 +158,6 @@ export function UserList({
 
   return (
     <div className="space-y-4">
-      {/* Filter and search controls */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="flex flex-1 items-center space-x-2">
           <input
@@ -214,14 +200,12 @@ export function UserList({
         </div>
       </div>
 
-      {/* Add User Button */}
       <div className="flex justify-end">
         <Button onClick={onAdd}>
           <Plus className="h-4 w-4 mr-2" /> {t('addUser')}
         </Button>
       </div>
 
-      {/* Users Table */}
       <div className="rounded-md border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -296,7 +280,7 @@ export function UserList({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
-                            <DotsHorizontal className="h-4 w-4" />
+                            <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">{t('openMenu')}</span>
                           </Button>
                         </DropdownMenuTrigger>
@@ -349,7 +333,6 @@ export function UserList({
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -373,7 +356,6 @@ export function UserList({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reset Password Confirmation Dialog */}
       <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
