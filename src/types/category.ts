@@ -41,6 +41,9 @@ export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
 
 // Kateqoriyaları Supabase formatına çevirmək
 export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
+  // Əgər category yoxdursa boş obyekt qaytar
+  if (!category) return {};
+  
   const {
     createdAt,
     updatedAt,

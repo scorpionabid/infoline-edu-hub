@@ -11,10 +11,11 @@ export interface Notification {
   title: string;
   message: string;
   time: string;
+  read?: boolean;
 }
 
 interface NotificationsCardProps {
-  notifications: Notification[];
+  notifications: Notification[] | TypedNotification[];
 }
 
 // Notification tipi uyğunlaşdırma köməkçi funksiyası
@@ -25,6 +26,7 @@ const adaptNotification = (notification: TypedNotification): Notification => {
     title: notification.title,
     message: notification.message,
     time: notification.createdAt,
+    read: notification.isRead
   };
 };
 
@@ -46,7 +48,8 @@ const adaptIfNeeded = (notification: any): Notification => {
     type: notification.type || 'info',
     title: notification.title || 'Bildiriş',
     message: notification.message || '',
-    time: notification.createdAt || new Date().toISOString(),
+    time: notification.time || notification.createdAt || new Date().toISOString(),
+    read: notification.read || notification.isRead || false
   };
 };
 

@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useSupabaseAuth } from '@/hooks/auth'; // auth qovluğunu istifadə etdik
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 
@@ -81,8 +81,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(error.message || 'Bilinməyən giriş xətası');
       }
       
-      // toast bildirişi artıq signIn funksiyası daxilində göstərilir,
-      // burada təkrarlamağa ehtiyac yoxdur
       return false;
     }
   };

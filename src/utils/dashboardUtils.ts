@@ -1,4 +1,3 @@
-
 import { FormItem, StatsItem, DashboardNotification, DashboardData, ChartData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData } from '@/hooks/useDashboardData';
 
 // Mock data generatoru - istifadəçi tipinə görə dashboard məlumatlarını yaradır
@@ -98,7 +97,7 @@ export const generateMockDashboardData = (role: string): DashboardData => {
     }
   ];
 
-  // Role-a görə müxtəlif data döndəriririk
+  // Role-a görə müxtəlif data döndəririk
   switch (role.toLowerCase()) {
     case 'superadmin':
       const superAdminData: SuperAdminDashboardData = {
@@ -264,4 +263,41 @@ export const generateMockChartData = (): ChartData => {
       { name: 'Maddi-texniki baza', completed: 72 }
     ]
   };
+};
+
+// Təsadüfi bildirişlərin yaradılması
+export const generateMockNotifications = (count: number = 5): any[] => {
+  const notificationTypes = ['info', 'warning', 'success', 'error'];
+  const notificationTitles = [
+    'Yeni kateqoriya yaradıldı',
+    'Məlumat təsdiqləndi',
+    'Məlumat rədd edildi',
+    'Doldurma müddəti bitir',
+    'Yeni məktəb əlavə edildi',
+    'İstifadəçi hesabı yaradıldı',
+  ];
+  
+  const notificationMessages = [
+    'Məktəb statistikaları kateqoriyası yaradıldı',
+    'Müəllim məlumatları təsdiqləndi',
+    'Şagird məlumatları natamam olduğuna görə rədd edildi',
+    '24 saat ərzində məlumatları doldurun',
+    'Bakı şəhəri, 25 nömrəli məktəb əlavə edildi',
+    'Cavid Ələkbərov istifadəçisi sistemə əlavə edildi',
+  ];
+  
+  return Array.from({ length: count }, (_, index) => {
+    const randomType = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
+    const randomTitle = notificationTitles[Math.floor(Math.random() * notificationTitles.length)];
+    const randomMessage = notificationMessages[Math.floor(Math.random() * notificationMessages.length)];
+    
+    return {
+      id: `notification-${index + 1}`,
+      type: randomType,
+      title: randomTitle,
+      message: randomMessage,
+      time: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
+      read: Math.random() > 0.7,
+    };
+  });
 };

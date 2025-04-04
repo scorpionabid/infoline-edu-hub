@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -160,11 +159,6 @@ export const useDashboardData = () => {
   const [error, setError] = useState<Error | null>(null);
   
   useEffect(() => {
-    // Eğer kimlik doğrulama yükleniyor veya kullanıcı yoksa, işlem yapmıyoruz
-    if (authLoading) {
-      return;
-    }
-    
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
@@ -172,22 +166,18 @@ export const useDashboardData = () => {
         
         console.log('Dashboard məlumatları alınır...');
         
-        // Simulate API call with delay
+        // Təxminən API çağırışını simulyasiya etmək üçün gecikmə
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Generate mock data based on user role
-        if (!user) {
-          throw new Error('İstifadəçi məlumatı yoxdur');
-        }
-        
-        const role = user.role;
+        // İstifadəçi roluna əsasən mock data generasiya etmək
+        const role = user?.role || 'schooladmin'; // Default rol təyin edirik
         console.log(`Dashboard yüklənir: ${role} rolu üçün`);
         
-        // Generate mock data
+        // Mock data generasiya etmək
         const mockData = generateMockDashboardData(role);
         setDashboardData(mockData);
         
-        // Generate chart data
+        // Qrafik datanı generasiya etmək
         const mockChartData = generateMockChartData();
         setChartData(mockChartData);
         
@@ -200,14 +190,9 @@ export const useDashboardData = () => {
       }
     };
     
-    // İstifadəçi yüklənibsə, dashboard məlumatlarını əldə et
-    if (!authLoading && user) {
+    // Auth yükləməsi bitdikdə dashboard məlumatlarını əldə et
+    if (!authLoading) {
       fetchDashboardData();
-    } else if (!authLoading && !user) {
-      // Əgər istifadəçi yoxdursa, boş data göstər
-      setDashboardData(null);
-      setChartData(null);
-      setIsLoading(false);
     }
   }, [user, authLoading]);
   
