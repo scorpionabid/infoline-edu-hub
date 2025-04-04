@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,64 +10,63 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Category } from '@/types/category';
-import { useLanguage } from '@/context/LanguageContext';
+} from "@/components/ui/alert-dialog";
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
-export interface DeleteCategoryDialogProps {
-  open: boolean;
+interface DeleteCategoryDialogProps {
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  category: Category | null;
-  onDeleteCategory: (categoryId: string) => Promise<boolean>;
+  onConfirm: () => void;
+  categoryName?: string;
 }
 
-export const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
-  open,
+const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
+  isOpen,
   onOpenChange,
-  category,
-  onDeleteCategory,
+  onConfirm,
+  categoryName
 }) => {
   const { t } = useLanguage();
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  
-  const handleDelete = async () => {
-    if (!category) return;
-    
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirm = () => {
     setIsDeleting(true);
-    try {
-      const success = await onDeleteCategory(category.id);
-      if (success) {
-        onOpenChange(false);
-      }
-    } finally {
+    // API çağrışı simyulasiyası
+    setTimeout(() => {
+      onConfirm();
       setIsDeleting(false);
-    }
+    }, 500);
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {t('deleteCategory')}
+            {categoryName 
+              ? t('deleteCategoryConfirmationName').replace('{name}', categoryName) 
+              : t('deleteCategoryConfirmation')}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteCategoryConfirmation')}
-            <br />
-            <span className="font-medium">{category?.name}</span>
+            {t('deleteCategoryWarning')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{t('cancel')}</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleDelete}
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <Button 
+            onClick={handleConfirm}
+            variant="destructive"
+            className="gap-2"
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? t('deleting') : t('delete')}
-          </AlertDialogAction>
+            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {t('delete')}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 };
+
+export default DeleteCategoryDialog;

@@ -1,45 +1,289 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import ProfileSettings from '@/components/settings/ProfileSettings';
-import PreferencesForm from '@/components/settings/account/PreferencesForm';
-import PasswordChangeForm from '@/components/settings/account/PasswordChangeForm';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
-const Profile = () => {
+const Profile: React.FC = () => {
   const { t } = useLanguage();
-  // Use updateProfile instead of updateUser
-  const { user, updateProfile } = useAuth();
+  const { user, updateUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    position: user?.position || '',
+  });
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-muted-foreground">{t('userNotFound')}</p>
+      </div>
+    );
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSave = () => {
+    updateUser({
+      ...user,
+      name: formData.name,
+      phone: formData.phone,
+      position: formData.position,
+    });
+    
+    setIsEditing(false);
+    toast.success(t('profileUpdated'), {
+      description: t('profileUpdatedMessage'),
+    });
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      position: user.position || '',
+    });
+    setIsEditing(false);
+  };
 
   return (
-    <div className="container max-w-6xl mx-auto py-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('profile')}</h1>
-        <p className="text-muted-foreground">{t('profileSettings')}</p>
-      </div>
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-4">{t('profile')}</h1>
       
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3">
-          <TabsTrigger value="profile">{t('profile')}</TabsTrigger>
-          <TabsTrigger value="account">{t('account')}</TabsTrigger>
-          <TabsTrigger value="password">{t('password')}</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Profile Card */}
+        <Card className="md:col-span-1 h-fit">
+          <CardHeader>
+            <CardTitle>{t('profileInfo')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center text-center">
+            <Avatar className="h-24 w-24 mb-4">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="text-lg">
+                {user.name?.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <h3 className="text-xl font-semibold">{user.name}</h3>
+            <p className="text-muted-foreground">{t(user.role)}</p>
+            <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+            
+            {user.regionId && (
+              <div className="mt-4 w-full">
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="font-medium">{t('region')}</span>
+                  <span className="text-muted-foreground">{user.regionId}</span>
+                </div>
+              </div>
+            )}
+            
+            {user.sectorId && (
+              <div className="w-full">
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="font-medium">{t('sector')}</span>
+                  <span className="text-muted-foreground">{user.sectorId}</span>
+                </div>
+              </div>
+            )}
+            
+            {user.schoolId && (
+              <div className="w-full">
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="font-medium">{t('school')}</span>
+                  <span className="text-muted-foreground">{user.schoolId}</span>
+                </div>
+              </div>
+            )}
+            
+            <div className="mt-4 w-full">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => setIsEditing(true)}
+                disabled={isEditing}
+              >
+                {t('editProfile')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className="mt-6">
-          <TabsContent value="profile">
-            <ProfileSettings />
-          </TabsContent>
-          
-          <TabsContent value="account">
-            <PreferencesForm />
-          </TabsContent>
-          
-          <TabsContent value="password">
-            <PasswordChangeForm />
-          </TabsContent>
-        </div>
-      </Tabs>
+        {/* Edit Profile / Settings */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>{isEditing ? t('editProfile') : t('settings')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">{t('name')}</Label>
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      value={formData.name} 
+                      onChange={handleInputChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">{t('email')}</Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      value={formData.email} 
+                      disabled 
+                    />
+                    <p className="text-sm text-muted-foreground">{t('emailCannotBeChanged')}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">{t('phone')}</Label>
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      value={formData.phone} 
+                      onChange={handleInputChange}
+                      placeholder="+994 XX XXX XX XX" 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="position">{t('position')}</Label>
+                    <Input 
+                      id="position" 
+                      name="position" 
+                      value={formData.position} 
+                      onChange={handleInputChange} 
+                      placeholder={t('positionPlaceholder')}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={handleCancel}>
+                    {t('cancel')}
+                  </Button>
+                  <Button onClick={handleSave}>
+                    {t('save')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Tabs defaultValue="account">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="account">{t('account')}</TabsTrigger>
+                  <TabsTrigger value="appearance">{t('appearance')}</TabsTrigger>
+                  <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="account" className="space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">{t('accountInformation')}</h4>
+                    <p className="text-sm text-muted-foreground">{t('accountInformationDesc')}</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2">
+                      <Label>{t('lastLogin')}</Label>
+                      <div className="text-sm text-muted-foreground">
+                        {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : t('never')}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2">
+                      <Label>{t('twoFactorAuth')}</Label>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {user.twoFactorEnabled ? t('enabled') : t('disabled')}
+                        </div>
+                        <Button variant="outline" size="sm">
+                          {user.twoFactorEnabled ? t('disable') : t('enable')}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
+                        {t('resetPassword')}
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="appearance" className="space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">{t('appearance')}</h4>
+                    <p className="text-sm text-muted-foreground">{t('appearanceDesc')}</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2">
+                      <Label>{t('language')}</Label>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {t('currentLanguage')}
+                        </div>
+                        <Button variant="outline" size="sm">
+                          {t('changeLanguage')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="notifications" className="space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">{t('notificationSettings')}</h4>
+                    <p className="text-sm text-muted-foreground">{t('notificationSettingsDesc')}</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2">
+                      <Label>{t('emailNotifications')}</Label>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {user.notificationSettings?.email ? t('enabled') : t('disabled')}
+                        </div>
+                        <Button variant="outline" size="sm">
+                          {user.notificationSettings?.email ? t('disable') : t('enable')}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2">
+                      <Label>{t('systemNotifications')}</Label>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {user.notificationSettings?.system ? t('enabled') : t('disabled')}
+                        </div>
+                        <Button variant="outline" size="sm">
+                          {user.notificationSettings?.system ? t('disable') : t('enable')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

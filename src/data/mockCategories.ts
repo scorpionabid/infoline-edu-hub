@@ -1,154 +1,254 @@
-import { Category } from "@/types/category";
-import { Column } from "@/types/column";
+import { CategoryWithColumns } from '@/types/column';
 
-// Kateqoriyaları daha uyğun formata çevirək
-const adaptMockCategory = (data: any): Category => {
-  return {
-    id: data.id || '',
-    name: data.name || '',
-    description: data.description || '',
-    status: data.status || 'active',
-    assignment: data.assignment || 'all',
-    priority: data.priority || 0,
-    archived: data.archived || false,
-    column_count: data.column_count || 0,
-    order: data.order || data.priority || 0,
-    deadline: data.deadline || null
-  };
+// Mock kateqoriyalar və sütunlar
+export const mockCategories: CategoryWithColumns[] = [
+  {
+    id: "cat1",
+    name: "Ümumi məlumatlar",
+    description: "Məktəbin əsas statistik göstəriciləri haqqında məlumatlar",
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 gün sonra
+    status: "active",
+    priority: 1,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { 
+        id: "col1", 
+        categoryId: "cat1", 
+        name: "Şagird sayı", 
+        type: "number", 
+        isRequired: true, 
+        order: 1, 
+        status: "active",
+        helpText: "Məktəbdə təhsil alan bütün şagirdlərin sayı", 
+        validationRules: { minValue: 0, maxValue: 5000 }
+      },
+      { 
+        id: "col2", 
+        categoryId: "cat1", 
+        name: "Müəllim sayı", 
+        type: "number", 
+        isRequired: true, 
+        order: 2, 
+        status: "active",
+        helpText: "Məktəbdə çalışan bütün müəllimlərin sayı", 
+        validationRules: { minValue: 0, maxValue: 500 }
+      },
+      { 
+        id: "col3", 
+        categoryId: "cat1", 
+        name: "Sinif otaqlarının sayı", 
+        type: "number", 
+        isRequired: true, 
+        order: 3, 
+        status: "active",
+        helpText: "Tədris məqsədlə istifadə olunan sinif otaqlarının sayı", 
+        validationRules: { minValue: 0 }
+      },
+      { 
+        id: "col4", 
+        categoryId: "cat1", 
+        name: "Kompüter otaqlarının sayı", 
+        type: "number", 
+        isRequired: false, 
+        order: 4, 
+        status: "active",
+        helpText: "İnformatika dərsləri üçün nəzərdə tutulmuş kompüter otaqlarının sayı"
+      }
+    ]
+  },
+  {
+    id: "cat2",
+    name: "Tədris məlumatları",
+    description: "Məktəbin tədris fəaliyyəti ilə bağlı məlumatlar",
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 gün sonra
+    status: "active",
+    priority: 2,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { 
+        id: "col5", 
+        categoryId: "cat2", 
+        name: "Tədris dili", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Azərbaycan", "Rus", "İngilis", "Qarışıq"], 
+        order: 1, 
+        status: "active",
+        helpText: "Məktəbdə əsas tədris dili"
+      },
+      { 
+        id: "col6", 
+        categoryId: "cat2", 
+        name: "Tədris proqramı", 
+        type: "text", 
+        isRequired: true, 
+        order: 2, 
+        status: "active",
+        multiline: true,
+        helpText: "Məktəbin istifadə etdiyi əsas tədris proqramı(ları)"
+      },
+      { 
+        id: "col7", 
+        categoryId: "cat2", 
+        name: "Təhsil növü", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Tam orta", "Ümumi orta", "İbtidai", "Qarışıq"], 
+        order: 3, 
+        status: "active",
+        helpText: "Məktəbdə verilən təhsilin növü"
+      }
+    ]
+  },
+  {
+    id: "cat3",
+    name: "İnfrastruktur",
+    description: "Məktəb binası və infrastrukturu haqqında məlumatlar",
+    deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 gün sonra
+    status: "active",
+    priority: 3,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { 
+        id: "col8", 
+        categoryId: "cat3", 
+        name: "İdman zalı", 
+        type: "checkbox", 
+        isRequired: false, 
+        order: 1, 
+        status: "active",
+        placeholder: "Məktəbdə idman zalı mövcuddur",
+        helpText: "İdman zalının olub-olmadığını qeyd edin"
+      },
+      { 
+        id: "col9", 
+        categoryId: "cat3", 
+        name: "Kitabxana", 
+        type: "checkbox", 
+        isRequired: false, 
+        order: 2, 
+        status: "active",
+        placeholder: "Məktəbdə kitabxana mövcuddur", 
+        helpText: "Kitabxananın olub-olmadığını qeyd edin"
+      },
+      { 
+        id: "col10", 
+        categoryId: "cat3", 
+        name: "Yeməkxana", 
+        type: "checkbox", 
+        isRequired: false, 
+        order: 3, 
+        status: "active",
+        placeholder: "Məktəbdə yeməkxana mövcuddur", 
+        helpText: "Yeməkxananın olub-olmadığını qeyd edin"
+      },
+      { 
+        id: "col11", 
+        categoryId: "cat3", 
+        name: "Binanın vəziyyəti", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Əla", "Yaxşı", "Kafi", "Qənaətbəxş deyil"], 
+        order: 4, 
+        status: "active",
+        helpText: "Məktəb binasının ümumi vəziyyətini qiymətləndirin"
+      },
+      { 
+        id: "col12", 
+        categoryId: "cat3", 
+        name: "Son təmir tarixi", 
+        type: "date", 
+        isRequired: true, 
+        order: 5, 
+        status: "active",
+        helpText: "Məktəbdə son təmir işlərinin aparıldığı tarix"
+      }
+    ]
+  },
+  {
+    id: "cat4",
+    name: "Digər məlumatlar",
+    description: "Əlavə məlumatlar və qeydlər",
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 gün sonra
+    status: "active",
+    priority: 4,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { 
+        id: "col13", 
+        categoryId: "cat4", 
+        name: "Əlavə qeydlər", 
+        type: "text", 
+        isRequired: false, 
+        order: 1, 
+        status: "active",
+        multiline: true,
+        helpText: "Məktəb haqqında əlavə qeydlər və məlumatlar"
+      },
+      { 
+        id: "col14", 
+        categoryId: "cat4", 
+        name: "Təklif və rəylər", 
+        type: "text", 
+        isRequired: false, 
+        order: 2, 
+        status: "active",
+        multiline: true,
+        helpText: "Tədris prosesinin inkişafı üçün təkliflər"
+      }
+    ]
+  },
+  {
+    id: "cat5",
+    name: "Yeni kateqoriya",
+    description: "Bu kateqoriya yeni əlavə edilib və doldurulması tələb olunur",
+    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 gün sonra
+    status: "active",
+    priority: 5,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { 
+        id: "col15", 
+        categoryId: "cat5", 
+        name: "Yeni əlavə olunmuş field", 
+        type: "text", 
+        isRequired: true, 
+        order: 1, 
+        status: "active",
+        helpText: "Bu field yeni əlavə olunub və mütləq doldurulmalıdır", 
+      },
+      { 
+        id: "col16", 
+        categoryId: "cat5", 
+        name: "İkinci yeni field", 
+        type: "select", 
+        isRequired: true, 
+        options: ["Seçim 1", "Seçim 2", "Seçim 3"], 
+        order: 2, 
+        status: "active",
+        helpText: "Bu da yeni əlavə olunmuş seçim sahəsidir"
+      }
+    ]
+  }
+];
+
+// Sütun tipinə görə ilkin dəyər təyin etmək
+export const getDefaultValueByType = (type: string, defaultValue?: string) => {
+  switch (type) {
+    case 'number':
+      return defaultValue ? Number(defaultValue) : '';
+    case 'checkbox':
+      return defaultValue === 'true';
+    case 'date':
+      return defaultValue ? new Date(defaultValue) : '';
+    case 'select':
+      return defaultValue || '';
+    default:
+      return defaultValue || '';
+  }
 };
-
-// Mock kateqoriyalar
-export const mockCategories: Category[] = [
-  adaptMockCategory({
-    id: 'cat-1',
-    name: 'Şagird sayları',
-    description: 'Məktəbdəki şagirdlərin sayı haqqında məlumat',
-    status: 'active',
-    assignment: 'all',
-    priority: 1
-  }),
-  adaptMockCategory({
-    id: 'cat-2',
-    name: 'Müəllim sayları',
-    description: 'Məktəbdəki müəllimlərin sayı haqqında məlumat',
-    status: 'active',
-    assignment: 'all',
-    priority: 2
-  }),
-  adaptMockCategory({
-    id: 'cat-3',
-    name: 'İnfrastruktur',
-    description: 'Məktəbin infrastrukturu haqqında məlumat',
-    status: 'active',
-    assignment: 'all',
-    priority: 3
-  }),
-  adaptMockCategory({
-    id: 'cat-4',
-    name: 'Sektor hesabatları',
-    description: 'Sektorlar üzrə xüsusi hesabatlar',
-    status: 'active',
-    assignment: 'sectors',
-    priority: 4
-  }),
-  adaptMockCategory({
-    id: 'cat-5',
-    name: 'Tədris proqramları',
-    description: 'Tədris proqramları haqqında məlumat',
-    status: 'active',
-    assignment: 'all',
-    priority: 5
-  })
-];
-
-// Mock sütunlar
-export const mockColumns: Column[] = [
-  {
-    id: 'col-1',
-    name: 'Məktəb adı',
-    type: 'text',
-    categoryId: 'cat-1',
-    isRequired: true,
-    options: [],
-    placeholder: 'Məktəbin adını daxil edin',
-    helpText: 'Məktəbin tam rəsmi adını daxil edin',
-    defaultValue: '',
-    validation: { 
-      required: true,
-      minLength: 3, 
-      maxLength: 100 
-    },
-    status: 'active',
-    orderIndex: 1,
-    order: 1
-  },
-  {
-    id: 'col-2',
-    name: 'Şagird sayı',
-    type: 'number',
-    categoryId: 'cat-1',
-    isRequired: true,
-    options: [],
-    placeholder: 'Şagird sayını daxil edin',
-    helpText: 'Ümumi şagird sayını daxil edin',
-    defaultValue: '',
-    validation: { 
-      required: true,
-      min: 0 
-    },
-    status: 'active',
-    orderIndex: 2,
-    order: 2
-  },
-  {
-    id: 'col-3',
-    name: 'Müəllim sayı',
-    type: 'number',
-    categoryId: 'cat-2',
-    isRequired: true,
-    options: [],
-    placeholder: 'Müəllim sayını daxil edin',
-    helpText: 'Ümumi müəllim sayını daxil edin',
-    defaultValue: '',
-    validation: { 
-      required: true,
-      min: 0 
-    },
-    status: 'active',
-    orderIndex: 1,
-    order: 1
-  }
-];
-
-// Kateqoriya statusları
-export const statusFilters = [
-  { value: "all", label: "Hamısı" },
-  { value: "active", label: "Aktiv" },
-  { value: "inactive", label: "Qeyri-aktiv" },
-  { value: "archived", label: "Arxivlənmiş" }
-];
-
-// Məktəb məlumatları
-export const schoolData: CategoryEntryData[] = [
-  {
-    id: "entry-1",
-    categoryId: "cat-1",
-    categoryName: "Ümumi Məlumatlar",
-    status: "draft",
-    entries: {
-      "col-1": "20 saylı tam orta məktəb",
-      "col-2": "1200",
-      "col-3": "60"
-    }
-  },
-  {
-    id: "entry-2",
-    categoryId: "cat-2",
-    categoryName: "Şagird Məlumatları",
-    status: "pending",
-    entries: {
-      "col-4": "600",
-      "col-5": "600",
-    }
-  }
-];

@@ -1,139 +1,100 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { useLanguage } from '@/context/LanguageContext';
+import React from "react";
+import { Column } from "@/types/column";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
+
+// Refaktorlanmış komponentlər
+import { useColumnForm } from './columnDialog/useColumnForm';
+import BasicColumnFields from './columnDialog/BasicColumnFields';
+import ValidationFields from './columnDialog/ValidationFields';
+import OptionsField from './columnDialog/OptionsField';
 
 interface AddColumnDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  categoryId: string;
-  column?: any;
-  onSubmit: (columnData: any) => Promise<boolean>;
-  categoryName?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onAddColumn: (newColumn: Omit<Column, "id">) => Promise<boolean>;
+  categories: { id: string; name: string }[];
+  editColumn?: Column; // For edit mode
+  columns?: Column[]; // For parent column selection
 }
 
-const AddColumnDialog: React.FC<AddColumnDialogProps> = ({ open, onOpenChange, categoryId, column, onSubmit, categoryName }) => {
-  const { t } = useLanguage();
-  
-  const formSchema = z.object({
-    name: z.string().min(2, {
-      message: t('columnNameRequired'),
-    }),
-    type: z.string(),
-    is_required: z.boolean().default(true),
-    category_id: z.string().optional(),
-  });
+const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
+  isOpen,
+  onClose,
+  onAddColumn,
+  categories,
+  editColumn,
+  columns = [],
+}) => {
+  const {
+    form,
+    selectedType,
+    handleTypeChange,
+    onSubmit,
+    isEditMode,
+    t
+  } = useColumnForm(categories, editColumn, onAddColumn);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      type: 'text',
-      is_required: true,
-      category_id: categoryId,
-    },
-  });
-
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    const result = await onSubmit(values);
-    if (result) {
-      onOpenChange(false);
+  // Handle form submission
+  const handleSubmit = async (values: any) => {
+    if (await onSubmit(values)) {
+      onClose();
     }
   };
 
-  // Ensure we have a valid array of categories
-  const categoryOptions = [
-    { id: '1', name: 'Kateqoriya 1' },
-    { id: '2', name: 'Kateqoriya 2' },
-  ];
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('addColumn')}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? t("editColumn") : t("addColumn")}
+          </DialogTitle>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('columnName')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Əsas sahələr */}
+              <BasicColumnFields
+                form={form}
+                categories={categories}
+                columns={columns}
+                editColumn={editColumn}
+                selectedType={selectedType}
+                handleTypeChange={handleTypeChange}
+              />
+
+              {/* Validasiya sahələri */}
+              <ValidationFields
+                form={form}
+                selectedType={selectedType}
+                t={t}
+              />
+
+              {/* Options for select, checkbox, radio */}
+              {(selectedType === "select" || selectedType === "checkbox" || selectedType === "radio") && (
+                <OptionsField
+                  control={form.control}
+                />
               )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('columnType')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectColumnType')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="text">{t('text')}</SelectItem>
-                      <SelectItem value="number">{t('number')}</SelectItem>
-                      <SelectItem value="select">{t('select')}</SelectItem>
-                      <SelectItem value="date">{t('date')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="category_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('category')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={categoryId || field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectCategory')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categoryOptions.map(category => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit">{t('add')}</Button>
             </div>
+
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={onClose}>
+                {t("cancel")}
+              </Button>
+              <Button type="submit">
+                {isEditMode ? t("saveChanges") : t("addColumn")}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

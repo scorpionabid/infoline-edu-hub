@@ -5,16 +5,16 @@ import { School } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { exportSchoolsToExcel } from '@/utils/excelUtils';
-import { useRegionsData } from '../regions/useRegionsData';
-import { useSectorsData } from '../sectors/useSectorsData';
+import { useRegions } from '../useRegions';
+import { useSectors } from '../useSectors';
 
 export const useImportExport = (onComplete: () => void) => {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const { t } = useLanguage();
-  const { regions } = useRegionsData();
-  const { sectors } = useSectorsData();
+  const { regions } = useRegions();
+  const { sectors } = useSectors();
 
   // Map üçün region və sektorları hazırlayırıq
   const regionNames = regions.reduce((acc, region) => ({

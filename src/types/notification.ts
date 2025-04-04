@@ -1,25 +1,24 @@
 
-export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'deadline' | 'update' | 'reminder' | 'system';
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type NotificationEntityType = 'category' | 'form' | 'school' | 'user' | 'system' | 'region' | 'sector' | 'column' | 'data';
+export type NotificationType = 
+  | 'newCategory' 
+  | 'deadline' 
+  | 'approvalRequest' 
+  | 'approved' 
+  | 'rejected' 
+  | 'systemUpdate' 
+  | 'reminder';
+
+export type NotificationPriority = 'normal' | 'high' | 'critical';
 
 export interface Notification {
   id: string;
   type: NotificationType;
   title: string;
   message: string;
-  priority: NotificationPriority | string;
   userId: string;
-  createdAt: string;
   isRead: boolean;
-  time: string;
-  relatedEntityId: string;
-  relatedEntityType: NotificationEntityType | string;
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  inApp: boolean;
-  push?: boolean;
-  system?: boolean;
+  createdAt: string;
+  priority: NotificationPriority;
+  relatedEntityId?: string;
+  relatedEntityType?: 'category' | 'column' | 'data' | 'user' | 'school';
 }

@@ -1,173 +1,263 @@
-import { FullUserData, Profile } from '@/types/supabase';
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Profile, FullUserData, UserRole } from '@/types/supabase';
 
-// Sign in function
-export const signIn = async (
-  email: string, 
-  password: string, 
-  setLoading: (loading: boolean) => void
-) => {
+// Giriş funksiyası
+export const signIn = async (email: string, password: string, setLoading: (loading: boolean) => void) => {
   try {
     setLoading(true);
-    console.log(`Auth signing in with email: ${email}`);
     
+    console.log(`Giriş edilir: ${email}`);
+    
+    // Mövcud sessiyaları təmizləyək
+    await supabase.auth.signOut();
+    
+    // Login cəhdi edək
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
     if (error) {
-      toast.error('Giriş zamanı xəta baş verdi', {
-        description: error.message
-      });
+      console.error('Giriş xətası:', error);
       throw error;
     }
     
-    toast.success('Uğurlu giriş');
+    console.log('Giriş uğurludur, məlumatlar:', data ? 'Əldə edildi' : 'Yoxdur');
+    
+    if (!data || !data.user) {
+      throw new Error('İstifadəçi məlumatları əldə edilmədi');
+    }
+    
+    // Last login yeniləyək
+    try {
+      // Profilin olub-olmadığını yoxlayaq
+      const { data: profileData, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profileCheckError && profileCheckError.code === 'PGRST116') {
+        // Profil tapılmadı, yenisini yaradaq
+        await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            full_name: data.user.email?.split('@')[0] || 'İstifadəçi',
+            language: 'az',
+            status: 'active',
+            last_login: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      } else {
+        // Profil var, last_login yeniləyək
+        await supabase
+          .from('profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
+      }
+    } catch (updateError) {
+      console.warn('Last login yeniləmə xətası:', updateError);
+      // Bu xətanı ignore edək və davam edək
+    }
+    
     return data;
   } catch (error: any) {
-    console.error('Auth signin error:', error);
+    console.error('Giriş zamanı xəta:', error);
+    
+    let errorMessage = 'Giriş zamanı xəta baş verdi';
+    
+    if (error.message) {
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Yanlış e-poçt və ya şifrə';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'E-poçt ünvanınız təsdiqlənməyib';
+      } else if (error.message.includes('Database error')) {
+        errorMessage = 'Verilənlər bazası xətası. Zəhmət olmasa administratora müraciət edin.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
+    toast.error('Giriş uğursuz oldu', {
+      description: errorMessage
+    });
+    
     throw error;
   } finally {
     setLoading(false);
   }
 };
 
-// Sign out function
-export const signOut = async (
-  setLoading: (loading: boolean) => void,
-  setUser: (user: FullUserData | null) => void,
-  setSession: (session: any | null) => void
-) => {
+// Çıxış funksiyası
+export const signOut = async (setLoading: (loading: boolean) => void, setUser: (user: FullUserData | null) => void, setSession: (session: any | null) => void) => {
   try {
     setLoading(true);
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    
     setUser(null);
     setSession(null);
+    
+    toast.success('Sistemdən uğurla çıxış edildi');
   } catch (error: any) {
-    console.error('Auth signout error:', error);
-    throw error;
+    console.error('Çıxış zamanı xəta:', error);
+    toast.error('Çıxış uğursuz oldu', {
+      description: error.message
+    });
   } finally {
     setLoading(false);
   }
 };
 
-// Sign up function
-export const signUp = async (
-  email: string, 
-  password: string, 
-  userData: Partial<Profile>,
-  setLoading: (loading: boolean) => void
-) => {
+// Qeydiyyat funksiyası
+export const signUp = async (email: string, password: string, userData: Partial<Profile>, setLoading: (loading: boolean) => void) => {
   try {
     setLoading(true);
-    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: userData,
-      },
+        data: {
+          full_name: userData.full_name,
+          role: 'schooladmin' as UserRole, // Default olaraq schooladmin
+        }
+      }
     });
     
-    if (error) {
-      toast.error('Qeydiyyat zamanı xəta baş verdi', {
-        description: error.message
-      });
-      throw error;
-    }
+    if (error) throw error;
     
-    toast.success('Qeydiyyat uğurla tamamlandı');
+    toast.success('Qeydiyyat uğurla tamamlandı', {
+      description: 'Zəhmət olmasa e-poçtunuzu yoxlayın və hesabınızı təsdiqləyin'
+    });
+    
     return data;
   } catch (error: any) {
-    console.error('Auth signup error:', error);
+    console.error('Qeydiyyat zamanı xəta:', error);
+    let errorMessage = 'Qeydiyyat zamanı xəta baş verdi';
+    
+    if (error.message) {
+      if (error.message.includes('User already registered')) {
+        errorMessage = 'Bu e-poçt artıq qeydiyyatdan keçib';
+      }
+    }
+    
+    toast.error('Qeydiyyat uğursuz oldu', {
+      description: errorMessage
+    });
+    
     throw error;
   } finally {
     setLoading(false);
   }
 };
 
-// Reset password function
-export const resetPassword = async (
-  email: string,
-  setLoading: (loading: boolean) => void
-) => {
+// Şifrəni sıfırla
+export const resetPassword = async (email: string, setLoading: (loading: boolean) => void) => {
   try {
     setLoading(true);
-    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     
-    if (error) {
-      toast.error('Şifrə sıfırlamada xəta baş verdi', {
-        description: error.message
-      });
-      throw error;
-    }
+    if (error) throw error;
     
-    toast.success('Şifrə sıfırlama linki e-poçt adresinizə göndərildi');
+    toast.success('Şifrə sıfırlama linki göndərildi', {
+      description: 'Zəhmət olmasa e-poçtunuzu yoxlayın'
+    });
+    
     return true;
   } catch (error: any) {
-    console.error('Auth reset password error:', error);
+    console.error('Şifrə sıfırlama zamanı xəta:', error);
+    
+    toast.error('Şifrə sıfırlama uğursuz oldu', {
+      description: error.message
+    });
+    
     throw error;
   } finally {
     setLoading(false);
   }
 };
 
-// Update profile function
-export const updateProfile = async (
-  updates: Partial<Profile>,
-  userId: string,
-  fetchUserData: (id: string) => Promise<FullUserData>,
-  setUser: (user: FullUserData | null) => void
-) => {
+// İstifadəçi profilini yenilə
+export const updateProfile = async (updates: Partial<Profile>, userId: string, fetchUserData: (userId: string) => Promise<FullUserData>, setUser: (user: FullUserData) => void) => {
   try {
-    // Profil məlumatlarını yeniləyək
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', userId);
+    if (!userId) throw new Error('İstifadəçi daxil olmayıb');
     
-    if (error) {
-      toast.error('Profil yeniləmədə xəta baş verdi', {
-        description: error.message
-      });
-      return false;
+    // Profilin olub-olmadığını yoxlayaq
+    const { data: profileData, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (profileCheckError && profileCheckError.code === 'PGRST116') {
+      // Profil tapılmadı, yenisini yaradaq
+      await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: updates.full_name || 'İstifadəçi',
+          language: updates.language || 'az',
+          status: updates.status || 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+    } else {
+      // Profil var, yeniləyək
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      
+      if (error) throw error;
     }
     
-    // Yeni istifadəçi məlumatlarını əldə edək
-    const updatedUserData = await fetchUserData(userId);
-    setUser(updatedUserData);
+    // Yenilənmiş istifadəçi məlumatlarını əldə et
+    const updatedUser = await fetchUserData(userId);
+    setUser(updatedUser);
     
-    toast.success('Profil uğurla yeniləndi');
+    toast.success('Profil yeniləndi', {
+      description: 'Məlumatlarınız uğurla yeniləndi'
+    });
+    
     return true;
   } catch (error: any) {
-    console.error('Update profile error:', error);
-    return false;
+    console.error('Profil yeniləmə zamanı xəta:', error);
+    
+    toast.error('Profil yeniləmə uğursuz oldu', {
+      description: error.message
+    });
+    
+    throw error;
   }
 };
 
-// Update password function
+// İstifadəçinin şifrəsini yenilə
 export const updatePassword = async (password: string) => {
   try {
     const { error } = await supabase.auth.updateUser({
       password,
     });
     
-    if (error) {
-      toast.error('Şifrə yeniləmədə xəta baş verdi', {
-        description: error.message
-      });
-      return false;
-    }
+    if (error) throw error;
     
-    toast.success('Şifrə uğurla yeniləndi');
+    toast.success('Şifrə yeniləndi', {
+      description: 'Şifrəniz uğurla yeniləndi'
+    });
+    
     return true;
   } catch (error: any) {
-    console.error('Update password error:', error);
-    return false;
+    console.error('Şifrə yeniləmə zamanı xəta:', error);
+    
+    toast.error('Şifrə yeniləmə uğursuz oldu', {
+      description: error.message
+    });
+    
+    throw error;
   }
 };

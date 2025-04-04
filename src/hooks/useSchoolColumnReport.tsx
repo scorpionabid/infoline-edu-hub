@@ -1,247 +1,190 @@
-import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { School } from '@/types/school';
 import { CategoryWithColumns } from '@/types/column';
+import { useColumns } from './useColumns';
 
-export const useSchoolColumnReport = (schoolId?: string) => {
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+// Test/demo verilənləri
+const mockSchool: School = {
+  id: "school-1",
+  name: "Şəhər Məktəbi #123",
+  regionId: "region-1",
+  sectorId: "sector-1",
+  address: "Bakı şəhəri, Nəsimi rayonu",
+  status: "active",
+};
 
-  const fetchCategoriesWithColumns = useCallback(async () => {
-    if (!schoolId) {
-      setLoading(false);
-      return;
-    }
+const mockCategories: CategoryWithColumns[] = [
+  {
+    id: "cat-1",
+    name: "Ümumi məlumatlar",
+    description: "Məktəb haqqında ümumi məlumatlar",
+    status: "active",
+    priority: 1,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { id: "col-1", categoryId: "cat-1", name: "Şagird sayı", type: "number", isRequired: true, order: 1, status: "active" },
+      { id: "col-2", categoryId: "cat-1", name: "Müəllim sayı", type: "number", isRequired: true, order: 2, status: "active" },
+      { id: "col-3", categoryId: "cat-1", name: "Otaq sayı", type: "number", isRequired: true, order: 3, status: "active" },
+    ]
+  },
+  {
+    id: "cat-2",
+    name: "Tədris statistikası",
+    description: "Tədris statistikası haqqında məlumatlar",
+    status: "active",
+    priority: 2,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { id: "col-4", categoryId: "cat-2", name: "Buraxılış faizi", type: "number", isRequired: true, order: 1, status: "active" },
+    ]
+  },
+  {
+    id: "cat-3",
+    name: "İnfrastruktur",
+    description: "İnfrastruktur haqqında məlumatlar",
+    status: "active",
+    priority: 3,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      { id: "col-5", categoryId: "cat-3", name: "İdman zalı", type: "boolean", isRequired: true, order: 1, status: "active" },
+      { id: "col-6", categoryId: "cat-3", name: "Kitabxana", type: "boolean", isRequired: true, order: 2, status: "active" },
+    ]
+  }
+];
 
-    setLoading(true);
-    setError(null);
+// Məktəb sütun məlumatları
+interface SchoolColumnData {
+  schoolId: string;
+  schoolName: string;
+  region?: string;
+  sector?: string;
+  status?: string;
+  rejectionReason?: string;
+  columnData: {
+    columnId: string;
+    value: any;
+    status?: string;
+  }[];
+}
 
-    try {
-      // Kateqoriyaları əldə et
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .order('priority', { ascending: true });
+export interface SchoolColumnReport {
+  school: School;
+  categories: CategoryWithColumns[];
+  selectedCategoryId: string;
+  setSelectedCategoryId: (categoryId: string) => void;
+  schoolColumnData: SchoolColumnData[];
+  sectors: string[];
+  isCategoriesLoading: boolean;
+  isCategoriesError: boolean;
+  isDataLoading: boolean;
+  exportData: (options?: any) => void;
+  toggleSchoolSelection: (schoolId: string) => void;
+  selectAllSchools: () => void;
+  deselectAllSchools: () => void;
+  getSelectedSchoolsData: () => SchoolColumnData[];
+}
 
-      if (categoriesError) throw categoriesError;
+export const useSchoolColumnReport = (schoolId?: string): SchoolColumnReport => {
+  const [school, setSchool] = useState<School>(mockSchool);
+  const [categories, setCategories] = useState<CategoryWithColumns[]>(mockCategories);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(mockCategories[0]?.id || '');
+  const [schoolColumnData, setSchoolColumnData] = useState<SchoolColumnData[]>([]);
+  const [sectors, setSectors] = useState<string[]>(['Bakı şəhəri', 'Abşeron', 'Sumqayıt']);
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState<boolean>(false);
+  const [isCategoriesError, setIsCategoriesError] = useState<boolean>(false);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const { columns } = useColumns();
 
-      const categoriesWithColumnsPromises = categoriesData.map(async (cat) => {
-        // Hər kateqoriya üçün sütunları əldə et
-        const { data: columnsData, error: columnsError } = await supabase
-          .from('columns')
-          .select('*')
-          .eq('category_id', cat.id)
-          .order('order_index', { ascending: true });
-
-        if (columnsError) throw columnsError;
-
-        // Kateqoriya və sütun məlumatlarını birləşdir
-        const formattedColumns = columnsData.map(col => {
-          // Ensure column order is properly set
-          const order = col.order || col.order_index || 0;
-          
-          return {
-            id: col.id,
-            name: col.name,
-            type: col.type,
-            categoryId: col.category_id,
-            isRequired: col.is_required,
-            order,
-            orderIndex: col.order_index,
-            status: col.status || 'active',
-            options: col.options || []
-          };
-        });
-
-        return {
-          category: {
-            id: cat.id,
-            name: cat.name,
-            description: cat.description || '',
-            order: cat.order || cat.priority || 1,
-            priority: cat.priority || 1,
-            status: cat.status || 'active',
-            assignment: cat.assignment || 'all',
-            deadline: cat.deadline
-          },
-          columns: formattedColumns
-        };
-      });
-
-      const categoriesWithColumns = await Promise.all(categoriesWithColumnsPromises);
-      setCategories(categoriesWithColumns);
-    } catch (err: any) {
-      console.error('Error fetching categories with columns:', err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [schoolId]);
-
-  const fetchSchoolDataEntries = useCallback(async (categoryId: string) => {
-    if (!schoolId) return [];
-
-    try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId);
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (err: any) {
-      console.error('Error fetching school data entries:', err);
-      return [];
-    }
-  }, [schoolId]);
-
-  // Cari kateqoriyanın təsdiqlənmə statusunu əldə et
-  const getCategoryStatus = useCallback(async (categoryId: string) => {
-    if (!schoolId) return 'pending';
-
-    try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('status, updated_at')
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .order('updated_at', { ascending: false })
-        .limit(1);
-
-      if (error) throw error;
-      
-      if (!data || data.length === 0) return 'pending';
-      
-      return data[0].status;
-    } catch (err: any) {
-      console.error('Error fetching category status:', err);
-      return 'pending';
-    }
-  }, [schoolId]);
-
-  // Lazım olan test məlumatları
-  const getMockSchoolData = useCallback(() => {
-    const defaultCategories: CategoryWithColumns[] = [
+  useEffect(() => {
+    // Real verilənləri backenddən çəkmək üçün istifadə edilə bilər
+    // Məsələn:
+    // fetch(`/api/schools/${schoolId}`).then(res => res.json()).then(data => setSchool(data));
+    // fetch(`/api/schools/${schoolId}/categories`).then(res => res.json()).then(data => setCategories(data));
+    
+    // Demo məlumatlar
+    const mockSchoolData: SchoolColumnData[] = [
       {
-        id: 'cat-1',
-        name: 'Məktəb məlumatları',
-        description: 'Əsas məktəb məlumatları',
-        assignment: 'all',
-        priority: 1,
-        deadline: new Date().toISOString(),
-        status: 'active',
-        order: 1,
-        category: {
-          id: 'cat-1',
-          name: 'Məktəb məlumatları',
-          description: 'Əsas məktəb məlumatları',
-          order: 1,
-          priority: 1
-        },
-        columns: [
-          {
-            id: 'col-1',
-            categoryId: 'cat-1',
-            name: 'Şagird sayı',
-            type: 'number',
-            isRequired: true,
-            order: 1,
-            orderIndex: 1,
-            status: 'active'
-          },
-          {
-            id: 'col-2',
-            categoryId: 'cat-1',
-            name: 'Müəllim sayı',
-            type: 'number',
-            isRequired: true,
-            order: 2,
-            orderIndex: 2,
-            status: 'active'
-          }
+        schoolId: "school-1",
+        schoolName: "Şəhər Məktəbi #123",
+        region: "Bakı",
+        sector: "Nəsimi",
+        status: "Gözləmədə",
+        columnData: [
+          { columnId: "col-1", value: 1200 },
+          { columnId: "col-2", value: 85 },
+          { columnId: "col-3", value: 42 },
+          { columnId: "col-4", value: 98 },
+          { columnId: "col-5", value: true },
+          { columnId: "col-6", value: true },
         ]
       },
       {
-        id: 'cat-2',
-        name: 'İnfrastruktur',
-        description: 'Məktəbin infrastrukturu barədə məlumatlar',
-        assignment: 'sectors',
-        priority: 2,
-        status: 'active',
-        order: 2,
-        category: {
-          id: 'cat-2',
-          name: 'İnfrastruktur',
-          description: 'Məktəbin infrastrukturu barədə məlumatlar',
-          order: 2,
-          priority: 2
-        },
-        columns: [
-          {
-            id: 'col-3',
-            categoryId: 'cat-2',
-            name: 'Sinif otaqlarının sayı',
-            type: 'number',
-            isRequired: true,
-            order: 1,
-            orderIndex: 1,
-            status: 'active'
-          }
-        ]
-      },
-      {
-        id: 'cat-3',
-        name: 'Əlavə məlumatlar',
-        description: 'Əlavə məlumatlar',
-        assignment: 'all',
-        priority: 3,
-        status: 'active',
-        order: 3,
-        category: {
-          id: 'cat-3',
-          name: 'Əlavə məlumatlar',
-          description: 'Əlavə məlumatlar',
-          order: 3,
-          priority: 3
-        },
-        columns: [
-          {
-            id: 'col-4',
-            categoryId: 'cat-3',
-            name: 'İdman zalı mövcuddur',
-            type: 'checkbox',
-            isRequired: true,
-            order: 1,
-            orderIndex: 1,
-            status: 'active'
-          }
+        schoolId: "school-2",
+        schoolName: "Kənd Məktəbi #45",
+        region: "Abşeron",
+        sector: "Xırdalan",
+        status: "Gözləmədə",
+        columnData: [
+          { columnId: "col-1", value: 450 },
+          { columnId: "col-2", value: 32 },
+          { columnId: "col-3", value: 18 },
+          { columnId: "col-4", value: 92 },
+          { columnId: "col-5", value: false },
+          { columnId: "col-6", value: true },
         ]
       }
     ];
+    
+    setSchoolColumnData(mockSchoolData);
+  }, [schoolId]);
 
-    return defaultCategories;
-  }, []);
+  const toggleSchoolSelection = (schoolId: string) => {
+    setSelectedSchools(prev => {
+      if (prev.includes(schoolId)) {
+        return prev.filter(id => id !== schoolId);
+      } else {
+        return [...prev, schoolId];
+      }
+    });
+  };
 
-  useEffect(() => {
-    if (schoolId) {
-      fetchCategoriesWithColumns();
-    } else {
-      // Test məlumatlarını yüklə
-      setCategories(getMockSchoolData());
-      setLoading(false);
-    }
-  }, [schoolId, fetchCategoriesWithColumns, getMockSchoolData]);
+  const selectAllSchools = () => {
+    const allSchoolIds = schoolColumnData.map(school => school.schoolId);
+    setSelectedSchools(allSchoolIds);
+  };
 
-  return {
-    categories,
-    loading,
-    error,
-    fetchCategoriesWithColumns,
-    fetchSchoolDataEntries,
-    getCategoryStatus
+  const deselectAllSchools = () => {
+    setSelectedSchools([]);
+  };
+
+  const getSelectedSchoolsData = () => {
+    return schoolColumnData.filter(school => selectedSchools.includes(school.schoolId));
+  };
+
+  const exportData = (options?: any) => {
+    console.log("Exporting data with options:", options);
+    // Excel ixracını həyata keçirə bilər
+  };
+
+  return { 
+    school, 
+    categories, 
+    selectedCategoryId, 
+    setSelectedCategoryId,
+    schoolColumnData,
+    sectors,
+    isCategoriesLoading,
+    isCategoriesError,
+    isDataLoading,
+    exportData,
+    toggleSchoolSelection,
+    selectAllSchools,
+    deselectAllSchools,
+    getSelectedSchoolsData
   };
 };
-
-export default useSchoolColumnReport;

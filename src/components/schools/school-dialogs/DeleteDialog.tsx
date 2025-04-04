@@ -8,34 +8,29 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { School } from '@/types/school';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface DeleteDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  school: School | null;
-  onDelete: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
 }
 
-export const DeleteDialog: React.FC<DeleteDialogProps> = ({ open, onOpenChange, school, onDelete }) => {
-  const { t } = useLanguage();
-
+export const DeleteDialog: React.FC<DeleteDialogProps> = ({ isOpen, onClose, onConfirm }) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('deleteSchool')}</DialogTitle>
+          <DialogTitle>Məktəbi sil</DialogTitle>
           <DialogDescription>
-            {t('deleteSchoolConfirmation')}
+            Bu məktəbi silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-2 mt-4">
-          <Button variant="destructive" onClick={onDelete}>
-            {t('delete')}
+          <Button variant="destructive" onClick={onConfirm}>
+            Sil
           </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('cancel')}
+          <Button variant="outline" onClick={onClose}>
+            Ləğv et
           </Button>
         </div>
       </DialogContent>

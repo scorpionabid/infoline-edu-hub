@@ -1,58 +1,47 @@
 
+/**
+ * Bildiriş tərcümələri
+ */
 const notifications = {
-  // Ümumi bildiriş elementləri
-  notifications: 'Bildirişlər',
-  notificationSettings: 'Bildiriş ayarları',
-  markAllAsRead: 'Hamısını oxunmuş kimi qeyd et',
-  clearAll: 'Hamısını təmizlə',
+  // Notifications
+  notifications: "Bildirişlər",
+  markAllAsRead: "Hamısını oxunmuş kimi işarələ",
+  markAsRead: "Oxunmuş kimi işarələ",
+  clearAll: "Hamısını təmizlə",
+  noNotifications: "Bildiriş yoxdur",
+  noNotificationsDesc: "Hazırda heç bir bildirişiniz yoxdur",
+  systemNotifications: "Sistem bildirişləri",
+  systemNotificationsDesc: "Sistem daxilində bildirişləri görmək üçün aktivləşdirin",
   
-  // Bildiriş növləri
-  approvalRequests: 'Təsdiq tələbləri',
-  deadlineReminders: 'Son tarix xatırlatmaları',
-  systemUpdates: 'Sistem yenilikləri',
-  dataChanges: 'Məlumat dəyişiklikləri',
+  // Notification types
+  newCategory: "Yeni kateqoriya",
+  deadline: "Son tarix",
+  approvalRequest: "Təsdiq tələbi",
+  approved: "Təsdiqləndi",
+  rejected: "Rədd edildi",
+  systemUpdate: "Sistem yeniləməsi",
+  reminder: "Xatırlatma",
   
-  // Bildiriş statusları
-  read: 'Oxunmuş',
-  unread: 'Oxunmamış',
+  // Notification messages
+  newCategoryMessage: "{categoryName} kateqoriyası əlavə edildi",
+  deadlineApproachingMessage: "{categoryName} kateqoriyası üçün son tarix yaxınlaşır: {deadline}",
+  deadlinePassedMessage: "{categoryName} kateqoriyası üçün son tarix keçdi: {deadline}",
+  approvalRequestMessage: "{schoolName} məktəbi {categoryName} kateqoriyası üçün məlumatları təsdiq üçün göndərdi",
+  approvedMessage: "{categoryName} kateqoriyası təsdiqləndi",
+  rejectedMessage: "{categoryName} kateqoriyası rədd edildi: {reason}",
+  systemUpdateMessage: "Sistem yeniləməsi: {message}",
+  reminderMessage: "{categoryName} kateqoriyası üçün məlumatları doldurmağı unutmayın",
   
-  // Prioritetlər
-  priority: 'Prioritet',
-  highPriority: 'Yüksək prioritet',
-  mediumPriority: 'Orta prioritet',
-  lowPriority: 'Aşağı prioritet',
+  // Notification times
+  justNow: "İndicə",
+  minutesAgo: "{minutes} dəqiqə əvvəl",
+  hoursAgo: "{hours} saat əvvəl",
+  daysAgo: "{days} gün əvvəl",
   
-  // Bildiriş mesajları
-  newApprovalRequest: 'Yeni təsdiq tələbi',
-  approvalRequestFrom: '{school} məktəbindən yeni təsdiq tələbi',
-  deadlineApproaching: 'Son tarix yaxınlaşır',
-  deadlineInDays: '{days} gün sonra son tarix bitir',
-  dataUpdated: 'Məlumatlar yeniləndi',
-  dataApproved: 'Məlumatlar təsdiqləndi',
-  dataRejected: 'Məlumatlar rədd edildi',
-  categoryCreated: 'Yeni kateqoriya yaradıldı',
-  columnAdded: 'Yeni sütun əlavə edildi',
-  
-  // Mesajlar
-  noNotifications: 'Bildiriş yoxdur',
-  notificationSent: 'Bildiriş göndərildi',
-  notificationDeleted: 'Bildiriş silindi',
-  
-  // Ayarlar
-  emailNotifications: 'E-poçt bildirişləri',
-  pushNotifications: 'Push bildirişlər',
-  inAppNotifications: 'Tətbiq daxili bildirişlər',
-  notifyForApprovals: 'Təsdiq tələbləri üçün bildiriş',
-  notifyForDeadlines: 'Son tarixlər üçün bildiriş',
-  notifyForChanges: 'Dəyişikliklər üçün bildiriş',
-  notifyForSystemUpdates: 'Sistem yenilikləri üçün bildiriş',
-  
-  // Zaman bildirişləri
-  justNow: 'İndicə',
-  minutesAgo: '{minutes} dəqiqə əvvəl',
-  hoursAgo: '{hours} saat əvvəl',
-  yesterday: 'Dünən',
-  daysAgo: '{days} gün əvvəl',
+  // Info notifications
+  unreadNotifications: "Oxunmamış bildirişlər",
+  noUnreadNotifications: "Oxunmamış bildiriş yoxdur",
+  newNotifications: "Yeni bildirişlər",
 };
 
 export default notifications;

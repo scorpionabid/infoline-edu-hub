@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   School, 
@@ -19,7 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import StatsCard from './StatsCard';
 import NotificationsCard from './NotificationsCard';
-import { Notification } from '@/types/notification';
+import { Notification } from './NotificationsCard';
 
 // Mock data for schools
 const mockSchoolsData = [

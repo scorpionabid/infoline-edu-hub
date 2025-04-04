@@ -1,18 +1,17 @@
 
 import { useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData, DataEntryForm, ColumnValidationError, ColumnEntry, DataEntryStatus } from '@/types/dataEntry';
+import { CategoryEntryData, DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { v4 as uuid } from 'uuid';
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
   formData: DataEntryForm;
   errors: ColumnValidationError[];
-  initializeForm: (entries: CategoryEntryData[], status: DataEntryStatus) => void;
+  initializeForm: (entries: CategoryEntryData[], status: 'draft' | 'submitted' | 'approved' | 'rejected') => void;
   validateForm: () => boolean;
   submitForm: (validateFn: () => boolean) => boolean;
   setCurrentCategoryIndex: (index: number) => void;
@@ -57,17 +56,16 @@ export const useDataUpdates = ({
             newEntries[categoryIndex].values[valueIndex] = {
               ...newEntries[categoryIndex].values[valueIndex],
               value,
-              status: 'pending' as DataEntryStatus,
+              status: 'pending'
             };
             
             // Xəta mesajını silirik
             delete newEntries[categoryIndex].values[valueIndex].errorMessage;
           } else {
             newEntries[categoryIndex].values.push({
-              id: uuid(),
               columnId,
               value,
-              status: 'pending' as DataEntryStatus
+              status: 'pending'
             });
           }
         }
@@ -111,7 +109,6 @@ export const useDataUpdates = ({
     // Həmçinin Excel məlumatlarını serverdə də saxlayaq
     if (user?.schoolId && categoryId) {
       try {
-        // Hər bir sütun məlumatı üçün data entries-i yenilə
         for (const [columnId, value] of Object.entries(excelData)) {
           // Bu sütün və məktəb üçün mövcud məlumat olub-olmadığını yoxlayaq
           const { data: existingData, error: fetchError } = await supabase
@@ -154,10 +151,8 @@ export const useDataUpdates = ({
             if (insertError) throw insertError;
           }
         }
-        
-        toast.success(t('excelDataSaved'));
       } catch (err) {
-        console.error('Excel məlumatlarını serverdə saxlayarkən xəta:', err);
+        console.error('Error saving Excel data to server:', err);
         toast.error(t('errorOccurred'), {
           description: t('someDataMayNotBeSaved')
         });
@@ -174,7 +169,7 @@ export const useDataUpdates = ({
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
       // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
-      saveForm(); // Manual olaraq saxlayırıq
+      saveForm(); // <-- Manual olaraq saxlayırıq
       
       // İndi kateqoriyanı dəyişək
       setCurrentCategoryIndex(index);

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Region } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SchoolFiltersProps {
   searchTerm: string;
@@ -19,9 +18,9 @@ interface SchoolFiltersProps {
   }[];
   regions: Region[];
   handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRegionFilter: (value: string) => void;
-  handleSectorFilter: (value: string) => void;
-  handleStatusFilter: (value: string) => void;
+  handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleSectorFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleStatusFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   resetFilters: () => void;
 }
 
@@ -65,54 +64,45 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
         </div>
         
         <div>
-          <Select 
-            value={selectedRegion || 'all'} 
-            onValueChange={handleRegionFilter}
+          <select
+            value={selectedRegion}
+            onChange={handleRegionFilter}
+            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={t('filterByRegion')}
           >
-            <SelectTrigger aria-label={t('filterByRegion')}>
-              <SelectValue placeholder={t('allRegions')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allRegions')}</SelectItem>
-              {regions.map(region => (
-                <SelectItem key={region.id} value={region.id}>{region.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">{t('allRegions')}</option>
+            {regions.map(region => (
+              <option key={region.id} value={region.id}>{region.name}</option>
+            ))}
+          </select>
         </div>
         
         <div>
-          <Select 
-            value={selectedSector || 'all'} 
-            onValueChange={handleSectorFilter} 
+          <select
+            value={selectedSector}
+            onChange={handleSectorFilter}
             disabled={!selectedRegion && filteredSectors.length === 0}
+            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={t('filterBySector')}
           >
-            <SelectTrigger aria-label={t('filterBySector')}>
-              <SelectValue placeholder={t('allSectors')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allSectors')}</SelectItem>
-              {filteredSectors.map(sector => (
-                <SelectItem key={sector.id} value={sector.id}>{sector.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">{t('allSectors')}</option>
+            {filteredSectors.map(sector => (
+              <option key={sector.id} value={sector.id}>{sector.name}</option>
+            ))}
+          </select>
         </div>
         
         <div>
-          <Select 
-            value={selectedStatus || 'all'} 
-            onValueChange={handleStatusFilter}
+          <select
+            value={selectedStatus}
+            onChange={handleStatusFilter}
+            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={t('filterByStatus')}
           >
-            <SelectTrigger aria-label={t('filterByStatus')}>
-              <SelectValue placeholder={t('allStatuses')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allStatuses')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-            </SelectContent>
-          </Select>
+            <option value="">{t('allStatuses')}</option>
+            <option value="active">{t('active')}</option>
+            <option value="inactive">{t('inactive')}</option>
+          </select>
         </div>
       </div>
       

@@ -1,76 +1,82 @@
 
-import { v4 as uuidv4 } from 'uuid';
-import { CategoryEntryData, DataEntryStatus, ColumnEntry } from '@/types/dataEntry';
+import { EntryValue } from '@/types/dataEntry';
+import { ColumnType } from '@/types/column';
 
-export const createEmptyEntries = (categoryIds: string[]): CategoryEntryData[] => {
-  return categoryIds.map(categoryId => ({
-    id: uuidv4(),
-    categoryId,
-    categoryName: '',
-    order: 0,
-    progress: 0,
-    status: 'draft',
-    values: [],
-    entries: {}, // Boş bir object olaraq təyin edildi
-    isCompleted: false,
-    isSubmitted: false,
-    completionPercentage: 0
-  }));
+/**
+ * Verilmiş sütun ID-si üçün dəyəri kateqoriya məlumatları içərisindən əldə edir
+ */
+export const getValueForColumn = (values: EntryValue[], columnId: string): any => {
+  const value = values.find(v => v.columnId === columnId)?.value;
+  return value !== undefined ? value : '';
 };
 
-export const createEmptyEntry = (categoryId: string): CategoryEntryData => {
-  return {
-    id: uuidv4(),
-    categoryId,
-    categoryName: '',
-    order: 0,
-    progress: 0,
-    status: 'draft',
-    values: [],
-    entries: {}, // Boş bir object olaraq təyin edildi
-    isSubmitted: false
-  };
+/**
+ * Verilmiş sütun ID-si üçün statusu kateqoriya məlumatları içərisindən əldə edir
+ */
+export const getStatusForColumn = (values: EntryValue[], columnId: string): 'pending' | 'approved' | 'rejected' => {
+  return values.find(v => v.columnId === columnId)?.status || 'pending';
 };
 
-export const createColumnEntry = (columnId: string, value: string = '', status: DataEntryStatus = 'draft'): ColumnEntry => {
-  return {
-    id: uuidv4(),
-    columnId,
-    value,
-    isValid: true, // isValid əlavə edildi
-    status
-  };
-};
-
-export const calculateProgress = (values: ColumnEntry[], requiredColumnIds: string[]): number => {
-  if (requiredColumnIds.length === 0) {
-    return 100;
-  }
-
-  const completedRequired = requiredColumnIds.filter(id => {
-    const entry = values.find(v => v.columnId === id);
-    return entry && entry.value && entry.value.trim() !== '';
-  }).length;
-
-  return Math.round((completedRequired / requiredColumnIds.length) * 100);
-};
-
-export const formatEntryStatus = (status: DataEntryStatus): {
-  label: string;
-  color: string;
-} => {
-  switch (status) {
-    case 'approved':
-      return { label: 'Təsdiqlənmiş', color: 'green' };
-    case 'rejected':
-      return { label: 'Rədd edilmiş', color: 'red' };
-    case 'pending':
-      return { label: 'Gözləmədə', color: 'yellow' };
-    case 'draft':
-      return { label: 'Qaralama', color: 'gray' };
-    case 'submitted':
-      return { label: 'Göndərilmiş', color: 'blue' };
+/**
+ * Sütun tipinə görə dəyərin düzgün formatını təyin edir
+ */
+export const formatValueByType = (value: any, type: ColumnType): any => {
+  if (value === null || value === undefined) return '';
+  
+  switch (type) {
+    case 'number':
+      return value === '' ? '' : Number(value);
+    case 'checkbox':
+      return Boolean(value);
+    case 'date':
+      return value instanceof Date ? value : value ? new Date(value) : '';
     default:
-      return { label: 'Naməlum', color: 'gray' };
+      return value;
   }
+};
+
+/**
+ * Verilmiş dəyərin boş olub-olmadığını yoxlayır
+ */
+export const isEmptyValue = (value: any): boolean => {
+  if (value === null || value === undefined || value === '') return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  return false;
+};
+
+/**
+ * Sütun validasiyasını yoxlayır və xəta mesajı qaytarır
+ */
+export const validateColumnValue = (value: any, type: ColumnType, isRequired: boolean, validationRules?: any): string | undefined => {
+  // Əgər sahə məcburidirsə və boşdursa
+  if (isRequired && isEmptyValue(value)) {
+    return 'Bu sahə məcburidir';
+  }
+  
+  // Əgər dəyər boş deyilsə və validasiya qaydaları varsa
+  if (!isEmptyValue(value) && validationRules) {
+    switch (type) {
+      case 'number':
+        const numValue = Number(value);
+        if (isNaN(numValue)) return 'Rəqəm daxil edin';
+        if (validationRules.minValue !== undefined && numValue < validationRules.minValue) {
+          return `Minimum dəyər ${validationRules.minValue} olmalıdır`;
+        }
+        if (validationRules.maxValue !== undefined && numValue > validationRules.maxValue) {
+          return `Maksimum dəyər ${validationRules.maxValue} olmalıdır`;
+        }
+        break;
+      case 'text':
+        if (validationRules.regex) {
+          const regex = new RegExp(validationRules.regex);
+          if (!regex.test(String(value))) {
+            return validationRules.regexMessage || 'Daxil edilmiş mətn formatı düzgün deyil';
+          }
+        }
+        break;
+      // Digər tip validasiyaları burada əlavə edilə bilər
+    }
+  }
+  
+  return undefined;
 };

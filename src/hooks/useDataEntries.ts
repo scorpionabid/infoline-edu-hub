@@ -1,368 +1,303 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntry } from '@/types/dataEntry';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
+import { DataEntry } from '@/types/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-const useDataEntries = (categoryId?: string, schoolId?: string) => {
-  const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
+  const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { t } = useLanguage();
   const { user } = useAuth();
 
-  // Fetch data entries with optional filtering
-  const fetchEntries = useCallback(async (filters?: Partial<DataEntry>) => {
+  const fetchDataEntries = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    
     try {
       let query = supabase
         .from('data_entries')
-        .select(`
-          id, 
-          category_id, 
-          column_id, 
-          school_id, 
-          value, 
-          status, 
-          created_at, 
-          updated_at, 
-          created_by,
-          approved_at,
-          approved_by,
-          rejected_by,
-          rejection_reason
-        `);
-        
-      // Əgər categoryId varsa, filtrdə istifadə et
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (schoolId) {
+        query = query.eq('school_id', schoolId);
+      } else if (user?.schoolId) {
+        query = query.eq('school_id', user.schoolId);
+      }
+      
       if (categoryId) {
         query = query.eq('category_id', categoryId);
       }
       
-      // Əgər schoolId varsa, istifadə et
-      if (schoolId) {
-        query = query.eq('school_id', schoolId);
+      if (columnId) {
+        query = query.eq('column_id', columnId);
       }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
       
-      // Əlavə filtrləri tətbiq et
-      if (filters) {
-        Object.keys(filters).forEach(key => {
-          // Fikir verin - burada `key` və onun dəyəri tip təhlükəsizliyi üçün yoxlanılmalıdır
-          const value = (filters as any)[key];
-          if (value !== undefined && value !== null) {
-            query = query.eq(key, value);
-          }
-        });
-      }
-      
-      // Sorğunu icra et
-      const { data, error: fetchError } = await query.order('updated_at', { ascending: false });
-      
-      if (fetchError) throw fetchError;
-      
-      // Məlumatları formatlaşdır
-      const formattedEntries: DataEntry[] = (data || []).map(entry => ({
-        id: entry.id,
-        category_id: entry.category_id,
-        column_id: entry.column_id,
-        school_id: entry.school_id,
-        categoryId: entry.category_id,
-        columnId: entry.column_id,
-        schoolId: entry.school_id,
-        value: entry.value || "",
-        status: entry.status || "pending",
-        createdAt: entry.created_at,
-        updatedAt: entry.updated_at,
-        createdBy: entry.created_by,
-        approvedAt: entry.approved_at,
-        approvedBy: entry.approved_by,
-        rejectedBy: entry.rejected_by,
-        rejectionReason: entry.rejection_reason
-      }));
-      
-      setEntries(formattedEntries);
+      setDataEntries(data as DataEntry[]);
     } catch (err: any) {
-      console.error("Failed to fetch data entries:", err);
+      console.error('Error fetching data entries:', err);
       setError(err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotLoadDataEntries')
+      });
     } finally {
       setLoading(false);
     }
-  }, [categoryId, schoolId]);
+  }, [schoolId, categoryId, columnId, user, t]);
 
-  // Add a new entry
-  const addEntry = useCallback(async (entryData: Omit<DataEntry, "id" | "createdAt" | "updatedAt">) => {
+  const addDataEntry = async (dataEntry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const entryWithSchoolId = {
+        ...dataEntry,
+        school_id: dataEntry.school_id || user?.schoolId,
+        created_by: user?.id,
+        status: 'pending'
+      };
+
+      const { data, error } = await supabase
+        .from('data_entries')
+        .insert([entryWithSchoolId])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setDataEntries(prev => [data as DataEntry, ...prev]);
+      toast.success(t('dataEntrySaved'), {
+        description: t('dataEntrySavedDesc')
+      });
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error adding data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotSaveData')
+      });
+      throw err;
+    }
+  };
+
+  const updateDataEntry = async (id: string, updates: Partial<DataEntry>) => {
     try {
       const { data, error } = await supabase
         .from('data_entries')
-        .insert({
-          category_id: entryData.category_id || entryData.categoryId,
-          column_id: entryData.column_id || entryData.columnId,
-          school_id: entryData.school_id || entryData.schoolId,
-          value: entryData.value || "",
-          status: entryData.status || "pending",
-          created_by: user?.id || entryData.createdBy
-        })
+        .update(updates)
+        .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       
-      const newEntry: DataEntry = {
-        id: data.id,
-        category_id: data.category_id,
-        column_id: data.column_id,
-        school_id: data.school_id,
-        categoryId: data.category_id,
-        columnId: data.column_id,
-        schoolId: data.school_id,
-        value: data.value || "",
-        status: data.status || "pending",
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        createdBy: data.created_by
-      };
+      setDataEntries(prev => prev.map(entry => 
+        entry.id === id ? { ...entry, ...data } as DataEntry : entry
+      ));
       
-      setEntries(prev => [newEntry, ...prev]);
-      return newEntry;
+      toast.success(t('dataEntryUpdated'), {
+        description: t('dataEntryUpdatedDesc')
+      });
+      
+      return data;
     } catch (err: any) {
-      console.error("Failed to add data entry:", err);
+      console.error('Error updating data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotUpdateData')
+      });
       throw err;
     }
-  }, [user]);
+  };
 
-  // Update an existing entry
-  const updateEntry = useCallback(async (entryId: string, updateData: Partial<DataEntry>) => {
-    try {
-      const supabaseData: any = {};
-      
-      // Convert from column/category/school id to *_id format
-      if (updateData.categoryId) supabaseData.category_id = updateData.categoryId;
-      if (updateData.columnId) supabaseData.column_id = updateData.columnId;
-      if (updateData.schoolId) supabaseData.school_id = updateData.schoolId;
-      
-      // Copy over direct matches
-      if (updateData.category_id) supabaseData.category_id = updateData.category_id;
-      if (updateData.column_id) supabaseData.column_id = updateData.column_id;
-      if (updateData.school_id) supabaseData.school_id = updateData.school_id;
-      if (updateData.value !== undefined) supabaseData.value = updateData.value;
-      if (updateData.status) supabaseData.status = updateData.status;
-      
-      // Update the entry
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({
-          ...supabaseData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', entryId)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      const updatedEntry: DataEntry = {
-        id: data.id,
-        category_id: data.category_id,
-        column_id: data.column_id,
-        school_id: data.school_id,
-        categoryId: data.category_id,
-        columnId: data.column_id,
-        schoolId: data.school_id,
-        value: data.value || "",
-        status: data.status || "pending",
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        createdBy: data.created_by,
-        approvedAt: data.approved_at,
-        approvedBy: data.approved_by,
-        rejectedBy: data.rejected_by,
-        rejectionReason: data.rejection_reason
-      };
-      
-      // Update state
-      setEntries(prev =>
-        prev.map(entry => entry.id === entryId ? updatedEntry : entry)
-      );
-      
-      return updatedEntry;
-    } catch (err: any) {
-      console.error("Failed to update data entry:", err);
-      throw err;
-    }
-  }, []);
-
-  // Delete an entry
-  const deleteEntry = useCallback(async (entryId: string) => {
+  const deleteDataEntry = async (id: string) => {
     try {
       const { error } = await supabase
         .from('data_entries')
         .delete()
-        .eq('id', entryId);
-      
+        .eq('id', id);
+
       if (error) throw error;
       
-      // Update state
-      setEntries(prev => prev.filter(entry => entry.id !== entryId));
-      return true;
+      setDataEntries(prev => prev.filter(entry => entry.id !== id));
+      
+      toast.success(t('dataEntryDeleted'), {
+        description: t('dataEntryDeletedDesc')
+      });
     } catch (err: any) {
-      console.error("Failed to delete data entry:", err);
+      console.error('Error deleting data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotDeleteData')
+      });
       throw err;
     }
-  }, []);
+  };
 
-  // Təsdiqləmə funksiyası
-  const approveEntry = useCallback(async (entryId: string) => {
+  const approveDataEntry = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: user?.id
-        })
-        .eq('id', entryId);
-      
-      if (error) throw error;
-      
-      // Update state
-      setEntries(prev =>
-        prev.map(entry => 
-          entry.id === entryId 
-            ? { 
-                ...entry, 
-                status: 'approved', 
-                approvedAt: new Date().toISOString(), 
-                approvedBy: user?.id 
-              } 
-            : entry
-        )
-      );
-      
-      return true;
-    } catch (err: any) {
-      console.error("Failed to approve data entry:", err);
-      throw err;
-    }
-  }, [user]);
-
-  // Rədd etmə funksiyası
-  const rejectEntry = useCallback(async (entryId: string, reason: string) => {
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejection_reason: reason,
-          rejected_by: user?.id
-        })
-        .eq('id', entryId);
-      
-      if (error) throw error;
-      
-      // Update state
-      setEntries(prev =>
-        prev.map(entry => 
-          entry.id === entryId 
-            ? { 
-                ...entry, 
-                status: 'rejected', 
-                rejectionReason: reason, 
-                rejectedBy: user?.id 
-              } 
-            : entry
-        )
-      );
-      
-      return true;
-    } catch (err: any) {
-      console.error("Failed to reject data entry:", err);
-      throw err;
-    }
-  }, [user]);
-
-  // Təsdiq üçün göndərmə funksiyası
-  const submitCategoryForApproval = useCallback(async (categoryId: string, schoolId: string) => {
-    try {
-      // Əvvəlcə bütün gözləmə məlumatlarını əldə et
       const { data, error } = await supabase
         .from('data_entries')
-        .select('id')
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', 'pending');
-      
+        .update({ status: 'approved' })
+        .eq('id', id)
+        .select()
+        .single();
+
       if (error) throw error;
       
-      // Yoxlayın ki, məlumatlar varmı
-      if (!data || data.length === 0) {
-        throw new Error("No pending entries found for this category and school");
+      setDataEntries(prev => prev.map(entry => 
+        entry.id === id ? { ...entry, ...data } as DataEntry : entry
+      ));
+      
+      toast.success(t('dataEntryApproved'), {
+        description: t('dataEntryApprovedDesc')
+      });
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error approving data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotApproveData')
+      });
+      throw err;
+    }
+  };
+
+  const rejectDataEntry = async (id: string, rejectionReason: string) => {
+    try {
+      if (!rejectionReason) {
+        throw new Error('Rejection reason is required');
       }
+
+      const { data, error } = await supabase
+        .from('data_entries')
+        .update({ 
+          status: 'rejected',
+          rejection_reason: rejectionReason
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
       
-      // Status update function for multiple entries
-      const updateStatus = async () => {
-        const { error } = await supabase
-          .rpc('submit_category_for_approval', {
-            p_category_id: categoryId,
-            p_school_id: schoolId,
-            p_user_id: user?.id || null
-          });
-        
-        if (error) throw error;
-      };
+      setDataEntries(prev => prev.map(entry => 
+        entry.id === id ? { ...entry, ...data } as DataEntry : entry
+      ));
       
-      // Update all entries
-      await updateStatus();
+      toast.success(t('dataEntryRejected'), {
+        description: t('dataEntryRejectedDesc')
+      });
       
-      // Update local state
-      await fetchEntries({ category_id: categoryId, school_id: schoolId });
-      
-      return true;
+      return data;
     } catch (err: any) {
-      console.error("Failed to submit category for approval:", err);
+      console.error('Error rejecting data entry:', err);
+      toast.error(t('errorOccurred'), {
+        description: err.message || t('couldNotRejectData')
+      });
       throw err;
     }
-  }, [fetchEntries, user]);
+  };
 
-  // Təsdiq statusunu əldə etmək üçün funksiya
-  const getApprovalStatus = useCallback(async (catId: string) => {
+  const getApprovalStatus = async (schoolId: string, categoryId?: string) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('data_entries')
         .select('status')
-        .eq('category_id', catId)
-        .eq('school_id', schoolId || '')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
+        .eq('school_id', schoolId);
       
-      if (error) {
-        // Məlumat tapılmadısa, "pending" qaytarın
-        if (error.code === 'PGRST116') {
-          return "pending";
-        }
-        throw error;
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      const statusCounts = {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        total: 0
+      };
+      
+      if (data && data.length > 0) {
+        data.forEach((item: any) => {
+          const status = item.status as keyof typeof statusCounts;
+          if (status in statusCounts) {
+            statusCounts[status] += 1;
+            statusCounts.total += 1;
+          }
+        });
       }
       
-      return data?.status || "pending";
-    } catch (err: any) {
-      console.error("Failed to get approval status:", err);
-      return "pending";
+      return statusCounts;
+    } catch (err) {
+      console.error('Error fetching approval status:', err);
+      throw err;
     }
-  }, [schoolId]);
+  };
+
+  const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
+    try {
+      if (!categoryId || !schoolId) {
+        throw new Error('Category ID and School ID are required');
+      }
+
+      // RPC çağırışı yerinə birbaşa sorğu edirik
+      const { data: entries, error: entriesError } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+
+      if (entriesError) throw entriesError;
+      
+      if (!entries || entries.length === 0) {
+        throw new Error('No data entries found for this category');
+      }
+      
+      // Bütün məlumatları 'pending' statusuna yeniləyirik
+      const { error: updateError } = await supabase
+        .from('data_entries')
+        .update({ status: 'pending' })
+        .eq('category_id', categoryId)
+        .eq('school_id', schoolId);
+        
+      if (updateError) throw updateError;
+      
+      await fetchDataEntries();
+      
+      toast.success(t('categorySubmitted'), {
+        description: t('categorySubmittedDesc')
+      });
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error submitting category for approval:', err);
+      toast.error(t('errorOccurred'), {
+        description: err.message || t('couldNotSubmitCategory')
+      });
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchDataEntries();
+  }, [fetchDataEntries]);
 
   return {
-    entries,
+    dataEntries,
     loading,
     error,
-    fetchEntries,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    approveEntry,
-    rejectEntry,
-    submitCategoryForApproval,
-    getApprovalStatus
+    fetchDataEntries,
+    addDataEntry,
+    updateDataEntry,
+    deleteDataEntry,
+    getApprovalStatus,
+    approveDataEntry,
+    rejectDataEntry,
+    submitCategoryForApproval
   };
 };
-
-export { useDataEntries };

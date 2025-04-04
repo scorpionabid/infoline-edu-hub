@@ -1,110 +1,213 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RegionAdminDashboardData } from '@/types/dashboard';
+import { School, Users, Map, Globe, CheckCircle, AlertCircle, Clock, FileBarChart, Database, Layers } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Activity } from '@/components/dashboard/Activity';
-import { FormItem } from '@/types/form';
-import CategoryCompletionChart from './CategoryCompletionChart';
-import StatusDistributionChart from './StatusDistributionChart';
-import SchoolsStatusCard from './SchoolsStatusCard';
-import NotificationsCard from './NotificationsCard';
-import ApprovalRateCard from './ApprovalRateCard';
+import StatsCard from './StatsCard';
 import CompletionRateCard from './CompletionRateCard';
-import PendingFormsCard from './PendingFormsCard';
+import PendingApprovalsCard from './PendingApprovalsCard';
+import NotificationsCard from './NotificationsCard';
+import { Notification } from './NotificationsCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { useNavigate } from 'react-router-dom';
 
 interface RegionAdminDashboardProps {
-  data: RegionAdminDashboardData;
+  data: {
+    sectors: number;
+    schools: number;
+    users: number;
+    completionRate: number;
+    pendingApprovals: number;
+    pendingSchools: number;
+    approvedSchools: number;
+    rejectedSchools: number;
+    notifications: Notification[];
+    categories?: {
+      name: string;
+      completionRate: number;
+      color: string;
+    }[];
+    sectorCompletions?: {
+      name: string;
+      completionRate: number;
+    }[];
+  };
 }
 
 const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
-
+  const navigate = useNavigate();
+  
+  // Massivlərin undefined olmamasını təmin edirik
+  const categories = data.categories || [];
+  const sectorCompletions = data.sectorCompletions || [];
+  
   return (
-    <>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{t('regionDashboard')}</h2>
-          <p className="text-muted-foreground">
-            {data.regionName ? `${t('regionAdminDashboardDesc')} - ${data.regionName}` : t('regionAdminDashboardDesc')}
-          </p>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('sectors')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.sectors}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('schools')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.schools}</div>
-          </CardContent>
-        </Card>
-        <CompletionRateCard completion={data.completionRate} />
-        <ApprovalRateCard rate={data.approvalRate} pendingCount={data.pendingApprovals} />
-      </div>
-
-      {/* Second Row */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3 mb-4">
-        <SchoolsStatusCard 
-          pendingSchools={data.pendingSchools}
-          approvedSchools={data.approvedSchools}
-          rejectedSchools={data.rejectedSchools}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatsCard 
+          title={t('sectors')}
+          value={data.sectors}
+          icon={<Globe className="h-5 w-5 text-purple-500" />}
+          color="purple"
+          onClick={() => navigate('/sectors')}
         />
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t('categoryCompletion')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {data.categoryCompletion?.length > 0 ? (
-              <CategoryCompletionChart data={data.categoryCompletion} />
-            ) : (
-              <div className="flex justify-center items-center h-64">
-                <p className="text-muted-foreground">{t('noCategoryData')}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <StatsCard 
+          title={t('schools')}
+          value={data.schools}
+          icon={<School className="h-5 w-5 text-green-500" />}
+          color="green"
+          onClick={() => navigate('/schools')}
+        />
+        <StatsCard 
+          title={t('users')}
+          value={data.users}
+          icon={<Users className="h-5 w-5 text-amber-500" />}
+          color="amber"
+          onClick={() => navigate('/users')}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CompletionRateCard 
+          completionRate={data.completionRate} 
+          description={t('regionDataSubmissionRate')}
+        />
+        <PendingApprovalsCard 
+          pendingApprovals={data.pendingApprovals}
+          todayCount={6}
+          weekCount={10}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatsCard 
+          title={t('pendingSchools')}
+          value={data.pendingSchools}
+          icon={<Clock className="h-5 w-5 text-amber-500" />}
+          color="amber"
+        />
+        <StatsCard 
+          title={t('approvedSchools')}
+          value={data.approvedSchools}
+          icon={<CheckCircle className="h-5 w-5 text-green-500" />}
+          color="green"
+        />
+        <StatsCard 
+          title={t('rejectedSchools')}
+          value={data.rejectedSchools}
+          icon={<AlertCircle className="h-5 w-5 text-red-500" />}
+          color="red"
+        />
       </div>
 
-      {/* Third Row */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Kateqoriyalar üzrə tamamlanma statistikası */}
         <Card>
-          <CardHeader>
-            <CardTitle>{t('statusDistribution')}</CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-medium">{t('categoryCompletion')}</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs" 
+                onClick={() => navigate('/categories')}
+              >
+                <Layers className="h-4 w-4 mr-1" />
+                {t('viewAll')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            {data.statusDistribution?.length > 0 ? (
-              <StatusDistributionChart data={data.statusDistribution} />
-            ) : (
-              <div className="flex justify-center items-center h-64">
-                <p className="text-muted-foreground">{t('noStatusData')}</p>
-              </div>
-            )}
+            <div className="space-y-4">
+              {categories.map((category, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{category.name}</span>
+                    <span className="text-sm text-muted-foreground">{category.completionRate}%</span>
+                  </div>
+                  <Progress value={category.completionRate} className={`h-2 ${category.color}`} />
+                </div>
+              ))}
+              {categories.length === 0 && (
+                <div className="py-4 text-center text-muted-foreground">
+                  {t('noCategoriesFound')}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
-        <NotificationsCard notifications={data.notifications} />
+
+        {/* Sektorlar üzrə tamamlanma statistikası */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-medium">{t('sectorCompletion')}</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs" 
+                onClick={() => navigate('/sectors')}
+              >
+                <Globe className="h-4 w-4 mr-1" />
+                {t('viewAll')}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {sectorCompletions.map((sector, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{sector.name}</span>
+                    <span className="text-sm text-muted-foreground">{sector.completionRate}%</span>
+                  </div>
+                  <Progress value={sector.completionRate} className="h-2" />
+                </div>
+              ))}
+              {sectorCompletions.length === 0 && (
+                <div className="py-4 text-center text-muted-foreground">
+                  {t('noSectorsFound')}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Fourth Row */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 mb-4">
-        <PendingFormsCard forms={data.pendingForms as FormItem[]} />
-        <Activity activities={data.activityData} />
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-medium">{t('quickActions')}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/schools')}>
+                <School className="h-6 w-6 mb-2" />
+                <span>{t('manageSchools')}</span>
+              </Button>
+              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/users')}>
+                <Users className="h-6 w-6 mb-2" />
+                <span>{t('manageUsers')}</span>
+              </Button>
+              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/categories')}>
+                <Layers className="h-6 w-6 mb-2" />
+                <span>{t('manageCategories')}</span>
+              </Button>
+              <Button className="flex flex-col h-24 p-4" variant="outline" onClick={() => navigate('/reports')}>
+                <FileBarChart className="h-6 w-6 mb-2" />
+                <span>{t('viewReports')}</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </>
+      
+      <NotificationsCard notifications={data.notifications} />
+    </div>
   );
 };
 

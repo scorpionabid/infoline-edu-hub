@@ -1,29 +1,17 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage 
-} from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { UserRole } from '@/types/supabase';
-import { UseFormReturn } from 'react-hook-form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Role } from '@/context/AuthContext';
+import { UserFormData } from '@/types/user';
 
 interface BasicInfoSectionProps {
-  form: UseFormReturn<any>;
-  data: any;
-  onFormChange: (field: string, value: any) => void;
-  availableRoles: UserRole[];
+  form: any;
+  data: UserFormData;
+  onFormChange: (fieldName: string, value: any) => void;
+  availableRoles: Role[];
   isEdit: boolean;
   passwordRequired: boolean;
   hideRoleSelector?: boolean;
@@ -36,14 +24,12 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   availableRoles,
   isEdit,
   passwordRequired,
-  hideRoleSelector = false
+  hideRoleSelector = false,
 }) => {
   const { t } = useLanguage();
-  
+
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">{t('basicInfo')}</h3>
-      
       <FormField
         control={form.control}
         name="name"
@@ -51,8 +37,8 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <FormItem>
             <FormLabel>{t('fullName')}</FormLabel>
             <FormControl>
-              <Input 
-                {...field} 
+              <Input
+                {...field}
                 onChange={(e) => {
                   field.onChange(e);
                   onFormChange('name', e.target.value);
@@ -63,7 +49,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           </FormItem>
         )}
       />
-      
+
       <FormField
         control={form.control}
         name="email"
@@ -71,8 +57,8 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <FormItem>
             <FormLabel>{t('email')}</FormLabel>
             <FormControl>
-              <Input 
-                {...field} 
+              <Input
+                {...field}
                 type="email"
                 onChange={(e) => {
                   field.onChange(e);
@@ -84,7 +70,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           </FormItem>
         )}
       />
-      
+
       {(!isEdit || passwordRequired) && (
         <FormField
           control={form.control}
@@ -93,21 +79,27 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormItem>
               <FormLabel>{isEdit ? t('newPassword') : t('password')}</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
+                <Input
+                  {...field}
                   type="password"
                   onChange={(e) => {
                     field.onChange(e);
                     onFormChange('password', e.target.value);
                   }}
+                  placeholder={isEdit ? t('enterNewPassword') : t('enterPassword')}
                 />
               </FormControl>
+              {isEdit && passwordRequired && (
+                <p className="text-sm text-muted-foreground">
+                  {t('passwordResetHelp')}
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}
         />
       )}
-      
+
       {!hideRoleSelector && (
         <FormField
           control={form.control}
@@ -116,7 +108,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormItem>
               <FormLabel>{t('role')}</FormLabel>
               <Select
-                value={field.value}
+                value={data.role}
                 onValueChange={(value) => {
                   field.onChange(value);
                   onFormChange('role', value);
@@ -128,7 +120,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {availableRoles.map(role => (
+                  {availableRoles.map((role) => (
                     <SelectItem key={role} value={role}>
                       {t(role)}
                     </SelectItem>
@@ -140,7 +132,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           )}
         />
       )}
-      
+
       <FormField
         control={form.control}
         name="status"
@@ -148,7 +140,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <FormItem>
             <FormLabel>{t('status')}</FormLabel>
             <Select
-              value={field.value}
+              value={data.status}
               onValueChange={(value) => {
                 field.onChange(value);
                 onFormChange('status', value);

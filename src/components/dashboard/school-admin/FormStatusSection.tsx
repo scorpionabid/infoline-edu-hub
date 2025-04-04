@@ -1,176 +1,110 @@
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  AlertTriangle, 
+  AlertCircle, 
+  FileInput 
+} from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
-interface FormStatusSectionProps {
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-  overdueCount: number;
-  dueSoonCount: number;
-  onNavigate: (status: string | null) => void;
+interface FormStatusCounts {
+  pending: number;
+  approved: number;
+  rejected: number;
+  dueSoon: number;
+  overdue: number;
 }
 
-const FormStatusSection: React.FC<FormStatusSectionProps> = ({ 
-  pendingCount,
-  approvedCount,
-  rejectedCount,
-  overdueCount,
-  dueSoonCount,
-  onNavigate
+interface FormStatusSectionProps {
+  forms: FormStatusCounts;
+  navigateToDataEntry: (status: string | null) => void;
+  activeStatus: string | null;
+  compact?: boolean;
+}
+
+const FormStatusSection: React.FC<FormStatusSectionProps> = ({
+  forms,
+  navigateToDataEntry,
+  activeStatus,
+  compact = false
 }) => {
   const { t } = useLanguage();
   
-  const totalCount = pendingCount + approvedCount + rejectedCount + overdueCount + dueSoonCount || 1;
-  
-  // Calculate percentages
-  const pendingPercentage = Math.round((pendingCount / totalCount) * 100);
-  const approvedPercentage = Math.round((approvedCount / totalCount) * 100);
-  const rejectedPercentage = Math.round((rejectedCount / totalCount) * 100);
-  const overduePercentage = Math.round((overdueCount / totalCount) * 100);
-  const dueSoonPercentage = Math.round((dueSoonCount / totalCount) * 100);
+  const statusItems = [
+    {
+      id: 'pending',
+      label: t('pending'),
+      count: forms.pending,
+      icon: <Clock className="h-4 w-4" />,
+      color: 'bg-yellow-100 text-yellow-700'
+    },
+    {
+      id: 'approved',
+      label: t('approved'),
+      count: forms.approved,
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      color: 'bg-green-100 text-green-700'
+    },
+    {
+      id: 'rejected',
+      label: t('rejected'),
+      count: forms.rejected,
+      icon: <XCircle className="h-4 w-4" />,
+      color: 'bg-red-100 text-red-700'
+    },
+    {
+      id: 'dueSoon',
+      label: t('dueSoon'),
+      count: forms.dueSoon,
+      icon: <AlertTriangle className="h-4 w-4" />,
+      color: 'bg-orange-100 text-orange-700'
+    },
+    {
+      id: 'overdue',
+      label: t('overdue'),
+      count: forms.overdue,
+      icon: <AlertCircle className="h-4 w-4" />,
+      color: 'bg-red-100 text-red-700'
+    }
+  ];
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t('formStatus')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Pending Forms */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 text-amber-500 mr-2" />
-                <span className="text-sm font-medium">{t('pending')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {pendingCount} <span className="text-muted-foreground text-xs">({pendingPercentage}%)</span>
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2 text-xs"
-                  onClick={() => onNavigate('pending')}
-                >
-                  {t('view')}
-                </Button>
-              </div>
-            </div>
-            <Progress value={pendingPercentage} className="h-2" />
-          </div>
-          
-          {/* Approved Forms */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                <span className="text-sm font-medium">{t('approved')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {approvedCount} <span className="text-muted-foreground text-xs">({approvedPercentage}%)</span>
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2 text-xs"
-                  onClick={() => onNavigate('approved')}
-                >
-                  {t('view')}
-                </Button>
-              </div>
-            </div>
-            <Progress value={approvedPercentage} className="h-2 bg-green-100" />
-          </div>
-          
-          {/* Rejected Forms */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <XCircle className="h-4 w-4 text-red-500 mr-2" />
-                <span className="text-sm font-medium">{t('rejected')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {rejectedCount} <span className="text-muted-foreground text-xs">({rejectedPercentage}%)</span>
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2 text-xs"
-                  onClick={() => onNavigate('rejected')}
-                >
-                  {t('view')}
-                </Button>
-              </div>
-            </div>
-            <Progress value={rejectedPercentage} className="h-2 bg-red-100" />
-          </div>
-          
-          {/* Overdue Forms */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
-                <span className="text-sm font-medium">{t('overdue')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {overdueCount} <span className="text-muted-foreground text-xs">({overduePercentage}%)</span>
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2 text-xs"
-                  onClick={() => onNavigate('overdue')}
-                >
-                  {t('view')}
-                </Button>
-              </div>
-            </div>
-            <Progress value={overduePercentage} className="h-2 bg-red-100" />
-          </div>
-          
-          {/* Due Soon Forms */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 text-blue-500 mr-2" />
-                <span className="text-sm font-medium">{t('dueSoon')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {dueSoonCount} <span className="text-muted-foreground text-xs">({dueSoonPercentage}%)</span>
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 px-2 text-xs"
-                  onClick={() => onNavigate('dueSoon')}
-                >
-                  {t('view')}
-                </Button>
-              </div>
-            </div>
-            <Progress value={dueSoonPercentage} className="h-2 bg-blue-100" />
-          </div>
-          
-          <div className="pt-2">
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => onNavigate(null)}
-            >
-              {t('viewAllForms')}
-            </Button>
-          </div>
-        </div>
+      <CardContent className={cn("flex flex-wrap gap-2", compact ? "py-3" : "py-6")}>
+        {compact && (
+          <Button
+            variant={activeStatus === null ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={() => navigateToDataEntry(null)}
+          >
+            <FileInput className="h-4 w-4" />
+            {t('all')}
+          </Button>
+        )}
+        
+        {statusItems.map(item => (
+          <Button
+            key={item.id}
+            variant={activeStatus === item.id ? "default" : "outline"}
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={() => navigateToDataEntry(item.id)}
+            disabled={item.count === 0}
+          >
+            <span className={cn("flex items-center gap-1 px-1 py-0.5 rounded", item.color)}>
+              {item.icon}
+              <span>{item.count}</span>
+            </span>
+            <span>{item.label}</span>
+          </Button>
+        ))}
       </CardContent>
     </Card>
   );

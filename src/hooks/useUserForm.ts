@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { UserFormData } from '@/types/user';
 import { useForm as useHookForm } from "react-hook-form";
 import * as z from "zod";
@@ -48,7 +48,7 @@ export const useUserForm = ({ initialData, onFormChange, passwordRequired }: Use
       email: initialData.email || '',
       password: initialData.password || '',
       confirmPassword: initialData.confirmPassword || '',
-      role: initialData.role.toString() || 'schooladmin',
+      role: initialData.role || 'schooladmin',
       regionId: initialData.regionId || '',
       sectorId: initialData.sectorId || '',
       schoolId: initialData.schoolId || '',

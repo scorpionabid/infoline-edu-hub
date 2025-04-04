@@ -13,12 +13,11 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
-import { FullUserData } from '@/types/supabase';
 
 interface DeleteUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: User | FullUserData;
+  user: User;
   onDelete: (userId: string) => void;
 }
 
@@ -54,17 +53,13 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     }, 1000);
   };
 
-  // Adı həm User, həm də FullUserData tiplərindən əldə edə biləcək şəkildə düzəltdik
-  const displayName = 'name' in user && user.name ? user.name : 
-                       'full_name' in user && user.full_name ? user.full_name : '';
-
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserConfirmation')} <strong>{displayName}</strong>?
+            {t('deleteUserConfirmation')} <strong>{user.name}</strong>?
             <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>

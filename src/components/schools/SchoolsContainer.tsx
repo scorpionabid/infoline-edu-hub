@@ -1,42 +1,44 @@
 
-import React from 'react';
-import { School } from '@/types/school';
+import React, { useEffect, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/context/AuthContext';
+import SchoolFilters from './SchoolFilters';
+import SchoolTable from './SchoolTable';
+import SchoolPagination from './SchoolPagination';
+import SchoolHeader from './SchoolHeader';
+import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
-import { useSchoolsData } from '@/hooks/schools/useSchoolsData';
+import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import SchoolAdminDialog from './SchoolAdminDialog';
-import SchoolDeleteDialog from './SchoolDeleteDialog';
-import SchoolEditDialog from './SchoolEditDialog';
-import SchoolAddDialog from './SchoolAddDialog';
+import { FileDown, FileUp } from 'lucide-react';
+import { useImportExport } from '@/hooks/schools/useImportExport';
+import ImportDialog from './ImportDialog';
 
 const SchoolsContainer: React.FC = () => {
-  const { t } = useLanguage();
-  const [search, setSearch] = React.useState<string>('');
-
+  const { user } = useAuth();
   const {
-    schools,
-    loading,
-    error,
-    createSchool,
-    updateSchool,
-    deleteSchool,
-    assignAdmin,
-    unassignAdmin,
-    resetPassword,
-  } = useSchoolsData();
+    currentItems,
+    searchTerm,
+    selectedRegion,
+    selectedSector,
+    selectedStatus,
+    sectors,
+    regions,
+    sortConfig,
+    currentPage,
+    totalPages,
+    handleSearch,
+    handleRegionFilter,
+    handleSectorFilter,
+    handleStatusFilter,
+    handleSort,
+    handlePageChange,
+    resetFilters,
+    fetchSchools,
+    isOperationComplete,
+    setIsOperationComplete,
+    schools
+  } = useSchoolsStore();
 
   const {
     isDeleteDialogOpen,
@@ -55,158 +57,135 @@ const SchoolsContainer: React.FC = () => {
     handleAdminDialogOpen,
     handleAddSubmit,
     handleEditSubmit,
+    handleDeleteConfirm,
+    handleAdminUpdate,
+    handleResetPassword,
     formData,
     currentTab,
     setCurrentTab,
-    handleFormChange,
-    setFormData,
+    handleFormChange
   } = useSchoolDialogHandlers();
 
-  const filteredSchools = React.useMemo(() => {
-    if (!schools) return [];
-    return schools.filter(school =>
-      school.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [schools, search]);
+  const {
+    isImportDialogOpen,
+    setIsImportDialogOpen,
+    handleExportToExcel,
+    handleImportSchools
+  } = useImportExport(() => setIsOperationComplete(true));
 
-  const handleDeleteConfirm = () => {
-    if (selectedSchool) {
-      handleDeleteConfirmHelper(selectedSchool);
+  useEffect(() => {
+    if (isOperationComplete) {
+      fetchSchools();
+      setIsOperationComplete(false);
     }
+  }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
+
+  // İstifadəçinin regionuna əsasən sektorları filtirləyirik
+  const filteredSectors = useMemo(() => {
+    let sectorsList = sectors.map(sector => ({
+      id: sector.id,
+      name: sector.name,
+      regionId: sector.region_id
+    }));
+    
+    // Əgər regionadmin və ya schooladmin-dirsə, yalnız öz regionuna aid sektorları göstər
+    if (user && (user.role === 'regionadmin' || user.role === 'schooladmin') && user.regionId) {
+      sectorsList = sectorsList.filter(sector => sector.regionId === user.regionId);
+    }
+    
+    return sectorsList;
+  }, [sectors, user]);
+
+  // Avtomatik olaraq istifadəçinin regionuna aid sektorlarla filtrələyirik
+  useEffect(() => {
+    if (user && user.regionId && selectedRegion !== user.regionId) {
+      handleRegionFilter({ target: { value: user.regionId } } as React.ChangeEvent<HTMLSelectElement>);
+    }
+  }, [user, selectedRegion, handleRegionFilter]);
+
+  // Excel ixrac və idxal funksiyaları
+  const handleExportClick = () => {
+    handleExportToExcel(schools);
   };
 
-  const handleDeleteConfirmHelper = async (school: School) => {
-    closeDeleteDialog();
-    // Buraya kod əlavə edilməlidir əgər silmə əməliyyatı olacaqsa
-    try {
-      await deleteSchool(school.id);
-      toast.success(t('schoolDeleted'), {
-        description: t('schoolDeletedSuccess', { name: school.name })
-      });
-    } catch (error) {
-      toast.error(t('error'), {
-        description: t('schoolDeleteFailed')
-      });
-    }
+  const handleImportClick = () => {
+    setIsImportDialogOpen(true);
   };
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-        <h1 className="text-2xl font-bold tracking-tight">{t('schools')}</h1>
-        <Button onClick={handleAddDialogOpen}>
-          <Plus className="mr-2 h-4 w-4" /> {t('addSchool')}
-        </Button>
-      </div>
-
-      <div className="rounded-md border mt-4">
-        <Tabs defaultValue="all" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="all">{t('allSchools')}</TabsTrigger>
-            <TabsTrigger value="active">{t('activeSchools')}</TabsTrigger>
-            <TabsTrigger value="inactive">{t('inactiveSchools')}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="all" className="space-y-2">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={t('searchByName')}
-                className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring focus:border-primary"
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                <Search className="h-4 w-4" />
-              </span>
-            </div>
-
-            <Table>
-              <TableCaption>{t('allSchoolsCaption')}</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">{t('id')}</TableHead>
-                  <TableHead>{t('name')}</TableHead>
-                  <TableHead>{t('region')}</TableHead>
-                  <TableHead>{t('sector')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
-                  <TableHead className="text-right">{t('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSchools.map((school) => (
-                  <TableRow key={school.id}>
-                    <TableCell className="font-medium">{school.id}</TableCell>
-                    <TableCell>{school.name}</TableCell>
-                    <TableCell>{school.regionName}</TableCell>
-                    <TableCell>{school.sectorName}</TableCell>
-                    <TableCell>{school.status}</TableCell>
-                    <TableCell className="text-right flex gap-2 justify-end">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleEditDialogOpen(school)}
-                      >
-                        {t('edit')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteDialogOpen(school)}
-                      >
-                        {t('delete')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAdminDialogOpen(school)}
-                      >
-                        {t('admin')}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabsContent>
-          <TabsContent value="active">
-            <div>Active Schools Content</div>
-          </TabsContent>
-          <TabsContent value="inactive">
-            <div>Inactive Schools Content</div>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <SchoolAddDialog
-        isOpen={isAddDialogOpen}
-        onOpenChange={closeAddDialog}
-        onAddSchool={createSchool}
-        onClose={closeAddDialog}
+    <div className="space-y-6">
+      <SchoolHeader 
+        userRole={user?.role} 
+        onAddClick={handleAddDialogOpen}
+        onExportClick={handleExportClick}
+        onImportClick={handleImportClick}
       />
-
-      <SchoolEditDialog
-        isOpen={isEditDialogOpen}
-        onOpenChange={closeEditDialog}
-        school={selectedSchool}
-        onUpdateSchool={updateSchool}
-        onClose={closeEditDialog}
+      
+      <Card>
+        <CardContent className="p-6">
+          <SchoolFilters 
+            searchTerm={searchTerm}
+            selectedRegion={selectedRegion}
+            selectedSector={selectedSector}
+            selectedStatus={selectedStatus}
+            filteredSectors={filteredSectors}
+            regions={regions}
+            handleSearch={handleSearch}
+            handleRegionFilter={handleRegionFilter}
+            handleSectorFilter={handleSectorFilter}
+            handleStatusFilter={handleStatusFilter}
+            resetFilters={resetFilters}
+          />
+          
+          <SchoolTable 
+            currentItems={currentItems}
+            searchTerm={searchTerm}
+            sortConfig={sortConfig}
+            handleSort={handleSort}
+            handleEditDialogOpen={handleEditDialogOpen}
+            handleDeleteDialogOpen={handleDeleteDialogOpen}
+            handleAdminDialogOpen={handleAdminDialogOpen}
+            userRole={user?.role}
+          />
+          
+          {totalPages > 1 && (
+            <SchoolPagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </CardContent>
+      </Card>
+      
+      <SchoolDialogs
+        isDeleteDialogOpen={isDeleteDialogOpen}
+        isEditDialogOpen={isEditDialogOpen}
+        isAddDialogOpen={isAddDialogOpen}
+        isAdminDialogOpen={isAdminDialogOpen}
+        selectedSchool={selectedSchool}
+        selectedAdmin={selectedAdmin}
+        closeDeleteDialog={closeDeleteDialog}
+        closeEditDialog={closeEditDialog}
+        closeAddDialog={closeAddDialog}
+        closeAdminDialog={closeAdminDialog}
+        handleDeleteConfirm={handleDeleteConfirm}
+        handleAddSubmit={handleAddSubmit}
+        handleEditSubmit={handleEditSubmit}
+        handleAdminUpdate={handleAdminUpdate}
+        handleResetPassword={handleResetPassword}
+        formData={formData}
+        handleFormChange={handleFormChange}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        filteredSectors={filteredSectors}
       />
-
-      <SchoolDeleteDialog
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={closeDeleteDialog}
-        school={selectedSchool}
-        onDeleteSchool={deleteSchool}
-        onClose={closeDeleteDialog}
-      />
-
-      <SchoolAdminDialog
-        isOpen={isAdminDialogOpen}
-        onOpenChange={closeAdminDialog}
-        school={selectedSchool}
-        onAssignAdmin={assignAdmin}
-        onUnassignAdmin={unassignAdmin}
-        onResetPassword={resetPassword}
-        onClose={closeAdminDialog}
+      
+      {/* Import Dialog */}
+      <ImportDialog 
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImport={handleImportSchools}
       />
     </div>
   );

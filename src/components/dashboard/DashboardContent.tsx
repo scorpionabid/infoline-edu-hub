@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,16 +9,16 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  ActivityItem,
   FormItem
-} from '@/types/dashboard';
-import { FormStatus } from '@/types/form';
-import { Notification } from '@/types/notification';
+} from '@/hooks/useDashboardData';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './SchoolAdminDashboard';
-import { adaptFormStatus } from '@/utils/dashboardUtils';
+import DashboardTabs from './DashboardTabs';
+import { Notification as DashboardNotification } from './NotificationsCard';
+import { Notification } from '@/types/notification';
+import { FormStatus } from '@/types/form';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -30,74 +31,23 @@ interface DashboardContentProps {
   isLoading: boolean;
 }
 
-// Form items üçün adapter
-const adaptFormItems = (items: any[]): FormItem[] => {
-  if (!items) return [];
-  return items.map(item => ({
-    id: item.id || '',
-    title: item.title || '',
-    status: adaptFormStatus(item.status || 'pending'),
-    completionPercentage: item.completionPercentage || item.completion_percentage || 0,
-    deadline: item.deadline || null,
-    categoryId: item.categoryId || item.category_id || '',
-    filledCount: item.filledCount || item.filled_count || 0,
-    totalCount: item.totalCount || item.total_count || 0,
-  }));
+// Notification formatını uyğunlaşdırma funksiyası
+const adaptNotifications = (notifications: Notification[]): DashboardNotification[] => {
+  return notifications?.map(notification => ({
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    time: notification.createdAt
+  })) || [];
 };
 
-// Notification items üçün adapter
-const adaptNotifications = (notifications: any[]): Notification[] => {
-  if (!notifications) return [];
-  return notifications.map(notification => ({
-    id: notification.id || '',
-    type: notification.type || 'info',
-    title: notification.title || '',
-    message: notification.message || '',
-    priority: notification.priority || 'normal',
-    userId: notification.userId || notification.user_id || '',
-    createdAt: notification.createdAt || notification.created_at || new Date().toISOString(),
-    isRead: notification.isRead || notification.is_read || false,
-    time: notification.time || formatTimeFromNow(notification.created_at || notification.createdAt),
-    relatedEntityId: notification.relatedEntityId || notification.related_entity_id || '',
-    relatedEntityType: notification.relatedEntityType || notification.related_entity_type || 'system',
-  }));
-};
-
-// Activity items üçün adapter
-const adaptActivityItems = (items: any[]): ActivityItem[] => {
-  if (!items) return [];
-  return items.map(item => ({
-    id: item.id || '',
-    type: item.type || 'action',
-    title: item.title || '',
-    description: item.description || '',
-    timestamp: item.timestamp || new Date().toISOString(),
-    userId: item.userId || item.user_id || '',
-    action: item.action || '',
-    actor: item.actor || '',
-    target: item.target || '',
-    time: item.time || formatTimeFromNow(item.timestamp || item.created_at),
-  }));
-};
-
-// Tarix formatını şəkilləndirmə funksiyası
-const formatTimeFromNow = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.round(diffMs / 60000); // millisecond -> minute
-  
-  if (diffMins < 1) {
-    return 'indicə';
-  } else if (diffMins < 60) {
-    return `${diffMins} dəqiqə əvvəl`;
-  } else if (diffMins < 24 * 60) {
-    const diffHours = Math.round(diffMins / 60);
-    return `${diffHours} saat əvvəl`;
-  } else {
-    const diffDays = Math.round(diffMins / (60 * 24));
-    return `${diffDays} gün əvvəl`;
-  }
+// FormItem-ləri Form formatına çevirmək üçün helper funksiya
+const adaptFormItems = (formItems: FormItem[]) => {
+  return formItems?.map(item => ({
+    ...item,
+    status: item.status as FormStatus // FormStatus tipinə explicit çeviririk
+  })) || [];
 };
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -109,20 +59,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  console.log('DashboardContent rendering for role:', userRole);
-  console.log('Dashboard data available:', !!dashboardData);
-
-  if (!dashboardData) {
-    console.error('Dashboard data is undefined or null');
-    return (
-      <div className="p-4 border rounded-md">
-        <p className="text-center text-muted-foreground">
-          {t('dashboardDataNotAvailable')}
-        </p>
-      </div>
-    );
-  }
-
+  // Data entry səhifəsinə keçid
   const navigateToDataEntry = () => {
     navigate('/data-entry');
     toast.success(t('navigatingToDataEntry'), {
@@ -130,6 +67,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     });
   };
 
+  // Form-a keçid funksiyası - Data entry səhifəsinə yönləndirir və form ID-sini ötürür
   const handleFormClick = (formId: string) => {
     navigate(`/data-entry?formId=${formId}`);
     toast.info(t('openingForm'), {
@@ -137,6 +75,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     });
   };
 
+  // Yüklənmə zamanı göstəriləcək
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -145,137 +84,83 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
+  // Render appropriate dashboard based on user role
   const renderDashboard = () => {
-    console.log('Rendering dashboard for role:', userRole);
-    
-    try {
-      switch (userRole) {
-        case 'superadmin': {
-          const superAdminData = dashboardData as SuperAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
-          
-          const adaptedSuperAdminData: SuperAdminDashboardData = {
-            ...superAdminData,
-            notifications: adaptedNotifications,
-            regions: superAdminData.regions || 0,
-            sectors: superAdminData.sectors || 0,
-            schools: superAdminData.schools || 0,
-            users: superAdminData.users || 0,
-            completionRate: superAdminData.completionRate || 0,
-            pendingApprovals: superAdminData.pendingApprovals || 0,
-            pendingSchools: superAdminData.pendingSchools || 0,
-            approvedSchools: superAdminData.approvedSchools || 0,
-            rejectedSchools: superAdminData.rejectedSchools || 0,
-            activityData: adaptActivityItems(superAdminData.activityData || []),
-            categoryCompletionData: chartData.categoryCompletionData
-          };
-          
-          return <SuperAdminDashboard data={adaptedSuperAdminData} />;
-        }
-        case 'regionadmin': {
-          const regionAdminData = dashboardData as RegionAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
-          
-          const adaptedRegionAdminData: RegionAdminDashboardData = {
-            ...regionAdminData,
-            notifications: adaptedNotifications,
-            regionName: regionAdminData.regionName || 'Unknown Region',
-            sectors: regionAdminData.sectors || 0,
-            schools: regionAdminData.schools || 0,
-            approvalRate: regionAdminData.approvalRate || 0,
-            completionRate: regionAdminData.completionRate || 0,
-            pendingApprovals: regionAdminData.pendingApprovals || 0,
-            pendingSchools: regionAdminData.pendingSchools || 0,
-            approvedSchools: regionAdminData.approvedSchools || 0,
-            rejectedSchools: regionAdminData.rejectedSchools || 0,
-            activityData: adaptActivityItems(regionAdminData.activityData || []),
-            categoryCompletion: regionAdminData.categoryCompletion || chartData.categoryCompletionData,
-            statusDistribution: regionAdminData.statusDistribution || []
-          };
-          
-          return <RegionAdminDashboard data={adaptedRegionAdminData} />;
-        }
-        case 'sectoradmin': {
-          const sectorAdminData = dashboardData as SectorAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
-          
-          const adaptedSectorAdminData: SectorAdminDashboardData = {
-            ...sectorAdminData,
-            notifications: adaptedNotifications,
-            sectorName: sectorAdminData.sectorName || 'Unknown Sector',
-            regionName: sectorAdminData.regionName || 'Unknown Region',
-            schools: sectorAdminData.schools || 0,
-            pendingApprovals: sectorAdminData.pendingApprovals || 0,
-            completionRate: sectorAdminData.completionRate || 0,
-            pendingSchools: sectorAdminData.pendingSchools || 0,
-            approvedSchools: sectorAdminData.approvedSchools || 0,
-            rejectedSchools: sectorAdminData.rejectedSchools || 0,
-            activityData: adaptActivityItems(sectorAdminData.activityData || [])
-          };
-          
-          return <SectorAdminDashboard data={adaptedSectorAdminData} />;
-        }
-        case 'schooladmin': 
-        default: {
-          console.log('Rendering SchoolAdminDashboard (default)');
-          const schoolAdminData = dashboardData as SchoolAdminDashboardData;
-          const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
-          
-          const pendingForms = schoolAdminData.pendingForms ? 
-            adaptFormItems(schoolAdminData.pendingForms) : [];
-          
-          let completedForms: FormItem[] = [];
-          if (Array.isArray(schoolAdminData.completedForms)) {
-            completedForms = adaptFormItems(schoolAdminData.completedForms);
-          }
-          
-          const adaptedSchoolAdminData = {
-            schoolName: schoolAdminData.schoolName || "Unknown School",
-            sectorName: schoolAdminData.sectorName || "Unknown Sector",
-            regionName: schoolAdminData.regionName || "Unknown Region",
-            forms: schoolAdminData.forms || {
-              pending: 0,
-              approved: 0,
-              rejected: 0,
-              dueSoon: 0,
-              overdue: 0
-            },
-            completionRate: schoolAdminData.completionRate || 0,
-            notifications: adaptedNotifications,
-            pendingForms: pendingForms,
-            completedForms: completedForms,
-            recentForms: schoolAdminData.recentForms ? 
-              adaptFormItems(schoolAdminData.recentForms) : [],
-            dueSoonForms: schoolAdminData.dueSoonForms ? 
-              adaptFormItems(schoolAdminData.dueSoonForms) : [],
-            overdueForms: schoolAdminData.overdueForms ? 
-              adaptFormItems(schoolAdminData.overdueForms) : [],
-            activityData: adaptActivityItems(schoolAdminData.activityData || [])
-          };
-          
-          return (
-            <SchoolAdminDashboard 
-              data={adaptedSchoolAdminData}
-              navigateToDataEntry={navigateToDataEntry}
-              handleFormClick={handleFormClick}
-            />
-          );
-        }
+    switch (userRole) {
+      case 'superadmin': {
+        const superAdminData = dashboardData as SuperAdminDashboardData;
+        const adaptedNotifications = adaptNotifications(superAdminData.notifications || []);
+        const preparedData = {
+          ...superAdminData,
+          notifications: adaptedNotifications
+        };
+        return <SuperAdminDashboard data={preparedData} />;
       }
-    } catch (error) {
-      console.error('Error rendering dashboard:', error);
-      return (
-        <div className="p-4 border rounded-md">
-          <p className="text-center text-muted-foreground">
-            {t('dashboardRenderError')}
-          </p>
-        </div>
-      );
+      case 'regionadmin': {
+        const regionAdminData = dashboardData as RegionAdminDashboardData;
+        const adaptedNotifications = adaptNotifications(regionAdminData.notifications || []);
+        // RegionAdminDashboard-a ötürülən data-nın tam olduğundan əmin olaq
+        const preparedData = {
+          ...regionAdminData,
+          notifications: adaptedNotifications,
+          categories: regionAdminData.categories || [],
+          sectorCompletions: regionAdminData.sectorCompletions || []
+        };
+        return <RegionAdminDashboard data={preparedData} />;
+      }
+      case 'sectoradmin': {
+        const sectorAdminData = dashboardData as SectorAdminDashboardData;
+        const adaptedNotifications = adaptNotifications(sectorAdminData.notifications || []);
+        const preparedData = {
+          ...sectorAdminData,
+          notifications: adaptedNotifications
+        };
+        return <SectorAdminDashboard data={preparedData} />;
+      }
+      case 'schooladmin': {
+        const schoolAdminData = dashboardData as SchoolAdminDashboardData;
+        const adaptedNotifications = adaptNotifications(schoolAdminData.notifications || []);
+        
+        // Əmin olaq ki, pendingForms məlumatı düzgün formadadır
+        const pendingFormsData = Array.isArray(schoolAdminData.pendingForms) 
+          ? schoolAdminData.pendingForms 
+          : [];
+
+        // recentForms-ları da uyğunlaşdırırıq
+        const recentFormsData = Array.isArray(schoolAdminData.recentForms) 
+          ? adaptFormItems(schoolAdminData.recentForms)
+          : [];
+        
+        const preparedData = {
+          ...schoolAdminData,
+          notifications: adaptedNotifications,
+          pendingForms: pendingFormsData,
+          recentForms: recentFormsData
+        };
+        
+        return (
+          <SchoolAdminDashboard 
+            data={preparedData}
+            navigateToDataEntry={navigateToDataEntry}
+            handleFormClick={handleFormClick}
+          />
+        );
+      }
+      default:
+        return null;
     }
   };
 
   return (
     <div className="space-y-4">
+      {userRole === 'superadmin' && chartData && (
+        <DashboardTabs 
+          activityData={chartData.activityData}
+          regionSchoolsData={chartData.regionSchoolsData}
+          categoryCompletionData={chartData.categoryCompletionData}
+        />
+      )}
+      
       {renderDashboard()}
     </div>
   );

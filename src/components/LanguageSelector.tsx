@@ -33,13 +33,13 @@ const LanguageSelector = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
-        {languages.map((langInfo) => (
+        {Object.entries(languages).map(([code, langInfo]) => (
           <DropdownMenuItem
-            key={langInfo.value}
+            key={code}
             className={`flex items-center justify-between ${
-              language === langInfo.value ? 'font-semibold bg-accent/50' : ''
+              language === code ? 'font-semibold bg-accent/50' : ''
             }`}
-            onClick={() => handleSelectLanguage(langInfo.value)}
+            onClick={() => handleSelectLanguage(code as Language)}
           >
             <span className="mr-2">{langInfo.flag}</span>
             <span>{langInfo.nativeName}</span>

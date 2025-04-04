@@ -1,7 +1,1 @@
-
-# This file defines configuration settings for Supabase Edge Functions
 project_id = "olbfnauhzpdskqnxtwav"
-
-[functions]
-[functions.school-operations]
-verify_jwt = true

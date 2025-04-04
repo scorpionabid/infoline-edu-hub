@@ -16,19 +16,15 @@ import { FileUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ImportColumnsDialogProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onImport?: (file: File) => Promise<boolean>;
-  categoryId?: string;
-  categoryName?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onImportColumns: (file: File) => Promise<boolean>;
 }
 
 const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
-  open = false,
-  onOpenChange,
-  onImport,
-  categoryId,
-  categoryName,
+  isOpen,
+  onClose,
+  onImportColumns,
 }) => {
   const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
@@ -51,13 +47,13 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
         setError(null);
       } else {
         setFile(null);
-        setError(t("invalidFileType") || "Yalnız Excel faylları (.xlsx, .xls) dəstəklənir.");
+        setError(t("invalidFileType"));
       }
     }
   };
 
   const handleImport = async () => {
-    if (!file || !onImport) return;
+    if (!file) return;
 
     try {
       setIsUploading(true);
@@ -78,7 +74,7 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
       }, 300);
 
       // Perform import
-      const result = await onImport(file);
+      const result = await onImportColumns(file);
 
       clearInterval(progressInterval);
       
@@ -91,12 +87,12 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
           handleClose();
         }, 2000);
       } else {
-        setError(t("importFailed") || "İdxal əməliyyatı uğursuz oldu.");
+        setError(t("importFailed"));
         setProgress(0);
       }
     } catch (error) {
       console.error("Import error:", error);
-      setError(t("importError") || "İdxal zamanı xəta yarandı.");
+      setError(t("importError"));
       setProgress(0);
     } finally {
       setIsUploading(false);
@@ -109,16 +105,14 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
     setProgress(0);
     setError(null);
     setSuccess(false);
-    if (onOpenChange) {
-      onOpenChange(false);
-    }
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("importColumns") || `${categoryName || ''} Sütunları İdxal Et`}</DialogTitle>
+          <DialogTitle>{t("importColumns")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -126,7 +120,7 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
             <>
               <div className="flex items-center gap-4">
                 <Label htmlFor="file" className="text-right">
-                  {t("excelFile") || "Excel faylı"}
+                  {t("excelFile")}
                 </Label>
                 <Input
                   id="file"
@@ -140,16 +134,16 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>{t("error") || "Xəta"}</AlertTitle>
+                  <AlertTitle>{t("error")}</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="text-sm text-muted-foreground">
-                <p>{t("importColumnsDescription") || "Excel faylı vasitəsilə bir neçə sütunu bir dəfəyə idxal edə bilərsiniz."}</p>
+                <p>{t("importColumnsDescription")}</p>
                 <ul className="list-disc pl-5 mt-2">
-                  <li>{t("importColumnsFormat") || "Excel faylı düzgün formatda olmalıdır."}</li>
-                  <li>{t("importColumnsWarning") || "İdxal əməliyyatı mövcud sütun parametrlərini dəyişə bilər."}</li>
+                  <li>{t("importColumnsFormat")}</li>
+                  <li>{t("importColumnsWarning")}</li>
                 </ul>
               </div>
             </>
@@ -157,7 +151,7 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
 
           {isUploading && (
             <div className="space-y-4">
-              <p>{t("uploading") || "Yüklənir..."}</p>
+              <p>{t("uploading")}</p>
               <Progress value={progress} className="h-2" />
             </div>
           )}
@@ -165,9 +159,9 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
           {success && (
             <Alert className="border-green-500 text-green-500">
               <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle>{t("importSuccess") || "İdxal uğurla tamamlandı"}</AlertTitle>
+              <AlertTitle>{t("importSuccess")}</AlertTitle>
               <AlertDescription>
-                {t("importSuccessDescription") || "Sütunlar uğurla idxal edildi."}
+                {t("importSuccessDescription")}
               </AlertDescription>
             </Alert>
           )}
@@ -175,17 +169,15 @@ const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isUploading}>
-            {t("cancel") || "Ləğv et"}
+            {t("cancel")}
           </Button>
-          {onImport && (
-            <Button
-              onClick={handleImport}
-              disabled={!file || isUploading || success}
-            >
-              <FileUp className="mr-2 h-4 w-4" />
-              {t("import") || "İdxal et"}
-            </Button>
-          )}
+          <Button
+            onClick={handleImport}
+            disabled={!file || isUploading || success}
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("import")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

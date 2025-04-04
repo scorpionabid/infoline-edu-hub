@@ -4,16 +4,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { User, UserFormData } from '@/types/user';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, useRole } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
-import { UpdateUserData, FullUserData } from '@/types/supabase';
 
 interface EditUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User;
-  onSave: (user: UpdateUserData) => void;
+  onSave: (user: User) => void;
 }
 
 const EditUserDialog: React.FC<EditUserDialogProps> = ({ 
@@ -26,20 +25,22 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [showPasswordReset, setShowPasswordReset] = React.useState(false);
-  const canResetPassword = (currentUser?.role === 'superadmin' || currentUser?.role === 'regionadmin') && 
+  const canResetPassword = useRole(['superadmin', 'regionadmin']) && 
                            currentUser?.role !== user.role &&
                            user.id !== currentUser?.id;
   
   // Convert User to UserFormData
   const initialFormData: UserFormData = {
-    name: user.full_name || user.name || '',
+    name: user.name,
     email: user.email,
     role: user.role,
-    regionId: user.region_id || user.regionId,
-    sectorId: user.sector_id || user.sectorId,
-    schoolId: user.school_id || user.schoolId,
+    regionId: user.regionId,
+    sectorId: user.sectorId,
+    schoolId: user.schoolId,
     status: user.status,
     avatar: user.avatar,
+    passwordResetDate: user.passwordResetDate,
+    twoFactorEnabled: user.twoFactorEnabled,
     language: user.language,
     notificationSettings: user.notificationSettings,
     password: ''  // Add empty password field for reset
@@ -60,25 +61,15 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     
     // Simulate API call
     setTimeout(() => {
-      const updatedUserData: UpdateUserData = {
-        full_name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        region_id: formData.regionId,
-        sector_id: formData.sectorId,
-        school_id: formData.schoolId,
-        status: formData.status as 'active' | 'inactive' | 'blocked',
-        language: formData.language,
-        phone: formData.phone,
-        position: formData.position,
-        avatar: formData.avatar,
+      const updatedUser: User = {
+        ...user,
+        ...formData,
+        updatedAt: new Date().toISOString(), // Date -> string
+        // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
+        ...(showPasswordReset && { passwordResetDate: new Date().toISOString() }) // Date -> string
       };
       
-      if (showPasswordReset && formData.password) {
-        updatedUserData.password = formData.password;
-      }
-      
-      onSave(updatedUserData);
+      onSave(updatedUser);
       
       if (showPasswordReset) {
         toast.success(t('passwordResetSuccess'), {
@@ -124,7 +115,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           data={formData} 
           onChange={setFormData} 
           currentUserRole={currentUser?.role}
-          currentUserRegionId={currentUser?.regionId || currentUser?.region_id}
+          currentUserRegionId={currentUser?.regionId}
           isEdit={true}
           passwordRequired={showPasswordReset}
         />

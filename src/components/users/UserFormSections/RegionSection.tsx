@@ -1,30 +1,18 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage 
-} from '@/components/ui/form';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { UseFormReturn } from 'react-hook-form';
-import { UserRole } from '@/types/supabase';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserFormData } from '@/types/user';
+import { Role } from '@/context/AuthContext';
 
 interface RegionSectionProps {
-  form: UseFormReturn<any>;
-  data: any;
-  onFormChange: (field: string, value: any) => void;
-  regions: any[];
-  isSuperAdmin?: boolean;
-  currentUserRole?: UserRole;
+  form: any;
+  data: UserFormData;
+  onFormChange: (fieldName: string, value: any) => void;
+  isSuperAdmin: boolean;
+  currentUserRole?: Role;
+  regions: { id: string; name: string }[];
   hideSection?: boolean;
 }
 
@@ -32,20 +20,17 @@ const RegionSection: React.FC<RegionSectionProps> = ({
   form,
   data,
   onFormChange,
-  regions,
-  isSuperAdmin = false,
+  isSuperAdmin,
   currentUserRole,
-  hideSection = false
+  regions,
+  hideSection = false,
 }) => {
   const { t } = useLanguage();
-  
-  // Istifadəçi rolu əsasında region seçimini məhdudlaşdıraq
-  const canSelectRegion = isSuperAdmin || currentUserRole === 'superadmin';
-  
-  if (hideSection || (!canSelectRegion && !data.regionId && data.role !== 'regionadmin')) {
+
+  if (hideSection || !(isSuperAdmin && (data.role === 'regionadmin' || data.role === 'sectoradmin' || data.role === 'schooladmin'))) {
     return null;
   }
-  
+
   return (
     <FormField
       control={form.control}
@@ -54,12 +39,11 @@ const RegionSection: React.FC<RegionSectionProps> = ({
         <FormItem>
           <FormLabel>{t('region')}</FormLabel>
           <Select
-            value={field.value || ''}
+            value={data.regionId || "none"}
             onValueChange={(value) => {
-              field.onChange(value);
-              onFormChange('regionId', value);
+              field.onChange(value === "none" ? undefined : value);
+              onFormChange('regionId', value === "none" ? undefined : value);
             }}
-            disabled={!canSelectRegion && data.role !== 'regionadmin'}
           >
             <FormControl>
               <SelectTrigger>
@@ -67,7 +51,8 @@ const RegionSection: React.FC<RegionSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {regions.map(region => (
+              <SelectItem value="none">{t('selectRegion')}</SelectItem>
+              {regions.map((region) => (
                 <SelectItem key={region.id} value={region.id}>
                   {region.name}
                 </SelectItem>

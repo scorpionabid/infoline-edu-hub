@@ -27,7 +27,7 @@ type SettingsFormData = z.infer<typeof settingsFormSchema>;
 
 const PreferencesForm: React.FC = () => {
   const { t } = useLanguage();
-  const { user, updateProfile } = useAuth(); 
+  const { user, updateUser } = useAuth();
   
   // Hesab parametrləri forması
   const settingsForm = useForm<SettingsFormData>({
@@ -43,13 +43,13 @@ const PreferencesForm: React.FC = () => {
   });
   
   // Hesab parametrlərini saxla
-  const saveSettings = async (data: SettingsFormData) => {
+  const saveSettings = (data: SettingsFormData) => {
     // Dil dəyişdiklərini saxla
     localStorage.setItem('infoline-language', data.language);
     
     // İstifadəçi məlumatlarını yenilə - User tipində yalnız mövcud olan xüsusiyyətləri istifadə et
     if (user) {
-      await updateProfile({
+      updateUser({
         ...user,
         twoFactorEnabled: data.twoFactorEnabled,
         notificationSettings: {

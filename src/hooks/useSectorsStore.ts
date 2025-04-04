@@ -1,295 +1,275 @@
-import { create } from 'zustand';
-import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
-import { fetchSectors as fetchSectorsApi, addSector, deleteSector } from '@/services/sectorService';
-import { Sector } from '@/types/sector';
+
+import { useState, useEffect, useCallback } from 'react';
+import { Sector } from '@/types/supabase';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import { useSectors } from './useSectors';
+import { useRegions } from './useRegions';
 
-type TranslateFunction = (key: string) => string;
-
-// Default tərcümə funksiyası
-const emptyTranslate = (key: string) => key;
-
-interface SortConfig {
-  key: string;
-  direction: 'asc' | 'desc';
-}
-
-interface SectorsState {
-  sectors: Sector[];
-  filteredSectors: Sector[];
-  loading: boolean;
-  error: Error | null;
-  searchTerm: string;
-  selectedStatus: string | null;
-  sortConfig: SortConfig;
-  currentPage: number;
-  pageSize: number;
-  totalPages: number;
-  isOperationComplete: boolean;
-  
-  handleSearch: (term: string) => void;
-  handleStatusFilter: (status: string | null) => void;
-  handleSort: (key: string) => void;
-  resetFilters: () => void;
-  handlePageChange: (page: number) => void;
-  
-  fetchSectors: (regionId?: string) => Promise<void>;
-  handleAddSector: (sectorData: any, translateFunction?: TranslateFunction) => Promise<boolean>;
-  handleUpdateSector: (sectorId: string, updates: any, translateFunction?: TranslateFunction) => Promise<boolean>;
-  handleDeleteSector: (sectorId: string, translateFunction?: TranslateFunction) => Promise<boolean>;
-  setIsOperationComplete: (value: boolean) => void;
-}
-
-export const useSectorsStore = create<SectorsState>((set, get) => ({
-  sectors: [],
-  filteredSectors: [],
-  loading: false,
-  error: null,
-  searchTerm: '',
-  selectedStatus: null,
-  sortConfig: {
-    key: 'name',
-    direction: 'asc'
-  },
-  currentPage: 1,
-  pageSize: 10,
-  totalPages: 1,
-  isOperationComplete: false,
-  
-  handleSearch: (term: string) => {
-    set({ searchTerm: term, currentPage: 1 });
-    const { sectors, selectedStatus } = get();
-    const filtered = filterSectors(sectors, term, selectedStatus);
-    const sorted = sortSectors(filtered, get().sortConfig);
-    const totalPages = Math.max(1, Math.ceil(sorted.length / get().pageSize));
-    set({ filteredSectors: sorted, totalPages });
-  },
-  
-  handleStatusFilter: (status: string | null) => {
-    set({ selectedStatus: status, currentPage: 1 });
-    const { sectors, searchTerm } = get();
-    const filtered = filterSectors(sectors, searchTerm, status);
-    const sorted = sortSectors(filtered, get().sortConfig);
-    const totalPages = Math.max(1, Math.ceil(sorted.length / get().pageSize));
-    set({ filteredSectors: sorted, totalPages });
-  },
-  
-  handleSort: (key: string) => {
-    const { sortConfig, filteredSectors } = get();
-    const direction = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
-    const newConfig = { key, direction } as SortConfig;
-    
-    const sorted = sortSectors(filteredSectors, newConfig);
-    set({ sortConfig: newConfig, filteredSectors: sorted });
-  },
-  
-  resetFilters: () => {
-    const { sectors, sortConfig, pageSize } = get();
-    const sorted = sortSectors(sectors, sortConfig);
-    const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-    
-    set({
-      searchTerm: '',
-      selectedStatus: null,
-      currentPage: 1,
-      filteredSectors: sorted,
-      totalPages
-    });
-  },
-  
-  handlePageChange: (page: number) => {
-    set({ currentPage: page });
-  },
-  
-  fetchSectors: async (regionId?: string) => {
-    set({ loading: true, error: null });
-    
-    try {
-      console.log('Sektorlar yüklənir...', regionId ? `Region ID: ${regionId}` : 'Bütün regionlar üçün');
-      const sectorsData = await fetchSectorsApi(regionId);
-      console.log(`${sectorsData.length} sektor yükləndi`, sectorsData);
-      
-      const { sortConfig, searchTerm, selectedStatus, pageSize } = get();
-      const filtered = filterSectors(sectorsData, searchTerm, selectedStatus);
-      const sorted = sortSectors(filtered, sortConfig);
-      const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-      
-      set({
-        sectors: sectorsData,
-        filteredSectors: sorted,
-        totalPages,
-        loading: false
-      });
-      
-      console.log('Sektorlar yükləmə tamamlandı');
-    } catch (err: any) {
-      console.error('Sektorlar yüklənərkən xəta:', err);
-      set({ error: err, loading: false });
-      
-      toast.error('Xəta baş verdi', {
-        description: 'Sektorlar yüklənə bilmədi'
-      });
-    }
-  },
-  
-  handleAddSector: async (sectorData: any, translateFunction = emptyTranslate) => {
-    try {
-      console.log("Sektor əlavə edilir:", sectorData);
-      
-      const newSector = await addSector({
-        name: sectorData.name,
-        description: sectorData.description,
-        regionId: sectorData.region_id || sectorData.regionId,
-        status: sectorData.status as 'active' | 'inactive',
-        adminEmail: sectorData.adminEmail,
-        adminName: sectorData.adminName,
-        adminPassword: sectorData.adminPassword
-      });
-      
-      console.log("Sektor əlavə edildi:", newSector);
-      
-      set(state => ({
-        sectors: [...state.sectors, {
-          ...newSector,
-          status: newSector.status as 'active' | 'inactive'
-        }],
-        isOperationComplete: true
-      }));
-      
-      get().handleSearch(get().searchTerm);
-      
-      toast.success(translateFunction('sectorCreated') || 'Sektor yaradıldı', {
-        description: translateFunction('sectorCreatedDesc') || 'Sektor uğurla yaradıldı'
-      });
-      
-      return true;
-    } catch (err: any) {
-      console.error('Sektor yaradılması xətası:', err);
-      
-      toast.error(translateFunction('errorOccurred') || 'Xəta baş verdi', {
-        description: err.message || translateFunction('couldNotCreateSector') || 'Sektor yaradıla bilmədi'
-      });
-      
-      return false;
-    }
-  },
-  
-  handleUpdateSector: async (sectorId: string, updates: any, translateFunction = emptyTranslate) => {
-    try {
-      console.log("Sektor yenilənir:", { sectorId, ...updates });
-      
-      const { data, error } = await supabase
-        .from('sectors')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          status: updates.status as 'active' | 'inactive',
-          region_id: updates.region_id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', sectorId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      console.log("Sektor yeniləndi:", data);
-      
-      set(state => ({
-        sectors: state.sectors.map(sector => 
-          sector.id === sectorId ? {
-            ...sector,
-            ...data,
-            status: data.status as 'active' | 'inactive'
-          } : sector
-        ),
-        isOperationComplete: true
-      }));
-      
-      get().handleSearch(get().searchTerm);
-      
-      toast.success(translateFunction('sectorUpdated') || 'Sektor yeniləndi', {
-        description: translateFunction('sectorUpdatedDesc') || 'Sektor məlumatları uğurla yeniləndi'
-      });
-      
-      return true;
-    } catch (err: any) {
-      console.error('Sektor yenilənməsi xətası:', err);
-      
-      toast.error(translateFunction('errorOccurred') || 'Xəta baş verdi', {
-        description: err.message || translateFunction('couldNotUpdateSector') || 'Sektor yenilənə bilmədi'
-      });
-      
-      return false;
-    }
-  },
-  
-  handleDeleteSector: async (sectorId: string, translateFunction = emptyTranslate) => {
-    try {
-      console.log("Sektor silinir:", sectorId);
-      
-      const result = await deleteSector(sectorId);
-      
-      if (result.success) {
-        set(state => ({
-          sectors: state.sectors.filter(sector => sector.id !== sectorId),
-          isOperationComplete: true
-        }));
-        
-        get().handleSearch(get().searchTerm);
-        
-        toast.success(translateFunction('sectorDeleted') || 'Sektor silindi', {
-          description: translateFunction('sectorDeletedDesc') || 'Sektor uğurla silindi'
-        });
-        
-        return true;
-      } else {
-        throw new Error(result.error || 'Unknown error');
-      }
-    } catch (err: any) {
-      console.error('Sektor silinməsi xətası:', err);
-      
-      toast.error(translateFunction('errorOccurred') || 'Xəta baş verdi', {
-        description: err.message || translateFunction('couldNotDeleteSector') || 'Sektor silinə bilmədi'
-      });
-      
-      return false;
-    }
-  },
-  
-  setIsOperationComplete: (value: boolean) => {
-    set({ isOperationComplete: value });
-  }
-}));
-
-const filterSectors = (sectors: Sector[], searchTerm: string, status: string | null): Sector[] => {
-  return sectors.filter(sector => {
-    const matchesSearch = !searchTerm || 
-      sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (sector.description && sector.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (sector.adminEmail && sector.adminEmail.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-    const matchesStatus = !status || sector.status === status;
-    
-    return matchesSearch && matchesStatus;
-  });
+export type SortConfig = {
+  key: string | null;
+  direction: 'asc' | 'desc' | null;
 };
 
-const sortSectors = (sectors: Sector[], sortConfig: SortConfig): Sector[] => {
-  return [...sectors].sort((a: any, b: any) => {
-    if (sortConfig.key === 'adminEmail') {
-      if (a.adminEmail === null && b.adminEmail === null) return 0;
-      if (a.adminEmail === null) return sortConfig.direction === 'asc' ? 1 : -1;
-      if (b.adminEmail === null) return sortConfig.direction === 'asc' ? -1 : 1;
+// Əlavə edilmiş sahələrlə genişləndirilmiş Sector tipi
+export type EnhancedSector = Sector & {
+  schoolCount?: number;
+  completionRate?: number;
+  adminId?: string;
+  adminEmail?: string;
+  regionName?: string;
+};
+
+export const useSectorsStore = (regionId?: string) => {
+  const { t } = useLanguage();
+  const { sectors, loading, fetchSectors, addSector, updateSector, deleteSector } = useSectors(regionId);
+  const { regions } = useRegions();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isOperationComplete, setIsOperationComplete] = useState(false);
+  const [schoolCounts, setSchoolCounts] = useState<Record<string, number>>({});
+  const [completionRates, setCompletionRates] = useState<Record<string, number>>({});
+  const [sectorAdmins, setSectorAdmins] = useState<Record<string, { id: string, email: string }>>({});
+  
+  const itemsPerPage = 5;
+
+  // Sektorların xüsusi məlumatlarını əldə etmək
+  const fetchSectorStats = useCallback(async () => {
+    try {
+      // Hər sektor üçün məktəb sayını əldə etmək
+      const { data: schools, error: schoolError } = await supabase
+        .from('schools')
+        .select('*');
+      
+      if (schoolError) throw schoolError;
+      
+      // Məktəbləri sektorlara görə qruplaşdırırıq
+      const schoolCountsMap: Record<string, number> = {};
+      schools?.forEach(school => {
+        if (school.sector_id) {
+          schoolCountsMap[school.sector_id] = (schoolCountsMap[school.sector_id] || 0) + 1;
+        }
+      });
+      setSchoolCounts(schoolCountsMap);
+      
+      // TODO: Tamamlanma faizini hesablamaq (bu, verilənlər bazası strukturunuzdan asılı olacaq)
+      // Hələlik sadə bir misal olaraq təsadüfi dəyərlər təyin edirik
+      const tempCompletionRates: Record<string, number> = {};
+      sectors.forEach(sector => {
+        tempCompletionRates[sector.id] = Math.floor(Math.random() * 100);
+      });
+      setCompletionRates(tempCompletionRates);
+      
+      // Admin məlumatlarını əldə etmək
+      // TODO: Admin məlumatları üçün auth cədvəli ilə inteqrasiya
+      // Hələlik fake admin məlumatları istifadə edirik
+      const tempSectorAdmins: Record<string, { id: string, email: string }> = {};
+      sectors.forEach(sector => {
+        tempSectorAdmins[sector.id] = {
+          id: `admin-${sector.id}`,
+          email: `${sector.name.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`
+        };
+      });
+      setSectorAdmins(tempSectorAdmins);
+      
+    } catch (error) {
+      console.error("Sektor statistikalarını əldə edərkən xəta baş verdi:", error);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotLoadSectorStatistics')
+      });
+    }
+  }, [sectors, t]);
+
+  useEffect(() => {
+    if (sectors.length > 0) {
+      fetchSectorStats();
+    }
+  }, [sectors, fetchSectorStats]);
+
+  // Əməliyyatlar tamamlandıqda verilənlərin yenilənməsi
+  useEffect(() => {
+    if (isOperationComplete) {
+      fetchSectors();
+      setIsOperationComplete(false);
+    }
+  }, [isOperationComplete, fetchSectors]);
+
+  // Axtarış və filtirləmə
+  const filteredSectors = sectors.filter(sector => {
+    const matchesSearch = sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (sector.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = selectedStatus ? sector.status === selectedStatus : true;
+    const matchesRegion = regionId ? sector.region_id === regionId : true;
+    
+    return matchesSearch && matchesStatus && matchesRegion;
+  });
+
+  // Sıralama
+  const sortedSectors = [...filteredSectors].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    // Statistika sahələri üçün xüsusi hallar
+    if (sortConfig.key === 'schoolCount') {
+      return sortConfig.direction === 'asc' 
+        ? (schoolCounts[a.id] || 0) - (schoolCounts[b.id] || 0)
+        : (schoolCounts[b.id] || 0) - (schoolCounts[a.id] || 0);
     }
     
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
+    if (sortConfig.key === 'completionRate') {
+      return sortConfig.direction === 'asc' 
+        ? (completionRates[a.id] || 0) - (completionRates[b.id] || 0)
+        : (completionRates[b.id] || 0) - (completionRates[a.id] || 0);
     }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
+    
+    if (sortConfig.key === 'regionName') {
+      const aRegion = regions.find(r => r.id === a.region_id);
+      const bRegion = regions.find(r => r.id === b.region_id);
+      return sortConfig.direction === 'asc' 
+        ? (aRegion?.name || '').localeCompare(bRegion?.name || '')
+        : (bRegion?.name || '').localeCompare(aRegion?.name || '');
     }
+    
+    // Adi sahələr üçün
+    const key = sortConfig.key as keyof Sector;
+    
+    const aValue = a[key] || '';
+    const bValue = b[key] || '';
+    
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortConfig.direction === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+    
     return 0;
   });
+
+  // Səhifələmə
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedSectors.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedSectors.length / itemsPerPage);
+
+  // İdarəetmə funksiyaları
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  }, []);
+
+  const handleStatusFilter = useCallback((status: string | null) => {
+    setSelectedStatus(status);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSort = useCallback((key: string) => {
+    let direction: 'asc' | 'desc' | null = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  }, [sortConfig]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedStatus(null);
+    setSortConfig({ key: null, direction: null });
+    setCurrentPage(1);
+  }, []);
+
+  // Sektor əməliyyatları
+  const handleAddSector = useCallback(async (sectorData: Omit<Sector, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      await addSector(sectorData);
+      setIsOperationComplete(true);
+      toast.success(t('sectorAdded'), {
+        description: t('sectorAddedDesc')
+      });
+      return true;
+    } catch (error) {
+      console.error('Sektor əlavə edilərkən xəta baş verdi:', error);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotAddSector')
+      });
+      return false;
+    }
+  }, [addSector, t]);
+
+  const handleUpdateSector = useCallback(async (id: string, updates: Partial<Sector>) => {
+    try {
+      await updateSector(id, updates);
+      setIsOperationComplete(true);
+      toast.success(t('sectorUpdated'), {
+        description: t('sectorUpdatedDesc')
+      });
+      return true;
+    } catch (error) {
+      console.error('Sektor yenilənərkən xəta baş verdi:', error);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotUpdateSector')
+      });
+      return false;
+    }
+  }, [updateSector, t]);
+
+  const handleDeleteSector = useCallback(async (id: string) => {
+    try {
+      await deleteSector(id);
+      setIsOperationComplete(true);
+      toast.success(t('sectorDeleted'), {
+        description: t('sectorDeletedDesc')
+      });
+      return true;
+    } catch (error) {
+      console.error('Sektor silinərkən xəta baş verdi:', error);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotDeleteSector')
+      });
+      return false;
+    }
+  }, [deleteSector, t]);
+
+  // Sektorlara aid statistika və admin məlumatlarını birləşdirmək
+  const enhancedSectors = currentItems.map(sector => {
+    const regionName = regions.find(r => r.id === sector.region_id)?.name || '';
+    
+    return {
+      ...sector,
+      schoolCount: schoolCounts[sector.id] || 0,
+      completionRate: completionRates[sector.id] || 0,
+      adminId: sectorAdmins[sector.id]?.id,
+      adminEmail: sectorAdmins[sector.id]?.email,
+      regionName
+    };
+  });
+
+  return {
+    sectors: enhancedSectors,
+    allSectors: sectors,
+    loading,
+    searchTerm,
+    selectedStatus,
+    sortConfig,
+    currentPage,
+    totalPages,
+    isOperationComplete,
+    handleSearch,
+    handleStatusFilter,
+    handleSort,
+    handlePageChange,
+    resetFilters,
+    handleAddSector,
+    handleUpdateSector,
+    handleDeleteSector,
+    setIsOperationComplete,
+    fetchSectors
+  };
 };

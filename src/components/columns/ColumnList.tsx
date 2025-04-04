@@ -11,24 +11,22 @@ import { formatRelativeDate } from "@/utils/formatDateUtils";
 
 interface ColumnListProps {
   columns: Column[];
+  categories: { id: string; name: string }[];
   isLoading: boolean;
-  error: any;
+  isError: boolean;
   onDeleteColumn: (id: string) => Promise<boolean>;
+  onUpdateStatus: (id: string, status: "active" | "inactive") => Promise<boolean>;
   onEditColumn: (column: Column) => void;
-  categories?: { id: string; name: string }[];
-  onUpdateStatus?: (id: string, status: "active" | "inactive") => Promise<boolean>;
-  isError?: boolean;
 }
 
 const ColumnList: React.FC<ColumnListProps> = ({
   columns,
+  categories,
   isLoading,
-  error,
+  isError,
   onDeleteColumn,
-  onEditColumn,
-  categories = [],
   onUpdateStatus,
-  isError = false
+  onEditColumn,
 }) => {
   const { t, language } = useLanguage();
   const canManageColumns = useRole(["superadmin", "regionadmin"]);
@@ -42,7 +40,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
 
   // Handle status toggle
   const handleStatusToggle = async (column: Column) => {
-    if (!canManageColumns || !onUpdateStatus) return;
+    if (!canManageColumns) return;
     
     const newStatus = column.status === "active" ? "inactive" : "active";
     await onUpdateStatus(column.id, newStatus);
@@ -59,6 +57,11 @@ const ColumnList: React.FC<ColumnListProps> = ({
       key: "name",
       header: t("columnName"),
       cell: (column: Column) => <span className="font-medium">{column.name}</span>
+    },
+    {
+      key: "category",
+      header: t("category"),
+      cell: (column: Column) => getCategoryName(column.categoryId)
     },
     {
       key: "type",
@@ -88,7 +91,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
       key: "status",
       header: t("status"),
       cell: (column: Column) => (
-        canManageColumns && onUpdateStatus ? (
+        canManageColumns ? (
           <Switch
             checked={column.status === "active"}
             onCheckedChange={() => handleStatusToggle(column)}
@@ -107,31 +110,31 @@ const ColumnList: React.FC<ColumnListProps> = ({
       data={columns}
       columns={tableColumns}
       isLoading={isLoading}
-      isError={isError || !!error}
+      isError={isError}
       emptyState={{
         icon: <Database className="h-16 w-16 text-muted-foreground mb-4" />,
-        title: t("noColumnsFound") || "Sütunlar tapılmadı",
-        description: t("noColumnsFoundDesc") || "Bu kateqoriyada heç bir sütun tapılmadı."
+        title: t("noColumnsFound"),
+        description: t("noColumnsFoundDesc")
       }}
       actionColumn={canManageColumns ? {
         canManage: true,
         actions: [
           {
             icon: <Edit className="mr-2 h-4 w-4" />,
-            label: t("edit") || "Düzəliş et",
+            label: t("edit"),
             onClick: (column) => onEditColumn(column)
           },
           {
             icon: <Trash className="mr-2 h-4 w-4" />,
-            label: t("delete") || "Sil",
+            label: t("delete"),
             variant: "destructive",
             onClick: (column) => setColumnToDelete(column.id)
           }
         ]
       } : undefined}
       deleteDialog={{
-        title: t("deleteColumn") || "Sütunu sil",
-        description: t("deleteColumnConfirmation") || "Bu sütunu silmək istədiyinizə əminsiniz?",
+        title: t("deleteColumn"),
+        description: t("deleteColumnConfirmation"),
         itemToDelete: columnToDelete,
         setItemToDelete: setColumnToDelete,
         onDelete: onDeleteColumn

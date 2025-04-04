@@ -1,6 +1,7 @@
+
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, useRole } from "@/context/AuthContext";
 
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -19,8 +20,6 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
-import Index from "@/pages/Index";
-import Debug from "@/pages/Debug";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -29,10 +28,10 @@ interface ProtectedRouteProps {
 
 // Protected Route Component
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
@@ -41,14 +40,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
   
   if (!isAuthenticated) {
-    console.log('AppRoutes: İstifadəçi autentifikasiya olunmayıb, login səhifəsinə yönləndirilir');
     // Authenticate olmayan istifadəçiləri login səhifəsinə yönləndir və cari yolu saxla
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   // Əgər allowedRoles varsa və istifadəçinin rolu bu siyahıda deyilsə
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    console.log(`AppRoutes: İstifadəçi '${user.role}' roluna malikdir amma '${allowedRoles.join(', ')}' rolları tələb olunur`);
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -62,9 +59,9 @@ interface PublicRouteProps {
 
 // Public Route Component (redirects to dashboard if already logged in)
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
@@ -74,7 +71,6 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
   
   // Əgər istifadəçi daxil olubsa və route məhdudlaşdırılıbsa (məs. login səhifəsi), dashboard-a yönləndir
   if (isAuthenticated && restricted) {
-    console.log('AppRoutes: İstifadəçi autentifikasiya olunub və məhdud səhifəyə girmək istəyir, dashboard-a yönləndirilir');
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -82,161 +78,143 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
 };
 
 // Route konfigurasyonları
-const AppRoutes = () => {
-  console.log('AppRoutes: Marşrutlar yüklənir');
-  
-  return (
-    <Routes>
-      <Route 
-        path="/login" 
-        element={
-          <PublicRoute restricted>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route 
-        path="/register" 
-        element={
-          <PublicRoute restricted>
-            <Register />
-          </PublicRoute>
-        }
-      />
-      <Route 
-        path="/register-success" 
-        element={
-          <PublicRoute restricted>
-            <RegisterSuccess />
-          </PublicRoute>
-        }
-      />
-      <Route 
-        path="/forgot-password" 
-        element={
-          <PublicRoute restricted>
-            <ForgotPassword />
-          </PublicRoute>
-        }
-      />
-      <Route 
-        path="/reset-password" 
-        element={
-          <PublicRoute>
-            <ResetPassword />
-          </PublicRoute>
-        }
-      />
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/sectors" 
-        element={
-          <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-            <Sectors />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/regions" 
-        element={
-          <ProtectedRoute allowedRoles={['superadmin']}>
-            <Regions />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/schools" 
-        element={
-          <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-            <Schools />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/categories" 
-        element={
-          <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-            <Categories />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/columns" 
-        element={
-          <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-            <Columns />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/users" 
-        element={
-          <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-            <Users />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/reports" 
-        element={
-          <ProtectedRoute>
-            <Reports />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/settings" 
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/debug" 
-        element={
-          <ProtectedRoute>
-            <Debug />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/data-entry" 
-        element={
-          <ProtectedRoute>
-            <DataEntry />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/" 
-        element={
-          <PublicRoute>
-            <Index />
-          </PublicRoute>
-        }
-      />
-      <Route 
-        path="*" 
-        element={<NotFound />}
-      />
-    </Routes>
-  );
-};
+const AppRoutes = [
+  {
+    path: "/login",
+    element: (
+      <PublicRoute restricted>
+        <Login />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/register",
+    element: (
+      <PublicRoute restricted>
+        <Register />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/register-success",
+    element: (
+      <PublicRoute restricted>
+        <RegisterSuccess />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute restricted>
+        <ForgotPassword />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: (
+      <PublicRoute>
+        <ResetPassword />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/sectors",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+        <Sectors />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/regions",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin']}>
+        <Regions />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/schools",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
+        <Schools />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/categories",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+        <Categories />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/columns",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+        <Columns />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/users",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+        <Users />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/reports",
+    element: (
+      <ProtectedRoute>
+        <Reports />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/settings",
+    element: (
+      <ProtectedRoute>
+        <Settings />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/data-entry",
+    element: (
+      <ProtectedRoute>
+        <DataEntry />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/",
+    element: <Navigate to="/dashboard" replace />,
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+];
 
 export { AppRoutes, ProtectedRoute, PublicRoute };

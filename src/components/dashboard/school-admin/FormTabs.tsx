@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FormCard from './FormCard';
@@ -6,170 +7,59 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
-import { FormStatus, FormItem, Form } from '@/types/form';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { adaptFormStatus } from '@/utils/dashboardUtils';
+import { Form, FormStatus } from '@/types/form';
 
 interface FormTabsProps {
-  recentForms: FormItem[];
+  recentForms: Form[];
   handleFormClick: (formId: string) => void;
 }
 
-const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFormClick }) => {
+const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [forms, setForms] = useState<FormItem[]>(initialForms);
-  const [loading, setLoading] = useState(false);
   
-  useEffect(() => {
-    const fetchForms = async () => {
-      if (!user?.schoolId) return;
-      
-      setLoading(true);
-      try {
-        const { data: categories, error: categoriesError } = await supabase
-          .from('categories')
-          .select('*')
-          .order('deadline');
-        
-        if (categoriesError) throw categoriesError;
-        
-        const formsWithStats = await Promise.all(categories.map(async (category) => {
-          const { count: filledCount } = await supabase
-            .from('data_entries')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id)
-            .eq('school_id', user.schoolId);
-          
-          const { count: approvedCount } = await supabase
-            .from('data_entries')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id)
-            .eq('school_id', user.schoolId)
-            .eq('status', 'approved');
-          
-          const { count: rejectedCount } = await supabase
-            .from('data_entries')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id)
-            .eq('school_id', user.schoolId)
-            .eq('status', 'rejected');
-          
-          const { count: columnCount } = await supabase
-            .from('columns')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id);
-          
-          let status: FormStatus = 'pending';
-          if (rejectedCount > 0) {
-            status = 'rejected';
-          } else if (approvedCount === columnCount && columnCount > 0) {
-            status = 'approved';
-          } else if (category.deadline) {
-            const deadlineDate = new Date(category.deadline);
-            const now = new Date();
-            
-            if (deadlineDate < now) {
-              status = 'overdue';
-            } else if (deadlineDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) {
-              status = 'dueSoon';
-            }
-          }
-          
-          let completionPercentage = 0;
-          if (columnCount > 0) {
-            completionPercentage = Math.round((filledCount / columnCount) * 100);
-          }
-          
-          return {
-            id: category.id,
-            title: category.name,
-            categoryId: category.id,
-            categoryName: category.name,
-            status,
-            completionPercentage,
-            deadline: category.deadline || "",
-            dueDate: category.deadline,
-            filledCount: filledCount || 0,
-            totalCount: columnCount || 0,
-            createdAt: category.created_at,
-            updatedAt: category.updated_at,
-            data: {},
-            userId: user?.id || '',
-            schoolId: user?.schoolId || ''
-          } as FormItem;
-        }));
-        
-        setForms(formsWithStats);
-      } catch (error) {
-        console.error('Formaları yükləyərkən xəta:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if ((!initialForms || initialForms.length === 0) && user?.schoolId) {
-      fetchForms();
-    } else {
-      setForms(initialForms);
-    }
-  }, [initialForms, user?.schoolId, user?.id]);
+  // Formaların kateqoriyalarının siyahısını əldə edir
+  const categories = ['all', ...Array.from(new Set(recentForms.map(form => form.category)))];
   
-  const categories = React.useMemo(() => {
-    const categorySet = new Set(['all']);
-    forms.forEach(form => {
-      if (form.categoryId) {
-        categorySet.add(form.categoryId);
-      }
-    });
-    return Array.from(categorySet);
-  }, [forms]);
-  
-  const filterForms = (forms: FormItem[], tabValue: string) => {
+  // Axtarış və filtrləmələrdən sonra formaları süzür
+  const filterForms = (forms: Form[], tabValue: string) => {
     let filteredForms = [...forms];
     
+    // Tab filtri tətbiq edir
     if (tabValue === 'pending') {
       filteredForms = filteredForms.filter(form => form.status === 'pending');
     } else if (tabValue === 'urgent') {
       filteredForms = filteredForms.filter(form => 
         form.status === 'rejected' || 
         form.status === 'overdue' ||
-        (form.status === 'dueSoon') ||
-        (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000))
+        (form.status === 'due') || // Son tarixi yaxınlaşan formlar
+        (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)) // 3 gün içində olanlar
       );
     }
     
+    // Kateqoriya filtri
     if (selectedCategory !== 'all') {
-      filteredForms = filteredForms.filter(form => form.categoryId === selectedCategory);
+      filteredForms = filteredForms.filter(form => form.category === selectedCategory);
     }
     
+    // Status filtri
     if (selectedStatus !== 'all') {
       filteredForms = filteredForms.filter(form => form.status === selectedStatus as FormStatus);
     }
     
+    // Axtarış filtri
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filteredForms = filteredForms.filter(form => 
         form.title.toLowerCase().includes(query) || 
-        (form.categoryId && form.categoryId.toLowerCase().includes(query))
+        form.category.toLowerCase().includes(query)
       );
     }
     
     return filteredForms;
   };
-  
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-        <span className="ml-2">{t('loading')}</span>
-      </div>
-    );
-  }
   
   return (
     <section>
@@ -224,23 +114,24 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
               <SelectItem value="rejected">{t('rejected')}</SelectItem>
               <SelectItem value="draft">{t('draft')}</SelectItem>
               <SelectItem value="overdue">{t('overdue')}</SelectItem>
-              <SelectItem value="dueSoon">{t('dueSoon')}</SelectItem>
+              <SelectItem value="due">{t('dueSoon')}</SelectItem>
+              <SelectItem value="empty">{t('noFormsFound')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         <TabsContent value="recent" className="m-0">
-          {filterForms(forms, 'recent').length > 0 ? (
+          {filterForms(recentForms, 'recent').length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filterForms(forms, 'recent').map(form => (
+              {filterForms(recentForms, 'recent').map(form => (
                 <FormCard 
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.categoryId}
+                  category={form.category}
                   status={form.status}
-                  completionPercentage={form.completionPercentage || 0}
-                  deadline={form.deadline || ""}
+                  completionPercentage={form.completionPercentage}
+                  deadline={form.deadline}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}
@@ -254,17 +145,17 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
         </TabsContent>
         
         <TabsContent value="pending" className="m-0">
-          {filterForms(forms, 'pending').length > 0 ? (
+          {filterForms(recentForms, 'pending').length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filterForms(forms, 'pending').map(form => (
+              {filterForms(recentForms, 'pending').map(form => (
                 <FormCard 
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.categoryId}
+                  category={form.category}
                   status={form.status}
-                  completionPercentage={form.completionPercentage || 0}
-                  deadline={form.deadline || ""}
+                  completionPercentage={form.completionPercentage}
+                  deadline={form.deadline}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}
@@ -278,17 +169,17 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms: initialForms, handleFo
         </TabsContent>
         
         <TabsContent value="urgent" className="m-0">
-          {filterForms(forms, 'urgent').length > 0 ? (
+          {filterForms(recentForms, 'urgent').length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filterForms(forms, 'urgent').map(form => (
+              {filterForms(recentForms, 'urgent').map(form => (
                 <FormCard 
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.categoryId}
+                  category={form.category}
                   status={form.status}
-                  completionPercentage={form.completionPercentage || 0}
-                  deadline={form.deadline || ""}
+                  completionPercentage={form.completionPercentage}
+                  deadline={form.deadline}
                   onClick={() => handleFormClick(form.id)}
                 />
               ))}

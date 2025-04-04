@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Notification } from '@/types/notification';
+import { Notification, NotificationType } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,23 +27,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const getIcon = (type: string) => {
+  const getIcon = (type: NotificationType) => {
     switch (type) {
       case 'newCategory':
         return <File className="h-5 w-5 text-blue-500" />;
       case 'deadline':
-      case 'dueDateReminder':
         return <Calendar className="h-5 w-5 text-orange-500" />;
-      case 'approval':
       case 'approvalRequest':
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
       case 'approved':
-      case 'formApproved':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'rejection':
       case 'rejected':
-      case 'formRejected':
         return <XCircle className="h-5 w-5 text-red-500" />;
-      case 'system':
       case 'systemUpdate':
         return <Info className="h-5 w-5 text-purple-500" />;
       default:

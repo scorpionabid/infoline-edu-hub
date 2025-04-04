@@ -1,11 +1,9 @@
 
 import { useCallback, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { DataEntryForm, ColumnEntry } from '@/types/dataEntry';
-import { toast } from 'sonner';
+import { DataEntryForm } from '@/types/dataEntry';
+import { toast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
-import { v4 as uuid } from 'uuid';
-import { supabase } from '@/integrations/supabase/client';
 
 interface UseFormActionsProps {
   formData: DataEntryForm;
@@ -13,8 +11,6 @@ interface UseFormActionsProps {
   setIsAutoSaving: React.Dispatch<React.SetStateAction<boolean>>;
   setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
   categories: CategoryWithColumns[];
-  schoolId?: string;
-  userId?: string;
 }
 
 /**
@@ -25,9 +21,7 @@ export const useFormActions = ({
   setFormData,
   setIsAutoSaving,
   setIsSubmitting,
-  categories,
-  schoolId,
-  userId
+  categories
 }: UseFormActionsProps) => {
   const { t } = useLanguage();
   const lastOperationTimeRef = useRef<number>(Date.now());
@@ -61,7 +55,6 @@ export const useFormActions = ({
         } else {
           // Yeni sütun qiymətini əlavə edirik
           values.push({
-            id: uuid(), // UUID əlavə edildi
             columnId,
             value,
             status: 'pending'
@@ -112,192 +105,68 @@ export const useFormActions = ({
   }, [categories, setFormData, setIsAutoSaving]);
   
   // Manuel saxlama
-  const saveForm = useCallback(async () => {
+  const saveForm = useCallback(() => {
     lastOperationTimeRef.current = Date.now();
     
-    if (!schoolId || !userId) {
-      toast.error(t('missingUserOrSchoolData'));
-      return;
-    }
+    // Burada real API çağırışı olmalıdır
+    console.log("Məlumatlar manual saxlanıldı:", formData);
     
-    try {
-      setIsAutoSaving(true);
-      
-      // Hər bir kateqoriya və sütun üçün məlumatları yenilə
-      for (const entry of formData.entries) {
-        for (const value of entry.values) {
-          // Əvvəlcə mövcud daxiletmə məlumatı var mı yoxlayaq
-          const { data: existingEntry, error: fetchError } = await supabase
-            .from('data_entries')
-            .select('id, status')
-            .eq('school_id', schoolId)
-            .eq('category_id', entry.categoryId)
-            .eq('column_id', value.columnId)
-            .maybeSingle();
-            
-          if (fetchError) {
-            console.error("Mövcud məlumatı gətirərkən xəta:", fetchError);
-            continue;
-          }
-          
-          if (existingEntry) {
-            // Əgər məlumat təsdiqlənibsə, update etmək olmaz
-            if (existingEntry.status === 'approved') continue;
-            
-            // Əks halda update edək
-            const { error: updateError } = await supabase
-              .from('data_entries')
-              .update({
-                value: value.value,
-                status: 'draft',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existingEntry.id);
-              
-            if (updateError) {
-              console.error("Məlumatı yeniləyərkən xəta:", updateError);
-            }
-          } else {
-            // Yeni məlumat əlavə edək
-            const { error: insertError } = await supabase
-              .from('data_entries')
-              .insert([{
-                school_id: schoolId,
-                category_id: entry.categoryId,
-                column_id: value.columnId,
-                value: value.value,
-                status: 'draft',
-                created_by: userId
-              }]);
-              
-            if (insertError) {
-              console.error("Yeni məlumat əlavə edərkən xəta:", insertError);
-            }
-          }
-        }
-      }
-      
-      toast.success(t('changesAutoSaved'));
-      
-      setFormData(prev => ({
-        ...prev,
-        lastSaved: new Date().toISOString()
-      }));
-    } catch (error) {
-      console.error("Məlumatları saxlayarkən xəta:", error);
-      toast.error(t('errorSavingData'));
-    } finally {
-      setIsAutoSaving(false);
-    }
-  }, [formData, schoolId, userId, t, setFormData, setIsAutoSaving]);
+    // LocalStorage-də saxlayaq
+    localStorage.setItem('infolineFormData', JSON.stringify(formData));
+    
+    toast({
+      title: t('changesAutoSaved'),
+      variant: "default",
+    });
+    
+    setFormData(prev => ({
+      ...prev,
+      lastSaved: new Date().toISOString()
+    }));
+  }, [formData, t, setFormData]);
   
   // Təsdiq üçün göndərmək
-  const submitForm = useCallback(async (validateFn: () => boolean) => {
+  const submitForm = useCallback((validateFn: () => boolean) => {
     lastOperationTimeRef.current = Date.now();
     const isValid = validateFn();
     
-    if (!isValid) {
-      toast.error(t('formHasErrors'));
-      return false;
-    }
-    
-    if (!schoolId || !userId) {
-      toast.error(t('missingUserOrSchoolData'));
-      return false;
-    }
-    
-    try {
+    if (isValid) {
       setIsSubmitting(true);
       
-      // Hər bir kateqoriya və sütun üçün məlumatları təsdiq üçün göndər
-      for (const entry of formData.entries) {
-        // Kateqoriya üçün tamamlanma yoxlaması
-        if (!entry.isCompleted) {
-          toast.error(t('categoryNotCompleted'), {
-            description: categories.find(c => c.id === entry.categoryId)?.name
-          });
-          setIsSubmitting(false);
-          return false;
-        }
+      // API çağırışı simulyasiyası
+      setTimeout(() => {
+        const updatedFormData: DataEntryForm = {
+          ...formData,
+          status: 'submitted',
+          entries: formData.entries.map(entry => ({
+            ...entry,
+            isSubmitted: true,
+            approvalStatus: 'pending'
+          }))
+        };
         
-        for (const value of entry.values) {
-          // Əvvəlcə mövcud daxiletmə məlumatı var mı yoxlayaq
-          const { data: existingEntry, error: fetchError } = await supabase
-            .from('data_entries')
-            .select('id, status')
-            .eq('school_id', schoolId)
-            .eq('category_id', entry.categoryId)
-            .eq('column_id', value.columnId)
-            .maybeSingle();
-            
-          if (fetchError) {
-            console.error("Mövcud məlumatı gətirərkən xəta:", fetchError);
-            continue;
-          }
-          
-          if (existingEntry) {
-            // Əgər məlumat təsdiqlənibsə, update etmək olmaz
-            if (existingEntry.status === 'approved') continue;
-            
-            // Əks halda update edək
-            const { error: updateError } = await supabase
-              .from('data_entries')
-              .update({
-                value: value.value,
-                status: 'pending',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existingEntry.id);
-              
-            if (updateError) {
-              console.error("Məlumatı təsdiq üçün göndərərkən xəta:", updateError);
-              toast.error(t('errorSubmittingData'));
-              setIsSubmitting(false);
-              return false;
-            }
-          } else {
-            // Yeni məlumat əlavə edək
-            const { error: insertError } = await supabase
-              .from('data_entries')
-              .insert([{
-                school_id: schoolId,
-                category_id: entry.categoryId,
-                column_id: value.columnId,
-                value: value.value,
-                status: 'pending',
-                created_by: userId
-              }]);
-              
-            if (insertError) {
-              console.error("Yeni məlumatı təsdiq üçün göndərərkən xəta:", insertError);
-              toast.error(t('errorSubmittingData'));
-              setIsSubmitting(false);
-              return false;
-            }
-          }
-        }
-      }
-      
-      // Formun statusunu və tarixini yenilə
-      setFormData(prev => ({
-        ...prev,
-        status: 'pending',
-        lastSaved: new Date().toISOString()
-      }));
-      
-      toast.success(t('submissionSuccess'), {
-        description: t('submissionDescription')
-      });
-      
+        // LocalStorage-də saxlayaq
+        localStorage.setItem('infolineFormData', JSON.stringify(updatedFormData));
+        
+        setFormData(updatedFormData);
+        setIsSubmitting(false);
+        
+        toast({
+          title: t('submissionSuccess'),
+          description: t('submissionDescription'),
+          variant: "default",
+        });
+      }, 2000);
       return true;
-    } catch (error) {
-      console.error("Təsdiq prosesində xəta:", error);
-      toast.error(t('errorSubmittingForm'));
+    } else {
+      toast({
+        title: "Xəta",
+        description: "Zəhmət olmasa bütün məcburi sahələri doldurun",
+        variant: "destructive",
+      });
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [formData, categories, schoolId, userId, t, setFormData, setIsSubmitting]);
+  }, [formData, t, setFormData, setIsSubmitting]);
   
   return {
     updateValue,

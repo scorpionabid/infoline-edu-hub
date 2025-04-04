@@ -1,169 +1,176 @@
 
-import { create } from 'zustand';
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSchoolsData } from './useSchoolsData';
-import { useRegionsData } from './../regions/useRegionsData';
-import { useSectorsData } from './../sectors/useSectorsData';
-import { SortConfig } from '@/types/sorting';
-import { School } from '@/types/school';
-import { Region } from '@/types/region';
-import { Sector } from '@/types/sector';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { School } from '@/types/supabase';
+import { useRegions } from '../useRegions';
+import { useSectors } from '../useSectors';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
-interface SchoolsState {
-  searchTerm: string;
-  selectedRegion: string;
-  selectedSector: string;
-  selectedStatus: string;
-  sortConfig: SortConfig | null;
-  currentPage: number;
-  itemsPerPage: number;
-  sectors: Sector[];
-  regions: Region[];
-  handleSearch: (term: string) => void;
-  handleRegionFilter: (regionId: string) => void;
-  handleSectorFilter: (sectorId: string) => void;
-  handleStatusFilter: (status: string) => void;
-  handleSort: (key: string) => void;
-  handlePageChange: (page: number) => void;
-  resetFilters: () => void;
+export interface SortConfig {
+  key: string | null;
+  direction: 'asc' | 'desc' | null;
 }
 
 export const useSchoolsStore = () => {
-  const { schools, loading: schoolsLoading, error: schoolsError, fetchSchools } = useSchoolsData();
-  const { regions, loading: regionsLoading, error: regionsError, fetchRegions } = useRegionsData();
-  const { sectors, loading: sectorsLoading, error: sectorsError, fetchSectors } = useSectorsData();
-  
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedSector, setSelectedSector] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
   const [isOperationComplete, setIsOperationComplete] = useState(false);
+  const itemsPerPage = 10;
+  const { t } = useLanguage();
+  
+  // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
+  const { regions } = useRegions();
+  const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
 
-  const handleSearch = useCallback((term: string) => {
-    setSearchTerm(term);
+  // Məktəbləri yükləmək metodu
+  const fetchSchools = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase.from('schools').select('*');
+      
+      if (selectedRegion) {
+        query = query.eq('region_id', selectedRegion);
+      }
+      
+      if (selectedSector) {
+        query = query.eq('sector_id', selectedSector);
+      }
+      
+      if (selectedStatus) {
+        query = query.eq('status', selectedStatus);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      setSchools(data as School[]);
+    } catch (err: any) {
+      console.error('Error fetching schools:', err);
+      setError(err);
+      toast.error(t('errorOccurred'), {
+        description: t('couldNotLoadSchools')
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedRegion, selectedSector, selectedStatus, t]);
+
+  // Filtrlənmiş məktəblər
+  const filteredSchools = schools.filter(school => {
+    const searchMatch = 
+      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (school.address && school.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (school.phone && school.phone.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    return searchMatch;
+  });
+
+  // Sıralanmış məktəblər
+  const sortedSchools = [...filteredSchools].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    const key = sortConfig.key as keyof School;
+    const aValue = a[key] as any;
+    const bValue = b[key] as any;
+    
+    if (!aValue && !bValue) return 0;
+    if (!aValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    if (!bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  // Paginated məktəblər
+  const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
+  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+  const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Event handlers
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
     setCurrentPage(1);
   }, []);
 
-  const handleRegionFilter = useCallback((regionId: string) => {
-    setSelectedRegion(regionId);
+  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedRegion(e.target.value);
     setSelectedSector('');
     setCurrentPage(1);
   }, []);
 
-  const handleSectorFilter = useCallback((sectorId: string) => {
-    setSelectedSector(sectorId);
+  const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSector(e.target.value);
     setCurrentPage(1);
   }, []);
 
-  const handleStatusFilter = useCallback((status: string) => {
-    setSelectedStatus(status);
+  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(e.target.value);
     setCurrentPage(1);
   }, []);
 
   const handleSort = useCallback((key: string) => {
-    let direction = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
-    setSortConfig({ key, direction } as SortConfig);
+    setSortConfig({ key, direction });
   }, [sortConfig]);
 
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
 
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedRegion('');
     setSelectedSector('');
     setSelectedStatus('');
-    setSortConfig(null);
     setCurrentPage(1);
   }, []);
 
-  const sortedItems = useMemo(() => {
-    if (!schools || schools.length === 0 || !sortConfig) return schools;
-
-    return [...schools].sort((a, b) => {
-      const key = sortConfig.key;
-      const direction = sortConfig.direction === 'ascending' ? 1 : -1;
-
-      if (key === 'name') {
-        return a.name.localeCompare(b.name) * direction;
-      }
-      
-      if (key === 'region') {
-        const regionA = a.regionName || '';
-        const regionB = b.regionName || '';
-        return regionA.localeCompare(regionB) * direction;
-      }
-      
-      if (key === 'sector') {
-        const sectorA = a.sectorName || '';
-        const sectorB = b.sectorName || '';
-        return sectorA.localeCompare(sectorB) * direction;
-      }
-
-      return 0;
-    });
-  }, [schools, sortConfig]);
-
-  const filteredItems = useMemo(() => {
-    let result = sortedItems;
-
-    if (searchTerm) {
-      result = result?.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedRegion) {
-      result = result?.filter(item => item.regionId === selectedRegion || item.region_id === selectedRegion);
-    }
-
-    if (selectedSector) {
-      result = result?.filter(item => item.sectorId === selectedSector || item.sector_id === selectedSector);
-    }
-
-    if (selectedStatus) {
-      result = result?.filter(item => item.status === selectedStatus);
-    }
-
-    return result || [];
-  }, [sortedItems, searchTerm, selectedRegion, selectedSector, selectedStatus]);
-
-  const totalPages = useMemo(() => {
-    return Math.ceil((filteredItems?.length || 0) / itemsPerPage);
-  }, [filteredItems, itemsPerPage]);
-
-  const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredItems?.slice(start, end) || [];
-  }, [filteredItems, currentPage, itemsPerPage]);
-
+  // Məlumatların ilkin yüklənməsi
   useEffect(() => {
     fetchSchools();
-    fetchRegions();
-    fetchSectors();
-  }, [fetchSchools, fetchRegions, fetchSectors]);
+  }, [fetchSchools]);
 
   return {
     schools,
+    loading,
+    error,
     searchTerm,
     selectedRegion,
     selectedSector,
     selectedStatus,
     sortConfig,
-    currentPage,
+    currentPage: adjustedCurrentPage,
     itemsPerPage,
-    totalPages,
+    filteredSchools,
+    sortedSchools,
     currentItems,
-    sectors,
+    totalPages,
     regions,
+    sectors,
+    sectorsLoading,
     handleSearch,
     handleRegionFilter,
     handleSectorFilter,
@@ -172,11 +179,8 @@ export const useSchoolsStore = () => {
     handlePageChange,
     resetFilters,
     fetchSchools,
-    fetchRegions,
-    fetchSectors,
+    setSchools,
     isOperationComplete,
-    setIsOperationComplete,
-    isLoading: schoolsLoading || regionsLoading || sectorsLoading,
-    error: schoolsError || regionsError || sectorsError
+    setIsOperationComplete
   };
 };

@@ -1,65 +1,58 @@
 
-import { UserRole } from './supabase';
+import { Role } from '@/context/AuthContext';
 
 export interface User {
   id: string;
+  name: string;
   email: string;
-  full_name: string; 
-  name?: string;  // full_name ilə yanaşı name də təmin edirik geriyə uyğunluq üçün
-  position?: string;
-  status: "active" | "inactive" | "blocked";
-  role: UserRole;
-  region_id?: string;
-  regionId?: string; // region_id ilə yanaşı regionId də təmin edirik geriyə uyğunluq üçün
-  sector_id?: string;
-  sectorId?: string; // sector_id ilə yanaşı sectorId də təmin edirik geriyə uyğunluq üçün
-  school_id?: string;
-  schoolId?: string; // school_id ilə yanaşı schoolId də təmin edirik geriyə uyğunluq üçün
-  notificationSettings: {
-    email: boolean;
-    inApp: boolean;
-    push?: boolean;
-    system?: boolean;
-  };
+  role: Role;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
   avatar?: string;
-  lastLoginAt?: string;
-  passwordResetDate?: string;
-  twoFactorEnabled?: boolean;
-  lastLogin?: string;
-  createdAt?: string;
-  updatedAt?: string;
   phone?: string;
+  position?: string;
   language?: string;
+  lastLogin?: string;  // Date -> string
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
+  createdAt?: string;  // Date -> string
+  updatedAt?: string;  // Date -> string
+  status?: 'active' | 'inactive' | 'blocked';
+  passwordResetDate?: string; // Əlavə edildi
 }
 
-export interface UserDetails extends User {
-  regionName?: string;
-  sectorName?: string;
-  schoolName?: string;
-}
-
-// UserFormData interfeysi
 export interface UserFormData {
+  id?: string;
   name: string;
   email: string;
   password?: string;
   confirmPassword?: string;
-  role: UserRole;
+  role: Role;
   regionId?: string;
-  region_id?: string;
   sectorId?: string;
-  sector_id?: string;
   schoolId?: string;
-  school_id?: string;
-  status: "active" | "inactive" | "blocked";
-  avatar?: string;
-  language?: string;
   phone?: string;
   position?: string;
-  notificationSettings: {
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked'; // Əlavə edildi
+  twoFactorEnabled?: boolean; // Əlavə edildi
+  passwordResetDate?: string; // Əlavə edildi
+  notificationSettings?: {
     email: boolean;
-    inApp: boolean;
-    push?: boolean;
-    system?: boolean;
+    system: boolean;
   };
+}
+
+export interface UserFilter {
+  role?: Role;
+  status?: string;
+  region?: string;
+  sector?: string;
+  school?: string;
+  search?: string;
 }

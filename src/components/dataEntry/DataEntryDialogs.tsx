@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
 export interface DataEntryDialogsProps {
   isSubmitDialogOpen: boolean;
@@ -26,7 +26,7 @@ const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
   setIsHelpDialogOpen,
   submitForApproval
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   
   const handleSubmitConfirm = () => {
     submitForApproval();

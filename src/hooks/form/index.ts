@@ -1,38 +1,69 @@
 
-import { useState, useCallback } from 'react';
-import { DataEntryForm, CategoryEntryData } from '@/types/dataEntry';
+import { CategoryWithColumns } from '@/types/column';
+import { useFormState } from './useFormState';
+import { useFormActions } from './useFormActions';
+import { useFormInitialization } from './useFormInitialization';
+import { useAutoSave } from './useAutoSave';
 
-export interface UseFormStateProps {
-  initialFormState?: DataEntryForm;
-}
-
-export const useFormState = ({ initialFormState }: UseFormStateProps = {}) => {
-  const [formState, setFormState] = useState<DataEntryForm>(initialFormState || {
-    status: 'draft',
-    entries: [],
-    lastSaved: new Date().toISOString(),
-    overallProgress: 0
-  });
-
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Form-un məlumatlarını yeniləmək üçün funksiya
-  const updateFormEntries = useCallback((entries: CategoryEntryData[]) => {
-    setFormState(prevState => ({
-      ...prevState,
-      entries,
-      lastSaved: new Date().toISOString()
-    }));
-  }, []);
-
-  return {
-    formState,
-    setFormState,
+/**
+ * Forma əməliyyatlarını idarə edən əsas hook
+ */
+export const useForm = (categories: CategoryWithColumns[]) => {
+  // Form state'i
+  const {
+    formData,
+    setFormData,
     isAutoSaving,
     setIsAutoSaving,
-    isSubmitting, 
+    isSubmitting,
+    setIsSubmitting
+  } = useFormState();
+  
+  // Form əməliyyatları
+  const {
+    updateValue,
+    saveForm,
+    submitForm,
+    lastOperationTimeRef
+  } = useFormActions({
+    formData,
+    setFormData,
+    setIsAutoSaving,
     setIsSubmitting,
-    updateFormEntries
+    categories
+  });
+  
+  // Form ilkin məlumatları
+  const {
+    initializeForm
+  } = useFormInitialization({
+    setFormData
+  });
+  
+  // Avtomatik saxlama
+  const {
+    setupAutoSave
+  } = useAutoSave({
+    formData,
+    isAutoSaving,
+    setIsAutoSaving,
+    lastOperationTimeRef
+  });
+  
+  return {
+    formData,
+    isAutoSaving,
+    isSubmitting,
+    setIsSubmitting,
+    updateValue,
+    saveForm,
+    submitForm,
+    setupAutoSave,
+    initializeForm
   };
 };
+
+export * from './useFormState';
+export * from './useFormActions';
+export * from './useFormInitialization';
+export * from './useAutoSave';

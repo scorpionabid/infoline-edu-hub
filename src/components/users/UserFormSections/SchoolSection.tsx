@@ -4,7 +4,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
-import { UserRole } from '@/types/supabase';
 
 interface SchoolSectionProps {
   form: any;
@@ -22,9 +21,10 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
   hideSection = false,
 }) => {
   const { t } = useLanguage();
-  
-  // Don't show school for superadmin, regionadmin or if sector is not selected or if section is hidden
-  if (hideSection || data.role === 'superadmin' || data.role === 'regionadmin' || data.role === 'sectoradmin' || !data.sectorId) {
+
+  const shouldShow = !hideSection && (data.role === 'schooladmin' && data.sectorId);
+
+  if (!shouldShow) {
     return null;
   }
 
@@ -36,7 +36,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t('school')}</FormLabel>
           <Select
-            value={field.value || "none"}
+            value={data.schoolId || "none"}
             onValueChange={(value) => {
               field.onChange(value === "none" ? undefined : value);
               onFormChange('schoolId', value === "none" ? undefined : value);
@@ -49,7 +49,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem key="none" value="none">{t('selectSchool')}</SelectItem>
+              <SelectItem value="none">{t('selectSchool')}</SelectItem>
               {filteredSchools.map((school) => (
                 <SelectItem key={school.id} value={school.id}>
                   {school.name}

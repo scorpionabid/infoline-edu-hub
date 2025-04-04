@@ -1,32 +1,46 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useLanguage } from '@/context/LanguageContext';
 
-export interface CompletionRateCardProps {
-  completion: number;
-  title?: string;
-  subtitle?: string;
+interface CompletionRateCardProps {
+  completionRate: number;
+  description?: string;
 }
 
-const CompletionRateCard: React.FC<CompletionRateCardProps> = ({ completion, title, subtitle }) => {
+const CompletionRateCard: React.FC<CompletionRateCardProps> = ({ 
+  completionRate,
+  description
+}) => {
   const { t } = useLanguage();
   
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">
-          {title || t('completionRate')}
-        </CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">{t('completionRate')}</CardTitle>
+        <CardDescription>{description || 'Overall data submission rate'}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col space-y-2">
-          <div className="text-2xl font-bold">{completion}%</div>
-          <Progress className="h-2" value={completion} />
-          {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          )}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-3xl font-bold">{completionRate}%</span>
+            <Badge variant={completionRate > 75 ? "success" : completionRate > 50 ? "warning" : "destructive"}>
+              {completionRate > 75 ? "Good" : completionRate > 50 ? "Average" : "Needs Attention"}
+            </Badge>
+          </div>
+          <Progress value={completionRate} className="h-2" />
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span>Completed: {completionRate}%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-muted"></div>
+              <span>Remaining: {100 - completionRate}%</span>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,81 +1,64 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
 import SchoolForm from '../SchoolForm';
+import { SchoolFormData } from '@/types/school-form';
 
 interface AddDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (data: any) => void;
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: () => void;
+  formData: SchoolFormData;
+  handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   currentTab: string;
-  onTabChange: (tab: string) => void;
-  filteredSectors: { id: string; name: string; regionId: string }[];
+  setCurrentTab: (tab: string) => void;
+  filteredSectors: Array<{ id: string; name: string; regionId: string }>;
 }
 
-export const AddDialog = ({
-  open,
-  onOpenChange,
-  onSubmit,
-  formData,
-  onChange,
-  currentTab,
-  onTabChange,
-  filteredSectors
-}: AddDialogProps) => {
-  const { t } = useLanguage();
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  const handleTabChange = (value: string) => {
-    onTabChange(value);
-  };
-
+export const AddDialog: React.FC<AddDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  formData, 
+  handleFormChange, 
+  currentTab, 
+  setCurrentTab, 
+  filteredSectors 
+}) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('addSchool')}</DialogTitle>
+          <DialogTitle>Yeni məktəb əlavə et</DialogTitle>
+          <DialogDescription>
+            Məktəb məlumatlarını daxil edin. Bütün zəruri sahələri (*) doldurun.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleFormSubmit}>
-          <Tabs value={currentTab} onValueChange={handleTabChange}>
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="school">{t('generalInfo')}</TabsTrigger>
-              <TabsTrigger value="admin">{t('additionalInfo')}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="school">
-              <SchoolForm 
-                formData={formData}
-                onChange={onChange}
-                currentTab={currentTab}
-                setCurrentTab={onTabChange}
-                filteredSectors={filteredSectors}
-              />
-            </TabsContent>
-            <TabsContent value="additional">
-              <SchoolForm 
-                formData={formData}
-                onChange={onChange}
-                currentTab={currentTab}
-                setCurrentTab={onTabChange}
-                filteredSectors={filteredSectors}
-              />
-            </TabsContent>
-          </Tabs>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t('cancel')}
-            </Button>
-            <Button type="submit">{t('addSchool')}</Button>
-          </div>
-        </form>
+        
+        <SchoolForm
+          formData={formData}
+          handleFormChange={handleFormChange}
+          currentTab={currentTab}
+          setCurrentTab={setCurrentTab}
+          filteredSectors={filteredSectors}
+        />
+        
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Ləğv et
+          </Button>
+          <Button onClick={onSubmit}>
+            Əlavə et
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

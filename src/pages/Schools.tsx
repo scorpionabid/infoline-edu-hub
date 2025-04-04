@@ -1,17 +1,18 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import SchoolsContainer from '@/components/schools/SchoolsContainer';
+import { Loader2 } from 'lucide-react';
+import { useSupabaseSchools } from '@/hooks/useSupabaseSchools';
 
-/**
- * Məktəblər Səhifəsi
- */
 const Schools = () => {
-  const { t } = useLanguage();
-  
+  const { t } = useLanguageSafe();
+  const { user } = useAuth();
+  const { loading, error } = useSupabaseSchools();
+
   return (
     <>
       <Helmet>
@@ -19,7 +20,18 @@ const Schools = () => {
       </Helmet>
       <SidebarLayout>
         <div className="container mx-auto py-6">
-          <SchoolsContainer />
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-64">
+              <p className="text-destructive text-lg">{t('errorOccurred')}</p>
+              <p className="text-muted-foreground">{t('couldNotLoadSchools')}</p>
+            </div>
+          ) : (
+            <SchoolsContainer />
+          )}
         </div>
       </SidebarLayout>
     </>

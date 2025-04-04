@@ -44,8 +44,6 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
     }
   }
 
-  const displayName = user.full_name || user.name || '';
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -55,14 +53,14 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
 
         <div className="flex flex-col items-center gap-4 py-4">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={user.avatar || ''} alt={displayName} />
+            <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-              {displayName.split(' ').map(n => n[0]).join('').toUpperCase()}
+              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
             </AvatarFallback>
           </Avatar>
           
           <div className="text-center">
-            <h3 className="text-xl font-semibold">{displayName}</h3>
+            <h3 className="text-xl font-semibold">{user.name}</h3>
             <p className="text-muted-foreground">{user.email}</p>
             <div className="mt-2">
               <Badge variant="outline" className={user.status && getStatusBadgeStyle(user.status)}>
@@ -75,27 +73,27 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label className="text-muted-foreground">{t('role')}</Label>
-            <p className="font-medium">{t(String(user.role))}</p>
+            <p className="font-medium">{t(user.role)}</p>
           </div>
           
-          {(user.region_id || user.regionId) && (
+          {user.regionId && (
             <div>
               <Label className="text-muted-foreground">{t('region')}</Label>
-              <p className="font-medium">{user.region_id || user.regionId}</p>
+              <p className="font-medium">{user.regionId}</p>
             </div>
           )}
           
-          {(user.sector_id || user.sectorId) && (
+          {user.sectorId && (
             <div>
               <Label className="text-muted-foreground">{t('sector')}</Label>
-              <p className="font-medium">{user.sector_id || user.sectorId}</p>
+              <p className="font-medium">{user.sectorId}</p>
             </div>
           )}
           
-          {(user.school_id || user.schoolId) && (
+          {user.schoolId && (
             <div>
               <Label className="text-muted-foreground">{t('school')}</Label>
-              <p className="font-medium">{user.school_id || user.schoolId}</p>
+              <p className="font-medium">{user.schoolId}</p>
             </div>
           )}
           

@@ -1,63 +1,28 @@
 
 import React from 'react';
+import { Progress } from '@/components/ui/progress';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
-interface DataEntryProgressProps {
+export interface DataEntryProgressProps {
+  total: number;
+  completed: number;
   percentage: number;
-  size?: number;
-  strokeWidth?: number;
 }
 
-const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ 
-  percentage, 
-  size = 24, 
-  strokeWidth = 2 
-}) => {
-  // Ensure percentage is between 0 and 100
-  const normalizedPercentage = Math.min(100, Math.max(0, percentage));
-  
-  // Calculate circle dimensions
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (normalizedPercentage / 100) * circumference;
-  
-  // Determine color based on percentage
-  const getColor = () => {
-    if (normalizedPercentage < 30) return '#ef4444'; // red
-    if (normalizedPercentage < 70) return '#f59e0b'; // amber
-    return '#10b981'; // green
-  };
-  
+const DataEntryProgress: React.FC<DataEntryProgressProps> = ({ total, completed, percentage }) => {
+  const { t } = useLanguageSafe();
+
   return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox={`0 0 ${size} ${size}`}
-      className="transform -rotate-90"
-    >
-      {/* Background circle */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        strokeOpacity={0.2}
-      />
-      
-      {/* Progress circle */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={getColor()}
-        strokeWidth={strokeWidth}
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        strokeLinecap="round"
-      />
-    </svg>
+    <div className="space-y-2 w-full max-w-xs">
+      <div className="flex justify-between text-sm">
+        <span className="font-medium">{t('progress')}</span>
+        <span>{percentage}%</span>
+      </div>
+      <Progress value={percentage} className="h-2" />
+      <p className="text-xs text-muted-foreground">
+        {t('completedCategories').replace('{completed}', completed.toString()).replace('{total}', total.toString())}
+      </p>
+    </div>
   );
 };
 

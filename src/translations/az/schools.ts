@@ -1,83 +1,69 @@
 
+/**
+ * Məktəblər səhifəsi tərcümələri
+ */
 const schools = {
-  // Məktəblər səhifəsi
-  schools: 'Məktəblər',
-  schoolList: 'Məktəb siyahısı',
-  addSchool: 'Yeni məktəb əlavə et',
-  editSchool: 'Məktəbi redaktə et',
-  deleteSchool: 'Məktəbi sil',
-  exportSchools: 'Məktəbləri ixrac et',
-  importSchools: 'Məktəbləri idxal et',
+  // Məktəb
+  schools: "Məktəblər",
+  schoolsDescription: "Məktəbləri idarə edin və statistikaya baxın",
+  addSchool: "Məktəb əlavə et",
+  editSchool: "Məktəbi düzəlt",
+  deleteSchool: "Məktəbi sil",
+  schoolDetails: "Məktəb haqqında ətraflı",
+  schoolName: "Məktəb adı",
+  schoolAddress: "Məktəb ünvanı",
+  filterSchools: "Məktəbləri filtrlə",
+  filterSchoolsDescription: "İstədiyiniz kriteriyalara görə məktəbləri tapın",
+  searchSchools: "Məktəbləri axtar...",
+  schoolList: "Məktəblərin siyahısı",
+  schoolFound: "məktəb tapıldı",
+  noSchoolsFound: "Heç bir məktəb tapılmadı",
   
-  // Məktəb məlumatları
-  schoolName: 'Məktəb adı',
-  principalName: 'Direktor adı',
-  region: 'Region',
-  sector: 'Sektor',
-  address: 'Ünvan',
-  email: 'E-poçt',
-  phone: 'Telefon',
-  studentCount: 'Şagird sayı',
-  teacherCount: 'Müəllim sayı',
-  schoolType: 'Məktəb növü',
-  teachingLanguage: 'Tədris dili',
-  status: 'Status',
-  active: 'Aktiv',
-  inactive: 'Deaktiv',
+  // Məktəb Atributları
+  studentCount: "Şagird sayı",
+  teacherCount: "Müəllim sayı",
+  directorName: "Direktor",
+  foundedYear: "Quruluş ili",
+  schoolType: "Məktəb növü",
+  teachingLanguage: "Təhsil dili",
+  enrollmentCapacity: "Şagird tutumu",
+  classCount: "Sinif sayı",
+  buildingArea: "Bina sahəsi (m²)",
+  hasCanteen: "Yeməkxana",
+  hasSportsFacilities: "İdman qurğuları",
+  hasLaboratory: "Laboratoriya",
+  hasLibrary: "Kitabxana",
+  lastInspection: "Son yoxlama tarixi",
+  accreditationStatus: "Akkreditasiya statusu",
   
-  // Dialog başlıqları və mətnlər
-  addSchoolDescription: 'Məktəb məlumatlarını daxil edin. Bütün zəruri sahələri (*) doldurun.',
-  editSchoolDescription: 'Məktəb məlumatlarını yeniləyin. Bütün zəruri sahələri (*) doldurun.',
-  deleteSchoolConfirmation: 'Bu məktəbi silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.',
+  // Məktəb Növləri
+  elementarySchool: "İbtidai məktəb",
+  middleSchool: "Əsas məktəb",
+  highSchool: "Tam orta məktəb",
+  vocationalSchool: "Peşə məktəbi",
+  specialEducation: "Xüsusi təhsil məktəbi",
   
-  // Tab başlıqları
-  basicInfo: 'Əsas məlumatlar',
-  additionalInfo: 'Əlavə məlumatlar',
+  // Təhsil dilləri
+  azerbaijani: "Azərbaycan dili",
+  russian: "Rus dili",
+  georgian: "Gürcü dili",
+  turkish: "Türk dili",
+  english: "İngilis dili",
   
-  // Ümumi tərcümələr
-  search: 'Axtar',
-  filter: 'Filtrlə',
-  resetFilters: 'Filtrləri sıfırla',
-  actions: 'Əməliyyatlar',
-  edit: 'Redaktə et',
-  delete: 'Sil',
-  save: 'Yadda saxla',
-  cancel: 'Ləğv et',
-  add: 'Əlavə et',
+  // Tədbirləri
+  importSchools: "Məktəbləri idxal et",
+  exportSchools: "Məktəbləri ixrac et",
+  duplicateSchool: "Məktəbi dublikat et",
+  archiveSchool: "Məktəbi arxivləşdir",
+  restoreSchool: "Məktəbi bərpa et",
+  assignToSector: "Sektora təyin et",
   
-  // Admin ilə bağlı
-  schoolAdmin: 'Məktəb admini',
-  manageSchoolAdmin: 'Məktəb admininin məlumatlarını idarə edin.',
-  name: 'Ad',
-  school: 'Məktəb',
-  regionSector: 'Region/Sektor',
-  changePassword: 'Parolu dəyiş',
-  resetPassword: 'Parolu sıfırla',
-  update: 'Yenilə',
-  newPassword: 'Yeni parol',
-  enterNewPassword: 'Yeni parol daxil edin (minimum 6 simvol)',
-  passwordTooShort: 'Parol minimum 6 simvol olmalıdır',
-  passwordResetSuccess: 'Parol uğurla sıfırlandı',
-  passwordResetNote: 'Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.',
-  
-  // Məktəb növləri
-  fullSecondary: 'Tam orta',
-  generalSecondary: 'Ümumi orta',
-  primary: 'İbtidai',
-  lyceum: 'Lisey',
-  gymnasium: 'Gimnaziya',
-  
-  // Tədris dilləri
-  azerbaijani: 'Azərbaycan',
-  russian: 'Rus',
-  english: 'İngilis',
-  turkish: 'Türk',
-  
-  // Import/Export
-  downloadTemplate: 'Şablon yüklə',
-  uploadFile: 'Fayl yüklə',
-  dragAndDrop: 'Faylı buraya sürükləyin və ya seçin',
-  importInstructions: 'Excel faylını yükləyin. Lazım olduqda şablonu endirin və doldurun.',
+  // Bildirişlər
+  schoolAdded: "Məktəb əlavə edildi",
+  schoolUpdated: "Məktəb yeniləndi",
+  schoolDeleted: "Məktəb silindi",
+  confirmDeleteSchool: "Bu məktəbi silmək istədiyinizə əminsiniz?",
+  schoolDeleteWarning: "Bu əməliyyat geri qaytarıla bilməz və bütün məktəblə əlaqəli məlumatlar silinəcək."
 };
 
 export default schools;

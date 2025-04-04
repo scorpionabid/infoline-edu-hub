@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNotifications } from '@/context/NotificationContext';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Bell, BellOff, Check } from 'lucide-react';
 import { 
   Popover, 
@@ -15,7 +15,7 @@ import NotificationItem from '@/components/notifications/NotificationItem';
 import { cn } from '@/lib/utils';
 
 const NotificationSystem = () => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const { 
     notifications, 
     unreadCount, 

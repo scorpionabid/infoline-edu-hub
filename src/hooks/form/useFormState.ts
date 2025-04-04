@@ -1,22 +1,28 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { DataEntryForm } from '@/types/dataEntry';
 
-export function useFormState(initialState: DataEntryForm | (() => DataEntryForm)) {
-  const [formState, setFormState] = useState<DataEntryForm>(initialState);
+/**
+ * Forma state'ini idarə edən hook
+ */
+export const useFormState = (initialFormId: string = "form1", initialSchoolId: string = "school1") => {
+  const [formData, setFormData] = useState<DataEntryForm>({
+    formId: initialFormId,
+    schoolId: initialSchoolId,
+    entries: [],
+    overallProgress: 0,
+    status: 'draft'
+  });
   
-  // Add computed properties
-  const computedState = useMemo(() => {
-    return {
-      ...formState,
-      // Any computed values can be added here
-    };
-  }, [formState]);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   return {
-    formState: computedState,
-    setFormState,
+    formData,
+    setFormData,
+    isAutoSaving,
+    setIsAutoSaving,
+    isSubmitting,
+    setIsSubmitting
   };
-}
-
-export default useFormState;
+};

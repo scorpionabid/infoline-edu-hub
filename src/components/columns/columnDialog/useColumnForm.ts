@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -6,12 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Column, ColumnType, ColumnOption, adaptColumnToSupabase } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 export const createFormSchema = (t: (key: string) => string) => {
   return z.object({
     name: z.string().min(1, { message: t("columnNameRequired") }),
     categoryId: z.string().min(1, { message: t("categoryRequired") }),
-    type: z.enum(["text", "number", "date", "select", "multiselect", "checkbox", "radio", "file", "image", "email", "phone", "textarea"]) as z.ZodType<ColumnType>,
+    type: z.enum(["text", "number", "date", "select", "checkbox", "radio", "file", "image", "email", "phone", "boolean", "textarea"]),
     isRequired: z.boolean().default(false),
     validationRules: z.object({
       minValue: z.number().optional(),
@@ -48,7 +48,7 @@ export const useColumnForm = (
   onAddColumn?: (newColumn: Omit<Column, "id">) => Promise<boolean>
 ) => {
   const { t } = useLanguage();
-  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
+  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type as ColumnType || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     editColumn?.options 
       ? Array.isArray(editColumn.options) 
@@ -66,7 +66,7 @@ export const useColumnForm = (
     defaultValues: {
       name: "",
       categoryId: categories.length > 0 ? categories[0].id : "",
-      type: "text" as ColumnType,
+      type: "text",
       isRequired: false,
       validationRules: {
         minValue: undefined,
@@ -93,7 +93,7 @@ export const useColumnForm = (
 
   useEffect(() => {
     if (isEditMode && editColumn) {
-      setSelectedType(editColumn.type);
+      setSelectedType(editColumn.type as ColumnType);
       
       if (editColumn.options) {
         setOptions(
@@ -106,9 +106,9 @@ export const useColumnForm = (
       form.reset({
         name: editColumn.name,
         categoryId: editColumn.categoryId,
-        type: editColumn.type,
+        type: editColumn.type as ColumnType,
         isRequired: editColumn.isRequired,
-        validationRules: editColumn.validation as any,
+        validationRules: editColumn.validationRules as any || editColumn.validation as any || {},
         defaultValue: editColumn.defaultValue || "",
         placeholder: editColumn.placeholder || "",
         helpText: editColumn.helpText || "",
@@ -127,7 +127,7 @@ export const useColumnForm = (
       form.reset({
         name: "",
         categoryId: categories.length > 0 ? categories[0].id : "",
-        type: "text" as ColumnType,
+        type: "text",
         isRequired: false,
         validationRules: {
           minValue: undefined,
@@ -157,19 +157,18 @@ export const useColumnForm = (
     try {
       if (!onAddColumn) return false;
       
-      // validationRules -> validation olaraq çeviririk
       const supabaseColumnData = {
         name: values.name,
         category_id: values.categoryId,
-        type: values.type as string,
+        type: values.type,
         is_required: values.isRequired,
-        validation: JSON.stringify(values.validationRules || null),
+        validation: values.validationRules || null,
         default_value: values.defaultValue || null,
         placeholder: values.placeholder || null,
         help_text: values.helpText || null,
         order_index: values.order,
         status: values.status,
-        options: ["select", "multiselect", "checkbox", "radio"].includes(values.type) ? JSON.stringify(options) : null
+        options: ["select", "checkbox", "radio"].includes(values.type) ? options as unknown as Json : null
       };
       
       if (isEditMode && editColumn?.id) {

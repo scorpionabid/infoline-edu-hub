@@ -3,14 +3,13 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
-import { School } from '@/types/school';
-import { supabase } from '@/integrations/supabase/client';
+import { School } from '@/data/schoolsData';
 
 interface UseSchoolOperationsReturn {
   handleAddSubmit: (formData: SchoolFormData) => Promise<void>;
   handleEditSubmit: (formData: SchoolFormData, selectedSchool: School | null) => Promise<void>;
   handleDeleteConfirm: (selectedSchool: School | null) => Promise<void>;
-  handleAdminUpdate: (adminData: any) => void;
+  handleAdminUpdate: () => void;
   handleResetPassword: (newPassword: string) => void;
 }
 
@@ -24,89 +23,42 @@ export const useSchoolOperations = (
     try {
       console.log("Məktəb əlavə edilir:", formData);
       
-      // İlk öncə eyni adlı məktəb və ya eyni admin e-poçtu ilə məktəb olub-olmadığını yoxlayaq
-      if (formData.adminEmail) {
-        const { data: existingSchools, error: checkError } = await supabase
-          .from('schools')
-          .select('id, name')
-          .eq('admin_email', formData.adminEmail);
-        
-        if (checkError) {
-          console.error('Mövcud məktəbləri yoxlayarkən xəta:', checkError);
-        } else if (existingSchools && existingSchools.length > 0) {
-          toast.error("Admin e-poçtu artıq istifadə olunur", {
-            description: `${existingSchools[0].name} məktəbi eyni admin e-poçtu istifadə edir`
-          });
-          return;
-        }
-      }
-      
-      // Eyni adlı məktəbin olub-olmadığını yoxlayaq
-      const { data: nameCheck, error: nameCheckError } = await supabase
-        .from('schools')
-        .select('id')
-        .eq('name', formData.name);
-      
-      if (!nameCheckError && nameCheck && nameCheck.length > 0) {
-        toast.error("Məktəb adı artıq mövcuddur", {
-          description: `${formData.name} adı ilə məktəb artıq mövcuddur`
-        });
-        return;
-      }
-      
-      // Supabase gözlədiyi tip formatında verilənləri düzləndirib göndəririk
       const newSchool = {
         name: formData.name,
-        principalName: formData.principalName || null,
-        regionId: formData.regionId,
-        sectorId: formData.sectorId,
-        region_id: formData.regionId, // Edge Function-a uyğunlaşdırmaq üçün əlavə edildi
-        sector_id: formData.sectorId, // Edge Function-a uyğunlaşdırmaq üçün əlavə edildi
+        principal_name: formData.principalName || null,
+        region_id: formData.regionId,
+        sector_id: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
-        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
+        student_count: formData.studentCount ? Number(formData.studentCount) : null,
+        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
         type: formData.type || null,
         language: formData.language || null,
-        adminEmail: formData.adminEmail || null,
-        adminFullName: formData.adminFullName || null,
-        adminPassword: formData.adminPassword || null,
-        adminStatus: formData.adminStatus || 'active'
+        admin_email: formData.adminEmail || null,
+        logo: null
       };
       
-      // Məktəbi yaradaq
       const result = await addSchool(newSchool);
-      
       console.log("Əlavə edilən məktəb:", result);
       
       toast.success("Məktəb uğurla əlavə edildi", {
         description: `${formData.name} məktəbi sistemə əlavə olundu`
       });
       
-      // Dialoqu bağlayaq və məlumatları yeniləyək
       onCloseDialog('add');
       onSuccess();
       
-      // Admin yaradılıbsa bildiriş göstərək
       if (formData.adminEmail) {
         toast.success("Məktəb admini uğurla yaradıldı", {
           description: `${formData.adminEmail} e-poçt ünvanı ilə admin yaradıldı`
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Məktəb əlavə edilərkən xəta baş verdi:', error);
-      
-      let errorMessage = "Məktəb əlavə edilərkən bir xəta baş verdi.";
-      
-      // Xəta mesajını göstər
-      if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast.error("Məktəb əlavə edilərkən xəta", {
-        description: errorMessage
+        description: "Məktəb əlavə edilərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
       });
     }
   }, [addSchool, onCloseDialog, onSuccess]);
@@ -119,20 +71,18 @@ export const useSchoolOperations = (
       
       const updatedSchool = {
         name: formData.name,
-        principalName: formData.principalName || null,
-        regionId: formData.regionId,
-        sectorId: formData.sectorId,
-        region_id: formData.regionId, // Əlavə edildi
-        sector_id: formData.sectorId, // Əlavə edildi
+        principal_name: formData.principalName || null,
+        region_id: formData.regionId,
+        sector_id: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
-        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
+        student_count: formData.studentCount ? Number(formData.studentCount) : null,
+        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
         status: formData.status,
         type: formData.type || null,
         language: formData.language || null,
-        adminEmail: formData.adminEmail || null
+        admin_email: formData.adminEmail || null
       };
       
       const result = await updateSchool(selectedSchool.id, updatedSchool);
@@ -144,20 +94,10 @@ export const useSchoolOperations = (
       
       onCloseDialog('edit');
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Məktəb yenilənərkən xəta baş verdi:', error);
-      
-      let errorMessage = "Məktəb yenilənərkən bir xəta baş verdi.";
-      
-      // Edge function-dan gələn xəta mesajını göstər
-      if (error.message && typeof error.message === 'string') {
-        errorMessage = error.message;
-      } else if (error.data && error.data.error) {
-        errorMessage = error.data.error;
-      }
-      
       toast.error("Məktəb yenilənərkən xəta", {
-        description: errorMessage
+        description: "Məktəb yenilənərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
       });
     }
   }, [updateSchool, onCloseDialog, onSuccess]);
@@ -176,20 +116,10 @@ export const useSchoolOperations = (
       
       onCloseDialog('delete');
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Məktəb silinərkən xəta baş verdi:', error);
-      
-      let errorMessage = "Məktəb silinərkən bir xəta baş verdi.";
-      
-      // Edge function-dan gələn xəta mesajını göstər
-      if (error.message && typeof error.message === 'string') {
-        errorMessage = error.message;
-      } else if (error.data && error.data.error) {
-        errorMessage = error.data.error;
-      }
-      
       toast.error("Məktəb silinərkən xəta", {
-        description: errorMessage
+        description: "Məktəb silinərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
       });
     }
   }, [deleteSchool, onCloseDialog, onSuccess]);

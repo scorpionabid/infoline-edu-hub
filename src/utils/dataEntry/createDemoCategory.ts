@@ -1,136 +1,121 @@
 
-import { CategoryWithColumns } from "@/types/column";
+import { CategoryWithColumns, ColumnType } from '@/types/column';
+import { generateId } from '@/utils/generateId';
 
-// Demo kateqoriya və sütun yaratmaq üçün köməkçi funksiya
-export function createDemoCategory(): CategoryWithColumns {
-  // Demo kateqoriyanı yaradırıq
-  return {
-    category: {
-      id: 'demo-cat-1',
-      name: 'Demo Məktəb Məlumatları',
-      description: 'Bu demo məlumatlar kateqoriyasıdır',
-      order: 1,
-      priority: 1,
-      status: 'active',
-      assignment: 'all',
-      deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() // 1 həftə sonra
-    },
-    columns: [
-      {
-        id: 'demo-col-1',
-        name: 'Şagird sayı',
-        type: 'number',
-        categoryId: 'demo-cat-1',
-        isRequired: true,
-        order: 1,
-        orderIndex: 1,
-        status: 'active',
-        validation: {
-          min: 0,
-          max: 10000
-        }
-      },
-      {
-        id: 'demo-col-2',
-        name: 'Məktəb növü',
-        type: 'select',
-        categoryId: 'demo-cat-1',
-        isRequired: true,
-        options: [
-          { value: 'tam', label: 'Tam orta məktəb' },
-          { value: 'umumi', label: 'Ümumi orta məktəb' },
-          { value: 'ibtidai', label: 'İbtidai məktəb' }
-        ],
-        order: 2,
-        orderIndex: 2,
-        status: 'active',
-      },
-      {
-        id: 'demo-col-3',
-        name: 'İnternet mövcuddur',
-        type: 'checkbox',
-        categoryId: 'demo-cat-1',
-        isRequired: true,
-        order: 3,
-        orderIndex: 3,
-        status: 'active'
-      },
-      {
-        id: 'demo-col-4',
-        name: 'Qeydlər',
-        type: 'textarea',
-        categoryId: 'demo-cat-1',
-        isRequired: false,
-        order: 4,
-        orderIndex: 4,
-        status: 'active'
-      }
-    ],
-    id: 'demo-cat-1',
-    name: 'Demo Məktəb Məlumatları',
-    description: 'Bu demo məlumatlar kateqoriyasıdır',
+export const createDemoCategories = (): CategoryWithColumns[] => {
+  const t = (key: string) => key; // Lokalizasiya əvəzinə sadə funksiya
+
+  const demoCategory1: CategoryWithColumns = {
+    id: generateId(),
+    name: t('demoCategory1'),
+    description: t('demoCategory1Description'),
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
     assignment: 'all',
+    createdAt: new Date().toISOString(),
     priority: 1,
-    deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-    order: 1
-  };
-}
-
-// Müəllimlər demosu
-export function createTeachersDemoCategory(): CategoryWithColumns {
-  return {
-    category: {
-      id: 'demo-cat-teachers',
-      name: 'Demo Müəllim Məlumatları',
-      description: 'Demo müəllim məlumatları kateqoriyası',
-      order: 2,
-      priority: 2,
-      status: 'active',
-      assignment: 'all',
-      deadline: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() // 2 həftə sonra
-    },
     columns: [
       {
-        id: 'demo-col-t1',
-        name: 'Müəllim sayı',
-        type: 'number',
-        categoryId: 'demo-cat-teachers',
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory1Column1'),
+        type: 'number' as ColumnType,
         isRequired: true,
         order: 1,
-        orderIndex: 1,
         status: 'active',
-        validation: {
-          min: 0,
-          max: 500
-        }
+        helpText: t('demoCategory1Column1HelpText'),
+        validationRules: { minValue: 0, maxValue: 1000 },
       },
       {
-        id: 'demo-col-t2',
-        name: 'Ali təhsilli müəllim sayı',
-        type: 'number',
-        categoryId: 'demo-cat-teachers',
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory1Column2'),
+        type: 'text' as ColumnType,
+        isRequired: false,
+        order: 2,
+        status: 'active',
+        helpText: t('demoCategory1Column2HelpText'),
+      },
+    ]
+  };
+
+  const demoCategory2: CategoryWithColumns = {
+    id: generateId(),
+    name: t('demoCategory2'),
+    description: t('demoCategory2Description'),
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    assignment: 'sectors',
+    createdAt: new Date().toISOString(),
+    priority: 2,
+    columns: [
+      {
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory2Column1'),
+        type: 'number' as ColumnType,
+        isRequired: true,
+        order: 1,
+        status: 'active',
+        helpText: t('demoCategory2Column1HelpText'),
+        validationRules: { minValue: 0, maxValue: 500 },
+      },
+      {
+        id: generateId(),
+        categoryId: '',
+        name: t('demoCategory2Column2'),
+        type: 'select' as ColumnType,
         isRequired: true,
         order: 2,
-        orderIndex: 2,
         status: 'active',
-        validation: {
-          min: 0,
-          max: 500
-        }
-      }
-    ],
-    id: 'demo-cat-teachers',
-    name: 'Demo Müəllim Məlumatları',
-    description: 'Demo müəllim məlumatları kateqoriyası',
-    assignment: 'all',
-    priority: 2,
-    deadline: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-    order: 2
+        helpText: t('demoCategory2Column2HelpText'),
+        options: [
+          { label: t('option1'), value: 'option1' },
+          { label: t('option2'), value: 'option2' },
+        ],
+      },
+    ]
   };
-}
 
-export function createDemoCategories(): CategoryWithColumns[] {
-  return [createDemoCategory(), createTeachersDemoCategory()];
-}
+  return [demoCategory1, demoCategory2];
+};
+
+// Müəllimlər üçün demo kateqoriya
+export const createTeachersDemoCategory = (): CategoryWithColumns => {
+  const t = (key: string) => key; // Lokalizasiya əvəzinə sadə funksiya
+  
+  return {
+    id: generateId(),
+    name: "Müəllimlər haqqında məlumat",
+    description: "Məktəbin müəllim heyəti haqqında ətraflı məlumatlar",
+    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
+    assignment: 'all',
+    createdAt: new Date().toISOString(),
+    priority: 3,
+    columns: [
+      {
+        id: generateId(),
+        categoryId: '',
+        name: "Müəllimlərin ümumi sayı",
+        type: 'number' as ColumnType,
+        isRequired: true,
+        order: 1,
+        status: 'active',
+        helpText: "Məktəbdə çalışan bütün müəllimlərin sayı",
+        validationRules: { minValue: 0, maxValue: 1000 },
+      },
+      {
+        id: generateId(),
+        categoryId: '',
+        name: "Ali təhsilli müəllimlərin sayı",
+        type: 'number' as ColumnType,
+        isRequired: true,
+        order: 2,
+        status: 'active',
+        helpText: "Ali təhsilə malik müəllim sayı",
+        validationRules: { minValue: 0, maxValue: 1000 },
+      }
+    ]
+  };
+};

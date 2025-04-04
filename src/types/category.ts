@@ -1,72 +1,60 @@
 
-export type CategoryStatus = 'active' | 'inactive' | 'archived';
-export type CategoryAssignment = 'all' | 'sectors' | 'schools';
+export type CategoryStatus = 'active' | 'inactive' | 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  status: CategoryStatus;
-  assignment: CategoryAssignment;
-  priority: number;
-  archived: boolean;
-  column_count: number;
   deadline?: string;
-  created_at?: string;
-  updated_at?: string;
+  status: CategoryStatus | string;
+  priority?: number;
+  assignment?: 'all' | 'sectors';
   createdAt?: string;
   updatedAt?: string;
+  column_count?: number; // Supabase-dən gələn adı saxlayırıq
+  columnCount?: number; // Alternativ ad
+  archived?: boolean;
 }
 
-export interface CategoryWithOrder extends Category {
-  order?: number;
+export interface CategoryWithProgress extends Category {
+  completionPercentage?: number;
+  entryCount?: number;
+  completedEntryCount?: number;
+  rejectedEntryCount?: number;
 }
 
-/**
- * Verilənlər bazasından gələn kateqoriya məlumatlarını tətbiq formatına çevirir
- * @param dbData Supabase-dən gələn kateqoriya məlumatı
- * @returns Kateqoriya obyekti
- */
-export function adaptSupabaseCategory(dbData: any): CategoryWithOrder {
+export interface CategoryFilter {
+  status?: string;
+  assignment?: 'all' | 'sectors';
+  search?: string;
+  showArchived?: boolean;
+}
+
+// Supabase Category tipini Category tipinə çevirmək üçün adapter
+export const adaptSupabaseCategory = (supabaseCategory: any): Category => {
   return {
-    id: dbData.id || '',
-    name: dbData.name || '',
-    description: dbData.description || '',
-    status: adaptCategoryStatus(dbData.status || ''),
-    assignment: adaptCategoryAssignment(dbData.assignment || ''),
-    priority: dbData.priority || 0,
-    archived: dbData.archived || false,
-    column_count: dbData.column_count || 0,
-    deadline: dbData.deadline || undefined,
-    created_at: dbData.created_at || new Date().toISOString(),
-    updated_at: dbData.updated_at || new Date().toISOString(),
-    order: dbData.order || dbData.priority || 0
+    id: supabaseCategory.id,
+    name: supabaseCategory.name,
+    description: supabaseCategory.description,
+    deadline: supabaseCategory.deadline,
+    status: supabaseCategory.status,
+    priority: supabaseCategory.priority,
+    assignment: supabaseCategory.assignment as 'all' | 'sectors', // supabase assignment dəyərini düzgün tipə çeviririk
+    createdAt: supabaseCategory.created_at,
+    updatedAt: supabaseCategory.updated_at,
+    column_count: supabaseCategory.column_count,
+    columnCount: supabaseCategory.column_count,
+    archived: supabaseCategory.archived
   };
-}
+};
 
-// Status və Assignment adapter funksiyaları
-function adaptCategoryStatus(status: string): CategoryStatus {
-  switch(status.toLowerCase()) {
-    case 'active':
-      return 'active';
-    case 'inactive':
-      return 'inactive';
-    case 'archived':
-      return 'archived';
-    default:
-      return 'active';
-  }
-}
-
-function adaptCategoryAssignment(assignment: string): CategoryAssignment {
-  switch(assignment.toLowerCase()) {
-    case 'all':
-      return 'all';
-    case 'sectors':
-      return 'sectors';
-    case 'schools':
-      return 'schools';
-    default:
-      return 'all';
-  }
-}
+// Category tipini Supabase Category tipinə çevirmək üçün adapter
+export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
+  const { columnCount, createdAt, updatedAt, ...rest } = category;
+  
+  return {
+    ...rest,
+    column_count: category.column_count || columnCount,
+    // created_at və updated_at serverə göndərilmir, onları Supabase özü təyin edir
+  };
+};

@@ -1,14 +1,16 @@
 
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AppRoutes } from './routes/AppRoutes';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { Toaster } from './components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
-import { AppRoutes } from './routes/AppRoutes';
 import './App.css';
 
 function App() {
+  const router = createBrowserRouter(AppRoutes);
+  
   // React Query üçün yeni QueryClient yaradaq
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -22,16 +24,14 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <LanguageProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <AppRoutes />
-              <Toaster />
-            </NotificationProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </BrowserRouter>
+      <LanguageProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </NotificationProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
