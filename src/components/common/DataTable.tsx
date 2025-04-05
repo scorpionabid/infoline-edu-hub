@@ -56,6 +56,7 @@ interface DataTableProps {
       label: string;
       onClick: (item: any) => void;
       variant?: "default" | "destructive";
+      isHidden?: (item: any) => boolean; // Əlavə edilmiş xüsusiyyət
     }[];
   };
   deleteDialog?: {
@@ -154,14 +155,17 @@ const DataTable: React.FC<DataTableProps> = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {actionColumn.actions.map((action, idx) => (
-                            <DropdownMenuItem
-                              key={idx}
-                              className={action.variant === "destructive" ? "text-destructive" : ""}
-                              onClick={() => action.onClick(item)}
-                            >
-                              {action.icon}
-                              {action.label}
-                            </DropdownMenuItem>
+                            // isHidden xüsusiyyətini yoxlayırıq və gizlədilməli olan elementləri göstərmirik
+                            !action.isHidden || !action.isHidden(item) ? (
+                              <DropdownMenuItem
+                                key={idx}
+                                className={action.variant === "destructive" ? "text-destructive" : ""}
+                                onClick={() => action.onClick(item)}
+                              >
+                                {action.icon}
+                                {action.label}
+                              </DropdownMenuItem>
+                            ) : null
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>

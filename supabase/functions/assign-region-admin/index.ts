@@ -335,11 +335,8 @@ serve(async (req) => {
 
   try {
     // Auth başlığını al
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return createErrorResponse('Authorization başlığı tapılmadı', null, 401);
-    }
-
+    const authHeader = req.headers.get('Authorization') || '';
+    
     // Supabase müştərisini yarat - Service role key ilə SuperAdmin səlahiyyətli
     const supabaseClient = createSupabaseClient(authHeader);
 

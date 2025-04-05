@@ -123,7 +123,6 @@ const SectorTable: React.FC<SectorTableProps> = ({
             icon: <UserPlus className="h-4 w-4 mr-2" />,
             label: t('assignAdmin'),
             onClick: (sector) => onAssignAdmin(sector),
-            // 'condition' özelliğini isHidden ile değiştiriyoruz
             isHidden: (sector) => !!sector.admin_email
           },
           {

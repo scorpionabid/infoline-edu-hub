@@ -123,7 +123,6 @@ const RegionTable: React.FC<RegionTableProps> = ({
             icon: <UserPlus className="h-4 w-4 mr-2" />,
             label: t('assignAdmin'),
             onClick: (region) => onAssignAdmin(region),
-            // 'condition' özelliğini düzeltiyoruz - bu özellik şartlı gösterme için
             isHidden: (region) => !!region.admin_email
           },
           {
