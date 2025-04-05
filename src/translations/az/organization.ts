@@ -28,7 +28,18 @@ const organization = {
   assignRegionAdmin: "Region adminini təyin et",
   assignRegionAdminDesc: "Bu region üçün admin təyin edin",
   adminAssigned: "Admin uğurla təyin edildi",
+  adminAssignedDesc: "İstifadəçi regiona admin kimi təyin edildi",
   errorAssigningAdmin: "Admin təyin edilərkən xəta baş verdi",
+  selectUser: "İstifadəçi seçin",
+  selectUserRequired: "Zəhmət olmasa istifadəçi seçin",
+  regionNotFound: "Region tapılmadı",
+  errorLoadingUsers: "İstifadəçilər yüklənərkən xəta baş verdi",
+  availableUsers: "Mövcud istifadəçilər",
+  noUsersFound: "İstifadəçi tapılmadı",
+  existingUserAdminHelp: "Seçilmiş istifadəçi bu region üçün admin səlahiyyətlərinə malik olacaq.",
+  assignExistingUserAsAdmin: "Mövcud istifadəçini admin kimi təyin edin",
+  createNewAdmin: "Yeni admin yarat",
+  useExistingUser: "Mövcud istifadəçini seç",
   
   // Sectors
   sectors: "Sektorlar",

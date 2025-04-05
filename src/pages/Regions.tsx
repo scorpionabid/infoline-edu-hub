@@ -5,6 +5,7 @@ import { useRegionsStore } from '@/hooks/useRegionsStore';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { RegionDialog } from '@/components/regions/RegionDialog';
 import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
+import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; // Yeni dialog
 import RegionHeader from '@/components/regions/RegionHeader';
 import RegionTable from '@/components/regions/RegionTable';
 import { EnhancedRegion } from '@/hooks/useRegionsStore';
@@ -33,22 +34,34 @@ const Regions = () => {
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
+  const [openExistingUserDialog, setOpenExistingUserDialog] = useState(false); // Yeni state
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
   const [createdRegion, setCreatedRegion] = useState<any>(null);
+  const [adminAssignMethod, setAdminAssignMethod] = useState<'new' | 'existing'>('existing'); // Admin təyin etmə metodu
 
   const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
     setOpenRegionDialog(true);
   }, []);
 
-  const handleOpenAdminDialog = useCallback((region: EnhancedRegion) => {
+  // Admin təyin etmə dialoqlarını açmaq
+  const handleOpenAdminDialog = useCallback((region: EnhancedRegion, method: 'new' | 'existing' = 'existing') => {
     setSelectedRegion(region);
-    setOpenAdminDialog(true);
+    setAdminAssignMethod(method);
+    
+    // Metoda görə fərqli dialoqları aç
+    if (method === 'existing') {
+      setOpenExistingUserDialog(true);
+    } else {
+      setOpenAdminDialog(true);
+    }
   }, []);
 
   const handleRegionCreated = (region: any) => {
     setCreatedRegion(region);
-    setOpenAdminDialog(true);
+    // Burada istifadəçiyə admin təyin etmə metodunu soruşa bilərik
+    // və ya birbaşa təyin etmə edə bilərik
+    setOpenExistingUserDialog(true); // Varsayılan olaraq mövcud istifadəçilərdən seçim
   };
 
   const handleAdminAssigned = () => {
@@ -107,7 +120,7 @@ const Regions = () => {
           loading={loading}
           onEdit={handleOpenRegionDialog}
           onDelete={handleDeleteRegion}
-          onAssignAdmin={handleOpenAdminDialog}
+          onAssignAdmin={(region) => handleOpenAdminDialog(region, 'existing')} // Varsayılan metod dəyişdirildi
         />
         
         {totalPages > 1 && (
@@ -131,9 +144,18 @@ const Regions = () => {
           onSuccess={handleRegionCreated}
         />
         
+        {/* Köhnə admin təyin etmə dialoqu - yeni admin yaratmaq üçün */}
         <RegionAdminDialog
           open={openAdminDialog}
           setOpen={setOpenAdminDialog}
+          region={createdRegion || selectedRegion}
+          onSuccess={handleAdminAssigned}
+        />
+        
+        {/* Yeni admin təyin etmə dialoqu - mövcud istifadəçilərdən seçim üçün */}
+        <ExistingUserAdminDialog
+          open={openExistingUserDialog}
+          setOpen={setOpenExistingUserDialog}
           region={createdRegion || selectedRegion}
           onSuccess={handleAdminAssigned}
         />
