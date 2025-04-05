@@ -5,7 +5,7 @@ import { useRegionsStore } from '@/hooks/useRegionsStore';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { RegionDialog } from '@/components/regions/RegionDialog';
 import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
-import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; // Yeni dialog
+import { ExistingUserAdminDialog } from '@/components/regions/ExistingUserAdminDialog'; 
 import RegionHeader from '@/components/regions/RegionHeader';
 import RegionTable from '@/components/regions/RegionTable';
 import { EnhancedRegion } from '@/hooks/useRegionsStore';
@@ -34,11 +34,10 @@ const Regions = () => {
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
-  const [openExistingUserDialog, setOpenExistingUserDialog] = useState(false); // Yeni state
+  const [openExistingUserDialog, setOpenExistingUserDialog] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
   const [createdRegion, setCreatedRegion] = useState<any>(null);
-  const [adminAssignMethod, setAdminAssignMethod] = useState<'new' | 'existing'>('existing'); // Admin təyin etmə metodu
-
+  
   const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
     setOpenRegionDialog(true);
@@ -46,8 +45,8 @@ const Regions = () => {
 
   // Admin təyin etmə dialoqlarını açmaq
   const handleOpenAdminDialog = useCallback((region: EnhancedRegion, method: 'new' | 'existing' = 'existing') => {
+    console.log('Admin təyin etmə, Region:', region, 'Method:', method);
     setSelectedRegion(region);
-    setAdminAssignMethod(method);
     
     // Metoda görə fərqli dialoqları aç
     if (method === 'existing') {
@@ -58,13 +57,13 @@ const Regions = () => {
   }, []);
 
   const handleRegionCreated = (region: any) => {
+    console.log('Region yaradıldı:', region);
     setCreatedRegion(region);
-    // Burada istifadəçiyə admin təyin etmə metodunu soruşa bilərik
-    // və ya birbaşa təyin etmə edə bilərik
-    setOpenExistingUserDialog(true); // Varsayılan olaraq mövcud istifadəçilərdən seçim
+    setOpenExistingUserDialog(true); // Mövcud istifadəçilərdən seçim
   };
 
   const handleAdminAssigned = () => {
+    console.log('Admin təyin edildi, regionları yeniləyirəm');
     fetchRegions();
     setCreatedRegion(null);
   };
@@ -73,6 +72,7 @@ const Regions = () => {
     try {
       if (selectedRegion) {
         // Region güncelleme
+        console.log('Region yenilənir:', values);
         await handleUpdateRegion(selectedRegion.id, {
           name: values.name,
           description: values.description,
@@ -81,6 +81,7 @@ const Regions = () => {
         toast.success(t('regionUpdated'));
       } else {
         // Yeni region oluşturma
+        console.log('Yeni region yaradılır:', values);
         await handleAddRegion({
           name: values.name,
           description: values.description,
@@ -93,6 +94,7 @@ const Regions = () => {
       setSelectedRegion(null);
       fetchRegions();
     } catch (error: any) {
+      console.error('Region yaradılarkən/yenilənərkən xəta:', error);
       toast.error(t('errorOccurred'), {
         description: error.message || t('unexpectedError')
       });
@@ -120,7 +122,7 @@ const Regions = () => {
           loading={loading}
           onEdit={handleOpenRegionDialog}
           onDelete={handleDeleteRegion}
-          onAssignAdmin={(region) => handleOpenAdminDialog(region, 'existing')} // Varsayılan metod dəyişdirildi
+          onAssignAdmin={(region) => handleOpenAdminDialog(region, 'existing')}
         />
         
         {totalPages > 1 && (
@@ -152,7 +154,7 @@ const Regions = () => {
           onSuccess={handleAdminAssigned}
         />
         
-        {/* Yeni admin təyin etmə dialoqu - mövcud istifadəçilərdən seçim üçün */}
+        {/* Mövcud istifadəçilərdən seçim üçün admin təyin etmə dialoqu */}
         <ExistingUserAdminDialog
           open={openExistingUserDialog}
           setOpen={setOpenExistingUserDialog}

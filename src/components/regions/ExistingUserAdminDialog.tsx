@@ -69,17 +69,24 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
       setError(t('regionNotFound') || 'Region tapılmadı');
       return;
     }
+
+    console.log('Təyin edilmə başladı. Region ID:', region.id, 'User ID:', selectedUserId);
     
     try {
       const result = await assignUserAsRegionAdmin(region.id, selectedUserId);
       
       if (result.success) {
+        console.log('Təyin etmə uğurla başa çatdı', result);
         setOpen(false);
         if (onSuccess) {
           onSuccess();
         }
+      } else {
+        console.error('Təyin etmə xətası:', result.error);
+        setError(result.error);
       }
     } catch (err: any) {
+      console.error('Təyin etmə zamanı istisna:', err);
       setError(err.message || t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta baş verdi');
     }
   };
@@ -120,7 +127,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
         <DialogHeader>
           <DialogTitle>{t('assignRegionAdmin') || 'Region admini təyin et'}</DialogTitle>
           <DialogDescription>
-            {t("assignExistingUserAsAdmin") || `"${region.name}" regionu üçün mövcud istifadəçini admin kimi təyin edin`}
+            {`"${region.name}" regionu üçün mövcud istifadəçini admin kimi təyin edin`}
           </DialogDescription>
         </DialogHeader>
         

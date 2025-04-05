@@ -17,18 +17,26 @@ export const useAvailableUsers = () => {
       setLoading(true);
       setError(null);
       
-      // 1. user_roles cədvəlindən məlumatları alaq
-      const { data: rolesData, error: rolesError, count } = await supabase
-        .from('user_roles')
-        .select('*', { count: 'exact' });
+      console.log('İstifadəçiləri əldə etmə başladı');
       
-      if (rolesError) throw rolesError;
+      // 1. user_roles cədvəlindən məlumatları alaq
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+      
+      if (rolesError) {
+        console.error('Rolları əldə edərkən xəta:', rolesError);
+        throw rolesError;
+      }
       
       if (!rolesData || rolesData.length === 0) {
+        console.log('Heç bir rol tapılmadı');
         setUsers([]);
         setLoading(false);
         return;
       }
+      
+      console.log(`${rolesData.length} rol tapıldı`);
       
       // İstifadəçi ID-lərini toplayaq
       const userIds = rolesData.map(item => item.user_id);
@@ -39,7 +47,12 @@ export const useAvailableUsers = () => {
         .select('*')
         .in('id', userIds);
       
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Profilləri əldə edərkən xəta:', profilesError);
+        throw profilesError;
+      }
+      
+      console.log(`${profilesData?.length || 0} profil tapıldı`);
       
       // Profil məlumatlarını ID-yə görə map edək
       const profilesMap: Record<string, any> = {};
@@ -49,8 +62,17 @@ export const useAvailableUsers = () => {
         });
       }
       
-      // 3. İstifadəçi məlumatlarını əldə etmək
-      const { data: emailsData } = await supabase.rpc('get_user_emails_by_ids', { user_ids: userIds });
+      // 3. İstifadəçi email məlumatlarını əldə etmək
+      const { data: emailsData, error: emailsError } = await supabase.rpc('get_user_emails_by_ids', { 
+        user_ids: userIds 
+      });
+      
+      if (emailsError) {
+        console.error('Email məlumatlarını əldə edərkən xəta:', emailsError);
+        throw emailsError;
+      }
+      
+      console.log(`${emailsData?.length || 0} email məlumatı tapıldı`);
       
       const emailMap: Record<string, string> = {};
       if (emailsData) {
@@ -97,6 +119,7 @@ export const useAvailableUsers = () => {
         };
       });
       
+      console.log(`${formattedUsers.length} istifadəçi formatlandı`);
       setUsers(formattedUsers);
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);

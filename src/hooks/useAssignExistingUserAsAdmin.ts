@@ -13,10 +13,12 @@ export const useAssignExistingUserAsAdmin = () => {
     try {
       setLoading(true);
       
+      console.log('Admin təyin etmək: Region ID:', regionId, 'User ID:', userId);
+      
       // Supabase edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-admin', {
         body: {
-          regionId,
+          regionId, // Backend tərəfdə bu parametrləri gözləyir
           userId
         }
       });
@@ -30,7 +32,7 @@ export const useAssignExistingUserAsAdmin = () => {
       }
       
       // Əgər edge funksiyası xəta qaytarıbsa
-      if (data.error) {
+      if (data && data.error) {
         console.error('Admin təyin edilərkən xəta:', data.error);
         toast.error(t('errorAssigningAdmin'), {
           description: data.error || t('unexpectedError')
