@@ -90,11 +90,56 @@ const user = {
   adminEmail: "Admin e-poçtu",
   adminPassword: "Admin şifrəsi",
   
+  // Entity information
+  adminEntity: "İdarə edilən qurum",
+  adminEntityDetails: "Qurum məlumatları",
+  entityName: "Qurum adı",
+  entityType: "Qurum tipi",
+  region: "Region",
+  sector: "Sektor",
+  school: "Məktəb",
+  entityStatus: "Qurum statusu",
+  schoolType: "Məktəb tipi",
+  
+  // Timestamps
+  createdAt: "Yaradılma tarixi",
+  updatedAt: "Yenilənmə tarixi",
+  
+  // Languages
+  language_az: "Azərbaycan dili",
+  language_ru: "Rus dili",
+  language_en: "İngilis dili",
+  language_tr: "Türk dili",
+  
+  // UI elements
+  selectRole: "Rol seçin",
+  selectStatus: "Status seçin",
+  allRoles: "Bütün rollar",
+  allStatuses: "Bütün statuslar",
+  searchUsers: "İstifadəçiləri axtar...",
+  
   // Misc
   users: "İstifadəçilər",
   allUsers: "Bütün istifadəçilər",
   activeUsers: "Aktiv istifadəçilər",
   admins: "Adminlər",
+  userUpdated: "İstifadəçi məlumatları yeniləndi",
+  userDeleted: "İstifadəçi silindi",
+  loading: "Yüklənir...",
+  noUsersFound: "İstifadəçi tapılmadı",
+  viewDetails: "Təfərrüatları göstər",
+  page: "Səhifə",
+  of: "/",
+  close: "Bağla",
+  save: "Saxla",
+  cancel: "Ləğv et",
+  edit: "Redaktə et",
+  delete: "Sil",
+  previous: "Əvvəlki",
+  next: "Sonrakı",
+  notAvailable: "Mövcud deyil",
+  invalidDate: "Yanlış tarix",
+  viewUserInfoDesc: "İstifadəçi haqqında ətraflı məlumat"
 };
 
 export default user;

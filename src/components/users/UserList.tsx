@@ -17,12 +17,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { User } from '@/types/user';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/card';
 import { useRole, Role } from '@/context/AuthContext';
-import { FilterX, Search, MoreHorizontal, Edit, Trash2, UserCog } from 'lucide-react';
+import { FilterX, Search, MoreHorizontal, Edit, Trash2, UserCog, Building2, BookOpen, School } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -113,6 +112,38 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
     }
   };
 
+  // Get admin entity display info
+  const renderAdminEntityInfo = (user: FullUserData) => {
+    if (!user.adminEntity) return null;
+    
+    const { type, name } = user.adminEntity;
+    
+    if (type === 'region') {
+      return (
+        <div className="flex items-center">
+          <Building2 className="h-4 w-4 mr-1 text-blue-600" />
+          <span>{name}</span>
+        </div>
+      );
+    } else if (type === 'sector') {
+      return (
+        <div className="flex items-center">
+          <BookOpen className="h-4 w-4 mr-1 text-green-600" />
+          <span>{name}</span>
+        </div>
+      );
+    } else if (type === 'school') {
+      return (
+        <div className="flex items-center">
+          <School className="h-4 w-4 mr-1 text-orange-600" />
+          <span>{name}</span>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <Card className="p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -178,6 +209,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
               <TableHead>{t('user')}</TableHead>
               <TableHead>{t('email')}</TableHead>
               <TableHead>{t('role')}</TableHead>
+              <TableHead>{t('adminEntity')}</TableHead>
               <TableHead>{t('status')}</TableHead>
               <TableHead>{t('lastLogin')}</TableHead>
               <TableHead className="text-right">{t('actions')}</TableHead>
@@ -186,7 +218,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-4">
+                <TableCell colSpan={7} className="text-center py-4">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
                     <span className="ml-2">{t('loading')}</span>
@@ -195,7 +227,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
                   {t('noUsersFound')}
                 </TableCell>
               </TableRow>
@@ -204,7 +236,7 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
+                      <Avatar className="h-8 w-8">
                         <AvatarImage src={user.avatar} alt={user.full_name} />
                         <AvatarFallback className="bg-primary/10 text-primary">
                           {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -218,6 +250,9 @@ const UserList: React.FC<UserListProps> = ({ currentUserRole, currentUserRegionI
                     <Badge variant="outline" className={getRoleBadgeStyle(user.role)}>
                       {t(user.role)}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {renderAdminEntityInfo(user)}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusBadgeStyle(user.status)}>
