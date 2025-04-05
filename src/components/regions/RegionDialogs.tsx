@@ -31,8 +31,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateRegionAdmin } from '@/hooks/useCreateRegionAdmin';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const statusOptions = [
   { value: 'active', label: 'active' },
@@ -48,15 +49,25 @@ const newRegionSchema = z.object({
   }),
   description: z.string().optional(),
   status: z.string().optional(),
+  skipAdminCreation: z.boolean().optional(),
   adminName: z.string().min(2, {
     message: "Admin adı ən azı 2 simvol olmalıdır.",
-  }),
+  }).optional(),
   adminEmail: z.string().email({
     message: "Düzgün email formatı daxil edin.",
-  }),
+  }).optional(),
   adminPassword: z.string().min(6, {
     message: "Şifrə ən azı 6 simvol olmalıdır.",
-  }),
+  }).optional(),
+}).refine((data) => {
+  // Əgər admin yaratma seçilməyibsə, admin məlumatları lazım deyil
+  if (data.skipAdminCreation) return true;
+  
+  // Əgər admin yaratma seçilibsə, bütün admin məlumatları doldurulmalıdır
+  return data.adminName && data.adminEmail && data.adminPassword;
+}, {
+  message: "Əgər admin yaratma seçilməyibsə, bütün admin məlumatları doldurulmalıdır",
+  path: ["adminName"]
 });
 
 // 2. Mövcud regionu redaktə etmək üçün admin olmadan
@@ -87,6 +98,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
   const { t } = useLanguage();
   const { createRegionWithAdmin, loading: createRegionLoading } = useCreateRegionAdmin();
   const [error, setError] = React.useState<string | null>(null);
+  const [skipAdminCreation, setSkipAdminCreation] = React.useState<boolean>(false);
 
   const isEditMode = Boolean(selectedRegion);
   
@@ -107,6 +119,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
       name: "",
       description: "",
       status: "active",
+      skipAdminCreation: false,
       adminName: "",
       adminEmail: "",
       adminPassword: "",
@@ -120,6 +133,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
     // Dialog açıldığında xəta mesajlarını sıfırla
     if (open) {
       setError(null);
+      setSkipAdminCreation(false);
       
       if (selectedRegion) {
         editForm.reset({
@@ -132,6 +146,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
           name: "",
           description: "",
           status: "active",
+          skipAdminCreation: false,
           adminName: "",
           adminEmail: "",
           adminPassword: "",
@@ -160,9 +175,10 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
           regionName: newValues.name,
           regionDescription: newValues.description,
           regionStatus: newValues.status,
-          adminName: newValues.adminName,
-          adminEmail: newValues.adminEmail,
-          adminPassword: newValues.adminPassword
+          adminName: newValues.skipAdminCreation ? undefined : newValues.adminName,
+          adminEmail: newValues.skipAdminCreation ? undefined : newValues.adminEmail,
+          adminPassword: newValues.skipAdminCreation ? undefined : newValues.adminPassword,
+          skipAdminCreation: newValues.skipAdminCreation
         });
         
         if (result.success) {
@@ -175,6 +191,11 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
       console.error('Form submit xətası:', error);
       setError(error.message || 'Region işləmi zamanı xəta baş verdi');
     }
+  };
+
+  const handleSkipAdminChange = (checked: boolean) => {
+    setSkipAdminCreation(checked);
+    createForm.setValue('skipAdminCreation', checked);
   };
 
   return (
@@ -191,6 +212,16 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {!isEditMode && (
+          <Alert variant="info" className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Məlumat</AlertTitle>
+            <AlertDescription>
+              İcazə xətası ilə qarşılaşırsınızsa, "Admin yaratma" seçimini aktiv edin və yalnız region yaratmağı sınayın.
+            </AlertDescription>
           </Alert>
         )}
         
@@ -254,45 +285,63 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
             {/* Yeni region yaratılarkən admin məlumatları */}
             {!isEditMode && (
               <>
-                <FormField
-                  control={createForm.control}
-                  name="adminName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("adminName") || 'Admin adı'}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("adminName") || 'Admin adı'} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={createForm.control}
-                  name="adminEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("adminEmail") || 'Admin email'}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("adminEmail") || 'Admin email'} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={createForm.control}
-                  name="adminPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("adminPassword") || 'Admin şifrəsi'}</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder={t("adminPassword") || 'Admin şifrəsi'} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="flex items-center space-x-2 mb-2">
+                  <Checkbox 
+                    id="skipAdminCreation" 
+                    checked={skipAdminCreation}
+                    onCheckedChange={handleSkipAdminChange}
+                  />
+                  <label
+                    htmlFor="skipAdminCreation"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {t("skipAdminCreation") || "Admin yaratma"}
+                  </label>
+                </div>
+                
+                {!skipAdminCreation && (
+                  <>
+                    <FormField
+                      control={createForm.control}
+                      name="adminName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("adminName") || 'Admin adı'}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={t("adminName") || 'Admin adı'} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="adminEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("adminEmail") || 'Admin email'}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={t("adminEmail") || 'Admin email'} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="adminPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("adminPassword") || 'Admin şifrəsi'}</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder={t("adminPassword") || 'Admin şifrəsi'} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
               </>
             )}
             

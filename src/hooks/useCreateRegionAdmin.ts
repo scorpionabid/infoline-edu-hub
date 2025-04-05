@@ -3,35 +3,51 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface RegionAdminData {
   regionName: string;
   regionDescription?: string;
   regionStatus?: string;
-  adminName: string;
-  adminEmail: string;
-  adminPassword: string;
+  adminName?: string;  // opsional edildi
+  adminEmail?: string; // opsional edildi
+  adminPassword?: string; // opsional edildi
+  skipAdminCreation?: boolean; // Yeni parametr əlavə edildi
 }
 
 export const useCreateRegionAdmin = () => {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const createRegionWithAdmin = useCallback(async (data: RegionAdminData) => {
     setLoading(true);
     
     try {
+      // Əgər admin məlumatları yoxdursa və ya skipAdminCreation=true, 
+      // yalnız region yaradılacaq
+      const shouldCreateAdmin = !data.skipAdminCreation && 
+                             data.adminName && 
+                             data.adminEmail && 
+                             data.adminPassword;
+      
       console.log('Region yaratma məlumatları:', {
         regionName: data.regionName,
-        adminEmail: data.adminEmail ? `${data.adminEmail.substring(0, 3)}...` : undefined
+        regionDescription: data.regionDescription,
+        skipAdminCreation: data.skipAdminCreation,
+        willCreateAdmin: shouldCreateAdmin
       });
       
       // Region və Admin-i yaratmaq üçün edge funksiyasını çağırırıq
       const { data: responseData, error } = await supabase.functions.invoke('create-region-admin', {
-        body: data
+        body: {
+          ...data,
+          currentUserEmail: user?.email, // İstifadəçi email-ini əlavə edirik
+          skipAdminCreation: data.skipAdminCreation || !shouldCreateAdmin
+        }
       });
       
-      console.log('Edge funksiyası cavabı:', responseData, error);
+      console.log('Edge funksiyası cavabı:', responseData);
       
       if (error) {
         throw new Error(error.message || 'Region və admin yaradılarkən xəta baş verdi');
@@ -45,8 +61,12 @@ export const useCreateRegionAdmin = () => {
         throw new Error('Region yaradılarkən naməlum xəta baş verdi');
       }
       
-      console.log('Region yaradıldı:', responseData);
-      toast.success(t('regionCreated') || 'Region uğurla yaradıldı');
+      // Uğurlu mesaj
+      let successMessage = data.skipAdminCreation || !shouldCreateAdmin
+        ? t('regionCreatedWithoutAdmin') || 'Region uğurla yaradıldı (admin olmadan)'
+        : t('regionCreated') || 'Region uğurla yaradıldı';
+      
+      toast.success(successMessage);
       
       return { success: true, data: responseData };
     } catch (error: any) {
@@ -56,7 +76,12 @@ export const useCreateRegionAdmin = () => {
       
       // Specific error messages
       if (error.message) {
-        errorMessage = error.message;
+        if (error.message.includes('not allowed') || error.message.includes('not_admin')) {
+          errorMessage = t('insufficientPermissions') || 
+            'Admin yaratmaq üçün kifayət qədər icazə yoxdur. Yalnız region yaratmağı sınayın.';
+        } else {
+          errorMessage = error.message;
+        }
       }
       
       toast.error(t('errorOccurred') || 'Xəta baş verdi', {
@@ -67,7 +92,7 @@ export const useCreateRegionAdmin = () => {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, user]);
 
   return {
     createRegionWithAdmin,

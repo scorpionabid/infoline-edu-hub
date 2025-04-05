@@ -2,6 +2,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
+// CORS başlıqları
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -44,6 +45,31 @@ function createSupabaseClient(authHeader: string) {
   );
 }
 
+// Sorğu məlumatlarını validasiya etmək
+function validateRequestData(data: any) {
+  const { regionName, skipAdminCreation = false, adminName, adminEmail, adminPassword } = data;
+  
+  // Region adı hökmən olmalıdır
+  if (!regionName) {
+    throw new Error('Region adı tələb olunur');
+  }
+  
+  // Əgər admin yaratmaq istəyiriksə, bütün məlumatlar olmalıdır
+  if (!skipAdminCreation) {
+    if (!adminName) {
+      throw new Error('Admin adı tələb olunur');
+    }
+    if (!adminEmail) {
+      throw new Error('Admin email tələb olunur');
+    }
+    if (!adminPassword) {
+      throw new Error('Admin şifrəsi tələb olunur');
+    }
+  }
+  
+  return { isValid: true };
+}
+
 // Bölgə adının unikallığının yoxlanılması
 async function checkRegionNameExists(supabaseClient: any, regionName: string) {
   try {
@@ -69,7 +95,7 @@ async function checkUserEmailExists(supabaseClient: any, email: string) {
   if (!email) return null;
   
   try {
-    // getUserByEmail metodu olmadığından direct auth istifadəçilərinə sorğu edirik
+    // profiles cədvəlində email üzrə yoxlayırıq
     const { data, error } = await supabaseClient
       .from('profiles')
       .select('id')
@@ -119,6 +145,7 @@ async function createAdminUser(supabaseClient: any, adminData: any, regionId: st
   const { adminName, adminEmail, adminPassword } = adminData;
   
   if (!adminEmail || !adminName || !adminPassword) {
+    console.log('Admin məlumatları tam deyil, admin yaradılmır');
     return null;
   }
   
@@ -138,6 +165,9 @@ async function createAdminUser(supabaseClient: any, adminData: any, regionId: st
     });
 
     if (userError) {
+      if (userError.message === 'User not allowed') {
+        throw new Error('Bu əməliyyat üçün icazəniz yoxdur. Təkcə region yaradın.');
+      }
       throw userError;
     }
 
@@ -202,7 +232,11 @@ async function addAuditLog(supabaseClient: any, userId: string, regionId: string
         entity_id: regionId,
         new_value: JSON.stringify({
           region: regionData,
-          admin: adminData
+          admin: adminData ? {
+            id: adminData.id,
+            email: adminData.email,
+            name: adminData.name
+          } : null
         })
       });
       
@@ -214,8 +248,13 @@ async function addAuditLog(supabaseClient: any, userId: string, regionId: string
 }
 
 // Region admin məlumatlarını yeniləmək
-async function updateRegionAdminInfo(supabaseClient: any, regionId: string, userId: string, adminEmail: string) {
+async function updateRegionAdminInfo(supabaseClient: any, regionId: string, userId: string | null, adminEmail: string | null) {
   try {
+    if (!userId || !adminEmail) {
+      console.log('Admin məlumatları olmadığı üçün region admin məlumatları yenilənmir');
+      return;
+    }
+    
     console.log('Region admin məlumatları yenilənir...');
     await supabaseClient
       .from('regions')
@@ -254,21 +293,24 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
     regionStatus, 
     adminName, 
     adminEmail, 
-    adminPassword 
+    adminPassword,
+    skipAdminCreation = false,
+    currentUserEmail
   } = requestData;
   
-  console.log('Gələn məlumatlar:', JSON.stringify({ 
+  // Məlumatları loglamaq (həssas məlumatlar gizlədilir)
+  console.log('Gələn məlumatları:', JSON.stringify({ 
     regionName, 
     regionDescription, 
-    regionStatus, 
-    adminName, 
-    adminEmail: adminEmail ? `${adminEmail.substring(0, 3)}...` : undefined 
+    regionStatus,
+    skipAdminCreation,
+    adminName: adminName ? '***' : undefined,
+    adminEmail: adminEmail ? `${adminEmail.substring(0, 3)}***` : undefined,
+    currentUserEmail: currentUserEmail ? `${currentUserEmail.substring(0, 3)}***` : undefined
   }, null, 2));
 
-  // Region adı validasiyası
-  if (!regionName) {
-    throw new Error('Region adı tələb olunur');
-  }
+  // Məlumatların validasiyası
+  validateRequestData(requestData);
 
   // Region adının yoxlanması
   const existingRegion = await checkRegionNameExists(supabaseClient, regionName);
@@ -276,8 +318,8 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
     throw new Error(`"${regionName}" adlı region artıq mövcuddur`);
   }
 
-  // Email validasiyası
-  if (adminEmail) {
+  // Email validasiyası (admin yaradılacaqsa)
+  if (!skipAdminCreation && adminEmail) {
     const existingUser = await checkUserEmailExists(supabaseClient, adminEmail);
     if (existingUser) {
       throw new Error(`"${adminEmail}" email ünvanı ilə istifadəçi artıq mövcuddur`);
@@ -295,45 +337,66 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
   let adminData = null;
   
   try {
-    // Əgər admin məlumatları varsa, admin istifadəçi yarat
-    if (adminEmail && adminName && adminPassword) {
-      // Admin istifadəçi yaratmaq
-      const newUser = await createAdminUser(supabaseClient, {
-        adminName,
-        adminEmail,
-        adminPassword
-      }, newRegion.id);
-      
-      if (newUser) {
-        // İstifadəçi rolunu əlavə etmək
-        await createUserRole(supabaseClient, newUser.id, newRegion.id);
+    // Əgər admin yaradılacaqsa və admin məlumatları varsa, admin istifadəçi yarat
+    if (!skipAdminCreation && adminEmail && adminName && adminPassword) {
+      try {
+        // Admin istifadəçi yaratmaq
+        const newUser = await createAdminUser(supabaseClient, {
+          adminName,
+          adminEmail,
+          adminPassword
+        }, newRegion.id);
         
-        // Audit loq əlavə etmək
-        await addAuditLog(supabaseClient, newUser.id, newRegion.id, newRegion, {
-          id: newUser.id,
-          email: adminEmail,
-          name: adminName
-        });
-        
-        // Region admin məlumatlarını yeniləmək
-        await updateRegionAdminInfo(supabaseClient, newRegion.id, newUser.id, adminEmail);
-        
-        adminData = {
-          id: newUser.id,
-          email: adminEmail,
-          name: adminName
-        };
+        if (newUser) {
+          // İstifadəçi rolunu əlavə etmək
+          await createUserRole(supabaseClient, newUser.id, newRegion.id);
+          
+          // Region admin məlumatlarını yeniləmək
+          await updateRegionAdminInfo(supabaseClient, newRegion.id, newUser.id, adminEmail);
+          
+          // Audit loq məlumatları hazırla
+          adminData = {
+            id: newUser.id,
+            email: adminEmail,
+            name: adminName
+          };
+        }
+      } catch (adminError: any) {
+        console.error('Admin yaradılarkən xəta:', adminError);
+        // Admin yaradılma xətası olsa da, regiona audit loq əlavə edək
       }
+    }
+    
+    // İstifadəçiyə aid audit loq əlavə etmək
+    try {
+      // Mövcud istifadəçi ID-sini al (əgər mümkünsə)
+      const { data: userProfile } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('email', currentUserEmail)
+        .maybeSingle();
+      
+      const userId = userProfile?.id;
+      if (userId) {
+        await addAuditLog(supabaseClient, userId, newRegion.id, newRegion, adminData);
+      } else {
+        console.log('İstifadəçi ID-si tapılmadığı üçün audit log yaradılmadı');
+      }
+    } catch (auditError) {
+      console.error('Audit log yaradılarkən xəta:', auditError);
     }
     
     return {
       success: true,
       region: newRegion,
-      admin: adminData
+      admin: adminData,
+      adminCreated: !!adminData
     };
   } catch (error) {
-    // Xəta baş verərsə, yaradılmış regionu sil
-    await deleteRegionOnError(supabaseClient, newRegion.id);
+    // Xəta baş verərsə və region yaradılıbsa, onu sil
+    if (newRegion?.id) {
+      await deleteRegionOnError(supabaseClient, newRegion.id);
+    }
     throw error;
   }
 }
@@ -362,10 +425,18 @@ serve(async (req) => {
     try {
       const result = await createRegionWithAdmin(supabaseClient, requestData);
       return createSuccessResponse(result);
-    } catch (error) {
-      return createErrorResponse(error.message || 'Region yaradılarkən xəta baş verdi', error, 400);
+    } catch (error: any) {
+      const errorMessage = error.message || 'Region yaradılarkən xəta baş verdi';
+      
+      // İcazə xətalarını daha spesifik log et
+      if (errorMessage.includes('not allowed') || errorMessage.includes('not_admin')) {
+        console.error('İcazə xətası: İstifadəçi admin yaratmaq səlahiyyətinə sahib deyil');
+        return createErrorResponse('Admin yaratmaq üçün icazəniz yoxdur. Yalnız region yaratmağı sınayın və "skipAdminCreation" parametrini true olaraq təyin edin.', error, 403);
+      }
+      
+      return createErrorResponse(errorMessage, error, 400);
     }
-  } catch (error) {
-    return createErrorResponse('Gözlənilməz xəta baş verdi', error, 500);
+  } catch (error: any) {
+    return createErrorResponse('Gözlənilməz xəta baş verdi: ' + (error.message || 'Naməlum xəta'), error, 500);
   }
 });
