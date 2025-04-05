@@ -181,9 +181,9 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{selectedRegion ? t('editRegion') : t('addRegion')}</DialogTitle>
+          <DialogTitle>{selectedRegion ? t('editRegion') || 'Regionu düzəlt' : t('addRegion') || 'Region əlavə et'}</DialogTitle>
           <DialogDescription>
-            {t("createEditRegions")}
+            {t("createEditRegions") || 'Region məlumatlarını daxil edin'}
           </DialogDescription>
         </DialogHeader>
         
@@ -201,9 +201,9 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("regionName")}</FormLabel>
+                  <FormLabel>{t("regionName") || 'Region adı'}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t("regionName")} {...field} />
+                    <Input placeholder={t("regionName") || 'Region adı'} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -214,10 +214,10 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("description")}</FormLabel>
+                  <FormLabel>{t("description") || 'Təsvir'}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={t("description")}
+                      placeholder={t("description") || 'Təsvir'}
                       className="resize-none"
                       {...field}
                     />
@@ -231,17 +231,17 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("status")}</FormLabel>
+                  <FormLabel>{t("status") || 'Status'}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t("selectStatus")} />
+                        <SelectValue placeholder={t("selectStatus") || 'Status seçin'} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {statusOptions.map((status) => (
                         <SelectItem key={status.value} value={status.value}>
-                          {t(status.label)}
+                          {t(status.label) || status.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -259,9 +259,9 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                   name="adminName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("adminName")}</FormLabel>
+                      <FormLabel>{t("adminName") || 'Admin adı'}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("adminName")} {...field} />
+                        <Input placeholder={t("adminName") || 'Admin adı'} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -272,9 +272,9 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                   name="adminEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("adminEmail")}</FormLabel>
+                      <FormLabel>{t("adminEmail") || 'Admin email'}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("adminEmail")} {...field} />
+                        <Input placeholder={t("adminEmail") || 'Admin email'} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -285,9 +285,9 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                   name="adminPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("adminPassword")}</FormLabel>
+                      <FormLabel>{t("adminPassword") || 'Admin şifrəsi'}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder={t("adminPassword")} {...field} />
+                        <Input type="password" placeholder={t("adminPassword") || 'Admin şifrəsi'} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -304,16 +304,16 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                 className="mr-2"
                 disabled={createRegionLoading}
               >
-                {t("cancel")}
+                {t("cancel") || 'Ləğv et'}
               </Button>
               <Button type="submit" disabled={createRegionLoading}>
                 {createRegionLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("loading")}
+                    {t("loading") || 'Yüklənir...'}
                   </>
                 ) : (
-                  selectedRegion ? t("updateRegion") : t("createRegion")
+                  selectedRegion ? t("updateRegion") || 'Regionu yenilə' : t("createRegion") || 'Region yarat'
                 )}
               </Button>
             </div>

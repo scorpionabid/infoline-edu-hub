@@ -29,5 +29,6 @@ port = 54324
 enabled = true
 site_url = "http://localhost:3000"
 
+[functions]
 [functions.create-region-admin]
 verify_jwt = true

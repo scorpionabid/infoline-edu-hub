@@ -17,6 +17,7 @@ serve(async (req) => {
     // Auth başlığını al
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('Authorization başlığı tapılmadı');
       return new Response(
         JSON.stringify({ error: 'Authorization başlığı tapılmadı' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
@@ -27,9 +28,8 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
-    // Xəta ayıklama üçün loq əlavə edirik
     console.log("Supabase URL:", supabaseUrl);
-    console.log("Supabase Key var mı:", supabaseKey ? "Bəli" : "Xeyr");
+    console.log("Auth header:", authHeader ? "Mövcuddur" : "Yoxdur");
     
     const supabaseClient = createClient(
       supabaseUrl,
@@ -48,7 +48,13 @@ serve(async (req) => {
       adminPassword 
     } = requestData
 
-    console.log('Gələn məlumatlar:', { regionName, adminEmail });
+    console.log('Gələn məlumatlar:', JSON.stringify({ 
+      regionName, 
+      regionDescription, 
+      regionStatus, 
+      adminName, 
+      adminEmail: adminEmail ? `${adminEmail.substring(0, 3)}...` : undefined 
+    }, null, 2));
 
     if (!regionName) {
       return new Response(
@@ -70,6 +76,7 @@ serve(async (req) => {
       }
 
       if (existingRegion) {
+        console.log(`"${regionName}" adlı region artıq mövcuddur`);
         return new Response(
           JSON.stringify({ error: `"${regionName}" adlı region artıq mövcuddur` }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -86,16 +93,17 @@ serve(async (req) => {
         
         if (userCheckError) {
           console.error('İstifadəçi yoxlama xətası:', userCheckError);
-        }
-        
-        if (existingUser) {
+          // Bu xəta daha çox vaxt zərərsizdir - istifadəçi hələ mövcud deyilsə
+        } else if (existingUser && existingUser.user) {
+          console.log(`"${adminEmail}" email ünvanı ilə istifadəçi artıq mövcuddur`);
           return new Response(
             JSON.stringify({ error: `"${adminEmail}" email ünvanı ilə istifadəçi artıq mövcuddur` }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
           )
         }
       } catch (error) {
-        console.log('İstifadəçi yoxlanarkən xəta (mövcud deyilsə normal haldır):', error);
+        console.log('İstifadəçi yoxlanarkən xəta:', error);
+        // Bu xətanı mütləq qaytarmırıq, bəzən xəta istifadəçinin olmaması mənasına gəlir
       }
     }
 
@@ -112,17 +120,21 @@ serve(async (req) => {
         .single()
 
       if (regionError) {
-        console.error('Region yaradılma xətası:', regionError)
+        console.error('Region yaradılma xətası:', regionError);
         return new Response(
           JSON.stringify({ error: 'Region yaradılarkən xəta baş verdi', details: regionError }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
 
+      console.log('Region uğurla yaradıldı:', newRegion);
+
       // Admin məlumatları varsa, admin istifadəçi yarat
       let adminData = null;
       if (adminEmail && adminName && adminPassword) {
         try {
+          console.log('Admin yaradılır...');
+          
           // Admin istifadəçi yarat
           const { data: newUser, error: userError } = await supabaseClient.auth.admin.createUser({
             email: adminEmail,
@@ -138,7 +150,7 @@ serve(async (req) => {
           if (userError) {
             console.error('İstifadəçi yaradılma xətası:', userError);
             
-            // Xəta baş verdikdə yaradılmış regionu silin
+            // Xəta baş verdikdə yaradılmış regionu sil
             await supabaseClient
               .from('regions')
               .delete()
@@ -149,6 +161,8 @@ serve(async (req) => {
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
             );
           }
+
+          console.log('Admin uğurla yaradıldı:', newUser?.user?.id);
 
           // User_roles cədvəlində yeganəlik yoxlaması
           const { data: existingRole, error: roleCheckError } = await supabaseClient
@@ -165,6 +179,7 @@ serve(async (req) => {
 
           // Əgər rol mövcud deyilsə, əlavə et
           if (!existingRole) {
+            console.log('Rol yaradılır...');
             const { error: roleError } = await supabaseClient
               .from('user_roles')
               .insert({
@@ -175,11 +190,14 @@ serve(async (req) => {
 
             if (roleError) {
               console.error('Rol yaradılma xətası:', roleError);
+            } else {
+              console.log('Rol uğurla yaradıldı');
             }
           }
 
           // Audit loq əlavə et
           try {
+            console.log('Audit loq əlavə edilir...');
             await supabaseClient
               .from('audit_logs')
               .insert({
@@ -196,12 +214,15 @@ serve(async (req) => {
                   }
                 })
               });
+              
+            console.log('Audit loq uğurla əlavə edildi');
           } catch (auditError) {
             console.error('Audit loq əlavə edilərkən xəta:', auditError);
           }
 
           // Update admin_id and admin_email in regions table
           try {
+            console.log('Region admin məlumatları yenilənir...');
             await supabaseClient
               .from('regions')
               .update({ 
@@ -209,6 +230,8 @@ serve(async (req) => {
                 admin_email: adminEmail 
               })
               .eq('id', newRegion.id);
+              
+            console.log('Region admin məlumatları uğurla yeniləndi');
           } catch (updateError) {
             console.error('Region admin məlumatları yenilənərkən xəta:', updateError);
           }
@@ -219,8 +242,12 @@ serve(async (req) => {
             name: adminName
           };
         } catch (adminError) {
-          console.error('Admin yaratma xətası:', adminError);
-          // Adminlə bağlı xəta, amma region yaradıldı
+          console.error('Admin yaratma ümumi xətası:', adminError);
+          
+          return new Response(
+            JSON.stringify({ error: 'Admin yaradılarkən xəta baş verdi', details: adminError?.message || adminError }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          );
         }
       }
       
@@ -241,7 +268,7 @@ serve(async (req) => {
       );
     }
   } catch (error) {
-    console.error('Ümumi xəta:', error)
+    console.error('Ümumi xəta:', error);
     return new Response(
       JSON.stringify({ error: 'Gözlənilməz xəta baş verdi', details: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

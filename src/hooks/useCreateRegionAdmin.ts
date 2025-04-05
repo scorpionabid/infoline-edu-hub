@@ -21,7 +21,10 @@ export const useCreateRegionAdmin = () => {
     setLoading(true);
     
     try {
-      console.log('Region yaratma məlumatları:', data);
+      console.log('Region yaratma məlumatları:', {
+        regionName: data.regionName,
+        adminEmail: data.adminEmail ? `${data.adminEmail.substring(0, 3)}...` : undefined
+      });
       
       // Region və Admin-i yaratmaq üçün edge funksiyasını çağırırıq
       const { data: responseData, error } = await supabase.functions.invoke('create-region-admin', {
@@ -38,21 +41,25 @@ export const useCreateRegionAdmin = () => {
         throw new Error(responseData.error);
       }
       
+      if (!responseData || !responseData.success) {
+        throw new Error('Region yaradılarkən naməlum xəta baş verdi');
+      }
+      
       console.log('Region yaradıldı:', responseData);
-      toast.success(t('regionCreated'));
+      toast.success(t('regionCreated') || 'Region uğurla yaradıldı');
       
       return { success: true, data: responseData };
     } catch (error: any) {
       console.error('Region yaratma xətası:', error);
       
-      let errorMessage = t('errorCreatingRegion');
+      let errorMessage = t('errorCreatingRegion') || 'Region yaradılarkən xəta baş verdi';
       
       // Specific error messages
       if (error.message) {
         errorMessage = error.message;
       }
       
-      toast.error(t('errorOccurred'), {
+      toast.error(t('errorOccurred') || 'Xəta baş verdi', {
         description: errorMessage
       });
       
