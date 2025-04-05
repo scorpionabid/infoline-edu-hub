@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import UserList from '@/components/users/UserList';
 import UserHeader from '@/components/users/UserHeader';
 import { useAuth, useRole } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
+import { Helmet } from 'react-helmet';
 
 const Users = () => {
   const { t } = useLanguage();
@@ -13,6 +14,9 @@ const Users = () => {
   const isSuperAdmin = useRole('superadmin');
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // User listini yeniləmək üçün state
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Redirect if not allowed to access this page
   React.useEffect(() => {
@@ -30,11 +34,26 @@ const Users = () => {
     ? ['region', 'sector', 'school'] 
     : ['sector', 'school'];
 
+  // İstifadəçi əlavə edildikdə, yenilənməni işə sal
+  const handleUserAddedOrEdited = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <SidebarLayout>
+      <Helmet>
+        <title>{t('usersManagement')} | InfoLine</title>
+      </Helmet>
       <div className="container mx-auto py-6 space-y-6">
-        <UserHeader entityTypes={entityTypes} />
-        <UserList currentUserRole={user?.role} currentUserRegionId={user?.regionId} />
+        <UserHeader 
+          entityTypes={entityTypes} 
+          onUserAddedOrEdited={handleUserAddedOrEdited}
+        />
+        <UserList 
+          currentUserRole={user?.role} 
+          currentUserRegionId={user?.regionId}
+          onUserAddedOrEdited={handleUserAddedOrEdited}
+        />
       </div>
     </SidebarLayout>
   );

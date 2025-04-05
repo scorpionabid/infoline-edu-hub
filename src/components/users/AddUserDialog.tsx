@@ -6,25 +6,25 @@ import { useLanguage } from '@/context/LanguageContext';
 import { UserFormData } from '@/types/user';
 import { useAuth, Role } from '@/context/AuthContext';
 import UserForm from './UserForm';
-import { toast } from 'sonner';
-
-// Mock data import
-import { mockUsers } from '@/data/mockUsers';
+import { useCreateUser } from '@/hooks/useCreateUser';
+import { Loader2 } from 'lucide-react';
 
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entityType?: 'region' | 'sector' | 'school';
+  onSuccess?: () => void;
 }
 
 const AddUserDialog: React.FC<AddUserDialogProps> = ({ 
   open, 
   onOpenChange, 
-  entityType 
+  entityType,
+  onSuccess
 }) => {
   const { t } = useLanguage();
   const { user: currentUser } = useAuth();
-  const [loading, setLoading] = React.useState(false);
+  const { createUser, loading } = useCreateUser();
   
   // Set appropriate initial role based on entity type
   const getInitialRole = (): Role => {
@@ -39,7 +39,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     email: '',
     password: '',
     role: getInitialRole(),
-    status: 'active', // Artıq UserFormData interfeysinə əlavə edilib
+    status: 'active',
     regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     notificationSettings: {
       email: true,
@@ -56,31 +56,21 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     }
   }, [open, entityType]);
   
-  const handleSubmit = () => {
-    setLoading(true);
+  const handleSubmit = async () => {
+    console.log('İstifadəçi yaratma formunun məlumatları:', formData);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Add the new user to the mock data
-      const newUser = {
-        ...formData,
-        id: `user-${Date.now()}`,
-        createdAt: new Date().toISOString(), // Date -> string
-        updatedAt: new Date().toISOString()  // Date -> string
-      };
-      
-      mockUsers.push(newUser);
-      
-      // Show success message
-      toast.success(t('userCreated'), {
-        description: t('userCreatedDesc')
-      });
-      
+    const result = await createUser(formData);
+    
+    if (result.success) {
       // Reset form and close dialog
       setFormData(initialFormData);
-      setLoading(false);
       onOpenChange(false);
-    }, 1000);
+      
+      // Callback-i çağır
+      if (onSuccess) {
+        onSuccess();
+      }
+    }
   };
   
   const getDialogTitle = () => {
@@ -118,6 +108,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
+            disabled={loading}
           >
             {t('cancel')}
           </Button>
@@ -125,7 +116,14 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
             onClick={handleSubmit} 
             disabled={loading || !formData.name || !formData.email || !formData.password}
           >
-            {loading ? t('creating') : t('createUser')}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('creating')}
+              </>
+            ) : (
+              t('createUser')
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

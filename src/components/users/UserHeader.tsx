@@ -24,9 +24,13 @@ import {
 
 interface UserHeaderProps {
   entityTypes?: Array<'region' | 'sector' | 'school'>;
+  onUserAddedOrEdited?: () => void;
 }
 
-const UserHeader: React.FC<UserHeaderProps> = ({ entityTypes = [] }) => {
+const UserHeader: React.FC<UserHeaderProps> = ({ 
+  entityTypes = [],
+  onUserAddedOrEdited
+}) => {
   const { t } = useLanguage();
   const [showAddDialog, setShowAddDialog] = React.useState(false);
   const [importDialogOpen, setImportDialogOpen] = React.useState(false);
@@ -69,6 +73,17 @@ const UserHeader: React.FC<UserHeaderProps> = ({ entityTypes = [] }) => {
   const handleAddUser = () => {
     setSelectedEntityType(undefined);
     setShowAddDialog(true);
+  };
+
+  // İstifadəçi əlavə edildikdən sonra
+  const handleUserAdded = () => {
+    if (onUserAddedOrEdited) {
+      onUserAddedOrEdited();
+    }
+    
+    // Həmçinin, global event kimi göndərək ki, digər komponentlər də xəbərdar olsun
+    const event = new CustomEvent('user-added-or-edited');
+    window.dispatchEvent(event);
   };
 
   return (
@@ -163,6 +178,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ entityTypes = [] }) => {
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
         entityType={selectedEntityType}
+        onSuccess={handleUserAdded}
       />
       
       {/* Import Dialog */}

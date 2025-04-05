@@ -139,7 +139,32 @@ const user = {
   next: "Sonrakı",
   notAvailable: "Mövcud deyil",
   invalidDate: "Yanlış tarix",
-  viewUserInfoDesc: "İstifadəçi haqqında ətraflı məlumat"
+  viewUserInfoDesc: "İstifadəçi haqqında ətraflı məlumat",
+  
+  // Form validation and error messages
+  requiredFieldsMissing: "Zəhmət olmasa bütün vacib sahələri doldurun",
+  creating: "Yaradılır...",
+  created: "Yaradıldı",
+  userCreated: "İstifadəçi yaradıldı",
+  userCreatedDesc: "Yeni istifadəçi uğurla yaradıldı",
+  errorCreatingUser: "İstifadəçi yaradılarkən xəta baş verdi",
+  errorOccurred: "Xəta baş verdi",
+  userAlreadyExists: "Bu e-poçt ünvanı ilə istifadəçi artıq mövcuddur",
+  enterPassword: "Şifrə daxil edin",
+  enterNewPassword: "Yeni şifrə daxil edin",
+  passwordResetHelp: "İstifadəçini məcbur edəcək ki, növbəti girişdə şifrəni dəyişsin",
+  
+  // Dialog titles and descriptions
+  addNewRegionWithAdmin: "Yeni region və admin əlavə et",
+  addNewRegionWithAdminDesc: "Yeni region yaradın və onun üçün admin təyin edin",
+  addNewSectorWithAdmin: "Yeni sektor və admin əlavə et",
+  addNewSectorWithAdminDesc: "Yeni sektor yaradın və onun üçün admin təyin edin",
+  addNewSchoolWithAdmin: "Yeni məktəb və admin əlavə et",
+  addNewSchoolWithAdminDesc: "Yeni məktəb yaradın və onun üçün admin təyin edin",
+  addNewUser: "Yeni istifadəçi əlavə et",
+  addNewUserDesc: "Sistemə yeni istifadəçi əlavə edin",
+  adminDetails: "Admin məlumatları",
+  entityDetailsDescription: "Qurumun əsas məlumatlarını daxil edin"
 };
 
 export default user;

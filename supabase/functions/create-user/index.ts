@@ -40,7 +40,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Autorization başlığı tapılmadı' }),
+        JSON.stringify({ error: 'Authorization başlığı tapılmadı' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -92,6 +92,8 @@ serve(async (req) => {
     // İstək body-dən istifadəçi məlumatlarını alırıq
     const { email, password, userData } = await req.json()
     
+    console.log('Yeni istifadəçi yaratma tələbi:', { email, userData })
+    
     if (!email || !password || !userData || !userData.full_name || !userData.role) {
       return new Response(
         JSON.stringify({ error: 'Məlumatlar natamamdır' }),
@@ -100,6 +102,77 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
+    }
+
+    // RegionAdmin-in yalnız öz regionu üçün admin yaratma hüququ var
+    if (roleData.role === 'regionadmin') {
+      // RegionAdmin-in öz region_id-sini alırıq
+      const { data: adminRoleData, error: adminRoleError } = await supabaseAdmin
+        .from('user_roles')
+        .select('region_id')
+        .eq('user_id', user.id)
+        .single()
+      
+      if (adminRoleError || !adminRoleData || !adminRoleData.region_id) {
+        return new Response(
+          JSON.stringify({ error: 'RegionAdmin məlumatları tapılmadı', details: adminRoleError }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      // RegionAdmin yalnız öz regionu üçün admin yarada bilər
+      if (userData.role === 'regionadmin') {
+        if (userData.region_id !== adminRoleData.region_id) {
+          return new Response(
+            JSON.stringify({ error: 'Yalnız öz regionunuz üçün admin yarada bilərsiniz' }),
+            { 
+              status: 403, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+      }
+      
+      // SectorAdmin yaratdıqda sektor region_id-si yoxlanılır
+      if (userData.role === 'sectoradmin' && userData.sector_id) {
+        const { data: sectorData, error: sectorError } = await supabaseAdmin
+          .from('sectors')
+          .select('region_id')
+          .eq('id', userData.sector_id)
+          .single()
+        
+        if (sectorError || !sectorData || sectorData.region_id !== adminRoleData.region_id) {
+          return new Response(
+            JSON.stringify({ error: 'Bu sektor üçün admin yaratmaq icazəniz yoxdur' }),
+            { 
+              status: 403, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+      }
+      
+      // SchoolAdmin yaratdıqda məktəb region_id-si yoxlanılır
+      if (userData.role === 'schooladmin' && userData.school_id) {
+        const { data: schoolData, error: schoolError } = await supabaseAdmin
+          .from('schools')
+          .select('region_id')
+          .eq('id', userData.school_id)
+          .single()
+        
+        if (schoolError || !schoolData || schoolData.region_id !== adminRoleData.region_id) {
+          return new Response(
+            JSON.stringify({ error: 'Bu məktəb üçün admin yaratmaq icazəniz yoxdur' }),
+            { 
+              status: 403, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+      }
     }
 
     // Supabase ilə yeni istifadəçi yaradırıq
@@ -117,6 +190,7 @@ serve(async (req) => {
     })
 
     if (createError) {
+      console.error('İstifadəçi yaratma xətası:', createError)
       return new Response(
         JSON.stringify({ error: 'İstifadəçi yaradılarkən xəta baş verdi', details: createError }),
         { 
@@ -126,8 +200,11 @@ serve(async (req) => {
       )
     }
 
+    console.log('İstifadəçi uğurla yaradıldı:', { id: newUser.user.id, email: newUser.user.email })
+
     return new Response(
       JSON.stringify({ 
+        success: true,
         message: 'İstifadəçi uğurla yaradıldı', 
         user: {
           id: newUser.user.id,
@@ -141,6 +218,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Server xətası:', error)
     return new Response(
       JSON.stringify({ error: 'Serverda xəta baş verdi', details: error.message }),
       { 
