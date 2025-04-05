@@ -206,7 +206,7 @@ export const useUserList = () => {
       const formattedUsers: FullUserData[] = filteredRolesData.map((roleItem, index) => {
         const profile = profilesMap[roleItem.user_id] || {};
         
-        // Status dəyərini düzgün tipə çevirək
+        // Status dəyərini düzgün tipə çevirmək
         const statusValue = profile.status || 'active';
         const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
           ? statusValue as 'active' | 'inactive' | 'blocked'
@@ -326,7 +326,7 @@ export const useUserList = () => {
       console.error('İstifadəçi yeniləmə xətası:', err);
       toast.error('İstifadəçi məlumatları yenilənərkən xəta baş verdi');
     }
-  }, [selectedUser]);
+  }, [selectedUser, t]);
 
   // İstifadəçi silməni təsdiqləmə
   const handleDeleteUserConfirm = useCallback(async () => {
@@ -348,7 +348,7 @@ export const useUserList = () => {
       console.error('İstifadəçi silmə xətası:', err);
       toast.error('İstifadəçi silinərkən xəta baş verdi');
     }
-  }, [selectedUser]);
+  }, [selectedUser, t]);
 
   // Filtri yeniləmə
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
@@ -374,19 +374,6 @@ export const useUserList = () => {
       setOperationComplete(false);
     }
   }, [operationComplete, fetchUsers]);
-
-  // t funksiyasını yaratmaq
-  const t = (key: string) => {
-    // Bu sadəcə misal üçündür, əslində useLanguage hook-undan istifadə edilməlidir
-    const translations: Record<string, string> = {
-      'userUpdated': 'İstifadəçi məlumatları yeniləndi',
-      'userDeleted': 'İstifadəçi silindi',
-      'loading': 'Yüklənir...',
-      'noUsersFound': 'İstifadəçi tapılmadı'
-    };
-    
-    return translations[key] || key;
-  };
 
   return {
     users,
