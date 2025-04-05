@@ -30,7 +30,10 @@ enabled = true
 site_url = "http://localhost:3000"
 
 [functions]
-[functions.create-region-admin]
+[functions.create-region]
+verify_jwt = true
+
+[functions.assign-region-admin]
 verify_jwt = true
 
 [functions.create-user]

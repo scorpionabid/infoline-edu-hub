@@ -24,6 +24,11 @@ const organization = {
   regionWithAdminCreated: "Region və müvafiq admin uğurla yaradıldı",
   searchRegions: "Regionları axtar...",
   filterByStatus: "Statusa görə filtr",
+  assignAdmin: "Admin təyin et",
+  assignRegionAdmin: "Region adminini təyin et",
+  assignRegionAdminDesc: "Bu region üçün admin təyin edin",
+  adminAssigned: "Admin uğurla təyin edildi",
+  errorAssigningAdmin: "Admin təyin edilərkən xəta baş verdi",
   
   // Sectors
   sectors: "Sektorlar",

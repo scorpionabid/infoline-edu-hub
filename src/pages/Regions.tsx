@@ -3,7 +3,8 @@ import React, { useState, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegionsStore } from '@/hooks/useRegionsStore';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import { RegionDialog } from '@/components/regions/RegionDialogs';
+import { RegionDialog } from '@/components/regions/RegionDialog';
+import { RegionAdminDialog } from '@/components/regions/RegionAdminDialog';
 import RegionHeader from '@/components/regions/RegionHeader';
 import RegionTable from '@/components/regions/RegionTable';
 import { EnhancedRegion } from '@/hooks/useRegionsStore';
@@ -30,13 +31,30 @@ const Regions = () => {
     fetchRegions
   } = useRegionsStore();
 
-  const [open, setOpen] = useState(false);
+  const [openRegionDialog, setOpenRegionDialog] = useState(false);
+  const [openAdminDialog, setOpenAdminDialog] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
+  const [createdRegion, setCreatedRegion] = useState<any>(null);
 
-  const handleOpenDialog = useCallback((region: EnhancedRegion | null) => {
+  const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
-    setOpen(true);
+    setOpenRegionDialog(true);
   }, []);
+
+  const handleOpenAdminDialog = useCallback((region: EnhancedRegion) => {
+    setSelectedRegion(region);
+    setOpenAdminDialog(true);
+  }, []);
+
+  const handleRegionCreated = (region: any) => {
+    setCreatedRegion(region);
+    setOpenAdminDialog(true);
+  };
+
+  const handleAdminAssigned = () => {
+    fetchRegions();
+    setCreatedRegion(null);
+  };
 
   const handleFormSubmit = async (values: any) => {
     try {
@@ -58,7 +76,7 @@ const Regions = () => {
         toast.success(t('regionCreated'));
       }
       
-      setOpen(false);
+      setOpenRegionDialog(false);
       setSelectedRegion(null);
       fetchRegions();
     } catch (error: any) {
@@ -76,7 +94,7 @@ const Regions = () => {
       
       <div className="container mx-auto py-6 space-y-6">
         <RegionHeader
-          onAddRegion={() => handleOpenDialog(null)}
+          onAddRegion={() => handleOpenRegionDialog(null)}
           searchTerm={searchTerm}
           onSearchChange={handleSearch}
           selectedStatus={selectedStatus}
@@ -87,8 +105,9 @@ const Regions = () => {
         <RegionTable
           regions={regions}
           loading={loading}
-          onEdit={handleOpenDialog}
+          onEdit={handleOpenRegionDialog}
           onDelete={handleDeleteRegion}
+          onAssignAdmin={handleOpenAdminDialog}
         />
         
         {totalPages > 1 && (
@@ -105,10 +124,18 @@ const Regions = () => {
         )}
         
         <RegionDialog
-          open={open}
-          setOpen={setOpen}
+          open={openRegionDialog}
+          setOpen={setOpenRegionDialog}
           selectedRegion={selectedRegion}
           onSubmit={handleFormSubmit}
+          onSuccess={handleRegionCreated}
+        />
+        
+        <RegionAdminDialog
+          open={openAdminDialog}
+          setOpen={setOpenAdminDialog}
+          region={createdRegion || selectedRegion}
+          onSuccess={handleAdminAssigned}
         />
       </div>
     </SidebarLayout>

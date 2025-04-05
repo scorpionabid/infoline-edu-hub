@@ -11,7 +11,8 @@ import {
   School, 
   Mail, 
   BarChart3,
-  Building
+  Building,
+  UserPlus
 } from 'lucide-react';
 
 interface RegionTableProps {
@@ -19,13 +20,15 @@ interface RegionTableProps {
   loading: boolean;
   onEdit: (region: EnhancedRegion) => void;
   onDelete: (id: string) => void;
+  onAssignAdmin: (region: EnhancedRegion) => void;
 }
 
 const RegionTable: React.FC<RegionTableProps> = ({
   regions,
   loading,
   onEdit,
-  onDelete
+  onDelete,
+  onAssignAdmin
 }) => {
   const { t } = useLanguage();
   const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
@@ -131,6 +134,13 @@ const RegionTable: React.FC<RegionTableProps> = ({
             icon: <Edit className="h-4 w-4 mr-2" />,
             label: t('edit'),
             onClick: (region) => onEdit(region)
+          },
+          {
+            icon: <UserPlus className="h-4 w-4 mr-2" />,
+            label: t('assignAdmin'),
+            onClick: (region) => onAssignAdmin(region),
+            // Əgər regionun artıq admin-i varsa, bu butonu göstərmirik
+            isHidden: (region) => !!region.adminEmail
           },
           {
             icon: <Trash2 className="h-4 w-4 mr-2" />,
