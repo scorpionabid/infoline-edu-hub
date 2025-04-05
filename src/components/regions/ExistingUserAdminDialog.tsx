@@ -91,12 +91,13 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
     }
   };
 
-  // İstifadəçiləri filtrlə - SuperAdminləri çıxar və region adminlərini əvvələ gətir
+  // İstifadəçiləri filtrlə 
   const filteredUsers = React.useMemo(() => {
+    // Bütün istifadəçiləri əldə et, SuperAdminləri çıxar
     return users
-      .filter(user => user.role !== 'superadmin') // SuperAdminləri çıxar
+      .filter(user => user.role !== 'superadmin') 
       .sort((a, b) => {
-        // Regionadminləri əvvələ gətir
+        // RegionAdminləri əvvələ gətir
         if (a.role === 'regionadmin' && b.role !== 'regionadmin') return -1;
         if (a.role !== 'regionadmin' && b.role === 'regionadmin') return 1;
         return a.name.localeCompare(b.name);
