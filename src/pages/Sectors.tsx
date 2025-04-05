@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, Role } from '@/context/AuthContext';
@@ -49,15 +48,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationEllipsis, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { 
   Accordion, 
   AccordionContent, 
@@ -179,7 +170,6 @@ const Sectors = () => {
   };
   
   const handleAddSubmit = async () => {
-    // Sektor əlavə edilməsi üçün formadan verilənləri alırıq
     const sectorDataToAdd = {
       name: sectorFormData.name,
       description: sectorFormData.description,
@@ -187,12 +177,9 @@ const Sectors = () => {
       status: sectorFormData.status as 'active' | 'inactive'
     };
     
-    // Supabase üzərindən sektoru əlavə edirik
     const success = await handleAddSector(sectorDataToAdd);
     
     if (success) {
-      // TODO: Gələcəkdə, supabase auth ilə admin yaratmaq əlavə edilə bilər
-      // Hələlik mock data ilə işləyirik
       const newAdminId = `user-${Date.now()}`;
       const newAdmin = {
         ...adminFormData,
@@ -429,34 +416,14 @@ const Sectors = () => {
             
             {totalPages > 1 && (
               <div className="mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} 
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          isActive={currentPage === page}
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)} 
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  previousLabel={t('previous')}
+                  nextLabel={t('next')}
+                  pageLabel={(page) => `${page} ${t('of')} ${totalPages}`}
+                />
               </div>
             )}
           </CardContent>
