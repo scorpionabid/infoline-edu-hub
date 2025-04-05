@@ -33,15 +33,25 @@ function createSuccessResponse(data: any) {
 // Supabase client yaratmaq
 function createSupabaseClient(authHeader: string) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  // Service role key istifadə edirik - bu SuperAdmin səlahiyyətləri verir
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
   
   console.log("Supabase URL:", supabaseUrl);
   console.log("Auth header:", authHeader ? "Mövcuddur" : "Yoxdur");
   
+  // Admin rejimində client yaradırıq
   return createClient(
     supabaseUrl,
     supabaseKey,
-    { global: { headers: { Authorization: authHeader } } }
+    { 
+      global: { 
+        headers: { Authorization: authHeader } 
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
   );
 }
 
@@ -164,7 +174,7 @@ async function createAdminUser(supabaseClient: any, adminData: any, regionId: st
   try {
     console.log('Admin yaradılır...', { name: adminName, email: adminEmail });
     
-    // Admin istifadəçi yarat
+    // SuperAdmin səlahiyyətləri ilə admin istifadəçi yaradırıq
     const { data: newUser, error: userError } = await supabaseClient.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
@@ -177,9 +187,7 @@ async function createAdminUser(supabaseClient: any, adminData: any, regionId: st
     });
 
     if (userError) {
-      if (userError.message === 'User not allowed') {
-        throw new Error('Bu əməliyyat üçün icazəniz yoxdur. Təkcə region yaradın.');
-      }
+      console.error('Admin yaradılma xətası (ətraflı):', JSON.stringify(userError));
       throw userError;
     }
 
@@ -388,20 +396,26 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
         }
       } catch (adminError: any) {
         console.error('Admin yaradılarkən xəta:', adminError);
-        // Admin yaradılma xətası olsa da, regiona audit loq əlavə edək
+        // Admin yaradılma xətasını irəli ötürək
+        throw new Error(`Admin yaradılarkən xəta: ${adminError.message || 'Naməlum xəta'}`);
       }
     }
     
     // İstifadəçiyə aid audit loq əlavə etmək
     try {
       // Mövcud istifadəçi ID-sini al (əgər mümkünsə)
-      const { data: userProfile } = await supabaseClient
-        .from('profiles')
-        .select('id')
-        .eq('email', currentUserEmail)
-        .maybeSingle();
+      let userId = null;
       
-      const userId = userProfile?.id;
+      if (currentUserEmail) {
+        const { data: userProfile } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('email', currentUserEmail)
+          .maybeSingle();
+        
+        userId = userProfile?.id;
+      }
+      
       if (userId) {
         await addAuditLog(supabaseClient, userId, newRegion.id, newRegion, adminData);
       } else {
@@ -441,7 +455,7 @@ serve(async (req) => {
       return createErrorResponse('Authorization başlığı tapılmadı', null, 401);
     }
 
-    // Supabase müştərisini yarat
+    // Supabase müştərisini yarat - Service role key ilə SuperAdmin səlahiyyətli
     const supabaseClient = createSupabaseClient(authHeader);
 
     // Request body'ni al
@@ -453,13 +467,6 @@ serve(async (req) => {
       return createSuccessResponse(result);
     } catch (error: any) {
       const errorMessage = error.message || 'Region yaradılarkən xəta baş verdi';
-      
-      // İcazə xətalarını daha spesifik log et
-      if (errorMessage.includes('not allowed') || errorMessage.includes('not_admin')) {
-        console.error('İcazə xətası: İstifadəçi admin yaratmaq səlahiyyətinə sahib deyil');
-        return createErrorResponse('Admin yaratmaq üçün icazəniz yoxdur. Yalnız region yaratmağı sınayın və "skipAdminCreation" parametrini true olaraq təyin edin.', error, 403);
-      }
-      
       return createErrorResponse(errorMessage, error, 400);
     }
   } catch (error: any) {

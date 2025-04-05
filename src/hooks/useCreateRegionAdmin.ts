@@ -51,10 +51,12 @@ export const useCreateRegionAdmin = () => {
       console.log('Edge funksiyası cavabı:', responseData);
       
       if (error) {
+        console.error('Edge funksiyası xətası:', error);
         throw new Error(error.message || 'Region və admin yaradılarkən xəta baş verdi');
       }
       
       if (responseData && responseData.error) {
+        console.error('Region yaratma xətası cavabı:', responseData.error);
         throw new Error(responseData.error);
       }
       
@@ -71,7 +73,7 @@ export const useCreateRegionAdmin = () => {
       // Uğurlu mesaj
       let successMessage = data.skipAdminCreation || !shouldCreateAdmin
         ? t('regionCreatedWithoutAdmin') || 'Region uğurla yaradıldı (admin olmadan)'
-        : t('regionCreated') || 'Region uğurla yaradıldı';
+        : t('regionCreated') || 'Region və region admini uğurla yaradıldı';
       
       toast.success(successMessage);
       
