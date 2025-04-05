@@ -25,7 +25,34 @@ const navigation = {
   addNewData: "Məlumat əlavə et",
   viewAllForms: "Bütün formları göstər",
   allForms: "Bütün formlar",
-  recentForms: "Son formlar"
+  recentForms: "Son formlar",
+  
+  // Region related
+  searchRegions: "Regionları axtar...",
+  filterByStatus: "Statusa görə filtrlə",
+  allStatuses: "Bütün statuslar",
+  regionAdmin: "Region admini",
+  deleteRegion: "Regionu sil",
+  deleteRegionConfirmation: "Bu regionu silmək istədiyinizə əminsiniz? Bu əməliyyat bu regiona aid olan bütün sektorları və məktəbləri də təsir edəcək.",
+  noRegionsFound: "Region tapılmadı",
+  noRegionsFoundDesc: "Heç bir region tapılmadı. Yeni region əlavə etmək üçün \"Region əlavə et\" düyməsini sıxın.",
+  regionWithAdminCreated: "Region və admin uğurla yaradıldı.",
+  resetFilters: "Filtrləri sıfırla",
+  
+  // Dashboard
+  dashboard: "İdarəetmə paneli",
+  
+  // Users
+  users: "İstifadəçilər",
+  
+  // Data Entry
+  dataEntry: "Məlumat daxiletmə",
+  
+  // Reports
+  reports: "Hesabatlar",
+  
+  // School related
+  schools: "Məktəblər"
 };
 
 export default navigation;
