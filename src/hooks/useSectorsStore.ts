@@ -2,247 +2,214 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/supabase';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
 
 export interface EnhancedSector extends Sector {
   regionName?: string;
   schoolCount?: number;
-  completionRate?: number;
 }
 
-export const useSectorsStore = (initialRegionId?: string) => {
+export const useSectorsStore = () => {
   const [sectors, setSectors] = useState<EnhancedSector[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState<string>(initialRegionId || '');
+  const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const { t } = useLanguage();
   const { user } = useAuth();
+  
   const itemsPerPage = 10;
+
+  // İstifadəçinin regionuna əsasən filtrləmək
+  useEffect(() => {
+    if (user && user.role === 'regionadmin' && user.regionId) {
+      setSelectedRegion(user.regionId);
+    }
+  }, [user]);
 
   const fetchSectors = useCallback(async () => {
     setLoading(true);
     try {
-      // Temel sorgu
-      let query = supabase
-        .from('sectors')
-        .select(`
-          *,
-          regions:region_id (name)
-        `);
-
-      // Region filtrəsi
-      if (selectedRegion) {
-        query = query.eq('region_id', selectedRegion);
-      } else if (user?.regionId) {
-        // İstifadəçi regionadmin isə avtomatik olaraq öz regionuna filtrələnir
+      let query = supabase.from('sectors').select('*');
+      
+      // İstifadəçinin roluna görə filtrləmək
+      if (user && user.role === 'regionadmin' && user.regionId) {
         query = query.eq('region_id', user.regionId);
+      } else if (selectedRegion) {
+        query = query.eq('region_id', selectedRegion);
       }
-
-      // Status filtrəsi
+      
       if (selectedStatus) {
         query = query.eq('status', selectedStatus);
       }
-
+      
+      // Sıralama
+      query = query.order('name', { ascending: true });
+      
       const { data, error } = await query;
-
+      
       if (error) throw error;
-
-      if (!data) {
-        setSectors([]);
-        setTotalPages(1);
-        setLoading(false);
-        return;
-      }
-
-      // Məktəb sayını və tamamlanma faizini əldə et
-      const enhancedSectorsPromises = data.map(async (sector) => {
-        // Məktəb sayını əldə et
-        const { count: schoolCount, error: schoolError } = await supabase
-          .from('schools')
-          .select('id', { count: true })
-          .eq('sector_id', sector.id);
-
-        if (schoolError) {
-          console.error('Məktəb sayı əldə edilərkən xəta:', schoolError);
-        }
-
+      
+      // Region adlarını və məktəb saylarını əldə etmək
+      const enhancedSectors = await Promise.all((data || []).map(async (sector) => {
         // Region adını əldə et
-        const regionName = sector.regions ? sector.regions.name : '';
-
-        // Tamamlanma faizini əldə et (daha sonra implementasiya ediləcək)
-        // Bu hissə məlumat girişləri implementasiya edildikdən sonra əlavə ediləcək
-        const completionRate = 0;
-
+        const { data: regionData } = await supabase
+          .from('regions')
+          .select('name')
+          .eq('id', sector.region_id)
+          .single();
+        
+        // Sektora aid məktəblərin sayını əldə et
+        const { count: schoolCount } = await supabase
+          .from('schools')
+          .select('*', { count: "exact" })
+          .eq('sector_id', sector.id);
+          
         return {
           ...sector,
-          regionName,
-          schoolCount: schoolCount || 0,
-          completionRate
-        } as EnhancedSector;
-      });
-
-      const enhancedSectors = await Promise.all(enhancedSectorsPromises);
+          regionName: regionData?.name,
+          schoolCount: schoolCount || 0
+        };
+      }));
       
-      // Sektorları filtrələyək və səhifələyək
-      const filteredSectors = enhancedSectors.filter(sector => 
-        sector.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sector.description && sector.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (sector.regionName && sector.regionName.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-
-      setTotalPages(Math.ceil(filteredSectors.length / itemsPerPage));
-      
-      const paginatedSectors = filteredSectors.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-      );
-
-      setSectors(paginatedSectors);
-    } catch (err: any) {
-      console.error('Sektorlar əldə edilərkən xəta:', err);
+      setSectors(enhancedSectors as EnhancedSector[]);
+      setTotalPages(Math.ceil(enhancedSectors.length / itemsPerPage));
+    } catch (error: any) {
       toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadSectors')
+        description: error.message
       });
+      console.error('Error fetching sectors:', error);
     } finally {
       setLoading(false);
     }
-  }, [selectedRegion, selectedStatus, searchTerm, currentPage, t, user?.regionId]);
+  }, [user, selectedRegion, selectedStatus, t, itemsPerPage]);
 
-  // Hər dəfə filtr dəyişdikdə, məlumatları yenilə
   useEffect(() => {
     fetchSectors();
   }, [fetchSectors]);
 
-  // Axtarış mətni dəyişdikdə
-  const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  }, []);
+  // Axtarış termi və filtrlərə əsasən məlumatları filtrlə
+  const filteredSectors = sectors.filter(sector => {
+    const nameMatch = sector.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const descMatch = sector.description ? sector.description.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    
+    return nameMatch || descMatch;
+  });
+  
+  // Səhifələmə
+  const paginatedSectors = filteredSectors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  // Region filtrəsi dəyişdikdə
-  const handleRegionFilter = useCallback((value: string) => {
-    setSelectedRegion(value);
-    setCurrentPage(1);
-  }, []);
-
-  // Status filtrəsi dəyişdikdə
-  const handleStatusFilter = useCallback((value: string | null) => {
-    setSelectedStatus(value);
-    setCurrentPage(1);
-  }, []);
-
-  // Səhifə dəyişdikdə
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
-
-  // Filtrləri sıfırla
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedStatus(null);
-    // İstifadəçi regionadmin isə, region filtrəsini sıfırlama
-    if (!user?.regionId) {
-      setSelectedRegion('');
-    }
-    setCurrentPage(1);
-  }, [user?.regionId]);
-
-  // Yeni sektor əlavə et
-  const handleAddSector = useCallback(async (sectorData: Partial<Sector>) => {
+  // Sektor əlavə etmək
+  const handleAddSector = async (sectorData: Omit<Sector, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('sectors')
         .insert([sectorData])
         .select()
         .single();
-
+      
       if (error) throw error;
-
-      toast.success(t('sectorCreated'), {
-        description: t('sectorCreatedDesc')
-      });
-
-      fetchSectors();
+      
+      await fetchSectors();
       return data;
-    } catch (err: any) {
-      console.error('Sektor əlavə edilərkən xəta:', err);
+    } catch (error: any) {
       toast.error(t('errorOccurred'), {
-        description: t('couldNotAddSector')
+        description: error.message
       });
-      throw err;
+      throw error;
     }
-  }, [fetchSectors, t]);
+  };
 
-  // Sektor güncəllə
-  const handleUpdateSector = useCallback(async (id: string, sectorData: Partial<Sector>) => {
+  // Sektoru yeniləmək
+  const handleUpdateSector = async (id: string, sectorData: Partial<Sector>) => {
     try {
       const { error } = await supabase
         .from('sectors')
         .update(sectorData)
         .eq('id', id);
-
+      
       if (error) throw error;
-
-      toast.success(t('sectorUpdated'), {
-        description: t('sectorUpdatedDesc')
-      });
-
-      fetchSectors();
-    } catch (err: any) {
-      console.error('Sektor yenilənərkən xəta:', err);
+      
+      await fetchSectors();
+    } catch (error: any) {
       toast.error(t('errorOccurred'), {
-        description: t('couldNotUpdateSector')
+        description: error.message
       });
-      throw err;
+      throw error;
     }
-  }, [fetchSectors, t]);
+  };
 
-  // Sektor sil
-  const handleDeleteSector = useCallback(async (id: string) => {
+  // Sektoru silmək
+  const handleDeleteSector = async (id: string) => {
     try {
-      // Əvvəlcə bu sektora aid məktəbləri yoxlayaq
-      const { count, error: countError } = await supabase
+      // Sektorun məktəbləri varmı yoxla
+      const { count } = await supabase
         .from('schools')
-        .select('id', { count: true })
+        .select('*', { count: "exact" })
         .eq('sector_id', id);
-
-      if (countError) throw countError;
-
+      
       if (count && count > 0) {
         toast.error(t('cannotDeleteSector'), {
           description: t('sectorHasSchools')
         });
         return;
       }
-
+      
       const { error } = await supabase
         .from('sectors')
         .delete()
         .eq('id', id);
-
+      
       if (error) throw error;
-
-      toast.success(t('sectorDeleted'), {
-        description: t('sectorDeletedDesc')
-      });
-
-      fetchSectors();
-    } catch (err: any) {
-      console.error('Sektor silinərkən xəta:', err);
+      
+      toast.success(t('sectorDeleted'));
+      await fetchSectors();
+    } catch (error: any) {
       toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteSector')
+        description: error.message
       });
-      throw err;
     }
-  }, [fetchSectors, t]);
+  };
+
+  // Axtarış və filtrləmə işləyicilər
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  }, []);
+
+  const handleRegionFilter = useCallback((region: string) => {
+    setSelectedRegion(region);
+    setCurrentPage(1);
+  }, []);
+
+  const handleStatusFilter = useCallback((status: string | null) => {
+    setSelectedStatus(status);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSearchTerm('');
+    // regionadmin isə region seçimini sıfırlama
+    if (!(user && user.role === 'regionadmin' && user.regionId)) {
+      setSelectedRegion('');
+    }
+    setSelectedStatus(null);
+    setCurrentPage(1);
+  }, [user]);
 
   return {
-    sectors,
+    sectors: paginatedSectors,
     loading,
     searchTerm,
     selectedRegion,

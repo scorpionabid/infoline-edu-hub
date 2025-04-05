@@ -10,8 +10,8 @@ import {
   FileText, 
   School, 
   Mail, 
-  BarChart3,
   Building,
+  MapPin,
   UserPlus
 } from 'lucide-react';
 
@@ -62,10 +62,10 @@ const RegionTable: React.FC<RegionTableProps> = ({
       header: t('regionAdmin'),
       cell: (region) => (
         <div className="flex items-center">
-          {region.adminEmail ? (
+          {region.admin_email ? (
             <>
               <Mail className="h-4 w-4 mr-2 text-blue-500" />
-              <span>{region.adminEmail}</span>
+              <span>{region.admin_email}</span>
             </>
           ) : (
             <span className="text-muted-foreground">-</span>
@@ -78,7 +78,7 @@ const RegionTable: React.FC<RegionTableProps> = ({
       header: t('sectorCount'),
       cell: (region) => (
         <div className="flex items-center">
-          <Building className="h-4 w-4 mr-2 text-purple-500" />
+          <Building className="h-4 w-4 mr-2 text-indigo-500" />
           <span>{region.sectorCount || 0}</span>
         </div>
       )
@@ -90,22 +90,6 @@ const RegionTable: React.FC<RegionTableProps> = ({
         <div className="flex items-center">
           <School className="h-4 w-4 mr-2 text-orange-500" />
           <span>{region.schoolCount || 0}</span>
-        </div>
-      )
-    },
-    {
-      key: 'completionRate',
-      header: t('completionRate'),
-      cell: (region) => (
-        <div className="flex items-center">
-          <BarChart3 className="h-4 w-4 mr-2 text-green-500" />
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-            <div 
-              className="bg-primary h-2.5 rounded-full" 
-              style={{ width: `${region.completionRate || 0}%` }}
-            ></div>
-          </div>
-          <span className="text-sm">{region.completionRate || 0}%</span>
         </div>
       )
     },
@@ -139,8 +123,8 @@ const RegionTable: React.FC<RegionTableProps> = ({
             icon: <UserPlus className="h-4 w-4 mr-2" />,
             label: t('assignAdmin'),
             onClick: (region) => onAssignAdmin(region),
-            // `isHidden` xassəsi `DataTable` tipində yoxdur, bunun əvəzinə `condition` istifadə edək
-            condition: (region) => !region.adminEmail
+            // 'condition' özelliğini düzeltiyoruz - bu özellik şartlı gösterme için
+            isHidden: (region) => !!region.admin_email
           },
           {
             icon: <Trash2 className="h-4 w-4 mr-2" />,

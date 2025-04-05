@@ -139,7 +139,7 @@ async function createAdminUser(name: string, email: string, password: string, se
   }
 }
 
-// Region admini təyin etmək üçün əsas funksiya
+// Sektor admini təyin etmək üçün əsas funksiya
 async function assignSectorAdmin(sectorId: string, adminName: string, adminEmail: string, adminPassword: string) {
   try {
     // İstifadəçinin mövcudluğunu yoxlayaq

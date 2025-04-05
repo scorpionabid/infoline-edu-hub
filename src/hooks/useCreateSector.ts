@@ -31,12 +31,12 @@ export const useCreateSector = () => {
       // Sektoru database-ə əlavə edirik
       const { data: newSector, error } = await supabase
         .from('sectors')
-        .insert([{
+        .insert({
           name: data.name,
           description: data.description,
           region_id: data.region_id,
           status: data.status || 'active'
-        }])
+        })
         .select()
         .single();
       

@@ -35,6 +35,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useRegions } from '@/hooks/useRegions';
 import { useAuth } from '@/context/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const statusOptions = [
   { value: 'active', label: 'active' },
@@ -52,6 +53,7 @@ const sectorSchema = z.object({
     required_error: "Region seçilməlidir",
   }),
   status: z.string().optional(),
+  addAdmin: z.boolean().optional().default(false),
 });
 
 type SectorSchemaType = z.infer<typeof sectorSchema>;
@@ -86,6 +88,7 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
       description: selectedSector?.description || "",
       region_id: selectedSector?.region_id || user?.regionId || "",
       status: selectedSector?.status || "active",
+      addAdmin: false,
     },
   });
 
@@ -100,6 +103,7 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
           description: selectedSector.description,
           region_id: selectedSector.region_id,
           status: selectedSector.status || 'active',
+          addAdmin: false,
         });
       } else {
         form.reset({
@@ -107,6 +111,7 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
           description: "",
           region_id: user?.regionId || "",
           status: "active",
+          addAdmin: false,
         });
       }
     }
@@ -123,6 +128,7 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
           description: values.description,
           region_id: values.region_id,
           status: values.status,
+          addAdmin: values.addAdmin,
         });
       } else {
         // Yeni sektor yarat
@@ -134,10 +140,11 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
         });
         
         if (result.success) {
-          if (onSuccess) {
+          if (onSuccess && values.addAdmin) {
             onSuccess(result.data.sector);
+          } else {
+            setOpen(false);
           }
-          setOpen(false);
         } else if (result.error) {
           setError(result.error);
         }
@@ -149,7 +156,7 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
   };
 
   // İstifadəçi regionadmin olduqda, region seçimini bağla
-  const isRegionFixed = user?.role === 'regionadmin' && user?.regionId;
+  const isRegionFixed = user?.role === 'regionadmin' && !!user?.regionId;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -264,6 +271,28 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
               )}
             />
             
+            {!isEditMode && (
+              <FormField
+                control={form.control}
+                name="addAdmin"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        {t("addAdminAfterCreation") || 'Yaratdıqdan sonra admin təyin et'}
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+            
             <div className="flex justify-end">
               <Button 
                 type="button" 
@@ -291,3 +320,5 @@ export const SectorDialog: React.FC<SectorDialogProps> = ({
     </Dialog>
   );
 };
+
+export default SectorDialog;
