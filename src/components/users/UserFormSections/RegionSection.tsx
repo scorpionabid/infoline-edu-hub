@@ -39,10 +39,10 @@ const RegionSection: React.FC<RegionSectionProps> = ({
         <FormItem>
           <FormLabel>{t('region')}</FormLabel>
           <Select
-            value={data.regionId || "none"}
+            value={data.regionId || ""}
             onValueChange={(value) => {
-              field.onChange(value === "none" ? undefined : value);
-              onFormChange('regionId', value === "none" ? undefined : value);
+              field.onChange(value);
+              onFormChange('regionId', value);
             }}
           >
             <FormControl>
@@ -51,7 +51,7 @@ const RegionSection: React.FC<RegionSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="none">{t('selectRegion')}</SelectItem>
+              <SelectItem value="">{t('selectRegion')}</SelectItem>
               {regions.map((region) => (
                 <SelectItem key={region.id} value={region.id}>
                   {region.name}

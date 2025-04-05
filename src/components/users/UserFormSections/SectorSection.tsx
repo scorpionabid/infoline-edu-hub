@@ -43,10 +43,10 @@ const SectorSection: React.FC<SectorSectionProps> = ({
         <FormItem>
           <FormLabel>{t('sector')}</FormLabel>
           <Select
-            value={data.sectorId || "none"}
+            value={data.sectorId || ""}
             onValueChange={(value) => {
-              field.onChange(value === "none" ? undefined : value);
-              onFormChange('sectorId', value === "none" ? undefined : value);
+              field.onChange(value);
+              onFormChange('sectorId', value);
             }}
             disabled={filteredSectors.length === 0}
           >
@@ -56,7 +56,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="none">{t('selectSector')}</SelectItem>
+              <SelectItem value="">{t('selectSector')}</SelectItem>
               {filteredSectors.map((sector) => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sector.name}

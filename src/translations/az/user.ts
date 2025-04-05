@@ -67,10 +67,17 @@ const user = {
   deleteErrorDesc: 'İstifadəçi silinərkən xəta baş verdi. Yenidən cəhd edin.',
   deleteUserConfirmation: 'Bu istifadəçini silmək istədiyinizə əminsiniz?',
   deleteUserWarning: 'Bu əməliyyat geri qaytarıla bilməz!',
+  userUpdatedDesc: 'İstifadəçi məlumatları uğurla yeniləndi',
+  passwordResetSuccess: 'Şifrə sıfırlama uğurlu oldu',
+  passwordResetRequired: 'İstifadəçi növbəti girişində şifrəsini yeniləməlidir',
+  cancelPasswordReset: 'Şifrə sıfırlamanı ləğv et',
+  resetPassword: 'Şifrəni sıfırla',
+  saveChanges: 'Dəyişiklikləri Saxla',
   
   // Vəziyyətlər
   creating: 'Yaradılır...',
   updating: 'Yenilənir...',
+  saving: 'Saxlanılır...',
   deleting: 'Silinir...',
   loading: 'Yüklənir...',
   
@@ -82,6 +89,28 @@ const user = {
   notAvailable: 'Məlumat yoxdur',
   invalidDate: 'Yanlış tarix',
   createUser: 'İstifadəçi Yarat',
+  editUserDesc: 'İstifadəçi məlumatlarını redaktə edin',
+  viewUserInfoDesc: 'İstifadəçi haqqında ətraflı məlumat',
+  accountCreated: 'Hesab yaradıldı',
+  adminEntityDetails: 'İdarəetmə obyekti məlumatları',
+  entityName: 'Obyekt adı',
+  entityType: 'Obyekt növü',
+  close: 'Bağla',
+  region: 'Region',
+  sector: 'Sektor',
+  school: 'Məktəb',
+  schoolType: 'Məktəb növü',
+  
+  // Dillər
+  selectLanguage: 'Dil seçin',
+  azerbaijani: 'Azərbaycan dili',
+  english: 'İngilis dili',
+  russian: 'Rus dili',
+  turkish: 'Türk dili',
+  language_az: 'Azərbaycan dili',
+  language_en: 'İngilis dili',
+  language_ru: 'Rus dili',
+  language_tr: 'Türk dili',
   
   // Formlar
   basicInfo: 'Əsas Məlumat',
@@ -94,9 +123,12 @@ const user = {
   twoFactorAuth: 'İki Faktorlu Doğrulama',
   
   // Təşkilati hissələr
-  region: 'Region',
-  sector: 'Sektor',
-  school: 'Məktəb',
+  selectRegion: 'Region seçin',
+  selectSector: 'Sektor seçin',
+  selectSchool: 'Məktəb seçin',
+  allRegions: 'Bütün regionlar',
+  allSectors: 'Bütün sektorlar',
+  allSchools: 'Bütün məktəblər',
   
   // Xəta mesajları
   errorOccurred: 'Xəta Baş Verdi',

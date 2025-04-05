@@ -100,11 +100,9 @@ const UserFilters: React.FC<UserFiltersProps> = ({
 
           {/* Rol filtri */}
           <Select
-            value={filter.role || ""}
+            value={filter.role || "all"}
             onValueChange={(value: string) => {
-              // Burada düzəliş: Əgər boş string gəlirsə, undefined təyin edirik
-              // Əks halda, value dəyərini Role tipinə çeviririk
-              const roleValue = value ? value as Role : undefined;
+              const roleValue = value === "all" ? undefined : value as Role;
               updateFilter({ role: roleValue });
             }}
           >
@@ -112,7 +110,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               <SelectValue placeholder={t('selectRole')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allRoles')}</SelectItem>
+              <SelectItem value="all">{t('allRoles')}</SelectItem>
               <SelectItem value="superadmin">{t('superadmin')}</SelectItem>
               <SelectItem value="regionadmin">{t('regionadmin')}</SelectItem>
               <SelectItem value="sectoradmin">{t('sectoradmin')}</SelectItem>
@@ -122,14 +120,14 @@ const UserFilters: React.FC<UserFiltersProps> = ({
 
           {/* Status filtri */}
           <Select
-            value={filter.status || ""}
-            onValueChange={(value) => updateFilter({ status: value || undefined })}
+            value={filter.status || "all"}
+            onValueChange={(value) => updateFilter({ status: value === "all" ? undefined : value })}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('selectStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allStatuses')}</SelectItem>
+              <SelectItem value="all">{t('allStatuses')}</SelectItem>
               <SelectItem value="active">{t('active')}</SelectItem>
               <SelectItem value="inactive">{t('inactive')}</SelectItem>
               <SelectItem value="blocked">{t('blocked')}</SelectItem>
@@ -138,10 +136,10 @@ const UserFilters: React.FC<UserFiltersProps> = ({
 
           {/* Region filtri */}
           <Select
-            value={filter.region || ""}
+            value={filter.region || "all"}
             onValueChange={(value) => {
               updateFilter({ 
-                region: value || undefined,
+                region: value === "all" ? undefined : value,
                 sector: undefined,
                 school: undefined
               });
@@ -152,7 +150,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               <SelectValue placeholder={t('selectRegion')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allRegions')}</SelectItem>
+              <SelectItem value="all">{t('allRegions')}</SelectItem>
               {availableRegions.map((region) => (
                 <SelectItem key={region.id} value={region.id}>
                   {region.name}
@@ -178,10 +176,10 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             {/* Sektor filtri */}
             {filter.region && (
               <Select
-                value={filter.sector || ""}
+                value={filter.sector || "all"}
                 onValueChange={(value) => {
                   updateFilter({ 
-                    sector: value || undefined,
+                    sector: value === "all" ? undefined : value,
                     school: undefined
                   });
                 }}
@@ -190,7 +188,7 @@ const UserFilters: React.FC<UserFiltersProps> = ({
                   <SelectValue placeholder={t('selectSector')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t('allSectors')}</SelectItem>
+                  <SelectItem value="all">{t('allSectors')}</SelectItem>
                   {filteredSectors.map((sector) => (
                     <SelectItem key={sector.id} value={sector.id}>
                       {sector.name}
@@ -203,14 +201,14 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             {/* Məktəb filtri */}
             {filter.sector && (
               <Select
-                value={filter.school || ""}
-                onValueChange={(value) => updateFilter({ school: value || undefined })}
+                value={filter.school || "all"}
+                onValueChange={(value) => updateFilter({ school: value === "all" ? undefined : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('selectSchool')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t('allSchools')}</SelectItem>
+                  <SelectItem value="all">{t('allSchools')}</SelectItem>
                   {filteredSchools.map((school) => (
                     <SelectItem key={school.id} value={school.id}>
                       {school.name}

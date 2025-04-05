@@ -26,10 +26,10 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({
         <FormItem>
           <FormLabel>{t('language')}</FormLabel>
           <Select
-            value={data.language || "none"}
+            value={data.language || "az"}
             onValueChange={(value) => {
-              field.onChange(value === "none" ? undefined : value);
-              onFormChange('language', value === "none" ? undefined : value);
+              field.onChange(value);
+              onFormChange('language', value);
             }}
           >
             <FormControl>
@@ -38,7 +38,6 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="none">{t('selectLanguage')}</SelectItem>
               <SelectItem value="az">{t('azerbaijani')}</SelectItem>
               <SelectItem value="en">{t('english')}</SelectItem>
               <SelectItem value="ru">{t('russian')}</SelectItem>

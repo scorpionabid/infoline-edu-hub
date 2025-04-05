@@ -1,13 +1,20 @@
 
 import React from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Role } from '@/context/AuthContext';
-import { FullUserData } from '@/types/supabase';
 import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { FullUserData } from '@/types/supabase';
+import { Role } from '@/context/AuthContext';
 
 interface UserListTableProps {
   users: FullUserData[];
@@ -17,143 +24,143 @@ interface UserListTableProps {
   currentUserRole?: Role;
 }
 
-const UserListTable: React.FC<UserListTableProps> = ({
-  users,
-  onEdit,
-  onDelete,
+const UserListTable: React.FC<UserListTableProps> = ({ 
+  users, 
+  onEdit, 
+  onDelete, 
   onViewDetails,
   currentUserRole
 }) => {
   const { t } = useLanguage();
-  
-  // Tarixin formatlanması üçün köməkçi funksiya
-  const formatDate = (dateStr: string) => {
+
+  if (users.length === 0) {
+    return (
+      <div className="rounded-md border p-8 text-center">
+        <h3 className="text-lg font-medium">{t('noUsersFound')}</h3>
+        <p className="text-muted-foreground mt-2">{t('tryAnotherFilter')}</p>
+      </div>
+    );
+  }
+
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return t('notAvailable');
     try {
-      if (!dateStr) return t('notAvailable');
-      return format(new Date(dateStr), 'dd.MM.yyyy HH:mm');
+      return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
     } catch (error) {
       return t('invalidDate');
     }
   };
-  
-  // Rol üçün badge üslubunu təyin edən funksiya
+
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
       case 'superadmin':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+        return 'bg-purple-100 text-purple-800';
       case 'regionadmin':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+        return 'bg-blue-100 text-blue-800';
       case 'sectoradmin':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'bg-green-100 text-green-800';
       case 'schooladmin':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+        return 'bg-orange-100 text-orange-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 text-gray-800';
     }
   };
-  
-  // Status üçün badge üslubunu təyin edən funksiya
+
   const getStatusBadgeStyle = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'bg-green-100 text-green-800';
       case 'inactive':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+        return 'bg-yellow-100 text-yellow-800';
       case 'blocked':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 text-gray-800';
     }
   };
-  
-  // Entity adını göstərən funksiya
-  const getEntityName = (user: FullUserData) => {
-    if (!user.adminEntity) return t('notAvailable');
-    
-    return user.adminEntity.name || t('notAvailable');
+
+  // SuperAdmin və RegionAdmin bütün istifadəçiləri redaktə edə bilər,
+  // digər adminlər yalnız özlərindən aşağı səviyyəlilərə müdaxilə edə bilər
+  const canEditUser = (user: FullUserData) => {
+    if (currentUserRole === 'superadmin') return true;
+    if (currentUserRole === 'regionadmin' && user.role !== 'superadmin') return true;
+    if (currentUserRole === 'sectoradmin' && 
+        (user.role === 'schooladmin' || user.role === 'schoolteacher')) return true;
+    return false;
   };
-  
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="font-medium">{t('fullName')}</TableHead>
-            <TableHead className="font-medium">{t('email')}</TableHead>
-            <TableHead className="font-medium">{t('role')}</TableHead>
-            <TableHead className="font-medium">{t('adminEntity')}</TableHead>
-            <TableHead className="font-medium">{t('status')}</TableHead>
-            <TableHead className="font-medium">{t('createdAt')}</TableHead>
+            <TableHead>{t('fullName')}</TableHead>
+            <TableHead>{t('email')}</TableHead>
+            <TableHead>{t('role')}</TableHead>
+            <TableHead>{t('status')}</TableHead>
+            <TableHead>{t('lastLogin')}</TableHead>
             <TableHead className="text-right">{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
-                {t('noUsersFound')}
+          {users.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar} alt={user.full_name} />
+                    <AvatarFallback className="text-xs">
+                      {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="font-medium">{user.full_name}</div>
+                </div>
+              </TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>
+                <Badge variant="outline" className={getRoleBadgeStyle(user.role)}>
+                  {t(user.role)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className={getStatusBadgeStyle(user.status)}>
+                  {t(user.status)}
+                </Badge>
+              </TableCell>
+              <TableCell>{formatDate(user.last_login)}</TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <span className="sr-only">{t('openMenu')}</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onViewDetails(user)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      <span>{t('viewDetails')}</span>
+                    </DropdownMenuItem>
+                    {canEditUser(user) && (
+                      <DropdownMenuItem onClick={() => onEdit(user)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>{t('edit')}</span>
+                      </DropdownMenuItem>
+                    )}
+                    {canEditUser(user) && (
+                      <DropdownMenuItem 
+                        onClick={() => onDelete(user)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>{t('delete')}</span>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
-          ) : (
-            users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.full_name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={getRoleBadgeStyle(user.role)}>
-                    {t(user.role)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {user.adminEntity ? (
-                    <span className="flex items-center gap-1">
-                      {getEntityName(user)}
-                    </span>
-                  ) : (
-                    t('notAvailable')
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={getStatusBadgeStyle(user.status)}>
-                    {t(user.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatDate(user.created_at)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onViewDetails(user)}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">{t('viewDetails')}</span>
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(user)}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">{t('edit')}</span>
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(user)}
-                      className="text-destructive hover:text-destructive/90"
-                      disabled={currentUserRole === user.role || user.id === 'current-user-id'}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">{t('delete')}</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
