@@ -1,4 +1,3 @@
-
 import { Notification } from './notification';
 
 export interface FormItem {
@@ -9,13 +8,29 @@ export interface FormItem {
 }
 
 export interface AdminDashboardData {
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  users?: number;
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
   completionRate: number;
   pendingApprovals: number;
   notifications: Notification[];
+  activityData?: {
+    id: string;
+    action: string;
+    actor: string;
+    target: string;
+    time: string;
+  }[];
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
+  statusData?: {
+    completed: number;
+    pending: number;
+    rejected: number;
+    notStarted: number;
+  };
 }
 
 export interface RegionAdminDashboardData {

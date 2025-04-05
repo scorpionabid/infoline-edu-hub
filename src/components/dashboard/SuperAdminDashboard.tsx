@@ -6,33 +6,10 @@ import NotificationsCard from './NotificationsCard';
 import StatsRow from './StatsRow';
 import StatusCards from './StatusCards';
 import DashboardTabs from './DashboardTabs';
+import { AdminDashboardData } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
-  data: {
-    regions: number;
-    sectors: number;
-    schools: number;
-    users: number;
-    completionRate: number;
-    pendingApprovals: number;
-    notifications: Notification[];
-    activityData?: Array<{
-      id: string;
-      action: string;
-      actor: string;
-      target: string;
-      time: string;
-    }>;
-    pendingSchools?: number;
-    approvedSchools?: number;
-    rejectedSchools?: number;
-    statusData?: {
-      completed: number;
-      pending: number;
-      rejected: number;
-      notStarted: number;
-    };
-  };
+  data: AdminDashboardData;
 }
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
@@ -67,7 +44,12 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6">
       {/* Əsas statistika kartları */}
-      <StatsRow stats={data} />
+      <StatsRow stats={{
+        regions: data.regions || 0,
+        sectors: data.sectors || 0,
+        schools: data.schools || 0,
+        users: data.users || 0,
+      }} />
       
       {/* Tamamlanma və təsdiq kartları */}
       <StatusCards 

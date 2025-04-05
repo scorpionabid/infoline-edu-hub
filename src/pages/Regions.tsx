@@ -19,7 +19,7 @@ import {
 } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { PlusIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -162,14 +162,12 @@ const Regions = () => {
 
   const onSubmit = async (values: RegionSchemaType) => {
     if (selectedRegion) {
-      // Mevcut regionu güncelle
       handleUpdateRegion(selectedRegion.id, {
         name: values.name,
         description: values.description,
         status: values.status,
       });
     } else {
-      // Yeni region yarat
       try {
         await createRegionWithAdmin({
           regionName: values.name,
@@ -220,7 +218,7 @@ const Regions = () => {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button variant="default">
-              <PlusCircledIcon className="h-4 w-4 mr-2" />
+              <PlusIcon className="h-4 w-4 mr-2" />
               {t("addRegion")}
             </Button>
           </DialogTrigger>

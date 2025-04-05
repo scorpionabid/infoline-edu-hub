@@ -98,6 +98,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const adaptDashboardData = (data: any) => {
     if (!data) return data;
     
+    // İstifadəçi rolunu daha düzgün müəyyən edək
+    // userRole-u string kimi qəbul edirik və lowercase edirik
+    const normalizedRole = typeof userRole === 'string' ? userRole.toLowerCase() : '';
+    
     // Bildirişləri standart formata çeviririk
     if (data.notifications) {
       data = {
@@ -128,7 +132,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
     switch (normalizedRole) {
       case 'superadmin':
-        return <SuperAdminDashboard data={adaptedData as AdminDashboardData} />;
+        return <SuperAdminDashboard data={adaptedData} />;
       case 'regionadmin':
         return <RegionAdminDashboard data={adaptedData as RegionAdminDashboardData} />;
       case 'sectoradmin':
