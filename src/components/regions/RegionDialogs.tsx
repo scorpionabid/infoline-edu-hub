@@ -31,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateRegionAdmin } from '@/hooks/useCreateRegionAdmin';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const statusOptions = [
   { value: 'active', label: 'active' },
@@ -48,13 +50,13 @@ const newRegionSchema = z.object({
   status: z.string().optional(),
   adminName: z.string().min(2, {
     message: "Admin adı ən azı 2 simvol olmalıdır.",
-  }).optional(),
+  }),
   adminEmail: z.string().email({
     message: "Düzgün email formatı daxil edin.",
-  }).optional(),
+  }),
   adminPassword: z.string().min(6, {
     message: "Şifrə ən azı 6 simvol olmalıdır.",
-  }).optional(),
+  }),
 });
 
 // 2. Mövcud regionu redaktə etmək üçün admin olmadan
@@ -84,6 +86,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
 }) => {
   const { t } = useLanguage();
   const { createRegionWithAdmin, loading: createRegionLoading } = useCreateRegionAdmin();
+  const [error, setError] = React.useState<string | null>(null);
 
   const isEditMode = Boolean(selectedRegion);
   
@@ -114,36 +117,44 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
   const currentForm = isEditMode ? editForm : createForm;
 
   React.useEffect(() => {
-    if (selectedRegion) {
-      editForm.reset({
-        name: selectedRegion.name,
-        description: selectedRegion.description,
-        status: selectedRegion.status || 'active',
-      });
-    } else {
-      createForm.reset({
-        name: "",
-        description: "",
-        status: "active",
-        adminName: "",
-        adminEmail: "",
-        adminPassword: "",
-      });
+    // Dialog açıldığında xəta mesajlarını sıfırla
+    if (open) {
+      setError(null);
+      
+      if (selectedRegion) {
+        editForm.reset({
+          name: selectedRegion.name,
+          description: selectedRegion.description,
+          status: selectedRegion.status || 'active',
+        });
+      } else {
+        createForm.reset({
+          name: "",
+          description: "",
+          status: "active",
+          adminName: "",
+          adminEmail: "",
+          adminPassword: "",
+        });
+      }
     }
-  }, [selectedRegion, editForm, createForm]);
+  }, [selectedRegion, editForm, createForm, open]);
 
   const handleFormSubmit = async (values: NewRegionSchemaType | EditRegionSchemaType) => {
-    if (isEditMode) {
-      // Mövcud regionu redaktə et
-      await onSubmit({
-        name: values.name,
-        description: values.description,
-        status: values.status,
-      });
-    } else {
-      // Yeni region-admin cütlüyü yarat
-      const newValues = values as NewRegionSchemaType;
-      if (newValues.adminEmail && newValues.adminName && newValues.adminPassword) {
+    try {
+      setError(null);
+      
+      if (isEditMode) {
+        // Mövcud regionu redaktə et
+        await onSubmit({
+          name: values.name,
+          description: values.description,
+          status: values.status,
+        });
+      } else {
+        // Yeni region-admin cütlüyü yarat
+        const newValues = values as NewRegionSchemaType;
+        
         // Region və admin yaratmaq üçün edge funksiyası çağırılır
         const result = await createRegionWithAdmin({
           regionName: newValues.name,
@@ -156,15 +167,13 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
         
         if (result.success) {
           setOpen(false);
+        } else if (result.error) {
+          setError(result.error);
         }
-      } else {
-        // Admin məlumatları olmadan region yaratmaq
-        await onSubmit({
-          name: newValues.name,
-          description: newValues.description,
-          status: newValues.status,
-        });
       }
+    } catch (error: any) {
+      console.error('Form submit xətası:', error);
+      setError(error.message || 'Region işləmi zamanı xəta baş verdi');
     }
   };
 
@@ -177,6 +186,14 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
             {t("createEditRegions")}
           </DialogDescription>
         </DialogHeader>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <Form {...currentForm}>
           <form onSubmit={currentForm.handleSubmit(handleFormSubmit)} className="space-y-4">
             <FormField
@@ -280,8 +297,24 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
             )}
             
             <div className="flex justify-end">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setOpen(false)}
+                className="mr-2"
+                disabled={createRegionLoading}
+              >
+                {t("cancel")}
+              </Button>
               <Button type="submit" disabled={createRegionLoading}>
-                {selectedRegion ? t("updateRegion") : t("createRegion")}
+                {createRegionLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t("loading")}
+                  </>
+                ) : (
+                  selectedRegion ? t("updateRegion") : t("createRegion")
+                )}
               </Button>
             </div>
           </form>

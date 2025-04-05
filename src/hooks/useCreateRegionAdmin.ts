@@ -21,13 +21,21 @@ export const useCreateRegionAdmin = () => {
     setLoading(true);
     
     try {
+      console.log('Region yaratma məlumatları:', data);
+      
       // Region və Admin-i yaratmaq üçün edge funksiyasını çağırırıq
       const { data: responseData, error } = await supabase.functions.invoke('create-region-admin', {
         body: data
       });
       
+      console.log('Edge funksiyası cavabı:', responseData, error);
+      
       if (error) {
         throw new Error(error.message || 'Region və admin yaradılarkən xəta baş verdi');
+      }
+      
+      if (responseData && responseData.error) {
+        throw new Error(responseData.error);
       }
       
       console.log('Region yaradıldı:', responseData);
@@ -40,7 +48,7 @@ export const useCreateRegionAdmin = () => {
       let errorMessage = t('errorCreatingRegion');
       
       // Specific error messages
-      if (error.message && error.message.includes('mövcuddur')) {
+      if (error.message) {
         errorMessage = error.message;
       }
       
