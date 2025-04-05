@@ -29,13 +29,18 @@ export interface RegionAdminDashboardData {
   rejectedSchools: number;
   notifications: Notification[];
   categories?: { 
+    id?: string;
     name: string; 
     completionRate: number; 
-    color: string; 
+    color: string;
+    deadline?: string;
+    status?: string;
   }[];
   sectorCompletions?: { 
+    id?: string;
     name: string; 
-    completionRate: number; 
+    completionRate: number;
+    schoolCount?: number;
   }[];
 }
 

@@ -4,14 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
-  DashboardData,
-  SuperAdminDashboardData, 
+  AdminDashboardData,
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  FormItem,
-  DashboardNotification
-} from '@/hooks/useDashboardData';
+  FormItem
+} from '@/types/dashboard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
@@ -32,7 +30,7 @@ interface DashboardContentProps {
 }
 
 // DashboardNotification-dan Notification-a adaptasiya
-const adaptToNotifications = (dashboardNotifications: DashboardNotification[]): Notification[] => {
+const adaptToNotifications = (dashboardNotifications: any[]): Notification[] => {
   return dashboardNotifications?.map(notification => ({
     id: notification.id,
     title: notification.title,
@@ -47,7 +45,7 @@ const adaptToNotifications = (dashboardNotifications: DashboardNotification[]): 
 };
 
 // FormItem-ləri Form formatına çevirmək üçün helper funksiya
-const adaptFormItems = (formItems: FormItem[]) => {
+const adaptFormItems = (formItems: any[]) => {
   return formItems?.map(item => ({
     ...item,
     status: item.status as FormStatus // FormStatus tipinə explicit çeviririk
@@ -108,6 +106,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       };
     }
     
+    // SchoolAdminDashboard üçün pendingForms məlumatlarını təmin edirik
+    if (normalizedRole === 'schooladmin' && data) {
+      data = {
+        ...data,
+        pendingForms: data.pendingForms || []
+      };
+    }
+    
     return data;
   };
 
@@ -122,7 +128,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
     switch (normalizedRole) {
       case 'superadmin':
-        return <SuperAdminDashboard data={adaptedData as SuperAdminDashboardData} />;
+        return <SuperAdminDashboard data={adaptedData as AdminDashboardData} />;
       case 'regionadmin':
         return <RegionAdminDashboard data={adaptedData as RegionAdminDashboardData} />;
       case 'sectoradmin':

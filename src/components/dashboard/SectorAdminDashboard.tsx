@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Notification } from '@/types/notification';
 import NotificationsCard from './NotificationsCard';

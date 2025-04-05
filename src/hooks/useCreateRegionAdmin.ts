@@ -30,9 +30,7 @@ export const useCreateRegionAdmin = () => {
         throw new Error(error.message || 'Region və admin yaradılarkən xəta baş verdi');
       }
       
-      toast.success(t('regionCreated'), {
-        description: t('regionCreatedWithAdmin', { name: data.regionName, email: data.adminEmail })
-      });
+      toast.success(t('regionCreated'));
       
       return { success: true };
     } catch (error: any) {

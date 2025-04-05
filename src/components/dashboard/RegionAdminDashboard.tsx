@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Notification } from '@/types/notification';
@@ -9,6 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
+import { 
+  Globe, 
+  School, 
+  Users, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle, 
+  Layers, 
+  FileBarChart 
+} from 'lucide-react';
 
 interface RegionAdminDashboardProps {
   data: {
