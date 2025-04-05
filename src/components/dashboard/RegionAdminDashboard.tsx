@@ -1,12 +1,10 @@
-
 import React from 'react';
-import { School, Users, Map, Globe, CheckCircle, AlertCircle, Clock, FileBarChart, Database, Layers } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { Notification } from '@/types/notification';
+import NotificationsCard from './NotificationsCard';
 import StatsCard from './StatsCard';
 import CompletionRateCard from './CompletionRateCard';
 import PendingApprovalsCard from './PendingApprovalsCard';
-import NotificationsCard from './NotificationsCard';
-import { Notification } from './NotificationsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -39,7 +37,6 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  // Massivlərin undefined olmamasını təmin edirik
   const categories = data.categories || [];
   const sectorCompletions = data.sectorCompletions || [];
   
@@ -103,7 +100,6 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Kateqoriyalar üzrə tamamlanma statistikası */}
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -139,7 +135,6 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
           </CardContent>
         </Card>
 
-        {/* Sektorlar üzrə tamamlanma statistikası */}
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">

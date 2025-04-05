@@ -72,7 +72,7 @@ export interface SchoolAdminDashboardData {
   categories?: number;
   totalForms?: number;
   completedForms?: number;
-  pendingForms: FormItem[];
+  pendingForms: FormItem[]; // Bu xəta üçün məcburi sahə etdik
   rejectedForms?: number;
   dueDates?: {
     category: string;

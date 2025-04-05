@@ -21,6 +21,7 @@ export const useCreateRegionAdmin = () => {
     setLoading(true);
     
     try {
+      // Region və Admin-i yaratmaq üçün edge funksiyasını çağırırıq
       const { error } = await supabase.functions.invoke('create-region-admin', {
         body: data
       });

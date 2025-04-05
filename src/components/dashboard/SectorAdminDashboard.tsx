@@ -1,5 +1,7 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { Notification } from '@/types/notification';
+import NotificationsCard from './NotificationsCard';
 import { 
   School, 
   FileBarChart, 
@@ -12,15 +14,12 @@ import {
   Download
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import StatsCard from './StatsCard';
-import NotificationsCard from './NotificationsCard';
-import { Notification } from './NotificationsCard';
+import { useNavigate } from 'react-router-dom';
 
 // Mock data for schools
 const mockSchoolsData = [
@@ -75,18 +74,15 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   };
   
   const handleSchoolClick = (schoolId: number) => {
-    // Navigate to school data entry page
     navigate('/data-entry');
   };
   
   const handleSendNotification = () => {
-    // Show notification sent toast
     console.log('Notification sent to schools');
   };
   
   return (
     <div className="space-y-6">
-      {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsCard 
           title={t('schools')}
@@ -108,7 +104,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
         />
       </div>
       
-      {/* School Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsCard 
           title={t('pendingSchools')}
@@ -130,7 +125,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
         />
       </div>
       
-      {/* Main Content Tabs */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg">{t('sectorData')}</CardTitle>
@@ -145,7 +139,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
               <TabsTrigger value="activity">{t('activity')}</TabsTrigger>
             </TabsList>
             
-            {/* Schools Tab Content */}
             <TabsContent value="schools" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-md font-medium">{t('schoolsInSector')}</h3>
@@ -189,7 +182,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
               </div>
             </TabsContent>
             
-            {/* Categories Tab Content */}
             <TabsContent value="categories" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-md font-medium">{t('categoryCompletionRates')}</h3>
@@ -221,7 +213,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
               </div>
             </TabsContent>
             
-            {/* Approvals Tab Content */}
             <TabsContent value="approvals" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-md font-medium">{t('pendingApprovals')}</h3>
@@ -269,7 +260,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
               )}
             </TabsContent>
             
-            {/* Activity Tab Content */}
             <TabsContent value="activity" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-md font-medium">{t('recentActivity')}</h3>
@@ -298,7 +288,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
         </CardContent>
       </Card>
       
-      {/* Notifications */}
       <NotificationsCard notifications={data.notifications} />
     </div>
   );
