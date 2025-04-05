@@ -53,14 +53,14 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
         
         <div className="w-full sm:w-[200px]">
           <Select
-            value={selectedStatus || ""}
-            onValueChange={(value) => onStatusChange(value === "" ? null : value)}
+            value={selectedStatus || "all"}
+            onValueChange={(value) => onStatusChange(value === "all" ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder={t("filterByStatus")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("allStatuses")}</SelectItem>
+              <SelectItem value="all">{t("allStatuses")}</SelectItem>
               <SelectItem value="active">{t("active")}</SelectItem>
               <SelectItem value="inactive">{t("inactive")}</SelectItem>
               <SelectItem value="blocked">{t("blocked")}</SelectItem>
