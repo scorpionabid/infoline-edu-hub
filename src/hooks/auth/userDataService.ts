@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
 

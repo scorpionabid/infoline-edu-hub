@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, Role } from '@/context/AuthContext';
@@ -69,6 +68,7 @@ import { UserFormData } from '@/types/user';
 import { useRegionsStore } from '@/hooks/useRegionsStore';
 import { Region } from '@/types/supabase';
 import { mockUsers } from '@/data/mockUsers';
+import { useCreateRegionAdmin } from '@/hooks/useCreateRegionAdmin';
 
 const Regions = () => {
   const { user } = useAuth();
@@ -88,10 +88,9 @@ const Regions = () => {
     handleSort,
     handlePageChange,
     resetFilters,
-    handleAddRegion,
-    handleUpdateRegion,
-    handleDeleteRegion
   } = useRegionsStore();
+  
+  const { createRegionWithAdmin, loading: createLoading } = useCreateRegionAdmin();
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -176,19 +175,32 @@ const Regions = () => {
   };
   
   const handleAddSubmit = async () => {
-    // Supabase-ə region əlavə et
-    const newRegion = {
-      name: regionFormData.name,
-      description: regionFormData.description,
-      status: regionFormData.status
-    };
+    if (!regionFormData.name || !adminFormData.name || !adminFormData.email || !adminFormData.password) {
+      toast.error('Xəta', {
+        description: 'Bütün zəruri sahələri doldurun'
+      });
+      return;
+    }
     
-    const success = await handleAddRegion(newRegion);
+    if (adminFormData.password.length < 6) {
+      toast.error('Xəta', {
+        description: 'Parol ən azı 6 simvol olmalıdır'
+      });
+      return;
+    }
     
-    if (success) {
-      // TODO: Gələcəkdə admin yaratma məntiqi Auth API ilə birləşdiriləcək
+    const result = await createRegionWithAdmin({
+      regionName: regionFormData.name,
+      regionDescription: regionFormData.description,
+      regionStatus: regionFormData.status,
+      adminName: adminFormData.name,
+      adminEmail: adminFormData.email,
+      adminPassword: adminFormData.password
+    });
+    
+    if (result.success) {
       setIsAddDialogOpen(false);
-      toast.success('Region və admin uğurla əlavə edildi');
+      setTimeout(() => window.location.reload(), 1000);
     }
   };
   
@@ -478,6 +490,7 @@ const Regions = () => {
                       value={regionFormData.name}
                       onChange={handleRegionFormChange}
                       placeholder="Region adı"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -521,6 +534,7 @@ const Regions = () => {
                       value={adminFormData.name}
                       onChange={(e) => setAdminFormData({...adminFormData, name: e.target.value})}
                       placeholder="Admin adı və soyadı"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -532,6 +546,7 @@ const Regions = () => {
                       value={adminFormData.email}
                       onChange={(e) => setAdminFormData({...adminFormData, email: e.target.value})}
                       placeholder="admin@example.com"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -543,7 +558,11 @@ const Regions = () => {
                       value={adminFormData.password}
                       onChange={(e) => setAdminFormData({...adminFormData, password: e.target.value})}
                       placeholder="Şifrə (minimum 6 simvol)"
+                      required
                     />
+                    {adminFormData.password && adminFormData.password.length < 6 && (
+                      <p className="text-sm text-red-500">Şifrə minimum 6 simvol olmalıdır</p>
+                    )}
                   </div>
                 </div>
               </AccordionContent>
@@ -552,8 +571,10 @@ const Regions = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Ləğv et</Button>
-            <Button onClick={handleAddSubmit} 
+            <Button 
+              onClick={handleAddSubmit} 
               disabled={
+                createLoading ||
                 !regionFormData.name || 
                 !adminFormData.name || 
                 !adminFormData.email || 
@@ -561,7 +582,14 @@ const Regions = () => {
                 adminFormData.password.length < 6
               }
             >
-              Əlavə et
+              {createLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Yaradılır...
+                </>
+              ) : (
+                'Əlavə et'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
