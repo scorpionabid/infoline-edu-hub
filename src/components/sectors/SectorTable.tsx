@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import DataTable, { Column } from '@/components/common/DataTable';
-import { EnhancedRegion } from '@/hooks/useRegionsStore';
+import { EnhancedSector } from '@/hooks/useSectorsStore';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit, 
@@ -10,21 +10,21 @@ import {
   FileText, 
   School, 
   Mail, 
-  BarChart3,
   Building,
+  MapPin,
   UserPlus
 } from 'lucide-react';
 
-interface RegionTableProps {
-  regions: EnhancedRegion[];
+interface SectorTableProps {
+  sectors: EnhancedSector[];
   loading: boolean;
-  onEdit: (region: EnhancedRegion) => void;
+  onEdit: (sector: EnhancedSector) => void;
   onDelete: (id: string) => void;
-  onAssignAdmin: (region: EnhancedRegion) => void;
+  onAssignAdmin: (sector: EnhancedSector) => void;
 }
 
-const RegionTable: React.FC<RegionTableProps> = ({
-  regions,
+const SectorTable: React.FC<SectorTableProps> = ({
+  sectors,
   loading,
   onEdit,
   onDelete,
@@ -49,23 +49,33 @@ const RegionTable: React.FC<RegionTableProps> = ({
   const columns: Column[] = [
     {
       key: 'name',
-      header: t('regionName'),
-      cell: (region) => <span className="font-medium">{region.name}</span>
+      header: t('sectorName'),
+      cell: (sector) => <span className="font-medium">{sector.name}</span>
     },
     {
       key: 'description',
       header: t('description'),
-      cell: (region) => <span className="text-muted-foreground">{region.description || '-'}</span>
+      cell: (sector) => <span className="text-muted-foreground">{sector.description || '-'}</span>
+    },
+    {
+      key: 'regionName',
+      header: t('region'),
+      cell: (sector) => (
+        <div className="flex items-center">
+          <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+          <span>{sector.regionName || '-'}</span>
+        </div>
+      )
     },
     {
       key: 'admin',
-      header: t('regionAdmin'),
-      cell: (region) => (
+      header: t('sectorAdmin'),
+      cell: (sector) => (
         <div className="flex items-center">
-          {region.adminEmail ? (
+          {sector.admin_email ? (
             <>
               <Mail className="h-4 w-4 mr-2 text-blue-500" />
-              <span>{region.adminEmail}</span>
+              <span>{sector.admin_email}</span>
             </>
           ) : (
             <span className="text-muted-foreground">-</span>
@@ -74,58 +84,32 @@ const RegionTable: React.FC<RegionTableProps> = ({
       )
     },
     {
-      key: 'sectorCount',
-      header: t('sectorCount'),
-      cell: (region) => (
-        <div className="flex items-center">
-          <Building className="h-4 w-4 mr-2 text-purple-500" />
-          <span>{region.sectorCount || 0}</span>
-        </div>
-      )
-    },
-    {
       key: 'schoolCount',
       header: t('schoolCount'),
-      cell: (region) => (
+      cell: (sector) => (
         <div className="flex items-center">
           <School className="h-4 w-4 mr-2 text-orange-500" />
-          <span>{region.schoolCount || 0}</span>
-        </div>
-      )
-    },
-    {
-      key: 'completionRate',
-      header: t('completionRate'),
-      cell: (region) => (
-        <div className="flex items-center">
-          <BarChart3 className="h-4 w-4 mr-2 text-green-500" />
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-            <div 
-              className="bg-primary h-2.5 rounded-full" 
-              style={{ width: `${region.completionRate || 0}%` }}
-            ></div>
-          </div>
-          <span className="text-sm">{region.completionRate || 0}%</span>
+          <span>{sector.schoolCount || 0}</span>
         </div>
       )
     },
     {
       key: 'status',
       header: t('status'),
-      cell: (region) => getStatusBadge(region.status)
+      cell: (sector) => getStatusBadge(sector.status)
     }
   ];
 
   return (
     <DataTable
-      data={regions}
+      data={sectors}
       columns={columns}
       isLoading={loading}
       isError={false}
       emptyState={{
         icon: <FileText className="h-10 w-10 text-muted-foreground" />,
-        title: t('noRegionsFound'),
-        description: t('noRegionsFoundDesc')
+        title: t('noSectorsFound'),
+        description: t('noSectorsFoundDesc')
       }}
       actionColumn={{
         canManage: true,
@@ -133,26 +117,25 @@ const RegionTable: React.FC<RegionTableProps> = ({
           {
             icon: <Edit className="h-4 w-4 mr-2" />,
             label: t('edit'),
-            onClick: (region) => onEdit(region)
+            onClick: (sector) => onEdit(sector)
           },
           {
             icon: <UserPlus className="h-4 w-4 mr-2" />,
             label: t('assignAdmin'),
-            onClick: (region) => onAssignAdmin(region),
-            // `isHidden` xassəsi `DataTable` tipində yoxdur, bunun əvəzinə `condition` istifadə edək
-            condition: (region) => !region.adminEmail
+            onClick: (sector) => onAssignAdmin(sector),
+            condition: (sector) => !sector.admin_email
           },
           {
             icon: <Trash2 className="h-4 w-4 mr-2" />,
             label: t('delete'),
-            onClick: (region) => setItemToDelete(region.id),
+            onClick: (sector) => setItemToDelete(sector.id),
             variant: "destructive"
           }
         ]
       }}
       deleteDialog={{
-        title: t('deleteRegion'),
-        description: t('deleteRegionConfirmation'),
+        title: t('deleteSector'),
+        description: t('deleteSectorConfirmation'),
         itemToDelete: itemToDelete,
         setItemToDelete: setItemToDelete,
         onDelete: async (id) => {
@@ -164,4 +147,4 @@ const RegionTable: React.FC<RegionTableProps> = ({
   );
 };
 
-export default RegionTable;
+export default SectorTable;

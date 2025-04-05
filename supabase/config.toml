@@ -36,5 +36,8 @@ verify_jwt = true
 [functions.assign-region-admin]
 verify_jwt = true
 
+[functions.assign-sector-admin]
+verify_jwt = true
+
 [functions.create-user]
 verify_jwt = true
