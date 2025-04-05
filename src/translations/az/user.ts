@@ -1,170 +1,129 @@
 
-/**
- * İstifadəçi və rol tərcümələri
- */
 const user = {
-  // User roles
-  superadmin: "Super Admin",
-  regionadmin: "Region Admini",
-  sectoradmin: "Sektor Admini",
-  schooladmin: "Məktəb Admini",
-  user: "İstifadəçi",
+  // Əsas etiketlər
+  usersManagement: 'İstifadəçi İdarəetməsi',
+  users: 'İstifadəçilər',
+  user: 'İstifadəçi',
+  addUser: 'İstifadəçi Əlavə Et',
+  editUser: 'İstifadəçini Redaktə Et',
+  deleteUser: 'İstifadəçini Sil',
+  userDetails: 'İstifadəçi Təfərrüatları',
   
-  // User actions and labels
-  login: "Daxil ol",
-  logout: "Çıxış",
-  register: "Qeydiyyat",
-  forgotPassword: "Şifrəni unutmusunuz?",
-  resetPassword: "Şifrəni sıfırla",
-  profile: "Profil",
-  settings: "Tənzimləmələr",
-  username: "İstifadəçi adı",
-  email: "E-poçt",
-  password: "Şifrə",
-  confirmPassword: "Şifrəni təsdiqləyin",
-  newPassword: "Yeni şifrə",
-  currentPassword: "Cari şifrə",
+  // Sahələr
+  fullName: 'Ad Soyad',
+  firstName: 'Ad',
+  lastName: 'Soyad',
+  email: 'E-poçt',
+  phone: 'Telefon',
+  position: 'Vəzifə',
+  role: 'Rol',
+  password: 'Şifrə',
+  confirmPassword: 'Şifrəni Təsdiqləyin',
+  status: 'Status',
+  createdAt: 'Yaradılma Tarixi',
+  updatedAt: 'Yenilənmə Tarixi',
+  lastLogin: 'Son Giriş',
+  language: 'Dil',
+  adminEntity: 'İdarəetmə obyekti',
+  regionAdmin: 'Region Admini',
+  sectorAdmin: 'Sektor Admini',
+  schoolAdmin: 'Məktəb Admini',
+  selectEntity: 'Obyekt Seçin',
   
-  // User status
-  active: "Aktiv",
-  inactive: "Qeyri-aktiv",
-  blocked: "Bloklanıb",
+  // Rollar
+  superadmin: 'Super Admin',
+  regionadmin: 'Region Admini',
+  sectoradmin: 'Sektor Admini',
+  schooladmin: 'Məktəb Admini',
+  allRoles: 'Bütün Rollar',
   
-  // User fields
-  firstName: "Ad",
-  lastName: "Soyad",
-  fullName: "Tam ad",
-  phoneNumber: "Telefon nömrəsi",
-  address: "Ünvan",
-  dateOfBirth: "Doğum tarixi",
-  gender: "Cins",
-  male: "Kişi",
-  female: "Qadın",
-  other: "Digər",
+  // Statuslar
+  active: 'Aktiv',
+  inactive: 'Deaktiv',
+  blocked: 'Bloklanmış',
+  allStatuses: 'Bütün Statuslar',
   
-  // User management
-  createUser: "İstifadəçi yarat",
-  editUser: "İstifadəçini redaktə et",
-  deleteUser: "İstifadəçini sil",
-  userDetails: "İstifadəçi məlumatları",
-  userList: "İstifadəçilər siyahısı",
-  addUser: "İstifadəçi əlavə et",
-  removeUser: "İstifadəçini sil",
-  assignRole: "Rol təyin et",
-  changeRole: "Rolu dəyişdir",
-  lastLogin: "Son giriş",
-  loginHistory: "Giriş tarixçəsi",
-  accountCreated: "Hesab yaradıldı",
+  // Hərəkətlər
+  save: 'Yadda Saxla',
+  cancel: 'Ləğv Et',
+  delete: 'Sil',
+  confirm: 'Təsdiqlə',
+  search: 'Axtar',
+  searchUsers: 'İstifadəçiləri Axtar',
+  resetFilters: 'Filtrləri Sıfırla',
+  viewDetails: 'Təfərrüatlara Bax',
+  edit: 'Redaktə Et',
+  selectRole: 'Rol Seçin',
+  selectStatus: 'Status Seçin',
   
-  // User feedback
-  accountCreatedSuccess: "Hesabınız uğurla yaradıldı",
-  loginSuccess: "Uğurla daxil oldunuz",
-  loginFailed: "Daxil olmaq alınmadı",
-  logoutSuccess: "Uğurla çıxış etdiniz",
-  passwordResetSuccess: "Şifrəniz uğurla sıfırlandı",
-  passwordResetFailed: "Şifrə sıfırlama alınmadı",
-  passwordResetEmailSent: "Şifrə sıfırlama e-poçtu göndərildi",
-  passwordUpdateSuccess: "Şifrəniz uğurla yeniləndi",
+  // Bildirişlər
+  userCreated: 'İstifadəçi uğurla yaradıldı',
+  userUpdated: 'İstifadəçi uğurla yeniləndi',
+  userDeleted: 'İstifadəçi uğurla silindi',
+  createError: 'İstifadəçi yaradılarkən xəta baş verdi',
+  updateError: 'İstifadəçi yenilənərkən xəta baş verdi',
+  deleteError: 'İstifadəçi silinərkən xəta baş verdi',
+  userDeletedDesc: 'İstifadəçi və bütün əlaqəli məlumatlar silindi',
+  deleteErrorDesc: 'İstifadəçi silinərkən xəta baş verdi. Yenidən cəhd edin.',
+  deleteUserConfirmation: 'Bu istifadəçini silmək istədiyinizə əminsiniz?',
+  deleteUserWarning: 'Bu əməliyyat geri qaytarıla bilməz!',
   
-  // User notifications
-  emailVerification: "E-poçt doğrulaması",
-  emailVerified: "E-poçtunuz doğrulandı",
-  emailVerificationRequired: "E-poçt doğrulaması tələb olunur",
-  emailVerificationSent: "Doğrulama e-poçtu göndərildi",
+  // Vəziyyətlər
+  creating: 'Yaradılır...',
+  updating: 'Yenilənir...',
+  deleting: 'Silinir...',
+  loading: 'Yüklənir...',
   
-  // User permissions
-  canViewUsers: "İstifadəçiləri görmək icazəsi",
-  canCreateUsers: "İstifadəçi yaratmaq icazəsi",
-  canEditUsers: "İstifadəçiləri redaktə etmək icazəsi",
-  canDeleteUsers: "İstifadəçiləri silmək icazəsi",
-  canAssignRoles: "Rol təyin etmək icazəsi",
+  // Digər mətnlər
+  noUsersFound: 'İstifadəçi tapılmadı',
+  totalUsers: 'Cəmi istifadəçi',
+  filterByRole: 'Rola görə filtrlə',
+  filterByStatus: 'Statusa görə filtrlə',
+  notAvailable: 'Məlumat yoxdur',
+  invalidDate: 'Yanlış tarix',
+  createUser: 'İstifadəçi Yarat',
   
-  // User preferences
-  language: "Dil",
-  theme: "Tema",
-  notifications: "Bildirişlər",
-  privacy: "Gizlilik",
+  // Formlar
+  basicInfo: 'Əsas Məlumat',
+  accountSettings: 'Hesab Parametrləri',
+  permissions: 'İcazələr',
+  contactInfo: 'Əlaqə Məlumatları',
+  notificationSettings: 'Bildiriş Parametrləri',
+  emailNotifications: 'E-poçt Bildirişləri',
+  systemNotifications: 'Sistem Bildirişləri',
+  twoFactorAuth: 'İki Faktorlu Doğrulama',
   
-  // Admin user fields
-  adminName: "Admin adı",
-  adminEmail: "Admin e-poçtu",
-  adminPassword: "Admin şifrəsi",
+  // Təşkilati hissələr
+  region: 'Region',
+  sector: 'Sektor',
+  school: 'Məktəb',
   
-  // Entity information
-  adminEntity: "İdarə edilən qurum",
-  adminEntityDetails: "Qurum məlumatları",
-  entityName: "Qurum adı",
-  entityType: "Qurum tipi",
-  region: "Region",
-  sector: "Sektor",
-  school: "Məktəb",
-  entityStatus: "Qurum statusu",
-  schoolType: "Məktəb tipi",
+  // Xəta mesajları
+  errorOccurred: 'Xəta Baş Verdi',
+  tryAgain: 'Yenidən Cəhd Et',
   
-  // Timestamps
-  createdAt: "Yaradılma tarixi",
-  updatedAt: "Yenilənmə tarixi",
-  
-  // Languages
-  language_az: "Azərbaycan dili",
-  language_ru: "Rus dili",
-  language_en: "İngilis dili",
-  language_tr: "Türk dili",
-  
-  // UI elements
-  selectRole: "Rol seçin",
-  selectStatus: "Status seçin",
-  allRoles: "Bütün rollar",
-  allStatuses: "Bütün statuslar",
-  searchUsers: "İstifadəçiləri axtar...",
-  
-  // Misc
-  users: "İstifadəçilər",
-  allUsers: "Bütün istifadəçilər",
-  activeUsers: "Aktiv istifadəçilər",
-  admins: "Adminlər",
-  userUpdated: "İstifadəçi məlumatları yeniləndi",
-  userDeleted: "İstifadəçi silindi",
-  loading: "Yüklənir...",
-  noUsersFound: "İstifadəçi tapılmadı",
-  viewDetails: "Təfərrüatları göstər",
-  page: "Səhifə",
-  of: "/",
-  close: "Bağla",
-  save: "Saxla",
-  cancel: "Ləğv et",
-  edit: "Redaktə et",
-  delete: "Sil",
-  previous: "Əvvəlki",
-  next: "Sonrakı",
-  notAvailable: "Mövcud deyil",
-  invalidDate: "Yanlış tarix",
-  viewUserInfoDesc: "İstifadəçi haqqında ətraflı məlumat",
-  
-  // Form validation and error messages
-  requiredFieldsMissing: "Zəhmət olmasa bütün vacib sahələri doldurun",
-  creating: "Yaradılır...",
-  created: "Yaradıldı",
-  userCreated: "İstifadəçi yaradıldı",
-  userCreatedDesc: "Yeni istifadəçi uğurla yaradıldı",
-  errorCreatingUser: "İstifadəçi yaradılarkən xəta baş verdi",
-  errorOccurred: "Xəta baş verdi",
-  userAlreadyExists: "Bu e-poçt ünvanı ilə istifadəçi artıq mövcuddur",
-  enterPassword: "Şifrə daxil edin",
-  enterNewPassword: "Yeni şifrə daxil edin",
-  passwordResetHelp: "İstifadəçini məcbur edəcək ki, növbəti girişdə şifrəni dəyişsin",
-  
-  // Dialog titles and descriptions
-  addNewRegionWithAdmin: "Yeni region və admin əlavə et",
-  addNewRegionWithAdminDesc: "Yeni region yaradın və onun üçün admin təyin edin",
-  addNewSectorWithAdmin: "Yeni sektor və admin əlavə et",
-  addNewSectorWithAdminDesc: "Yeni sektor yaradın və onun üçün admin təyin edin",
-  addNewSchoolWithAdmin: "Yeni məktəb və admin əlavə et",
-  addNewSchoolWithAdminDesc: "Yeni məktəb yaradın və onun üçün admin təyin edin",
-  addNewUser: "Yeni istifadəçi əlavə et",
-  addNewUserDesc: "Sistemə yeni istifadəçi əlavə edin",
-  adminDetails: "Admin məlumatları",
-  entityDetailsDescription: "Qurumun əsas məlumatlarını daxil edin"
+  // Yeni tərcümələr
+  addNewRegionWithAdmin: 'Yeni Region və Admini Əlavə Et',
+  addNewSectorWithAdmin: 'Yeni Sektor və Admini Əlavə Et',
+  addNewSchoolWithAdmin: 'Yeni Məktəb və Admini Əlavə Et',
+  addNewUser: 'Yeni İstifadəçi Əlavə Et',
+  addNewRegionWithAdminDesc: 'Yeni region yaradaraq, onun üçün admin təyin edin',
+  addNewSectorWithAdminDesc: 'Yeni sektor yaradaraq, onun üçün admin təyin edin',
+  addNewSchoolWithAdminDesc: 'Yeni məktəb yaradaraq, onun üçün admin təyin edin',
+  addNewUserDesc: 'İdarəetmə sisteminə yeni istifadəçi əlavə edin',
+  entityDetailsDescription: 'Bu bölmədə əlaqəli obyektin (Region/Sektor/Məktəb) məlumatlarını daxil edin',
+  adminDetails: 'Admin Detalları',
+  regionDetails: 'Region Detalları',
+  sectorDetails: 'Sektor Detalları',
+  schoolDetails: 'Məktəb Detalları',
+
+  // Pagination
+  of: 'of',
+  previous: 'Əvvəlki',
+  next: 'Sonrakı',
+
+  // UserListTable
+  actions: 'Əməliyyatlar',
 };
 
 export default user;

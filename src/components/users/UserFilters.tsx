@@ -101,7 +101,12 @@ const UserFilters: React.FC<UserFiltersProps> = ({
           {/* Rol filtri */}
           <Select
             value={filter.role || ""}
-            onValueChange={(value) => updateFilter({ role: value || undefined })}
+            onValueChange={(value: string) => {
+              // Burada düzəliş: Əgər boş string gəlirsə, undefined təyin edirik
+              // Əks halda, value dəyərini Role tipinə çeviririk
+              const roleValue = value ? value as Role : undefined;
+              updateFilter({ role: roleValue });
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('selectRole')} />
