@@ -19,6 +19,7 @@ const navigation = {
   forms: "Formalar",
   regions: "Regionlar",
   sectors: "Sektorlar",
+  columns: "Sütunlar",
   formStatus: "Form statusu",
   formStatusDesc: "Formalarınızın ümumi vəziyyəti",
   addNewData: "Məlumat əlavə et",

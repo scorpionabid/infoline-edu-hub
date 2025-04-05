@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegions } from '@/hooks/useRegions';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 import {
   Table,
   TableBody,
@@ -212,65 +213,66 @@ const Regions = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">{t("regions")}</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="default">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              {t("addRegion")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{selectedRegion ? t('editRegion') : t('addRegion')}</DialogTitle>
-              <DialogDescription>
-                {t("createEditRegions")}
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...regionForm}>
-              <form onSubmit={regionForm.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={regionForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("regionName")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("regionName")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={regionForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("description")}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t("description")}
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={regionForm.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("status")}</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+    <SidebarLayout>
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">{t("regions")}</h1>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default">
+                <PlusIcon className="h-4 w-4 mr-2" />
+                {t("addRegion")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{selectedRegion ? t('editRegion') : t('addRegion')}</DialogTitle>
+                <DialogDescription>
+                  {t("createEditRegions")}
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...regionForm}>
+                <form onSubmit={regionForm.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={regionForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("regionName")}</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("selectStatus")} />
+                          <Input placeholder={t("regionName")} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={regionForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("description")}</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder={t("description")}
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={regionForm.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("status")}</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("selectStatus")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -396,6 +398,7 @@ const Regions = () => {
         </div>
       )}
     </div>
+    </SidebarLayout>
   );
 };
 

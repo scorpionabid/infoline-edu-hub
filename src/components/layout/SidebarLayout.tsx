@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings, MapPin, Building } from 'lucide-react';
+import { Menu, X, Home, FileInput, PieChart, Users, School, FolderKanban, Settings, MapPin, Building, Columns } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationControl from '../notifications/NotificationControl';
@@ -71,6 +71,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageCategories = isSuperAdmin || isRegionAdmin;
+  const canManageColumns = isSuperAdmin || isRegionAdmin;
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   
@@ -104,6 +105,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       icon: <FolderKanban size={20} />,
       label: t('categories'),
       show: canManageCategories
+    },
+    {
+      href: "/columns",
+      icon: <Columns size={20} />,
+      label: t('columns'),
+      show: canManageColumns
     },
     {
       href: "/users",
