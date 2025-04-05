@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Region } from '@/types/supabase';
 import { useRegions } from './useRegions';
@@ -33,7 +34,6 @@ export const useRegionsStore = () => {
   const [schoolCounts, setSchoolCounts] = useState<Record<string, number>>({});
   const [sectorCounts, setSectorCounts] = useState<Record<string, number>>({});
   const [completionRates, setCompletionRates] = useState<Record<string, number>>({});
-  const [regionAdmins, setRegionAdmins] = useState<Record<string, { id: string, email: string }>>({});
   
   const itemsPerPage = 5;
 
@@ -65,25 +65,48 @@ export const useRegionsStore = () => {
       });
       setSectorCounts(sectorCountsMap);
       
-      // TODO: Tamamlanma faizini hesablamaq (bu, verilənlər bazası strukturunuzdan asılı olacaq)
-      // Hələlik sadə bir misal olaraq təsadüfi dəyərlər təyin edirik
-      const tempCompletionRates: Record<string, number> = {};
-      regions.forEach(region => {
-        tempCompletionRates[region.id] = Math.floor(Math.random() * 100);
-      });
-      setCompletionRates(tempCompletionRates);
+      // Tamamlanma faizini data_entries cədvəlindən əldə etmək
+      // Hər region üçün Bütün data_entries-ləri sayırıq və tamamlanma faizini hesablayırıq
+      const { data: dataEntries, error: dataEntriesError } = await supabase
+        .from('data_entries')
+        .select(`
+          status,
+          school_id,
+          schools(region_id)
+        `);
       
-      // Admin məlumatlarını əldə etmək
-      // TODO: Admin məlumatları üçün auth cədvəli ilə inteqrasiya
-      // Hələlik boş bir obyekt istifadə edirik
-      const tempRegionAdmins: Record<string, { id: string, email: string }> = {};
-      regions.forEach(region => {
-        tempRegionAdmins[region.id] = {
-          id: `admin-${region.id}`,
-          email: `${region.name.toLowerCase().replace(/\s+/g, '.')}.admin@infoline.edu`
-        };
+      if (dataEntriesError) throw dataEntriesError;
+      
+      // Region əsaslı tamamlanma faizi hesablaması
+      const completionRatesTemp: Record<string, {total: number, completed: number}> = {};
+      
+      dataEntries?.forEach(entry => {
+        if (entry.schools && entry.schools.region_id) {
+          const regionId = entry.schools.region_id;
+          
+          if (!completionRatesTemp[regionId]) {
+            completionRatesTemp[regionId] = { total: 0, completed: 0 };
+          }
+          
+          completionRatesTemp[regionId].total += 1;
+          
+          if (entry.status === 'approved') {
+            completionRatesTemp[regionId].completed += 1;
+          }
+        }
       });
-      setRegionAdmins(tempRegionAdmins);
+      
+      // Faiz hesablaması
+      const calculatedRates: Record<string, number> = {};
+      Object.entries(completionRatesTemp).forEach(([regionId, data]) => {
+        if (data.total > 0) {
+          calculatedRates[regionId] = Math.round((data.completed / data.total) * 100);
+        } else {
+          calculatedRates[regionId] = 0;
+        }
+      });
+      
+      setCompletionRates(calculatedRates);
       
     } catch (error) {
       console.error("Region statistikalarını əldə edərkən xəta baş verdi:", error);
@@ -231,8 +254,8 @@ export const useRegionsStore = () => {
     schoolCount: schoolCounts[region.id] || 0,
     sectorCount: sectorCounts[region.id] || 0,
     completionRate: completionRates[region.id] || 0,
-    adminId: regionAdmins[region.id]?.id,
-    adminEmail: regionAdmins[region.id]?.email
+    adminId: region.admin_id,
+    adminEmail: region.admin_email
   }));
 
   return {

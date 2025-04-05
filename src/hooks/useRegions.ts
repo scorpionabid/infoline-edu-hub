@@ -1,23 +1,32 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { Region } from '@/types/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 export const useRegions = () => {
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
+  const { user } = useAuth();
 
-  const fetchRegions = async () => {
+  const fetchRegions = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('regions')
-        .select('*')
-        .order('name');
+      let query = supabase.from('regions').select('*');
+      
+      // Əgər istifadəçi regionadmin-dirsə, yalnız öz regionunu görsün
+      if (user?.role === 'regionadmin' && user?.regionId) {
+        query = query.eq('id', user.regionId);
+      }
+      
+      // Sıralama əlavə et
+      query = query.order('name');
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -31,9 +40,9 @@ export const useRegions = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t, user]);
 
-  const addRegion = async (region: Omit<Region, 'id' | 'created_at' | 'updated_at'>) => {
+  const addRegion = useCallback(async (region: Omit<Region, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('regions')
@@ -56,9 +65,9 @@ export const useRegions = () => {
       });
       throw err;
     }
-  };
+  }, [t]);
 
-  const updateRegion = async (id: string, updates: Partial<Region>) => {
+  const updateRegion = useCallback(async (id: string, updates: Partial<Region>) => {
     try {
       const { data, error } = await supabase
         .from('regions')
@@ -85,10 +94,20 @@ export const useRegions = () => {
       });
       throw err;
     }
-  };
+  }, [t]);
 
-  const deleteRegion = async (id: string) => {
+  const deleteRegion = useCallback(async (id: string) => {
     try {
+      // Əvvəlcə regionun əlaqəli olduğu sektorlar və məktəblər yoxlanılır
+      const { data: relatedSectors } = await supabase
+        .from('sectors')
+        .select('id')
+        .eq('region_id', id);
+        
+      if (relatedSectors && relatedSectors.length > 0) {
+        throw new Error(t('cannotDeleteRegionWithSectors'));
+      }
+      
       const { error } = await supabase
         .from('regions')
         .delete()
@@ -104,15 +123,15 @@ export const useRegions = () => {
     } catch (err: any) {
       console.error('Error deleting region:', err);
       toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteRegion')
+        description: err.message || t('couldNotDeleteRegion')
       });
       throw err;
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchRegions();
-  }, []);
+  }, [fetchRegions]);
 
   return {
     regions,

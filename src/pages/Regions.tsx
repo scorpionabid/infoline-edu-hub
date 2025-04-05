@@ -7,12 +7,12 @@ import { RegionDialog } from '@/components/regions/RegionDialogs';
 import RegionHeader from '@/components/regions/RegionHeader';
 import RegionTable from '@/components/regions/RegionTable';
 import { EnhancedRegion } from '@/hooks/useRegionsStore';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
+import { Pagination } from '@/components/ui/pagination';
 
 const Regions = () => {
   const { t } = useLanguage();
-  const { toast } = useToast();
   const {
     regions,
     loading,
@@ -47,10 +47,7 @@ const Regions = () => {
           description: values.description,
           status: values.status,
         });
-        toast({
-          title: t('regionUpdated'),
-          description: t('regionUpdatedDesc'),
-        });
+        toast.success(t('regionUpdated'));
       } else {
         // Yeni region oluşturma
         await handleAddRegion({
@@ -58,30 +55,15 @@ const Regions = () => {
           description: values.description,
           status: values.status,
         });
-        
-        if (values.adminEmail && values.adminName && values.adminPassword) {
-          // Eğer admin bilgileri de girildiyse, admin oluşturma
-          // Not: Backend entegrasyon değişikliği yapılması gerekebilir
-          toast({
-            title: t('regionCreated'),
-            description: t('regionWithAdminCreated'),
-          });
-        } else {
-          toast({
-            title: t('regionCreated'),
-            description: t('regionCreatedDesc'),
-          });
-        }
+        toast.success(t('regionCreated'));
       }
       
       setOpen(false);
       setSelectedRegion(null);
       fetchRegions();
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: t('error'),
-        description: error.message || t('errorOccurred'),
+      toast.error(t('errorOccurred'), {
+        description: error.message || t('unexpectedError')
       });
     }
   };
@@ -108,6 +90,19 @@ const Regions = () => {
           onEdit={handleOpenDialog}
           onDelete={handleDeleteRegion}
         />
+        
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              previousLabel={t('previous')}
+              nextLabel={t('next')}
+              pageLabel={(page) => `${page} ${t('of')} ${totalPages}`}
+            />
+          </div>
+        )}
         
         <RegionDialog
           open={open}

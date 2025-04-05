@@ -33,12 +33,14 @@ import {
 import { useCreateRegionAdmin } from '@/hooks/useCreateRegionAdmin';
 
 const statusOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'blocked', label: 'Blocked' },
+  { value: 'active', label: 'active' },
+  { value: 'inactive', label: 'inactive' },
+  { value: 'blocked', label: 'blocked' },
 ];
 
-const regionSchema = z.object({
+// İki fərqli forma sxeması yaradaq
+// 1. Yeni region yaratmaq üçün admin daxil olmaqla
+const newRegionSchema = z.object({
   name: z.string().min(2, {
     message: "Region adı ən azı 2 simvol olmalıdır.",
   }),
@@ -46,22 +48,32 @@ const regionSchema = z.object({
   status: z.string().optional(),
   adminName: z.string().min(2, {
     message: "Admin adı ən azı 2 simvol olmalıdır.",
-  }),
+  }).optional(),
   adminEmail: z.string().email({
     message: "Düzgün email formatı daxil edin.",
-  }),
+  }).optional(),
   adminPassword: z.string().min(6, {
     message: "Şifrə ən azı 6 simvol olmalıdır.",
-  }),
+  }).optional(),
 });
 
-type RegionSchemaType = z.infer<typeof regionSchema>;
+// 2. Mövcud regionu redaktə etmək üçün admin olmadan
+const editRegionSchema = z.object({
+  name: z.string().min(2, {
+    message: "Region adı ən azı 2 simvol olmalıdır.",
+  }),
+  description: z.string().optional(),
+  status: z.string().optional(),
+});
+
+type NewRegionSchemaType = z.infer<typeof newRegionSchema>;
+type EditRegionSchemaType = z.infer<typeof editRegionSchema>;
 
 interface RegionDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   selectedRegion: Region | null;
-  onSubmit: (values: RegionSchemaType) => Promise<void>;
+  onSubmit: (values: any) => Promise<void>;
 }
 
 export const RegionDialog: React.FC<RegionDialogProps> = ({ 
@@ -71,32 +83,45 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
   onSubmit 
 }) => {
   const { t } = useLanguage();
-  const { loading: createRegionLoading } = useCreateRegionAdmin();
+  const { createRegionWithAdmin, loading: createRegionLoading } = useCreateRegionAdmin();
 
-  const regionForm = useForm<RegionSchemaType>({
-    resolver: zodResolver(regionSchema),
+  const isEditMode = Boolean(selectedRegion);
+  
+  // Edit formu için form hook
+  const editForm = useForm<EditRegionSchemaType>({
+    resolver: zodResolver(editRegionSchema),
     defaultValues: {
       name: selectedRegion?.name || "",
       description: selectedRegion?.description || "",
       status: selectedRegion?.status || "active",
+    },
+  });
+  
+  // Create formu için form hook
+  const createForm = useForm<NewRegionSchemaType>({
+    resolver: zodResolver(newRegionSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      status: "active",
       adminName: "",
       adminEmail: "",
       adminPassword: "",
     },
   });
 
+  // Seçilen form
+  const currentForm = isEditMode ? editForm : createForm;
+
   React.useEffect(() => {
     if (selectedRegion) {
-      regionForm.reset({
+      editForm.reset({
         name: selectedRegion.name,
         description: selectedRegion.description,
         status: selectedRegion.status || 'active',
-        adminName: '',
-        adminEmail: selectedRegion.admin_email || '',
-        adminPassword: '',
       });
     } else {
-      regionForm.reset({
+      createForm.reset({
         name: "",
         description: "",
         status: "active",
@@ -105,7 +130,43 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
         adminPassword: "",
       });
     }
-  }, [selectedRegion, regionForm]);
+  }, [selectedRegion, editForm, createForm]);
+
+  const handleFormSubmit = async (values: NewRegionSchemaType | EditRegionSchemaType) => {
+    if (isEditMode) {
+      // Mövcud regionu redaktə et
+      await onSubmit({
+        name: values.name,
+        description: values.description,
+        status: values.status,
+      });
+    } else {
+      // Yeni region-admin cütlüyü yarat
+      const newValues = values as NewRegionSchemaType;
+      if (newValues.adminEmail && newValues.adminName && newValues.adminPassword) {
+        // Region və admin yaratmaq üçün edge funksiyası çağırılır
+        const result = await createRegionWithAdmin({
+          regionName: newValues.name,
+          regionDescription: newValues.description,
+          regionStatus: newValues.status,
+          adminName: newValues.adminName,
+          adminEmail: newValues.adminEmail,
+          adminPassword: newValues.adminPassword
+        });
+        
+        if (result.success) {
+          setOpen(false);
+        }
+      } else {
+        // Admin məlumatları olmadan region yaratmaq
+        await onSubmit({
+          name: newValues.name,
+          description: newValues.description,
+          status: newValues.status,
+        });
+      }
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -116,10 +177,10 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
             {t("createEditRegions")}
           </DialogDescription>
         </DialogHeader>
-        <Form {...regionForm}>
-          <form onSubmit={regionForm.handleSubmit(onSubmit)} className="space-y-4">
+        <Form {...currentForm}>
+          <form onSubmit={currentForm.handleSubmit(handleFormSubmit)} className="space-y-4">
             <FormField
-              control={regionForm.control}
+              control={currentForm.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
@@ -132,7 +193,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
               )}
             />
             <FormField
-              control={regionForm.control}
+              control={currentForm.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
@@ -149,7 +210,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
               )}
             />
             <FormField
-              control={regionForm.control}
+              control={currentForm.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
@@ -172,10 +233,12 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                 </FormItem>
               )}
             />
-            {!selectedRegion && (
+            
+            {/* Yeni region yaratılarkən admin məlumatları */}
+            {!isEditMode && (
               <>
                 <FormField
-                  control={regionForm.control}
+                  control={createForm.control}
                   name="adminName"
                   render={({ field }) => (
                     <FormItem>
@@ -188,7 +251,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                   )}
                 />
                 <FormField
-                  control={regionForm.control}
+                  control={createForm.control}
                   name="adminEmail"
                   render={({ field }) => (
                     <FormItem>
@@ -201,7 +264,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                   )}
                 />
                 <FormField
-                  control={regionForm.control}
+                  control={createForm.control}
                   name="adminPassword"
                   render={({ field }) => (
                     <FormItem>
@@ -215,6 +278,7 @@ export const RegionDialog: React.FC<RegionDialogProps> = ({
                 />
               </>
             )}
+            
             <div className="flex justify-end">
               <Button type="submit" disabled={createRegionLoading}>
                 {selectedRegion ? t("updateRegion") : t("createRegion")}

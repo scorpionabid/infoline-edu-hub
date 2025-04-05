@@ -491,6 +491,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_user_roles_region_id"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_roles_school_id"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_roles_sector_id"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_roles_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false

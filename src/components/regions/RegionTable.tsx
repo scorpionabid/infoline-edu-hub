@@ -1,10 +1,18 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import DataTable, { Column } from '@/components/common/DataTable';
 import { EnhancedRegion } from '@/hooks/useRegionsStore';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Users, FileText, School } from 'lucide-react';
+import { 
+  Edit, 
+  Trash2, 
+  FileText, 
+  School, 
+  Mail, 
+  BarChart3,
+  Building
+} from 'lucide-react';
 
 interface RegionTableProps {
   regions: EnhancedRegion[];
@@ -20,7 +28,7 @@ const RegionTable: React.FC<RegionTableProps> = ({
   onDelete
 }) => {
   const { t } = useLanguage();
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = React.useState<string | null>(null);
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
@@ -49,14 +57,25 @@ const RegionTable: React.FC<RegionTableProps> = ({
     {
       key: 'admin',
       header: t('regionAdmin'),
-      cell: (region) => <span>{region.adminEmail || '-'}</span>
+      cell: (region) => (
+        <div className="flex items-center">
+          {region.adminEmail ? (
+            <>
+              <Mail className="h-4 w-4 mr-2 text-blue-500" />
+              <span>{region.adminEmail}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
+        </div>
+      )
     },
     {
       key: 'sectorCount',
       header: t('sectorCount'),
       cell: (region) => (
         <div className="flex items-center">
-          <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+          <Building className="h-4 w-4 mr-2 text-purple-500" />
           <span>{region.sectorCount || 0}</span>
         </div>
       )
@@ -66,7 +85,7 @@ const RegionTable: React.FC<RegionTableProps> = ({
       header: t('schoolCount'),
       cell: (region) => (
         <div className="flex items-center">
-          <School className="h-4 w-4 mr-2 text-muted-foreground" />
+          <School className="h-4 w-4 mr-2 text-orange-500" />
           <span>{region.schoolCount || 0}</span>
         </div>
       )
@@ -76,6 +95,7 @@ const RegionTable: React.FC<RegionTableProps> = ({
       header: t('completionRate'),
       cell: (region) => (
         <div className="flex items-center">
+          <BarChart3 className="h-4 w-4 mr-2 text-green-500" />
           <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
             <div 
               className="bg-primary h-2.5 rounded-full" 
