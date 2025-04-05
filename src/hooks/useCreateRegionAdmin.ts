@@ -35,7 +35,8 @@ export const useCreateRegionAdmin = () => {
         regionName: data.regionName,
         regionDescription: data.regionDescription,
         skipAdminCreation: data.skipAdminCreation,
-        willCreateAdmin: shouldCreateAdmin
+        willCreateAdmin: shouldCreateAdmin,
+        adminEmail: data.adminEmail ? `${data.adminEmail.substring(0, 3)}***` : undefined
       });
       
       // Region və Admin-i yaratmaq üçün edge funksiyasını çağırırıq
@@ -59,6 +60,12 @@ export const useCreateRegionAdmin = () => {
       
       if (!responseData || !responseData.success) {
         throw new Error('Region yaradılarkən naməlum xəta baş verdi');
+      }
+      
+      // Administrasiya məlumatları ilə bağlı əlavə yoxlama
+      if (!data.skipAdminCreation && shouldCreateAdmin && !responseData.adminCreated) {
+        console.warn('Region yaradıldı, lakin admin yaradılmadı:', responseData);
+        toast.warning(t('adminNotCreated') || 'Region yaradıldı, lakin admin yaradılmadı');
       }
       
       // Uğurlu mesaj

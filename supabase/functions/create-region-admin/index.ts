@@ -106,7 +106,19 @@ async function checkUserEmailExists(supabaseClient: any, email: string) {
       console.error('İstifadəçi yoxlama xətası:', error);
     }
 
-    return data;
+    // Həmçinin auth.users cədvəlində də yoxlamaq üçün auth.users-ə birbaşa sorğu edək
+    const { data: authUser, error: authError } = await supabaseClient.auth.admin.listUsers({
+      filter: { email: email }
+    });
+
+    if (authError) {
+      console.error('Auth istifadəçi yoxlama xətası:', authError);
+    }
+
+    const userExists = data || (authUser?.users?.length > 0);
+    console.log(`Email "${email}" yoxlanışı:`, userExists ? 'Mövcuddur' : 'Mövcud deyil');
+    
+    return userExists;
   } catch (error) {
     console.log('İstifadəçi yoxlanarkən xəta:', error);
     return null;
@@ -150,7 +162,7 @@ async function createAdminUser(supabaseClient: any, adminData: any, regionId: st
   }
   
   try {
-    console.log('Admin yaradılır...');
+    console.log('Admin yaradılır...', { name: adminName, email: adminEmail });
     
     // Admin istifadəçi yarat
     const { data: newUser, error: userError } = await supabaseClient.auth.admin.createUser({
@@ -197,22 +209,27 @@ async function createUserRole(supabaseClient: any, userId: string, regionId: str
 
     // Əgər rol mövcud deyilsə, əlavə et
     if (!existingRole) {
-      console.log('Rol yaradılır...');
-      const { error: roleError } = await supabaseClient
+      console.log('Rol yaradılır...', { user_id: userId, region_id: regionId });
+      const { data: roleData, error: roleError } = await supabaseClient
         .from('user_roles')
         .insert({
           user_id: userId,
           role: 'regionadmin',
           region_id: regionId
-        });
+        })
+        .select();
 
       if (roleError) {
         console.error('Rol yaradılma xətası:', roleError);
         throw roleError;
       } else {
-        console.log('Rol uğurla yaradıldı');
+        console.log('Rol uğurla yaradıldı:', roleData);
       }
+      
+      return roleData;
     }
+    
+    return existingRole;
   } catch (error) {
     console.error('Rol yaradılma xətası:', error);
     throw error;
@@ -255,16 +272,23 @@ async function updateRegionAdminInfo(supabaseClient: any, regionId: string, user
       return;
     }
     
-    console.log('Region admin məlumatları yenilənir...');
-    await supabaseClient
+    console.log('Region admin məlumatları yenilənir...', { region_id: regionId, admin_id: userId, admin_email: adminEmail });
+    const { data, error } = await supabaseClient
       .from('regions')
       .update({ 
         admin_id: userId,
         admin_email: adminEmail 
       })
-      .eq('id', regionId);
+      .eq('id', regionId)
+      .select();
       
-    console.log('Region admin məlumatları uğurla yeniləndi');
+    if (error) {
+      console.error('Region admin məlumatları yenilənərkən xəta:', error);
+      throw error;
+    }
+    
+    console.log('Region admin məlumatları uğurla yeniləndi:', data);
+    return data;
   } catch (error) {
     console.error('Region admin məlumatları yenilənərkən xəta:', error);
     throw error;
@@ -335,6 +359,7 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
 
   // Admin məlumatları
   let adminData = null;
+  let userRoleData = null;
   
   try {
     // Əgər admin yaradılacaqsa və admin məlumatları varsa, admin istifadəçi yarat
@@ -349,7 +374,7 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
         
         if (newUser) {
           // İstifadəçi rolunu əlavə etmək
-          await createUserRole(supabaseClient, newUser.id, newRegion.id);
+          userRoleData = await createUserRole(supabaseClient, newUser.id, newRegion.id);
           
           // Region admin məlumatlarını yeniləmək
           await updateRegionAdminInfo(supabaseClient, newRegion.id, newUser.id, adminEmail);
@@ -390,6 +415,7 @@ async function createRegionWithAdmin(supabaseClient: any, requestData: any) {
       success: true,
       region: newRegion,
       admin: adminData,
+      userRole: userRoleData,
       adminCreated: !!adminData
     };
   } catch (error) {
