@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export interface UserFilter {
   role?: UserRole;
@@ -16,6 +17,7 @@ export interface UserFilter {
 
 export const useUserList = () => {
   const { user: currentUser } = useAuth();
+  const { t } = useLanguage();
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -35,12 +37,10 @@ export const useUserList = () => {
     setError(null);
     
     try {
+      // 1. Əvvəlcə user_roles cədvəlindən məlumatları alaq
       let query = supabase
         .from('user_roles')
-        .select(`
-          *,
-          profiles(*)
-        `, { count: 'exact' });
+        .select('*', { count: 'exact' });
       
       // Filtrləri tətbiq et
       if (filter.role) {
@@ -67,32 +67,62 @@ export const useUserList = () => {
       const to = from + pageSize - 1;
       query = query.range(from, to);
       
-      const { data, error, count } = await query;
+      const { data: rolesData, error: rolesError, count } = await query;
       
-      if (error) throw error;
+      if (rolesError) throw rolesError;
       
-      if (!data) {
+      if (!rolesData || rolesData.length === 0) {
         setUsers([]);
         setTotalCount(0);
+        setLoading(false);
         return;
       }
       
-      // Status və axtarış filtrini profiles üzərində əlavə edirik
-      let filteredData = data;
+      // İstifadəçi ID-lərini toplayaq
+      const userIds = rolesData.map(item => item.user_id);
+      
+      // 2. profiles cədvəlindən məlumatları alaq
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) throw profilesError;
+      
+      // Profil məlumatlarını ID-yə görə map edək
+      const profilesMap: Record<string, any> = {};
+      if (profilesData) {
+        profilesData.forEach(profile => {
+          profilesMap[profile.id] = profile;
+        });
+      }
+      
+      // 3. İstifadəçi məlumatlarını əldə etmək
+      const { data: emailsData } = await supabase.rpc('get_user_emails_by_ids', { user_ids: userIds });
+      
+      const emailMap: Record<string, string> = {};
+      if (emailsData) {
+        emailsData.forEach((item: { id: string, email: string }) => {
+          emailMap[item.id] = item.email;
+        });
+      }
+      
+      // Axtarış və status filtrlərini tətbiq edək
+      let filteredRolesData = rolesData;
       if (filter.status || filter.search) {
-        filteredData = data.filter(item => {
-          const profile = item.profiles;
+        filteredRolesData = rolesData.filter(roleItem => {
+          const profile = profilesMap[roleItem.user_id] || {};
           
           // Status filtri
-          if (filter.status && profile?.status !== filter.status) {
+          if (filter.status && profile.status !== filter.status) {
             return false;
           }
           
           // Axtarış filtri
           if (filter.search) {
             const searchTerm = filter.search.toLowerCase();
-            const fullName = profile?.full_name?.toLowerCase() || '';
-            const email = profile?.email?.toLowerCase() || '';
+            const fullName = (profile.full_name || '').toLowerCase();
+            const email = (emailMap[roleItem.user_id] || '').toLowerCase();
             
             if (!fullName.includes(searchTerm) && !email.includes(searchTerm)) {
               return false;
@@ -103,34 +133,23 @@ export const useUserList = () => {
         });
       }
       
-      // İstifadəçi məlumatlarını əldə etmək
-      const userIds = filteredData.map(item => item.user_id);
-      const { data: emailsData } = await supabase.rpc('get_user_emails_by_ids', { user_ids: userIds });
-      
-      const emailMap: Record<string, string> = {};
-      if (emailsData) {
-        emailsData.forEach((item: { id: string, email: string }) => {
-          emailMap[item.id] = item.email;
-        });
-      }
-      
       // Admin entity məlumatlarını əldə et
-      const adminEntityPromises = filteredData.map(async (item) => {
-        if (!item.role.includes('admin') || 
-           (item.role === 'regionadmin' && !item.region_id) ||
-           (item.role === 'sectoradmin' && !item.sector_id) || 
-           (item.role === 'schooladmin' && !item.school_id)) {
+      const adminEntityPromises = filteredRolesData.map(async (roleItem) => {
+        if (!roleItem.role.includes('admin') || 
+           (roleItem.role === 'regionadmin' && !roleItem.region_id) ||
+           (roleItem.role === 'sectoradmin' && !roleItem.sector_id) || 
+           (roleItem.role === 'schooladmin' && !roleItem.school_id)) {
           return null;
         }
         
         try {
           let adminEntity: any = null;
           
-          if (item.role === 'regionadmin' && item.region_id) {
+          if (roleItem.role === 'regionadmin' && roleItem.region_id) {
             const { data: regionData } = await supabase
               .from('regions')
               .select('name, status')
-              .eq('id', item.region_id)
+              .eq('id', roleItem.region_id)
               .single();
             
             if (regionData) {
@@ -140,11 +159,11 @@ export const useUserList = () => {
                 status: regionData.status
               };
             }
-          } else if (item.role === 'sectoradmin' && item.sector_id) {
+          } else if (roleItem.role === 'sectoradmin' && roleItem.sector_id) {
             const { data: sectorData } = await supabase
               .from('sectors')
               .select('name, status, regions(name)')
-              .eq('id', item.sector_id)
+              .eq('id', roleItem.sector_id)
               .single();
             
             if (sectorData) {
@@ -155,11 +174,11 @@ export const useUserList = () => {
                 regionName: sectorData.regions?.name
               };
             }
-          } else if (item.role === 'schooladmin' && item.school_id) {
+          } else if (roleItem.role === 'schooladmin' && roleItem.school_id) {
             const { data: schoolData } = await supabase
               .from('schools')
               .select('name, status, type, sectors(name), regions(name)')
-              .eq('id', item.school_id)
+              .eq('id', roleItem.school_id)
               .single();
             
             if (schoolData) {
@@ -184,8 +203,8 @@ export const useUserList = () => {
       const adminEntities = await Promise.all(adminEntityPromises);
       
       // Tam istifadəçi məlumatlarını formatlaşdır
-      const formattedUsers: FullUserData[] = filteredData.map((item, index) => {
-        const profile = item.profiles || {};
+      const formattedUsers: FullUserData[] = filteredRolesData.map((roleItem, index) => {
+        const profile = profilesMap[roleItem.user_id] || {};
         
         // Status dəyərini düzgün tipə çevirək
         const statusValue = profile.status || 'active';
@@ -194,13 +213,13 @@ export const useUserList = () => {
           : 'active' as 'active' | 'inactive' | 'blocked';
         
         return {
-          id: item.user_id,
-          email: emailMap[item.user_id] || profile.email || 'N/A',
+          id: roleItem.user_id,
+          email: emailMap[roleItem.user_id] || 'N/A',
           full_name: profile.full_name || 'İsimsiz İstifadəçi',
-          role: item.role,
-          region_id: item.region_id,
-          sector_id: item.sector_id,
-          school_id: item.school_id,
+          role: roleItem.role,
+          region_id: roleItem.region_id,
+          sector_id: roleItem.sector_id,
+          school_id: roleItem.school_id,
           phone: profile.phone,
           position: profile.position,
           language: profile.language || 'az',
@@ -212,9 +231,9 @@ export const useUserList = () => {
           
           // Alias-lar
           name: profile.full_name || 'İsimsiz İstifadəçi',
-          regionId: item.region_id,
-          sectorId: item.sector_id,
-          schoolId: item.school_id,
+          regionId: roleItem.region_id,
+          sectorId: roleItem.sector_id,
+          schoolId: roleItem.school_id,
           lastLogin: profile.last_login,
           createdAt: profile.created_at || '',
           updatedAt: profile.updated_at || '',
@@ -232,7 +251,7 @@ export const useUserList = () => {
       });
       
       setUsers(formattedUsers);
-      setTotalCount(count || filteredData.length);
+      setTotalCount(count || filteredRolesData.length);
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);
       setError(err instanceof Error ? err : new Error('İstifadəçilər yüklənərkən xəta baş verdi'));
