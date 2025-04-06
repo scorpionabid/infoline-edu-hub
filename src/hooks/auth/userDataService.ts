@@ -59,7 +59,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
           throw new Error('İstifadəçi profili yaradıla bilmədi');
         }
         
-        profile = insertedProfile;
+        profile = insertedProfile as Profile;
       } catch (createError) {
         console.error('Profil yaratma xətası:', createError);
         
@@ -75,10 +75,10 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
           throw new Error('İstifadəçi profili yoxlama və ya yaratma xətası');
         }
         
-        profile = existingProfile;
+        profile = existingProfile as Profile;
       }
     } else {
-      profile = profileData;
+      profile = profileData as Profile;
     }
     
     // Rol məlumatlarını əldə et

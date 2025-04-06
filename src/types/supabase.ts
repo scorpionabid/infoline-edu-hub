@@ -1,9 +1,8 @@
-
 // Supabase üçün tip tərifləri
 
 // Profil interfeysi
 export interface Profile {
-  id: string; // auth.users cədvəlindəki id ilə eynidir
+  id: string;
   full_name: string;
   avatar?: string;
   phone?: string;
@@ -16,7 +15,7 @@ export interface Profile {
 }
 
 // İstifadəçi rolu
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 // İstifadəçi rolu cədvəli interfeysi
 export interface UserRoleData {

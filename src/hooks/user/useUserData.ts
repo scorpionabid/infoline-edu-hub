@@ -157,10 +157,12 @@ export const formatUserData = (
     const profile = profilesMap[user.id] || {};
     
     // Status dəyərini düzgün tipə çevirmək
+    let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
     const statusValue = profile.status || 'active';
-    const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-      ? statusValue as 'active' | 'inactive' | 'blocked'
-      : 'active' as 'active' | 'inactive' | 'blocked';
+    
+    if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
+      typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
+    }
     
     return {
       id: user.id,
