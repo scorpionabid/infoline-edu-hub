@@ -24,7 +24,7 @@ export interface User {
   };
   createdAt?: string;  // Date -> string
   updatedAt?: string;  // Date -> string
-  status?: 'active' | 'inactive' | 'blocked';
+  status: 'active' | 'inactive' | 'blocked'; // Artıq optional deyil, məcburidir
   passwordResetDate?: string; // Əlavə edildi
   
   // FullUserData interface ilə uyğunluq üçün əlavə sahələr
