@@ -1,78 +1,86 @@
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 
-export function useAssignExistingUserAsSectorAdmin() {
+/**
+ * Mövcud istifadəçini sektor admini kimi təyin etmək üçün hook
+ */
+export const useAssignExistingUserAsSectorAdmin = () => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const { t } = useLanguage();
-  const [loading, setLoading] = useState<boolean>(false);
-  
-  const assignUserAsSectorAdmin = useCallback(async (
-    sectorId: string,
-    userId: string
-  ) => {
+
+  /**
+   * Mövcud istifadəçini sektor admini kimi təyin edir
+   * @param sectorId sektor ID
+   * @param userId istifadəçi ID
+   * @returns əməliyyatın nəticəsi
+   */
+  const assignUserAsSectorAdmin = async (sectorId: string, userId: string): Promise<{ 
+    success: boolean; 
+    error?: string; 
+    data?: any 
+  }> => {
     try {
       setLoading(true);
       
       if (!sectorId || !userId) {
-        throw new Error(t('missingRequiredFields') || 'Zəruri sahələr doldurulmayıb');
+        throw new Error(t('missingRequiredFields') || 'Sektor ID və istifadəçi ID tələb olunur');
       }
       
-      console.log('Sektor admini təyin edilir:', {
-        sectorId,
-        userId
-      });
+      console.log('Edge funksiyasına sorğu göndərilir:', { sectorId, userId });
       
-      // Edge funksiyasını çağırırıq - parametr adlarına diqqət
+      // Edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
-        body: {
+        body: { 
           sectorId,
           userId
         }
       });
       
-      console.log('Edge funksiyası nəticəsi:', data, error);
+      console.log('Edge funksiyasının cavabı:', data, error);
       
       if (error) {
-        console.error('Admin təyinat xətası:', error);
-        throw new Error(error.message || 'Admin təyin edilərkən xəta baş verdi');
+        throw new Error(error.message || 'Sektor admini təyin edilərkən xəta baş verdi');
       }
       
-      if (data && !data.success) {
-        console.error('Admin təyinat xətası:', data.error);
-        throw new Error(data.error || 'Admin təyin edilərkən xəta baş verdi');
+      if (!data.success) {
+        throw new Error(data.error || 'Əməliyyat uğursuz oldu');
       }
       
-      toast.success(
-        t('sectorAdminAssignedSuccess') || 'Sektor admini uğurla təyin edildi',
-        {
-          description: t('userAssignedAsSectorAdmin') || 'İstifadəçi sektor admini olaraq təyin edildi'
-        }
-      );
+      // Uğurlu nəticə
+      toast({
+        title: t('adminAssignSuccess') || 'Admin təyin edildi',
+        description: data.message || `İstifadəçi uğurla sektor admini təyin edildi`,
+        variant: 'default'
+      });
       
-      return { success: true };
+      return { 
+        success: true, 
+        data: data 
+      };
     } catch (error: any) {
-      console.error('Admin təyinat xətası:', error);
+      console.error('Sektor admini təyin edilərkən xəta:', error);
       
-      toast.error(
-        t('sectorAdminAssignedError') || 'Sektor admini təyin edilərkən xəta',
-        {
-          description: error.message
-        }
-      );
+      toast({
+        title: t('adminAssignError') || 'Xəta',
+        description: error.message || 'Sektor admini təyin edilərkən xəta baş verdi',
+        variant: 'destructive'
+      });
       
       return { 
         success: false, 
-        error: error.message 
+        error: error.message || 'Gözlənilməz xəta' 
       };
     } finally {
       setLoading(false);
     }
-  }, [t]);
-  
+  };
+
   return {
     assignUserAsSectorAdmin,
     loading
   };
-}
+};

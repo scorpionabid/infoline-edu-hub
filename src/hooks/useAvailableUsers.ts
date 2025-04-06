@@ -61,9 +61,6 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
         console.log('Filterlənmiş istifadəçilər:', filteredUsers.length);
       }
       
-      // Əlavə filter - artıq admin olan istifadəçiləri çıxaraq
-      filteredUsers = filteredUsers.filter(u => u.role !== 'sectoradmin');
-      
       console.log(`${filteredUsers.length} istifadəçi yükləndi`);
       setUsers(filteredUsers);
       
