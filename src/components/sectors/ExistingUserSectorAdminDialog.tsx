@@ -77,17 +77,13 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
 
   // Regionadmin istifadəçi seçimlərini filtirləməlidir
   const filteredUsers = React.useMemo(() => {
-    if (!user || user.role !== 'regionadmin' || !user.regionId) {
-      return users;
+    if (!users || users.length === 0) {
+      return [];
     }
     
-    // Regionadmin yalnız superadmin və ya heç bir rolu olmayan istifadəçiləri görəcək
-    return users.filter(u => 
-      !u.role || // rolu olmayanlar
-      u.role === 'user' || // sadəcə user olanlar
-      (u.regionId === user.regionId && u.role !== 'regionadmin') // eyni regiondakı adminlər (regionadmin olmamaq şərtiylə)
-    );
-  }, [users, user]);
+    // Mövcud istifadəçiləri göstər
+    return users;
+  }, [users]);
 
   if (!sector) {
     return null;

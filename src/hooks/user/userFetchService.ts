@@ -24,7 +24,38 @@ export async function fetchAvailableUsersService() {
     // İstifadəçi rollarını tapılıb-tapılmadığını yoxlayaq
     if (!roleData || roleData.length === 0) {
       console.log('Heç bir istifadəçi rolu tapılmadı');
-      return { users: [] };
+      
+      // İstifadəçi rolu tapılmadı - əlavə istifadəçi məlumatlarını almaq üçün auth users-ə sorğu göndərək
+      const { data: authUsersData, error: authError } = await supabase.rpc(
+        'get_all_users'
+      );
+      
+      if (authError) {
+        console.error('Auth istifadəçilərini əldə edərkən xəta:', authError);
+        return { 
+          error: authError,
+          users: [] 
+        };
+      }
+      
+      if (!authUsersData || authUsersData.length === 0) {
+        console.log('Heç bir istifadəçi tapılmadı');
+        return { users: [] };
+      }
+      
+      console.log(`${authUsersData.length} auth istifadəçi tapıldı`);
+      
+      // Əsas istifadəçi məlumatlarını formatlaşdıraq
+      const basicUsers: FullUserData[] = authUsersData.map(user => ({
+        id: user.id,
+        email: user.email || 'N/A',
+        user_metadata: user.raw_user_meta_data || {},
+        full_name: user.raw_user_meta_data?.full_name || user.email || 'İsimsiz istifadəçi',
+        role: 'user',
+        created_at: user.created_at
+      }));
+      
+      return { users: basicUsers };
     }
     
     console.log(`${roleData.length} istifadəçi rolu tapıldı`);

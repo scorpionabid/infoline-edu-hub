@@ -1,8 +1,9 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { fetchAvailableUsersService } from '@/hooks/user/userFetchService';
+import { useAuth } from '@/context/AuthContext';
 
 export interface UseAvailableUsersReturn {
   users: FullUserData[];
@@ -15,6 +16,7 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
 
   // Mövcud istifadəçiləri əldə etmək
   const fetchAvailableUsers = useCallback(async () => {
@@ -22,9 +24,9 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
       setLoading(true);
       setError(null);
       
-      console.log('Mövcud istifadəçilər yüklənir...');
+      console.log('Mövcud istifadəçilər yüklənir...', user?.role, user?.regionId);
       
-      // User fetch servisini istifadə et - bu bizə daha uyğun olacaq
+      // User fetch servisini istifadə et
       const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
       
       if (fetchError) {
@@ -38,8 +40,18 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
         return;
       }
       
-      console.log(`${fetchedUsers.length} istifadəçi yükləndi`);
-      setUsers(fetchedUsers);
+      // İstifadəçi region admini isə, yalnız onun bölgəsindəki və ya role olmayan istifadəçiləri göstər
+      let filteredUsers = fetchedUsers;
+      if (user && user.role === 'regionadmin' && user.regionId) {
+        filteredUsers = fetchedUsers.filter(u => 
+          !u.role || // rolu olmayanlar
+          u.role === 'user' || // sadəcə user olanlar
+          (u.regionId === user.regionId && u.role !== 'regionadmin') // eyni regiondakı adminlər (regionadmin olmamaq şərtiylə)
+        );
+      }
+      
+      console.log(`${filteredUsers.length} istifadəçi yükləndi`);
+      setUsers(filteredUsers);
       
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);
@@ -47,7 +59,12 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
+
+  // Component mount olduqda istifadəçiləri əldə et
+  useEffect(() => {
+    fetchAvailableUsers();
+  }, [fetchAvailableUsers]);
 
   return {
     users,
