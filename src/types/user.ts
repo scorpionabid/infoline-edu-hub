@@ -22,8 +22,8 @@ export interface User {
     email: boolean;
     system: boolean;
   };
-  createdAt?: string;  // Date -> string
-  updatedAt?: string;  // Date -> string
+  createdAt: string;  // Artıq optional deyil, məcburidir
+  updatedAt: string;  // Artıq optional deyil, məcburidir
   status: 'active' | 'inactive' | 'blocked'; // Artıq optional deyil, məcburidir
   passwordResetDate?: string; // Əlavə edildi
   
@@ -141,8 +141,8 @@ export const fullUserDataToUser = (data: FullUserData): User => {
     avatar: data.avatar,
     status: data.status,
     lastLogin: data.last_login,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    createdAt: data.createdAt || data.created_at, // Default dəyər veririk
+    updatedAt: data.updatedAt || data.updated_at, // Default dəyər veririk
     
     // FullUserData interface ilə uyğunluq üçün əlavə sahələr
     region_id: data.region_id,
