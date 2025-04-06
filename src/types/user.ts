@@ -31,7 +31,7 @@ export interface User {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  created_at?: string;
+  created_at: string; // Artıq optional deyil, məcburidir
   updated_at?: string;
   last_login?: string;
   adminEntity?: {
@@ -95,7 +95,7 @@ export const userToFullUserData = (user: User): FullUserData => {
     avatar: user.avatar,
     status: user.status || 'active',
     last_login: user.lastLogin || user.last_login,
-    created_at: user.createdAt || user.created_at || '',
+    created_at: user.createdAt || user.created_at || new Date().toISOString(),
     updated_at: user.updatedAt || user.updated_at || '',
     
     // Alias sahələr
@@ -104,7 +104,7 @@ export const userToFullUserData = (user: User): FullUserData => {
     sectorId: user.sectorId || user.sector_id,
     schoolId: user.schoolId || user.school_id,
     lastLogin: user.lastLogin || user.last_login,
-    createdAt: user.createdAt || user.created_at || '',
+    createdAt: user.createdAt || user.created_at || new Date().toISOString(),
     updatedAt: user.updatedAt || user.updated_at || '',
     
     // Admin entity

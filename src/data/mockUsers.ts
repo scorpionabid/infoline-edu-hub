@@ -18,7 +18,8 @@ export const mockUsers: User[] = [
       system: true
     },
     createdAt: '2023-01-01T00:00:00',
-    updatedAt: '2023-01-01T00:00:00'
+    updatedAt: '2023-01-01T00:00:00',
+    created_at: '2023-01-01T00:00:00'
   },
   {
     id: 'regionadmin-1',
@@ -37,7 +38,8 @@ export const mockUsers: User[] = [
       system: true
     },
     createdAt: '2023-01-05T00:00:00',
-    updatedAt: '2023-05-12T00:00:00'
+    updatedAt: '2023-05-12T00:00:00',
+    created_at: '2023-01-05T00:00:00'
   },
   {
     id: 'regionadmin-2',
@@ -56,7 +58,8 @@ export const mockUsers: User[] = [
       system: false
     },
     createdAt: '2023-02-15T00:00:00',
-    updatedAt: '2023-08-02T00:00:00'
+    updatedAt: '2023-08-02T00:00:00',
+    created_at: '2023-02-15T00:00:00'
   },
   {
     id: 'sectoradmin-1',
@@ -76,7 +79,8 @@ export const mockUsers: User[] = [
       system: true
     },
     createdAt: '2023-03-10T00:00:00',
-    updatedAt: '2023-09-05T00:00:00'
+    updatedAt: '2023-09-05T00:00:00',
+    created_at: '2023-03-10T00:00:00'
   },
   {
     id: 'sectoradmin-2',
@@ -95,7 +99,8 @@ export const mockUsers: User[] = [
       system: true
     },
     createdAt: '2023-03-15T00:00:00',
-    updatedAt: '2023-07-20T00:00:00'
+    updatedAt: '2023-07-20T00:00:00',
+    created_at: '2023-03-15T00:00:00'
   },
   {
     id: 'schooladmin-1',
@@ -116,7 +121,8 @@ export const mockUsers: User[] = [
       system: true
     },
     createdAt: '2023-04-01T00:00:00',
-    updatedAt: '2023-10-01T00:00:00'
+    updatedAt: '2023-10-01T00:00:00',
+    created_at: '2023-04-01T00:00:00'
   },
   {
     id: 'schooladmin-2',
@@ -137,7 +143,8 @@ export const mockUsers: User[] = [
       system: false
     },
     createdAt: '2023-04-15T00:00:00',
-    updatedAt: '2023-09-01T00:00:00'
+    updatedAt: '2023-09-01T00:00:00',
+    created_at: '2023-04-15T00:00:00'
   },
   {
     id: 'schooladmin-3',
@@ -158,6 +165,7 @@ export const mockUsers: User[] = [
       system: true
     },
     createdAt: '2023-05-01T00:00:00',
-    updatedAt: '2023-09-15T00:00:00'
+    updatedAt: '2023-09-15T00:00:00',
+    created_at: '2023-05-01T00:00:00'
   }
 ];
