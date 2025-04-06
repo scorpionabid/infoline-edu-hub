@@ -546,6 +546,15 @@ export type Database = {
         }
         Returns: Json
       }
+      assign_sector_admin: {
+        Args: {
+          admin_name_param: string
+          admin_email_param: string
+          admin_password_param: string
+          sector_id_param: string
+        }
+        Returns: Json
+      }
       get_auth_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
