@@ -1,6 +1,6 @@
 
 import { Role } from '@/context/AuthContext';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 
 // Supabase-dəki FullUserData tipinin əsas xüsusiyyətlərini daşıyan daha sadə User tipi
 export interface User {
@@ -78,11 +78,23 @@ export interface UserFilter {
 
 // User və FullUserData arasında çevrilməni təmin etmək üçün köməkçi funksiyalar
 export const userToFullUserData = (user: User): FullUserData => {
+  // UserRole tipinə çevrilmə üçün validi bir dəyər əldə etmək
+  let roleValue: UserRole = 'user';
+  
+  // Əgər user.role dəyəri uyğundursa, onu UserRole tipinə çevir
+  if (user.role === 'superadmin' || 
+      user.role === 'regionadmin' || 
+      user.role === 'sectoradmin' || 
+      user.role === 'schooladmin' ||
+      user.role === 'user') {
+    roleValue = user.role as UserRole;
+  }
+  
   return {
     id: user.id,
     email: user.email,
     full_name: user.name || user.full_name || '',
-    role: user.role,
+    role: roleValue,
     region_id: user.regionId || user.region_id,
     sector_id: user.sectorId || user.sector_id,
     school_id: user.schoolId || user.school_id,
@@ -120,11 +132,23 @@ export const userToFullUserData = (user: User): FullUserData => {
 };
 
 export const fullUserDataToUser = (data: FullUserData): User => {
+  // Role tipinə çevrilmə üçün validi bir dəyər əldə etmək
+  let roleValue: Role = 'user';
+  
+  // Əgər data.role dəyəri uyğundursa, onu Role tipinə çevir
+  if (data.role === 'superadmin' || 
+      data.role === 'regionadmin' || 
+      data.role === 'sectoradmin' || 
+      data.role === 'schooladmin' ||
+      data.role === 'user') {
+    roleValue = data.role as Role;
+  }
+  
   return {
     id: data.id,
     name: data.full_name,
     email: data.email,
-    role: data.role,
+    role: roleValue,
     regionId: data.region_id,
     sectorId: data.sector_id,
     schoolId: data.school_id,

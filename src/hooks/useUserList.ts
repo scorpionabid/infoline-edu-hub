@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
@@ -40,7 +41,7 @@ export const useUserList = () => {
         .select('*', { count: 'exact' });
       
       if (filter.role) {
-        query = query.eq('role', filter.role as UserRole);
+        query = query.eq('role', filter.role);
       }
       
       if (currentUser?.role === 'regionadmin' && currentUser?.regionId) {
@@ -121,17 +122,19 @@ export const useUserList = () => {
       }
       
       const adminEntityPromises = filteredRolesData.map(async (roleItem) => {
-        if (!roleItem.role.includes('admin') || 
-           (roleItem.role === 'regionadmin' && !roleItem.region_id) ||
-           (roleItem.role === 'sectoradmin' && !roleItem.sector_id) || 
-           (roleItem.role === 'schooladmin' && !roleItem.school_id)) {
+        // Admin rolları üçün əlavə məlumatları əldə et
+        const rolStr = String(roleItem.role);
+        if (!rolStr.includes('admin') || 
+           (rolStr === 'regionadmin' && !roleItem.region_id) ||
+           (rolStr === 'sectoradmin' && !roleItem.sector_id) || 
+           (rolStr === 'schooladmin' && !roleItem.school_id)) {
           return null;
         }
         
         try {
           let adminEntity: any = null;
           
-          if (roleItem.role === 'regionadmin' && roleItem.region_id) {
+          if (rolStr === 'regionadmin' && roleItem.region_id) {
             const { data: regionData } = await supabase
               .from('regions')
               .select('name, status')
@@ -145,7 +148,7 @@ export const useUserList = () => {
                 status: regionData.status
               };
             }
-          } else if (roleItem.role === 'sectoradmin' && roleItem.sector_id) {
+          } else if (rolStr === 'sectoradmin' && roleItem.sector_id) {
             const { data: sectorData } = await supabase
               .from('sectors')
               .select('name, status, regions(name)')
@@ -160,7 +163,7 @@ export const useUserList = () => {
                 regionName: sectorData.regions?.name
               };
             }
-          } else if (roleItem.role === 'schooladmin' && roleItem.school_id) {
+          } else if (rolStr === 'schooladmin' && roleItem.school_id) {
             const { data: schoolData } = await supabase
               .from('schools')
               .select('name, status, type, sectors(name), regions(name)')
@@ -198,11 +201,14 @@ export const useUserList = () => {
           typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
         }
         
+        // Hər zaman string tipli role istifadə edirik
+        const roleValue = String(roleItem.role) as UserRole;
+        
         return {
           id: roleItem.user_id,
           email: emailMap[roleItem.user_id] || 'N/A',
           full_name: profile.full_name || 'İsimsiz İstifadəçi',
-          role: roleItem.role as UserRole,
+          role: roleValue,
           region_id: roleItem.region_id,
           sector_id: roleItem.sector_id,
           school_id: roleItem.school_id,
@@ -282,10 +288,13 @@ export const useUserList = () => {
       
       if (profileError) throw profileError;
       
+      // role değerini string olarak kullanıyoruz
+      const roleValue = String(updatedUserData.role);
+      
       const { error: roleError } = await supabase
         .from('user_roles')
         .update({
-          role: updatedUserData.role,
+          role: roleValue,
           region_id: updatedUserData.region_id,
           sector_id: updatedUserData.sector_id,
           school_id: updatedUserData.school_id,
