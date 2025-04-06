@@ -34,7 +34,7 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
         throw new Error(fetchError.message);
       }
       
-      if (!fetchedUsers || fetchedUsers.length === 0) {
+      if (!fetchedUsers) {
         console.warn('Heç bir istifadəçi tapılmadı');
         setUsers([]);
         return;
@@ -61,7 +61,7 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
     }
   }, [user]);
 
-  // Component mount olduqda istifadəçiləri əldə et
+  // İlkin yükləmə - komponent ilk dəfə mount olduqda istifadəçiləri yüklə
   useEffect(() => {
     fetchAvailableUsers();
   }, [fetchAvailableUsers]);
