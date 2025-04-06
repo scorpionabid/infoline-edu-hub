@@ -1,46 +1,43 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FullUserData } from '@/types/supabase';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import { fetchUserData } from './auth/userDataService';
 import { fetchAvailableUsersService } from './user/userFetchService';
 
 export const useAvailableUsers = () => {
-  const { t } = useLanguage();
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
-  // İstifadəçiləri əldə etmək üçün servis çağrısı
-  const fetchAvailableUsers = async () => {
+
+  const fetchAvailableUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
+      const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
       
-      console.log('İstifadəçiləri əldə etmə başladı');
-      
-      // İstifadəçilər servisindən məlumatları alaq
-      const result = await fetchAvailableUsersService();
-      
-      if (result.error) {
-        throw result.error;
+      if (fetchError) {
+        throw fetchError;
       }
       
-      setUsers(result.users || []);
+      // Əgər istifadəçi məlumatları alınıbsa və array şəklindədirsə
+      if (Array.isArray(fetchedUsers)) {
+        setUsers(fetchedUsers);
+      } else {
+        console.warn('Məlumatlar array formatında deyil:', fetchedUsers);
+        setUsers([]);
+      }
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);
       setError(err instanceof Error ? err : new Error('İstifadəçilər yüklənərkən xəta baş verdi'));
-      toast.error('İstifadəçilər yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // İlk dəfə yüklənmə
+  // İlk yükləmə zamanı istifadəçiləri əldə et
   useEffect(() => {
     fetchAvailableUsers();
-  }, []);
+  }, [fetchAvailableUsers]);
 
   return {
     users,

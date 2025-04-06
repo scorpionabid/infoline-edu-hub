@@ -28,7 +28,7 @@ serve(async (req) => {
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
     // Supabase admin client yaratma
@@ -39,7 +39,7 @@ serve(async (req) => {
       },
     });
 
-    // Request body'ni al və aç
+    // Request body-ni al və aç
     let body;
     try {
       body = await req.json();
@@ -52,7 +52,7 @@ serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
     
     const { userId, regionId } = body;
@@ -65,7 +65,7 @@ serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
     
     if (!regionId) {
@@ -76,7 +76,7 @@ serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
+      );
     }
 
     console.log(`Region admin təyinatı başladı: User ID: ${userId}, Region ID: ${regionId}`);
@@ -93,7 +93,7 @@ serve(async (req) => {
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
 
       if (!userData || !userData.user) {
@@ -104,7 +104,7 @@ serve(async (req) => {
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
 
       // 2. Regionun mövcudluğunu yoxlayaq
@@ -122,7 +122,7 @@ serve(async (req) => {
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
       
       if (!regionData) {
@@ -133,7 +133,7 @@ serve(async (req) => {
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
       
       console.log('Region tapıldı:', regionData);
@@ -152,7 +152,7 @@ serve(async (req) => {
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
       
       // 4. Əgər istifadəçi artıq regionadmin roluna malikdirsə, rolu yeniləyək
@@ -180,7 +180,7 @@ serve(async (req) => {
               status: 500, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
-          )
+          );
         }
         
         console.log('İstifadəçi rolu yeniləndi:', updatedRole);
@@ -230,7 +230,7 @@ serve(async (req) => {
               status: 500, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
             }
-          )
+          );
         }
         
         console.log('Yeni rol yaradıldı:', newRole);
@@ -255,7 +255,7 @@ serve(async (req) => {
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-        )
+        );
       }
       
       console.log('Region məlumatları yeniləndi:', updatedRegion);
