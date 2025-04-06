@@ -5,6 +5,7 @@ import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { Role } from '@/context/AuthContext';
 
 export interface UserFilter {
   role?: string;

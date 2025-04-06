@@ -147,6 +147,7 @@ export const fullUserDataToUser = (data: FullUserData): User => {
   return {
     id: data.id,
     name: data.full_name,
+    full_name: data.full_name,
     email: data.email,
     role: roleValue,
     regionId: data.region_id,
@@ -162,7 +163,6 @@ export const fullUserDataToUser = (data: FullUserData): User => {
     updatedAt: data.updated_at,
     
     // FullUserData interface ilə uyğunluq üçün əlavə sahələr
-    full_name: data.full_name,
     region_id: data.region_id,
     sector_id: data.sector_id,
     school_id: data.school_id,

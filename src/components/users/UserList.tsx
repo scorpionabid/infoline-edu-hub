@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserList } from '@/hooks/useUserList';
@@ -55,34 +54,27 @@ const UserList: React.FC<UserListProps> = ({
     fetchUsers
   } = useUserList();
 
-  // İlk dəfə və refreshTrigger dəyişdikdə məlumatları yüklə
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers, refreshTrigger]);
 
-  // onUserAddedOrEdited callback-i əlavə edilmişdirsə,
-  // parent komponentin yeniləmə istəyini izləyirik
   useEffect(() => {
     if (onUserAddedOrEdited) {
       const handleUserChange = () => {
         setRefreshTrigger(prev => prev + 1);
       };
       
-      // Event listener əlavə edək
       window.addEventListener('user-added-or-edited', handleUserChange);
       
-      // Cleanup
       return () => {
         window.removeEventListener('user-added-or-edited', handleUserChange);
       };
     }
   }, [onUserAddedOrEdited]);
 
-  // İstifadəçi əlavə ediləndə veya düzəldiləndə siyahını yenilə
   const handleUserUpdated = () => {
     setRefreshTrigger(prev => prev + 1);
     
-    // onUserAddedOrEdited callback-i çağırılır əgər varsa
     if (onUserAddedOrEdited) {
       onUserAddedOrEdited();
     }
@@ -152,7 +144,6 @@ const UserList: React.FC<UserListProps> = ({
             onOpenChange={setIsEditDialogOpen}
             user={fullUserDataToUser(selectedUser)}
             onSave={(updatedUser) => {
-              // User tipini FullUserData tipinə çevir
               const fullUserData = userToFullUserData(updatedUser);
               handleUpdateUserConfirm(fullUserData);
               handleUserUpdated();

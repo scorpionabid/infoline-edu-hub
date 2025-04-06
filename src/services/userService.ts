@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CreateUserData, 
@@ -34,7 +35,7 @@ export const getUsers = async (
     // Filtrləri tətbiq et
     if (filters) {
       if (filters.role) {
-        query = query.eq('role', filters.role as UserRole);
+        query = query.eq('role', filters.role);
       }
       
       if (filters.region_id) {
@@ -117,11 +118,14 @@ export const getUsers = async (
         typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
       }
       
+      // String tipli role istifadə edirik
+      const roleValue = String(item.role) as UserRole;
+      
       return {
         id: item.user_id,
         email: emails[item.user_id] || '',
         full_name: profile.full_name,
-        role: item.role as UserRole,
+        role: roleValue,
         region_id: item.region_id,
         sector_id: item.sector_id,
         school_id: item.school_id,
@@ -335,12 +339,14 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
     
     if (profileError) throw profileError;
     
-    // Rol yarat
+    // Rol yarat - string olaraq qəbul edirik
+    const roleValue = String(userData.role);
+    
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
         user_id: mockUserId,
-        role: userData.role as UserRole,
+        role: roleValue,
         region_id: userData.region_id,
         sector_id: userData.sector_id,
         school_id: userData.school_id
