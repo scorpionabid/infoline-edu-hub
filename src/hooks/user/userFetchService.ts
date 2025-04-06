@@ -25,9 +25,9 @@ export async function fetchAvailableUsersService() {
     if (!roleData || roleData.length === 0) {
       console.log('Heç bir istifadəçi rolu tapılmadı');
       
-      // İstifadəçi rolu tapılmadı - əlavə istifadəçi məlumatlarını almaq üçün auth users-ə sorğu göndərək
-      const { data: authUsersData, error: authError } = await supabase.rpc(
-        'get_all_users'
+      // İstifadəçi rolu tapılmadı - əlavə istifadəçi məlumatlarını almaq üçün edge funksiyasını çağıraq
+      const { data: authUsers, error: authError } = await supabase.functions.invoke(
+        'get_all_users_with_roles'
       );
       
       if (authError) {
@@ -38,21 +38,34 @@ export async function fetchAvailableUsersService() {
         };
       }
       
-      if (!authUsersData || authUsersData.length === 0) {
+      if (!authUsers || !authUsers.users || authUsers.users.length === 0) {
         console.log('Heç bir istifadəçi tapılmadı');
         return { users: [] };
       }
       
-      console.log(`${authUsersData.length} auth istifadəçi tapıldı`);
+      console.log(`${authUsers.users.length} auth istifadəçi tapıldı`);
       
       // Əsas istifadəçi məlumatlarını formatlaşdıraq
-      const basicUsers: FullUserData[] = authUsersData.map(user => ({
+      const basicUsers: FullUserData[] = authUsers.users.map(user => ({
         id: user.id,
         email: user.email || 'N/A',
         user_metadata: user.raw_user_meta_data || {},
         full_name: user.raw_user_meta_data?.full_name || user.email || 'İsimsiz istifadəçi',
-        role: 'user',
-        created_at: user.created_at
+        role: user.role || 'user',
+        region_id: user.region_id,
+        sector_id: user.sector_id,
+        school_id: user.school_id,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        // App tərəfindən istifadə edilən sahələr
+        name: user.raw_user_meta_data?.full_name || user.email || 'İsimsiz istifadəçi',
+        regionId: user.region_id,
+        sectorId: user.sector_id,
+        schoolId: user.school_id,
+        language: 'az',
+        status: 'active',
+        createdAt: user.created_at,
+        updatedAt: user.updated_at
       }));
       
       return { users: basicUsers };

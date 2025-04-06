@@ -102,7 +102,7 @@ export const SectorAdminDialog: React.FC<SectorAdminDialogProps> = ({
       
       <ExistingUserSectorAdminDialog
         open={showExistingUserDialog}
-        setOpen={handleExistingUserClose}
+        setOpen={setShowExistingUserDialog}
         sector={sector}
         onSuccess={handleExistingUserSuccess}
       />
