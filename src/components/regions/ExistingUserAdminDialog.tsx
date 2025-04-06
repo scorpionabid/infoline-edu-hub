@@ -38,6 +38,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   // Dialog açıldığında istifadəçiləri yenidən əldə et və state'i sıfırla
   useEffect(() => {
     if (open) {
+      console.log('Dialog açıldı, istifadəçilər yüklənir...');
       fetchAvailableUsers();
       setSelectedUserId('');
       setError(null);
@@ -46,6 +47,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   
   // İstifadəçi seçimi dəyişdikdə
   const handleUserChange = (value: string) => {
+    console.log('Seçilmiş istifadəçi dəyişdi:', value);
     setSelectedUserId(value);
     setError(null);
   };
@@ -53,32 +55,34 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   // Admin təyin etmə prosesi
   const handleAssignAdmin = async () => {
     if (!selectedUserId) {
+      console.error('İstifadəçi seçilməyib');
       setError(t('selectUserRequired') || 'Zəhmət olmasa istifadəçi seçin');
       return;
     }
     
     if (!region) {
+      console.error('Region tapılmadı');
       setError(t('regionNotFound') || 'Region tapılmadı');
       return;
     }
 
-    console.log('Təyin edilmə başladı. Region ID:', region.id, 'User ID:', selectedUserId);
+    console.log('Admin təyin etmə başladı. Region ID:', region.id, 'User ID:', selectedUserId);
     
     try {
       const result = await assignUserAsRegionAdmin(region.id, selectedUserId);
       
       if (result.success) {
-        console.log('Təyin etmə uğurla başa çatdı', result);
+        console.log('Admin təyin etmə uğurla başa çatdı', result);
         setOpen(false);
         if (onSuccess) {
           onSuccess();
         }
       } else {
-        console.error('Təyin etmə xətası:', result.error);
+        console.error('Admin təyin etmə xətası:', result.error);
         setError(result.error);
       }
     } catch (err: any) {
-      console.error('Təyin etmə zamanı istisna:', err);
+      console.error('Admin təyin etmə zamanı istisna:', err);
       setError(err.message || t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta baş verdi');
     }
   };
