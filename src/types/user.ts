@@ -6,6 +6,7 @@ import { FullUserData, UserRole } from '@/types/supabase';
 export interface User {
   id: string;
   name: string;
+  full_name: string; // Artıq optional deyil, məcburidir
   email: string;
   role: Role;
   regionId?: string;
@@ -27,7 +28,6 @@ export interface User {
   passwordResetDate?: string; // Əlavə edildi
   
   // FullUserData interface ilə uyğunluq üçün əlavə sahələr
-  full_name?: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
@@ -78,23 +78,14 @@ export interface UserFilter {
 
 // User və FullUserData arasında çevrilməni təmin etmək üçün köməkçi funksiyalar
 export const userToFullUserData = (user: User): FullUserData => {
-  // UserRole tipinə çevrilmə üçün validi bir dəyər əldə etmək
-  let roleValue: UserRole = 'user';
-  
-  // Əgər user.role dəyəri uyğundursa, onu UserRole tipinə çevir
-  if (user.role === 'superadmin' || 
-      user.role === 'regionadmin' || 
-      user.role === 'sectoradmin' || 
-      user.role === 'schooladmin' ||
-      user.role === 'user') {
-    roleValue = user.role as UserRole;
-  }
+  // Role tipini string-ə çeviririk (UserRole tipi üçün)
+  const roleValue = user.role;
   
   return {
     id: user.id,
     email: user.email,
-    full_name: user.name || user.full_name || '',
-    role: roleValue,
+    full_name: user.full_name || user.name || '',
+    role: roleValue as UserRole,
     region_id: user.regionId || user.region_id,
     sector_id: user.sectorId || user.sector_id,
     school_id: user.schoolId || user.school_id,
@@ -132,17 +123,8 @@ export const userToFullUserData = (user: User): FullUserData => {
 };
 
 export const fullUserDataToUser = (data: FullUserData): User => {
-  // Role tipinə çevrilmə üçün validi bir dəyər əldə etmək
-  let roleValue: Role = 'user';
-  
-  // Əgər data.role dəyəri uyğundursa, onu Role tipinə çevir
-  if (data.role === 'superadmin' || 
-      data.role === 'regionadmin' || 
-      data.role === 'sectoradmin' || 
-      data.role === 'schooladmin' ||
-      data.role === 'user') {
-    roleValue = data.role as Role;
-  }
+  // Role tipini string kimi qəbul edirik
+  const roleValue = data.role as Role;
   
   return {
     id: data.id,

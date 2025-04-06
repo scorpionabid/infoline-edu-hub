@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CreateUserData, 
@@ -339,14 +338,12 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
     
     if (profileError) throw profileError;
     
-    // Rol yarat - string olaraq qəbul edirik
-    const roleValue = String(userData.role);
-    
+    // Rol yarat - rolu any kimi cast edirik ki, tipi dəyişdirilə bilsin
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
         user_id: mockUserId,
-        role: roleValue,
+        role: userData.role as any,
         region_id: userData.region_id,
         sector_id: userData.sector_id,
         school_id: userData.school_id

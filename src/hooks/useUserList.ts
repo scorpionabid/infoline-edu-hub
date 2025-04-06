@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
@@ -42,6 +41,7 @@ export const useUserList = () => {
         .select('*', { count: 'exact' });
       
       if (filter.role) {
+        // filtr dəyərini string kimi ötür
         query = query.eq('role', filter.role);
       }
       
@@ -202,8 +202,8 @@ export const useUserList = () => {
           typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
         }
         
-        // Hər zaman string tipli role istifadə edirik
-        const roleValue = String(roleItem.role) as UserRole;
+        // Rolu UserRole tipinə məcburi çeviririk
+        const roleValue = roleItem.role as unknown as UserRole;
         
         return {
           id: roleItem.user_id,
@@ -289,13 +289,11 @@ export const useUserList = () => {
       
       if (profileError) throw profileError;
       
-      // role değerini string olarak kullanıyoruz
-      const roleValue = String(updatedUserData.role);
-      
+      // role dəyərini çeviririk
       const { error: roleError } = await supabase
         .from('user_roles')
         .update({
-          role: roleValue,
+          role: updatedUserData.role as any, // `as any` ilə tipi keçirik
           region_id: updatedUserData.region_id,
           sector_id: updatedUserData.sector_id,
           school_id: updatedUserData.school_id,

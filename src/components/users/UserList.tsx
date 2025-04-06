@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserList } from '@/hooks/useUserList';
@@ -144,6 +145,8 @@ const UserList: React.FC<UserListProps> = ({
             onOpenChange={setIsEditDialogOpen}
             user={fullUserDataToUser(selectedUser)}
             onSave={(updatedUser) => {
+              // User tipini FullUserData tipinə çevir
+              // Burada userToFullUserData funksiyasını istifadə edirik ki, full_name sahəsi düzgün doldurulsun
               const fullUserData = userToFullUserData(updatedUser);
               handleUpdateUserConfirm(fullUserData);
               handleUserUpdated();
