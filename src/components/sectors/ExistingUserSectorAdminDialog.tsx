@@ -81,9 +81,18 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       return [];
     }
     
-    // Mövcud istifadəçiləri göstər
+    // Region admini üçün filtrələmə - yalnız öz regionuna aid və ya rolu olmayan istifadəçilər
+    if (user?.role === 'regionadmin' && user.regionId && sector?.region_id) {
+      return users.filter(u => 
+        !u.role || // rolu olmayanlar
+        u.role === 'user' || // sadəcə user olanlar
+        (u.regionId === user.regionId && u.role !== 'regionadmin' && u.role !== 'sectoradmin') // eyni regiondakı, amma admin olmayan istifadəçilər
+      );
+    }
+    
+    // Superadmin üçün bütün istifadəçiləri göstər
     return users;
-  }, [users]);
+  }, [users, user, sector]);
 
   if (!sector) {
     return null;

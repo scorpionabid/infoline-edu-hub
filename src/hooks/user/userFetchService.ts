@@ -25,7 +25,7 @@ export async function fetchAvailableUsersService() {
     if (!roleData || roleData.length === 0) {
       console.log('Heç bir istifadəçi rolu tapılmadı');
       
-      // İstifadəçi rolu tapılmadı - əlavə istifadəçi məlumatlarını almaq üçün edge funksiyasını çağıraq
+      // İstifadəçi rolu tapılmadı - edge funksiyasını çağıraq
       const { data: authUsers, error: authError } = await supabase.functions.invoke(
         'get_all_users_with_roles'
       );

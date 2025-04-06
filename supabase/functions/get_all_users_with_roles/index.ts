@@ -96,6 +96,7 @@ serve(async (req) => {
         school_id: roleData.school_id || null,
         created_at: user.created_at || now,
         updated_at: user.updated_at || now,
+        raw_user_meta_data: user.user_metadata,
         // JavaScript/React tərəfində istifadə üçün CamelCase əlavə edir
         createdAt: user.created_at || now,
         updatedAt: user.updated_at || now
