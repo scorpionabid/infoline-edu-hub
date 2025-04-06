@@ -29,8 +29,24 @@ export async function fetchAvailableUsersService() {
     
     console.log(`${data.users.length} istifadəçi edge funksiyasından əldə edildi`);
     
+    // İstifadəçiləri filterləyək - superadminlər və sektor adminləri olmasın
+    const filteredUsers = data.users.filter(user => {
+      // Superadminləri çıxar
+      if (user.role === 'superadmin') return false;
+      
+      // Mövcud sektor adminlərini çıxar
+      if (user.role === 'sectoradmin' && user.sector_id) return false;
+      
+      // Region adminlərini çıxar (region admini digər region admini ola bilməz)
+      if (user.role === 'regionadmin') return false;
+      
+      return true;
+    });
+    
+    console.log(`${filteredUsers.length} istifadəçi filterləndi və hazırdır`);
+    
     // İstifadəçiləri formatlaşdıraq və qaytaraq
-    return { users: data.users as FullUserData[] };
+    return { users: filteredUsers as FullUserData[] };
   } catch (err) {
     console.error('İstifadəçi sorğusu servisində xəta:', err);
     return { 

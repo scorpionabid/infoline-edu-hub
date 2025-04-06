@@ -35,9 +35,11 @@ serve(async (req) => {
     });
 
     console.log('Edge funksiyası işə salındı: get_all_users_with_roles');
-
+    
     // auth.users-dən bütün istifadəçiləri alırıq
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
+      perPage: 100 // Daha çox istifadəçi almaq üçün
+    });
 
     if (authError) {
       console.error('İstifadəçilər əldə edilərkən xəta:', authError);
@@ -57,9 +59,26 @@ serve(async (req) => {
 
     console.log(`${authUsers.users.length} istifadəçi tapıldı`);
 
-    // İstifadəçi IDs əldə edirik
+    // İstifadəçi profilelərini əldə edirik
     const userIds = authUsers.users.map(user => user.id);
-
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+      
+    if (profilesError) {
+      console.error('İstifadəçi profilləri əldə edilərkən xəta:', profilesError);
+    }
+    
+    // İstifadəçi profilləri üçün map yaradırıq
+    const profilesMap = {};
+    if (profiles) {
+      profiles.forEach(profile => {
+        profilesMap[profile.id] = profile;
+      });
+    }
+    
+    // İstifadəçi IDs əldə edirik
     // İstifadəçi rollərini əldə edirik
     const { data: userRoles, error: rolesError } = await supabase
       .from('user_roles')
@@ -85,23 +104,34 @@ serve(async (req) => {
     // İstifadəçi məlumatlarını formatlayırıq
     const combinedUsers = authUsers.users.map(user => {
       const roleData = roleMap[user.id] || {};
+      const profileData = profilesMap[user.id] || {};
       const now = new Date().toISOString();
 
       return {
         id: user.id,
         email: user.email || '',
+        full_name: profileData.full_name || 'İsimsiz İstifadəçi',
         role: roleData.role || 'user',
         region_id: roleData.region_id || null,
         sector_id: roleData.sector_id || null,
         school_id: roleData.school_id || null,
+        phone: profileData.phone || null,
+        position: profileData.position || null,
+        language: profileData.language || 'az',
+        avatar: profileData.avatar || null,
+        status: profileData.status || 'active',
+        last_login: profileData.last_login || null,
         created_at: user.created_at || now,
         updated_at: user.updated_at || now,
-        raw_user_meta_data: user.user_metadata,
         // JavaScript/React tərəfində istifadə üçün CamelCase əlavə edir
         createdAt: user.created_at || now,
-        updatedAt: user.updated_at || now
+        updatedAt: user.updated_at || now,
+        raw_user_meta_data: user.user_metadata || {}
       };
     });
+
+    // Debug məlumatı
+    console.log(`Formatlanmış istifadəçilər: ${combinedUsers.length}`);
 
     // Uğurlu cavab
     return new Response(

@@ -51,9 +51,8 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
           const isBasicUser = !u.role || u.role === 'user';
           
           // Ya da eyni regiondan olan, lakin regionadmin/sectoradmin olmayan istifadəçilər
-          const isSameRegion = u.region_id === user.regionId && 
-                              u.role !== 'regionadmin' && 
-                              u.role !== 'sectoradmin';
+          const isSameRegion = u.region_id === user.regionId || 
+                             (!u.region_id && !u.sector_id); // Region və sektoru olmayan istifadəçilər də görünsün
           
           return isBasicUser || isSameRegion;
         });
