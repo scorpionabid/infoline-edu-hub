@@ -82,3 +82,6 @@ verify_jwt = true
 
 [functions.assign-existing-user-as-sector-admin]
 verify_jwt = true
+
+[functions.assign-sector-admin]
+verify_jwt = true
