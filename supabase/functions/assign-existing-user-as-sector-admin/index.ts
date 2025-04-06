@@ -33,62 +33,6 @@ serve(async (req) => {
       );
     }
 
-    // Autentifikasiya olunmuş istifadəçiyə bağlı client
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
-
-    // İstifadəçi məlumatlarını əldə et
-    const { data: { user: currentUser }, error: userError } = await supabaseAuth.auth.getUser();
-
-    if (userError || !currentUser) {
-      console.error("İstifadəçi autentifikasiya xətası:", userError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: userError?.message || "İstifadəçi autentifikasiya olunmayıb" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
-    }
-
-    console.log("Cari istifadəçi:", currentUser.id, currentUser.email);
-
-    // İstifadəçi rolunu yoxla
-    const { data: userRoleData, error: userRoleError } = await supabaseAuth
-      .from("user_roles")
-      .select("*")
-      .eq("user_id", currentUser.id)
-      .single();
-
-    if (userRoleError) {
-      console.error("İstifadəçi rolu sorğusu xətası:", userRoleError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: userRoleError.message || "İstifadəçi rolu tapılmadı" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
-
-    const userRole = userRoleData.role;
-    console.log("İstifadəçi rolu:", userRole);
-
-    // Yalnız superadmin və regionadmin rolları icazəlidir
-    if (userRole !== "superadmin" && userRole !== "regionadmin") {
-      console.error("İcazəsiz giriş - yalnız superadmin və regionadmin");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Bu əməliyyat üçün superadmin və ya regionadmin səlahiyyətləri tələb olunur" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
-
     // İstəyin məlumatlarını əldə et
     const requestData = await req.json();
     console.log("Gələn məlumatları:", {
@@ -118,39 +62,6 @@ serve(async (req) => {
         persistSession: false,
       },
     });
-
-    // Region admini üçün əlavə yoxlamalar
-    if (userRole === "regionadmin") {
-      // Sektoru yoxla
-      const { data: sector, error: sectorError } = await supabase
-        .from("sectors")
-        .select("*")
-        .eq("id", sectorId)
-        .single();
-
-      if (sectorError || !sector) {
-        console.error("Sektor sorğusu xətası:", sectorError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: sectorError?.message || "Sektor tapılmadı" 
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-
-      // Region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər
-      if (sector.region_id !== userRoleData.region_id) {
-        console.error("İcazəsiz giriş - region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər");
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Siz yalnız öz regionunuza aid sektorlara admin təyin edə bilərsiniz" 
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-        );
-      }
-    }
 
     // SQL funksiyasını çağır
     console.log(`SQL funksiyası çağırılır: assign_sector_admin(${userId}, ${sectorId})`);
