@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -91,13 +90,13 @@ serve(async (req) => {
     // İsifadəçi olmadığı halda boş siyahı qaytar
     if (combinedUserData.length === 0) {
       return new Response(
-        JSON.stringify({ data: [] }),
+        JSON.stringify([]),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
     return new Response(
-      JSON.stringify({ data: combinedUserData }),
+      JSON.stringify(combinedUserData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {

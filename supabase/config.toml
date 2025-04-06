@@ -69,3 +69,4 @@ verify_jwt = true
 
 [functions.assign-existing-user-as-admin]
 verify_jwt = true
+

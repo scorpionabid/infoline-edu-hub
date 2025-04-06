@@ -1,28 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Region, FullUserData } from '@/types/supabase';
+import { Region } from '@/types/supabase';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import { useAssignExistingUserAsAdmin } from '@/hooks/useAssignExistingUserAsAdmin';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
-import { AlertCircle, Loader2, UserCheck, ShieldCheck } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// İmport komponentləri
+import { AdminDialogHeader } from './AdminDialog/AdminDialogHeader';
+import { AdminUserSelector } from './AdminDialog/AdminUserSelector';
+import { AdminDialogFooter } from './AdminDialog/AdminDialogFooter';
 
 interface ExistingUserAdminDialogProps {
   open: boolean;
@@ -91,33 +83,6 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
     }
   };
 
-  // İstifadəçiləri filtrlə 
-  const filteredUsers = React.useMemo(() => {
-    // Bütün istifadəçiləri əldə et, SuperAdminləri çıxar
-    return users
-      .filter(user => user.role !== 'superadmin') 
-      .sort((a, b) => {
-        // RegionAdminləri əvvələ gətir
-        if (a.role === 'regionadmin' && b.role !== 'regionadmin') return -1;
-        if (a.role !== 'regionadmin' && b.role === 'regionadmin') return 1;
-        return a.name.localeCompare(b.name);
-      });
-  }, [users]);
-
-  // İstifadəçi rolunu ikona ilə göstər
-  const getRoleIcon = (role: string) => {
-    switch(role) {
-      case 'regionadmin':
-        return <ShieldCheck className="h-4 w-4 text-blue-500 mr-2" />;
-      case 'sectoradmin':
-        return <ShieldCheck className="h-4 w-4 text-green-500 mr-2" />;
-      case 'schooladmin':
-        return <ShieldCheck className="h-4 w-4 text-amber-500 mr-2" />;
-      default:
-        return <UserCheck className="h-4 w-4 text-gray-500 mr-2" />;
-    }
-  };
-
   if (!region) {
     return null;
   }
@@ -125,12 +90,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('assignRegionAdmin') || 'Region admini təyin et'}</DialogTitle>
-          <DialogDescription>
-            {`"${region.name}" regionu üçün mövcud istifadəçini admin kimi təyin edin`}
-          </DialogDescription>
-        </DialogHeader>
+        <AdminDialogHeader region={region} />
         
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -140,78 +100,20 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
         )}
         
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <h4 className="font-medium">{t('selectUser') || 'İstifadəçi seçin'}</h4>
-            
-            {usersLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : usersError ? (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi'}</AlertDescription>
-              </Alert>
-            ) : (
-              <Select 
-                value={selectedUserId} 
-                onValueChange={handleUserChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>{t('availableUsers') || 'Mövcud istifadəçilər'}</SelectLabel>
-                    {filteredUsers.length === 0 ? (
-                      <SelectItem value="no-users" disabled>
-                        {t('noUsersFound') || 'İstifadəçi tapılmadı'}
-                      </SelectItem>
-                    ) : (
-                      filteredUsers.map(user => (
-                        <SelectItem key={user.id} value={user.id}>
-                          <div className="flex items-center">
-                            {getRoleIcon(user.role)}
-                            <span>{user.name} ({user.email})</span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
-            
-            <p className="text-sm text-muted-foreground">
-              {t('existingUserAdminHelp') || 'Seçilmiş istifadəçi bu region üçün admin səlahiyyətlərinə malik olacaq.'}
-            </p>
-          </div>
+          <AdminUserSelector 
+            users={users}
+            loading={usersLoading}
+            error={usersError}
+            selectedUserId={selectedUserId}
+            onUserChange={handleUserChange}
+          />
           
-          <div className="flex justify-end">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setOpen(false)}
-              className="mr-2"
-              disabled={assignLoading}
-            >
-              {t("cancel") || 'Ləğv et'}
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handleAssignAdmin} 
-              disabled={assignLoading || !selectedUserId}
-            >
-              {assignLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("loading") || 'Yüklənir...'}
-                </>
-              ) : (
-                t("assignAdmin") || 'Admin təyin et'
-              )}
-            </Button>
-          </div>
+          <AdminDialogFooter 
+            loading={assignLoading}
+            onCancel={() => setOpen(false)}
+            onAssign={handleAssignAdmin}
+            disabled={!selectedUserId}
+          />
         </div>
       </DialogContent>
     </Dialog>
