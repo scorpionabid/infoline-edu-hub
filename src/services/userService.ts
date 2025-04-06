@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CreateUserData, 
@@ -34,7 +35,7 @@ export const getUsers = async (
     // Filtrləri tətbiq et
     if (filters) {
       if (filters.role) {
-        query = query.eq('role', filters.role);
+        query = query.eq('role', filters.role as any);
       }
       
       if (filters.region_id) {

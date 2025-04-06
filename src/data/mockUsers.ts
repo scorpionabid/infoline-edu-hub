@@ -1,9 +1,11 @@
+
 import { User } from '@/types/user';
 
 export const mockUsers: User[] = [
   {
     id: 'superadmin-1',
     name: 'Super Admin',
+    full_name: 'Super Admin',
     email: 'superadmin@infoline.edu',
     role: 'superadmin',
     status: 'active',
@@ -21,6 +23,7 @@ export const mockUsers: User[] = [
   {
     id: 'regionadmin-1',
     name: 'Bakı Region Admini',
+    full_name: 'Bakı Region Admini',
     email: 'bakuadmin@infoline.edu',
     role: 'regionadmin',
     regionId: 'region-1',
@@ -39,6 +42,7 @@ export const mockUsers: User[] = [
   {
     id: 'regionadmin-2',
     name: 'Gəncə Region Admini',
+    full_name: 'Gəncə Region Admini',
     email: 'ganja@infoline.edu',
     role: 'regionadmin',
     regionId: 'region-2',
@@ -57,6 +61,7 @@ export const mockUsers: User[] = [
   {
     id: 'sectoradmin-1',
     name: 'Yasamal Sektor Admini',
+    full_name: 'Yasamal Sektor Admini',
     email: 'yasamal@infoline.edu',
     role: 'sectoradmin',
     regionId: 'region-1',
@@ -76,6 +81,7 @@ export const mockUsers: User[] = [
   {
     id: 'sectoradmin-2',
     name: 'Nəsimi Sektor Admini',
+    full_name: 'Nəsimi Sektor Admini',
     email: 'nasimi@infoline.edu',
     role: 'sectoradmin',
     regionId: 'region-1',
@@ -94,6 +100,7 @@ export const mockUsers: User[] = [
   {
     id: 'schooladmin-1',
     name: 'Məktəb 45 Admini',
+    full_name: 'Məktəb 45 Admini',
     email: 'school45@infoline.edu',
     role: 'schooladmin',
     regionId: 'region-1',
@@ -114,6 +121,7 @@ export const mockUsers: User[] = [
   {
     id: 'schooladmin-2',
     name: 'Məktəb 153 Admini',
+    full_name: 'Məktəb 153 Admini',
     email: 'school153@infoline.edu',
     role: 'schooladmin',
     regionId: 'region-1',
@@ -134,6 +142,7 @@ export const mockUsers: User[] = [
   {
     id: 'schooladmin-3',
     name: 'Məktəb 23 Admini',
+    full_name: 'Məktəb 23 Admini',
     email: 'school23@infoline.edu',
     role: 'schooladmin',
     regionId: 'region-1',

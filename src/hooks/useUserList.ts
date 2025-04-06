@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
@@ -41,8 +42,8 @@ export const useUserList = () => {
         .select('*', { count: 'exact' });
       
       if (filter.role) {
-        // filtr dəyərini string kimi ötür
-        query = query.eq('role', filter.role);
+        // filtr dəyərini string kimi ötür və role sütunu ilə müqayisə et
+        query = query.eq('role', filter.role as any);
       }
       
       if (currentUser?.role === 'regionadmin' && currentUser?.regionId) {

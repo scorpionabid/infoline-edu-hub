@@ -146,7 +146,14 @@ export interface FullUserData {
   updatedAt: string; // updated_at ilə eyni
   
   // Admin entity məlumatları
-  adminEntity?: AdminEntity;
+  adminEntity?: {
+    type: string;
+    name: string;
+    status?: string;
+    regionName?: string;
+    sectorName?: string;
+    schoolType?: string;
+  };
   
   // Əlavə tətbiq xüsusiyyətləri
   twoFactorEnabled?: boolean;

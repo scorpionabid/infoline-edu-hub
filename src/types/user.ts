@@ -15,7 +15,7 @@ export interface User {
   avatar?: string;
   phone?: string;
   position?: string;
-  language?: string;
+  language: string; // Artıq optional deyil, məcburidir
   lastLogin?: string;  // Date -> string
   twoFactorEnabled?: boolean;
   notificationSettings?: {
@@ -137,7 +137,7 @@ export const fullUserDataToUser = (data: FullUserData): User => {
     schoolId: data.school_id,
     phone: data.phone,
     position: data.position,
-    language: data.language,
+    language: data.language || 'az', // Default dəyər veririk
     avatar: data.avatar,
     status: data.status,
     lastLogin: data.last_login,
