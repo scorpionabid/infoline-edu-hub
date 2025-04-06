@@ -1,13 +1,13 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export interface UserFilter {
-  role?: UserRole;
+  role?: string;
   status?: string;
   region?: string;
   sector?: string;
@@ -207,10 +207,12 @@ export const useUserList = () => {
         const profile = profilesMap[roleItem.user_id] || {};
         
         // Status dəyərini düzgün tipə çevirmək
+        let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
         const statusValue = profile.status || 'active';
-        const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-          ? statusValue as 'active' | 'inactive' | 'blocked'
-          : 'active' as 'active' | 'inactive' | 'blocked';
+        
+        if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
+          typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
+        }
         
         return {
           id: roleItem.user_id,

@@ -1,11 +1,11 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth'; // auth qovluğunu istifadə etdik
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 
 // User roles
-export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type Role = UserRole; // UserRole tipindən istifadə edirik
 
 // Auth state interface
 interface AuthState {

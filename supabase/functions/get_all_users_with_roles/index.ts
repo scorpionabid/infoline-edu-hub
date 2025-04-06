@@ -1,114 +1,124 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.51.7";
 
-// CORS başlıqları
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type"
+};
+
+interface ResponseData {
+  users?: any[];
+  error?: string;
 }
 
-// Ana handler funksiyası
-serve(async (req) => {
-  // CORS preflight işləmə
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+serve(async (req: Request) => {
+  // Handle CORS OPTIONS request
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
 
   try {
-    // Supabase konfiqurasiyası
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Supabase URL və ya Service Key tapılmadı');
-      return new Response(
-        JSON.stringify({ error: 'Server konfiqurasyonu səhvdir' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
+    // Create a Supabase client with the Auth context of the logged in user
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization")! },
+        },
+        auth: {
+          persistSession: false,
+        },
+      }
+    );
 
-    // Supabase admin client yaratma
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    // Get users from auth schema
+    const { data: authUsers, error: authError } = await supabaseClient.auth.admin.listUsers();
+
+    if (authError) {
+      console.error("Error fetching auth users:", authError);
+      return new Response(
+        JSON.stringify({ error: `Error fetching auth users: ${authError.message}` }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+    
+    if (!authUsers || !authUsers.users || authUsers.users.length === 0) {
+      return new Response(
+        JSON.stringify({ users: [] }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+    
+    // Get user roles
+    const userIds = authUsers.users.map(user => user.id);
+    
+    const { data: userRoles, error: userRolesError } = await supabaseClient
+      .from('user_roles')
+      .select('*')
+      .in('user_id', userIds);
+      
+    if (userRolesError) {
+      console.error("Error fetching user roles:", userRolesError);
+      return new Response(
+        JSON.stringify({ error: `Error fetching user roles: ${userRolesError.message}` }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+    
+    // Create a map of user_id to role data
+    const roleMap: Record<string, any> = {};
+    if (userRoles) {
+      userRoles.forEach(role => {
+        roleMap[role.user_id] = role;
+      });
+    }
+    
+    // Combine user data with roles and create a response
+    const combinedUserData = authUsers.users.map(user => {
+      const roleData = roleMap[user.id] || {};
+      
+      return {
+        id: user.id,
+        email: user.email || '',
+        role: roleData.role || 'user',  // Default to 'user' if no role found
+        region_id: roleData.region_id || null,
+        sector_id: roleData.sector_id || null,
+        school_id: roleData.school_id || null,
+      };
     });
 
-    try {
-      // 1. Bütün istifadəçiləri əldə et - auth.admin.listUsers əvəzinə auth.admin.getUserById istifadə edərək
-      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Auth istifadəçiləri əldə edərkən xəta:', authError);
-        throw authError;
-      }
-      
-      // 2. user_roles cədvəlindən rol məlumatlarını əldə et
-      const { data: userRoles, error: rolesError } = await supabaseAdmin
-        .from('user_roles')
-        .select('*');
-      
-      if (rolesError) {
-        console.error('İstifadəçi rollarını əldə edərkən xəta:', rolesError);
-        throw rolesError;
-      }
-      
-      // Role məlumatlarını ID-yə görə map edək
-      const roleMap: Record<string, any> = {};
-      if (userRoles) {
-        userRoles.forEach(role => {
-          roleMap[role.user_id] = role;
-        });
-      }
-      
-      // İstifadəçi və rol məlumatlarını birləşdir
-      const users = authUsers.users.map(user => {
-        const userRole = roleMap[user.id] || {};
-        
-        return {
-          id: user.id,
-          email: user.email,
-          role: userRole.role || 'user', // Default rol əgər təyin edilməyibsə
-          region_id: userRole.region_id,
-          sector_id: userRole.sector_id,
-          school_id: userRole.school_id,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        };
-      });
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          users
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    } catch (error: any) {
-      console.error('İstifadəçiləri əldə edərkən xəta:', error);
-      return new Response(
-        JSON.stringify({ error: error.message || 'İstifadəçilər əldə edilərkən xəta baş verdi' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-  } catch (error: any) {
-    console.error('Gözlənilməz xəta:', error);
+    const responseData: ResponseData = {
+      users: combinedUserData
+    };
+
     return new Response(
-      JSON.stringify({ error: 'Gözlənilməz xəta baş verdi: ' + (error.message || 'Naməlum xəta') }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      JSON.stringify(responseData),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return new Response(
+      JSON.stringify({ error: "An unexpected error occurred" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
       }
     );
   }

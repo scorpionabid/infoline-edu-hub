@@ -52,11 +52,11 @@ const UserForm: React.FC<UserFormProps> = ({
   // Determine available roles based on current user role
   const availableRoles = React.useMemo<Role[]>(() => {
     if (isSuperAdmin) {
-      return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+      return ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'];
     } else if (currentUserRole === 'regionadmin') {
-      return ['sectoradmin', 'schooladmin'];
+      return ['sectoradmin', 'schooladmin', 'user'];
     } else {
-      return ['schooladmin'];
+      return ['schooladmin', 'user'];
     }
   }, [isSuperAdmin, currentUserRole]);
 

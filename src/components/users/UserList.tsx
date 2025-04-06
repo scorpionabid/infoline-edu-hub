@@ -11,7 +11,7 @@ import UserListTable from './UserListTable';
 import UserFilters from './UserFilters';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { userToFullUserData } from '@/types/user';
+import { User, userToFullUserData } from '@/types/user';
 
 interface UserListProps {
   currentUserRole?: Role;
@@ -149,7 +149,7 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser}
+            user={selectedUser as unknown as User}
             onSave={(updatedUser) => {
               // User tipini FullUserData tipinə çevir
               const fullUserData = userToFullUserData(updatedUser);
@@ -161,7 +161,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser}
+            user={selectedUser as unknown as User}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -171,7 +171,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser}
+            user={selectedUser as unknown as User}
           />
         </>
       )}

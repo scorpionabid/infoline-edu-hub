@@ -12,7 +12,7 @@ import { addAuditLog } from '@/hooks/auth/userDataService';
 // İstifadəçiləri əldə et (filtirlərlə)
 export const getUsers = async (
   filters?: {
-    role?: UserRole;
+    role?: string;
     region_id?: string;
     sector_id?: string;
     school_id?: string;
@@ -111,10 +111,12 @@ export const getUsers = async (
       };
       
       // Status dəyərini düzgün tipə çevirək
+      let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
       const statusValue = profile.status || 'active';
-      const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-        ? statusValue as 'active' | 'inactive' | 'blocked'
-        : 'active' as 'active' | 'inactive' | 'blocked';
+      
+      if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
+        typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
+      }
       
       return {
         id: item.user_id,
@@ -203,10 +205,12 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
     const mockEmail = `user-${userId.substring(0, 6)}@infoline.edu`;
     
     // Status dəyərini düzgün tipə çevirək
+    let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
     const statusValue = profile.status || 'active';
-    const typedStatus = (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') 
-      ? statusValue as 'active' | 'inactive' | 'blocked'
-      : 'active' as 'active' | 'inactive' | 'blocked';
+    
+    if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
+      typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
+    }
     
     // Admin entity məlumatları
     let adminEntityData: any = null;
