@@ -30,107 +30,102 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   
   // Sessiya dəyişikliklərinə qulaq asaq və yeniləyək
   useEffect(() => {
+    let mounted = true;
     let unsubscribe: { data?: { subscription: { unsubscribe: () => void } } } = {};
     
     // İlkin yükləmə
     const initializeAuth = async () => {
       try {
         console.log('Auth inisializasiya başladı');
+        setLoading(true);
         
         // Mövcud sessiyanı yoxlayaq
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Sessiya əldə etmə xətası:', sessionError);
-          setLoading(false);
+          if (mounted) setLoading(false);
           return;
         }
         
         console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
-        setSession(currentSession);
+        if (mounted) setSession(currentSession);
         
-        // Auth state dəyişikliklərinə abunə olaq - ilk olaraq bunu təyin edirik (sıra vacibdir)
+        // Auth state dəyişikliklərinə abunə olaq
         unsubscribe = supabase.auth.onAuthStateChange(async (event, newSession) => {
           console.log('Auth state dəyişdi:', event);
+          
+          if (!mounted) return;
           
           // Sinxron əməliyyatlar əvvəlcə
           setSession(newSession);
           
-          // Sonra asinxron əməliyyatlar
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            if (newSession?.user) {
-              try {
-                // İstifadəçi məlumatlarını əldə etmək prosesini sonsuz dövrəyə girməsin deyə
-                // fetchUserData funksiyasını çağırma prosesini bir mikro task ilə ayıraq
-                setTimeout(async () => {
-                  try {
-                    const userData = await fetchUserData(newSession.user.id);
-                    setUser(userData);
-                  } catch (userError: any) {
-                    console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-                    
-                    // Bu xətanı emal et və istifadəçini logout et
-                    if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
-                        userError.message?.includes('rol təyin edilə bilmədi') ||
-                        userError.message?.includes('İstifadəçi profili tapılmadı') ||
-                        userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
-                      console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
-                      await supabase.auth.signOut();
-                      setSession(null);
-                      setUser(null);
-                    }
-                  } finally {
-                    setLoading(false);
-                  }
-                }, 0);
-              } catch (error) {
-                setLoading(false);
-              }
-            } else {
-              setLoading(false);
-            }
-          } else if (event === 'SIGNED_OUT') {
+          // SIGNED_OUT halında user-i null-layıb state yeniləyib bitirək
+          if (event === 'SIGNED_OUT') {
             setUser(null);
             setLoading(false);
+            return;
+          }
+          
+          // Sonra asinxron əməliyyatlar - yalnız lazım olduqda
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && newSession?.user) {
+            try {
+              setLoading(true);
+              const userData = await fetchUserData(newSession.user.id);
+              if (mounted) setUser(userData);
+            } catch (userError: any) {
+              console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
+              
+              // Profil xətası ciddi problemdirsə avtomatik logout
+              if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                  userError.message?.includes('rol təyin edilə bilmədi') ||
+                  userError.message?.includes('İstifadəçi profili tapılmadı')) {
+                console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
+                
+                // Rekursiv çağrı yaratmamaq üçün async çağırmırıq
+                supabase.auth.signOut().then(() => {
+                  if (mounted) {
+                    setSession(null);
+                    setUser(null);
+                  }
+                });
+              }
+            } finally {
+              if (mounted) setLoading(false);
+            }
           } else {
-            setLoading(false);
+            if (mounted) setLoading(false);
           }
         });
         
         // Əgər sessiya varsa, istifadəçi məlumatlarını əldə edək
-        if (currentSession?.user) {
+        // Amma rekursiv çağrıları önləmək üçün yalnız bir dəfə
+        if (currentSession?.user && mounted) {
           try {
-            // Burada da eyni şəkildə setTimeout ilə sonsuz dövrədən qaçaq
-            setTimeout(async () => {
-              try {
-                const userData = await fetchUserData(currentSession.user.id);
-                setUser(userData);
-              } catch (userError: any) {
-                console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
-                
-                // Xəta mesajını yoxlayaraq məqsədli qərarlar verək
-                if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
-                    userError.message?.includes('rol təyin edilə bilmədi') ||
-                    userError.message?.includes('İstifadəçi profili tapılmadı') ||
-                    userError.message?.includes('İstifadəçi üçün rol təyin edilməyib')) {
-                  console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
-                  await supabase.auth.signOut();
-                  setSession(null);
-                  setUser(null);
-                }
-              } finally {
-                setLoading(false);
+            const userData = await fetchUserData(currentSession.user.id);
+            if (mounted) setUser(userData);
+          } catch (userError: any) {
+            console.error('İlkin istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+            
+            // Profil xətası ciddi problemdirsə avtomatik logout
+            if (userError.message?.includes('Profil məlumatları əldə edilə bilmədi') ||
+                userError.message?.includes('rol təyin edilə bilmədi') ||
+                userError.message?.includes('İstifadəçi profili tapılmadı')) {
+              console.warn('İstifadəçi məlumatlarında problem var, sessiyadan çıxırıq');
+              
+              await supabase.auth.signOut();
+              if (mounted) {
+                setSession(null);
+                setUser(null);
               }
-            }, 0);
-          } catch (error) {
-            setLoading(false);
+            }
           }
-        } else {
-          setLoading(false);
         }
+        
+        if (mounted) setLoading(false);
       } catch (error) {
         console.error('Auth inisializasiya xətası:', error);
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
     
@@ -139,6 +134,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     
     // Cleanup
     return () => {
+      mounted = false;
       if (unsubscribe.data?.subscription) {
         unsubscribe.data.subscription.unsubscribe();
       }

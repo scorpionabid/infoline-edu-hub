@@ -39,9 +39,21 @@ serve(async (req) => {
       },
     });
 
-    // Request body'ni al
-    const body = await req.json();
-    console.log('Request body:', body);
+    // Request body'ni al və aç
+    let body;
+    try {
+      body = await req.json();
+      console.log('Request body:', body);
+    } catch (parseError) {
+      console.error('JSON parse xətası:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Request body JSON formatında olmalıdır' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
     
     const { userId, regionId } = body;
     
@@ -67,16 +79,27 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Region admin təyinatı: User ID: ${userId}, Region ID: ${regionId}`);
+    console.log(`Region admin təyinatı başladı: User ID: ${userId}, Region ID: ${regionId}`);
 
     try {
       // 1. İstifadəçinin mövcudluğunu yoxlayaq
       const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
-      if (userError || !userData || !userData.user) {
+      if (userError) {
         console.error('İstifadəçi tapılmadı:', userError);
         return new Response(
-          JSON.stringify({ error: `İstifadəçi tapılmadı: ${userError?.message || 'Naməlum xəta'}` }),
+          JSON.stringify({ error: `İstifadəçi tapılmadı: ${userError.message}` }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      if (!userData || !userData.user) {
+        console.error('İstifadəçi tapılmadı (user null)');
+        return new Response(
+          JSON.stringify({ error: 'İstifadəçi tapılmadı - veri boş' }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -89,12 +112,23 @@ serve(async (req) => {
         .from('regions')
         .select('id, name')
         .eq('id', regionId)
-        .single();
+        .maybeSingle();
         
-      if (regionError || !regionData) {
-        console.error('Region tapılmadı:', regionError);
+      if (regionError) {
+        console.error('Region tapılmadı (xəta):', regionError);
         return new Response(
-          JSON.stringify({ error: `Region tapılmadı: ${regionError?.message || 'Naməlum xəta'}` }),
+          JSON.stringify({ error: `Region tapılmadı: ${regionError.message}` }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      if (!regionData) {
+        console.error('Region tapılmadı (data boş)');
+        return new Response(
+          JSON.stringify({ error: 'Region tapılmadı - veri boş' }),
           { 
             status: 404, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -122,9 +156,11 @@ serve(async (req) => {
       }
       
       // 4. Əgər istifadəçi artıq regionadmin roluna malikdirsə, rolu yeniləyək
-      const hasRegionAdminRole = existingRoles?.some(role => role.role === 'regionadmin');
+      const hasRegionAdminRole = existingRoles && existingRoles.some(role => role.role === 'regionadmin');
       
       if (hasRegionAdminRole) {
+        console.log('İstifadəçi artıq regionadmin roluna malikdir, rolu yeniləyirəm');
+        
         // Mövcud regionadmin rolunu yeniləyək
         const { data: updatedRole, error: updateError } = await supabaseAdmin
           .from('user_roles')
@@ -149,7 +185,32 @@ serve(async (req) => {
         
         console.log('İstifadəçi rolu yeniləndi:', updatedRole);
       } else {
-        // 5. Yeni regionadmin rolu əlavə edək
+        console.log('İstifadəçidə regionadmin rolu yoxdur, yeni rol əlavə edilir');
+        
+        // 5. Əvvəlcə mövcud rollardan digər admin rollarını tapaq
+        const existingAdminRoles = existingRoles?.filter(role => 
+          role.role === 'regionadmin' || role.role === 'sectoradmin' || role.role === 'schooladmin'
+        ) || [];
+        
+        // Əgər başqa admin rolları varsa, onları silək
+        if (existingAdminRoles.length > 0) {
+          console.log('Mövcud admin rolları:', existingAdminRoles);
+          
+          for (const role of existingAdminRoles) {
+            const { error: deleteError } = await supabaseAdmin
+              .from('user_roles')
+              .delete()
+              .eq('id', role.id);
+              
+            if (deleteError) {
+              console.error(`Köhnə ${role.role} rolu silinərkən xəta:`, deleteError);
+            } else {
+              console.log(`Köhnə ${role.role} rolu silindi`);
+            }
+          }
+        }
+        
+        // 6. Yeni regionadmin rolu əlavə edək
         const { data: newRole, error: insertError } = await supabaseAdmin
           .from('user_roles')
           .insert({
@@ -175,7 +236,7 @@ serve(async (req) => {
         console.log('Yeni rol yaradıldı:', newRole);
       }
       
-      // 6. Region-də admin məlumatlarını yeniləyək
+      // 7. Region-də admin məlumatlarını yeniləyək
       const { data: updatedRegion, error: updateRegionError } = await supabaseAdmin
         .from('regions')
         .update({
@@ -199,7 +260,7 @@ serve(async (req) => {
       
       console.log('Region məlumatları yeniləndi:', updatedRegion);
       
-      // 7. Audit log əlavə edək
+      // 8. Audit log əlavə edək
       try {
         await supabaseAdmin
           .from('audit_logs')

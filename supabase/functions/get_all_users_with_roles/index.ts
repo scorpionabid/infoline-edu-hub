@@ -40,7 +40,7 @@ serve(async (req) => {
     });
 
     try {
-      // 1. Bütün istifadəçiləri əldə et
+      // 1. Bütün istifadəçiləri əldə et - auth.admin.listUsers əvəzinə auth.admin.getUserById istifadə edərək
       const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
       
       if (authError) {
@@ -73,7 +73,7 @@ serve(async (req) => {
         return {
           id: user.id,
           email: user.email,
-          role: userRole.role || 'user',
+          role: userRole.role || 'user', // Default rol əgər təyin edilməyibsə
           region_id: userRole.region_id,
           sector_id: userRole.sector_id,
           school_id: userRole.school_id,

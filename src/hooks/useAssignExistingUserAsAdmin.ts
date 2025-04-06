@@ -18,7 +18,7 @@ export const useAssignExistingUserAsAdmin = () => {
       // Supabase edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-admin', {
         body: {
-          regionId, // Backend tərəfdə bu parametrləri gözləyir
+          regionId, 
           userId
         }
       });

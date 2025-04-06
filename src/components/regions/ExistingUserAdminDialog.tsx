@@ -88,7 +88,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(open) => !open && setOpen(false)}>
       <DialogContent className="sm:max-w-[425px]">
         <AdminDialogHeader region={region} />
         
