@@ -16,14 +16,19 @@ serve(async (req) => {
   try {
     // İstifadəçi autentifikasiyasını yoxla
     const authHeader = req.headers.get("Authorization");
+    console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
+    
     const authResult = await authenticateAndAuthorize(authHeader);
     
     if (!authResult.authorized) {
+      console.error("Autorizasiya uğursuz:", authResult.error);
       return new Response(
         JSON.stringify({ success: false, error: authResult.error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: authResult.status || 401 }
       );
     }
+
+    console.log("Auth uğurludur, userData:", authResult.userData);
 
     // İstəyin məlumatlarını əldə et
     const requestData = await req.json();
@@ -34,6 +39,7 @@ serve(async (req) => {
     const paramValidation = validateRequiredParams(sectorId, userId);
     
     if (!paramValidation.valid) {
+      console.error("Parametr doğrulama xətası:", paramValidation.error);
       return new Response(
         JSON.stringify({ success: false, error: paramValidation.error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -46,16 +52,20 @@ serve(async (req) => {
     const regionAccessResult = await validateRegionAdminAccess(authResult.userData!, sectorId);
     
     if (!regionAccessResult.valid) {
+      console.error("Region giriş hüququ xətası:", regionAccessResult.error);
       return new Response(
         JSON.stringify({ success: false, error: regionAccessResult.error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
       );
     }
 
+    console.log("Region giriş hüququ təsdiqləndi, SQL funksiyası çağırılır");
+
     // SQL funksiyasını çağır və admin təyin et
     const assignResult = await callAssignSectorAdminFunction(userId, sectorId);
     
     if (!assignResult.success) {
+      console.error("Admin təyin etmə xətası:", assignResult.error);
       return new Response(
         JSON.stringify({ success: false, error: assignResult.error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }

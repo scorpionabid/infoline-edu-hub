@@ -43,10 +43,12 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       console.log('Edge funksiyasının cavabı:', data, error);
       
       if (error) {
+        console.error('Edge funksiyası xətası:', error);
         throw new Error(error.message || 'Sektor admini təyin edilərkən xəta baş verdi');
       }
       
       if (!data.success) {
+        console.error('Sektor admin təyinatı uğursuz oldu:', data.error);
         throw new Error(data.error || 'Əməliyyat uğursuz oldu');
       }
       
@@ -59,7 +61,7 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       
       return { 
         success: true, 
-        data: data 
+        data: data.data
       };
     } catch (error: any) {
       console.error('Sektor admini təyin edilərkən xəta:', error);
