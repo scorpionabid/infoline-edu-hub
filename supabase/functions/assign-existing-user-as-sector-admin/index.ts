@@ -152,7 +152,7 @@ serve(async (req) => {
       }
     }
 
-    // SQL funksiyasını çağır - burada parametrlərin adlarına diqqət edək
+    // SQL funksiyasını çağır - parametr adlarını dəqiq uyğunlaşdırırıq
     console.log(`SQL funksiyası çağırılır: assign_sector_admin(${userId}, ${sectorId})`);
     const { data, error } = await supabase.rpc(
       'assign_sector_admin',
@@ -175,8 +175,9 @@ serve(async (req) => {
       );
     }
 
-    if (data && !data.success) {
-      console.error('SQL funksiyası xətası:', data.error);
+    // SQL funksiyasından qaytarılan nəticənin success olmasını yoxlayırıq
+    if (data && typeof data === 'object' && 'success' in data && !data.success) {
+      console.error('SQL funksiyası xətası:', data.error || 'Naməlum xəta');
       return new Response(
         JSON.stringify({ 
           success: false, 

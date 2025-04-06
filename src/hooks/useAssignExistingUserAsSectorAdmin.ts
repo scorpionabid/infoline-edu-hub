@@ -24,7 +24,7 @@ export function useAssignExistingUserAsSectorAdmin() {
         userId
       });
       
-      // Edge funksiyasını çağırırıq - parametr adlarına diqqət edək
+      // SQL funksiyasının parametr adları ilə uyğunlaşan dəyərlər göndəririk
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: {
           sectorId,
