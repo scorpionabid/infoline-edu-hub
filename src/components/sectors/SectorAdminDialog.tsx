@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Sector } from '@/types/supabase';
 import {
@@ -25,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { useAssignSectorAdmin } from '@/hooks/useAssignSectorAdmin';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ExistingUserSectorAdminDialog } from './ExistingUserSectorAdminDialog';
 
 // Admin təyin etmək üçün schema
 const adminSchema = z.object({
@@ -56,7 +58,9 @@ export const SectorAdminDialog: React.FC<SectorAdminDialogProps> = ({
 }) => {
   const { t } = useLanguage();
   const { assignAdmin, loading } = useAssignSectorAdmin();
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<string>("createNew");
+  const [showExistingUserDialog, setShowExistingUserDialog] = useState(false);
   
   const form = useForm<AdminSchemaType>({
     resolver: zodResolver(adminSchema),
@@ -109,98 +113,156 @@ export const SectorAdminDialog: React.FC<SectorAdminDialogProps> = ({
       setError(error.message || 'Admin təyin edilərkən xəta baş verdi');
     }
   };
+  
+  const handleExistingUserSelect = () => {
+    setShowExistingUserDialog(true);
+    setOpen(false);
+  };
+  
+  const handleExistingUserClose = () => {
+    setShowExistingUserDialog(false);
+    setOpen(true);
+  };
+
+  const handleExistingUserSuccess = () => {
+    setShowExistingUserDialog(false);
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
 
   if (!sector) {
     return null;
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('assignSectorAdmin') || 'Sektor admini təyin et'}</DialogTitle>
-          <DialogDescription>
-            {t("assignSectorAdminDesc") || `"${sector.name}" sektoru üçün admin təyin edin`}
-          </DialogDescription>
-        </DialogHeader>
-        
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="adminName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("adminName") || 'Admin adı'}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("adminName") || 'Admin adı'} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="adminEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("adminEmail") || 'Admin email'}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("adminEmail") || 'Admin email'} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="adminPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("adminPassword") || 'Admin şifrəsi'}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder={t("adminPassword") || 'Admin şifrəsi'} 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('assignSectorAdmin') || 'Sektor admini təyin et'}</DialogTitle>
+            <DialogDescription>
+              {t("assignSectorAdminDesc") || `"${sector.name}" sektoru üçün admin təyin edin`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="createNew">{t('createNewAdmin') || 'Yeni admin yarat'}</TabsTrigger>
+              <TabsTrigger value="useExisting">{t('useExistingUser') || 'Mövcud istifadəçini seç'}</TabsTrigger>
+            </TabsList>
             
-            <div className="flex justify-end">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setOpen(false)}
-                className="mr-2"
-                disabled={loading}
-              >
-                {t("cancel") || 'Ləğv et'}
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("loading") || 'Yüklənir...'}
-                  </>
-                ) : (
-                  t("assignAdmin") || 'Admin təyin et'
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            <TabsContent value="createNew">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="adminName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("adminName") || 'Admin adı'}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("adminName") || 'Admin adı'} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="adminEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("adminEmail") || 'Admin email'}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t("adminEmail") || 'Admin email'} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="adminPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("adminPassword") || 'Admin şifrəsi'}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder={t("adminPassword") || 'Admin şifrəsi'} 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setOpen(false)}
+                      className="mr-2"
+                      disabled={loading}
+                    >
+                      {t("cancel") || 'Ləğv et'}
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("loading") || 'Yüklənir...'}
+                        </>
+                      ) : (
+                        t("assignAdmin") || 'Admin təyin et'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </TabsContent>
+            
+            <TabsContent value="useExisting">
+              <div className="py-4 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t('assignExistingUserAsAdmin') || 'Mövcud istifadəçini admin kimi təyin edin'}
+                </p>
+                <div className="flex justify-end">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setOpen(false)}
+                    className="mr-2"
+                  >
+                    {t("cancel") || 'Ləğv et'}
+                  </Button>
+                  <Button 
+                    onClick={handleExistingUserSelect}
+                  >
+                    {t("selectUser") || 'İstifadəçi seçin'}
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+      
+      <ExistingUserSectorAdminDialog
+        open={showExistingUserDialog}
+        setOpen={handleExistingUserClose}
+        sector={sector}
+        onSuccess={handleExistingUserSuccess}
+      />
+    </>
   );
 };
