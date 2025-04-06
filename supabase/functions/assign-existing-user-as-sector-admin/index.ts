@@ -1,19 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { corsHeaders } from "./config.ts";
+import { authenticateAndAuthorize } from "./auth.ts";
+import { validateRequiredParams, validateRegionAdminAccess } from "./validators.ts";
+import { callAssignSectorAdminFunction } from "./service.ts";
 
-// Supabase URL və anahtarları əldə etmək
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-
-console.log("Supabase URL:", supabaseUrl);
-
-// CORS başlıqları
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+console.log("assign-existing-user-as-sector-admin Edge funksiyası başladıldı");
 
 serve(async (req) => {
   // CORS preflight sorğuları
@@ -24,68 +16,12 @@ serve(async (req) => {
   try {
     // İstifadəçi autentifikasiyasını yoxla
     const authHeader = req.headers.get("Authorization");
+    const authResult = await authenticateAndAuthorize(authHeader);
     
-    if (!authHeader) {
-      console.error("Auth header mövcud deyil");
+    if (!authResult.authorized) {
       return new Response(
-        JSON.stringify({ success: false, error: "İstifadəçi autentifikasiya olunmayıb" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
-    }
-
-    // Autentifikasiya olunmuş istifadəçiyə bağlı client
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
-
-    // İstifadəçi məlumatlarını əldə et
-    const { data: { user: currentUser }, error: userError } = await supabaseAuth.auth.getUser();
-
-    if (userError || !currentUser) {
-      console.error("İstifadəçi autentifikasiya xətası:", userError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: userError?.message || "İstifadəçi autentifikasiya olunmayıb" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
-    }
-
-    console.log("Cari istifadəçi:", currentUser.id, currentUser.email);
-
-    // İstifadəçi rolunu yoxla
-    const { data: userRoleData, error: userRoleError } = await supabaseAuth
-      .from("user_roles")
-      .select("*")
-      .eq("user_id", currentUser.id)
-      .single();
-
-    if (userRoleError) {
-      console.error("İstifadəçi rolu sorğusu xətası:", userRoleError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: userRoleError.message || "İstifadəçi rolu tapılmadı" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
-
-    const userRole = userRoleData.role;
-    console.log("İstifadəçi rolu:", userRole);
-
-    // Yalnız superadmin və regionadmin rolları icazəlidir
-    if (userRole !== "superadmin" && userRole !== "regionadmin") {
-      console.error("İcazəsiz giriş - yalnız superadmin və regionadmin");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Bu əməliyyat üçün superadmin və ya regionadmin səlahiyyətləri tələb olunur" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        JSON.stringify({ success: false, error: authResult.error }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: authResult.status || 401 }
       );
     }
 
@@ -95,107 +31,45 @@ serve(async (req) => {
 
     // Parametrləri yoxla
     const { sectorId, userId } = requestData;
-
-    if (!sectorId || !userId) {
-      const missingParams = [];
-      if (!sectorId) missingParams.push("sectorId");
-      if (!userId) missingParams.push("userId");
-      
-      const errorMessage = `Tələb olunan parametrlər çatışmır: ${missingParams.join(", ")}`;
-      console.error(errorMessage);
-      
+    const paramValidation = validateRequiredParams(sectorId, userId);
+    
+    if (!paramValidation.valid) {
       return new Response(
-        JSON.stringify({ success: false, error: errorMessage }),
+        JSON.stringify({ success: false, error: paramValidation.error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
     console.log(`Sektor admin təyinatı başlayır - Sektor ID: ${sectorId}, User ID: ${userId}`);
 
-    // Admin client yaratmaq
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
     // Region admini üçün əlavə yoxlamalar
-    if (userRole === "regionadmin") {
-      // Sektoru yoxla
-      const { data: sector, error: sectorError } = await supabase
-        .from("sectors")
-        .select("*")
-        .eq("id", sectorId)
-        .single();
-
-      if (sectorError || !sector) {
-        console.error("Sektor sorğusu xətası:", sectorError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: sectorError?.message || "Sektor tapılmadı" 
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-
-      // Region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər
-      if (sector.region_id !== userRoleData.region_id) {
-        console.error("İcazəsiz giriş - region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər");
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Siz yalnız öz regionunuza aid sektorlara admin təyin edə bilərsiniz" 
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-        );
-      }
+    const regionAccessResult = await validateRegionAdminAccess(authResult.userData!, sectorId);
+    
+    if (!regionAccessResult.valid) {
+      return new Response(
+        JSON.stringify({ success: false, error: regionAccessResult.error }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
     }
 
-    // SQL funksiyasını çağır - parametr adlarını dəqiq uyğunlaşdırırıq
-    console.log(`SQL funksiyası çağırılır: assign_sector_admin(${userId}, ${sectorId})`);
-    const { data, error } = await supabase.rpc(
-      'assign_sector_admin',
-      {
-        user_id_param: userId,
-        sector_id_param: sectorId
-      }
-    );
-
-    console.log('SQL funksiyası nəticəsi:', data, error);
-
-    if (error) {
-      console.error('Sektor admin təyin etmə xətası:', error);
+    // SQL funksiyasını çağır və admin təyin et
+    const assignResult = await callAssignSectorAdminFunction(userId, sectorId);
+    
+    if (!assignResult.success) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: error.message || "Sektor admini təyin edilərkən xəta baş verdi" 
-        }),
+        JSON.stringify({ success: false, error: assignResult.error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
-    // SQL funksiyasından qaytarılan nəticənin success olmasını yoxlayırıq
-    if (data && typeof data === 'object' && 'success' in data && !data.success) {
-      console.error('SQL funksiyası xətası:', data.error || 'Naməlum xəta');
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: data.error || "Sektor admini təyin edilərkən xəta baş verdi" 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
-
-    console.log('Sektor admin uğurla təyin edildi:', data);
+    console.log('Sektor admin uğurla təyin edildi:', assignResult.data);
 
     // Uğurlu nəticə qaytarma
     return new Response(
       JSON.stringify({
         success: true,
         message: "İstifadəçi sektor admini olaraq təyin edildi",
-        data: data
+        data: assignResult.data
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
