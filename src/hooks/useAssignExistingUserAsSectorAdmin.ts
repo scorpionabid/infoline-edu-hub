@@ -24,13 +24,15 @@ export function useAssignExistingUserAsSectorAdmin() {
         userId
       });
       
-      // Edge funksiyasını çağırırıq
+      // Edge funksiyasını çağırırıq - parametr adlarına diqqət edək
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: {
           sectorId,
           userId
         }
       });
+      
+      console.log('Edge funksiyası nəticəsi:', data, error);
       
       if (error || !data?.success) {
         console.error('Admin təyinat xətası:', error || data?.error);

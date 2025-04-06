@@ -59,7 +59,14 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     try {
       setError(null);
       
+      console.log('Sektor admini təyin etmə cəhdi:', {
+        sectorId: sector.id,
+        userId: selectedUserId
+      });
+      
       const result = await assignUserAsSectorAdmin(sector.id, selectedUserId);
+      
+      console.log('Təyinat nəticəsi:', result);
       
       if (result.success) {
         setOpen(false);
@@ -75,7 +82,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     }
   };
 
-  // Regionadmin istifadəçi seçimlərini filtirləməlidir
+  // Region admin istifadəçi seçimlərini filtirləməlidir
   const filteredUsers = React.useMemo(() => {
     if (!users || users.length === 0) {
       return [];
