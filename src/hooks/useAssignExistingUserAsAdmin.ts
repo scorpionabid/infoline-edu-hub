@@ -15,6 +15,19 @@ export const useAssignExistingUserAsAdmin = () => {
       
       console.log('Admin təyin etmək: Region ID:', regionId, 'User ID:', userId);
       
+      // Parametrləri doğrula
+      if (!regionId || !userId) {
+        const errorMessage = !regionId 
+          ? 'Region ID təyin edilməyib'
+          : 'İstifadəçi ID təyin edilməyib';
+          
+        console.error(errorMessage);
+        toast.error(t('errorAssigningAdmin'), {
+          description: errorMessage
+        });
+        return { success: false, error: errorMessage };
+      }
+      
       // Supabase edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-admin', {
         body: {
@@ -44,6 +57,8 @@ export const useAssignExistingUserAsAdmin = () => {
       toast.success(t('adminAssigned'), {
         description: t('adminAssignedDesc')
       });
+      
+      console.log('Admin təyinatı uğurla başa çatdı:', data);
       return { success: true, data };
     } catch (error: any) {
       console.error('Admin təyin etmə xətası:', error);

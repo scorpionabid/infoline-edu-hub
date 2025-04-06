@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
 import { Loader2 } from 'lucide-react';
 
 interface AdminDialogFooterProps {
@@ -20,28 +20,25 @@ export const AdminDialogFooter: React.FC<AdminDialogFooterProps> = ({
   const { t } = useLanguage();
   
   return (
-    <div className="flex justify-end">
+    <div className="flex justify-end gap-2 mt-4">
       <Button 
-        type="button" 
         variant="outline" 
         onClick={onCancel}
-        className="mr-2"
         disabled={loading}
       >
-        {t("cancel") || 'Ləğv et'}
+        {t('cancel') || 'Ləğv et'}
       </Button>
       <Button 
-        type="button" 
-        onClick={onAssign} 
-        disabled={loading || disabled}
+        onClick={onAssign}
+        disabled={disabled || loading}
       >
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t("loading") || 'Yüklənir...'}
+            {t('loading') || 'Yüklənir...'}
           </>
         ) : (
-          t("assignAdmin") || 'Admin təyin et'
+          t('assignAdmin') || 'Admin təyin et'
         )}
       </Button>
     </div>

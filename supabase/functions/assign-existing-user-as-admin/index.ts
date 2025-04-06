@@ -8,10 +8,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Konfiqurasiya parametrlərini alır
-function getConfig() {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+// Xəta cavabı yaradır
+function createErrorResponse(message: string, status: number = 400) {
+  return new Response(
+    JSON.stringify({ error: message }),
+    { 
+      status: status, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    }
+  );
+}
+
+// Supabase konfiqurasiyasını alır
+function getSupabaseConfig() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Supabase URL və ya Service Key tapılmadı');
@@ -22,19 +33,8 @@ function getConfig() {
 }
 
 // Supabase client yaradır
-function createSupabaseAdmin(supabaseUrl: string, supabaseServiceKey: string) {
-  return createClient(supabaseUrl, supabaseServiceKey);
-}
-
-// Xəta cavabı yaradır
-function createErrorResponse(message: string, status: number = 400) {
-  return new Response(
-    JSON.stringify({ error: message }),
-    { 
-      status: status, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    }
-  );
+function createSupabaseAdmin(config: { supabaseUrl: string, supabaseServiceKey: string }) {
+  return createClient(config.supabaseUrl, config.supabaseServiceKey);
 }
 
 // İstifadəçi profil məlumatlarını əldə edir
@@ -97,45 +97,26 @@ async function getRegionData(supabaseAdmin: any, regionId: string) {
     throw new Error('Region tapılmadı - veri boş');
   }
   
-  console.log('Region tapıldı:', data);
   return data;
 }
 
 // Mövcud admin rollarını silir
 async function deleteExistingAdminRoles(supabaseAdmin: any, userId: string) {
-  // İstifadəçinin cari rollarını əldə et
-  const { data: existingRoles, error: rolesError } = await supabaseAdmin
+  console.log(`${userId} istifadəçisinin köhnə admin rolları silinir...`);
+  
+  // İstifadəçinin bütün admin rollarını sil
+  const { error } = await supabaseAdmin
     .from('user_roles')
-    .select('*')
-    .eq('user_id', userId);
+    .delete()
+    .eq('user_id', userId)
+    .in('role', ['regionadmin', 'sectoradmin', 'schooladmin']);
     
-  if (rolesError) {
-    console.error('İstifadəçi rolları yoxlanarkən xəta:', rolesError);
-    throw new Error(`İstifadəçi rolları yoxlanarkən xəta: ${rolesError.message}`);
+  if (error) {
+    console.error('Köhnə admin rolları silinərkən xəta:', error);
+    throw new Error(`Köhnə rolları silərkən xəta: ${error.message}`);
   }
-
-  // Admin rollarını filtirlə və sil
-  if (existingRoles && existingRoles.length > 0) {
-    const adminRoles = existingRoles.filter(role => 
-      ['regionadmin', 'sectoradmin', 'schooladmin'].includes(String(role.role))
-    );
-    
-    if (adminRoles.length > 0) {
-      console.log('Köhnə admin rolları silinəcək:', adminRoles);
-      
-      const { error: deleteError } = await supabaseAdmin
-        .from('user_roles')
-        .delete()
-        .in('id', adminRoles.map(r => r.id));
-        
-      if (deleteError) {
-        console.error('Köhnə admin rolları silinərkən xəta:', deleteError);
-        throw new Error(`Köhnə rollary silərkən xəta: ${deleteError.message}`);
-      }
-      
-      console.log('Köhnə admin rolları silindi');
-    }
-  }
+  
+  console.log('Köhnə admin rolları silindi');
 }
 
 // Yeni regionadmin rolu əlavə edir
@@ -162,7 +143,6 @@ async function addRegionAdminRole(supabaseAdmin: any, userId: string, regionId: 
     throw new Error('Rol əlavə etmə xətası: Məlumat qaytarılmadı');
   }
   
-  console.log('Yeni rol yaradıldı:', data);
   return data[0];
 }
 
@@ -184,7 +164,6 @@ async function updateRegionAdminInfo(supabaseAdmin: any, regionId: string, userI
     throw new Error(`Region yeniləmə xətası: ${error.message}`);
   }
   
-  console.log('Region məlumatları yeniləndi:', data);
   return data;
 }
 
@@ -272,13 +251,13 @@ serve(async (req) => {
 
   try {
     // Konfiqurasiya parametrlərini al
-    const config = getConfig();
+    const config = getSupabaseConfig();
     if (!config) {
       return createErrorResponse('Server konfiqurasyonu səhvdir', 500);
     }
     
     // Supabase admin client yaratma
-    const supabaseAdmin = createSupabaseAdmin(config.supabaseUrl, config.supabaseServiceKey);
+    const supabaseAdmin = createSupabaseAdmin(config);
 
     // Request body-ni al və aç
     let body;

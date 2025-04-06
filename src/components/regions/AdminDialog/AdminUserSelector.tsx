@@ -1,18 +1,16 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { FullUserData } from '@/types/supabase';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2, UserCheck, ShieldCheck } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AdminUserSelectorProps {
   users: FullUserData[];
@@ -30,86 +28,41 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
   onUserChange
 }) => {
   const { t } = useLanguage();
-
-  // İstifadəçiləri filtrlə 
-  const filteredUsers = React.useMemo(() => {
-    // Bütün istifadəçiləri əldə et, SuperAdminləri çıxar
-    return users
-      .filter(user => user.role !== 'superadmin') 
-      .sort((a, b) => {
-        // RegionAdminləri əvvələ gətir
-        if (a.role === 'regionadmin' && b.role !== 'regionadmin') return -1;
-        if (a.role !== 'regionadmin' && b.role === 'regionadmin') return 1;
-        return a.name.localeCompare(b.name);
-      });
-  }, [users]);
-
-  // İstifadəçi rolunu ikona ilə göstər
-  const getRoleIcon = (role: string) => {
-    switch(role) {
-      case 'regionadmin':
-        return <ShieldCheck className="h-4 w-4 text-blue-500 mr-2" />;
-      case 'sectoradmin':
-        return <ShieldCheck className="h-4 w-4 text-green-500 mr-2" />;
-      case 'schooladmin':
-        return <ShieldCheck className="h-4 w-4 text-amber-500 mr-2" />;
-      default:
-        return <UserCheck className="h-4 w-4 text-gray-500 mr-2" />;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-4">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
   
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi'}</AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <div className="space-y-2">
-      <h4 className="font-medium">{t('selectUser') || 'İstifadəçi seçin'}</h4>
+      <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
       
-      <Select 
-        value={selectedUserId} 
-        onValueChange={onUserChange}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>{t('availableUsers') || 'Mövcud istifadəçilər'}</SelectLabel>
-            {filteredUsers.length === 0 ? (
-              <SelectItem value="no-users" disabled>
-                {t('noUsersFound') || 'İstifadəçi tapılmadı'}
-              </SelectItem>
-            ) : (
-              filteredUsers.map(user => (
+      {loading ? (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="text-destructive flex items-center gap-2 text-sm py-2">
+          <AlertCircle className="h-4 w-4" />
+          <span>{t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi'}</span>
+        </div>
+      ) : (
+        <Select value={selectedUserId} onValueChange={onUserChange}>
+          <SelectTrigger id="user-select" className="w-full">
+            <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
+          </SelectTrigger>
+          <SelectContent>
+            {users.length > 0 ? (
+              users.map((user) => (
                 <SelectItem key={user.id} value={user.id}>
-                  <div className="flex items-center">
-                    {getRoleIcon(user.role)}
-                    <span>{user.name} ({user.email})</span>
-                  </div>
+                  {user.full_name || user.email} 
+                  {user.email && ` (${user.email})`}
                 </SelectItem>
               ))
+            ) : (
+              <div className="text-center py-2 text-muted-foreground">
+                {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+              </div>
             )}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      
-      <p className="text-sm text-muted-foreground">
-        {t('existingUserAdminHelp') || 'Seçilmiş istifadəçi bu region üçün admin səlahiyyətlərinə malik olacaq.'}
-      </p>
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 };
