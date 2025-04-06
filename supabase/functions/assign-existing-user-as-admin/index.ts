@@ -32,12 +32,7 @@ serve(async (req) => {
     }
 
     // Supabase admin client yaratma
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Request body-ni al və aç
     let body;
@@ -82,7 +77,6 @@ serve(async (req) => {
 
     console.log(`Region admin təyinatı başladı: User ID: ${userId}, Region ID: ${regionId}`);
 
-    // YENİ YANAŞMA: auth tablesindən yan keçərək işləyək
     try {
       // 1. İstifadəçinin profiles cədvəlindən məlumatlarını alaq
       const { data: profileData, error: profileError } = await supabaseAdmin
