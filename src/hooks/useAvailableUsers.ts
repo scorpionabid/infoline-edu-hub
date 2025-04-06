@@ -9,6 +9,7 @@ import {
   fetchAdminEntityData, 
   formatUserData 
 } from './user/useUserData';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAvailableUsers = () => {
   const { t } = useLanguage();
@@ -24,23 +25,36 @@ export const useAvailableUsers = () => {
       
       console.log('İstifadəçiləri əldə etmə başladı');
       
-      // 1. user_roles cədvəlindən məlumatları alaq
-      const userData = await fetchUserRoles();
+      // 1. Edge funksiyası vasitəsilə bütün istifadəçiləri əldə et
+      const { data, error } = await supabase.functions.invoke('get_all_users_with_roles');
       
-      if (!userData || userData.length === 0) {
+      if (error) {
+        console.error('Edge funksiyası xətası:', error);
+        throw new Error(`İstifadəçiləri əldə edərkən xəta: ${error.message}`);
+      }
+      
+      if (!data || !data.users || data.users.length === 0) {
         console.log('Heç bir istifadəçi tapılmadı');
         setUsers([]);
         setLoading(false);
         return;
       }
       
+      const userData = data.users;
       console.log(`${userData.length} istifadəçi tapıldı`);
       
       // İstifadəçi ID-lərini toplayaq
-      const userIds = userData.map((item: any) => item.id);
+      const userIds = userData.map((user: any) => user.id);
       
       // 2. profiles cədvəlindən məlumatları alaq
-      const profilesData = await fetchUserProfiles(userIds);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        throw profilesError;
+      }
       
       console.log(`${profilesData?.length || 0} profil tapıldı`);
       

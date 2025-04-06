@@ -94,7 +94,7 @@ export const fetchSchoolData = async (schoolId: string) => {
  * User rolu üçün müvafiq admin entity məlumatlarını əldə et
  */
 export const fetchAdminEntityData = async (user: any) => {
-  if (!user.role.includes('admin') || 
+  if (!user.role?.includes('admin') || 
       (user.role === 'regionadmin' && !user.region_id) ||
       (user.role === 'sectoradmin' && !user.sector_id) || 
       (user.role === 'schooladmin' && !user.school_id)) {

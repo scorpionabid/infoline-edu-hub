@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -9,101 +10,106 @@ const corsHeaders = {
 
 // Ana handler funksiyası
 serve(async (req) => {
-  // CORS preflight sorğularını idarə et
+  // CORS preflight işləmə
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Auth başlığını əldə et
-    const authHeader = req.headers.get('Authorization') || '';
-    
-    // Supabase inteqrasiyası
+    // Supabase konfiqurasiyası
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
-    // Service Role Key ilə Supabase klientini yarat - SuperAdmin səlahiyyətləri verir
-    const supabase = createClient(
-      supabaseUrl,
-      supabaseKey,
-      { 
-        global: { 
-          headers: { Authorization: authHeader } 
-        },
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase URL və ya Service Key tapılmadı');
+      return new Response(
+        JSON.stringify({ error: 'Server konfiqurasyonu səhvdir' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      }
-    );
-
-    // İstifadəçi məlumatları və rolları əldə et
-    const { data: userRoles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('*');
-
-    if (rolesError) {
-      console.error('İstifadəçi rollarını əldə edərkən xəta:', rolesError);
-      return new Response(
-        JSON.stringify({ error: 'İstifadəçi rollarını əldə edərkən xəta', details: rolesError }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+      )
     }
 
-    // User ID'lər siyahısı
-    const userIds = userRoles.map(role => role.user_id);
-
-    // Auth.users cədvəlindən email məlumatlarını əldə et
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-
-    if (authError) {
-      console.error('Auth istifadəçilərini əldə edərkən xəta:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Auth istifadəçilərini əldə edərkən xəta', details: authError }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    // Auth istifadəçi məlumatlarını ID-yə görə map et
-    const authUserMap: Record<string, any> = {};
-    if (authUsers && authUsers.users) {
-      authUsers.users.forEach(user => {
-        authUserMap[user.id] = user;
-      });
-    }
-
-    // Tam istifadəçi məlumatlarını birləşdir
-    const combinedUserData = userRoles.map(roleItem => {
-      const authUser = authUserMap[roleItem.user_id] || {};
-      
-      return {
-        id: roleItem.user_id,
-        email: authUser.email || null,
-        role: roleItem.role,
-        region_id: roleItem.region_id,
-        sector_id: roleItem.sector_id,
-        school_id: roleItem.school_id,
-        created_at: roleItem.created_at
-      };
+    // Supabase admin client yaratma
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     });
 
-    // İsifadəçi olmadığı halda boş siyahı qaytar
-    if (combinedUserData.length === 0) {
+    try {
+      // 1. Bütün istifadəçiləri əldə et
+      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Auth istifadəçiləri əldə edərkən xəta:', authError);
+        throw authError;
+      }
+      
+      // 2. user_roles cədvəlindən rol məlumatlarını əldə et
+      const { data: userRoles, error: rolesError } = await supabaseAdmin
+        .from('user_roles')
+        .select('*');
+      
+      if (rolesError) {
+        console.error('İstifadəçi rollarını əldə edərkən xəta:', rolesError);
+        throw rolesError;
+      }
+      
+      // Role məlumatlarını ID-yə görə map edək
+      const roleMap: Record<string, any> = {};
+      if (userRoles) {
+        userRoles.forEach(role => {
+          roleMap[role.user_id] = role;
+        });
+      }
+      
+      // İstifadəçi və rol məlumatlarını birləşdir
+      const users = authUsers.users.map(user => {
+        const userRole = roleMap[user.id] || {};
+        
+        return {
+          id: user.id,
+          email: user.email,
+          role: userRole.role || 'user',
+          region_id: userRole.region_id,
+          sector_id: userRole.sector_id,
+          school_id: userRole.school_id,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        };
+      });
+      
       return new Response(
-        JSON.stringify([]),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        JSON.stringify({
+          success: true,
+          users
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    } catch (error: any) {
+      console.error('İstifadəçiləri əldə edərkən xəta:', error);
+      return new Response(
+        JSON.stringify({ error: error.message || 'İstifadəçilər əldə edilərkən xəta baş verdi' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
-
-    return new Response(
-      JSON.stringify(combinedUserData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Gözlənilməz xəta:', error);
     return new Response(
-      JSON.stringify({ error: 'Gözlənilməz server xətası', details: error?.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ error: 'Gözlənilməz xəta baş verdi: ' + (error.message || 'Naməlum xəta') }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
