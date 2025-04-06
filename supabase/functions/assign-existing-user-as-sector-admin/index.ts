@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 // Supabase URL və anahtarları əldə etmək
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -91,25 +91,26 @@ serve(async (req) => {
 
     // İstəyin məlumatlarını əldə et
     const requestData = await req.json();
-    console.log("Gələn məlumatları:", {
-      sectorId: requestData.sectorId,
-      userId: requestData.userId,
-    });
-
-    const { sectorId, userId } = requestData;
+    console.log("Gələn sorğu məlumatları:", requestData);
 
     // Parametrləri yoxla
+    const { sectorId, userId } = requestData;
+
     if (!sectorId || !userId) {
-      const errorMessage = !sectorId 
-        ? "Sektor ID təyin edilməyib" 
-        : "İstifadəçi ID təyin edilməyib";
+      const missingParams = [];
+      if (!sectorId) missingParams.push("sectorId");
+      if (!userId) missingParams.push("userId");
       
+      const errorMessage = `Tələb olunan parametrlər çatışmır: ${missingParams.join(", ")}`;
       console.error(errorMessage);
+      
       return new Response(
         JSON.stringify({ success: false, error: errorMessage }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
+
+    console.log(`Sektor admin təyinatı başlayır - Sektor ID: ${sectorId}, User ID: ${userId}`);
 
     // Admin client yaratmaq
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {

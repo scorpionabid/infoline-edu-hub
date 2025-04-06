@@ -64,6 +64,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
         userId: selectedUserId
       });
       
+      // Parametr adları düzgün olmalıdır - backend ilə uyğunlaşdırılıb
       const result = await assignUserAsSectorAdmin(sector.id, selectedUserId);
       
       console.log('Təyinat nəticəsi:', result);

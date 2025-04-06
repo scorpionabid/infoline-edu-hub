@@ -24,7 +24,7 @@ export function useAssignExistingUserAsSectorAdmin() {
         userId
       });
       
-      // SQL funksiyasının parametr adları ilə uyğunlaşan dəyərlər göndəririk
+      // Edge funksiyasını çağırırıq - parametr adlarına diqqət
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: {
           sectorId,
@@ -34,9 +34,14 @@ export function useAssignExistingUserAsSectorAdmin() {
       
       console.log('Edge funksiyası nəticəsi:', data, error);
       
-      if (error || !data?.success) {
-        console.error('Admin təyinat xətası:', error || data?.error);
-        throw new Error(data?.error || error?.message || 'Admin təyin edilərkən xəta baş verdi');
+      if (error) {
+        console.error('Admin təyinat xətası:', error);
+        throw new Error(error.message || 'Admin təyin edilərkən xəta baş verdi');
+      }
+      
+      if (data && !data.success) {
+        console.error('Admin təyinat xətası:', data.error);
+        throw new Error(data.error || 'Admin təyin edilərkən xəta baş verdi');
       }
       
       toast.success(
