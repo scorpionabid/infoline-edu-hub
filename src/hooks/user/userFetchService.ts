@@ -8,10 +8,10 @@ export async function fetchAvailableUsersService() {
   try {
     console.log('İstifadəçiləri əldə etmə servisində...');
     
-    // 1. İstifadəçilərin rollarını əldə edək
+    // 1. İstifadəçi rollarını əldə edək
     const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('*');
+      .from("user_roles")
+      .select("*");
       
     if (roleError) {
       console.error('İstifadəçi rollarını əldə edərkən xəta:', roleError);
@@ -21,68 +21,19 @@ export async function fetchAvailableUsersService() {
       };
     }
     
-    // İstifadəçi rollarının tapılıb-tapılmadığını yoxlayaq
-    if (!roleData || roleData.length === 0) {
-      console.log('Heç bir istifadəçi rolu tapılmadı, auth istifadəçilərini yükləyirəm...');
-      
-      // İstifadəçi rolu tapılmadı - edge funksiyasını çağıraq
-      const { data: authUsers, error: authError } = await supabase.functions.invoke(
-        'get_all_users_with_roles'
-      );
-      
-      if (authError) {
-        console.error('Auth istifadəçilərini əldə edərkən xəta:', authError);
-        return { 
-          error: authError,
-          users: [] 
-        };
-      }
-      
-      if (!authUsers || !authUsers.users || authUsers.users.length === 0) {
-        console.log('Heç bir istifadəçi tapılmadı');
-        return { users: [] };
-      }
-      
-      console.log(`${authUsers.users.length} auth istifadəçi tapıldı`);
-      
-      // Əsas istifadəçi məlumatlarını formatlaşdıraq
-      const basicUsers: FullUserData[] = authUsers.users.map(user => ({
-        id: user.id,
-        email: user.email || 'N/A',
-        user_metadata: user.raw_user_meta_data || {},
-        full_name: user.raw_user_meta_data?.full_name || user.email || 'İsimsiz istifadəçi',
-        role: user.role || 'user',
-        region_id: user.region_id,
-        sector_id: user.sector_id,
-        school_id: user.school_id,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        // App tərəfindən istifadə edilən sahələr
-        name: user.raw_user_meta_data?.full_name || user.email || 'İsimsiz istifadəçi',
-        regionId: user.region_id,
-        sectorId: user.sector_id,
-        schoolId: user.school_id,
-        language: 'az',
-        status: 'active',
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      }));
-      
-      return { users: basicUsers };
-    }
-    
-    console.log(`${roleData.length} istifadəçi rolu tapıldı`);
+    console.log(`${roleData?.length || 0} istifadəçi rolu tapıldı:`, roleData);
     
     // İstifadəçi ID-lərini toplayaq
     const userIds = roleData.map(role => role.user_id);
     
     // 2. Profil məlumatlarını əldə edək
     const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('id', userIds);
+      .from("profiles")
+      .select("*")
+      .in("id", userIds.length > 0 ? userIds : ['00000000-0000-0000-0000-000000000000']); // Boş array problemi
     
     if (profilesError) {
+      console.error('Profil məlumatlarını əldə edərkən xəta:', profilesError);
       return { 
         error: profilesError,
         users: [] 
@@ -91,17 +42,22 @@ export async function fetchAvailableUsersService() {
     
     console.log(`${profilesData?.length || 0} profil tapıldı`);
     
-    // 3. E-poçt məlumatlarını əldə edək
-    const { data: emailsData, error: emailsError } = await supabase.rpc(
-      'get_user_emails_by_ids',
-      { user_ids: userIds }
-    );
+    // 3. E-poçt məlumatlarını əldə edək - yalnız userIds varsa
+    let emailsData = [];
+    let emailsError = null;
     
-    if (emailsError) {
-      return { 
-        error: emailsError,
-        users: [] 
-      };
+    if (userIds.length > 0) {
+      const emailResult = await supabase.rpc(
+        'get_user_emails_by_ids',
+        { user_ids: userIds }
+      );
+      
+      emailsData = emailResult.data || [];
+      emailsError = emailResult.error;
+      
+      if (emailsError) {
+        console.error('Email məlumatlarını əldə edərkən xəta:', emailsError);
+      }
     }
     
     console.log(`${emailsData?.length || 0} email tapıldı`);
@@ -116,14 +72,23 @@ export async function fetchAvailableUsersService() {
     
     // Email məlumatlarını ID-yə görə map edək
     const emailMap: Record<string, string> = {};
-    if (emailsData) {
+    if (emailsData && Array.isArray(emailsData)) {
       emailsData.forEach((item: any) => {
-        emailMap[item.id] = item.email;
+        if (item && item.id) {
+          emailMap[item.id] = item.email;
+        }
       });
     }
     
-    // Admin entity məlumatlarını əldə et
+    // Admin entity məlumatlarını əldə et - yalnız valid roleData varsa
+    if (!roleData || roleData.length === 0) {
+      console.log('İstifadəçi rolu tapılmadı, boş siyahı qaytarılır');
+      return { users: [] };
+    }
+    
     const adminEntityPromises = roleData.map(async (role: any) => {
+      if (!role || !role.user_id) return null;
+      
       const modifiedUser = { 
         ...role, 
         id: role.user_id,
@@ -133,12 +98,13 @@ export async function fetchAvailableUsersService() {
     });
     
     const adminEntities = await Promise.all(adminEntityPromises);
+    const validAdminEntities = adminEntities.filter(entity => entity !== null);
     
     // İstifadəçiləri formatlaşdıraq
     const formattedUsers = formatUserData(
-      roleData.map(role => ({ ...role, id: role.user_id })), 
+      roleData.filter(role => !!role && !!role.user_id).map(role => ({ ...role, id: role.user_id })), 
       profilesMap, 
-      adminEntities
+      validAdminEntities
     );
     
     console.log(`${formattedUsers.length} istifadəçi formatlandı`);

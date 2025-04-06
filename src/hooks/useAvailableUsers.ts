@@ -33,8 +33,8 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
         throw new Error(fetchError.message);
       }
       
-      if (!fetchedUsers) {
-        console.warn('Heç bir istifadəçi tapılmadı');
+      if (!fetchedUsers || !Array.isArray(fetchedUsers)) {
+        console.warn('Heç bir istifadəçi tapılmadı veya data massiv deyil', fetchedUsers);
         setUsers([]);
         return;
       }
@@ -48,14 +48,14 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
         
         filteredUsers = fetchedUsers.filter(u => {
           // Rolsuz/sadəcə user olan istifadəçilər təyin edilə bilər
-          const isAssignable = !u.role || u.role === 'user';
+          const isBasicUser = !u.role || u.role === 'user';
           
           // Ya da eyni regiondan olan, lakin regionadmin/sectoradmin olmayan istifadəçilər
-          const isSameRegion = u.regionId === user.regionId && 
+          const isSameRegion = u.region_id === user.regionId && 
                               u.role !== 'regionadmin' && 
                               u.role !== 'sectoradmin';
           
-          return isAssignable || isSameRegion;
+          return isBasicUser || isSameRegion;
         });
         
         console.log('Filterlənmiş istifadəçilər:', filteredUsers.length);

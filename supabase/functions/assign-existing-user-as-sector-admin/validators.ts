@@ -27,6 +27,14 @@ export async function validateRegionAdminAccess(userData: UserData, sectorId: st
     return { valid: true }; // Superadmin üçün yoxlamaya ehtiyac yoxdur
   }
 
+  if (!userData.regionId) {
+    console.error("Regionadmin üçün region ID mövcud deyil");
+    return { 
+      valid: false, 
+      error: "Region administratoru üçün region ID tapılmadı"
+    };
+  }
+
   const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
@@ -51,9 +59,12 @@ export async function validateRegionAdminAccess(userData: UserData, sectorId: st
 
   console.log('Sektor yoxlaması:', sector, 'Region ID:', userData.regionId);
 
+  // Doğru property adlarını yoxlayaq
+  const sectorRegionId = sector.region_id;
+  
   // Region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər
-  if (sector.region_id !== userData.regionId) {
-    console.error("İcazəsiz giriş - region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər");
+  if (sectorRegionId !== userData.regionId) {
+    console.error(`İcazəsiz giriş - region (${userData.regionId}) sektora (${sectorRegionId}) uyğun deyil`);
     return { 
       valid: false, 
       error: "Siz yalnız öz regionunuza aid sektorlara admin təyin edə bilərsiniz" 

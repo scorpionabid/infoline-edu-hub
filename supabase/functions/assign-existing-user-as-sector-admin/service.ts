@@ -23,6 +23,37 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
   console.log(`SQL funksiyası çağırılır: assign_sector_admin(${userId}, ${sectorId})`);
   
   try {
+    // Əvvəlcə istifadəçi və sektor məlumatlarını əldə edək
+    const { data: userData, error: userError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+      
+    if (userError) {
+      console.error("İstifadəçi məlumatı əldə edilərkən xəta:", userError);
+      return {
+        success: false,
+        error: "İstifadəçi tapılmadı"
+      };
+    }
+    
+    // Email məlumatını əldə edək
+    const { data: emailData, error: emailError } = await supabase.rpc(
+      'get_user_emails_by_ids',
+      { user_ids: [userId] }
+    );
+    
+    const userEmail = emailData && emailData.length > 0 ? emailData[0].email : null;
+    
+    if (emailError || !userEmail) {
+      console.error("İstifadəçi email məlumatı əldə edilərkən xəta:", emailError);
+      return {
+        success: false,
+        error: "İstifadəçi email məlumatı tapılmadı"
+      };
+    }
+    
     // SQL funksiyasını çağır - parametr adlarını dəqiq uyğunlaşdırırıq
     const { data, error } = await supabase.rpc(
       'assign_sector_admin',
@@ -48,6 +79,24 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
       return { 
         success: false, 
         error: data.error || "Sektor admini təyin edilərkən xəta baş verdi" 
+      };
+    }
+    
+    // Uğurlu olduqda, sektoru yeniləyək - admin_id və admin_email ilə
+    const { error: updateError } = await supabase
+      .from("sectors")
+      .update({
+        admin_id: userId,
+        admin_email: userEmail,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", sectorId);
+      
+    if (updateError) {
+      console.error('Sektor yeniləmə xətası:', updateError);
+      return {
+        success: false,
+        error: updateError.message || "Sektor yeniləməsi baş tutmadı"
       };
     }
 

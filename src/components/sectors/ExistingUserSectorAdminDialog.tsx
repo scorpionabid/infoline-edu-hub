@@ -41,9 +41,9 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   useEffect(() => {
     if (open) {
       console.log('Dialog açıldı, istifadəçilər yüklənir...');
-      fetchAvailableUsers();
       setError(null);
       setSelectedUserId('');
+      fetchAvailableUsers();
     }
   }, [open, fetchAvailableUsers]);
 
