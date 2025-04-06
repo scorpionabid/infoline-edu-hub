@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   CreateUserData, 
@@ -35,7 +34,7 @@ export const getUsers = async (
     // Filtrləri tətbiq et
     if (filters) {
       if (filters.role) {
-        query = query.eq('role', filters.role);
+        query = query.eq('role', filters.role as UserRole);
       }
       
       if (filters.region_id) {
@@ -122,7 +121,7 @@ export const getUsers = async (
         id: item.user_id,
         email: emails[item.user_id] || '',
         full_name: profile.full_name,
-        role: item.role,
+        role: item.role as UserRole,
         region_id: item.region_id,
         sector_id: item.sector_id,
         school_id: item.school_id,
@@ -341,7 +340,7 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
       .from('user_roles')
       .insert({
         user_id: mockUserId,
-        role: userData.role,
+        role: userData.role as UserRole,
         region_id: userData.region_id,
         sector_id: userData.sector_id,
         school_id: userData.school_id
@@ -422,7 +421,7 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
     // Rol yeniləmələri
     if (updates.role || updates.region_id !== undefined || updates.sector_id !== undefined || updates.school_id !== undefined) {
       const roleUpdates: any = {};
-      if (updates.role) roleUpdates.role = updates.role;
+      if (updates.role) roleUpdates.role = updates.role as UserRole;
       if (updates.region_id !== undefined) roleUpdates.region_id = updates.region_id;
       if (updates.sector_id !== undefined) roleUpdates.sector_id = updates.sector_id;
       if (updates.school_id !== undefined) roleUpdates.school_id = updates.school_id;

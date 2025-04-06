@@ -1,7 +1,6 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -31,23 +30,19 @@ export const useUserList = () => {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [operationComplete, setOperationComplete] = useState(false);
 
-  // İstifadəçiləri əldə etmə
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // 1. Əvvəlcə user_roles cədvəlindən məlumatları alaq
       let query = supabase
         .from('user_roles')
         .select('*', { count: 'exact' });
       
-      // Filtrləri tətbiq et
       if (filter.role) {
-        query = query.eq('role', filter.role);
+        query = query.eq('role', filter.role as UserRole);
       }
       
-      // Hazırkı istifadəçinin regionuna görə filtirləyin
       if (currentUser?.role === 'regionadmin' && currentUser?.regionId) {
         query = query.eq('region_id', currentUser.regionId);
       } else if (filter.region) {
@@ -62,7 +57,6 @@ export const useUserList = () => {
         query = query.eq('school_id', filter.school);
       }
       
-      // Pagination
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
       query = query.range(from, to);
@@ -78,10 +72,8 @@ export const useUserList = () => {
         return;
       }
       
-      // İstifadəçi ID-lərini toplayaq
       const userIds = rolesData.map(item => item.user_id);
       
-      // 2. profiles cədvəlindən məlumatları alaq
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -89,7 +81,6 @@ export const useUserList = () => {
       
       if (profilesError) throw profilesError;
       
-      // Profil məlumatlarını ID-yə görə map edək
       const profilesMap: Record<string, any> = {};
       if (profilesData) {
         profilesData.forEach(profile => {
@@ -97,7 +88,6 @@ export const useUserList = () => {
         });
       }
       
-      // 3. İstifadəçi məlumatlarını əldə etmək
       const { data: emailsData } = await supabase.rpc('get_user_emails_by_ids', { user_ids: userIds });
       
       const emailMap: Record<string, string> = {};
@@ -107,18 +97,15 @@ export const useUserList = () => {
         });
       }
       
-      // Axtarış və status filtrlərini tətbiq edək
       let filteredRolesData = rolesData;
       if (filter.status || filter.search) {
         filteredRolesData = rolesData.filter(roleItem => {
           const profile = profilesMap[roleItem.user_id] || {};
           
-          // Status filtri
           if (filter.status && profile.status !== filter.status) {
             return false;
           }
           
-          // Axtarış filtri
           if (filter.search) {
             const searchTerm = filter.search.toLowerCase();
             const fullName = (profile.full_name || '').toLowerCase();
@@ -133,7 +120,6 @@ export const useUserList = () => {
         });
       }
       
-      // Admin entity məlumatlarını əldə et
       const adminEntityPromises = filteredRolesData.map(async (roleItem) => {
         if (!roleItem.role.includes('admin') || 
            (roleItem.role === 'regionadmin' && !roleItem.region_id) ||
@@ -202,11 +188,9 @@ export const useUserList = () => {
       
       const adminEntities = await Promise.all(adminEntityPromises);
       
-      // Tam istifadəçi məlumatlarını formatlaşdır
       const formattedUsers: FullUserData[] = filteredRolesData.map((roleItem, index) => {
         const profile = profilesMap[roleItem.user_id] || {};
         
-        // Status dəyərini düzgün tipə çevirmək
         let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
         const statusValue = profile.status || 'active';
         
@@ -218,7 +202,7 @@ export const useUserList = () => {
           id: roleItem.user_id,
           email: emailMap[roleItem.user_id] || 'N/A',
           full_name: profile.full_name || 'İsimsiz İstifadəçi',
-          role: roleItem.role,
+          role: roleItem.role as UserRole,
           region_id: roleItem.region_id,
           sector_id: roleItem.sector_id,
           school_id: roleItem.school_id,
@@ -231,7 +215,6 @@ export const useUserList = () => {
           created_at: profile.created_at || '',
           updated_at: profile.updated_at || '',
           
-          // Alias-lar
           name: profile.full_name || 'İsimsiz İstifadəçi',
           regionId: roleItem.region_id,
           sectorId: roleItem.sector_id,
@@ -240,10 +223,8 @@ export const useUserList = () => {
           createdAt: profile.created_at || '',
           updatedAt: profile.updated_at || '',
           
-          // Admin entity
           adminEntity: adminEntities[index],
           
-          // Əlavə xüsusiyyətlər
           twoFactorEnabled: false,
           notificationSettings: {
             email: true,
@@ -263,35 +244,29 @@ export const useUserList = () => {
     }
   }, [filter, currentPage, pageSize, currentUser]);
 
-  // Filtr dəyişdikdə istifadəçiləri yenidən əldə etmə
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // İstifadəçini redaktə etmə
   const handleEditUser = useCallback((user: FullUserData) => {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   }, []);
 
-  // İstifadəçini silmə
   const handleDeleteUser = useCallback((user: FullUserData) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   }, []);
 
-  // İstifadəçi təfərrüatlarını göstərmə
   const handleViewDetails = useCallback((user: FullUserData) => {
     setSelectedUser(user);
     setIsDetailsDialogOpen(true);
   }, []);
 
-  // İstifadəçi redaktəsini təsdiqləmə
   const handleUpdateUserConfirm = useCallback(async (updatedUserData: FullUserData) => {
     if (!selectedUser) return;
     
     try {
-      // Profil məlumatlarını yenilə
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -307,7 +282,6 @@ export const useUserList = () => {
       
       if (profileError) throw profileError;
       
-      // Rol məlumatlarını yenilə
       const { error: roleError } = await supabase
         .from('user_roles')
         .update({
@@ -330,12 +304,10 @@ export const useUserList = () => {
     }
   }, [selectedUser, t]);
 
-  // İstifadəçi silməni təsdiqləmə
   const handleDeleteUserConfirm = useCallback(async () => {
     if (!selectedUser) return;
     
     try {
-      // İstifadəçi profilini sil, user_roles CASCADE ilə silinəcək
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -352,24 +324,20 @@ export const useUserList = () => {
     }
   }, [selectedUser, t]);
 
-  // Filtri yeniləmə
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
     setFilter(prev => ({ ...prev, ...newFilter }));
     setCurrentPage(1);
   }, []);
 
-  // Filtri sıfırlama
   const resetFilter = useCallback(() => {
     setFilter({});
     setCurrentPage(1);
   }, []);
 
-  // Səhifə dəyişikliyi
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
   }, []);
 
-  // Əməliyyat tamamlandıqda məlumatları yenidən yükləmə
   useEffect(() => {
     if (operationComplete) {
       fetchUsers();

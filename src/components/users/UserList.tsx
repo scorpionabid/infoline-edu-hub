@@ -149,7 +149,7 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser as unknown as User}
+            user={selectedUser as User}
             onSave={(updatedUser) => {
               // User tipini FullUserData tipinə çevir
               const fullUserData = userToFullUserData(updatedUser);
@@ -161,7 +161,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser as unknown as User}
+            user={selectedUser as User}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -171,7 +171,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser as unknown as User}
+            user={selectedUser as User}
           />
         </>
       )}
