@@ -35,7 +35,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   
-  // Dialog açıldığında istifadəçiləri yenidən əldə et
+  // Dialog açıldığında istifadəçiləri yenidən əldə et və state'i sıfırla
   useEffect(() => {
     if (open) {
       fetchAvailableUsers();

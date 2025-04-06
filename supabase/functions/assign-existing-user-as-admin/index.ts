@@ -55,6 +55,7 @@ serve(async (req) => {
       );
     }
     
+    // userId və regionId doğrulamaq
     const { userId, regionId } = body;
     
     if (!userId) {
@@ -81,6 +82,7 @@ serve(async (req) => {
 
     console.log(`Region admin təyinatı başladı: User ID: ${userId}, Region ID: ${regionId}`);
 
+    // Əsas işi try-catch bloku içində edək
     try {
       // 1. İstifadəçinin mövcudluğunu yoxlayaq
       const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -138,7 +140,7 @@ serve(async (req) => {
       
       console.log('Region tapıldı:', regionData);
 
-      // 3. İstifadəçinin cari rolunu yoxlayaq və regionadmin olub olmadığını təyin edək
+      // 3. İstifadəçinin cari user_roles məlumatlarını yoxlayaq
       const { data: existingRoles, error: rolesError } = await supabaseAdmin
         .from('user_roles')
         .select('*')
@@ -154,6 +156,8 @@ serve(async (req) => {
           }
         );
       }
+      
+      let roleResult;
       
       // 4. Əgər istifadəçi artıq regionadmin roluna malikdirsə, rolu yeniləyək
       const hasRegionAdminRole = existingRoles && existingRoles.some(role => role.role === 'regionadmin');
@@ -183,29 +187,32 @@ serve(async (req) => {
           );
         }
         
+        roleResult = updatedRole;
         console.log('İstifadəçi rolu yeniləndi:', updatedRole);
       } else {
         console.log('İstifadəçidə regionadmin rolu yoxdur, yeni rol əlavə edilir');
         
-        // 5. Əvvəlcə mövcud rollardan digər admin rollarını tapaq
-        const existingAdminRoles = existingRoles?.filter(role => 
-          role.role === 'regionadmin' || role.role === 'sectoradmin' || role.role === 'schooladmin'
-        ) || [];
-        
-        // Əgər başqa admin rolları varsa, onları silək
-        if (existingAdminRoles.length > 0) {
-          console.log('Mövcud admin rolları:', existingAdminRoles);
+        // 5. Əvvəlcə user_roles cədvəlində mövcud admin rollarını tapaq və siləkk
+        if (existingRoles && existingRoles.length > 0) {
+          const adminRoles = existingRoles.filter(role => 
+            ['regionadmin', 'sectoradmin', 'schooladmin'].includes(String(role.role))
+          );
           
-          for (const role of existingAdminRoles) {
-            const { error: deleteError } = await supabaseAdmin
-              .from('user_roles')
-              .delete()
-              .eq('id', role.id);
-              
-            if (deleteError) {
-              console.error(`Köhnə ${role.role} rolu silinərkən xəta:`, deleteError);
-            } else {
-              console.log(`Köhnə ${role.role} rolu silindi`);
+          if (adminRoles.length > 0) {
+            console.log('Mövcud admin rolları:', adminRoles);
+            
+            // Bütün köhnə admin rollarını siləcəyik
+            for (const role of adminRoles) {
+              const { error: deleteError } = await supabaseAdmin
+                .from('user_roles')
+                .delete()
+                .eq('id', role.id);
+                
+              if (deleteError) {
+                console.error(`Köhnə ${role.role} rolu silinərkən xəta:`, deleteError);
+              } else {
+                console.log(`Köhnə ${role.role} rolu silindi`);
+              }
             }
           }
         }
@@ -233,6 +240,7 @@ serve(async (req) => {
           );
         }
         
+        roleResult = newRole;
         console.log('Yeni rol yaradıldı:', newRole);
       }
       
@@ -284,6 +292,7 @@ serve(async (req) => {
         // Audit log xətası əsas əməliyyatı dayandırmamalıdır
       }
       
+      // Uğurlu cavab
       return new Response(
         JSON.stringify({
           success: true,
@@ -295,7 +304,8 @@ serve(async (req) => {
           region: {
             id: regionId,
             name: regionData.name
-          }
+          },
+          role: roleResult?.[0] || null
         }),
         { 
           status: 200, 
