@@ -10,11 +10,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AdminUserSelector } from '@/components/regions/AdminDialog/AdminUserSelector';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 import { useAssignExistingUserAsSectorAdmin } from '@/hooks/useAssignExistingUserAsSectorAdmin';
+import { useAuth } from '@/context/AuthContext';
 
 interface ExistingUserSectorAdminDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   onSuccess
 }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { users, loading: loadingUsers, error: usersError, fetchAvailableUsers } = useAvailableUsers();
   const { assignUserAsSectorAdmin, loading: assigningAdmin } = useAssignExistingUserAsSectorAdmin();
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +75,20 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     }
   };
 
+  // Regionadmin istifadəçi seçimlərini filtirləməlidir
+  const filteredUsers = React.useMemo(() => {
+    if (!user || user.role !== 'regionadmin' || !user.regionId) {
+      return users;
+    }
+    
+    // Regionadmin yalnız superadmin və ya heç bir rolu olmayan istifadəçiləri görəcək
+    return users.filter(u => 
+      !u.role || // rolu olmayanlar
+      u.role === 'user' || // sadəcə user olanlar
+      (u.regionId === user.regionId && u.role !== 'regionadmin') // eyni regiondakı adminlər (regionadmin olmamaq şərtiylə)
+    );
+  }, [users, user]);
+
   if (!sector) {
     return null;
   }
@@ -94,9 +110,18 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
           </Alert>
         )}
         
+        {user?.role === 'regionadmin' && (
+          <Alert variant="info" className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              {t('regionAdminPermissionInfo') || 'Siz yalnız öz regionunuza aid istifadəçiləri sektor admini təyin edə bilərsiniz.'}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="py-4">
           <AdminUserSelector
-            users={users}
+            users={filteredUsers}
             loading={loadingUsers}
             error={usersError}
             selectedUserId={selectedUserId}

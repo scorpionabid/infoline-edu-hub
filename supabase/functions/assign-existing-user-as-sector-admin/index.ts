@@ -21,8 +21,65 @@ serve(async (req) => {
   }
 
   try {
+    // İstifadəçinin autentifikasiya məlumatlarını əldə et
     const authHeader = req.headers.get("Authorization");
     console.log("Auth header:", authHeader ? "Mövcuddur" : "Mövcud deyil");
+
+    // Supabase client yaratma - autentifikasiya ilə
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader || "" },
+      },
+    });
+
+    // İstifadəçinin kim olduğunu yoxlayaq
+    const { data: { user: currentUser }, error: userError } = await supabaseAuth.auth.getUser();
+
+    if (userError || !currentUser) {
+      console.error("İstifadəçi autentifikasiya xətası:", userError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: userError?.message || "İstifadəçi autentifikasiya olunmayıb" 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    console.log("Cari istifadəçi:", currentUser.id, currentUser.email);
+
+    // İstifadəçinin rolunu əldə et
+    const { data: userRoleData, error: userRoleError } = await supabaseAuth
+      .from("user_roles")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .single();
+
+    if (userRoleError || !userRoleData) {
+      console.error("İstifadəçi rolu sorğusu xətası:", userRoleError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: userRoleError?.message || "İstifadəçi rolu tapılmadı" 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    const userRole = userRoleData.role;
+    console.log("İstifadəçi rolu:", userRole);
+
+    // Yalnız superadmin və regionadmin rollarına icazə veririk
+    if (userRole !== "superadmin" && userRole !== "regionadmin") {
+      console.error("İcazəsiz giriş - yalnız superadmin və regionadmin");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Bu əməliyyat üçün superadmin və ya regionadmin səlahiyyətləri tələb olunur" 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
 
     // İstəyin məlumatlarını əldə et
     const requestData = await req.json();
@@ -44,7 +101,7 @@ serve(async (req) => {
       );
     }
 
-    // Supabase client yaratma
+    // Admin client yaratmaq
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -70,6 +127,21 @@ serve(async (req) => {
       );
     }
 
+    // Region admini üçün əlavə yoxlamalar
+    if (userRole === "regionadmin") {
+      // Sektorun regionu ilə istifadəçinin regionu eyni olmalıdır
+      if (sector.region_id !== userRoleData.region_id) {
+        console.error("İcazəsiz giriş - region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər");
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Siz yalnız öz regionunuza aid sektorlara admin təyin edə bilərsiniz" 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
+    }
+
     // Sektorun mövcud admininin olub-olmadığını yoxla
     if (sector.admin_id) {
       const errorMessage = "Bu sektora artıq admin təyin edilib";
@@ -81,16 +153,16 @@ serve(async (req) => {
     }
 
     // İstifadəçini yoxla
-    const { data: authUser, error: userError } = await supabase.auth.admin.getUserById(
+    const { data: authUser, error: userError2 } = await supabase.auth.admin.getUserById(
       requestData.userId
     );
 
-    if (userError || !authUser.user) {
-      console.error("İstifadəçi sorğusu xətası:", userError);
+    if (userError2 || !authUser.user) {
+      console.error("İstifadəçi sorğusu xətası:", userError2);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: userError?.message || "İstifadəçi tapılmadı" 
+          error: userError2?.message || "İstifadəçi tapılmadı" 
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
@@ -120,24 +192,25 @@ serve(async (req) => {
     }
 
     // İstifadəçi rolunu əlavə et
-    const { error: userRoleError } = await supabase
+    const { error: userRoleError2 } = await supabase
       .from("user_roles")
       .upsert({
         user_id: requestData.userId,
         role: "sectoradmin",
         sector_id: requestData.sectorId,
+        region_id: sector.region_id, // region id-ni də əlavə edirik ki, aidiyyətli region müəyyən olsun
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: "user_id,role"
       });
 
-    if (userRoleError) {
-      console.error("İstifadəçi rolu əlavə edilmə xətası:", userRoleError);
+    if (userRoleError2) {
+      console.error("İstifadəçi rolu əlavə edilmə xətası:", userRoleError2);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: userRoleError.message || "İstifadəçi rolu əlavə edilmə xətası" 
+          error: userRoleError2.message || "İstifadəçi rolu əlavə edilmə xətası" 
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
@@ -162,6 +235,29 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
+    }
+
+    // Audit logu əlavə et
+    const { error: auditLogError } = await supabase
+      .from("audit_logs")
+      .insert({
+        user_id: currentUser.id,
+        action: "assign_sector_admin",
+        entity_type: "sector",
+        entity_id: requestData.sectorId,
+        new_value: {
+          admin_id: requestData.userId,
+          admin_email: authUser.user.email,
+          sector_id: requestData.sectorId,
+          sector_name: sector.name,
+          assigned_by: currentUser.email,
+          assigned_by_role: userRole
+        }
+      });
+    
+    if (auditLogError) {
+      console.warn("Audit log əlavə edilmə xətası:", auditLogError);
+      // Bu xəta əsas işi bloklamasın
     }
 
     // Uğurlu nəticə qaytarma
