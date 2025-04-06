@@ -2,10 +2,10 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function useAssignExistingUserAsSectorAdmin() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState<boolean>(false);
   
   const assignUserAsSectorAdmin = useCallback(async (
