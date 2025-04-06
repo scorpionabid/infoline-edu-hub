@@ -30,7 +30,7 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
   }
 
   try {
-    console.log('Auth header ilə autentifikasiya başlayır:', authHeader.substring(0, 20) + '...');
+    console.log('Auth header ilə autentifikasiya başlayır');
 
     // Autentifikasiya olunmuş istifadəçiyə bağlı client
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {

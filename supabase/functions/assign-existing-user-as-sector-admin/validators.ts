@@ -26,7 +26,7 @@ export async function validateRegionAdminAccess(userData: any, sectorId: string)
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
-      return { valid: false, error: "Server konfiqurasiyası xətası" };
+      return { valid: false, error: "Server konfigurasiyası xətası" };
     }
 
     console.log(`RegionAdmin validation üçün userData:`, userData);
