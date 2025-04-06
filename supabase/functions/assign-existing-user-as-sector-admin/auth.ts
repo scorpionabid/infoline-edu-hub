@@ -29,6 +29,8 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
     };
   }
 
+  console.log('Auth header ilə autentifikasiya başlayır');
+
   // Autentifikasiya olunmuş istifadəçiyə bağlı client
   const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
@@ -67,7 +69,7 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
   }
 
   const userRole = userRoleData.role;
-  console.log("İstifadəçi rolu:", userRole);
+  console.log("İstifadəçi rolu:", userRole, "Bölgə ID:", userRoleData.region_id);
 
   // Yalnız superadmin və regionadmin rolları icazəlidir
   if (userRole !== "superadmin" && userRole !== "regionadmin") {

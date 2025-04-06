@@ -20,7 +20,10 @@ export async function validateRegionAdminAccess(userData: UserData, sectorId: st
   sector?: any; 
   error?: string;
 }> {
+  console.log('Region admin yoxlamaları', userData, sectorId);
+  
   if (userData.role !== "regionadmin") {
+    console.log('Superadmin olduğu üçün region yoxlamasına ehtiyac yoxdur');
     return { valid: true }; // Superadmin üçün yoxlamaya ehtiyac yoxdur
   }
 
@@ -45,6 +48,8 @@ export async function validateRegionAdminAccess(userData: UserData, sectorId: st
       error: sectorError?.message || "Sektor tapılmadı" 
     };
   }
+
+  console.log('Sektor yoxlaması:', sector, 'Region ID:', userData.regionId);
 
   // Region admini yalnız öz regionuna aid sektorlara admin təyin edə bilər
   if (sector.region_id !== userData.regionId) {

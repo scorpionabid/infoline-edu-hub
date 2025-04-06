@@ -1,6 +1,5 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { fetchAvailableUsersService } from '@/hooks/user/userFetchService';
 import { useAuth } from '@/context/AuthContext';
@@ -40,15 +39,30 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
         return;
       }
       
+      console.log('Alınan istifadəçilər:', fetchedUsers.length, fetchedUsers);
+      
       // İstifadəçi region admini isə, yalnız onun bölgəsindəki və ya role olmayan istifadəçiləri göstər
       let filteredUsers = fetchedUsers;
       if (user && user.role === 'regionadmin' && user.regionId) {
-        filteredUsers = fetchedUsers.filter(u => 
-          !u.role || // rolu olmayanlar
-          u.role === 'user' || // sadəcə user olanlar
-          (u.regionId === user.regionId && u.role !== 'regionadmin') // eyni regiondakı adminlər (regionadmin olmamaq şərtiylə)
-        );
+        console.log('Region admin filter tətbiq edilir:', user.regionId);
+        
+        filteredUsers = fetchedUsers.filter(u => {
+          // Rolsuz/sadəcə user olan istifadəçilər təyin edilə bilər
+          const isAssignable = !u.role || u.role === 'user';
+          
+          // Ya da eyni regiondan olan, lakin regionadmin/sectoradmin olmayan istifadəçilər
+          const isSameRegion = u.regionId === user.regionId && 
+                              u.role !== 'regionadmin' && 
+                              u.role !== 'sectoradmin';
+          
+          return isAssignable || isSameRegion;
+        });
+        
+        console.log('Filterlənmiş istifadəçilər:', filteredUsers.length);
       }
+      
+      // Əlavə filter - artıq admin olan istifadəçiləri çıxaraq
+      filteredUsers = filteredUsers.filter(u => u.role !== 'sectoradmin');
       
       console.log(`${filteredUsers.length} istifadəçi yükləndi`);
       setUsers(filteredUsers);
@@ -63,8 +77,10 @@ export const useAvailableUsers = (): UseAvailableUsersReturn => {
 
   // İlkin yükləmə - komponent ilk dəfə mount olduqda istifadəçiləri yüklə
   useEffect(() => {
-    fetchAvailableUsers();
-  }, [fetchAvailableUsers]);
+    if (user) {
+      fetchAvailableUsers();
+    }
+  }, [fetchAvailableUsers, user]);
 
   return {
     users,

@@ -21,9 +21,9 @@ export async function fetchAvailableUsersService() {
       };
     }
     
-    // İstifadəçi rollarını tapılıb-tapılmadığını yoxlayaq
+    // İstifadəçi rollarının tapılıb-tapılmadığını yoxlayaq
     if (!roleData || roleData.length === 0) {
-      console.log('Heç bir istifadəçi rolu tapılmadı');
+      console.log('Heç bir istifadəçi rolu tapılmadı, auth istifadəçilərini yükləyirəm...');
       
       // İstifadəçi rolu tapılmadı - edge funksiyasını çağıraq
       const { data: authUsers, error: authError } = await supabase.functions.invoke(

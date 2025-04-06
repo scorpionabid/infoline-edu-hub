@@ -85,36 +85,13 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     }
   };
 
-  // Region admin istifadəçi seçimlərini filtirləməlidir
-  const filteredUsers = React.useMemo(() => {
-    if (!users || users.length === 0) {
-      return [];
-    }
-    
-    // Region admini üçün filtrələmə - yalnız öz regionuna aid və ya rolu olmayan istifadəçilər
-    if (user?.role === 'regionadmin' && user.regionId && sector?.region_id) {
-      return users.filter(u => 
-        !u.role || // rolu olmayanlar
-        u.role === 'user' || // sadəcə user olanlar
-        (u.regionId === user.regionId && u.role !== 'regionadmin' && u.role !== 'sectoradmin') // eyni regiondakı, amma admin olmayan istifadəçilər
-      );
-    }
-    
-    // Superadmin üçün bütün istifadəçiləri göstər
-    return users;
-  }, [users, user, sector]);
-
-  if (!sector) {
-    return null;
-  }
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t('assignSectorAdmin') || 'Sektor admini təyin et'}</DialogTitle>
           <DialogDescription>
-            {t('existingUserAdminHelp') || `Seçilmiş istifadəçi "${sector.name}" sektoru üçün admin səlahiyyətlərinə malik olacaq.`}
+            {t('existingUserAdminHelp') || `Seçilmiş istifadəçi "${sector?.name}" sektoru üçün admin səlahiyyətlərinə malik olacaq.`}
           </DialogDescription>
         </DialogHeader>
         
@@ -136,7 +113,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
         
         <div className="py-4">
           <AdminUserSelector
-            users={filteredUsers}
+            users={users}
             loading={loadingUsers}
             error={usersError}
             selectedUserId={selectedUserId}

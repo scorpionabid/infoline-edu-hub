@@ -22,33 +22,41 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
 
   console.log(`SQL funksiyası çağırılır: assign_sector_admin(${userId}, ${sectorId})`);
   
-  // SQL funksiyasını çağır - parametr adlarını dəqiq uyğunlaşdırırıq
-  const { data, error } = await supabase.rpc(
-    'assign_sector_admin',
-    {
-      user_id_param: userId,
-      sector_id_param: sectorId
+  try {
+    // SQL funksiyasını çağır - parametr adlarını dəqiq uyğunlaşdırırıq
+    const { data, error } = await supabase.rpc(
+      'assign_sector_admin',
+      {
+        user_id_param: userId,
+        sector_id_param: sectorId
+      }
+    );
+
+    console.log('SQL funksiyası nəticəsi:', data, error);
+
+    if (error) {
+      console.error('Sektor admin təyin etmə xətası:', error);
+      return { 
+        success: false, 
+        error: error.message || "Sektor admini təyin edilərkən xəta baş verdi" 
+      };
     }
-  );
 
-  console.log('SQL funksiyası nəticəsi:', data, error);
+    // SQL funksiyasından qaytarılan nəticənin success olmasını yoxlayırıq
+    if (data && typeof data === 'object' && 'success' in data && !data.success) {
+      console.error('SQL funksiyası xətası:', data.error || 'Naməlum xəta');
+      return { 
+        success: false, 
+        error: data.error || "Sektor admini təyin edilərkən xəta baş verdi" 
+      };
+    }
 
-  if (error) {
+    return { success: true, data };
+  } catch (error) {
     console.error('Sektor admin təyin etmə xətası:', error);
     return { 
       success: false, 
-      error: error.message || "Sektor admini təyin edilərkən xəta baş verdi" 
+      error: error instanceof Error ? error.message : "Sektor admini təyin edilərkən xəta baş verdi" 
     };
   }
-
-  // SQL funksiyasından qaytarılan nəticənin success olmasını yoxlayırıq
-  if (data && typeof data === 'object' && 'success' in data && !data.success) {
-    console.error('SQL funksiyası xətası:', data.error || 'Naməlum xəta');
-    return { 
-      success: false, 
-      error: data.error || "Sektor admini təyin edilərkən xəta baş verdi" 
-    };
-  }
-
-  return { success: true, data };
 }
