@@ -24,7 +24,7 @@ export async function fetchAvailableUsersService() {
     }
     
     const userData = data.users;
-    console.log(`${userData.length} istifadəçi tapıldı`);
+    console.log(`${userData.length} istifadəçi tapıldı`, userData);
     
     // İstifadəçi ID-lərini toplayaq
     const userIds = userData.map((user: any) => user.id);
