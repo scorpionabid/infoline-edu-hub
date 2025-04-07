@@ -4,8 +4,8 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { ExistingUserSectorAdminDialog } from './ExistingUserSectorAdminDialog';
+import { AlertCircle } from 'lucide-react';
+import { ExistingUserSectorAdminDialog } from './SectorAdminDialogs';
 import { Sector } from '@/types/supabase';
 
 interface SectorAdminDialogProps {
