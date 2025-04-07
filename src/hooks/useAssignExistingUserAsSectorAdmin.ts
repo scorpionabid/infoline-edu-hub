@@ -32,6 +32,20 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       
       console.log('Edge funksiyasına sorğu göndərilir:', { sectorId, userId });
       
+      // Əvvəlcə region ID-ni əldə edirik
+      const { data: sectorData, error: sectorError } = await supabase
+        .from('sectors')
+        .select('region_id')
+        .eq('id', sectorId)
+        .single();
+        
+      if (sectorError) {
+        console.error('Sektor məlumatları əldə edilərkən xəta:', sectorError);
+        throw new Error(`Sektor məlumatları əldə edilərkən xəta: ${sectorError.message}`);
+      }
+      
+      const regionId = sectorData.region_id;
+      
       // Supabase-in functions API-sini istifadə edək
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: { 
@@ -58,6 +72,7 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         .update({ 
           role: 'sectoradmin',
           sector_id: sectorId,
+          region_id: regionId,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -67,14 +82,30 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         // Bu xəta ilə əməliyyatı dayandırmırıq, çünki edge funksiyası əsasən yeniləyir
       }
       
+      // Əlavə olaraq istifadəçinin email-ini əldə edək
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+      
+      let userEmail = data.data?.admin?.email || null;
+      if (!userError && userData && userData.email) {
+        userEmail = userData.email;
+      }
+      
       // Sektorlar cədvəlini yenilə
-      await supabase.from('sectors')
+      const { error: sectorUpdateError } = await supabase.from('sectors')
         .update({ 
           admin_id: userId,
-          admin_email: data.data?.admin?.email || null,
+          admin_email: userEmail,
           updated_at: new Date().toISOString()
         })
         .eq('id', sectorId);
+        
+      if (sectorUpdateError) {
+        console.error('Sektor yeniləmə xətası:', sectorUpdateError);
+      }
       
       // Uğurlu nəticə
       toast({

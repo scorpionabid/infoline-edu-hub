@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -37,6 +37,15 @@ const Sectors = () => {
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
   const [selectedSector, setSelectedSector] = useState<EnhancedSector | null>(null);
   const [createdSector, setCreatedSector] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Yenilənmə triggerini izlə
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('Sektorlar siyahısı yenilənir...');
+      fetchSectors();
+    }
+  }, [refreshTrigger, fetchSectors]);
 
   const handleOpenSectorDialog = useCallback((sector: EnhancedSector | null) => {
     setSelectedSector(sector);
@@ -56,7 +65,7 @@ const Sectors = () => {
   const handleAdminAssigned = () => {
     console.log('handleAdminAssigned çağırıldı');
     // Sektorlar listini yenidən yüklə
-    fetchSectors();
+    setRefreshTrigger(prev => prev + 1);
     setCreatedSector(null);
   };
 
@@ -90,7 +99,7 @@ const Sectors = () => {
       
       setOpenSectorDialog(false);
       setSelectedSector(null);
-      fetchSectors();
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       toast.error(t('errorOccurred'), {
         description: error.message || t('unexpectedError')
