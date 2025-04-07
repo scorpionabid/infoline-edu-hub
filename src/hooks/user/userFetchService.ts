@@ -9,7 +9,7 @@ export async function fetchAvailableUsersService() {
     console.log('İstifadəçiləri əldə etmə servisində...');
     
     // get_all_users_with_roles edge funksiyasını çağırır
-    const { data, error } = await supabase.functions.invoke('get_all_users_with_roles');
+    const { data, error } = await supabase.functions.invoke('get-all-users-with-roles');
     
     if (error) {
       console.error('İstifadəçiləri əldə edərkən edge funksiya xətası:', error);

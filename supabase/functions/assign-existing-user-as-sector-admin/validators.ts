@@ -1,90 +1,127 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { supabaseUrl, supabaseServiceRoleKey } from "./config.ts";
 
-// Məcburi parametrlərin yoxlanması
-export function validateRequiredParams(
-  sectorId: string | undefined,
-  userId: string | undefined
-) {
+// İstifadəçi məlumatları tipi
+interface UserData {
+  id: string;
+  email: string;
+  role: string;
+  region_id?: string;
+}
+
+/**
+ * Tələb olunan parametrləri doğrulayır
+ * @param sectorId Sektor ID
+ * @param userId İstifadəçi ID
+ * @returns Doğrulama nəticəsi
+ */
+export function validateRequiredParams(sectorId: string, userId: string) {
   if (!sectorId) {
-    return { valid: false, error: "Sektor ID məcburidir" };
+    return { valid: false, error: "Sektor ID tələb olunur" };
   }
-
+  
   if (!userId) {
-    return { valid: false, error: "İstifadəçi ID məcburidir" };
+    return { valid: false, error: "İstifadəçi ID tələb olunur" };
   }
-
+  
   return { valid: true };
 }
 
-// Region admininin sektora giriş hüququnun yoxlanması
-export async function validateRegionAdminAccess(userData: any, sectorId: string) {
-  try {
-    // Supabase client yaradılır - artıq Deno.env.get istifadə etmirik
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
-      return { valid: false, error: "Server konfigurasiyası xətası" };
+/**
+ * Region admini üçün sektora giriş icazəsini yoxlayır
+ * @param userData İstifadəçi məlumatları
+ * @param sectorId Sektor ID
+ * @returns Doğrulama nəticəsi
+ */
+export async function validateRegionAdminAccess(userData: UserData, sectorId: string) {
+  // Superadminlər bütün sektorlara giriş hüququna malikdir
+  if (userData.role === "superadmin") {
+    return { valid: true };
+  }
+  
+  // RegionAdmin yalnız öz regionuna aid olan sektorlara giriş hüququna malikdir
+  if (userData.role === "regionadmin" && userData.region_id) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+      
+      // Sektorun regionunu yoxla
+      const { data: sector, error } = await supabase
+        .from("sectors")
+        .select("region_id")
+        .eq("id", sectorId)
+        .single();
+      
+      if (error) {
+        console.error("Sektor sorğusu xətası:", error);
+        return { valid: false, error: "Sektor tapılmadı" };
+      }
+      
+      if (sector.region_id !== userData.region_id) {
+        return { 
+          valid: false, 
+          error: "Bu sektor sizin regionunuza aid deyil və ona giriş hüququnuz yoxdur" 
+        };
+      }
+      
+      return { valid: true };
+    } catch (error) {
+      console.error("Region icazəsi yoxlanılarkən xəta:", error);
+      return { 
+        valid: false, 
+        error: "Region icazəsi yoxlanılarkən xəta baş verdi" 
+      };
     }
+  }
+  
+  // Digər rolların icazəsi yoxdur
+  return { valid: false, error: "Bu əməliyyat üçün icazəniz yoxdur" };
+}
 
-    console.log(`RegionAdmin validation üçün userData:`, userData);
-    console.log(`Yoxlanacaq sectorId:`, sectorId);
-
+/**
+ * Sektor admini artıq təyin olunub-olunmadığını yoxlayır
+ * @param sectorId Sektor ID
+ * @returns Doğrulama nəticəsi
+ */
+export async function validateSectorAdminExists(sectorId: string) {
+  try {
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
     });
-
-    // Əgər superadmin isə, daima giriş icazəsi var
-    if (userData.role === "superadmin") {
-      console.log("Superadmin rolunda istifadəçi - icazə verildi");
-      return { valid: true };
+    
+    // Sektorun mövcud admin ID-sini yoxla
+    const { data: sector, error } = await supabase
+      .from("sectors")
+      .select("admin_id")
+      .eq("id", sectorId)
+      .single();
+    
+    if (error) {
+      console.error("Sektor admin yoxlama xətası:", error);
+      return { valid: false, error: "Sektor tapılmadı" };
     }
-
-    // Region admininin yoxlanması
-    if (userData.role === "regionadmin" && userData.region_id) {
-      console.log(`RegionAdmin yoxlanışı: regionId=${userData.region_id}`);
-      
-      // Sektorun hansı regiona aid olduğunu yoxla
-      const { data: sector, error: sectorError } = await supabase
-        .from("sectors")
-        .select("region_id")
-        .eq("id", sectorId)
-        .single();
-
-      if (sectorError) {
-        console.error("Sektor məlumatları alınarkən xəta:", sectorError);
-        return { valid: false, error: "Sektor məlumatları alına bilmədi" };
-      }
-
-      console.log(`Sektor məlumatları:`, sector);
-
-      // Region adminin öz regionuna aid sektorlar üçün icazəsi var
-      if (sector && sector.region_id === userData.region_id) {
-        console.log("Region admin öz regionundakı sektora müraciət edir - icazə verildi");
-        return { valid: true };
-      }
-
-      console.error("Region admin başqa regionun sektoruna müraciət edir - icazə verilmədi");
-      return {
-        valid: false,
-        error: "Bu regiona aid olmayan sektorlar üçün admin təyin etmə icazəniz yoxdur",
+    
+    if (sector.admin_id) {
+      return { 
+        valid: false, 
+        error: "Bu sektora artıq admin təyin edilib" 
       };
     }
-
-    console.error("İstifadəçi SuperAdmin və ya RegionAdmin deyil");
-    // Digər rollar üçün icazəni inkar et
-    return {
-      valid: false,
-      error: "Yalnız superadmin və region adminləri sektor admini təyin edə bilər",
-    };
+    
+    return { valid: true };
   } catch (error) {
-    console.error("Giriş yoxlanışı zamanı xəta:", error);
-    return {
-      valid: false,
-      error: error instanceof Error ? error.message : "Giriş yoxlanışı zamanı gözlənilməz xəta",
+    console.error("Sektor admin yoxlanılarkən xəta:", error);
+    return { 
+      valid: false, 
+      error: "Sektor admin yoxlanılarkən xəta baş verdi" 
     };
   }
 }
