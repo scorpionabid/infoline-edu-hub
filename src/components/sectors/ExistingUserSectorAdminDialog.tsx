@@ -25,7 +25,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   onSuccess
 }) => {
   const { t } = useLanguage();
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   
   const { users, loading: loadingUsers } = useAvailableUsers();
@@ -34,14 +34,14 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   // Dialog açıldığında seçimləri sıfırla
   useEffect(() => {
     if (open) {
-      setSelectedUserId(null);
+      setSelectedUserId("");
       setError(null);
     }
   }, [open]);
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
-    setSelectedUserId(userId === "unselected" ? null : userId);
+    setSelectedUserId(userId);
   };
 
   // Sektora admin təyin et
@@ -93,7 +93,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
           <div className="space-y-2">
             <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
             <Select
-              value={selectedUserId || "unselected"}
+              value={selectedUserId}
               onValueChange={handleUserSelect}
               disabled={loadingUsers || users.length === 0}
             >
@@ -101,12 +101,16 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
                 <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unselected">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.full_name} ({user.email})
+                    {user.full_name || 'İstifadəçi'} ({user.email})
                   </SelectItem>
                 ))}
+                {users.length === 0 && (
+                  <div className="p-2 text-center text-sm text-muted-foreground">
+                    {loadingUsers ? (t('loading') || 'Yüklənir...') : (t('noUsersFound') || 'İstifadəçi tapılmadı')}
+                  </div>
+                )}
               </SelectContent>
             </Select>
           </div>
