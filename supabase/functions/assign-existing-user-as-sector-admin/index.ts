@@ -45,11 +45,9 @@ serve(async (req) => {
     console.log("Auth uğurludur, userData:", authResult.userData);
 
     // İstəyin məlumatlarını əldə et
-    let requestText;
     let requestData;
-    
     try {
-      requestText = await req.text();
+      const requestText = await req.text();
       console.log("Raw request body:", requestText);
       
       if (!requestText || requestText.trim() === '') {
@@ -59,19 +57,11 @@ serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
         );
       }
-    } catch (textError) {
-      console.error("Request body əldə edilərkən xəta:", textError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Sorğu məlumatları əldə edilərkən xəta" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
-    
-    try {
+      
       requestData = JSON.parse(requestText);
       console.log("Gələn sorğu məlumatları:", JSON.stringify(requestData, null, 2));
-    } catch (jsonError) {
-      console.error("JSON parse xətası:", jsonError);
+    } catch (error) {
+      console.error("JSON parse xətası:", error);
       return new Response(
         JSON.stringify({ success: false, error: "Sorğu məlumatları düzgün JSON formatında deyil" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
