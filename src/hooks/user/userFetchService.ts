@@ -20,8 +20,9 @@ export async function fetchAvailableUsersService() {
     }
     
     console.log("JWT token mövcuddur, uzunluq:", session.access_token.length);
+    console.log("JWT token başlanğıcı:", session.access_token.substring(0, 20) + "...");
     
-    // get_all_users_with_roles edge funksiyasını çağırır
+    // get_all_users_with_roles edge funksiyasını çağırır - ad düzəldildi
     const { data, error } = await supabase.functions.invoke('get_all_users_with_roles', {
       headers: {
         Authorization: `Bearer ${session.access_token}`

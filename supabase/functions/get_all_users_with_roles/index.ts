@@ -15,8 +15,13 @@ serve(async (req) => {
   }
 
   try {
+    // Headers-i daha detallı loqla
+    console.log("Bütün headers:", Object.fromEntries(req.headers.entries()));
+    
     // Auth başlığını al
     const authHeader = req.headers.get('Authorization');
+    console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
+    
     if (!authHeader) {
       console.error('Authorization başlığı tapılmadı');
       return new Response(
