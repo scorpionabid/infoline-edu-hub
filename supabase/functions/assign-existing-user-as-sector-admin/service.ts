@@ -1,6 +1,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { supabaseUrl, supabaseServiceRoleKey } from "./config.ts";
+import { supabaseUrl } from "./config.ts";
 
 /**
  * Sektor admini təyin etmək üçün SQL funksiyasını çağırır
@@ -14,8 +14,13 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
   data?: any;
 }> {
   try {
+    // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
+      console.error(`URL mövcuddur: ${!!supabaseUrl}, Key mövcuddur: ${!!supabaseServiceRoleKey}`);
+      console.error(`URL: ${supabaseUrl && supabaseUrl.substring(0, 10)}...`);
       return { success: false, error: "Server konfiqurasiyası xətası" };
     }
 

@@ -48,28 +48,19 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       const accessToken = sessionData.session.access_token;
       console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
       
-      // Fetch ilə direct sorğu göndərək
-      const response = await fetch('https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/assign-existing-user-as-sector-admin', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
+      // Supabase-in functions API-sini istifadə edək
+      const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
+        body: { 
           sectorId,
           userId
-        })
+        }
       });
       
-      console.log('Edge funksiyasından status kodu:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Edge funksiyası xətası:', response.status, errorText);
-        throw new Error(`Server xətası (${response.status}): ${errorText || 'Bilinməyən xəta'}`);
+      if (error) {
+        console.error('Edge funksiyası xətası:', error);
+        throw new Error(`Server xətası: ${error.message || 'Bilinməyən xəta'}`);
       }
       
-      const data = await response.json();
       console.log('Edge funksiyasının cavabı:', data);
       
       if (!data || !data.success) {

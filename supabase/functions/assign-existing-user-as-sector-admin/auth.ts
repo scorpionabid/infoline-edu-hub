@@ -48,7 +48,17 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
     console.log('Token uzunluğu:', token.length);
     
     // Service Role key ilə supabase client yaradaq
-    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '', {
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseServiceRoleKey) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY mövcud deyil");
+      return { 
+        authorized: false,
+        error: "Server konfiqurasiyası xətası",
+        status: 500
+      };
+    }
+    
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
