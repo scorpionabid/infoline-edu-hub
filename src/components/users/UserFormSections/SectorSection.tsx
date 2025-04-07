@@ -56,7 +56,8 @@ const SectorSection: React.FC<SectorSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">{t('selectSector')}</SelectItem>
+              {/* Boş option dəyəri əvəzinə "none" kimi bir dəyər istifadə edirik */}
+              <SelectItem value="none">{t('selectSector')}</SelectItem>
               {filteredSectors.map((sector) => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sector.name}
