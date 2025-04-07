@@ -1,87 +1,45 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
-import { fetchAvailableUsersService } from '@/hooks/user/userFetchService';
-import { useAuth } from '@/context/AuthContext';
+import { fetchAvailableUsersService } from './user/userFetchService';
 
-export interface UseAvailableUsersReturn {
-  users: FullUserData[];
-  loading: boolean;
-  error: Error | null;
-  fetchAvailableUsers: () => Promise<void>;
-}
-
-export const useAvailableUsers = (): UseAvailableUsersReturn => {
+/**
+ * Mövcud istifadəçiləri əldə etmək üçün hook
+ * Admin təyinatı üçün uyğun olan (sektor admini olmayan və superadmin olmayan) istifadəçiləri qaytarır
+ */
+export const useAvailableUsers = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
 
-  // Mövcud istifadəçiləri əldə etmək
-  const fetchAvailableUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Mövcud istifadəçilər yüklənir...', user?.role, user?.regionId);
-      
-      // User fetch servisini istifadə et
-      const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
-      
-      if (fetchError) {
-        console.error('İstifadəçiləri yükləyərkən xəta baş verdi:', fetchError);
-        throw new Error(fetchError.message);
-      }
-      
-      if (!fetchedUsers || !Array.isArray(fetchedUsers)) {
-        console.warn('Heç bir istifadəçi tapılmadı veya data massiv deyil', fetchedUsers);
-        setUsers([]);
-        return;
-      }
-      
-      console.log('Alınan istifadəçilər:', fetchedUsers.length, fetchedUsers);
-      
-      // İstifadəçi region admini isə, yalnız onun bölgəsindəki və ya role olmayan istifadəçiləri göstər
-      let filteredUsers = fetchedUsers;
-      if (user && user.role === 'regionadmin' && user.regionId) {
-        console.log('Region admin filter tətbiq edilir:', user.regionId);
-        
-        filteredUsers = fetchedUsers.filter(u => {
-          // Rolsuz/sadəcə user olan istifadəçilər təyin edilə bilər
-          const isBasicUser = !u.role || u.role === 'user';
-          
-          // Ya da eyni regiondan olan, lakin regionadmin/sectoradmin olmayan istifadəçilər
-          const isSameRegion = u.region_id === user.regionId || 
-                             (!u.region_id && !u.sector_id); // Region və sektoru olmayan istifadəçilər də görünsün
-          
-          return isBasicUser || isSameRegion;
-        });
-        
-        console.log('Filterlənmiş istifadəçilər:', filteredUsers.length);
-      }
-      
-      console.log(`${filteredUsers.length} istifadəçi yükləndi`);
-      setUsers(filteredUsers);
-      
-    } catch (err) {
-      console.error('İstifadəçiləri əldə edərkən xəta:', err);
-      setError(err instanceof Error ? err : new Error('İstifadəçiləri yükləyərkən xəta baş verdi'));
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  // İlkin yükləmə - komponent ilk dəfə mount olduqda istifadəçiləri yüklə
   useEffect(() => {
-    if (user) {
-      fetchAvailableUsers();
-    }
-  }, [fetchAvailableUsers, user]);
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
+        
+        if (fetchError) {
+          throw fetchError;
+        }
+        
+        setUsers(fetchedUsers);
+      } catch (err) {
+        console.error('İstifadəçiləri əldə edərkən xəta:', err);
+        setError(err instanceof Error ? err : new Error('İstifadəçilər yüklənərkən xəta baş verdi'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   return {
     users,
     loading,
-    error,
-    fetchAvailableUsers
+    error
   };
 };
