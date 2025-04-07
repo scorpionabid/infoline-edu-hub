@@ -4,8 +4,11 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 import { useAssignExistingUserAsSectorAdmin } from '@/hooks/useAssignExistingUserAsSectorAdmin';
-import { Sector } from '@/types/supabase';
+import { Sector, FullUserData } from '@/types/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useForm } from 'react-hook-form';
 
 import { 
   SectorAdminDialogHeader, 
@@ -33,9 +36,36 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   const { isAuthenticated } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [showExistingAdmins, setShowExistingAdmins] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState<FullUserData[]>([]);
+  
+  // Form yaratmaq
+  const form = useForm({
+    defaultValues: {
+      showExistingAdmins: false
+    }
+  });
   
   const { users, loading: loadingUsers, error: usersError, fetchAvailableUsers } = useAvailableUsers();
   const { assignUserAsSectorAdmin, loading: assigningUser } = useAssignExistingUserAsSectorAdmin();
+  
+  // Adminləri filtirləmək üçün effekt
+  useEffect(() => {
+    if (users) {
+      if (showExistingAdmins) {
+        // Bütün istifadəçiləri göstər
+        setFilteredUsers(users);
+      } else {
+        // Mövcud adminləri gizlət
+        setFilteredUsers(users.filter(user => {
+          return !user.role || 
+            (user.role === 'sectoradmin' && !user.sector_id) ||
+            (user.role !== 'superadmin' && user.role !== 'regionadmin' && 
+             user.role !== 'sectoradmin' && user.role !== 'schooladmin');
+        }));
+      }
+    }
+  }, [users, showExistingAdmins]);
   
   // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
   useEffect(() => {
@@ -43,6 +73,8 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       console.log('Dialog açıldı, istifadəçiləri yenidən yükləmə başladı...');
       setSelectedUserId("");
       setError(null);
+      setShowExistingAdmins(false);
+      form.reset({ showExistingAdmins: false });
       
       if (isAuthenticated) {
         fetchAvailableUsers();
@@ -50,7 +82,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
         setError(t('authRequiredForUsers') || 'İstifadəçiləri əldə etmək üçün giriş etməlisiniz');
       }
     }
-  }, [open, fetchAvailableUsers, isAuthenticated, t]);
+  }, [open, fetchAvailableUsers, isAuthenticated, t, form]);
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
@@ -108,7 +140,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
 
   // Dialog content
   const dialogContent = (
-    <>
+    <Form {...form}>
       <SectorAdminDialogHeader 
         sector={sector} 
         isEmbedded={isEmbedded} 
@@ -121,11 +153,32 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
 
       <div className="py-4 space-y-4">
         <SectorAdminUserSelector
-          users={users}
+          users={filteredUsers}
           loading={loadingUsers}
           selectedUserId={selectedUserId}
           onUserSelect={handleUserSelect}
           onRefresh={handleForceRefresh}
+        />
+        
+        <FormField
+          control={form.control}
+          name="showExistingAdmins"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2 mt-2">
+              <FormControl>
+                <Checkbox
+                  checked={showExistingAdmins}
+                  onCheckedChange={(checked) => {
+                    setShowExistingAdmins(Boolean(checked));
+                    field.onChange(Boolean(checked));
+                  }}
+                />
+              </FormControl>
+              <div className="space-y-0 leading-none">
+                <FormLabel>{t("showExistingAdmins") || 'Mövcud adminləri göstər'}</FormLabel>
+              </div>
+            </FormItem>
+          )}
         />
 
         <SectorAdminDialogFooter
@@ -135,7 +188,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
           onAssignAdmin={handleAssignAdmin}
         />
       </div>
-    </>
+    </Form>
   );
 
   if (isEmbedded) {

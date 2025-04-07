@@ -43,6 +43,7 @@ const translations = {
   apply: 'Apply',
   filters: 'Filters',
   showArchived: 'Show Archived',
+  showExistingAdmins: 'Show Existing Admins',
   archived: 'Archived',
   unarchived: 'Unarchived',
   archiveSuccess: 'Data archived successfully',
