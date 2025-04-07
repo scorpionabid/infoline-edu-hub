@@ -1,5 +1,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
+import { supabaseUrl, supabaseServiceRoleKey } from "./config.ts";
 
 // Məcburi parametrlərin yoxlanması
 export function validateRequiredParams(
@@ -20,11 +21,8 @@ export function validateRequiredParams(
 // Region admininin sektora giriş hüququnun yoxlanması
 export async function validateRegionAdminAccess(userData: any, sectorId: string) {
   try {
-    // Supabase client yaradılır
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-
-    if (!supabaseUrl || !supabaseServiceKey) {
+    // Supabase client yaradılır - artıq Deno.env.get istifadə etmirik
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
       console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
       return { valid: false, error: "Server konfigurasiyası xətası" };
     }
@@ -32,7 +30,7 @@ export async function validateRegionAdminAccess(userData: any, sectorId: string)
     console.log(`RegionAdmin validation üçün userData:`, userData);
     console.log(`Yoxlanacaq sectorId:`, sectorId);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
