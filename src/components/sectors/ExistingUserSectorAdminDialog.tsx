@@ -28,7 +28,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   
-  const { users, loading: loadingUsers, fetchAvailableUsers } = useAvailableUsers();
+  const { users, loading: loadingUsers, error: usersError, fetchAvailableUsers } = useAvailableUsers();
   const { assignUserAsSectorAdmin, loading: assigningUser } = useAssignExistingUserAsSectorAdmin();
   
   // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
@@ -37,9 +37,16 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       setSelectedUserId("");
       setError(null);
       fetchAvailableUsers();
-      console.log('Dialog açıldı, istifadəçilər yüklənir...');
+      console.log('Dialog açıldı, istifadəçilər yüklənir...', users.length);
     }
   }, [open, fetchAvailableUsers]);
+
+  // Xəta halında əlavə debug məlumatı
+  useEffect(() => {
+    if (usersError) {
+      console.error('İstifadəçiləri yükləmə xətası:', usersError);
+    }
+  }, [usersError]);
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
@@ -79,6 +86,9 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     }
   };
 
+  // İstifadəçi siyahısının debug məlumatı
+  console.log('Mövcud istifadəçilər:', users.length, loadingUsers, usersError);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
@@ -96,13 +106,22 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
           </Alert>
         )}
 
+        {usersError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta'}: {usersError.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="py-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
             <Select
               value={selectedUserId}
               onValueChange={handleUserSelect}
-              disabled={loadingUsers || users.length === 0}
+              disabled={loadingUsers}
             >
               <SelectTrigger id="user-select">
                 <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />

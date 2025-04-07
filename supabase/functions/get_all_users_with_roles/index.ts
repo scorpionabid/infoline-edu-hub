@@ -15,6 +15,16 @@ serve(async (req) => {
   }
 
   try {
+    // Auth başlığını al
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Authorization başlığı tapılmadı');
+      return new Response(
+        JSON.stringify({ error: 'Authorization başlığı tələb olunur' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
     // Əsas supabase client yaratma
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';

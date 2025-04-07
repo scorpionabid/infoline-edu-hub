@@ -8,8 +8,25 @@ export async function fetchAvailableUsersService() {
   try {
     console.log('İstifadəçiləri əldə etmə servisində...');
     
+    // Cari JWT tokeni əldə et
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("Aktiv istifadəçi sesiyası tapılmadı");
+      return { 
+        error: new Error("Avtorizasiya xətası"),
+        users: [] 
+      };
+    }
+    
+    console.log("JWT token mövcuddur, uzunluq:", session.access_token.length);
+    
     // get_all_users_with_roles edge funksiyasını çağırır
-    const { data, error } = await supabase.functions.invoke('get-all-users-with-roles');
+    const { data, error } = await supabase.functions.invoke('get_all_users_with_roles', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
     
     if (error) {
       console.error('İstifadəçiləri əldə edərkən edge funksiya xətası:', error);
