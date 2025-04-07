@@ -20,20 +20,28 @@ export const SectorAdminDialogFooter: React.FC<SectorAdminDialogFooterProps> = (
   const { t } = useLanguage();
   
   return (
-    <div className="flex justify-end space-x-2 pt-4">
+    <div className="flex justify-end space-x-2 pt-2">
       <Button 
         type="button" 
         variant="outline" 
         onClick={onCancel}
+        disabled={assigningUser}
       >
-        {t('cancel') || 'Ləğv et'}
+        {t('cancel') || 'İmtina'}
       </Button>
       <Button 
+        type="button" 
         onClick={onAssignAdmin}
-        disabled={!selectedUserId || assigningUser}
+        disabled={assigningUser || !selectedUserId}
       >
-        {assigningUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {t('assignAdmin') || 'Admin təyin et'}
+        {assigningUser ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {t('assigning') || 'Təyin edilir...'}
+          </>
+        ) : (
+          t('assignAdmin') || 'Admin Təyin Et'
+        )}
       </Button>
     </div>
   );

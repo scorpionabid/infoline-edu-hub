@@ -2,108 +2,69 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { supabaseUrl } from "./config.ts";
 
-// İstifadəçi məlumatları tipi
-interface UserData {
-  id: string;
-  email: string;
-  role: string;
-  region_id?: string;
-}
-
 /**
- * Tələb olunan parametrləri doğrulayır
+ * Sektor admin təyin etmək üçün parametrləri doğrulayır
  * @param sectorId Sektor ID
  * @param userId İstifadəçi ID
  * @returns Doğrulama nəticəsi
  */
-export function validateRequiredParams(sectorId: string, userId: string) {
+export function validateRequiredParams(sectorId?: string, userId?: string): {
+  valid: boolean;
+  error?: string;
+} {
   if (!sectorId) {
-    return { valid: false, error: "Sektor ID tələb olunur" };
+    return {
+      valid: false,
+      error: "Sektor ID tələb olunur"
+    };
   }
   
   if (!userId) {
-    return { valid: false, error: "İstifadəçi ID tələb olunur" };
+    return {
+      valid: false,
+      error: "İstifadəçi ID tələb olunur"
+    };
   }
   
   return { valid: true };
 }
 
 /**
- * Region admini üçün sektora giriş icazəsini yoxlayır
+ * Region admin səlahiyyətlərini doğrulayır
  * @param userData İstifadəçi məlumatları
  * @param sectorId Sektor ID
  * @returns Doğrulama nəticəsi
  */
-export async function validateRegionAdminAccess(userData: UserData, sectorId: string) {
-  // Superadminlər bütün sektorlara giriş hüququna malikdir
-  if (userData.role === "superadmin") {
-    return { valid: true };
-  }
-  
-  // RegionAdmin yalnız öz regionuna aid olan sektorlara giriş hüququna malikdir
-  if (userData.role === "regionadmin" && userData.region_id) {
-    try {
-      // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
-      const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      
-      if (!supabaseServiceRoleKey) {
-        console.error("SUPABASE_SERVICE_ROLE_KEY mövcud deyil");
-        return { valid: false, error: "Server konfiqurasiyası xətası" };
-      }
-      
-      const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      });
-      
-      // Sektorun regionunu yoxla
-      const { data: sector, error } = await supabase
-        .from("sectors")
-        .select("region_id")
-        .eq("id", sectorId)
-        .single();
-      
-      if (error) {
-        console.error("Sektor sorğusu xətası:", error);
-        return { valid: false, error: "Sektor tapılmadı" };
-      }
-      
-      if (sector.region_id !== userData.region_id) {
-        return { 
-          valid: false, 
-          error: "Bu sektor sizin regionunuza aid deyil və ona giriş hüququnuz yoxdur" 
-        };
-      }
-      
+export async function validateRegionAdminAccess(
+  userData: { id: string; role: string; region_id?: string; },
+  sectorId: string
+): Promise<{
+  valid: boolean;
+  error?: string;
+}> {
+  try {
+    // Superadmin üçün yoxlama etmirik
+    if (userData.role === 'superadmin') {
       return { valid: true };
-    } catch (error) {
-      console.error("Region icazəsi yoxlanılarkən xəta:", error);
-      return { 
-        valid: false, 
-        error: "Region icazəsi yoxlanılarkən xəta baş verdi" 
+    }
+    
+    // Əgər region admin deyilsə
+    if (userData.role !== 'regionadmin') {
+      return {
+        valid: false,
+        error: "Bu əməliyyat üçün superadmin və ya regionadmin səlahiyyətləri tələb olunur"
       };
     }
-  }
-  
-  // Digər rolların icazəsi yoxdur
-  return { valid: false, error: "Bu əməliyyat üçün icazəniz yoxdur" };
-}
-
-/**
- * Sektor admini artıq təyin olunub-olunmadığını yoxlayır
- * @param sectorId Sektor ID
- * @returns Doğrulama nəticəsi
- */
-export async function validateSectorAdminExists(sectorId: string) {
-  try {
-    // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
+    
+    // SUPABASE_SERVICE_ROLE_KEY-i alaq
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    if (!supabaseServiceRoleKey) {
-      console.error("SUPABASE_SERVICE_ROLE_KEY mövcud deyil");
-      return { valid: false, error: "Server konfigurasiyası xətası" };
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
+      return {
+        valid: false,
+        error: "Server konfigurasiya xətası",
+      };
     }
     
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -113,31 +74,96 @@ export async function validateSectorAdminExists(sectorId: string) {
       },
     });
     
-    // Sektorun mövcud admin ID-sini yoxla
-    const { data: sector, error } = await supabase
-      .from("sectors")
-      .select("admin_id")
-      .eq("id", sectorId)
+    // Sektorun region ID-ni əldə edək
+    const { data: sectorData, error: sectorError } = await supabase
+      .from('sectors')
+      .select('region_id')
+      .eq('id', sectorId)
       .single();
-    
-    if (error) {
-      console.error("Sektor admin yoxlama xətası:", error);
-      return { valid: false, error: "Sektor tapılmadı" };
+      
+    if (sectorError) {
+      console.error("Sektor məlumatları əldə edilərkən xəta:", sectorError);
+      return {
+        valid: false,
+        error: "Sektor məlumatları əldə edilərkən xəta: " + sectorError.message
+      };
     }
     
-    if (sector.admin_id) {
-      return { 
-        valid: false, 
-        error: "Bu sektora artıq admin təyin edilib" 
+    // Region admin öz regionuna aid olmayan sektorlara admin təyin edə bilməz
+    if (sectorData.region_id !== userData.region_id) {
+      return {
+        valid: false,
+        error: "Bu sektora admin təyin etmək üçün icazəniz yoxdur"
       };
     }
     
     return { valid: true };
   } catch (error) {
-    console.error("Sektor admin yoxlanılarkən xəta:", error);
-    return { 
-      valid: false, 
-      error: "Sektor admin yoxlanılarkən xəta baş verdi" 
+    console.error("Region giriş hüququ yoxlanarkən xəta:", error);
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : "Region giriş hüququ yoxlanarkən xəta"
+    };
+  }
+}
+
+/**
+ * Sektorun artıq admini olub-olmadığını yoxlayır
+ * @param sectorId Sektor ID
+ * @returns Doğrulama nəticəsi
+ */
+export async function validateSectorAdminExists(sectorId: string): Promise<{
+  valid: boolean;
+  error?: string;
+}> {
+  try {
+    // SUPABASE_SERVICE_ROLE_KEY-i alaq
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
+      return {
+        valid: false,
+        error: "Server konfigurasiya xətası",
+      };
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+    
+    // Sektorun admin ID-ni yoxlayaq
+    const { data: sectorData, error: sectorError } = await supabase
+      .from('sectors')
+      .select('admin_id, name')
+      .eq('id', sectorId)
+      .single();
+      
+    if (sectorError) {
+      console.error("Sektor məlumatları əldə edilərkən xəta:", sectorError);
+      return {
+        valid: false,
+        error: "Sektor məlumatları əldə edilərkən xəta: " + sectorError.message
+      };
+    }
+    
+    // Artıq admin təyin edilib
+    if (sectorData.admin_id) {
+      return {
+        valid: false,
+        error: `Sektor "${sectorData.name}" artıq bir admin ilə təyin edilib`
+      };
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    console.error("Sektor admin yoxlama xətası:", error);
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : "Sektor admin yoxlaması zamanı xəta"
     };
   }
 }
