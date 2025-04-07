@@ -27,7 +27,7 @@ export const useAvailableUsers = () => {
       setLoading(true);
       setError(null);
       
-      console.log('İstifadəçiləri əldə etmə başladı...');
+      console.log('İstifadəçiləri əldə etmə başladı. Cari istifadəçi:', currentUser.id);
       
       // Edge function-dan bütün istifadəçiləri və rollarını əldə edirik
       const { data, error: functionError } = await supabase.functions.invoke('get_all_users_with_roles');
@@ -50,8 +50,16 @@ export const useAvailableUsers = () => {
       const otherUsers = data.users.filter(user => user.id !== currentUser.id);
       console.log(`Cari istifadəçi çıxarıldıqdan sonra ${otherUsers.length} istifadəçi qalır`);
       
+      // Admin təyinatı üçün lazımi statusda olan istifadəçiləri filtrlə
+      const availableUsers = otherUsers.filter(user => {
+        // İstifadəçi aktiv vəziyyətdədirsə və profiles cədvəlində tam məlumatları varsa
+        return user.status !== 'blocked' && user.full_name;
+      });
+      
+      console.log(`Admin təyinatı üçün uyğun olan ${availableUsers.length} istifadəçi filtrləndi`);
+      
       // İstifadəçi məlumatlarını FullUserData formatına çeviririk
-      const formattedUsers = otherUsers.map(user => ({
+      const formattedUsers = availableUsers.map(user => ({
         id: user.id,
         email: user.email || '',
         full_name: user.full_name || 'İsimsiz İstifadəçi',
@@ -77,8 +85,8 @@ export const useAvailableUsers = () => {
         createdAt: user.created_at,
         updatedAt: user.updated_at,
         
-        // Admin olmadığı üçün boşdur
-        adminEntity: null
+        // Admin entity məlumatları
+        adminEntity: user.adminEntity || null
       } as FullUserData));
       
       setUsers(formattedUsers);

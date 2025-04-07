@@ -51,31 +51,54 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   
   // Adminləri filtirləmək üçün effekt
   useEffect(() => {
-    if (users) {
+    if (users && users.length > 0) {
+      console.log(`${users.length} istifadəçi filtrlənəcək. Mövcud adminlər göstərilsin? ${showExistingAdmins}`);
+      
       if (showExistingAdmins) {
         // Bütün istifadəçiləri göstər
         setFilteredUsers(users);
       } else {
         // Təyin edilməmiş istifadəçiləri və sektoradmin olmayan istifadəçiləri göstər
-        setFilteredUsers(users.filter(user => {
-          // Superadmin və regionadminlər istisna edilmir
-          if (user.role === 'superadmin' || user.role === 'regionadmin') return true;
-          
-          // Sektoradmin və schooladmin olmayanlar
-          if (user.role !== 'sectoradmin' && user.role !== 'schooladmin') return true;
-          
-          // Sektoradmin və ya schooladmin, amma təyin edilməmiş (heç bir region, sektor, school təyin edilməyənlər)
-          if ((user.role === 'sectoradmin' || user.role === 'schooladmin') && 
-              !user.region_id && !user.sector_id && !user.school_id) {
+        const filtered = users.filter(user => {
+          // Əvvəlcədən superadmin və regionadminlər hər zaman göstərilir
+          if (user.role === 'superadmin' || user.role === 'regionadmin') {
             return true;
           }
           
-          // Əgər sektoradmin-dirsə, başqa sektora təyin edilməyibsə göstər
-          if (user.role === 'sectoradmin' && !user.sector_id) return true;
+          // Adi istifadəçilər (rolu user olanlar) hər zaman göstərilir
+          if (user.role === 'user') {
+            return true;
+          }
           
-          return false;
-        }));
+          // Artıq sektoradmin olanları filtrləyək (özü admin olan sektordan başqa)
+          if (user.role === 'sectoradmin') {
+            // Admin təyin edilməyibsə
+            if (!user.sector_id) {
+              return true;
+            }
+            // Hazırda baxılan sektorun admini deyilsə, göstərmirik
+            return false;
+          }
+          
+          // Məktəb adminlərini yoxla
+          if (user.role === 'schooladmin') {
+            // Sektor, region və məktəbə bağlı olmayanları göstər
+            // Hazırda istifadəçi təyin edilməyibsə
+            if (!user.sector_id && !user.region_id && !user.school_id) {
+              return true;
+            }
+            // Başqa sektorlardakı məktəblərə bağlı olanları göstərmə
+            return false;
+          }
+          
+          return true;
+        });
+        
+        console.log(`Filtrdən sonra ${filtered.length} istifadəçi qaldı`);
+        setFilteredUsers(filtered);
       }
+    } else {
+      setFilteredUsers([]);
     }
   }, [users, showExistingAdmins]);
   
@@ -120,7 +143,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       const result = await assignUserAsSectorAdmin(sector.id, selectedUserId);
       
       if (result.success) {
-        console.log('Admin uğurla təyin edildi');
+        console.log('Admin uğurla təyin edildi:', result);
         setOpen(false);
         
         // Tətbiqi yeniləmək üçün event triggerlə
@@ -181,8 +204,10 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
                 <Checkbox
                   checked={showExistingAdmins}
                   onCheckedChange={(checked) => {
-                    setShowExistingAdmins(Boolean(checked));
-                    field.onChange(Boolean(checked));
+                    const isChecked = Boolean(checked);
+                    console.log('Checkbox dəyişdi:', isChecked);
+                    setShowExistingAdmins(isChecked);
+                    field.onChange(isChecked);
                   }}
                 />
               </FormControl>

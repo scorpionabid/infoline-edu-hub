@@ -112,7 +112,7 @@ serve(async (req) => {
       }
     }
 
-    // Sektorun artıq admini olub-olmadığını yoxla
+    // Sektorun statusunu yoxla
     const adminExistsResult = await validateSectorAdminExists(sectorId);
     if (!adminExistsResult.valid) {
       console.error("Sektor admin yoxlaması xətası:", adminExistsResult.error);

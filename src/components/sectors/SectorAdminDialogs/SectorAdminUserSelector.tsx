@@ -34,6 +34,38 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
     }
   };
   
+  // İstifadəçi rolunu göstərmək üçün köməkçi funksiya
+  const getUserRoleDisplay = (role: string) => {
+    switch (role) {
+      case 'superadmin':
+        return t('superAdmin') || 'Super Admin';
+      case 'regionadmin':
+        return t('regionAdmin') || 'Region Admin';
+      case 'sectoradmin':
+        return t('sectorAdmin') || 'Sektor Admin';
+      case 'schooladmin':
+        return t('schoolAdmin') || 'Məktəb Admin';
+      default:
+        return t('user') || 'İstifadəçi';
+    }
+  };
+  
+  // İstifadəçi məlumatlarını format et (ad, email, rol)
+  const formatUserDetails = (user: FullUserData) => {
+    const roleName = getUserRoleDisplay(user.role);
+    const details = [];
+    
+    if (user.email) {
+      details.push(user.email);
+    }
+    
+    if (roleName) {
+      details.push(roleName);
+    }
+    
+    return details.length > 0 ? `(${details.join(' • ')})` : '';
+  };
+  
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
@@ -85,13 +117,13 @@ export const SectorAdminUserSelector: React.FC<SectorAdminUserSelectorProps> = (
                 <ScrollArea className="h-72">
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id} className="py-2">
-                      <div className="flex items-center">
-                        <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <div>
-                          <div>{user.full_name || 'İsimsiz İstifadəçi'}</div>
-                          {user.email && (
-                            <div className="text-xs text-muted-foreground">{user.email}</div>
-                          )}
+                      <div className="flex flex-col">
+                        <div className="flex items-center">
+                          <UserPlus className="h-4 w-4 mr-2 text-muted-foreground" />
+                          <span className="font-medium">{user.full_name || 'İsimsiz İstifadəçi'}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground ml-6">
+                          {formatUserDetails(user)}
                         </div>
                       </div>
                     </SelectItem>

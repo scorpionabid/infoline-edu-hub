@@ -12,7 +12,7 @@ export const useAssignExistingUserAsSectorAdmin = () => {
     try {
       setLoading(true);
       
-      console.log('Admin təyin etmək: Sektor ID:', sectorId, 'User ID:', userId);
+      console.log('Admin təyin etmək üçün parametrlər: Sektor ID:', sectorId, 'User ID:', userId);
       
       // Parametrləri doğrula
       if (!sectorId || !userId) {

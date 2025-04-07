@@ -75,6 +75,14 @@ export async function validateRegionAdminAccess(
         };
       }
       
+      if (!sector) {
+        console.error("Sektor tapılmadı:", sectorId);
+        return {
+          valid: false,
+          error: "Sektor tapılmadı"
+        };
+      }
+      
       console.log("Sektor və admin region məlumatları:", {
         sectorRegionId: sector.region_id,
         userRegionId: userData.region_id
@@ -133,7 +141,7 @@ export async function validateSectorAdminExists(sectorId: string): Promise<Valid
     // Sektor məlumatlarını əldə et
     const { data: sector, error: sectorError } = await supabase
       .from("sectors")
-      .select("admin_id")
+      .select("admin_id, name")
       .eq("id", sectorId)
       .single();
     
@@ -145,10 +153,18 @@ export async function validateSectorAdminExists(sectorId: string): Promise<Valid
       };
     }
     
-    // Əvvəlki admin mövcudluğunu loqlayaq, amma sektor admin dəyişikliyinə icazə verək
+    if (!sector) {
+      console.error("Sektor tapılmadı:", sectorId);
+      return {
+        valid: false,
+        error: "Sektor tapılmadı"
+      };
+    }
+    
+    // Köhnə admin olub-olmadığını yoxla amma bloklama, sonra xüsusi emal edəcəyik
     if (sector.admin_id !== null) {
-      console.log(`Sektor ${sectorId} üçün mövcud admin ID: ${sector.admin_id}`);
-      console.log("Mövcud admin silinib yenisi ilə əvəz ediləcək");
+      console.log(`Sektor "${sector.name}" (${sectorId}) üçün mövcud admin ID: ${sector.admin_id}`);
+      console.log("Mövcud admin sonrakı addımlarda əvəz ediləcək");
     }
     
     // Admin dəyişikliyinə icazə veririk
