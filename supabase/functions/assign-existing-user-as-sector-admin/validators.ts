@@ -120,28 +120,13 @@ export async function validateSectorAdminExists(sectorId: string): Promise<Valid
       };
     }
     
-    // Sektorun artıq admin-i olub-olmadığını yoxla
+    // Əvvəlki admin mövcudluğunu loqlayaq, amma sektor admin dəyişikliyinə icazə verək
     if (sector.admin_id !== null) {
-      // Mövcud admini user_roles-dan yoxla
-      const { data: adminRole, error: adminRoleError } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("sector_id", sectorId)
-        .eq("role", "sectoradmin")
-        .maybeSingle();
-      
-      // Əgər user_roles-də tapılırsa, xəta qaytar
-      if (!adminRoleError && adminRole) {
-        return {
-          valid: false,
-          error: "Bu sektora artıq bir admin təyin edilib. Əvvəlcə onu silməlisiniz."
-        };
-      }
-      
-      // Əgər admin_id var, amma user_roles-də qeyd olunmayıbsa, davam edə bilərik
-      console.log("Sektor admin ID var, ancaq user_roles-də rolu tapılmadı");
+      console.log(`Sektor ${sectorId} üçün mövcud admin ID: ${sector.admin_id}`);
+      console.log("Mövcud admin silinib yenisi ilə əvəz ediləcək");
     }
     
+    // Admin dəyişikliyinə icazə veririk
     return { valid: true };
   } catch (error) {
     return {

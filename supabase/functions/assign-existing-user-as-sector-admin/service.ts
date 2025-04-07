@@ -36,7 +36,7 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
     // Əvvəlcə region ID-ni əldə edirik
     const { data: sectorData, error: sectorError } = await supabase
       .from('sectors')
-      .select('region_id')
+      .select('region_id, admin_id')
       .eq('id', sectorId)
       .single();
       
@@ -46,6 +46,24 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
     }
     
     const regionId = sectorData.region_id;
+    const currentAdminId = sectorData.admin_id;
+    
+    // Əgər mövcud admin varsa, əvvəlcə onun rolunu təmizləyək
+    if (currentAdminId) {
+      console.log(`Sektor ${sectorId} üçün mövcud admin (${currentAdminId}) silinir...`);
+      
+      const { error: removeRoleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', currentAdminId)
+        .eq('role', 'sectoradmin')
+        .eq('sector_id', sectorId);
+        
+      if (removeRoleError) {
+        console.error("Köhnə sektor admin rolunun silinməsi zamanı xəta:", removeRoleError);
+        // Bu xəta kritik deyil, davam edə bilərik
+      }
+    }
     
     // SQL funksiyasını çağır - mövcud assign_sector_admin funksiyasını istifadə edirik
     const { data, error } = await supabase.rpc(
