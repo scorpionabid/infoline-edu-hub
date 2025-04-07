@@ -43,10 +43,10 @@ const SectorSection: React.FC<SectorSectionProps> = ({
         <FormItem>
           <FormLabel>{t('sector')}</FormLabel>
           <Select
-            value={data.sectorId || ""}
+            value={data.sectorId || "unselected"}
             onValueChange={(value) => {
-              field.onChange(value);
-              onFormChange('sectorId', value);
+              field.onChange(value === "unselected" ? "" : value);
+              onFormChange('sectorId', value === "unselected" ? "" : value);
             }}
             disabled={filteredSectors.length === 0}
           >
@@ -56,8 +56,7 @@ const SectorSection: React.FC<SectorSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {/* Boş option dəyəri əvəzinə "none" kimi bir dəyər istifadə edirik */}
-              <SelectItem value="none">{t('selectSector')}</SelectItem>
+              <SelectItem value="unselected">{t('selectSector')}</SelectItem>
               {filteredSectors.map((sector) => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sector.name}

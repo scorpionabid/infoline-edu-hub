@@ -1,21 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Sector } from '@/types/supabase';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AdminUserSelector } from '@/components/regions/AdminDialog/AdminUserSelector';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 import { useAssignExistingUserAsSectorAdmin } from '@/hooks/useAssignExistingUserAsSectorAdmin';
-import { useAuth } from '@/context/AuthContext';
+import { Sector } from '@/types/supabase';
 
 interface ExistingUserSectorAdminDialogProps {
   open: boolean;
@@ -26,62 +20,55 @@ interface ExistingUserSectorAdminDialogProps {
 
 export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDialogProps> = ({ 
   open, 
-  setOpen, 
+  setOpen,
   sector,
   onSuccess
 }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  const { users, loading: loadingUsers, error: usersError, fetchAvailableUsers } = useAvailableUsers();
-  const { assignUserAsSectorAdmin, loading: assigningAdmin } = useAssignExistingUserAsSectorAdmin();
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-
-  // Dialog açıldığında istifadəçiləri yükləyək
+  
+  const { availableUsers, loading: loadingUsers } = useAvailableUsers();
+  const { assignUserAsSectorAdmin, loading: assigningUser } = useAssignExistingUserAsSectorAdmin();
+  
+  // Dialog açıldığında seçimləri sıfırla
   useEffect(() => {
     if (open) {
-      console.log('Dialog açıldı, istifadəçilər yüklənir...');
+      setSelectedUserId(null);
       setError(null);
-      setSelectedUserId('');
-      fetchAvailableUsers();
     }
-  }, [open, fetchAvailableUsers]);
+  }, [open]);
 
-  const handleAssign = async () => {
-    if (!sector) {
-      setError('Sektor mövcud deyil');
-      return;
-    }
-    
+  // İstifadəçi seçimini emal et
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+  };
+
+  // Sektora admin təyin et
+  const handleAssignAdmin = async () => {
     if (!selectedUserId) {
-      setError(t('selectUserRequired') || 'Zəhmət olmasa istifadəçi seçin');
+      setError(t('selectUserFirst') || 'Zəhmət olmasa bir istifadəçi seçin');
       return;
     }
-    
+
+    if (!sector?.id) {
+      setError(t('invalidSector') || 'Sektor məlumatları düzgün deyil');
+      return;
+    }
+
     try {
-      setError(null);
-      
-      console.log('Sektor admini təyin etmə cəhdi:', {
-        sectorId: sector.id,
-        userId: selectedUserId
-      });
-      
-      // Parametr adları düzgün olmalıdır - backend ilə uyğunlaşdırılıb
       const result = await assignUserAsSectorAdmin(sector.id, selectedUserId);
-      
-      console.log('Təyinat nəticəsi:', result);
       
       if (result.success) {
         setOpen(false);
         if (onSuccess) {
           onSuccess();
         }
-      } else if (result.error) {
-        setError(result.error);
+      } else {
+        setError(result.error || t('assignmentFailed') || 'Admin təyin edilərkən xəta baş verdi');
       }
     } catch (error: any) {
-      console.error('Admin təyin etmə xətası:', error);
-      setError(error.message || 'Admin təyin edilərkən xəta baş verdi');
+      setError(error.message || t('unexpectedError') || 'Gözlənilməz xəta');
     }
   };
 
@@ -89,59 +76,57 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('assignSectorAdmin') || 'Sektor admini təyin et'}</DialogTitle>
+          <DialogTitle>{t('assignExistingUserAsSectorAdmin') || 'Mövcud istifadəçini sektor admini təyin et'}</DialogTitle>
           <DialogDescription>
-            {t('existingUserAdminHelp') || `Seçilmiş istifadəçi "${sector?.name}" sektoru üçün admin səlahiyyətlərinə malik olacaq.`}
+            {t('sectorAdminExistingDesc') || `"${sector?.name}" sektoru üçün mövcud istifadəçini admin kimi təyin edin`}
           </DialogDescription>
         </DialogHeader>
-        
+
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
-        {user?.role === 'regionadmin' && (
-          <Alert variant="info" className="mb-4">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              {t('regionAdminPermissionInfo') || 'Siz yalnız öz regionunuza aid istifadəçiləri sektor admini təyin edə bilərsiniz.'}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="py-4">
-          <AdminUserSelector
-            users={users}
-            loading={loadingUsers}
-            error={usersError}
-            selectedUserId={selectedUserId}
-            onUserChange={(userId) => setSelectedUserId(userId)}
-          />
-        </div>
-        
-        <div className="flex justify-end gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setOpen(false)}
-            disabled={assigningAdmin}
-          >
-            {t('cancel') || 'Ləğv et'}
-          </Button>
-          <Button 
-            onClick={handleAssign}
-            disabled={assigningAdmin || !selectedUserId}
-          >
-            {assigningAdmin ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('loading') || 'Yüklənir...'}
-              </>
-            ) : (
-              t('assignAdmin') || 'Admin təyin et'
-            )}
-          </Button>
+
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
+            <Select
+              value={selectedUserId || "unselected"}
+              onValueChange={(value) => handleUserSelect(value === "unselected" ? "" : value)}
+              disabled={loadingUsers || availableUsers.length === 0}
+            >
+              <SelectTrigger id="user-select">
+                <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unselected">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
+                {availableUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name} ({user.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+            >
+              {t('cancel') || 'Ləğv et'}
+            </Button>
+            <Button 
+              onClick={handleAssignAdmin}
+              disabled={!selectedUserId || assigningUser}
+            >
+              {assigningUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('assignAdmin') || 'Admin təyin et'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

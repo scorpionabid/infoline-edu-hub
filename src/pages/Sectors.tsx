@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
