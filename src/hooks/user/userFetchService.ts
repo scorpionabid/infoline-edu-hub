@@ -8,7 +8,7 @@ export async function fetchAvailableUsersService() {
   try {
     console.log('İstifadəçiləri əldə etmə servisində...');
     
-    // Cari JWT tokeni əldə et
+    // Cari sessiyadan JWT tokeni əldə et
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
@@ -29,23 +29,27 @@ export async function fetchAvailableUsersService() {
     
     const accessToken = sessionData.session.access_token;
     console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
-    console.log("JWT token başlanğıcı:", accessToken.substring(0, 20) + "...");
     
-    // get_all_users_with_roles edge funksiyasını çağırır 
-    const { data, error } = await supabase.functions.invoke('get_all_users_with_roles', {
+    // Service key ilə işləyən edge funksiyası çağırılır
+    const response = await fetch(`https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/get_all_users_with_roles`, {
+      method: 'GET',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
     
-    if (error) {
-      console.error('İstifadəçiləri əldə edərkən edge funksiya xətası:', error);
+    if (!response.ok) {
+      console.error('Edge funksiya xətası:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
       return { 
-        error,
+        error: new Error(`Edge funksiya xətası: ${response.status} ${response.statusText}`),
         users: [] 
       };
     }
+    
+    const data = await response.json();
     
     if (!data || !data.users || !Array.isArray(data.users)) {
       console.error('Edge funksiyasından qayıdan cavab düzgün formatda deyil:', data);

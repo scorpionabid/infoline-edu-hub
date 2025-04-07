@@ -12,19 +12,23 @@ export const useAvailableUsers = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAuthenticated } = useAuth();
 
   const fetchAvailableUsers = useCallback(async () => {
+    if (!isAuthenticated || !currentUser) {
+      console.warn('İstifadəçilər əldə edilərkən cari istifadəçi avtorizasiya olunmayıb');
+      setError(new Error('İstifadəçiləri əldə etmək üçün əvvəlcə daxil olun'));
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
       console.log('İstifadəçiləri əldə etmə başladı...');
       console.log('Cari istifadəçi:', currentUser?.id, currentUser?.email);
-      
-      if (!currentUser) {
-        console.warn('İstifadəçilər əldə edilərkən cari istifadəçi avtorizasiya olunmayıb');
-      }
       
       const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
       
@@ -41,11 +45,11 @@ export const useAvailableUsers = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, isAuthenticated]);
 
   // Cari istifadəçi dəyişdikdə istifadəçiləri yenidən əldə et
   useEffect(() => {
-    if (currentUser) {
+    if (isAuthenticated && currentUser) {
       fetchAvailableUsers();
     } else {
       console.log('Cari istifadəçi autentifikasiya olunmayıb, istifadəçi sorğusu edilmir');
@@ -53,7 +57,7 @@ export const useAvailableUsers = () => {
       setError(new Error('İstifadəçiləri əldə etmək üçün əvvəlcə daxil olun'));
       setLoading(false);
     }
-  }, [fetchAvailableUsers, currentUser]);
+  }, [fetchAvailableUsers, currentUser, isAuthenticated]);
 
   return {
     users,

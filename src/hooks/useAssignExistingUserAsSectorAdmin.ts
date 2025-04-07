@@ -47,26 +47,30 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       
       const accessToken = sessionData.session.access_token;
       console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
-      console.log("JWT token başlanğıcı:", accessToken.substring(0, 20) + "...");
       
-      // Edge funksiyasını çağır və Authorization başlığını ötür
-      const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
-        body: { 
+      // Fetch ilə direct sorğu göndərək
+      const response = await fetch('https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/assign-existing-user-as-sector-admin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
           sectorId,
           userId
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
+        })
       });
       
-      console.log('Edge funksiyasının cavabı:', data, error);
+      console.log('Edge funksiyasından status kodu:', response.status);
       
-      if (error) {
-        console.error('Edge funksiyası xətası:', error);
-        throw new Error(error.message || 'Sektor admini təyin edilərkən xəta baş verdi');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Edge funksiyası xətası:', response.status, errorText);
+        throw new Error(`Server xətası (${response.status}): ${errorText || 'Bilinməyən xəta'}`);
       }
+      
+      const data = await response.json();
+      console.log('Edge funksiyasının cavabı:', data);
       
       if (!data || !data.success) {
         console.error('Sektor admin təyinatı uğursuz oldu:', data?.error || 'Bilinməyən səbəb');

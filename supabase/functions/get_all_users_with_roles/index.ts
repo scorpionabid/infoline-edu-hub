@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -22,10 +23,6 @@ serve(async (req) => {
     // Auth başlığını al
     const authHeader = req.headers.get('Authorization');
     console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
-    if (authHeader) {
-      console.log("Auth header uzunluğu:", authHeader.length);
-      console.log("Auth header başlanğıcı:", authHeader.substring(0, 30) + "...");
-    }
     
     if (!authHeader) {
       console.error('Authorization başlığı tapılmadı');
@@ -33,6 +30,11 @@ serve(async (req) => {
         JSON.stringify({ error: 'Authorization başlığı tələb olunur' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
+    }
+    
+    if (authHeader) {
+      console.log("Auth header uzunluğu:", authHeader.length);
+      console.log("Auth header başlanğıcı:", authHeader.substring(0, 30) + "...");
     }
 
     // Əsas supabase client yaratma
@@ -47,30 +49,56 @@ serve(async (req) => {
       );
     }
 
-    // Auth token ilə client
-    const supabaseAuth = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
+    // Service client istifadə edək, JWT token yoxlaması olmadan
+    const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
       }
     });
 
-    // Cari istifadəçini doğrula
+    // Auth token ilə istifadəçini doğrulayaq
     try {
-      const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+      // Token-dan istifadəçini əldə et
+      const token = authHeader.replace('Bearer ', '');
+      const { data: jwtData, error: jwtError } = await supabase.auth.getUser(token);
       
-      if (userError || !user) {
-        console.error('İstifadəçi autentifikasiya xətası:', userError);
+      if (jwtError || !jwtData.user) {
+        console.error('JWT token yoxlaması zamanı xəta:', jwtError);
         return new Response(
-          JSON.stringify({ error: 'Avtorizasiya xətası - istifadəçi tapılmadı' }),
+          JSON.stringify({ error: 'Avtorizasiya xətası - token doğrulanmadı' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
         );
       }
       
-      console.log('Cari istifadəçi ID:', user.id);
+      console.log('Cari istifadəçi ID:', jwtData.user.id);
+      
+      // İstifadəçinin rolunu yoxla
+      const { data: userRoleData, error: userRoleError } = await supabase
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", jwtData.user.id)
+        .single();
+
+      if (userRoleError) {
+        console.error('İstifadəçi rolu sorğusu xətası:', userRoleError);
+        return new Response(
+          JSON.stringify({ error: 'İstifadəçi rolu tapılmadı' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
+
+      const userRole = userRoleData.role;
+      console.log("İstifadəçi rolu:", userRole);
+
+      // Yalnız superadmin və regionadmin rolları icazəlidir
+      if (userRole !== "superadmin" && userRole !== "regionadmin") {
+        console.error("İcazəsiz giriş - yalnız superadmin və regionadmin");
+        return new Response(
+          JSON.stringify({ error: 'Bu əməliyyat üçün superadmin və ya regionadmin səlahiyyətləri tələb olunur' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
     } catch (authError) {
       console.error('Auth yoxlamada xəta:', authError);
       return new Response(
@@ -78,14 +106,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
     }
-
-    // Admin işləri üçün client
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
 
     console.log('Edge funksiyası işə salındı: get_all_users_with_roles');
     

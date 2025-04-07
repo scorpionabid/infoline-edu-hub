@@ -11,6 +11,7 @@ import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 import { useAssignExistingUserAsSectorAdmin } from '@/hooks/useAssignExistingUserAsSectorAdmin';
 import { Sector } from '@/types/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface ExistingUserSectorAdminDialogProps {
   open: boolean;
@@ -26,7 +27,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   onSuccess
 }) => {
   const { t } = useLanguage();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   
@@ -36,12 +37,17 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
   useEffect(() => {
     if (open) {
-      console.log('Dialog açıldı, istifadəçinin auth statusu:', currentUser ? 'Authenticated' : 'Not authenticated');
+      console.log('Dialog açıldı, istifadəçinin auth statusu:', isAuthenticated ? 'Authenticated' : 'Not authenticated');
       setSelectedUserId("");
       setError(null);
-      fetchAvailableUsers();
+      
+      if (isAuthenticated) {
+        fetchAvailableUsers();
+      } else {
+        setError('İstifadəçiləri əldə etmək üçün giriş etməlisiniz');
+      }
     }
-  }, [open, fetchAvailableUsers, currentUser]);
+  }, [open, fetchAvailableUsers, isAuthenticated]);
 
   // Xəta halında əlavə debug məlumatı
   useEffect(() => {
@@ -55,8 +61,10 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   useEffect(() => {
     if (users && users.length > 0) {
       console.log('İstifadəçilər uğurla yükləndi. İstifadəçi sayı:', users.length);
+    } else if (users && users.length === 0 && !loadingUsers && !usersError) {
+      console.log('İstifadəçilər yükləndi, lakin heç bir uyğun istifadəçi tapılmadı');
     }
-  }, [users]);
+  }, [users, loadingUsers, usersError]);
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
@@ -83,6 +91,9 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       
       if (result.success) {
         console.log('Admin uğurla təyin edildi');
+        toast.success(t('adminAssignSuccess') || 'Admin təyin edildi', {
+          description: t('adminAssignSuccessDesc') || 'İstifadəçi uğurla sektor admini təyin edildi'
+        });
         setOpen(false);
         if (onSuccess) {
           onSuccess();

@@ -43,17 +43,12 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
     console.log('Auth header ilə autentifikasiya başlayır');
     console.log('Auth header tipi:', typeof authHeader);
     console.log('Auth header uzunluğu:', authHeader.length);
-    console.log('Auth header başlanğıcı:', authHeader.substring(0, 30) + '...');
-
+    
     const token = authHeader.split(' ')[1];
     console.log('Token uzunluğu:', token.length);
-    console.log('Token başlanğıcı:', token.substring(0, 20) + '...');
-
-    // Autentifikasiya olunmuş istifadəçiyə bağlı client
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
+    
+    // Service Role key ilə supabase client yaradaq
+    const supabaseAdmin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '', {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
@@ -61,19 +56,19 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
     });
 
     try {
-      // İstifadəçi məlumatlarını əldə et
-      const { data: { user: currentUser }, error: userError } = await supabaseAuth.auth.getUser();
+      // Tokendən istifadəçini əldə et
+      const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
 
       if (userError) {
-        console.error("İstifadəçi autentifikasiya xətası:", userError);
+        console.error("Token yoxlaması xətası:", userError);
         return { 
           authorized: false, 
-          error: userError?.message || "İstifadəçi autentifikasiya olunmayıb",
+          error: userError.message || "Token yoxlaması zamanı xəta",
           status: 401 
         };
       }
 
-      if (!currentUser) {
+      if (!userData || !userData.user) {
         console.error("Cari istifadəçi tapılmadı");
         return { 
           authorized: false, 
@@ -82,13 +77,13 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
         };
       }
 
-      console.log("Cari istifadəçi:", currentUser.id, currentUser.email);
+      console.log("Cari istifadəçi:", userData.user.id, userData.user.email);
 
       // İstifadəçi rolunu yoxla
-      const { data: userRoleData, error: userRoleError } = await supabaseAuth
+      const { data: userRoleData, error: userRoleError } = await supabaseAdmin
         .from("user_roles")
         .select("*")
-        .eq("user_id", currentUser.id)
+        .eq("user_id", userData.user.id)
         .single();
 
       if (userRoleError) {
@@ -116,8 +111,8 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
       return { 
         authorized: true, 
         userData: {
-          id: currentUser.id,
-          email: currentUser.email || '',
+          id: userData.user.id,
+          email: userData.user.email || '',
           role: userRole,
           region_id: userRoleData.region_id
         }
