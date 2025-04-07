@@ -58,12 +58,21 @@ serve(async (req) => {
         );
       }
       
-      requestData = JSON.parse(requestText);
-      console.log("Gələn sorğu məlumatları:", JSON.stringify(requestData, null, 2));
+      // Gələn məlumatları JSON formatında parse et
+      try {
+        requestData = JSON.parse(requestText);
+        console.log("Gələn sorğu məlumatları (parsed):", JSON.stringify(requestData, null, 2));
+      } catch (parseError) {
+        console.error("JSON parse xətası:", parseError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Sorğu məlumatları düzgün JSON formatında deyil" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
     } catch (error) {
-      console.error("JSON parse xətası:", error);
+      console.error("Sorğu məlumatları oxunarkən xəta:", error);
       return new Response(
-        JSON.stringify({ success: false, error: "Sorğu məlumatları düzgün JSON formatında deyil" }),
+        JSON.stringify({ success: false, error: "Sorğu məlumatları oxunarkən xəta baş verdi" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }

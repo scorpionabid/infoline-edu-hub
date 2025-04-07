@@ -34,12 +34,12 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         sectorId
       }));
       
-      // Supabase edge funksiyasını çağır
+      // Supabase edge funksiyasını çağır - body düzgün JSON formatında olmalıdır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
-        body: {
+        body: JSON.stringify({
           userId, 
           sectorId
-        }
+        })
       });
       
       if (error) {
