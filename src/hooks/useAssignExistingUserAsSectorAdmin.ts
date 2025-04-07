@@ -33,15 +33,21 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       console.log('Edge funksiyasına sorğu göndərilir:', { sectorId, userId });
       
       // Cari JWT tokeni əldə et
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (!session) {
+      if (sessionError) {
+        console.error("Sessiya əldə edilərkən xəta:", sessionError);
+        throw new Error("Avtorizasiya xətası - sessiya əldə edilə bilmədi");
+      }
+      
+      if (!sessionData.session) {
         console.error("Aktiv istifadəçi sesiyası tapılmadı");
         throw new Error("Avtorizasiya xətası - əməliyyatı yerinə yetirmək üçün yenidən daxil olun");
       }
       
-      console.log("JWT token mövcuddur, uzunluq:", session.access_token.length);
-      console.log("JWT token başlanğıcı:", session.access_token.substring(0, 20) + "...");
+      const accessToken = sessionData.session.access_token;
+      console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
+      console.log("JWT token başlanğıcı:", accessToken.substring(0, 20) + "...");
       
       // Edge funksiyasını çağır və Authorization başlığını ötür
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
@@ -50,7 +56,8 @@ export const useAssignExistingUserAsSectorAdmin = () => {
           userId
         },
         headers: {
-          Authorization: `Bearer ${session.access_token}`
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -61,9 +68,9 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         throw new Error(error.message || 'Sektor admini təyin edilərkən xəta baş verdi');
       }
       
-      if (!data.success) {
-        console.error('Sektor admin təyinatı uğursuz oldu:', data.error);
-        throw new Error(data.error || 'Əməliyyat uğursuz oldu');
+      if (!data || !data.success) {
+        console.error('Sektor admin təyinatı uğursuz oldu:', data?.error || 'Bilinməyən səbəb');
+        throw new Error(data?.error || 'Əməliyyat uğursuz oldu');
       }
       
       // Uğurlu nəticə

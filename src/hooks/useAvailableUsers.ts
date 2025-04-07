@@ -1,8 +1,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { fetchAvailableUsersService } from './user/userFetchService';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Mövcud istifadəçiləri əldə etmək üçün hook
@@ -12,6 +12,7 @@ export const useAvailableUsers = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { user: currentUser } = useAuth();
 
   const fetchAvailableUsers = useCallback(async () => {
     try {
@@ -19,6 +20,11 @@ export const useAvailableUsers = () => {
       setError(null);
       
       console.log('İstifadəçiləri əldə etmə başladı...');
+      console.log('Cari istifadəçi:', currentUser?.id, currentUser?.email);
+      
+      if (!currentUser) {
+        console.warn('İstifadəçilər əldə edilərkən cari istifadəçi avtorizasiya olunmayıb');
+      }
       
       const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
       
@@ -35,11 +41,19 @@ export const useAvailableUsers = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
+  // Cari istifadəçi dəyişdikdə istifadəçiləri yenidən əldə et
   useEffect(() => {
-    fetchAvailableUsers();
-  }, [fetchAvailableUsers]);
+    if (currentUser) {
+      fetchAvailableUsers();
+    } else {
+      console.log('Cari istifadəçi autentifikasiya olunmayıb, istifadəçi sorğusu edilmir');
+      setUsers([]);
+      setError(new Error('İstifadəçiləri əldə etmək üçün əvvəlcə daxil olun'));
+      setLoading(false);
+    }
+  }, [fetchAvailableUsers, currentUser]);
 
   return {
     users,

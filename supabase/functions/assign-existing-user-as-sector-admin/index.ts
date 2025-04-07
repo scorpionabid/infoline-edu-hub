@@ -15,16 +15,28 @@ serve(async (req) => {
 
   try {
     // Headers-i daha detallı loqla
-    console.log("Bütün headers:", Object.fromEntries(req.headers.entries()));
+    const headersObj = Object.fromEntries(req.headers.entries());
+    console.log("Bütün headers:", JSON.stringify(headersObj, null, 2));
     
     // İstifadəçi autentifikasiyasını yoxla
     const authHeader = req.headers.get("Authorization");
     console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
-    console.log("Auth header:", authHeader);
+    if (authHeader) {
+      console.log("Auth header uzunluğu:", authHeader.length);
+      console.log("Auth header başlanğıcı:", authHeader.substring(0, 30) + "...");
+    }
     
     // Content type-ı yoxla
     const contentType = req.headers.get("Content-Type");
     console.log("Content-Type:", contentType);
+    
+    if (!authHeader) {
+      console.error("Autorizasiya başlığı yoxdur");
+      return new Response(
+        JSON.stringify({ success: false, error: "Autorizasiya başlığı tələb olunur" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
     
     const authResult = await authenticateAndAuthorize(authHeader);
     
@@ -39,8 +51,17 @@ serve(async (req) => {
     console.log("Auth uğurludur, userData:", authResult.userData);
 
     // İstəyin məlumatlarını əldə et
-    const requestData = await req.json();
-    console.log("Gələn sorğu məlumatları:", requestData);
+    let requestData;
+    try {
+      requestData = await req.json();
+      console.log("Gələn sorğu məlumatları:", requestData);
+    } catch (error) {
+      console.error("JSON parse xətası:", error);
+      return new Response(
+        JSON.stringify({ success: false, error: "Sorğu məlumatları düzgün JSON formatında deyil" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
     // Parametrləri yoxla
     const { sectorId, userId } = requestData;
@@ -57,14 +78,16 @@ serve(async (req) => {
     console.log(`Sektor admin təyinatı başlayır - Sektor ID: ${sectorId}, User ID: ${userId}`);
 
     // Region admini üçün əlavə yoxlamalar
-    const regionAccessResult = await validateRegionAdminAccess(authResult.userData!, sectorId);
-    
-    if (!regionAccessResult.valid) {
-      console.error("Region giriş hüququ xətası:", regionAccessResult.error);
-      return new Response(
-        JSON.stringify({ success: false, error: regionAccessResult.error }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
+    if (authResult.userData && authResult.userData.role === 'regionadmin') {
+      const regionAccessResult = await validateRegionAdminAccess(authResult.userData, sectorId);
+      
+      if (!regionAccessResult.valid) {
+        console.error("Region giriş hüququ xətası:", regionAccessResult.error);
+        return new Response(
+          JSON.stringify({ success: false, error: regionAccessResult.error }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
     }
 
     console.log("Region giriş hüququ təsdiqləndi, SQL funksiyası çağırılır");

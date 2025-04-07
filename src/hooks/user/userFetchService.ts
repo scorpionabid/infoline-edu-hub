@@ -9,23 +9,33 @@ export async function fetchAvailableUsersService() {
     console.log('İstifadəçiləri əldə etmə servisində...');
     
     // Cari JWT tokeni əldə et
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
-    if (!session) {
-      console.error("Aktiv istifadəçi sesiyası tapılmadı");
+    if (sessionError) {
+      console.error("Sessiya əldə edilərkən xəta:", sessionError);
       return { 
-        error: new Error("Avtorizasiya xətası"),
+        error: new Error("Sessiya əldə edilə bilmədi: " + sessionError.message),
         users: [] 
       };
     }
     
-    console.log("JWT token mövcuddur, uzunluq:", session.access_token.length);
-    console.log("JWT token başlanğıcı:", session.access_token.substring(0, 20) + "...");
+    if (!sessionData.session) {
+      console.error("Aktiv istifadəçi sesiyası tapılmadı");
+      return { 
+        error: new Error("Avtorizasiya xətası - aktiv sessiya tapılmadı"),
+        users: [] 
+      };
+    }
     
-    // get_all_users_with_roles edge funksiyasını çağırır - ad düzəldildi
+    const accessToken = sessionData.session.access_token;
+    console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
+    console.log("JWT token başlanğıcı:", accessToken.substring(0, 20) + "...");
+    
+    // get_all_users_with_roles edge funksiyasını çağırır 
     const { data, error } = await supabase.functions.invoke('get_all_users_with_roles', {
       headers: {
-        Authorization: `Bearer ${session.access_token}`
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       }
     });
     

@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 import { useAssignExistingUserAsSectorAdmin } from '@/hooks/useAssignExistingUserAsSectorAdmin';
 import { Sector } from '@/types/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 interface ExistingUserSectorAdminDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   onSuccess
 }) => {
   const { t } = useLanguage();
+  const { user: currentUser } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   
@@ -34,24 +36,33 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
   useEffect(() => {
     if (open) {
+      console.log('Dialog açıldı, istifadəçinin auth statusu:', currentUser ? 'Authenticated' : 'Not authenticated');
       setSelectedUserId("");
       setError(null);
       fetchAvailableUsers();
-      console.log('Dialog açıldı, istifadəçilər yüklənir...', users.length);
     }
-  }, [open, fetchAvailableUsers]);
+  }, [open, fetchAvailableUsers, currentUser]);
 
   // Xəta halında əlavə debug məlumatı
   useEffect(() => {
     if (usersError) {
       console.error('İstifadəçiləri yükləmə xətası:', usersError);
+      setError(usersError.message || 'İstifadəçilər yüklənərkən xəta baş verdi');
     }
   }, [usersError]);
+
+  // İstifadəçilər yükləndiyi zaman log
+  useEffect(() => {
+    if (users && users.length > 0) {
+      console.log('İstifadəçilər uğurla yükləndi. İstifadəçi sayı:', users.length);
+    }
+  }, [users]);
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
     console.log('Seçilmiş istifadəçi:', userId);
     setSelectedUserId(userId);
+    setError(null);
   };
 
   // Sektora admin təyin et
@@ -87,7 +98,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   };
 
   // İstifadəçi siyahısının debug məlumatı
-  console.log('Mövcud istifadəçilər:', users.length, loadingUsers, usersError);
+  console.log('Mövcud istifadəçilər:', users.length, 'Yüklənir:', loadingUsers, 'Xəta:', usersError ? usersError.message : 'yoxdur');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -106,7 +117,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
           </Alert>
         )}
 
-        {usersError && (
+        {usersError && !error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>

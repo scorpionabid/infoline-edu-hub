@@ -16,11 +16,16 @@ serve(async (req) => {
 
   try {
     // Headers-i daha detallı loqla
-    console.log("Bütün headers:", Object.fromEntries(req.headers.entries()));
+    const headersObj = Object.fromEntries(req.headers.entries());
+    console.log("Bütün headers:", JSON.stringify(headersObj, null, 2));
     
     // Auth başlığını al
     const authHeader = req.headers.get('Authorization');
     console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
+    if (authHeader) {
+      console.log("Auth header uzunluğu:", authHeader.length);
+      console.log("Auth header başlanğıcı:", authHeader.substring(0, 30) + "...");
+    }
     
     if (!authHeader) {
       console.error('Authorization başlığı tapılmadı');
@@ -42,6 +47,39 @@ serve(async (req) => {
       );
     }
 
+    // Auth token ilə client
+    const supabaseAuth = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    // Cari istifadəçini doğrula
+    try {
+      const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('İstifadəçi autentifikasiya xətası:', userError);
+        return new Response(
+          JSON.stringify({ error: 'Avtorizasiya xətası - istifadəçi tapılmadı' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      console.log('Cari istifadəçi ID:', user.id);
+    } catch (authError) {
+      console.error('Auth yoxlamada xəta:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Avtorizasiya yoxlaması zamanı xəta' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    // Admin işləri üçün client
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
@@ -93,7 +131,6 @@ serve(async (req) => {
       });
     }
     
-    // İstifadəçi IDs əldə edirik
     // İstifadəçi rollərini əldə edirik
     const { data: userRoles, error: rolesError } = await supabase
       .from('user_roles')
