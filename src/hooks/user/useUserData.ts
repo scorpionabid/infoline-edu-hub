@@ -1,24 +1,23 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole } from '@/types/supabase';
 
-export async function fetchAdminEntityData(user: any) {
-  const rolStr = String(user.role);
+export async function fetchAdminEntityData(roleItem: any) {
+  const rolStr = String(roleItem.role);
   if (!rolStr.includes('admin') || 
-     (rolStr === 'regionadmin' && !user.region_id) ||
-     (rolStr === 'sectoradmin' && !user.sector_id) || 
-     (rolStr === 'schooladmin' && !user.school_id)) {
+     (rolStr === 'regionadmin' && !roleItem.region_id) ||
+     (rolStr === 'sectoradmin' && !roleItem.sector_id) || 
+     (rolStr === 'schooladmin' && !roleItem.school_id)) {
     return null;
   }
   
   try {
     let adminEntity: any = null;
     
-    if (rolStr === 'regionadmin' && user.region_id) {
+    if (rolStr === 'regionadmin' && roleItem.region_id) {
       const { data: regionData } = await supabase
         .from('regions')
         .select('name, status')
-        .eq('id', user.region_id)
+        .eq('id', roleItem.region_id)
         .maybeSingle();
       
       if (regionData) {
@@ -28,11 +27,11 @@ export async function fetchAdminEntityData(user: any) {
           status: regionData.status
         };
       }
-    } else if (rolStr === 'sectoradmin' && user.sector_id) {
+    } else if (rolStr === 'sectoradmin' && roleItem.sector_id) {
       const { data: sectorData } = await supabase
         .from('sectors')
         .select('name, status, regions(name)')
-        .eq('id', user.sector_id)
+        .eq('id', roleItem.sector_id)
         .maybeSingle();
       
       if (sectorData) {
@@ -43,11 +42,11 @@ export async function fetchAdminEntityData(user: any) {
           regionName: sectorData.regions?.name
         };
       }
-    } else if (rolStr === 'schooladmin' && user.school_id) {
+    } else if (rolStr === 'schooladmin' && roleItem.school_id) {
       const { data: schoolData } = await supabase
         .from('schools')
         .select('name, status, type, sectors(name), regions(name)')
-        .eq('id', user.school_id)
+        .eq('id', roleItem.school_id)
         .maybeSingle();
       
       if (schoolData) {
@@ -73,7 +72,7 @@ export function formatUserData(
   userData: any[], 
   profilesMap: Record<string, any>, 
   adminEntities: any[]
-): FullUserData[] {
+) {
   return userData.map((user, index) => {
     const profile = profilesMap[user.id] || {};
     const now = new Date().toISOString();
@@ -85,14 +84,11 @@ export function formatUserData(
       typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
     }
     
-    // Rolu UserRole tipinə məcburi çeviririk
-    const roleValue = user.role as unknown as UserRole;
-    
     return {
       id: user.id,
       email: user.email || 'N/A',
       full_name: profile.full_name || 'İsimsiz İstifadəçi',
-      role: roleValue,
+      role: user.role,
       region_id: user.region_id,
       sector_id: user.sector_id,
       school_id: user.school_id,
