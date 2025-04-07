@@ -16,7 +16,7 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
   try {
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
-      return { success: false, error: "Server konfigurasiyası xətası" };
+      return { success: false, error: "Server konfiqurasiyası xətası" };
     }
 
     console.log(`Sektor admin təyin etmə funksiyası çağırılır: userId=${userId}, sectorId=${sectorId}`);
@@ -28,7 +28,7 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
       },
     });
     
-    // SQL funksiyasını çağır
+    // SQL funksiyasını çağır - mövcud assign_sector_admin funksiyasını istifadə edirik
     const { data, error } = await supabase.rpc(
       'assign_sector_admin',
       {

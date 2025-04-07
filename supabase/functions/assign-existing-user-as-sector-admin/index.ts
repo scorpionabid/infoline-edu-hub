@@ -14,10 +14,17 @@ serve(async (req) => {
   }
 
   try {
+    // Headers-i daha detallı loqla
+    console.log("Bütün headers:", Object.fromEntries(req.headers.entries()));
+    
     // İstifadəçi autentifikasiyasını yoxla
     const authHeader = req.headers.get("Authorization");
     console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
     console.log("Auth header:", authHeader);
+    
+    // Content type-ı yoxla
+    const contentType = req.headers.get("Content-Type");
+    console.log("Content-Type:", contentType);
     
     const authResult = await authenticateAndAuthorize(authHeader);
     

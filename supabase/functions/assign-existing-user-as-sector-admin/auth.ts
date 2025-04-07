@@ -29,11 +29,25 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
     };
   }
 
+  // Auth header formatını yoxla
+  if (!authHeader.startsWith('Bearer ')) {
+    console.error("Auth header yanlış formatdadır, 'Bearer' ilə başlamalıdır");
+    return {
+      authorized: false,
+      error: "Autentifikasiya başlığı yanlış formatdadır",
+      status: 401
+    };
+  }
+
   try {
     console.log('Auth header ilə autentifikasiya başlayır');
     console.log('Auth header tipi:', typeof authHeader);
     console.log('Auth header uzunluğu:', authHeader.length);
     console.log('Auth header başlanğıcı:', authHeader.substring(0, 30) + '...');
+
+    const token = authHeader.split(' ')[1];
+    console.log('Token uzunluğu:', token.length);
+    console.log('Token başlanğıcı:', token.substring(0, 20) + '...');
 
     // Autentifikasiya olunmuş istifadəçiyə bağlı client
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {

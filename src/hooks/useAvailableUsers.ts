@@ -18,12 +18,16 @@ export const useAvailableUsers = () => {
       setLoading(true);
       setError(null);
       
+      console.log('İstifadəçiləri əldə etmə başladı...');
+      
       const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
       
       if (fetchError) {
+        console.error('İstifadəçi əldə etmə xətası:', fetchError);
         throw fetchError;
       }
       
+      console.log(`${fetchedUsers.length} istifadəçi əldə edildi`);
       setUsers(fetchedUsers);
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);

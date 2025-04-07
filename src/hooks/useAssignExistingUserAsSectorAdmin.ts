@@ -41,12 +41,16 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       }
       
       console.log("JWT token mövcuddur, uzunluq:", session.access_token.length);
+      console.log("JWT token başlanğıcı:", session.access_token.substring(0, 20) + "...");
       
       // Edge funksiyasını çağır və Authorization başlığını ötür
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: { 
           sectorId,
           userId
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
       
