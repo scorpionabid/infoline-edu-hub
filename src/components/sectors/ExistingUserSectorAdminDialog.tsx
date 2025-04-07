@@ -28,7 +28,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const { availableUsers, loading: loadingUsers } = useAvailableUsers();
+  const { users, loading: loadingUsers } = useAvailableUsers();
   const { assignUserAsSectorAdmin, loading: assigningUser } = useAssignExistingUserAsSectorAdmin();
   
   // Dialog açıldığında seçimləri sıfırla
@@ -95,14 +95,14 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
             <Select
               value={selectedUserId || "unselected"}
               onValueChange={(value) => handleUserSelect(value === "unselected" ? "" : value)}
-              disabled={loadingUsers || availableUsers.length === 0}
+              disabled={loadingUsers || users.length === 0}
             >
               <SelectTrigger id="user-select">
                 <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unselected">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
-                {availableUsers.map((user) => (
+                {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.full_name} ({user.email})
                   </SelectItem>
