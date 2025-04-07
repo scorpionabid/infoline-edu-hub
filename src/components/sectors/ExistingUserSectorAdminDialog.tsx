@@ -18,13 +18,15 @@ interface ExistingUserSectorAdminDialogProps {
   setOpen: (open: boolean) => void;
   sector: Sector | null;
   onSuccess?: () => void;
+  isEmbedded?: boolean; // SectorAdminDialog içində embedded olaraq istifadə olunursa
 }
 
 export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDialogProps> = ({ 
   open, 
   setOpen,
   sector,
-  onSuccess
+  onSuccess,
+  isEmbedded = false
 }) => {
   const { t } = useLanguage();
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -111,80 +113,94 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   // İstifadəçi siyahısının debug məlumatı
   console.log('Mövcud istifadəçilər:', users.length, 'Yüklənir:', loadingUsers, 'Xəta:', usersError ? usersError.message : 'yoxdur');
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+  // İç komponent sadəcə içərik
+  const dialogContent = (
+    <>
+      {!isEmbedded && (
         <DialogHeader>
           <DialogTitle>{t('assignExistingUserAsSectorAdmin') || 'Mövcud istifadəçini sektor admini təyin et'}</DialogTitle>
           <DialogDescription>
             {t('sectorAdminExistingDesc') || `"${sector?.name}" sektoru üçün mövcud istifadəçini admin kimi təyin edin`}
           </DialogDescription>
         </DialogHeader>
+      )}
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        {usersError && !error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta'}: {usersError.message}
-            </AlertDescription>
-          </Alert>
-        )}
+      {usersError && !error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta'}: {usersError.message}
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
-            <Select
-              value={selectedUserId}
-              onValueChange={handleUserSelect}
-              disabled={loadingUsers}
-            >
-              <SelectTrigger id="user-select">
-                <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
-              </SelectTrigger>
-              <SelectContent>
-                {loadingUsers && (
-                  <div className="p-2 text-center text-sm text-muted-foreground">
-                    {t('loading') || 'Yüklənir...'}
-                  </div>
-                )}
-                {!loadingUsers && users.length === 0 && (
-                  <div className="p-2 text-center text-sm text-muted-foreground">
-                    {t('noUsersFound') || 'İstifadəçi tapılmadı'}
-                  </div>
-                )}
-                {!loadingUsers && users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name || 'İstifadəçi'} ({user.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setOpen(false)}
-            >
-              {t('cancel') || 'Ləğv et'}
-            </Button>
-            <Button 
-              onClick={handleAssignAdmin}
-              disabled={!selectedUserId || assigningUser}
-            >
-              {assigningUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('assignAdmin') || 'Admin təyin et'}
-            </Button>
-          </div>
+      <div className="py-4 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
+          <Select
+            value={selectedUserId}
+            onValueChange={handleUserSelect}
+            disabled={loadingUsers}
+          >
+            <SelectTrigger id="user-select">
+              <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
+            </SelectTrigger>
+            <SelectContent>
+              {loadingUsers && (
+                <div className="p-2 text-center text-sm text-muted-foreground">
+                  {t('loading') || 'Yüklənir...'}
+                </div>
+              )}
+              {!loadingUsers && users.length === 0 && (
+                <div className="p-2 text-center text-sm text-muted-foreground">
+                  {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+                </div>
+              )}
+              {!loadingUsers && users.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.full_name || 'İstifadəçi'} ({user.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+          >
+            {t('cancel') || 'Ləğv et'}
+          </Button>
+          <Button 
+            onClick={handleAssignAdmin}
+            disabled={!selectedUserId || assigningUser}
+          >
+            {assigningUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('assignAdmin') || 'Admin təyin et'}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
+  // Embedded istifadə halında sadəcə içərik qaytar, əks halda Dialog komponentində qablaşdır
+  if (isEmbedded) {
+    return dialogContent;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[425px]">
+        {dialogContent}
       </DialogContent>
     </Dialog>
   );

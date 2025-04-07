@@ -1,6 +1,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { supabaseUrl, supabaseServiceRoleKey } from "./config.ts";
+import { supabaseUrl } from "./config.ts";
 
 // İstifadəçi məlumatları tipi
 interface UserData {
@@ -43,6 +43,14 @@ export async function validateRegionAdminAccess(userData: UserData, sectorId: st
   // RegionAdmin yalnız öz regionuna aid olan sektorlara giriş hüququna malikdir
   if (userData.role === "regionadmin" && userData.region_id) {
     try {
+      // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
+      const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (!supabaseServiceRoleKey) {
+        console.error("SUPABASE_SERVICE_ROLE_KEY mövcud deyil");
+        return { valid: false, error: "Server konfiqurasiyası xətası" };
+      }
+      
       const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
         auth: {
           autoRefreshToken: false,
@@ -90,6 +98,14 @@ export async function validateRegionAdminAccess(userData: UserData, sectorId: st
  */
 export async function validateSectorAdminExists(sectorId: string) {
   try {
+    // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseServiceRoleKey) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY mövcud deyil");
+      return { valid: false, error: "Server konfigurasiyası xətası" };
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,

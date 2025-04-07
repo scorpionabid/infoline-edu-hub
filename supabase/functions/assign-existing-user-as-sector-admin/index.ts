@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./config.ts";
 import { authenticateAndAuthorize } from "./auth.ts";
-import { validateRequiredParams, validateRegionAdminAccess } from "./validators.ts";
+import { validateRequiredParams, validateRegionAdminAccess, validateSectorAdminExists } from "./validators.ts";
 import { callAssignSectorAdminFunction } from "./service.ts";
 
 console.log("assign-existing-user-as-sector-admin Edge funksiyası başladıldı");
@@ -90,7 +90,17 @@ serve(async (req) => {
       }
     }
 
-    console.log("Region giriş hüququ təsdiqləndi, SQL funksiyası çağırılır");
+    // Sektorun artıq admini olub-olmadığını yoxla
+    const adminExistsResult = await validateSectorAdminExists(sectorId);
+    if (!adminExistsResult.valid) {
+      console.error("Sektor admin yoxlaması xətası:", adminExistsResult.error);
+      return new Response(
+        JSON.stringify({ success: false, error: adminExistsResult.error }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    console.log("Region giriş hüququ və admin mövcudluğu təsdiqləndi, SQL funksiyası çağırılır");
 
     // SQL funksiyasını çağır və admin təyin et
     const assignResult = await callAssignSectorAdminFunction(userId, sectorId);
