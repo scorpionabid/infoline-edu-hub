@@ -93,12 +93,13 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       
       if (result.success) {
         console.log('Admin uğurla təyin edildi');
-        toast.success(t('adminAssignSuccess') || 'Admin təyin edildi', {
-          description: t('adminAssignSuccessDesc') || 'İstifadəçi uğurla sektor admini təyin edildi'
-        });
         setOpen(false);
+        
+        // Həm də list refresh etsin
         if (onSuccess) {
-          onSuccess();
+          setTimeout(() => {
+            onSuccess();
+          }, 500); // 500ms sonra refresh et, UI üçün daha yaxşı təcrübə
         }
       } else {
         console.error('Admin təyin etmə xətası:', result.error);
@@ -109,9 +110,6 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       setError(error.message || t('unexpectedError') || 'Gözlənilməz xəta');
     }
   };
-
-  // İstifadəçi siyahısının debug məlumatı
-  console.log('Mövcud istifadəçilər:', users.length, 'Yüklənir:', loadingUsers, 'Xəta:', usersError ? usersError.message : 'yoxdur');
 
   // İç komponent sadəcə içərik
   const dialogContent = (

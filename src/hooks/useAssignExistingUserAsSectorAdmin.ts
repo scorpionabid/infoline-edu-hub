@@ -32,22 +32,6 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       
       console.log('Edge funksiyasına sorğu göndərilir:', { sectorId, userId });
       
-      // Cari JWT tokeni əldə et
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Sessiya əldə edilərkən xəta:", sessionError);
-        throw new Error("Avtorizasiya xətası - sessiya əldə edilə bilmədi");
-      }
-      
-      if (!sessionData.session) {
-        console.error("Aktiv istifadəçi sesiyası tapılmadı");
-        throw new Error("Avtorizasiya xətası - əməliyyatı yerinə yetirmək üçün yenidən daxil olun");
-      }
-      
-      const accessToken = sessionData.session.access_token;
-      console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
-      
       // Supabase-in functions API-sini istifadə edək
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: { 
@@ -67,6 +51,15 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         console.error('Sektor admin təyinatı uğursuz oldu:', data?.error || 'Bilinməyən səbəb');
         throw new Error(data?.error || 'Əməliyyat uğursuz oldu');
       }
+      
+      // Sektorlar cədvəlini yenilə
+      await supabase.from('sectors')
+        .update({ 
+          admin_id: userId,
+          admin_email: data.data?.admin?.email || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sectorId);
       
       // Uğurlu nəticə
       toast({

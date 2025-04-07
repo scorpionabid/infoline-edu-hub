@@ -54,9 +54,10 @@ serve(async (req) => {
     let requestData;
     try {
       requestData = await req.json();
-      console.log("Gələn sorğu məlumatları:", requestData);
+      console.log("Gələn sorğu məlumatları:", JSON.stringify(requestData, null, 2));
     } catch (error) {
       console.error("JSON parse xətası:", error);
+      console.error("JSON məlumatları:", await req.text());
       return new Response(
         JSON.stringify({ success: false, error: "Sorğu məlumatları düzgün JSON formatında deyil" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
