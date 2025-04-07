@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
@@ -106,6 +106,10 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       if (sectorUpdateError) {
         console.error('Sektor yeniləmə xətası:', sectorUpdateError);
       }
+      
+      // Yenilikləri əldə etmək üçün tətbiqi yeniləyək
+      document.dispatchEvent(new Event('refresh-sectors'));
+      document.dispatchEvent(new Event('refresh-users'));
       
       // Uğurlu nəticə
       toast({

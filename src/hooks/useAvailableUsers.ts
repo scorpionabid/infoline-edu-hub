@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { FullUserData } from '@/types/supabase';
 import { fetchAvailableUsersService } from './user/userFetchService';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Mövcud istifadəçiləri əldə etmək üçün hook
@@ -29,22 +28,6 @@ export const useAvailableUsers = () => {
       setError(null);
       
       console.log('İstifadəçiləri əldə etmə başladı...');
-      console.log('Cari istifadəçi:', currentUser?.id, currentUser?.email);
-      
-      // Əvvəlcə mövcud sektor adminlərinin siyahısını alaq
-      const { data: existingSectorAdmins, error: sectorAdminError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'sectoradmin');
-        
-      if (sectorAdminError) {
-        console.error('Mövcud sektor adminlərini əldə edərkən xəta:', sectorAdminError);
-        throw sectorAdminError;
-      }
-      
-      // Mövcud admin ID-lərini array-ə çevirək
-      const existingAdminIds = existingSectorAdmins.map(admin => admin.user_id);
-      console.log(`${existingAdminIds.length} mövcud sektor admini tapıldı`);
       
       const { users: fetchedUsers, error: fetchError } = await fetchAvailableUsersService();
       
@@ -53,12 +36,11 @@ export const useAvailableUsers = () => {
         throw fetchError;
       }
       
-      // Mövcud adminləri filtrlə
-      const filteredUsers = fetchedUsers.filter(user => 
-        !existingAdminIds.includes(user.id) && user.role !== 'superadmin' && user.role !== 'sectoradmin'
-      );
+      console.log(`${fetchedUsers.length} uyğun istifadəçi əldə edildi`);
       
-      console.log(`${fetchedUsers.length} istifadəçidən ${filteredUsers.length} uyğun istifadəçi əldə edildi`);
+      // Özünü çıxar (cari istifadəçi)
+      const filteredUsers = fetchedUsers.filter(user => user.id !== currentUser.id);
+      
       setUsers(filteredUsers);
       
     } catch (err) {

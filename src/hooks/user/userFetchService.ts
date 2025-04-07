@@ -8,77 +8,98 @@ export async function fetchAvailableUsersService() {
   try {
     console.log('İstifadəçiləri əldə etmə servisində...');
     
-    // Cari sessiyadan JWT tokeni əldə et
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error("Sessiya əldə edilərkən xəta:", sessionError);
+    // Mövcud adminləri əldə edək - bunlar filtrələnəcək
+    const { data: existingAdmins, error: adminsError } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('role', ['superadmin', 'sectoradmin', 'regionadmin']);
+      
+    if (adminsError) {
+      console.error("Mövcud adminləri əldə edərkən xəta:", adminsError);
       return { 
-        error: new Error("Sessiya əldə edilə bilmədi: " + sessionError.message),
+        error: new Error("Mövcud adminləri əldə edilə bilmədi: " + adminsError.message),
         users: [] 
       };
     }
     
-    if (!sessionData.session) {
-      console.error("Aktiv istifadəçi sesiyası tapılmadı");
+    // Mövcud adminlərin ID-lərini saxlayaq
+    const existingAdminIds = existingAdmins.map(admin => admin.user_id);
+    console.log(`${existingAdminIds.length} mövcud admin tapıldı, bunlar filtrlənəcək`);
+    
+    // User roles tablosundan bütün istifadəçiləri əldə edək
+    const { data: userRolesData, error: userRolesError } = await supabase
+      .from('user_roles')
+      .select('*');
+      
+    if (userRolesError) {
+      console.error("User roles əldə edilərkən xəta:", userRolesError);
       return { 
-        error: new Error("Avtorizasiya xətası - aktiv sessiya tapılmadı"),
+        error: new Error("User roles əldə edilə bilmədi: " + userRolesError.message),
         users: [] 
       };
     }
     
-    const accessToken = sessionData.session.access_token;
-    console.log("JWT token mövcuddur, uzunluq:", accessToken.length);
+    // Admin olmayan (və ya sadəcə schooladmin olan) istifadəçiləri filtirləyək
+    const filteredUserRoles = userRolesData.filter(userRole => 
+      !existingAdminIds.includes(userRole.user_id) || 
+      (userRole.role === 'schooladmin' && !userRole.sector_id)
+    );
     
-    // Service key ilə işləyən edge funksiyası çağırılır
-    const response = await fetch(`https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/get_all_users_with_roles`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
+    console.log(`${userRolesData.length} istifadəçidən ${filteredUserRoles.length} uyğun istifadəçi filterləndi`);
+    
+    if (filteredUserRoles.length === 0) {
+      return { users: [] };
+    }
+    
+    // İstifadəçi ID-lərini alaq
+    const userIds = filteredUserRoles.map(ur => ur.user_id);
+    
+    // Profil məlumatlarını əldə edək
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+      
+    if (profilesError) {
+      console.error("Profiles əldə edilərkən xəta:", profilesError);
+      return { 
+        error: new Error("Profiles əldə edilə bilmədi: " + profilesError.message),
+        users: [] 
+      };
+    }
+    
+    // Profil məlumatlarını map formatına keçirək
+    const profilesMap = {};
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profilesMap[profile.id] = profile;
+      });
+    }
+    
+    // Email məlumatlarını əldə edək
+    const { data: emailsData } = await supabase.rpc('get_user_emails_by_ids', { user_ids: userIds });
+    
+    // Email-ləri map formatına keçirək
+    const emailMap = {};
+    if (emailsData) {
+      emailsData.forEach((item: any) => {
+        emailMap[item.id] = item.email;
+      });
+    }
+    
+    // Admin entity məlumatlarını əldə edək
+    const adminEntityPromises = filteredUserRoles.map(async (roleItem) => {
+      return await fetchAdminEntityData(roleItem);
     });
     
-    if (!response.ok) {
-      console.error('Edge funksiya xətası:', response.status, response.statusText);
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
-      return { 
-        error: new Error(`Edge funksiya xətası: ${response.status} ${response.statusText}`),
-        users: [] 
-      };
-    }
+    const adminEntities = await Promise.all(adminEntityPromises);
     
-    const data = await response.json();
+    // Formatlanmış istifadəçiləri yaradaq
+    const formattedUsers = formatUserData(filteredUserRoles, profilesMap, adminEntities);
     
-    if (!data || !data.users || !Array.isArray(data.users)) {
-      console.error('Edge funksiyasından qayıdan cavab düzgün formatda deyil:', data);
-      return { 
-        error: new Error('Server cavabı düzgün formatda deyil'),
-        users: [] 
-      };
-    }
+    console.log(`${formattedUsers.length} istifadəçi tam formatlandı və hazırdır`);
     
-    console.log(`${data.users.length} istifadəçi edge funksiyasından əldə edildi`);
-    
-    // İstifadəçiləri filterləyək - superadminlər və sektor adminləri olmasın
-    const filteredUsers = data.users.filter(user => {
-      // Superadminləri çıxar
-      if (user.role === 'superadmin') return false;
-      
-      // Mövcud sektor adminlərini çıxar
-      if (user.role === 'sectoradmin' && user.sector_id) return false;
-      
-      // Region adminlərini çıxar (region admini digər region admini ola bilməz)
-      if (user.role === 'regionadmin') return false;
-      
-      return true;
-    });
-    
-    console.log(`${filteredUsers.length} istifadəçi filterləndi və hazırdır`);
-    
-    // İstifadəçiləri formatlaşdıraq və qaytaraq
-    return { users: filteredUsers as FullUserData[] };
+    return { users: formattedUsers };
   } catch (err) {
     console.error('İstifadəçi sorğusu servisində xəta:', err);
     return { 
