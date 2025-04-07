@@ -8,3 +8,4 @@ export const corsHeaders = {
 
 // Supabase URL
 export const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+

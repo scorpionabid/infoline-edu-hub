@@ -44,13 +44,14 @@ serve(async (req) => {
 
     console.log("Auth uğurludur, userData:", authResult.userData);
 
-    // İstəyin məlumatlarını əldə et
+    // İstəyin məlumatlarını əldə et və diqqətlə emal et
     let requestData;
     try {
-      const requestText = await req.text();
-      console.log("Raw request body:", requestText);
+      // Bütün JSON emal xətalarını tutmaq üçün
+      const requestBody = await req.text();
+      console.log("Raw request body:", requestBody);
       
-      if (!requestText || requestText.trim() === '') {
+      if (!requestBody || requestBody.trim() === '') {
         console.error("Request body boşdur");
         return new Response(
           JSON.stringify({ success: false, error: "Sorğu məlumatları təqdim edilməyib" }),
@@ -58,10 +59,10 @@ serve(async (req) => {
         );
       }
       
-      // Gələn məlumatları JSON formatında parse et
+      // JSON parse xətası olmaması üçün try-catch blokuna aldıq
       try {
-        requestData = JSON.parse(requestText);
-        console.log("Gələn sorğu məlumatları (parsed):", JSON.stringify(requestData, null, 2));
+        requestData = JSON.parse(requestBody);
+        console.log("Parsed request data:", JSON.stringify(requestData, null, 2));
       } catch (parseError) {
         console.error("JSON parse xətası:", parseError);
         return new Response(

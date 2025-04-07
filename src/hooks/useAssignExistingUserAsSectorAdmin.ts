@@ -29,17 +29,18 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       
       // Debug üçün əlavə məlumatlar
       console.log('Supabase Edge funksiyası çağırılır...');
-      console.log('Parametrlər:', JSON.stringify({
+      
+      // Parametrləri düzgün formatla - body obyekti artıq JSON.stringify() ilə emal olunur
+      const bodyData = {
         userId, 
         sectorId
-      }));
+      };
       
-      // Supabase edge funksiyasını çağır - body düzgün JSON formatında olmalıdır
+      console.log('Parametrlər:', JSON.stringify(bodyData));
+      
+      // Supabase edge funksiyasını çağır - JSON formatı düzgün olmalıdır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
-        body: JSON.stringify({
-          userId, 
-          sectorId
-        })
+        body: bodyData  // Bu avtomatik olaraq JSON'a çevriləcək
       });
       
       if (error) {
