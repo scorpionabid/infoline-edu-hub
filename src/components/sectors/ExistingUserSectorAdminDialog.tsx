@@ -41,7 +41,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
-    setSelectedUserId(userId);
+    setSelectedUserId(userId === "unselected" ? null : userId);
   };
 
   // Sektora admin təyin et
@@ -94,7 +94,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
             <Label htmlFor="user-select">{t('selectUser') || 'İstifadəçi seçin'}</Label>
             <Select
               value={selectedUserId || "unselected"}
-              onValueChange={(value) => handleUserSelect(value === "unselected" ? "" : value)}
+              onValueChange={handleUserSelect}
               disabled={loadingUsers || users.length === 0}
             >
               <SelectTrigger id="user-select">

@@ -36,8 +36,8 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
           <Select
             value={data.schoolId || "none"}
             onValueChange={(value) => {
-              field.onChange(value === "none" ? undefined : value);
-              onFormChange('schoolId', value === "none" ? undefined : value);
+              field.onChange(value === "none" ? null : value);
+              onFormChange('schoolId', value === "none" ? null : value);
             }}
             disabled={filteredSchools.length === 0}
           >
