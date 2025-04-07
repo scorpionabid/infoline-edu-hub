@@ -62,16 +62,13 @@ export async function fetchAvailableUsersService() {
       
       console.log(`${availableProfiles.length} potensial istifadəçi filtrləndi`);
       
-      // Email məlumatlarını təxmin edək (demo üçün)
+      // FullUserData formatına çeviririk
       const formattedUsers = availableProfiles.map(profile => {
-        // Demo üçün email formatı yaradaq
-        const mockEmail = `user-${profile.id.substring(0, 6)}@infoline.edu`;
-        
         return {
           id: profile.id,
-          email: mockEmail,
+          email: profile.email || `user-${profile.id.substring(0, 6)}@example.com`,
           full_name: profile.full_name || 'İsimsiz İstifadəçi',
-          role: 'user', // default rol
+          role: 'user',
           region_id: null,
           sector_id: null,
           school_id: null,

@@ -80,18 +80,30 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
     }
     
     // Həmçinin sectors cədvəlini də yeniləyirik
-    const { data: userData, error: userError } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('email')
+      .select('*')
       .eq('id', userId)
       .single();
       
-    if (!userError && userData) {
+    if (!profileError && profileData) {
+      // E-poçt məlumatını əldə etmək üçün auth.users cədvəlinə sorğu
+      let userEmail = profileData.email;
+      
+      try {
+        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+        if (authUser?.user?.email) {
+          userEmail = authUser.user.email;
+        }
+      } catch (emailError) {
+        console.error("Auth email əldə edilərkən xəta:", emailError);
+      }
+      
       const { error: sectorUpdateError } = await supabase
         .from('sectors')
         .update({
           admin_id: userId,
-          admin_email: userData.email,
+          admin_email: userEmail,
           updated_at: new Date().toISOString()
         })
         .eq('id', sectorId);

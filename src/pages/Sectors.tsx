@@ -39,13 +39,27 @@ const Sectors = () => {
   const [createdSector, setCreatedSector] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Yenilənmə triggerini izlə
+  // Yeniləmə triggerini izlə
   useEffect(() => {
     if (refreshTrigger > 0) {
       console.log('Sektorlar siyahısı yenilənir...');
       fetchSectors();
     }
   }, [refreshTrigger, fetchSectors]);
+
+  // Document event ilə yeniləmə trigger
+  useEffect(() => {
+    const handleRefreshSectors = () => {
+      console.log('refresh-sectors event alındı, sektorlar yenilənir...');
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    document.addEventListener('refresh-sectors', handleRefreshSectors);
+    
+    return () => {
+      document.removeEventListener('refresh-sectors', handleRefreshSectors);
+    };
+  }, []);
 
   const handleOpenSectorDialog = useCallback((sector: EnhancedSector | null) => {
     setSelectedSector(sector);
