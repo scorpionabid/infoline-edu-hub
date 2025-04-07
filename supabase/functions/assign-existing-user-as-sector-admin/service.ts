@@ -2,30 +2,29 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { supabaseUrl } from "./config.ts";
 
-/**
- * Sektor admini təyin etmək üçün SQL funksiyasını çağırır
- * @param userId İstifadəçi ID
- * @param sectorId Sektor ID
- * @returns SQL funksiyasının nəticəsi
- */
-export async function callAssignSectorAdminFunction(userId: string, sectorId: string): Promise<{ 
-  success: boolean; 
-  error?: string;
-  data?: any;
-}> {
+export async function callAssignSectorAdminFunction(userId: string, sectorId: string) {
   try {
-    // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
+    console.log(`callAssignSectorAdminFunction çağırıldı - User ID: ${userId}, Sector ID: ${sectorId}`);
+    
+    // Parametrləri yoxla
+    if (!userId || !sectorId) {
+      console.error("Əskik parametrlər:", { userId, sectorId });
+      const errorMessage = !userId ? "İstifadəçi ID təyin edilməyib" : "Sektor ID təyin edilməyib";
+      return { success: false, error: errorMessage };
+    }
+    
+    // SUPABASE_SERVICE_ROLE_KEY-i Deno.env-dən al
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error("Server konfiqurasiyası xətası: URL və ya Service Key mövcud deyil");
-      console.error(`URL mövcuddur: ${!!supabaseUrl}, Key mövcuddur: ${!!supabaseServiceRoleKey}`);
-      console.error(`URL: ${supabaseUrl && supabaseUrl.substring(0, 10)}...`);
-      return { success: false, error: "Server konfiqurasiyası xətası" };
+      console.error("Server konfiqurasiyası xətası: URL veya ServiceRoleKey yoxdur");
+      return {
+        success: false,
+        error: "Server konfigurasiyası xətası"
+      };
     }
-
-    console.log(`Sektor admin təyin etmə funksiyası çağırılır: userId=${userId}, sectorId=${sectorId}`);
     
+    // Supabase service client yaradırıq
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -33,111 +32,116 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
       },
     });
     
-    // Əvvəlcə region ID-ni əldə edirik
-    const { data: sectorData, error: sectorError } = await supabase
-      .from('sectors')
-      .select('region_id, admin_id')
-      .eq('id', sectorId)
-      .single();
-      
-    if (sectorError) {
-      console.error("Sektor məlumatları əldə edilərkən xəta:", sectorError);
-      return { success: false, error: sectorError.message };
+    console.log("Supabase client yaradıldı, user_roles cədvəlinə sorğu göndərilir...");
+    
+    // Əvvəlcə sektora admin təyin edilmiş istifadəçini null ilə yeniləyirik
+    const { error: clearAdminError } = await supabase
+      .from("sectors")
+      .update({ admin_id: null })
+      .eq("id", sectorId);
+    
+    if (clearAdminError) {
+      console.error("Mövcud admini təmizləyərkən xəta:", clearAdminError);
+      return {
+        success: false,
+        error: `Mövcud admini təmizləyərkən xəta: ${clearAdminError.message}`
+      };
     }
     
-    const regionId = sectorData.region_id;
-    const currentAdminId = sectorData.admin_id;
+    console.log("Köhnə admin təmizləndi, indi yeni admini təyin edirik...");
     
-    // Əgər mövcud admin varsa, əvvəlcə onun rolunu təmizləyək
-    if (currentAdminId) {
-      console.log(`Sektor ${sectorId} üçün mövcud admin (${currentAdminId}) silinir...`);
-      
-      const { error: removeRoleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', currentAdminId)
-        .eq('role', 'sectoradmin')
-        .eq('sector_id', sectorId);
-        
-      if (removeRoleError) {
-        console.error("Köhnə sektor admin rolunun silinməsi zamanı xəta:", removeRoleError);
-        // Bu xəta kritik deyil, davam edə bilərik
-      }
+    // İstifadəçi rolunu yoxlayırıq və ya əlavə edirik
+    const { data: existingRoleData, error: roleCheckError } = await supabase
+      .from("user_roles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+    
+    if (roleCheckError) {
+      console.error("İstifadəçi rolunu yoxlarkən xəta:", roleCheckError);
+      return {
+        success: false,
+        error: `İstifadəçi rolunu yoxlarkən xəta: ${roleCheckError.message}`
+      };
     }
     
-    // SQL funksiyasını çağır - mövcud assign_sector_admin funksiyasını istifadə edirik
-    const { data, error } = await supabase.rpc(
-      'assign_sector_admin',
-      {
-        user_id_param: userId,
-        sector_id_param: sectorId
-      }
-    );
-    
-    if (error) {
-      console.error("SQL funksiya xətası:", error);
-      return { success: false, error: error.message };
-    }
-    
-    console.log("SQL funksiyası uğurla yerinə yetirildi:", data);
-    
-    // Həmçinin user_roles cədvəlini birbaşa yeniləyək (zəmanət üçün)
-    const { error: userRoleError } = await supabase
-      .from('user_roles')
-      .update({ 
-        role: 'sectoradmin',
-        sector_id: sectorId,
-        region_id: regionId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
+    // İstifadəçini sektoradmin olaraq yeniləyirik
+    if (existingRoleData) {
+      console.log("Mövcud istifadəçi rolu tapıldı, yenilənir:", existingRoleData);
       
-    if (userRoleError) {
-      console.error("User role yeniləmə xətası:", userRoleError);
-      // Ana əməliyyat uğurlu olsa da, xəta loglayırıq
-    }
-    
-    // Həmçinin sectors cədvəlini də yeniləyirik
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-      
-    if (!profileError && profileData) {
-      // E-poçt məlumatını əldə etmək üçün auth.users cədvəlinə sorğu
-      let userEmail = profileData.email;
-      
-      try {
-        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
-        if (authUser?.user?.email) {
-          userEmail = authUser.user.email;
-        }
-      } catch (emailError) {
-        console.error("Auth email əldə edilərkən xəta:", emailError);
-      }
-      
-      const { error: sectorUpdateError } = await supabase
-        .from('sectors')
+      // Əvvəlki bütün təyinatları sıfırla
+      const { error: updateRoleError } = await supabase
+        .from("user_roles")
         .update({
-          admin_id: userId,
-          admin_email: userEmail,
+          role: "sectoradmin",
+          region_id: null,
+          sector_id: sectorId,
+          school_id: null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', sectorId);
-        
-      if (sectorUpdateError) {
-        console.error("Sector yeniləmə xətası:", sectorUpdateError);
+        .eq("user_id", userId);
+      
+      if (updateRoleError) {
+        console.error("İstifadəçi rolunu yenilərkən xəta:", updateRoleError);
+        return {
+          success: false,
+          error: `İstifadəçi rolunu yenilərkən xəta: ${updateRoleError.message}`
+        };
+      }
+    } else {
+      console.log("İstifadəçi rolu tapılmadı, yeni rol yaradılır");
+      
+      // İstifadəçi üçün yeni rol yaradırıq
+      const { error: insertRoleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: userId,
+          role: "sectoradmin",
+          sector_id: sectorId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      
+      if (insertRoleError) {
+        console.error("İstifadəçi rolu yaradarkən xəta:", insertRoleError);
+        return {
+          success: false,
+          error: `İstifadəçi rolu yaradarkən xəta: ${insertRoleError.message}`
+        };
       }
     }
     
-    return { success: true, data };
+    console.log("İstifadəçi rolu uğurla yeniləndi, indi sektoru yeniləyirik...");
     
+    // Sektoru yeniləyərək admin_id-ni təyin et
+    const { error: updateSectorError } = await supabase
+      .from("sectors")
+      .update({ admin_id: userId })
+      .eq("id", sectorId);
+    
+    if (updateSectorError) {
+      console.error("Sektoru yenilərkən xəta:", updateSectorError);
+      return {
+        success: false,
+        error: `Sektoru yenilərkən xəta: ${updateSectorError.message}`
+      };
+    }
+    
+    console.log("Sektor admin təyinatı uğurla tamamlandı");
+    
+    return {
+      success: true,
+      data: {
+        message: "İstifadəçi sektor admini olaraq təyin edildi",
+        user_id: userId,
+        sector_id: sectorId
+      }
+    };
   } catch (error) {
     console.error("SQL funksiyası çağırılarkən xəta:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "SQL funksiyası çağırılarkən gözlənilməz xəta"
+    return {
+      success: false,
+      error: `SQL funksiyası çağırılarkən xəta: ${error instanceof Error ? error.message : "Bilinməyən xəta"}`
     };
   }
 }

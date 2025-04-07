@@ -65,8 +65,25 @@ serve(async (req) => {
     }
 
     // Parametrləri yoxla
-    const { sectorId, userId } = requestData;
-    const paramValidation = validateRequiredParams(sectorId, userId);
+    const userId = requestData.userId;
+    const sectorId = requestData.sectorId;
+    
+    console.log("Parametrlər:", { userId, sectorId });
+    
+    if (!userId || !sectorId) {
+      const errorMessage = !userId 
+        ? "İstifadəçi ID təyin edilməyib"
+        : "Sektor ID təyin edilməyib";
+        
+      console.error("Parametr doğrulama xətası:", errorMessage);
+      
+      return new Response(
+        JSON.stringify({ success: false, error: errorMessage }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
+    const paramValidation = await validateRequiredParams(sectorId, userId);
     
     if (!paramValidation.valid) {
       console.error("Parametr doğrulama xətası:", paramValidation.error);
