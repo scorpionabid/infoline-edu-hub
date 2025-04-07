@@ -1,145 +1,79 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
-/**
- * Mövcud istifadəçini sektor admini kimi təyin etmək üçün hook
- */
 export const useAssignExistingUserAsSectorAdmin = () => {
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const { t } = useLanguage();
+  const [loading, setLoading] = useState(false);
 
-  /**
-   * Mövcud istifadəçini sektor admini kimi təyin edir
-   * @param sectorId sektor ID
-   * @param userId istifadəçi ID
-   * @returns əməliyyatın nəticəsi
-   */
-  const assignUserAsSectorAdmin = async (sectorId: string, userId: string): Promise<{ 
-    success: boolean; 
-    error?: string; 
-    data?: any 
-  }> => {
+  const assignUserAsSectorAdmin = async (sectorId: string, userId: string) => {
     try {
       setLoading(true);
       
+      console.log('Admin təyin etmək: Sektor ID:', sectorId, 'User ID:', userId);
+      
+      // Parametrləri doğrula
       if (!sectorId || !userId) {
-        throw new Error(t('missingRequiredFields') || 'Sektor ID və istifadəçi ID tələb olunur');
+        const errorMessage = !sectorId 
+          ? 'Sektor ID təyin edilməyib'
+          : 'İstifadəçi ID təyin edilməyib';
+          
+        console.error(errorMessage);
+        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+          description: errorMessage
+        });
+        return { success: false, error: errorMessage };
       }
       
-      console.log('Edge funksiyasına sorğu göndərilir:', { sectorId, userId });
-      
-      // Əvvəlcə region ID-ni əldə edirik
-      const { data: sectorData, error: sectorError } = await supabase
-        .from('sectors')
-        .select('region_id')
-        .eq('id', sectorId)
-        .single();
-        
-      if (sectorError) {
-        console.error('Sektor məlumatları əldə edilərkən xəta:', sectorError);
-        throw new Error(`Sektor məlumatları əldə edilərkən xəta: ${sectorError.message}`);
-      }
-      
-      const regionId = sectorData.region_id;
-      
-      // Supabase-in functions API-sini istifadə edək
+      // Supabase edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
-        body: { 
-          sectorId,
-          userId
+        body: {
+          userId, 
+          sectorId
         }
       });
       
       if (error) {
-        console.error('Edge funksiyası xətası:', error);
-        throw new Error(`Server xətası: ${error.message || 'Bilinməyən xəta'}`);
+        console.error('Edge funksiya xətası:', error);
+        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+          description: error.message || t('unexpectedError') || 'Gözlənilməz xəta'
+        });
+        return { success: false, error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' };
       }
       
-      console.log('Edge funksiyasının cavabı:', data);
-      
-      if (!data || !data.success) {
-        console.error('Sektor admin təyinatı uğursuz oldu:', data?.error || 'Bilinməyən səbəb');
-        throw new Error(data?.error || 'Əməliyyat uğursuz oldu');
+      // Əgər data.error mövcuddursa (SQL funksiyasından qaytarılan xəta)
+      if (data && data.error) {
+        console.error('Admin təyin edilərkən xəta:', data.error);
+        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+          description: data.error || t('unexpectedError') || 'Gözlənilməz xəta'
+        });
+        return { success: false, error: data.error || t('unexpectedError') || 'Gözlənilməz xəta' };
       }
       
-      // Əmin olmaq üçün user_roles cədvəlini birbaşa yeniləyək
-      const { error: userRoleError } = await supabase
-        .from('user_roles')
-        .update({ 
-          role: 'sectoradmin',
-          sector_id: sectorId,
-          region_id: regionId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+      // Uğurlu hal
+      toast.success(t('adminAssigned') || 'Admin təyin edildi', {
+        description: t('adminAssignedDesc') || 'İstifadəçi sektor admini olaraq uğurla təyin edildi'
+      });
       
-      if (userRoleError) {
-        console.error('User roles yeniləmə xətası:', userRoleError);
-        // Bu xəta ilə əməliyyatı dayandırmırıq, çünki edge funksiyası əsasən yeniləyir
-      }
-      
-      // Əlavə olaraq istifadəçinin email-ini əldə edək
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', userId)
-        .single();
-      
-      let userEmail = data.data?.admin?.email || null;
-      if (!userError && userData && userData.email) {
-        userEmail = userData.email;
-      }
-      
-      // Sektorlar cədvəlini yenilə
-      const { error: sectorUpdateError } = await supabase.from('sectors')
-        .update({ 
-          admin_id: userId,
-          admin_email: userEmail,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', sectorId);
-        
-      if (sectorUpdateError) {
-        console.error('Sektor yeniləmə xətası:', sectorUpdateError);
-      }
-      
-      // Yenilikləri əldə etmək üçün tətbiqi yeniləyək
-      document.dispatchEvent(new Event('refresh-sectors'));
+      // Yeniləmə eventlərini triggerlə
       document.dispatchEvent(new Event('refresh-users'));
+      document.dispatchEvent(new Event('refresh-sectors'));
       
-      // Uğurlu nəticə
-      toast({
-        title: t('adminAssignSuccess') || 'Admin təyin edildi',
-        description: data.message || `İstifadəçi uğurla sektor admini təyin edildi`,
-        variant: 'default'
-      });
-      
-      return { 
-        success: true, 
-        data: data.data
-      };
+      console.log('Admin təyinatı uğurla başa çatdı:', data);
+      return { success: true, data };
     } catch (error: any) {
-      console.error('Sektor admini təyin edilərkən xəta:', error);
-      
-      toast({
-        title: t('adminAssignError') || 'Xəta',
-        description: error.message || 'Sektor admini təyin edilərkən xəta baş verdi',
-        variant: 'destructive'
+      console.error('Admin təyin etmə xətası:', error);
+      toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+        description: error.message || t('unexpectedError') || 'Gözlənilməz xəta'
       });
-      
-      return { 
-        success: false, 
-        error: error.message || 'Gözlənilməz xəta' 
-      };
+      return { success: false, error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' };
     } finally {
       setLoading(false);
     }
   };
-
+  
   return {
     assignUserAsSectorAdmin,
     loading

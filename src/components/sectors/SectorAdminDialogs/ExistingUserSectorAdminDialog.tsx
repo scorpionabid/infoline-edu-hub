@@ -98,6 +98,14 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     }
   };
 
+  // Məcburi yeniləmə
+  const handleForceRefresh = () => {
+    if (isAuthenticated) {
+      console.log('İstifadəçilər məcburi yenilənir...');
+      fetchAvailableUsers();
+    }
+  };
+
   // Dialog content
   const dialogContent = (
     <>
@@ -117,6 +125,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
           loading={loadingUsers}
           selectedUserId={selectedUserId}
           onUserSelect={handleUserSelect}
+          onRefresh={handleForceRefresh}
         />
 
         <SectorAdminDialogFooter
