@@ -5,6 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SchoolFormData } from '@/types/school-form';
 import { useAuth } from '@/context/AuthContext';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 
 interface SchoolFormProps {
   formData: SchoolFormData;
@@ -24,6 +31,17 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
   isEdit = false
 }) => {
   const { user } = useAuth();
+  
+  const handleSelectChange = (name: string, value: string) => {
+    const event = {
+      target: {
+        name,
+        value
+      }
+    } as React.ChangeEvent<HTMLSelectElement>;
+    
+    handleFormChange(event);
+  };
   
   return (
     <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
@@ -60,36 +78,39 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
           {isEdit || user?.role === 'superadmin' ? (
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="regionId">Region *</Label>
-              <select
-                id="regionId"
-                name="regionId"
-                value={formData.regionId}
-                onChange={handleFormChange}
-                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+              <Select
+                value={formData.regionId || "none"}
+                onValueChange={(value) => handleSelectChange('regionId', value === "none" ? "" : value)}
               >
-                <option value="">Seçin</option>
-                {/* Mockup data instead of actual regions */}
-                <option value="baki">Bakı</option>
-                <option value="sumqayit">Sumqayıt</option>
-                <option value="gence">Gəncə</option>
-              </select>
+                <SelectTrigger id="regionId">
+                  <SelectValue placeholder="Seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Seçin</SelectItem>
+                  <SelectItem value="baki">Bakı</SelectItem>
+                  <SelectItem value="sumqayit">Sumqayıt</SelectItem>
+                  <SelectItem value="gence">Gəncə</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           ) : null}
           
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="sectorId">Sektor *</Label>
-            <select
-              id="sectorId"
-              name="sectorId"
-              value={formData.sectorId}
-              onChange={handleFormChange}
-              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+            <Select
+              value={formData.sectorId || "none"}
+              onValueChange={(value) => handleSelectChange('sectorId', value === "none" ? "" : value)}
             >
-              <option value="">Seçin</option>
-              {filteredSectors.map(sector => (
-                <option key={sector.id} value={sector.id}>{sector.name}</option>
-              ))}
-            </select>
+              <SelectTrigger id="sectorId">
+                <SelectValue placeholder="Seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Seçin</SelectItem>
+                {filteredSectors.map(sector => (
+                  <SelectItem key={sector.id} value={sector.id}>{sector.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex flex-col space-y-1.5">
@@ -154,49 +175,55 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="type">Məktəb növü</Label>
-              <select
-                id="type"
-                name="type"
-                value={formData.type}
-                onChange={handleFormChange}
-                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+              <Select
+                value={formData.type || "full_secondary"}
+                onValueChange={(value) => handleSelectChange('type', value)}
               >
-                <option value="full_secondary">Tam orta</option>
-                <option value="general_secondary">Ümumi orta</option>
-                <option value="primary">İbtidai</option>
-                <option value="lyceum">Lisey</option>
-                <option value="gymnasium">Gimnaziya</option>
-              </select>
+                <SelectTrigger id="type">
+                  <SelectValue placeholder="Seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full_secondary">Tam orta</SelectItem>
+                  <SelectItem value="general_secondary">Ümumi orta</SelectItem>
+                  <SelectItem value="primary">İbtidai</SelectItem>
+                  <SelectItem value="lyceum">Lisey</SelectItem>
+                  <SelectItem value="gymnasium">Gimnaziya</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="language">Tədris dili</Label>
-              <select
-                id="language"
-                name="language"
-                value={formData.language}
-                onChange={handleFormChange}
-                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+              <Select
+                value={formData.language || "az"}
+                onValueChange={(value) => handleSelectChange('language', value)}
               >
-                <option value="az">Azərbaycan</option>
-                <option value="ru">Rus</option>
-                <option value="en">İngilis</option>
-                <option value="tr">Türk</option>
-              </select>
+                <SelectTrigger id="language">
+                  <SelectValue placeholder="Seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="az">Azərbaycan</SelectItem>
+                  <SelectItem value="ru">Rus</SelectItem>
+                  <SelectItem value="en">İngilis</SelectItem>
+                  <SelectItem value="tr">Türk</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="status">Status</Label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleFormChange}
-              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+            <Select
+              value={formData.status || "active"}
+              onValueChange={(value) => handleSelectChange('status', value)}
             >
-              <option value="active">Aktiv</option>
-              <option value="inactive">Deaktiv</option>
-            </select>
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktiv</SelectItem>
+                <SelectItem value="inactive">Deaktiv</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </TabsContent>
@@ -239,16 +266,18 @@ const SchoolForm: React.FC<SchoolFormProps> = ({
           
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="adminStatus">Admin statusu</Label>
-            <select
-              id="adminStatus"
-              name="adminStatus"
-              value={formData.adminStatus}
-              onChange={handleFormChange}
-              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm"
+            <Select
+              value={formData.adminStatus || "active"}
+              onValueChange={(value) => handleSelectChange('adminStatus', value)}
             >
-              <option value="active">Aktiv</option>
-              <option value="inactive">Deaktiv</option>
-            </select>
+              <SelectTrigger id="adminStatus">
+                <SelectValue placeholder="Seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktiv</SelectItem>
+                <SelectItem value="inactive">Deaktiv</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </TabsContent>

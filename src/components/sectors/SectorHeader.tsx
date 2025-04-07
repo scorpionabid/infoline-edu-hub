@@ -66,7 +66,7 @@ const SectorHeader: React.FC<SectorHeaderProps> = ({
         {!isRegionFixed && (
           <div className="w-full sm:w-[200px]">
             <Select
-              value={selectedRegion}
+              value={selectedRegion || "all"}
               onValueChange={onRegionChange}
               disabled={regionsLoading || isRegionFixed}
             >
@@ -81,7 +81,7 @@ const SectorHeader: React.FC<SectorHeaderProps> = ({
                 )}
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("allRegions") || 'Bütün regionlar'}</SelectItem>
+                <SelectItem value="all">{t("allRegions") || 'Bütün regionlar'}</SelectItem>
                 {regions.map((region) => (
                   <SelectItem key={region.id} value={region.id}>
                     {region.name}

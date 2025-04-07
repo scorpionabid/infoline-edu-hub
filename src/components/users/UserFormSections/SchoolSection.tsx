@@ -55,6 +55,11 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
                   {school.name}
                 </SelectItem>
               ))}
+              {filteredSchools.length === 0 && (
+                <div className="p-2 text-center text-sm text-muted-foreground">
+                  {t('noSchoolsFound') || 'Məktəb tapılmadı'}
+                </div>
+              )}
             </SelectContent>
           </Select>
           <FormMessage />

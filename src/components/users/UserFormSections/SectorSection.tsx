@@ -43,10 +43,10 @@ const SectorSection: React.FC<SectorSectionProps> = ({
         <FormItem>
           <FormLabel>{t('sector')}</FormLabel>
           <Select
-            value={data.sectorId || "unselected"}
+            value={data.sectorId || "none"}
             onValueChange={(value) => {
-              field.onChange(value === "unselected" ? null : value);
-              onFormChange('sectorId', value === "unselected" ? null : value);
+              field.onChange(value === "none" ? null : value);
+              onFormChange('sectorId', value === "none" ? null : value);
             }}
             disabled={filteredSectors.length === 0}
           >
@@ -56,12 +56,17 @@ const SectorSection: React.FC<SectorSectionProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="unselected">{t('selectSector')}</SelectItem>
+              <SelectItem value="none">{t('selectSector')}</SelectItem>
               {filteredSectors.map((sector) => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sector.name}
                 </SelectItem>
               ))}
+              {filteredSectors.length === 0 && (
+                <div className="p-2 text-center text-sm text-muted-foreground">
+                  {t('noSectorsFound') || 'Sektor tapılmadı'}
+                </div>
+              )}
             </SelectContent>
           </Select>
           <FormMessage />

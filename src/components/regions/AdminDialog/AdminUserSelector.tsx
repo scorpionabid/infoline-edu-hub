@@ -43,11 +43,15 @@ export const AdminUserSelector: React.FC<AdminUserSelectorProps> = ({
           <span>{t('errorLoadingUsers') || 'İstifadəçilər yüklənərkən xəta baş verdi'}</span>
         </div>
       ) : (
-        <Select value={selectedUserId} onValueChange={onUserChange}>
+        <Select 
+          value={selectedUserId || "none"} 
+          onValueChange={(value) => onUserChange(value === "none" ? "" : value)}
+        >
           <SelectTrigger id="user-select" className="w-full">
             <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">{t('selectUser') || 'İstifadəçi seçin'}</SelectItem>
             {users.length > 0 ? (
               users.map((user) => (
                 <SelectItem key={user.id} value={user.id}>
