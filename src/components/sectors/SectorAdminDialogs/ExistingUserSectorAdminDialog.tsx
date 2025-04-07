@@ -51,31 +51,38 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   
   // Adminləri filtirləmək üçün effekt
   useEffect(() => {
-    if (users) {
+    if (users && users.length > 0) {
+      console.log("İstifadəçilər filtrlənir:", showExistingAdmins ? "Bütün istifadəçilər" : "Yalnız seçilə bilən");
+      
       if (showExistingAdmins) {
-        // Bütün istifadəçiləri göstər
-        setFilteredUsers(users);
+        // Bütün istifadəçiləri göstər (təhlükəsizlik üçün superadminlər istisna)
+        setFilteredUsers(users.filter(user => user.role !== 'superadmin'));
       } else {
         // Təyin edilməmiş istifadəçiləri və sektoradmin olmayan istifadəçiləri göstər
-        setFilteredUsers(users.filter(user => {
-          // Superadmin və regionadminlər istisna edilmir
-          if (user.role === 'superadmin' || user.role === 'regionadmin') return true;
+        const filtered = users.filter(user => {
+          // Superadmin-lər görünməsin
+          if (user.role === 'superadmin') return false;
           
-          // Sektoradmin və schooladmin olmayanlar
-          if (user.role !== 'sectoradmin' && user.role !== 'schooladmin') return true;
+          // Mövcud regionadmin-lər görünsün (başqa regionlarda admin ola bilərlər)
+          if (user.role === 'regionadmin') return true;
           
-          // Sektoradmin və ya schooladmin, amma təyin edilməmiş (heç bir region, sektor, school təyin edilməyənlər)
+          // Heç bir rola təyin edilməmiş adi istifadəçilər görünsün
+          if (user.role === 'user' || !user.role) return true;
+          
+          // Sektoradmin və schooladmin-lərdən yalnız təyin edilməmişlər (cədvəldə NULL olanlar)
           if ((user.role === 'sectoradmin' || user.role === 'schooladmin') && 
-              !user.region_id && !user.sector_id && !user.school_id) {
+              !user.sector_id && !user.school_id) {
             return true;
           }
           
-          // Əgər sektoradmin-dirsə, başqa sektora təyin edilməyibsə göstər
-          if (user.role === 'sectoradmin' && !user.sector_id) return true;
-          
           return false;
-        }));
+        });
+        
+        console.log(`${filtered.length} istifadəçi filtrləndi (mövcud adminlər göstərilmir)`);
+        setFilteredUsers(filtered);
       }
+    } else {
+      setFilteredUsers([]);
     }
   }, [users, showExistingAdmins]);
   

@@ -1,121 +1,37 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { FullUserData } from '@/types/supabase';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
+import { fetchAvailableUsersService } from './user/userFetchService';
 
-/**
- * Mövcud istifadəçiləri əldə etmək üçün hook
- * Admin təyinatı üçün uyğun olan istifadəçiləri qaytarır
- */
 export const useAvailableUsers = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { user: currentUser, isAuthenticated } = useAuth();
 
   const fetchAvailableUsers = useCallback(async () => {
-    if (!isAuthenticated || !currentUser) {
-      console.warn('İstifadəçilər əldə edilərkən cari istifadəçi avtorizasiya olunmayıb');
-      setError(new Error('İstifadəçiləri əldə etmək üçün əvvəlcə daxil olun'));
-      setUsers([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
       
-      console.log('İstifadəçiləri əldə etmə başladı...');
+      console.log('İstifadəçiləri yükləmə başladı...');
       
-      // Edge function-dan bütün istifadəçiləri və rollarını əldə edirik
-      const { data, error: functionError } = await supabase.functions.invoke('get_all_users_with_roles');
+      const result = await fetchAvailableUsersService();
       
-      if (functionError) {
-        console.error('Edge function ilə istifadəçilər əldə edilərkən xəta:', functionError);
-        throw new Error(`İstifadəçilər əldə edilərkən xəta: ${functionError.message}`);
-      }
-      
-      if (!data || !data.users || data.users.length === 0) {
-        console.log('Heç bir istifadəçi tapılmadı');
-        setUsers([]);
-        setLoading(false);
+      if (result.error) {
+        console.error('İstifadəçiləri yükləmə xətası:', result.error);
+        setError(result.error);
         return;
       }
       
-      console.log(`${data.users.length} istifadəçi əldə edildi`);
-      
-      // Özünü çıxaraq
-      const otherUsers = data.users.filter(user => user.id !== currentUser.id);
-      console.log(`Cari istifadəçi çıxarıldıqdan sonra ${otherUsers.length} istifadəçi qalır`);
-      
-      // İstifadəçi məlumatlarını FullUserData formatına çeviririk
-      const formattedUsers = otherUsers.map(user => ({
-        id: user.id,
-        email: user.email || '',
-        full_name: user.full_name || 'İsimsiz İstifadəçi',
-        role: user.role || 'user',
-        region_id: user.region_id,
-        sector_id: user.sector_id,
-        school_id: user.school_id,
-        phone: user.phone,
-        position: user.position,
-        language: user.language || 'az',
-        avatar: user.avatar,
-        status: user.status || 'active',
-        last_login: user.last_login,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        
-        // JavaScript/React tərəfində istifadə üçün CamelCase əlavə edir
-        name: user.full_name || 'İsimsiz İstifadəçi',
-        regionId: user.region_id,
-        sectorId: user.sector_id,
-        schoolId: user.school_id,
-        lastLogin: user.last_login,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        
-        // Admin olmadığı üçün boşdur
-        adminEntity: null
-      } as FullUserData));
-      
-      setUsers(formattedUsers);
-      
-    } catch (err) {
-      console.error('İstifadəçiləri əldə edərkən xəta:', err);
-      setError(err instanceof Error ? err : new Error('İstifadəçilər yüklənərkən xəta baş verdi'));
+      console.log(`${result.users.length} istifadəçi uğurla yükləndi`);
+      setUsers(result.users);
+    } catch (err: any) {
+      console.error('İstifadəçiləri yükləmə cəhdi zamanı xəta:', err);
+      setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
-  }, [currentUser, isAuthenticated]);
-
-  // Komponent yükləndikdə istifadəçiləri avtomatik əldə et
-  useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      fetchAvailableUsers();
-    } else {
-      console.log('Cari istifadəçi autentifikasiya olunmayıb, istifadəçi sorğusu edilmir');
-      setUsers([]);
-      setError(new Error('İstifadəçiləri əldə etmək üçün əvvəlcə daxil olun'));
-      setLoading(false);
-    }
-  }, [fetchAvailableUsers, currentUser, isAuthenticated]);
-
-  // Document event dinamik yeniləmə üçün əlavə edildi
-  useEffect(() => {
-    const handleRefresh = () => {
-      console.log('refresh-users event alındı, istifadəçilər yenilənir...');
-      fetchAvailableUsers();
-    };
-    
-    document.addEventListener('refresh-users', handleRefresh);
-    
-    return () => {
-      document.removeEventListener('refresh-users', handleRefresh);
-    };
-  }, [fetchAvailableUsers]);
+  }, []);
 
   return {
     users,
