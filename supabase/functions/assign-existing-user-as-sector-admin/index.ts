@@ -14,6 +14,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Yeni sorğu qəbul edildi:", req.method);
+    
     // Headers-i daha detallı loqla
     const headersObj = Object.fromEntries(req.headers.entries());
     console.log("Bütün headers:", JSON.stringify(headersObj, null, 2));
@@ -21,14 +23,6 @@ serve(async (req) => {
     // İstifadəçi autentifikasiyasını yoxla
     const authHeader = req.headers.get("Authorization");
     console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
-    if (authHeader) {
-      console.log("Auth header uzunluğu:", authHeader.length);
-      console.log("Auth header başlanğıcı:", authHeader.substring(0, 30) + "...");
-    }
-    
-    // Content type-ı yoxla
-    const contentType = req.headers.get("Content-Type");
-    console.log("Content-Type:", contentType);
     
     if (!authHeader) {
       console.error("Autorizasiya başlığı yoxdur");
@@ -53,11 +47,21 @@ serve(async (req) => {
     // İstəyin məlumatlarını əldə et
     let requestData;
     try {
-      requestData = await req.json();
+      const requestText = await req.text();
+      console.log("Raw request body:", requestText);
+      
+      if (!requestText || requestText.trim() === '') {
+        console.error("Request body boşdur");
+        return new Response(
+          JSON.stringify({ success: false, error: "Sorğu məlumatları təqdim edilməyib" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+      
+      requestData = JSON.parse(requestText);
       console.log("Gələn sorğu məlumatları:", JSON.stringify(requestData, null, 2));
     } catch (error) {
       console.error("JSON parse xətası:", error);
-      console.error("JSON məlumatları:", await req.text());
       return new Response(
         JSON.stringify({ success: false, error: "Sorğu məlumatları düzgün JSON formatında deyil" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -65,8 +69,8 @@ serve(async (req) => {
     }
 
     // Parametrləri yoxla
-    const userId = requestData.userId;
-    const sectorId = requestData.sectorId;
+    const userId = requestData?.userId;
+    const sectorId = requestData?.sectorId;
     
     console.log("Parametrlər:", { userId, sectorId });
     

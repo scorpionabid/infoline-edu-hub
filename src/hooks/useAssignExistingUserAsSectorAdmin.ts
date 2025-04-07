@@ -20,12 +20,19 @@ export const useAssignExistingUserAsSectorAdmin = () => {
           ? 'Sektor ID təyin edilməyib'
           : 'İstifadəçi ID təyin edilməyib';
           
-        console.error(errorMessage);
+        console.error('Admin təyin etmək üçün parametr çatışmır:', errorMessage);
         toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
           description: errorMessage
         });
         return { success: false, error: errorMessage };
       }
+      
+      // Debug üçün əlavə məlumatlar
+      console.log('Supabase Edge funksiyası çağırılır...');
+      console.log('Parametrlər:', JSON.stringify({
+        userId, 
+        sectorId
+      }));
       
       // Supabase edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
@@ -43,8 +50,10 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         return { success: false, error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' };
       }
       
-      // Əgər data.error mövcuddursa (SQL funksiyasından qaytarılan xəta)
-      if (data && data.error) {
+      console.log('Edge funksiyasından gələn cavab:', data);
+      
+      // Əgər data.success false olarsa (funksiya uğursuz olub)
+      if (data && !data.success) {
         console.error('Admin təyin edilərkən xəta:', data.error);
         toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
           description: data.error || t('unexpectedError') || 'Gözlənilməz xəta'

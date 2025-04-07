@@ -58,19 +58,19 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       } else {
         // Təyin edilməmiş istifadəçiləri və sektoradmin olmayan istifadəçiləri göstər
         setFilteredUsers(users.filter(user => {
-          // İstifadəçinin rolu varmı və admindirsə
-          const isAdmin = user.role === 'superadmin' || 
-                          user.role === 'regionadmin' || 
-                          user.role === 'sectoradmin' || 
-                          user.role === 'schooladmin';
+          // Superadmin və regionadminlər istisna edilmir
+          if (user.role === 'superadmin' || user.role === 'regionadmin') return true;
           
-          // Admin olmayan istifadəçiləri göstər
-          if (!isAdmin) return true;
+          // Sektoradmin və schooladmin olmayanlar
+          if (user.role !== 'sectoradmin' && user.role !== 'schooladmin') return true;
           
-          // Təyin olunmayan adminləri göstər (region_id, sector_id və school_id null olanlar)
-          if (isAdmin && !user.region_id && !user.sector_id && !user.school_id) return true;
+          // Sektoradmin və ya schooladmin, amma təyin edilməmiş (heç bir region, sektor, school təyin edilməyənlər)
+          if ((user.role === 'sectoradmin' || user.role === 'schooladmin') && 
+              !user.region_id && !user.sector_id && !user.school_id) {
+            return true;
+          }
           
-          // Əgər sectoradmin-dirsə, amma heç bir sektora təyin edilməyibsə göstər
+          // Əgər sektoradmin-dirsə, başqa sektora təyin edilməyibsə göstər
           if (user.role === 'sectoradmin' && !user.sector_id) return true;
           
           return false;
