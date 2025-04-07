@@ -2,80 +2,70 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { supabaseUrl } from "./config.ts";
 
-interface AuthResult {
-  authorized: boolean;
-  userData?: {
-    id: string;
-    email: string;
-    role: string;
-    region_id?: string;
-  };
-  error?: string;
-  status?: number;
-}
-
 /**
- * JWT Token doğrulama və istifadəçi məlumatlarını əldə etmə
- * @param authHeader Authorization başlığı
- * @returns Auth nəticəsi
+ * Auth authorization header-ini yoxlayıb doğrulayır
+ * @param authHeader Authorization header dəyəri
+ * @returns Doğrulama nəticəsi
  */
-export async function authenticateAndAuthorize(authHeader: string): Promise<AuthResult> {
+export async function authenticateAndAuthorize(authHeader: string) {
   try {
-    // SUPABASE_SERVICE_ROLE_KEY-i birbaşa Deno.env-dən alırıq
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // JWT token-i extract et
+    const token = authHeader.replace("Bearer ", "");
     
-    if (!supabaseServiceRoleKey) {
-      console.error("SUPABASE_SERVICE_ROLE_KEY mövcud deyil");
+    if (!token) {
       return {
         authorized: false,
-        error: "Server konfigurasiyası xətası",
+        error: "Token təqdim edilməyib",
+        status: 401
+      };
+    }
+    
+    // SUPABASE_ANON_KEY environment variable-ını al
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Ətraf dəyişənlər mövcud deyil: SUPABASE_URL və ya SUPABASE_ANON_KEY");
+      return {
+        authorized: false,
+        error: "Server konfiqurasiyası xətası",
         status: 500
       };
     }
     
-    if (!authHeader.startsWith("Bearer ")) {
-      console.error("Dözgün olmayan auth header formatı");
-      return {
-        authorized: false,
-        error: "Avtorizasiya başlığı düzgün formatda deyil",
-        status: 401
-      };
-    }
-
-    // JWT Token
-    const token = authHeader.replace("Bearer ", "");
-    console.log("JWT token mövcuddur, uzunluq:", token.length);
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    // Supabase client yaradırıq
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        autoRefreshToken: false,
         persistSession: false,
+        autoRefreshToken: false,
       },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
     });
     
-    // JWT token-dən istifadəçi ID-ni əldə et
-    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+    // İstifadəçi məlumatlarını əldə edirik
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
-    if (authError || !userData.user) {
-      console.error("İstifadəçi autentifikasiya xətası:", authError);
+    if (userError || !user) {
+      console.error("JWT token yoxlaması xətası:", userError);
       return {
         authorized: false,
-        error: `Avtorizasiya xətası: ${authError?.message || "Token doğrulaması uğursuz oldu"}`,
+        error: userError?.message || "Etibarsız token",
         status: 401
       };
     }
     
-    console.log("Auth uğurludur, userData:", userData.user.id, userData.user.email);
-    
-    // İstifadəçinin rolunu əldə et
+    // İstifadəçi rolunu əldə edirik
     const { data: roleData, error: roleError } = await supabase
-      .from("user_roles")
-      .select("*")
-      .eq("user_id", userData.user.id)
-      .maybeSingle();
+      .from('user_roles')
+      .select('role, region_id')
+      .eq('user_id', user.id)
+      .single();
     
-    if (roleError) {
-      console.error("İstifadəçi rolu sorğu xətası:", roleError);
+    if (roleError || !roleData) {
+      console.error("İstifadəçi rolu əldə edilərkən xəta:", roleError);
       return {
         authorized: false,
         error: "İstifadəçi rolu tapılmadı",
@@ -83,42 +73,33 @@ export async function authenticateAndAuthorize(authHeader: string): Promise<Auth
       };
     }
     
-    if (!roleData) {
-      console.error("İstifadəçi rolu tapılmadı");
+    // İstifadəçinin superadmin, regionadmin və ya sectoradmin olduğunu yoxlayırıq
+    if (!['superadmin', 'regionadmin'].includes(roleData.role)) {
+      console.error("İcazə yoxdur, rol:", roleData.role);
       return {
         authorized: false,
-        error: "İstifadəçi rolu tapılmadı",
+        error: "Bu əməliyyat üçün admin səlahiyyətləri tələb olunur",
         status: 403
       };
     }
     
-    const role = roleData.role as string;
-    console.log("İstifadəçi rolu:", role);
-    
-    // Yalnız superadmin və regionadmin rolları icazəlidir
-    if (role !== "superadmin" && role !== "regionadmin") {
-      console.error("İcazəsiz giriş - yalnız superadmin və regionadmin");
-      return {
-        authorized: false,
-        error: "Bu əməliyyat üçün superadmin və ya regionadmin səlahiyyətləri tələb olunur",
-        status: 403
-      };
-    }
+    // Yoxlamaları keçən istifadəçi
+    console.log(`İstifadəçi ${user.id} doğrulandı, rol: ${roleData.role}`);
     
     return {
       authorized: true,
       userData: {
-        id: userData.user.id,
-        email: userData.user.email || "",
-        role: role,
+        id: user.id,
+        email: user.email,
+        role: roleData.role,
         region_id: roleData.region_id
       }
     };
   } catch (error) {
-    console.error("Auth emalı zamanı xəta:", error);
+    console.error("Autentifikasiya zamanı xəta:", error);
     return {
       authorized: false,
-      error: `Auth emalı zamanı xəta: ${error instanceof Error ? error.message : 'Bilinməyən xəta'}`,
+      error: `Autentifikasiya xətası: ${error instanceof Error ? error.message : "Bilinməyən xəta"}`,
       status: 500
     };
   }
