@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
@@ -139,7 +140,6 @@ const Sectors = () => {
           setOpen={setOpenSectorDialog}
           selectedSector={selectedSector}
           onSubmit={handleFormSubmit}
-          onSuccess={handleSectorCreated}
         />
         
         <SectorAdminDialog

@@ -45,8 +45,8 @@ const SectorSection: React.FC<SectorSectionProps> = ({
           <Select
             value={data.sectorId || "unselected"}
             onValueChange={(value) => {
-              field.onChange(value === "unselected" ? "" : value);
-              onFormChange('sectorId', value === "unselected" ? "" : value);
+              field.onChange(value === "unselected" ? null : value);
+              onFormChange('sectorId', value === "unselected" ? null : value);
             }}
             disabled={filteredSectors.length === 0}
           >
