@@ -54,6 +54,8 @@ const Sectors = () => {
   };
 
   const handleAdminAssigned = () => {
+    console.log('handleAdminAssigned çağırıldı');
+    // Sektorlar listini yenidən yüklə
     fetchSectors();
     setCreatedSector(null);
   };

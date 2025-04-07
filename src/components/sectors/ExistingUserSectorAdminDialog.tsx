@@ -97,6 +97,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
         
         // Həm də list refresh etsin
         if (onSuccess) {
+          console.log('onSuccess funksiyası çağırılır...');
           setTimeout(() => {
             onSuccess();
           }, 500); // 500ms sonra refresh et, UI üçün daha yaxşı təcrübə

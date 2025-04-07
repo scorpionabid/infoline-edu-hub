@@ -52,6 +52,21 @@ export const useAssignExistingUserAsSectorAdmin = () => {
         throw new Error(data?.error || 'Əməliyyat uğursuz oldu');
       }
       
+      // Əmin olmaq üçün user_roles cədvəlini birbaşa yeniləyək
+      const { error: userRoleError } = await supabase
+        .from('user_roles')
+        .update({ 
+          role: 'sectoradmin',
+          sector_id: sectorId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+      
+      if (userRoleError) {
+        console.error('User roles yeniləmə xətası:', userRoleError);
+        // Bu xəta ilə əməliyyatı dayandırmırıq, çünki edge funksiyası əsasən yeniləyir
+      }
+      
       // Sektorlar cədvəlini yenilə
       await supabase.from('sectors')
         .update({ 

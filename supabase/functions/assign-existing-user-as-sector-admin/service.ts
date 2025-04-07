@@ -48,6 +48,22 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
     }
     
     console.log("SQL funksiyası uğurla yerinə yetirildi:", data);
+    
+    // Həmçinin user_roles cədvəlini birbaşa yeniləyək (zəmanət üçün)
+    const { error: userRoleError } = await supabase
+      .from('user_roles')
+      .update({ 
+        role: 'sectoradmin',
+        sector_id: sectorId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+      
+    if (userRoleError) {
+      console.error("User role yeniləmə xətası:", userRoleError);
+      // Ana əməliyyat uğurlu olsa da, xəta loglayırıq
+    }
+    
     return { success: true, data };
     
   } catch (error) {
