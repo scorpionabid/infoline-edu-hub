@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 
 /**
  * Mövcud istifadəçiləri əldə etmək üçün hook
- * Admin təyinatı üçün uyğun olan (sektor admini olmayan və superadmin olmayan) istifadəçiləri qaytarır
+ * Admin təyinatı üçün uyğun olan istifadəçiləri qaytarır
  */
 export const useAvailableUsers = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
@@ -44,21 +44,14 @@ export const useAvailableUsers = () => {
         return;
       }
       
-      console.log(`${data.users.length} istifadəçi əldə edildi, filtrlənir...`);
+      console.log(`${data.users.length} istifadəçi əldə edildi`);
       
-      // Admin olmayan və özü olmayan istifadəçiləri filtrləyirik
-      const availableUsers = data.users.filter(user => 
-        user.id !== currentUser.id && // özünü çıxarırıq
-        user.role !== 'superadmin' && 
-        user.role !== 'regionadmin' && 
-        user.role !== 'sectoradmin' && 
-        user.role !== 'schooladmin'
-      );
-      
-      console.log(`${availableUsers.length} istifadəçi filtrləndikdən sonra qaldı`);
+      // Özünü çıxaraq
+      const otherUsers = data.users.filter(user => user.id !== currentUser.id);
+      console.log(`Cari istifadəçi çıxarıldıqdan sonra ${otherUsers.length} istifadəçi qalır`);
       
       // İstifadəçi məlumatlarını FullUserData formatına çeviririk
-      const formattedUsers = availableUsers.map(user => ({
+      const formattedUsers = otherUsers.map(user => ({
         id: user.id,
         email: user.email || '',
         full_name: user.full_name || 'İsimsiz İstifadəçi',

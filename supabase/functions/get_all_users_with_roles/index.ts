@@ -179,10 +179,39 @@ serve(async (req) => {
       const profileData = profilesMap[user.id] || {};
       const now = new Date().toISOString();
 
+      // Əgər profil yoxdursa, boş profil yaradaq
+      if (!profileData || Object.keys(profileData).length === 0) {
+        console.log(`Profil yoxdur istifadəçi üçün: ${user.id}, yeni profil yaradılır...`);
+        
+        // Profil yaratma
+        try {
+          supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              full_name: user.user_metadata?.full_name || 'İsimsiz İstifadəçi',
+              email: user.email,
+              language: 'az',
+              status: 'active',
+              created_at: now,
+              updated_at: now
+            })
+            .then(({ error }) => {
+              if (error) {
+                console.error('Profil yaratma xətası:', error);
+              } else {
+                console.log(`Yeni profil yaradıldı istifadəçi üçün: ${user.id}`);
+              }
+            });
+        } catch (err) {
+          console.error('Profil yaratma zamanı istisna:', err);
+        }
+      }
+
       return {
         id: user.id,
         email: user.email || '',
-        full_name: profileData.full_name || 'İsimsiz İstifadəçi',
+        full_name: profileData.full_name || user.user_metadata?.full_name || 'İsimsiz İstifadəçi',
         role: roleData.role || 'user',
         region_id: roleData.region_id || null,
         sector_id: roleData.sector_id || null,
@@ -198,7 +227,14 @@ serve(async (req) => {
         // JavaScript/React tərəfində istifadə üçün CamelCase əlavə edir
         createdAt: user.created_at || now,
         updatedAt: user.updated_at || now,
-        raw_user_meta_data: user.user_metadata || {}
+        raw_user_meta_data: user.user_metadata || {},
+        // Rolu və təyinat statusunu qeyd edək
+        is_assigned: !!(roleData.region_id || roleData.sector_id || roleData.school_id),
+        assignment_type: roleData.role ? (
+          roleData.region_id ? 'region' : 
+          roleData.sector_id ? 'sector' : 
+          roleData.school_id ? 'school' : 'none'
+        ) : 'none'
       };
     });
 
