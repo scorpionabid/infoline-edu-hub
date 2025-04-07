@@ -32,6 +32,16 @@ export const useAssignExistingUserAsSectorAdmin = () => {
       
       console.log('Edge funksiyasına sorğu göndərilir:', { sectorId, userId });
       
+      // Cari JWT tokeni əldə et
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error("Aktiv istifadəçi sesiyası tapılmadı");
+        throw new Error("Avtorizasiya xətası - əməliyyatı yerinə yetirmək üçün yenidən daxil olun");
+      }
+      
+      console.log("JWT token mövcuddur, uzunluq:", session.access_token.length);
+      
       // Edge funksiyasını çağır
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-sector-admin', {
         body: { 

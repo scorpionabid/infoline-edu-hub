@@ -17,6 +17,7 @@ serve(async (req) => {
     // İstifadəçi autentifikasiyasını yoxla
     const authHeader = req.headers.get("Authorization");
     console.log("Auth header alındı:", authHeader ? "Var" : "Yoxdur");
+    console.log("Auth header:", authHeader);
     
     const authResult = await authenticateAndAuthorize(authHeader);
     

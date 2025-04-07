@@ -31,11 +31,18 @@ export async function authenticateAndAuthorize(authHeader: string | null): Promi
 
   try {
     console.log('Auth header ilə autentifikasiya başlayır');
+    console.log('Auth header tipi:', typeof authHeader);
+    console.log('Auth header uzunluğu:', authHeader.length);
+    console.log('Auth header başlanğıcı:', authHeader.substring(0, 30) + '...');
 
     // Autentifikasiya olunmuş istifadəçiyə bağlı client
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: authHeader },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     });
 
