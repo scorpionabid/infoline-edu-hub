@@ -28,19 +28,22 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   
-  const { users, loading: loadingUsers } = useAvailableUsers();
+  const { users, loading: loadingUsers, fetchAvailableUsers } = useAvailableUsers();
   const { assignUserAsSectorAdmin, loading: assigningUser } = useAssignExistingUserAsSectorAdmin();
   
-  // Dialog açıldığında seçimləri sıfırla
+  // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
   useEffect(() => {
     if (open) {
       setSelectedUserId("");
       setError(null);
+      fetchAvailableUsers();
+      console.log('Dialog açıldı, istifadəçilər yüklənir...');
     }
-  }, [open]);
+  }, [open, fetchAvailableUsers]);
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
+    console.log('Seçilmiş istifadəçi:', userId);
     setSelectedUserId(userId);
   };
 
@@ -57,17 +60,21 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     }
 
     try {
+      console.log('Admin təyin etmə başladı:', { sectorId: sector.id, userId: selectedUserId });
       const result = await assignUserAsSectorAdmin(sector.id, selectedUserId);
       
       if (result.success) {
+        console.log('Admin uğurla təyin edildi');
         setOpen(false);
         if (onSuccess) {
           onSuccess();
         }
       } else {
+        console.error('Admin təyin etmə xətası:', result.error);
         setError(result.error || t('assignmentFailed') || 'Admin təyin edilərkən xəta baş verdi');
       }
     } catch (error: any) {
+      console.error('Admin təyin etmə istisna:', error);
       setError(error.message || t('unexpectedError') || 'Gözlənilməz xəta');
     }
   };
@@ -101,16 +108,21 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
                 <SelectValue placeholder={t('selectUser') || 'İstifadəçi seçin'} />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user) => (
+                {loadingUsers && (
+                  <div className="p-2 text-center text-sm text-muted-foreground">
+                    {t('loading') || 'Yüklənir...'}
+                  </div>
+                )}
+                {!loadingUsers && users.length === 0 && (
+                  <div className="p-2 text-center text-sm text-muted-foreground">
+                    {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+                  </div>
+                )}
+                {!loadingUsers && users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.full_name || 'İstifadəçi'} ({user.email})
                   </SelectItem>
                 ))}
-                {users.length === 0 && (
-                  <div className="p-2 text-center text-sm text-muted-foreground">
-                    {loadingUsers ? (t('loading') || 'Yüklənir...') : (t('noUsersFound') || 'İstifadəçi tapılmadı')}
-                  </div>
-                )}
               </SelectContent>
             </Select>
           </div>

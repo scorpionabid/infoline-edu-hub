@@ -30,7 +30,7 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
     
     // SQL funksiyasını çağır
     const { data, error } = await supabase.rpc(
-      'assign_existing_user_as_sector_admin',
+      'assign_sector_admin',
       {
         user_id_param: userId,
         sector_id_param: sectorId
