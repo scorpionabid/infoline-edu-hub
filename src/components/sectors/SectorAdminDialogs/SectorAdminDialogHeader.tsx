@@ -24,8 +24,7 @@ export const SectorAdminDialogHeader: React.FC<SectorAdminDialogHeaderProps> = (
           {t('selectUserToAssign') || 'Təyin ediləcək istifadəçini seçin'}
         </h3>
         <p className="text-sm text-muted-foreground mt-1">
-          {t('selectUserToAssignDesc', { sectorName: sector.name }) || 
-            `"${sector.name}" sektoru üçün admin olaraq təyin ediləcək istifadəçini seçin`}
+          {`"${sector.name}" sektoru üçün admin olaraq təyin ediləcək istifadəçini seçin`}
         </p>
       </div>
     );
@@ -35,8 +34,7 @@ export const SectorAdminDialogHeader: React.FC<SectorAdminDialogHeaderProps> = (
     <DialogHeader>
       <DialogTitle>{t('assignSectorAdmin') || 'Sektor Admini Təyin Et'}</DialogTitle>
       <DialogDescription>
-        {t('assignSectorAdminDesc', { sectorName: sector.name }) || 
-          `"${sector.name}" sektoru üçün admin təyin edin`}
+        {`"${sector.name}" sektoru üçün admin təyin edin`}
       </DialogDescription>
     </DialogHeader>
   );
