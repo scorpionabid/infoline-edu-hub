@@ -40,7 +40,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
   useEffect(() => {
     if (open) {
-      console.log('Dialog açıldı, istifadəçinin auth statusu:', isAuthenticated ? 'Authenticated' : 'Not authenticated');
+      console.log('Dialog açıldı, istifadəçiləri yenidən yükləmə başladı...');
       setSelectedUserId("");
       setError(null);
       
@@ -78,6 +78,10 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       if (result.success) {
         console.log('Admin uğurla təyin edildi');
         setOpen(false);
+        
+        // Tətbiqi yeniləmək üçün event triggerlə
+        document.dispatchEvent(new Event('refresh-users'));
+        document.dispatchEvent(new Event('refresh-sectors'));
         
         // Həm də list refresh etsin
         if (onSuccess) {

@@ -51,7 +51,7 @@ export const useAvailableUsers = () => {
     }
   }, [currentUser, isAuthenticated]);
 
-  // Cari istifadəçi dəyişdikdə istifadəçiləri yenidən əldə et
+  // Komponent yükləndikdə istifadəçiləri avtomatik əldə et
   useEffect(() => {
     if (isAuthenticated && currentUser) {
       fetchAvailableUsers();
@@ -62,6 +62,20 @@ export const useAvailableUsers = () => {
       setLoading(false);
     }
   }, [fetchAvailableUsers, currentUser, isAuthenticated]);
+
+  // Document event dinamik yeniləmə üçün əlavə edildi
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('refresh-users event alındı, istifadəçilər yenilənir...');
+      fetchAvailableUsers();
+    };
+    
+    document.addEventListener('refresh-users', handleRefresh);
+    
+    return () => {
+      document.removeEventListener('refresh-users', handleRefresh);
+    };
+  }, [fetchAvailableUsers]);
 
   return {
     users,
