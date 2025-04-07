@@ -35,12 +35,12 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
     console.log("Supabase client yaradıldı, işləmə başlayır...");
     
     try {
-      // İstifadəçi email-ni profiles-dan əldə et
+      // İstifadəçi profilini əldə et - maybeSingle() istifadə edərək xətadan qaçınırıq
       const { data: userProfileData, error: userProfileError } = await supabase
         .from("profiles")
         .select("email, full_name")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
       
       if (userProfileError) {
         console.error("İstifadəçi profili əldə edilərkən xəta:", userProfileError);
@@ -58,16 +58,30 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
         };
       }
       
-      const userEmail = userProfileData.email;
-      const userName = userProfileData.full_name;
+      // Auth istifadəçisini əldə etməyə çalışırıq
+      let userEmail = userProfileData.email;
+      let userName = userProfileData.full_name;
+      
+      if (!userEmail) {
+        // Əgər profildə email yoxdursa, auth cədvəlindən birbaşa əldə etməyə çalışırıq
+        const { data: authData } = await supabase.rpc('safe_get_user_by_id', { user_id: userId });
+        
+        if (authData && authData.email) {
+          userEmail = authData.email;
+        } else {
+          // Məcburən bir email əlavə edirik - boş qalmamalıdır
+          userEmail = `user-${userId.substring(0, 8)}@infoline.edu.az`;
+        }
+      }
+      
       console.log(`İstifadəçi məlumatları: Email: ${userEmail || 'yoxdur'}, Ad: ${userName || 'yoxdur'}`);
       
-      // Sektorun region_id məlumatını əldə et
+      // Sektorun region_id məlumatını əldə et - maybeSingle() istifadə edirik
       const { data: sectorData, error: sectorError } = await supabase
         .from("sectors")
         .select("region_id, name")
         .eq("id", sectorId)
-        .single();
+        .maybeSingle();
         
       if (sectorError) {
         console.error("Sektor məlumatları əldə edilərkən xəta:", sectorError);
@@ -90,11 +104,12 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
       console.log(`Sektor məlumatları: Region ID: ${regionId}, Ad: ${sectorName}`);
       
       // Mövcud admin-i yoxlayaq və əgər varsa, onu təmizləyək
+      // .maybeSingle() istifadə edirik
       const { data: currentSectorAdmin, error: currentSectorError } = await supabase
         .from("sectors")
         .select("admin_id")
         .eq("id", sectorId)
-        .single();
+        .maybeSingle();
       
       if (currentSectorError) {
         console.error("Mövcud admin yoxlanarkən xəta:", currentSectorError);
@@ -146,14 +161,14 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
         }
         
         // İndi istifadəçi rolunu yeniləyək
-        // Əvvəlcə mövcud rolu yoxlayaq
+        // Əvvəlcə mövcud rolu yoxlayaq - maybeSingle() istifadə edirik
         const { data: existingRole, error: roleCheckError } = await supabase
           .from("user_roles")
           .select("*")
           .eq("user_id", userId)
-          .single();
+          .maybeSingle();
         
-        if (roleCheckError && !roleCheckError.message.includes('No rows found')) {
+        if (roleCheckError) {
           console.error("İstifadəçi rolu yoxlanarkən xəta:", roleCheckError);
           return {
             success: false,
@@ -171,7 +186,8 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
               role: "sectoradmin",
               sector_id: sectorId,
               region_id: regionId,
-              school_id: null
+              school_id: null,
+              updated_at: new Date().toISOString()
             })
             .eq("user_id", userId);
             
@@ -184,7 +200,9 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
               role: "sectoradmin",
               sector_id: sectorId,
               region_id: regionId,
-              school_id: null
+              school_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             });
             
           roleUpdateError = error;
@@ -199,6 +217,29 @@ export async function callAssignSectorAdminFunction(userId: string, sectorId: st
         }
         
         console.log("Sektor admin və istifadəçi rolu uğurla təyin edildi");
+        
+        // Audit log əlavə etməyə çalışaq (əlavə xəbərdarlıq olaraq)
+        try {
+          await supabase
+            .from("audit_logs")
+            .insert({
+              user_id: userId,
+              action: "assign_sector_admin",
+              entity_type: "sector",
+              entity_id: sectorId,
+              new_value: {
+                sector_id: sectorId,
+                sector_name: sectorName,
+                region_id: regionId,
+                admin_id: userId,
+                admin_name: userName,
+                admin_email: userEmail
+              }
+            });
+        } catch (auditError) {
+          // Audit loglama xətası əsas əməliyyatı dayandırmamalıdır
+          console.warn("Audit log yazılarkən xəta:", auditError);
+        }
         
         // Uğurlu nəticə
         return {
