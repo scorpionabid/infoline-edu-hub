@@ -249,25 +249,50 @@ serve(async (req) => {
     let roleUpdateError: any = null;
     
     try {
-      // RPC funksiyası ilə istifadəçi rolunu təyin et
-      console.log(`assign_school_admin_role RPC funksiyası çağırılır...`);
+      // RPC funksiyası əvəzinə birbaşa SQL sorğuları istifadə edək
+      console.log(`İstifadəçi rolu yenilənir - SQL sorğusu ilə...`);
       
-      const { data: roleResult, error } = await supabaseAdmin.rpc('assign_school_admin_role', {
-        p_user_id: userId,
-        p_school_id: schoolId,
-        p_region_id: schoolData.region_id,
-        p_sector_id: schoolData.sector_id
-      });
-      
-      if (error) {
-        console.error('RPC assign_school_admin_role xətası:', error);
-        roleUpdateError = error;
-      } else {
-        console.log('RPC assign_school_admin_role nəticəsi:', roleResult);
+      // Əgər istifadəçinin mövcud rolu varsa, yenilə, yoxdursa əlavə et
+      if (existingRole) {
+        console.log(`Mövcud rol yenilənir. UserId: ${userId}, Role: schooladmin`);
         
-        if (roleResult && !roleResult.success) {
-          console.error('RPC assign_school_admin_role uğursuz oldu:', roleResult.error);
-          roleUpdateError = new Error(roleResult.error);
+        const { error: updateRoleError } = await supabaseAdmin
+          .from("user_roles")
+          .update({
+            role: "schooladmin",
+            region_id: schoolData.region_id,
+            sector_id: schoolData.sector_id,
+            school_id: schoolId,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", userId);
+        
+        if (updateRoleError) {
+          console.error("Error updating user role:", updateRoleError);
+          roleUpdateError = updateRoleError;
+        } else {
+          console.log(`İstifadəçi rolu uğurla yeniləndi. UserId: ${userId}`);
+        }
+      } else {
+        console.log(`Yeni rol əlavə edilir. UserId: ${userId}, Role: schooladmin`);
+        
+        const { error: insertRoleError } = await supabaseAdmin
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            role: "schooladmin",
+            region_id: schoolData.region_id,
+            sector_id: schoolData.sector_id,
+            school_id: schoolId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (insertRoleError) {
+          console.error("Error inserting user role:", insertRoleError);
+          roleUpdateError = insertRoleError;
+        } else {
+          console.log(`İstifadəçi rolu uğurla əlavə edildi. UserId: ${userId}`);
         }
       }
     } catch (prepError: any) {
@@ -320,15 +345,18 @@ serve(async (req) => {
         
         const newValue = { admin_id: userId, admin_email: userData.email };
         
-        // RPC funksiyası ilə audit log yarat
-        const { data: auditResult, error: auditLogError } = await supabaseAdmin.rpc('create_audit_log', {
-          p_user_id: userId,
-          p_action: 'assign',
-          p_entity_type: 'school_admin',
-          p_entity_id: schoolId,
-          p_old_value: oldValue,
-          p_new_value: newValue
-        });
+        // RPC funksiyası əvəzinə birbaşa SQL sorğusu istifadə edək
+        const { error: auditLogError } = await supabaseAdmin
+          .from("audit_logs")
+          .insert({
+            user_id: userId,
+            action: 'assign',
+            entity_type: 'school_admin',
+            entity_id: schoolId,
+            old_value: oldValue,
+            new_value: newValue,
+            created_at: new Date().toISOString()
+          });
         
         if (auditLogError) {
           console.error("Error creating audit log:", auditLogError);
