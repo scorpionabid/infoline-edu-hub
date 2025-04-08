@@ -92,12 +92,15 @@ serve(async (req) => {
           autoRefreshToken: false,
           persistSession: false,
         },
+        db: {
+          schema: 'public'
+        },
         global: {
-          headers: {
-            // Service role key ilə işləyərkən, RLS (Row Level Security) bypass edilir
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-          }
-        }
+          headers: { 
+            'X-Client-Info': 'supabase-admin-client',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+          },
+        },
       }
     );
     
@@ -245,55 +248,73 @@ serve(async (req) => {
 
     // 1. İstifadəçinin rolunu təyin et (yeni əlavə et və ya mövcudu yenilə)
     console.log(`İstifadəçi rolu yenilənir. UserId: ${userId}, SchoolId: ${schoolId}`);
-    
+
     let roleUpdateError: any = null;
-    
+
     try {
-      // RPC funksiyası əvəzinə birbaşa SQL sorğuları istifadə edək
-      console.log(`İstifadəçi rolu yenilənir - SQL sorğusu ilə...`);
+      // Supabase-də yaradılmış SQL funksiyasını çağıraq
+      console.log(`assign_school_admin SQL funksiyası çağırılır...`);
       
-      // Əgər istifadəçinin mövcud rolu varsa, yenilə, yoxdursa əlavə et
-      if (existingRole) {
-        console.log(`Mövcud rol yenilənir. UserId: ${userId}, Role: schooladmin`);
+      const { data: result, error } = await supabaseAdmin.rpc('assign_school_admin', {
+        user_id: userId,
+        school_id: schoolId,
+        region_id: schoolData.region_id,
+        sector_id: schoolData.sector_id
+      });
+      
+      if (error) {
+        console.error('SQL funksiyası xətası:', error);
         
-        const { error: updateRoleError } = await supabaseAdmin
-          .from("user_roles")
-          .update({
-            role: "schooladmin",
-            region_id: schoolData.region_id,
-            sector_id: schoolData.sector_id,
-            school_id: schoolId,
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", userId);
+        // RPC xətası baş verdikdə birbaşa SQL sorğusu ilə cəhd et
+        console.log('Birbaşa SQL sorğusu ilə cəhd edilir...');
         
-        if (updateRoleError) {
-          console.error("Error updating user role:", updateRoleError);
-          roleUpdateError = updateRoleError;
+        // Mövcud rolu yoxla
+        const { data: existingRole, error: roleCheckError } = await supabaseAdmin
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1);
+          
+        if (roleCheckError) {
+          throw roleCheckError;
+        }
+          
+        if (existingRole && existingRole.length > 0) {
+          // Mövcud rolu yenilə
+          console.log(`Mövcud rol tapıldı (${existingRole[0].id}), yenilənir...`);
+          const { error: updateError } = await supabaseAdmin
+            .from('user_roles')
+            .update({
+              role: 'schooladmin',
+              region_id: schoolData.region_id,
+              sector_id: schoolData.sector_id,
+              school_id: schoolId,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingRole[0].id);
+            
+          if (updateError) throw updateError;
+          console.log(`Rol uğurla yeniləndi.`);
         } else {
-          console.log(`İstifadəçi rolu uğurla yeniləndi. UserId: ${userId}`);
+          // Yeni rol əlavə et
+          console.log(`Mövcud rol tapılmadı, yeni rol əlavə edilir...`);
+          const { error: insertError } = await supabaseAdmin
+            .from('user_roles')
+            .insert({
+              user_id: userId,
+              role: 'schooladmin',
+              region_id: schoolData.region_id,
+              sector_id: schoolData.sector_id,
+              school_id: schoolId,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+          if (insertError) throw insertError;
+          console.log(`Yeni rol uğurla əlavə edildi.`);
         }
       } else {
-        console.log(`Yeni rol əlavə edilir. UserId: ${userId}, Role: schooladmin`);
-        
-        const { error: insertRoleError } = await supabaseAdmin
-          .from("user_roles")
-          .insert({
-            user_id: userId,
-            role: "schooladmin",
-            region_id: schoolData.region_id,
-            sector_id: schoolData.sector_id,
-            school_id: schoolId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        
-        if (insertRoleError) {
-          console.error("Error inserting user role:", insertRoleError);
-          roleUpdateError = insertRoleError;
-        } else {
-          console.log(`İstifadəçi rolu uğurla əlavə edildi. UserId: ${userId}`);
-        }
+        console.log('SQL funksiyası nəticəsi:', result);
       }
     } catch (prepError: any) {
       console.error('Rol əməliyyatı zamanı istisna:', prepError);
