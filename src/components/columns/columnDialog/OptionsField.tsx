@@ -26,13 +26,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 interface OptionsFieldProps {
-  control: Control<ColumnFormData>;
+  control: Control<any>;
 }
 
 interface SortableItemProps {
   id: string;
   index: number;
-  control: Control<ColumnFormData>;
+  control: Control<any>;
   remove: (index: number) => void;
 }
 

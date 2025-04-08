@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
@@ -27,8 +27,15 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
   categories
 }) => {
   const { t } = useLanguage();
-  const { register, handleSubmit, formState, watch, control, setValue } = useColumnForm(column);
-  const columnType = watch("type");
+  const { 
+    form, 
+    selectedType, 
+    handleTypeChange, 
+    onSubmit: handleFormSubmit,
+    isEditMode 
+  } = useColumnForm(categories, column);
+  
+  const { control } = form;
 
   const onSubmit = async (data: any) => {
     try {
@@ -59,29 +66,24 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <BasicColumnFields 
-            register={register} 
-            errors={formState.errors} 
+            form={form}
             categories={categories}
-            control={control}
+            selectedType={selectedType}
+            handleTypeChange={handleTypeChange}
           />
           
-          {(columnType === "select" || columnType === "radio" || columnType === "checkbox") && (
+          {(selectedType === "select" || selectedType === "radio" || selectedType === "checkbox") && (
             <OptionsField 
-              register={register}
               control={control}
-              errors={formState.errors}
-              watch={watch}
             />
           )}
           
           <ValidationFields 
-            register={register}
-            control={control}
-            errors={formState.errors}
-            columnType={columnType}
-            watch={watch}
+            form={form}
+            selectedType={selectedType}
+            t={t}
           />
           
           <DialogFooter>
