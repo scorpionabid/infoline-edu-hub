@@ -50,10 +50,11 @@ serve(async (req) => {
     );
 
     // İstifadəçi məlumatlarını yoxla
-    const { data: user, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    console.log(`İstifadəçi məlumatlarını əldə etmək: ${userId}`);
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
     
-    if (userError || !user) {
-      console.error('İstifadəçi məlumatları xətası:', userError);
+    if (userError || !userData || !userData.user) {
+      console.error('İstifadəçi məlumatları xətası:', userError || 'İstifadəçi tapılmadı');
       return new Response(
         JSON.stringify({
           success: false,
@@ -66,7 +67,11 @@ serve(async (req) => {
       );
     }
     
+    const user = userData.user;
+    console.log('İstifadəçi tapıldı:', user.email);
+    
     // Məktəbin mövcud olduğunu yoxlayaq
+    console.log(`Məktəb məlumatlarını əldə etmək: ${schoolId}`);
     const { data: school, error: schoolError } = await supabaseAdmin
       .from('schools')
       .select('id, name, region_id, sector_id')
@@ -88,6 +93,7 @@ serve(async (req) => {
     }
     
     if (!school) {
+      console.error('Məktəb tapılmadı:', schoolId);
       return new Response(
         JSON.stringify({
           success: false,
@@ -104,6 +110,7 @@ serve(async (req) => {
     
     // İstifadəçinin mövcud rollarını silək (user_roles cədvəlində)
     try {
+      console.log(`Köhnə rol məlumatlarını silmək: ${userId}`);
       const { error: deleteRolesError } = await supabaseAdmin
         .from('user_roles')
         .delete()
@@ -140,6 +147,7 @@ serve(async (req) => {
     
     // Yeni rol təyin edək
     try {
+      console.log(`Yeni rol təyin etmək: ${userId}, məktəb: ${schoolId}`);
       const { data: newRole, error: roleError } = await supabaseAdmin
         .from('user_roles')
         .insert({
@@ -147,7 +155,9 @@ serve(async (req) => {
           role: 'schooladmin',
           school_id: schoolId,
           region_id: school.region_id,
-          sector_id: school.sector_id
+          sector_id: school.sector_id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -166,7 +176,11 @@ serve(async (req) => {
         );
       }
       
-      console.log('Yeni rol təyin edildi:', JSON.stringify(newRole));
+      if (!newRole) {
+        console.error('Rol təyin edildi, lakin məlumat qaytarılmadı');
+      } else {
+        console.log('Yeni rol təyin edildi:', JSON.stringify(newRole));
+      }
     } catch (error) {
       console.error('Rol təyin etmə istisna:', error);
       return new Response(
@@ -183,11 +197,12 @@ serve(async (req) => {
     
     // Məktəbin admin məlumatlarını yeniləyək
     try {
+      console.log(`Məktəb admin məlumatlarını yeniləmək: ${schoolId}, admin: ${userId}`);
       const { data: updatedSchool, error: updateError } = await supabaseAdmin
         .from('schools')
         .update({
           admin_id: userId,
-          admin_email: user.user.email,
+          admin_email: user.email,
           updated_at: new Date().toISOString()
         })
         .eq('id', schoolId)
@@ -208,7 +223,11 @@ serve(async (req) => {
         );
       }
       
-      console.log('Məktəb yeniləndi:', JSON.stringify(updatedSchool));
+      if (!updatedSchool) {
+        console.error('Məktəb yeniləndi, lakin məlumat qaytarılmadı');
+      } else {
+        console.log('Məktəb yeniləndi:', JSON.stringify(updatedSchool));
+      }
     } catch (error) {
       console.error('Məktəb yeniləmə istisna:', error);
       return new Response(
@@ -225,25 +244,34 @@ serve(async (req) => {
     
     // Audit log əlavə edək
     try {
-      await supabaseAdmin.from('audit_logs').insert({
-        user_id: userId,
-        action: 'assign_school_admin',
-        entity_type: 'school',
-        entity_id: schoolId,
-        new_value: {
-          school_id: schoolId,
-          school_name: school.name,
-          admin_id: userId,
-          admin_email: user.user.email
-        }
-      });
-      console.log('Audit log əlavə edildi');
+      console.log(`Audit log əlavə edilir: ${userId}, ${schoolId}`);
+      const { error: auditError } = await supabaseAdmin
+        .from('audit_logs')
+        .insert({
+          user_id: userId,
+          action: 'assign_school_admin',
+          entity_type: 'school',
+          entity_id: schoolId,
+          new_value: {
+            school_id: schoolId,
+            school_name: school.name,
+            admin_id: userId,
+            admin_email: user.email
+          }
+        });
+        
+      if (auditError) {
+        console.warn('Audit log xətası (kritik deyil):', auditError);
+      } else {
+        console.log('Audit log əlavə edildi');
+      }
     } catch (auditError) {
       // Audit log xətasının əsas əməliyyata təsir etməsinə imkan verməyin
-      console.error('Audit log xətası (kritik deyil):', auditError);
+      console.warn('Audit log istisna (kritik deyil):', auditError);
     }
     
     // Uğurlu nəticə qaytaraq
+    console.log(`Əməliyyat uğurla başa çatdı: ${userId} istifadəçisi ${schoolId} məktəbinə admin təyin edildi`);
     return new Response(
       JSON.stringify({
         success: true,
@@ -254,7 +282,7 @@ serve(async (req) => {
           },
           admin: {
             id: userId,
-            email: user.user.email
+            email: user.email
           }
         },
         message: 'İstifadəçi məktəb admini kimi uğurla təyin edildi'
@@ -267,7 +295,7 @@ serve(async (req) => {
     
   } catch (error) {
     // Xətaları idarə et
-    console.error("Admin təyin etmə xətası:", error.message);
+    console.error("Admin təyin etmə xətası:", error.message || error);
     
     return new Response(
       JSON.stringify({

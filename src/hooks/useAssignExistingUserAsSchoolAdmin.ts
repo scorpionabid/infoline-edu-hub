@@ -16,25 +16,17 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
 
   const assignUserAsSchoolAdmin = async (schoolId: string, userId: string): Promise<AssignUserResult> => {
     try {
-      setLoading(true);
-      
-      console.log('Admin təyin etmək üçün parametrlər: Məktəb ID:', schoolId, 'User ID:', userId);
-      
-      // Parametrləri doğrula
       if (!schoolId || !userId) {
         const errorMessage = !schoolId 
           ? 'Məktəb ID təyin edilməyib'
           : 'İstifadəçi ID təyin edilməyib';
           
         console.error('Admin təyin etmək üçün parametr çatışmır:', errorMessage);
-        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
-          description: errorMessage
-        });
         return { success: false, error: errorMessage };
       }
       
-      // Debug üçün əlavə məlumatlar
-      console.log('Supabase Edge funksiyası çağırılır...');
+      setLoading(true);
+      console.log('Admin təyin etmək üçün parametrlər: Məktəb ID:', schoolId, 'User ID:', userId);
       
       // Edge funksiyasını çağırarkən parametrləri düzgün formatla
       const { data, error } = await supabase.functions.invoke('assign-existing-user-as-school-admin', {
@@ -44,23 +36,33 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
         }
       });
       
-      if (error) {
-        console.error('Edge funksiya xətası:', error);
-        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
-          description: error.message || t('unexpectedError') || 'Gözlənilməz xəta'
-        });
-        return { success: false, error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' };
-      }
-      
       console.log('Edge funksiyasından gələn cavab:', data);
       
+      // Əgər API sorğusu xəta verərsə
+      if (error) {
+        console.error('Edge funksiya xətası:', error);
+        return { 
+          success: false, 
+          error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' 
+        };
+      }
+      
+      // data null və ya undefined olarsa
+      if (!data) {
+        console.error('Edge funksiyasından gələn cavab boşdur');
+        return { 
+          success: false, 
+          error: t('noResponseFromServer') || 'Serverdən cavab alınmadı' 
+        };
+      }
+      
       // Əgər data.success false olarsa (funksiya uğursuz olub)
-      if (data && !data.success) {
+      if (!data.success) {
         console.error('Admin təyin edilərkən xəta:', data.error);
-        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
-          description: data.error || t('unexpectedError') || 'Gözlənilməz xəta'
-        });
-        return { success: false, error: data.error || t('unexpectedError') || 'Gözlənilməz xəta' };
+        return { 
+          success: false, 
+          error: data.error || t('unexpectedError') || 'Gözlənilməz xəta' 
+        };
       }
       
       // Uğurlu hal
@@ -76,10 +78,10 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
       return { success: true, data };
     } catch (error: any) {
       console.error('Admin təyin etmə xətası:', error);
-      toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
-        description: error.message || t('unexpectedError') || 'Gözlənilməz xəta'
-      });
-      return { success: false, error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' };
+      return { 
+        success: false, 
+        error: error.message || t('unexpectedError') || 'Gözlənilməz xəta' 
+      };
     } finally {
       setLoading(false);
     }
