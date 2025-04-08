@@ -69,7 +69,12 @@ const Categories: React.FC = () => {
   
   // Type-safe assignment filter handler
   const handleAssignmentFilterChange = (value: string) => {
-    setAssignmentFilter(value === '' ? 'all' : (value as 'all' | 'sectors'));
+    // Əgər boş string olarsa, 'all' dəyərini təyin edirik
+    if (value === '') {
+      setAssignmentFilter('all');
+    } else {
+      setAssignmentFilter(value as 'all' | 'sectors');
+    }
   };
   
   return (
