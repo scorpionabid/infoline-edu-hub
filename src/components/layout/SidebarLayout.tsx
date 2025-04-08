@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import NotificationControl from '../notifications/NotificationControl';
 import { useNotifications } from '@/context/NotificationContext';
@@ -21,6 +21,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const { notifications, markAsRead, markAllAsRead, clearAll } = useNotifications();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (isDesktop && open) {
@@ -30,12 +31,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   
   const handleLogout = () => {
     logout();
+    navigate('/login');
   };
   
   const sidebarContent = (
     <SidebarContainer>
       <div className="p-6">
-        <Logo />
+        <Link to="/dashboard" className="no-underline text-inherit">
+          <Logo />
+        </Link>
       </div>
       
       <SidebarNav onItemClick={() => setOpen(false)} />
@@ -64,7 +68,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </SheetContent>
             </Sheet>
             <div className="ml-3">
-              <Logo />
+              <Link to="/dashboard" className="no-underline text-inherit">
+                <Logo />
+              </Link>
             </div>
           </div>
           
@@ -87,7 +93,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         </header>
         
         <main className="p-4 lg:p-6">
-          {children}
+          <Suspense fallback={<div className="animate-pulse p-4">Yüklənir...</div>}>
+            {children}
+          </Suspense>
         </main>
       </div>
     </div>

@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -9,10 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { LogOut } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const { t } = useLanguage();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -61,9 +64,24 @@ const Profile: React.FC = () => {
     setIsEditing(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-4">{t('profile')}</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">{t('profile')}</h1>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={handleLogout}
+        >
+          <LogOut size={18} />
+          {t('logout')}
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Profile Card */}
