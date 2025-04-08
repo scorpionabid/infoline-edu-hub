@@ -39,3 +39,6 @@ verify_jwt = true
 
 [functions.direct-login]
 verify_jwt = false
+
+[functions.assign-existing-user-as-school-admin]
+verify_jwt = true
