@@ -119,7 +119,10 @@ const Columns: React.FC = () => {
           isLoading={isColumnsLoading}
           isError={!!columnsError}
           onEditColumn={handleEditDialogOpen}
-          onDeleteColumn={handleDeleteColumn}
+          onDeleteColumn={async (id) => {
+            await handleDeleteColumn(id);
+            return;
+          }}
           onUpdateStatus={handleUpdateColumnStatus}
         />
         
@@ -144,7 +147,10 @@ const Columns: React.FC = () => {
         <DeleteColumnDialog 
           isOpen={isDeleteDialogOpen} 
           onClose={() => setIsDeleteDialogOpen(false)} 
-          onConfirm={handleDeleteColumn}
+          onConfirm={async (id) => {
+            await handleDeleteColumn(id);
+            return;
+          }}
           column={selectedColumn}
           isSubmitting={isActionLoading}
         />

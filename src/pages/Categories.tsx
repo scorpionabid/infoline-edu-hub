@@ -69,7 +69,7 @@ const Categories: React.FC = () => {
   
   // Type-safe assignment filter handler
   const handleAssignmentFilterChange = (value: string) => {
-    setAssignmentFilter(value as 'all' | 'sectors' | '');
+    setAssignmentFilter(value === '' ? 'all' : value as 'all' | 'sectors');
   };
   
   return (
@@ -128,14 +128,25 @@ const Categories: React.FC = () => {
         <AddCategoryDialog 
           isOpen={isAddDialogOpen} 
           onClose={() => setIsAddDialogOpen(false)} 
-          onAddCategory={handleAddCategory}
+          onAddCategory={(data) => handleAddCategory({
+            ...data,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })}
           isSubmitting={isActionLoading}
         />
         
         <EditCategoryDialog 
           isOpen={isEditDialogOpen} 
           onClose={() => setIsEditDialogOpen(false)} 
-          onEditCategory={handleAddCategory}
+          onEditCategory={(data) => handleAddCategory({
+            ...data,
+            id: selectedCategory?.id,
+            status: selectedCategory?.status || 'active',
+            createdAt: selectedCategory?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })}
           category={selectedCategory}
           isSubmitting={isActionLoading}
         />
