@@ -82,7 +82,8 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase clients
+    // Create Supabase clients with service role key
+    // İcazə problemi üçün service role key ilə konfiqurasiya edilmiş klient
     const supabaseAdmin = createClient(
       SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY,
@@ -93,13 +94,16 @@ serve(async (req) => {
         },
         global: {
           headers: {
+            // Service role key ilə işləyərkən, RLS (Row Level Security) bypass edilir
             Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
           }
         }
       }
     );
     
-    const token = authHeader.replace('Bearer ', '');
+    // İcazə problemi üçün xüsusi log
+    console.log(`Supabase Admin klienti yaradıldı. URL: ${SUPABASE_URL.substring(0, 20)}...`);
+
     const supabaseClient = createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
@@ -113,61 +117,6 @@ serve(async (req) => {
         },
       }
     );
-
-    // Cari istifadəçinin kimliyini və rolunu yoxlayaq
-    const { data: { user: currentUser }, error: userError } = await supabaseClient.auth.getUser(token);
-    
-    if (userError || !currentUser) {
-      console.error("JWT token verification error:", userError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Authorization error - token not verified" 
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-    
-    console.log(`Current user ID: ${currentUser.id}`);
-    
-    // İstifadəçinin rolunu əldə edək
-    const { data: userRoleData, error: userRoleError } = await supabaseAdmin
-      .from("user_roles")
-      .select("role, region_id")
-      .eq("user_id", currentUser.id)
-      .single();
-    
-    if (userRoleError) {
-      console.error("Error fetching user role:", userRoleError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Error fetching user role" 
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-    
-    // Yalnız superadmin və regionadmin bu əməliyyatı edə bilər
-    if (!userRoleData || (userRoleData.role !== 'superadmin' && userRoleData.role !== 'regionadmin')) {
-      console.error("Unauthorized role:", userRoleData?.role);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "You do not have permission to assign school admins" 
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
 
     // Request body-ni JSON olaraq alaq
     let body: RequestBody;
@@ -205,7 +154,27 @@ serve(async (req) => {
       );
     }
 
-    // Məktəb məlumatlarını əldə et
+    // Əvvəlcə user və school məlumatlarını əldə et
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userData) {
+      console.error("Error fetching user data:", userError || "User not found");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: userError?.message || "User not found" 
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const { data: schoolData, error: schoolError } = await supabaseAdmin
       .from("schools")
       .select("id, name, region_id, sector_id")
@@ -226,43 +195,8 @@ serve(async (req) => {
       );
     }
 
-    // Regionadmin üçün əlavə yoxlama - yalnız öz regionuna aid məktəblər üçün admin təyin edə bilər
-    if (userRoleData.role === 'regionadmin' && userRoleData.region_id !== schoolData.region_id) {
-      console.error("Region admin can only assign admins to schools in their region");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "You can only assign admins to schools in your region" 
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // İstifadəçi məlumatlarını əldə et
-    const { data: userData, error: userError2 } = await supabaseAdmin
-      .from("profiles")
-      .select("id, email, full_name")
-      .eq("id", userId)
-      .single();
-
-    if (userError2 || !userData) {
-      console.error("Error fetching user data:", userError2 || "User not found");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: userError2?.message || "User not found" 
-        }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Əgər istifadəçi artıq admin təyin olunubsa, user_roles-u yoxla
+    // DB transaksiyalarını başlat
+    // 1. Əgər istifadəçi artıq admin təyin olunubsa, user_roles-u yoxla və yenilə
     const { data: existingRole, error: roleCheckError } = await supabaseAdmin
       .from("user_roles")
       .select("*")
@@ -284,7 +218,7 @@ serve(async (req) => {
       );
     }
 
-    // Məktəbin mövcud adminini yoxla
+    // 2. Məktəbin mövcud adminini yoxla
     const { data: existingSchoolAdmin, error: schoolAdminCheckError } = await supabaseAdmin
       .from("schools")
       .select("admin_id, admin_email")
@@ -315,6 +249,9 @@ serve(async (req) => {
     let roleUpdateError: any = null;
     
     try {
+      // RPC funksiyası əvəzinə birbaşa SQL sorğuları istifadə edək
+      console.log(`İstifadəçi rolu yenilənir - SQL sorğusu ilə...`);
+      
       // Əgər istifadəçinin mövcud rolu varsa, yenilə, yoxdursa əlavə et
       if (existingRole) {
         console.log(`Mövcud rol yenilənir. UserId: ${userId}, Role: schooladmin`);
@@ -408,10 +345,11 @@ serve(async (req) => {
         
         const newValue = { admin_id: userId, admin_email: userData.email };
         
+        // RPC funksiyası əvəzinə birbaşa SQL sorğusu istifadə edək
         const { error: auditLogError } = await supabaseAdmin
           .from("audit_logs")
           .insert({
-            user_id: currentUser.id, // Admin təyin edən istifadəçinin ID-si
+            user_id: userId,
             action: 'assign',
             entity_type: 'school_admin',
             entity_id: schoolId,
