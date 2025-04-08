@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,13 +40,11 @@ const Categories: React.FC = () => {
   
   const { t } = useLanguage();
   
-  // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   
-  // Handlers
   const handleAddDialogOpen = () => {
     setIsAddDialogOpen(true);
   };
@@ -62,18 +59,17 @@ const Categories: React.FC = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  // Type-safe status filter handler
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value as CategoryStatus | 'all');
   };
   
-  // Type-safe assignment filter handler
   const handleAssignmentFilterChange = (value: string) => {
-    // Əgər boş string olarsa, 'all' dəyərini təyin edirik
-    if (value === '') {
+    if (value === '' || value === 'all') {
       setAssignmentFilter('all');
+    } else if (value === 'sectors') {
+      setAssignmentFilter('sectors');
     } else {
-      setAssignmentFilter(value as 'all' | 'sectors');
+      setAssignmentFilter('all');
     }
   };
   
@@ -134,7 +130,6 @@ const Categories: React.FC = () => {
           isOpen={isAddDialogOpen} 
           onClose={() => setIsAddDialogOpen(false)} 
           onAddCategory={(data) => {
-            // Ensure we pass in a complete Category data object
             const categoryData: Omit<Category, "id"> = {
               name: data.name || '',
               description: data.description || '',
@@ -157,7 +152,6 @@ const Categories: React.FC = () => {
           onEditCategory={(data) => {
             if (!selectedCategory) return Promise.resolve(false);
             
-            // Ensure we pass in a complete Category data object with ID
             const categoryData: Omit<Category, "id"> & { id: string } = {
               id: selectedCategory.id,
               name: data.name || selectedCategory.name,
