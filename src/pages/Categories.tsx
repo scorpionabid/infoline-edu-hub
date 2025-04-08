@@ -128,25 +128,45 @@ const Categories: React.FC = () => {
         <AddCategoryDialog 
           isOpen={isAddDialogOpen} 
           onClose={() => setIsAddDialogOpen(false)} 
-          onAddCategory={(data) => handleAddCategory({
-            ...data,
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          })}
+          onAddCategory={(data) => {
+            // Ensure we pass in a complete Category data object
+            const categoryData: Omit<Category, "id"> = {
+              name: data.name || '',
+              description: data.description || '',
+              assignment: data.assignment || 'all',
+              status: 'active',
+              deadline: data.deadline ? data.deadline.toISOString() : undefined,
+              priority: data.priority || 0,
+              columnCount: 0,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            return handleAddCategory(categoryData);
+          }}
           isSubmitting={isActionLoading}
         />
         
         <EditCategoryDialog 
           isOpen={isEditDialogOpen} 
           onClose={() => setIsEditDialogOpen(false)} 
-          onEditCategory={(data) => handleAddCategory({
-            ...data,
-            id: selectedCategory?.id,
-            status: selectedCategory?.status || 'active',
-            createdAt: selectedCategory?.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          })}
+          onEditCategory={(data) => {
+            if (!selectedCategory) return Promise.resolve(false);
+            
+            // Ensure we pass in a complete Category data object with ID
+            const categoryData: Omit<Category, "id"> & { id: string } = {
+              id: selectedCategory.id,
+              name: data.name || selectedCategory.name,
+              description: data.description || selectedCategory.description || '',
+              assignment: data.assignment || selectedCategory.assignment || 'all',
+              status: selectedCategory.status || 'active',
+              deadline: data.deadline ? data.deadline.toISOString() : selectedCategory.deadline,
+              priority: data.priority !== undefined ? data.priority : selectedCategory.priority || 0,
+              columnCount: selectedCategory.columnCount || 0,
+              createdAt: selectedCategory.createdAt,
+              updatedAt: new Date().toISOString()
+            };
+            return handleAddCategory(categoryData);
+          }}
           category={selectedCategory}
           isSubmitting={isActionLoading}
         />

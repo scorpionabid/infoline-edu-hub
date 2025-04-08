@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import ColumnList from '@/components/columns/ColumnList';
 import AddColumnDialog from '@/components/columns/AddColumnDialog';
-import EditColumnDialog from '@/components/columns/EditColumnDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 import { Column } from '@/types/column';
 import { useColumns } from '@/hooks/useColumns';
@@ -81,6 +80,11 @@ const Columns: React.FC = () => {
 
   const { categories, isLoading } = useCategories();
   
+  // Wrapper function for deleting columns
+  const deleteColumnWrapper = async (id: string): Promise<void> => {
+    await handleDeleteColumn(id);
+  };
+  
   return (
     <SidebarLayout>
       <div className="container mx-auto py-6 space-y-6">
@@ -119,10 +123,7 @@ const Columns: React.FC = () => {
           isLoading={isColumnsLoading}
           isError={!!columnsError}
           onEditColumn={handleEditDialogOpen}
-          onDeleteColumn={async (id) => {
-            await handleDeleteColumn(id);
-            return;
-          }}
+          onDeleteColumn={deleteColumnWrapper}
           onUpdateStatus={handleUpdateColumnStatus}
         />
         
@@ -147,10 +148,7 @@ const Columns: React.FC = () => {
         <DeleteColumnDialog 
           isOpen={isDeleteDialogOpen} 
           onClose={() => setIsDeleteDialogOpen(false)} 
-          onConfirm={async (id) => {
-            await handleDeleteColumn(id);
-            return;
-          }}
+          onConfirm={deleteColumnWrapper}
           column={selectedColumn}
           isSubmitting={isActionLoading}
         />
