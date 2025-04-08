@@ -30,26 +30,37 @@ interface DashboardContentProps {
 }
 
 // DashboardNotification-dan Notification-a adaptasiya
-const adaptToNotifications = (dashboardNotifications: any[]): Notification[] => {
-  return dashboardNotifications?.map(notification => ({
-    id: notification.id,
-    title: notification.title,
+const adaptToNotifications = (dashboardNotifications: any[] | null | undefined): Notification[] => {
+  if (!dashboardNotifications || !Array.isArray(dashboardNotifications)) {
+    return [];
+  }
+  
+  return dashboardNotifications.map(notification => ({
+    id: notification.id || `notification-${Math.random().toString(36).substring(2, 11)}`,
+    title: notification.title || '',
     message: notification.message || '',
-    type: notification.type as NotificationType,
-    time: notification.time,
+    type: (notification.type as NotificationType) || 'info',
+    time: notification.time || new Date().toISOString(),
     isRead: notification.read || false,
     createdAt: notification.time || new Date().toISOString(),
-    userId: '',
-    priority: 'normal'
-  })) || [];
+    userId: notification.userId || '',
+    priority: notification.priority || 'normal'
+  }));
 };
 
 // FormItem-ləri Form formatına çevirmək üçün helper funksiya
-const adaptFormItems = (formItems: any[]) => {
-  return formItems?.map(item => ({
+const adaptFormItems = (formItems: any[] | null | undefined) => {
+  if (!formItems || !Array.isArray(formItems)) {
+    return [];
+  }
+  
+  return formItems.map(item => ({
     ...item,
-    status: item.status as FormStatus // FormStatus tipinə explicit çeviririk
-  })) || [];
+    id: item.id || `form-${Math.random().toString(36).substring(2, 11)}`,
+    title: item.title || '',
+    date: item.date || new Date().toISOString(),
+    status: (item.status as FormStatus) || 'pending'
+  }));
 };
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -96,7 +107,19 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
   // Bildirişləri adaptasiya edək
   const adaptDashboardData = (data: any) => {
-    if (!data) return data;
+    if (!data) {
+      // Əgər data null və ya undefined-dırsa, boş bir obyekt qaytarırıq
+      return {
+        regions: 0,
+        sectors: 0,
+        schools: 0,
+        users: 0,
+        completionRate: 0,
+        pendingApprovals: 0,
+        notifications: [],
+        pendingForms: []
+      };
+    }
     
     // İstifadəçi rolunu daha düzgün müəyyən edək
     // userRole-u string kimi qəbul edirik və lowercase edirik
@@ -108,14 +131,32 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         ...data,
         notifications: adaptToNotifications(data.notifications)
       };
+    } else {
+      data.notifications = [];
     }
     
     // SchoolAdminDashboard üçün pendingForms məlumatlarını təmin edirik
-    if (normalizedRole === 'schooladmin' && data) {
+    if (normalizedRole === 'schooladmin') {
       data = {
         ...data,
-        pendingForms: data.pendingForms || []
+        pendingForms: data.pendingForms ? adaptFormItems(data.pendingForms) : []
       };
+    }
+    
+    // Chart dataları üçün əlavə yoxlamalar
+    if (chartData) {
+      // Əmin olaq ki, bütün chart data massivləri düzgün formatdadır
+      if (!Array.isArray(chartData.activityData)) {
+        chartData.activityData = [];
+      }
+      
+      if (!Array.isArray(chartData.regionSchoolsData)) {
+        chartData.regionSchoolsData = [];
+      }
+      
+      if (!Array.isArray(chartData.categoryCompletionData)) {
+        chartData.categoryCompletionData = [];
+      }
     }
     
     return data;
@@ -130,41 +171,58 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     // Dashboardı göstərməzdən əvvəl dataları adaptasiya edirik
     const adaptedData = adaptDashboardData(dashboardData);
 
-    switch (normalizedRole) {
-      case 'superadmin':
-        return <SuperAdminDashboard data={adaptedData} />;
-      case 'regionadmin':
-        return <RegionAdminDashboard data={adaptedData as RegionAdminDashboardData} />;
-      case 'sectoradmin':
-        return <SectorAdminDashboard data={adaptedData as SectorAdminDashboardData} />;
-      case 'schooladmin':
-        return (
-          <SchoolAdminDashboard 
-            data={adaptedData as SchoolAdminDashboardData}
-            navigateToDataEntry={navigateToDataEntry}
-            handleFormClick={handleFormClick}
-          />
-        );
-      default:
-        // Əgər naməlum bir rol gəlirsə, istifadəçinin hansı rolda olduğunu konsola yazaq
-        console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
-        return (
-          <SchoolAdminDashboard 
-            data={adaptedData as SchoolAdminDashboardData}
-            navigateToDataEntry={navigateToDataEntry}
-            handleFormClick={handleFormClick}
-          />
-        );
+    try {
+      switch (normalizedRole) {
+        case 'superadmin':
+          return <SuperAdminDashboard data={adaptedData} />;
+        case 'regionadmin':
+          return <RegionAdminDashboard data={adaptedData as RegionAdminDashboardData} />;
+        case 'sectoradmin':
+          return <SectorAdminDashboard data={adaptedData as SectorAdminDashboardData} />;
+        case 'schooladmin':
+          return (
+            <SchoolAdminDashboard 
+              data={adaptedData as SchoolAdminDashboardData}
+              navigateToDataEntry={navigateToDataEntry}
+              handleFormClick={handleFormClick}
+            />
+          );
+        default:
+          // Əgər naməlum bir rol gəlirsə, istifadəçinin hansı rolda olduğunu konsola yazaq
+          console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
+          return (
+            <SchoolAdminDashboard 
+              data={adaptedData as SchoolAdminDashboardData}
+              navigateToDataEntry={navigateToDataEntry}
+              handleFormClick={handleFormClick}
+            />
+          );
+      }
+    } catch (error) {
+      console.error("Dashboard render xətası:", error);
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <p className="text-destructive text-lg">{t('errorOccurred')}</p>
+          <p className="text-muted-foreground">{t('dashboardRenderError')}</p>
+        </div>
+      );
     }
+  };
+
+  // Chart data null yoxlaması əlavə edək
+  const safeChartData = {
+    activityData: Array.isArray(chartData?.activityData) ? chartData.activityData : [],
+    regionSchoolsData: Array.isArray(chartData?.regionSchoolsData) ? chartData.regionSchoolsData : [],
+    categoryCompletionData: Array.isArray(chartData?.categoryCompletionData) ? chartData.categoryCompletionData : []
   };
 
   return (
     <div className="space-y-4">
       {userRole === 'superadmin' && chartData && (
         <DashboardTabs 
-          activityData={chartData.activityData}
-          regionSchoolsData={chartData.regionSchoolsData}
-          categoryCompletionData={chartData.categoryCompletionData}
+          activityData={safeChartData.activityData}
+          regionSchoolsData={safeChartData.regionSchoolsData}
+          categoryCompletionData={safeChartData.categoryCompletionData}
         />
       )}
       

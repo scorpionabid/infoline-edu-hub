@@ -23,11 +23,16 @@ interface DashboardTabsProps {
 }
 
 const DashboardTabs: React.FC<DashboardTabsProps> = ({ 
-  activityData, 
-  regionSchoolsData, 
-  categoryCompletionData 
+  activityData = [], 
+  regionSchoolsData = [], 
+  categoryCompletionData = [] 
 }) => {
   const { t } = useLanguage();
+  
+  // Dataların təmizliyi üçün əlavə yoxlama
+  const safeActivityData = Array.isArray(activityData) ? activityData : [];
+  const safeRegionSchoolsData = Array.isArray(regionSchoolsData) ? regionSchoolsData : [];
+  const safeCategoryCompletionData = Array.isArray(categoryCompletionData) ? categoryCompletionData : [];
   
   return (
     <Tabs defaultValue="activity" className="w-full">
@@ -47,15 +52,15 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
       </TabsList>
       
       <TabsContent value="activity">
-        <ActivityTab activityData={activityData} />
+        <ActivityTab activityData={safeActivityData} />
       </TabsContent>
       
       <TabsContent value="regions">
-        <RegionsTab regionSchoolsData={regionSchoolsData} />
+        <RegionsTab regionSchoolsData={safeRegionSchoolsData} />
       </TabsContent>
       
       <TabsContent value="categories">
-        <CategoriesTab categoryCompletionData={categoryCompletionData} />
+        <CategoriesTab categoryCompletionData={safeCategoryCompletionData} />
       </TabsContent>
     </Tabs>
   );
