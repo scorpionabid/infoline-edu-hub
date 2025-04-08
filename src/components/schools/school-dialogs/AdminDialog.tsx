@@ -1,18 +1,46 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
   Dialog, 
   DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
   DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
+  DialogTitle,
+  DialogFooter,
+  DialogDescription 
+} from '@/components/ui/dialog';
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, KeyRound, User, Globe, School as SchoolIcon } from 'lucide-react';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
 import { School } from '@/data/schoolsData';
+import { Loader2, User, Lock } from 'lucide-react';
+import { ExistingUserSchoolAdminDialog } from '../ExistingUserSchoolAdminDialog';
+
+const passwordSchema = z.object({
+  password: z.string().min(6, { message: 'Parol ən azı 6 simvol olmalıdır' }),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Parollar uyğun gəlmir',
+  path: ['confirmPassword'],
+});
+
+type PasswordForm = z.infer<typeof passwordSchema>;
 
 interface AdminDialogProps {
   isOpen: boolean;
@@ -29,125 +57,155 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
   onResetPassword,
   selectedAdmin
 }) => {
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState('info');
+  const [resetInProgress, setResetInProgress] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
-  // Dialog açıldıqda və ya bağlandıqda state-ləri sıfırla
-  useEffect(() => {
-    if (!isOpen) {
-      setShowPasswordReset(false);
-      setNewPassword('');
-      setPasswordError('');
+  const form = useForm<PasswordForm>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      password: '',
+      confirmPassword: ''
     }
-  }, [isOpen]);
+  });
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewPassword(e.target.value);
-    if (e.target.value.length < 6) {
-      setPasswordError('Parol minimum 6 simvol olmalıdır');
-    } else {
-      setPasswordError('');
+  const onPasswordSubmit = (data: PasswordForm) => {
+    setResetInProgress(true);
+    try {
+      onResetPassword(data.password);
+      form.reset();
+    } catch (error) {
+      console.error('Parol sıfırlama xətası:', error);
+    } finally {
+      setResetInProgress(false);
     }
   };
 
-  const handleResetPassword = () => {
-    if (newPassword.length < 6) {
-      setPasswordError('Parol minimum 6 simvol olmalıdır');
-      return;
-    }
-    onResetPassword(newPassword);
-    setShowPasswordReset(false);
-    setNewPassword('');
-  };
+  const hasAdmin = selectedAdmin?.adminEmail && selectedAdmin?.adminEmail.length > 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Məktəb admini</DialogTitle>
-          <DialogDescription>
-            Məktəb admininin məlumatlarını idarə edin.
-          </DialogDescription>
-        </DialogHeader>
-        {selectedAdmin && (
-          <div className="grid gap-4 py-4">
-            {!showPasswordReset ? (
-              <>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="adminEmail">E-poçt</Label>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span id="adminEmail">{selectedAdmin.adminEmail}</span>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{t('schoolAdminManagement') || 'Məktəb Admin İdarəetməsi'}</DialogTitle>
+            <DialogDescription>
+              {selectedAdmin?.name} məktəbi üçün admin idarəetməsi
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">
+                <User className="mr-2 h-4 w-4" />
+                Admin Məlumatları
+              </TabsTrigger>
+              <TabsTrigger value="password" disabled={!hasAdmin}>
+                <Lock className="mr-2 h-4 w-4" />
+                Şifrə Dəyişdirmə
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="info" className="space-y-4">
+              {hasAdmin ? (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <p className="text-sm font-medium">Admin E-poçt:</p>
+                    <p className="text-sm col-span-3">{selectedAdmin?.adminEmail}</p>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-1.5">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setIsAssignDialogOpen(true)}
+                    >
+                      Adminı dəyişdir
+                    </Button>
                   </div>
                 </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="adminSchool">Məktəb</Label>
-                  <div className="flex items-center gap-2">
-                    <SchoolIcon className="h-4 w-4 text-muted-foreground" />
-                    <span id="adminSchool">{selectedAdmin.name}</span>
-                  </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center space-y-4 py-6">
+                  <p className="text-center text-sm text-muted-foreground">
+                    Bu məktəbin hələ bir admini yoxdur
+                  </p>
+                  <Button onClick={() => setIsAssignDialogOpen(true)}>
+                    Admin təyin et
+                  </Button>
                 </div>
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="adminRegion">Region/Sektor</Label>
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span id="adminRegion">{selectedAdmin.region} / {selectedAdmin.sector}</span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col space-y-4">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="newPassword">Yeni parol</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={handlePasswordChange}
-                    placeholder="Yeni parol daxil edin (minimum 6 simvol)"
-                    className={passwordError ? "border-red-500" : ""}
+              )}
+            </TabsContent>
+
+            <TabsContent value="password">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yeni Şifrə</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Yeni şifrəni daxil edin"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p>Qeyd: Yeni parol təyin edildikdən sonra admin yeni parol ilə sistemə daxil olmalı olacaq.</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {!showPasswordReset ? (
-            <>
-              <Button variant="outline" onClick={() => setShowPasswordReset(true)}>
-                <KeyRound className="h-4 w-4 mr-2" />
-                Parolu dəyiş
-              </Button>
-              <Button 
-                onClick={onUpdate}
-                className="cursor-pointer"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Yenilə
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => setShowPasswordReset(false)}>
-                Ləğv et
-              </Button>
-              <Button 
-                onClick={handleResetPassword}
-                disabled={newPassword.length < 6}
-                className="cursor-pointer"
-              >
-                Parolu dəyiş
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Şifrəni Təsdiqlə</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Şifrəni təkrar daxil edin"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={resetInProgress}
+                  >
+                    {resetInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Şifrəni Yenilə
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Bağla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {isAssignDialogOpen && selectedAdmin && (
+        <ExistingUserSchoolAdminDialog
+          isOpen={isAssignDialogOpen}
+          onClose={() => setIsAssignDialogOpen(false)}
+          schoolId={selectedAdmin.id}
+          schoolName={selectedAdmin.name}
+          onSuccess={onUpdate}
+        />
+      )}
+    </>
   );
 };

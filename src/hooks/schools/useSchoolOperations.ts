@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
 import { School } from '@/data/schoolsData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseSchoolOperationsReturn {
   handleAddSubmit: (formData: SchoolFormData) => Promise<void>;
@@ -11,6 +12,7 @@ interface UseSchoolOperationsReturn {
   handleDeleteConfirm: (selectedSchool: School | null) => Promise<void>;
   handleAdminUpdate: () => void;
   handleResetPassword: (newPassword: string) => void;
+  handleAssignAdmin: (schoolId: string, userId: string) => Promise<boolean>;
 }
 
 export const useSchoolOperations = (
@@ -139,11 +141,40 @@ export const useSchoolOperations = (
     onSuccess();
   }, [onCloseDialog, onSuccess]);
 
+  const handleAssignAdmin = useCallback(async (schoolId: string, userId: string) => {
+    try {
+      console.log('Məktəb admini təyin edilir:', { schoolId, userId });
+      
+      const { data, error } = await supabase.functions.invoke('assign-existing-user-as-school-admin', {
+        body: { schoolId, userId }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Məktəb admini təyin edilərkən xəta');
+      }
+      
+      toast.success('Məktəb admini uğurla təyin edildi');
+      onSuccess();
+      return true;
+    } catch (error) {
+      console.error('Məktəb admini təyin edilərkən xəta:', error);
+      toast.error('Məktəb admini təyin edilərkən xəta', {
+        description: error.message
+      });
+      return false;
+    }
+  }, [onSuccess]);
+
   return {
     handleAddSubmit,
     handleEditSubmit,
     handleDeleteConfirm,
     handleAdminUpdate,
-    handleResetPassword
+    handleResetPassword,
+    handleAssignAdmin
   };
 };

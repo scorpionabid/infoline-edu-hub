@@ -1,5 +1,5 @@
 
 export { DeleteDialog } from './DeleteDialog';
-export { AddDialog } from './AddDialog';
 export { EditDialog } from './EditDialog';
+export { AddDialog } from './AddDialog';
 export { AdminDialog } from './AdminDialog';
