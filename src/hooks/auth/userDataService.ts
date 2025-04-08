@@ -80,7 +80,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       // Bəzi hallarda bu normal ola bilər (məsələn, admin başqa istifadəçinin məlumatlarını əldə edir)
     }
     
-    // Profil məlumatlarını əldə et - xəta halında yeni profil yaratma
+    // Profil məlumatlarını ayrı sorğu ilə əldə et
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -144,7 +144,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       profile = profileData as Profile;
     }
     
-    // Rol məlumatlarını əldə et
+    // Rol məlumatlarını ayrı sorğu ilə əldə et 
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('*')

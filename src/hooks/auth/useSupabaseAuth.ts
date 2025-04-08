@@ -187,7 +187,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setUser, fetchUserData]);
+  }, [setLoading, setUser]);
   
   // signOut-un bağlı variantını yaradaq
   const handleSignOut = useCallback(async () => {
