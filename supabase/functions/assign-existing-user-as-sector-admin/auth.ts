@@ -1,4 +1,5 @@
-
+// @deno-types="https://deno.land/x/types/index.d.ts"
+// @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import { supabaseUrl } from "./config.ts";
 
@@ -21,6 +22,7 @@ export async function authenticateAndAuthorize(authHeader: string) {
     }
     
     // SUPABASE_ANON_KEY environment variable-ını al
+    // @ts-ignore
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     
     if (!supabaseUrl || !supabaseAnonKey) {
