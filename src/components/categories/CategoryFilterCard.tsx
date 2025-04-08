@@ -29,7 +29,7 @@ const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
           <Label>{t('status')}</Label>
           <Select
             value={filter.status || 'all'}
-            onValueChange={(value) => onFilterChange({ status: value })}
+            onValueChange={(value) => onFilterChange({ status: value as CategoryFilter['status'] })}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('allStatuses')} />
@@ -46,15 +46,14 @@ const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
         <div className="space-y-2">
           <Label>{t('assignment')}</Label>
           <Select
-            value={filter.assignment || ''}
-            onValueChange={(value) => onFilterChange({ assignment: value })}
+            value={filter.assignment || 'all'}
+            onValueChange={(value) => onFilterChange({ assignment: value as CategoryFilter['assignment'] })}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('allAssignments')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allAssignments')}</SelectItem>
-              <SelectItem value="all">{t('allSchools')}</SelectItem>
+              <SelectItem value="all">{t('allAssignments')}</SelectItem>
               <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
             </SelectContent>
           </Select>
@@ -65,14 +64,14 @@ const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
         <div className="space-y-2">
           <Label>{t('deadline')}</Label>
           <Select
-            value={filter.deadline || ''}
-            onValueChange={(value) => onFilterChange({ deadline: value })}
+            value={filter.deadline || 'all'}
+            onValueChange={(value) => onFilterChange({ deadline: value as CategoryFilter['deadline'] })}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('allDeadlines')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t('allDeadlines')}</SelectItem>
+              <SelectItem value="all">{t('allDeadlines')}</SelectItem>
               <SelectItem value="upcoming">{t('upcomingDeadlines')}</SelectItem>
               <SelectItem value="past">{t('pastDeadlines')}</SelectItem>
             </SelectContent>

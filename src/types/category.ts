@@ -1,3 +1,4 @@
+
 // Kategoriya status tipi
 export type CategoryStatus = 'active' | 'inactive' | 'draft';
 
@@ -20,8 +21,8 @@ export interface Category {
 export interface CategoryFilter {
   search?: string;
   status?: CategoryStatus | 'all';
-  assignment?: 'all' | 'sectors' | '';
-  deadline?: 'upcoming' | 'past' | 'all' | '';
+  assignment?: 'all' | 'sectors';
+  deadline?: 'upcoming' | 'past' | 'all';
 }
 
 // Form status tipi

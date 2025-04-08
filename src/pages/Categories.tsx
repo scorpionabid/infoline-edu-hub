@@ -11,7 +11,7 @@ import CategoryChart from '@/components/categories/CategoryChart';
 import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
 import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
-import { Category } from '@/types/category';
+import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
 import { useCategories } from '@/hooks/useCategories';
 import { useCategoryActions } from '@/hooks/useCategoryActions';
 import { useLanguage } from '@/context/LanguageContext';
@@ -69,9 +69,9 @@ const Categories: React.FC = () => {
           onAddCategory={handleAddDialogOpen}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          statusFilter={statusFilter}
+          statusFilter={statusFilter as CategoryStatus | 'all'}
           onStatusFilterChange={setStatusFilter}
-          assignmentFilter={assignmentFilter}
+          assignmentFilter={assignmentFilter as CategoryFilter['assignment']}
           onAssignmentFilterChange={setAssignmentFilter}
           isLoading={isLoading}
         />
@@ -93,12 +93,13 @@ const Categories: React.FC = () => {
               <CategoryFilterCard 
                 filter={{
                   search: searchQuery,
-                  status: statusFilter,
-                  assignment: assignmentFilter
+                  status: statusFilter as CategoryStatus | 'all',
+                  assignment: assignmentFilter as CategoryFilter['assignment'],
+                  deadline: 'all'
                 }}
                 onFilterChange={(newFilter) => {
                   if (newFilter.search !== undefined) setSearchQuery(newFilter.search);
-                  if (newFilter.status !== undefined) setStatusFilter(newFilter.status as string);
+                  if (newFilter.status !== undefined) setStatusFilter(newFilter.status);
                   if (newFilter.assignment !== undefined) setAssignmentFilter(newFilter.assignment);
                 }}
               />

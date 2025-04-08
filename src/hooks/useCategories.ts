@@ -2,12 +2,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from 'react';
 import { fetchCategories } from "@/api/categoryApi";
-import { Category } from "@/types/category";
+import { Category, CategoryStatus } from "@/types/category";
 
 export const useCategories = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [assignmentFilter, setAssignmentFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<CategoryStatus | 'all'>('all');
+  const [assignmentFilter, setAssignmentFilter] = useState<'all' | 'sectors' | ''>('all');
+  const [deadlineFilter, setDeadlineFilter] = useState<'upcoming' | 'past' | 'all' | ''>('all');
   
   // Fetch categories data
   const {
@@ -31,18 +32,32 @@ export const useCategories = () => {
       }
       
       // Status filtri
-      if (statusFilter && statusFilter !== 'all' && category.status !== statusFilter) {
+      if (statusFilter !== 'all' && category.status !== statusFilter) {
         return false;
       }
       
       // Assignment filtri
-      if (assignmentFilter && assignmentFilter !== '' && category.assignment !== assignmentFilter) {
+      if (assignmentFilter && assignmentFilter !== 'all' && category.assignment !== assignmentFilter) {
         return false;
+      }
+      
+      // Deadline filtri
+      if (deadlineFilter && deadlineFilter !== 'all') {
+        const now = new Date();
+        if (deadlineFilter === 'upcoming' && category.deadline) {
+          const deadlineDate = new Date(category.deadline);
+          return deadlineDate > now;
+        } else if (deadlineFilter === 'past' && category.deadline) {
+          const deadlineDate = new Date(category.deadline);
+          return deadlineDate < now;
+        } else if (!category.deadline) {
+          return false;
+        }
       }
       
       return true;
     });
-  }, [categories, searchQuery, statusFilter, assignmentFilter]);
+  }, [categories, searchQuery, statusFilter, assignmentFilter, deadlineFilter]);
 
   // Kateqoriyaların statistikası
   const stats = useMemo(() => {
@@ -81,6 +96,8 @@ export const useCategories = () => {
     setStatusFilter,
     assignmentFilter,
     setAssignmentFilter,
+    deadlineFilter,
+    setDeadlineFilter,
     stats
   };
 };

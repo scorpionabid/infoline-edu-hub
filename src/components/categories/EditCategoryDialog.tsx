@@ -98,7 +98,11 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
     
     const updatedCategory: Category = {
       ...category,
-      ...data,
+      name: data.name,
+      description: data.description,
+      assignment: data.assignment,
+      deadline: data.deadline ? data.deadline.toISOString() : undefined,
+      priority: data.priority,
       updatedAt: new Date().toISOString(),
     };
     
