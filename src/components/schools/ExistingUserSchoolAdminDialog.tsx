@@ -14,7 +14,7 @@ import { Loader2, Users, CheckCircle2 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { UserSelect } from '@/components/shared/UserSelect';
+import { UserSelect } from '@/components/users/UserSelect';
 
 interface ExistingUserSchoolAdminDialogProps {
   isOpen: boolean;
@@ -123,7 +123,8 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
               <div className="flex flex-col space-y-2">
                 <label className="text-sm font-medium">{t('selectUser')}</label>
                 <UserSelect 
-                  onUserSelect={onUserSelect} 
+                  value=""
+                  onChange={onUserSelect} 
                   placeholder={t('selectUserPlaceholder')}
                 />
               </div>
