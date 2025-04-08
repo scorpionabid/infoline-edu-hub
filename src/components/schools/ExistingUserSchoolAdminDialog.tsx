@@ -34,7 +34,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
   const { t } = useLanguageSafe();
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   
   const { handleSubmit, reset, formState: { isValid } } = useForm({
     defaultValues: { userId: '' }
@@ -44,7 +44,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
   useEffect(() => {
     if (!isOpen) {
       reset();
-      setSelectedUserId(null);
+      setSelectedUserId('');
       setIsSuccess(false);
     }
   }, [isOpen, reset]);
@@ -123,7 +123,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
               <div className="flex flex-col space-y-2">
                 <label className="text-sm font-medium">{t('selectUser')}</label>
                 <UserSelect 
-                  value=""
+                  value={selectedUserId}
                   onChange={onUserSelect} 
                   placeholder={t('selectUserPlaceholder')}
                 />
