@@ -63,7 +63,18 @@ const schools = {
   schoolUpdated: "Məktəb yeniləndi",
   schoolDeleted: "Məktəb silindi",
   confirmDeleteSchool: "Bu məktəbi silmək istədiyinizə əminsiniz?",
-  schoolDeleteWarning: "Bu əməliyyat geri qaytarıla bilməz və bütün məktəblə əlaqəli məlumatlar silinəcək."
+  schoolDeleteWarning: "Bu əməliyyat geri qaytarıla bilməz və bütün məktəblə əlaqəli məlumatlar silinəcək.",
+  
+  // Məktəb Admin
+  schoolAdminManagement: "Məktəb Admin İdarəetməsi",
+  selectUser: "İstifadəçi seçin",
+  selectUserPlaceholder: "İstifadəçi seçin...",
+  assignExistingUserAsSchoolAdmin: "Mövcud istifadəçini məktəb admini təyin et",
+  assignExistingUserAsSchoolAdminDesc: "Seçilən istifadəçi məktəbin admini kimi təyin ediləcək",
+  errorAssigningAdmin: "Admin təyin edilərkən xəta",
+  adminAssigned: "Admin təyin edildi",
+  adminAssignedDesc: "İstifadəçi məktəb admini olaraq uğurla təyin edildi",
+  assign: "Təyin et"
 };
 
 export default schools;
