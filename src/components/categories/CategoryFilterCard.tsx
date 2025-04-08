@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -31,11 +30,11 @@ const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
   };
   
   const handleAssignmentChange = (value: string) => {
-    onFilterChange({ ...filter, assignment: value as 'all' | 'sectors' | '' });
+    onFilterChange({ ...filter, assignment: value === 'none' ? '' : value as 'all' | 'sectors' | '' });
   };
   
   const handleDeadlineChange = (value: string) => {
-    onFilterChange({ ...filter, deadline: value as 'upcoming' | 'past' | 'all' | '' });
+    onFilterChange({ ...filter, deadline: value === 'none' ? '' : value as 'upcoming' | 'past' | 'all' | '' });
   };
   
   const clearFilters = () => {
@@ -84,28 +83,28 @@ const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
           </Select>
           
           <Select 
-            value={filter.assignment || ''} 
+            value={filter.assignment || 'none'} 
             onValueChange={handleAssignmentChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Təyinat" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Bütün təyinatlar</SelectItem>
+              <SelectItem value="none">Bütün təyinatlar</SelectItem>
               <SelectItem value="all">Hamısı</SelectItem>
               <SelectItem value="sectors">Sektorlar</SelectItem>
             </SelectContent>
           </Select>
           
           <Select 
-            value={filter.deadline || ''} 
+            value={filter.deadline || 'none'} 
             onValueChange={handleDeadlineChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Son tarix" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Bütün tarixlər</SelectItem>
+              <SelectItem value="none">Bütün tarixlər</SelectItem>
               <SelectItem value="upcoming">Gələcək</SelectItem>
               <SelectItem value="past">Keçmiş</SelectItem>
             </SelectContent>
