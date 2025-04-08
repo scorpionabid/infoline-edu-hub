@@ -63,14 +63,10 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
           throw new Error(error.message || 'İstifadəçiləri yükləyərkən xəta baş verdi');
         }
         
-        if (!data || !Array.isArray(data)) {
-          console.log('API cavabı düzgün formatda deyil:', data);
-          setUsers([]);
-          return;
-        }
-        
-        console.log(`${data.length} istifadəçi yükləndi`);
-        setUsers(data as User[]);
+        // Təhlükəsizlik üçün data-nın array olduğunu yoxla
+        const safeData = Array.isArray(data) ? data : [];
+        console.log(`${safeData.length} istifadəçi yükləndi`);
+        setUsers(safeData as User[]);
       } catch (err) {
         console.error('İstifadəçiləri yükləyərkən istisna:', err);
         setError(err instanceof Error ? err.message : 'İstifadəçilər yüklənərkən xəta baş verdi');
@@ -88,8 +84,11 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
     const loadSelectedUser = async () => {
       if (!value || selectedUserData) return;
       
+      // Users massivini təhlükəsiz şəkildə istifadə et
+      const safeUsers = Array.isArray(users) ? users : [];
+      
       // Əgər users massivində artıq seçilmiş istifadəçi varsa
-      const existingUser = users.find(user => user.id === value);
+      const existingUser = safeUsers.find(user => user.id === value);
       if (existingUser) {
         setSelectedUserData(existingUser);
         return;
@@ -119,12 +118,13 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
         console.log('Seçilmiş istifadəçi yükləndi:', data);
         setSelectedUserData(data as User);
         
-        // Users massivini də yeniləyək
+        // Users massivini də yeniləyək, əvvəlcə təhlükəsizlik yoxlaması
         setUsers(prev => {
-          if (prev.some(user => user.id === data.id)) {
-            return prev;
+          const safePrev = Array.isArray(prev) ? prev : [];
+          if (safePrev.some(user => user.id === data.id)) {
+            return safePrev;
           }
-          return [...prev, data as User];
+          return [...safePrev, data as User];
         });
       } catch (err) {
         console.error('Seçilmiş istifadəçini yükləyərkən istisna:', err);
@@ -150,6 +150,9 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
     : value 
       ? 'Yüklənir...' 
       : placeholder || t('selectUser') || 'İstifadəçi seçin';
+
+  // Təhlükəsiz istifadə üçün users massivini əlavə yoxlama
+  const safeUsers = Array.isArray(users) ? users : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -190,8 +193,8 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
             <>
               <CommandEmpty>{t('noUsersFound') || 'İstifadəçi tapılmadı'}</CommandEmpty>
               <CommandGroup className="max-h-[300px] overflow-auto">
-                {Array.isArray(users) && users.length > 0 ? (
-                  users.map((user) => (
+                {safeUsers.length > 0 ? (
+                  safeUsers.map((user) => (
                     <CommandItem
                       key={user.id}
                       value={user.id}

@@ -134,8 +134,8 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
             <div className="space-y-4 py-2">
               {/* Məktəb məlumatları */}
               <div className="flex flex-col space-y-2">
-                <p className="text-sm font-medium">Məktəb: <span className="font-bold">{schoolName}</span></p>
-                <p className="text-sm text-muted-foreground">ID: {schoolId}</p>
+                <p className="text-sm font-medium">Məktəb: <span className="font-bold">{schoolName || 'Seçilməmiş'}</span></p>
+                <p className="text-sm text-muted-foreground">ID: {schoolId || 'Yoxdur'}</p>
               </div>
               
               {/* İstifadəçi seçimi */}

@@ -55,7 +55,7 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
       }
       
       // data null və ya undefined olarsa
-      if (!data) {
+      if (data === null || data === undefined) {
         const errorMessage = t('noResponseFromServer') || 'Serverdən cavab alınmadı';
         console.error('Edge funksiyasından gələn cavab boşdur');
         toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
@@ -89,7 +89,7 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
       return { success: true, data };
       
     } catch (error: any) {
-      const errorMessage = error.message || t('unexpectedError') || 'Gözlənilməz xəta';
+      const errorMessage = error?.message || t('unexpectedError') || 'Gözlənilməz xəta';
       console.error('Admin təyin etmək istisna:', error);
       toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
         description: errorMessage
