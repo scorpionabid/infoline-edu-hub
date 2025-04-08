@@ -1,28 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Check, ChevronsUpDown, Loader2, AlertCircle } from 'lucide-react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useLanguage } from '@/context/LanguageContext';
-
-type User = {
-  id: string;
-  full_name: string;
-  email: string;
-};
+import { UserSelectCommand } from './UserSelectParts/UserSelectCommand';
+import { useUserSelectData } from './UserSelectParts/useUserSelectData';
+import { UserLoadingState } from './UserSelectParts/UserLoadingState';
+import { User } from './UserSelectParts/types';
 
 interface UserSelectProps {
   value: string;
@@ -34,107 +24,16 @@ interface UserSelectProps {
 export function UserSelect({ value, onChange, placeholder, disabled }: UserSelectProps) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUserData, setSelectedUserData] = useState<User | null>(null);
-
-  // İstifadəçiləri yükləmə
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!open) return; // Popover açıq deyilsə, istifadəçiləri yükləməyə ehtiyac yoxdur
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        console.log('İstifadəçilər sorğulanır...');
-        let query = supabase.from('profiles').select('id, full_name, email');
-        
-        if (searchTerm) {
-          query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-        }
-        
-        const { data, error } = await query.limit(20);
-        
-        if (error) {
-          console.error('İstifadəçiləri yükləyərkən xəta:', error);
-          throw new Error(error.message || 'İstifadəçiləri yükləyərkən xəta baş verdi');
-        }
-        
-        // Təhlükəsizlik üçün data-nın array olduğunu yoxla
-        const safeData = Array.isArray(data) ? data : [];
-        console.log(`${safeData.length} istifadəçi yükləndi`);
-        setUsers(safeData as User[]);
-      } catch (err) {
-        console.error('İstifadəçiləri yükləyərkən istisna:', err);
-        setError(err instanceof Error ? err.message : 'İstifadəçilər yüklənərkən xəta baş verdi');
-        setUsers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, [open, searchTerm]);
-
-  // Seçilmiş istifadəçini yüklə (əgər varsa və users massivində yoxdursa)
-  useEffect(() => {
-    const loadSelectedUser = async () => {
-      if (!value || selectedUserData) return;
-      
-      // Users massivini təhlükəsiz şəkildə istifadə et
-      const safeUsers = Array.isArray(users) ? users : [];
-      
-      // Əgər users massivində artıq seçilmiş istifadəçi varsa
-      const existingUser = safeUsers.find(user => user.id === value);
-      if (existingUser) {
-        setSelectedUserData(existingUser);
-        return;
-      }
-      
-      // Əks təqdirdə, yüklə
-      try {
-        setLoading(true);
-        console.log(`Seçilmiş istifadəçi yüklənir: ${value}`);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .eq('id', value)
-          .single();
-        
-        if (error) {
-          console.error('Seçilmiş istifadəçini yükləyərkən xəta:', error);
-          return;
-        }
-        
-        if (!data) {
-          console.log('Seçilmiş istifadəçi tapılmadı');
-          return;
-        }
-        
-        console.log('Seçilmiş istifadəçi yükləndi:', data);
-        setSelectedUserData(data as User);
-        
-        // Users massivini də yeniləyək, əvvəlcə təhlükəsizlik yoxlaması
-        setUsers(prev => {
-          const safePrev = Array.isArray(prev) ? prev : [];
-          if (safePrev.some(user => user.id === data.id)) {
-            return safePrev;
-          }
-          return [...safePrev, data as User];
-        });
-      } catch (err) {
-        console.error('Seçilmiş istifadəçini yükləyərkən istisna:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSelectedUser();
-  }, [value, users, selectedUserData]);
+  
+  // İstifadəçi verilərini əldə etmək üçün xüsusi hook
+  const { 
+    users, 
+    loading, 
+    error, 
+    selectedUserData,
+    fetchUsers
+  } = useUserSelectData(value, open, searchTerm);
 
   // İstifadəçi seçildikdə
   const handleSelect = (userId: string) => {
@@ -151,9 +50,6 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
       ? 'Yüklənir...' 
       : placeholder || t('selectUser') || 'İstifadəçi seçin';
 
-  // Təhlükəsiz istifadə üçün users massivini əlavə yoxlama
-  const safeUsers = Array.isArray(users) ? users : [];
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -165,62 +61,19 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
           disabled={disabled}
         >
           {displayText}
-          {loading ? (
-            <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin" />
-          ) : (
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          )}
+          <UserLoadingState loading={loading} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0">
-        <Command>
-          <CommandInput 
-            placeholder={t('searchUser') || "İstifadəçi axtar..."} 
-            value={searchTerm}
-            onValueChange={setSearchTerm}
-          />
-          
-          {error ? (
-            <div className="flex items-center py-6 px-2 text-destructive gap-2">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">{error}</span>
-            </div>
-          ) : loading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              <CommandEmpty>{t('noUsersFound') || 'İstifadəçi tapılmadı'}</CommandEmpty>
-              <CommandGroup className="max-h-[300px] overflow-auto">
-                {safeUsers.length > 0 ? (
-                  safeUsers.map((user) => (
-                    <CommandItem
-                      key={user.id}
-                      value={user.id}
-                      onSelect={() => handleSelect(user.id)}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === user.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex flex-col">
-                        <span>{user.full_name || 'İsimsiz İstifadəçi'}</span>
-                        <span className="text-xs text-muted-foreground">{user.email || ''}</span>
-                      </div>
-                    </CommandItem>
-                  ))
-                ) : (
-                  <div className="text-center py-2 text-muted-foreground">
-                    {t('noUsersFound') || 'İstifadəçi tapılmadı'}
-                  </div>
-                )}
-              </CommandGroup>
-            </>
-          )}
-        </Command>
+        <UserSelectCommand 
+          users={users}
+          loading={loading}
+          error={error}
+          value={value}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onSelect={handleSelect}
+        />
       </PopoverContent>
     </Popover>
   );
