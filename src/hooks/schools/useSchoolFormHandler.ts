@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { School as SupabaseSchool } from '@/types/supabase';
 import { mapToMockSchool } from './schoolTypeConverters';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 // Initial form data
 export const getInitialFormState = (): SchoolFormData => ({
@@ -48,15 +49,27 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     }
   }, [user]);
 
-  const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // Sektor seçildikdə avtomatik olaraq region də təyin edilsin
     if (name === 'sectorId' && value) {
-      // Burada API çağırışı ilə sektorun regionunu əldə edə bilərik
-      // Sadəcə nümunə üçün göstərilir
-      console.log('Sektor seçildi, region avtomatik təyin ediləcək');
+      try {
+        const { data, error } = await supabase
+          .from('sectors')
+          .select('region_id')
+          .eq('id', value)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data && data.region_id) {
+          setFormData(prev => ({ ...prev, regionId: data.region_id }));
+        }
+      } catch (error) {
+        console.error('Sektor məlumatlarını əldə edərkən xəta:', error);
+      }
     }
   }, []);
 

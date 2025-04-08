@@ -25,10 +25,11 @@ export const useSchoolOperations = (
     try {
       console.log("Məktəb əlavə edilir:", formData);
       
+      // Yoxla region ID-si boşdursa, supabase-ə boş (null) ötürmək üçün
       const newSchool = {
         name: formData.name,
         principal_name: formData.principalName || null,
-        region_id: formData.regionId,
+        region_id: formData.regionId || null, // Əgər regionId boşdursa null ötürür
         sector_id: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
