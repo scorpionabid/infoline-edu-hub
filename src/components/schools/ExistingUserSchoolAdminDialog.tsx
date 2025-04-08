@@ -1,152 +1,155 @@
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { 
   Dialog, 
   DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
   DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-  DialogDescription 
-} from '@/components/ui/dialog';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { UserSelect } from '@/components/users/UserSelect';
-import { useAssignExistingUserAsSchoolAdmin } from '@/hooks/useAssignExistingUserAsSchoolAdmin';
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, Users, CheckCircle2 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-
-// Form validasiya sxemi
-const formSchema = z.object({
-  userId: z.string().min(1, { message: 'İstifadəçi seçilməlidir' }),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { UserSelect } from '@/components/shared/UserSelect';
 
 interface ExistingUserSchoolAdminDialogProps {
   isOpen: boolean;
   onClose: () => void;
   schoolId: string;
   schoolName: string;
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
-export function ExistingUserSchoolAdminDialog({
+export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDialogProps> = ({
   isOpen,
   onClose,
   schoolId,
   schoolName,
   onSuccess
-}: ExistingUserSchoolAdminDialogProps) {
-  const { t } = useLanguage();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { assignUserAsSchoolAdmin, loading } = useAssignExistingUserAsSchoolAdmin();
-
-  // React Hook Form
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      userId: '',
-    },
+}) => {
+  const { t } = useLanguageSafe();
+  const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  
+  const { handleSubmit, reset, formState: { isValid } } = useForm({
+    defaultValues: { userId: '' }
   });
 
-  // Dialog bağlandıqda formanı sıfırla
+  // Formu resetlə və vəziyyətləri təmizlə
   useEffect(() => {
     if (!isOpen) {
-      form.reset();
+      reset();
+      setSelectedUserId(null);
+      setIsSuccess(false);
     }
-  }, [isOpen, form]);
+  }, [isOpen, reset]);
 
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
+  const onUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+  };
+
+  const onSubmit = async () => {
+    if (!selectedUserId) return;
+    
+    setLoading(true);
+    
     try {
-      console.log('Məktəb admin təyini başlayır:', { schoolId, userId: values.userId });
+      const { data, error } = await supabase.functions.invoke('assign-existing-user-as-school-admin', {
+        body: { 
+          schoolId, 
+          userId: selectedUserId 
+        }
+      });
       
-      const result = await assignUserAsSchoolAdmin(schoolId, values.userId);
+      if (error) throw error;
       
-      if (result.success) {
-        console.log('Məktəb admin təyini uğurlu oldu:', result);
-        onClose();
-        if (onSuccess) onSuccess();
-      } else {
-        console.error('Məktəb admin təyini xətası:', result.error);
-        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', { 
-          description: result.error 
-        });
+      if (!data.success) {
+        throw new Error(data.error || t('errorAssigningAdmin'));
       }
+      
+      // Uğurlu olduğunu göstər
+      setIsSuccess(true);
+      
+      // 1.5 saniyə sonra dialoqu bağla
+      setTimeout(() => {
+        onClose();
+        onSuccess();
+        toast.success(t('adminAssigned'), {
+          description: t('adminAssignedDesc')
+        });
+      }, 1500);
     } catch (error) {
-      console.error('Məktəb admin təyini istisna:', error);
-      toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', { 
-        description: error.message || t('unexpectedError') || 'Gözlənilməz xəta'
+      console.error('Error assigning admin:', error);
+      toast.error(t('errorAssigningAdmin'), {
+        description: error.message
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {t('assignExistingUserAsSchoolAdmin') || 'Mövcud istifadəçini məktəb admini təyin et'}
-          </DialogTitle>
+          <DialogTitle>{t('assignExistingUserAsSchoolAdmin')}</DialogTitle>
           <DialogDescription>
-            {t('assignExistingUserAsSchoolAdminDesc') || 
-              `Seçilən istifadəçi "${schoolName}" məktəbinin admini kimi təyin ediləcək`}
+            {t('assignExistingUserAsSchoolAdminDesc')}
           </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="userId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('selectUser') || 'İstifadəçi seçin'}</FormLabel>
-                  <FormControl>
-                    <UserSelect
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder={t('selectUserPlaceholder') || 'İstifadəçi seçin...'}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {isSuccess ? (
+          <div className="flex flex-col items-center justify-center py-6 space-y-4">
+            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-600">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+            <p className="text-center font-medium text-lg">{t('adminAssigned')}</p>
+            <p className="text-center text-muted-foreground">
+              {t('adminAssignedDesc')}
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-4 py-2">
+              <div className="flex flex-col space-y-2">
+                <p className="text-sm font-medium">Məktəb: <span className="font-bold">{schoolName}</span></p>
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">{t('selectUser')}</label>
+                <UserSelect 
+                  onUserSelect={onUserSelect} 
+                  placeholder={t('selectUserPlaceholder')}
+                />
+              </div>
+            </div>
             
             <DialogFooter>
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={onClose} 
-                disabled={isSubmitting || loading}
+                onClick={onClose}
+                disabled={loading}
               >
-                {t('cancel') || 'Ləğv et'}
+                {t('cancel')}
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting || loading}
+                disabled={!selectedUserId || loading}
+                className="gap-2"
               >
-                {(isSubmitting || loading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('assign') || 'Təyin et'}
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading ? t('assigning') : t('assign')}
               </Button>
             </DialogFooter>
           </form>
-        </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
-}
+};

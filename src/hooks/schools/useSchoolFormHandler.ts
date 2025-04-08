@@ -52,8 +52,11 @@ export const useSchoolFormHandler = (): UseSchoolFormHandlerReturn => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    if (name === 'regionId') {
-      setFormData(prev => ({ ...prev, sectorId: '' }));
+    // Sektor seçildikdə avtomatik olaraq region də təyin edilsin
+    if (name === 'sectorId' && value) {
+      // Burada API çağırışı ilə sektorun regionunu əldə edə bilərik
+      // Sadəcə nümunə üçün göstərilir
+      console.log('Sektor seçildi, region avtomatik təyin ediləcək');
     }
   }, []);
 

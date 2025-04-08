@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { 
   Dialog, 
   DialogContent, 
@@ -57,7 +57,7 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
   onResetPassword,
   selectedAdmin
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const [activeTab, setActiveTab] = useState('info');
   const [resetInProgress, setResetInProgress] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -89,7 +89,7 @@ export const AdminDialog: React.FC<AdminDialogProps> = ({
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{t('schoolAdminManagement') || 'Məktəb Admin İdarəetməsi'}</DialogTitle>
+            <DialogTitle>{t('schoolAdminManagement')}</DialogTitle>
             <DialogDescription>
               {selectedAdmin?.name} məktəbi üçün admin idarəetməsi
             </DialogDescription>

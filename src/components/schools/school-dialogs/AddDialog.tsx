@@ -9,6 +9,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
+import { useLanguageSafe } from '@/context/LanguageContext';
 import SchoolForm from '../SchoolForm';
 import { SchoolFormData } from '@/types/school-form';
 
@@ -33,13 +34,15 @@ export const AddDialog: React.FC<AddDialogProps> = ({
   setCurrentTab, 
   filteredSectors 
 }) => {
+  const { t } = useLanguageSafe();
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md md:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Yeni məktəb əlavə et</DialogTitle>
+          <DialogTitle>{t('addSchool')}</DialogTitle>
           <DialogDescription>
-            Məktəb məlumatlarını daxil edin. Bütün zəruri sahələri (*) doldurun.
+            {t('schoolsDescription')}
           </DialogDescription>
         </DialogHeader>
         
@@ -53,10 +56,10 @@ export const AddDialog: React.FC<AddDialogProps> = ({
         
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose}>
-            Ləğv et
+            {t('cancel')}
           </Button>
           <Button onClick={onSubmit}>
-            Əlavə et
+            {t('add')}
           </Button>
         </DialogFooter>
       </DialogContent>
