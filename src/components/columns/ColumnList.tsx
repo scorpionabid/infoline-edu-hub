@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useRole } from "@/context/AuthContext";
 import { Column } from "@/types/column";
@@ -7,16 +7,15 @@ import { Database, Edit, Trash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import DataTable from "@/components/common/DataTable";
-import { formatRelativeDate } from "@/utils/formatDateUtils";
 
 interface ColumnListProps {
   columns: Column[];
   categories: { id: string; name: string }[];
   isLoading: boolean;
   isError: boolean;
-  onDeleteColumn: (id: string) => Promise<boolean>;
-  onUpdateStatus: (id: string, status: "active" | "inactive") => Promise<boolean>;
   onEditColumn: (column: Column) => void;
+  onDeleteColumn: (id: string) => Promise<any>;
+  onUpdateStatus: (id: string, status: "active" | "inactive") => Promise<any>;
 }
 
 const ColumnList: React.FC<ColumnListProps> = ({
@@ -24,13 +23,13 @@ const ColumnList: React.FC<ColumnListProps> = ({
   categories,
   isLoading,
   isError,
+  onEditColumn,
   onDeleteColumn,
   onUpdateStatus,
-  onEditColumn,
 }) => {
   const { t, language } = useLanguage();
   const canManageColumns = useRole(["superadmin", "regionadmin"]);
-  const [columnToDelete, setColumnToDelete] = React.useState<string | null>(null);
+  const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
 
   // Get category name by ID
   const getCategoryName = (categoryId: string) => {

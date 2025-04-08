@@ -61,6 +61,16 @@ const Categories: React.FC = () => {
     setSelectedCategory(category);
     setIsDeleteDialogOpen(true);
   };
+
+  // Type-safe status filter handler
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value as CategoryStatus | 'all');
+  };
+  
+  // Type-safe assignment filter handler
+  const handleAssignmentFilterChange = (value: string) => {
+    setAssignmentFilter(value as 'all' | 'sectors' | '');
+  };
   
   return (
     <SidebarLayout>
@@ -69,10 +79,10 @@ const Categories: React.FC = () => {
           onAddCategory={handleAddDialogOpen}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          statusFilter={statusFilter as CategoryStatus | 'all'}
-          onStatusFilterChange={setStatusFilter}
-          assignmentFilter={assignmentFilter as CategoryFilter['assignment']}
-          onAssignmentFilterChange={setAssignmentFilter}
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          assignmentFilter={assignmentFilter}
+          onAssignmentFilterChange={handleAssignmentFilterChange}
           isLoading={isLoading}
         />
         
@@ -93,8 +103,8 @@ const Categories: React.FC = () => {
               <CategoryFilterCard 
                 filter={{
                   search: searchQuery,
-                  status: statusFilter as CategoryStatus | 'all',
-                  assignment: assignmentFilter as CategoryFilter['assignment'],
+                  status: statusFilter,
+                  assignment: assignmentFilter,
                   deadline: 'all'
                 }}
                 onFilterChange={(newFilter) => {

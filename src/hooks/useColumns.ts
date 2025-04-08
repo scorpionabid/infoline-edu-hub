@@ -1,46 +1,76 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { Column, adaptSupabaseColumn, adaptColumnToSupabase } from '@/types/column';
 
+const fetchColumnsFromSupabase = async (categoryId?: string) => {
+  let query = supabase
+    .from('columns')
+    .select('*')
+    .order('order_index');
+  
+  if (categoryId) {
+    query = query.eq('category_id', categoryId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  
+  return (data || []).map(column => adaptSupabaseColumn(column));
+};
+
 export const useColumns = (categoryId?: string) => {
-  const [columns, setColumns] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const fetchColumns = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('columns')
-        .select('*')
-        .order('order_index');
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
+  // Fetch columns
+  const {
+    data: columns = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['columns', categoryId],
+    queryFn: () => fetchColumnsFromSupabase(categoryId),
+  });
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      setColumns(data || []);
-    } catch (err: any) {
-      console.error('Error fetching columns:', err);
-      setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadColumns')
-      });
-    } finally {
-      setLoading(false);
+  // Filter columns
+  const filteredColumns = columns.filter(column => {
+    // Search filter
+    if (searchQuery && !column.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
     }
-  };
+    
+    // Category filter
+    if (categoryFilter && column.categoryId !== categoryFilter) {
+      return false;
+    }
+    
+    // Type filter
+    if (typeFilter && typeFilter !== 'all' && column.type !== typeFilter) {
+      return false;
+    }
+    
+    // Status filter
+    if (statusFilter && statusFilter !== 'all' && column.status !== statusFilter) {
+      return false;
+    }
+    
+    return true;
+  });
 
-  const addColumn = async (column: Omit<Column, "id">) => {
-    try {
+  // Add column mutation
+  const addColumnMutation = useMutation({
+    mutationFn: async (column: Omit<Column, "id">) => {
       const supabaseColumn = adaptColumnToSupabase(column as Partial<Column>);
       
       // JSON tipləri üçün uyğunlaşma
@@ -58,29 +88,25 @@ export const useColumns = (categoryId?: string) => {
 
       if (error) throw error;
       
-      setColumns(prev => [...prev, data]);
-      
-      // Kateqoriyadakı sütun sayını yeniləyirik
-      if (column.categoryId) {
-        await updateCategoryColumnCount(column.categoryId);
-      }
-      
+      return adaptSupabaseColumn(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success(t('columnAdded'), {
         description: t('columnAddedDesc')
       });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error adding column:', err);
+    },
+    onError: (error) => {
+      console.error('Error adding column:', error);
       toast.error(t('errorOccurred'), {
         description: t('couldNotAddColumn')
       });
-      throw err;
     }
-  };
+  });
 
-  const updateColumn = async (id: string, updates: Partial<Column>) => {
-    try {
+  // Update column mutation
+  const updateColumnMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string, updates: Partial<Column> }) => {
       const supabaseUpdates = adaptColumnToSupabase(updates);
       
       // JSON tipləri üçün uyğunlaşma
@@ -99,30 +125,25 @@ export const useColumns = (categoryId?: string) => {
 
       if (error) throw error;
       
-      setColumns(prev => prev.map(column => 
-        column.id === id ? data : column
-      ));
-      
+      return adaptSupabaseColumn(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success(t('columnUpdated'), {
         description: t('columnUpdatedDesc')
       });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error updating column:', err);
+    },
+    onError: (error) => {
+      console.error('Error updating column:', error);
       toast.error(t('errorOccurred'), {
         description: t('couldNotUpdateColumn')
       });
-      throw err;
     }
-  };
+  });
 
-  const deleteColumn = async (id: string) => {
-    try {
-      // Əvvəlcə silinən sütunun kategoriya ID-sini almaq lazımdır
-      const column = columns.find(c => c.id === id);
-      const categoryId = column?.category_id;
-      
+  // Delete column mutation
+  const deleteColumnMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('columns')
         .delete()
@@ -130,26 +151,23 @@ export const useColumns = (categoryId?: string) => {
 
       if (error) throw error;
       
-      setColumns(prev => prev.filter(column => column.id !== id));
-      
-      // Kateqoriyadakı sütun sayını yeniləyirik
-      if (categoryId) {
-        await updateCategoryColumnCount(categoryId);
-      }
-      
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success(t('columnDeleted'), {
         description: t('columnDeletedDesc')
       });
-    } catch (err: any) {
-      console.error('Error deleting column:', err);
+    },
+    onError: (error) => {
+      console.error('Error deleting column:', error);
       toast.error(t('errorOccurred'), {
         description: t('couldNotDeleteColumn')
       });
-      throw err;
     }
-  };
+  });
 
-  // Kateqoriyada sütun sayını yeniləmək
+  // Helper function to update category column count
   const updateCategoryColumnCount = async (categoryId: string) => {
     try {
       // Kateqoriyadakı sütun sayını hesablayırıq
@@ -173,15 +191,50 @@ export const useColumns = (categoryId?: string) => {
     }
   };
 
-  useEffect(() => {
-    fetchColumns();
-  }, [categoryId]);
+  // API-i sadələşdirmək üçün funksiyalar
+  const addColumn = async (column: Omit<Column, "id">) => {
+    const result = await addColumnMutation.mutateAsync(column);
+    
+    // Kateqoriyadakı sütun sayını yeniləyirik
+    if (column.categoryId) {
+      await updateCategoryColumnCount(column.categoryId);
+    }
+    
+    return result;
+  };
+
+  const updateColumn = async (id: string, updates: Partial<Column>) => {
+    return updateColumnMutation.mutateAsync({ id, updates });
+  };
+
+  const deleteColumn = async (id: string) => {
+    // Əvvəlcə silinən sütunun kategoriya ID-sini alaq
+    const column = columns.find(c => c.id === id);
+    const categoryId = column?.categoryId;
+    
+    await deleteColumnMutation.mutateAsync(id);
+    
+    // Kateqoriyadakı sütun sayını yeniləyirik
+    if (categoryId) {
+      await updateCategoryColumnCount(categoryId);
+    }
+  };
 
   return {
     columns,
-    loading,
+    filteredColumns,
+    isLoading,
+    isError,
     error,
-    fetchColumns,
+    refetch,
+    searchQuery,
+    setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
+    typeFilter,
+    setTypeFilter,
+    statusFilter,
+    setStatusFilter,
     addColumn,
     updateColumn,
     deleteColumn

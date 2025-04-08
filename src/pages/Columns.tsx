@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,7 +28,7 @@ const Columns: React.FC = () => {
     columns, 
     filteredColumns,
     isLoading: isColumnsLoading,
-    error: columnsError,
+    isError: columnsError,
     searchQuery,
     setSearchQuery,
     refetch: refetchColumns
@@ -67,7 +68,7 @@ const Columns: React.FC = () => {
   };
 
   const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategoryId(categoryId);
+    setSelectedCategoryId(categoryId === "all" ? null : categoryId);
   };
 
   // Filter columns based on selected category
@@ -103,34 +104,42 @@ const Columns: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <h2 className="text-lg font-semibold mb-4">{t('filterByCategory')}</h2>
-            <CategorySelect categories={categories} isLoading={isLoading} selectedCategoryId={selectedCategoryId} onCategoryChange={handleCategoryChange} />
+            <CategorySelect 
+              categories={categories} 
+              isLoading={isLoading} 
+              selectedCategoryId={selectedCategoryId} 
+              onCategoryChange={handleCategoryChange} 
+            />
           </CardContent>
         </Card>
         
         <ColumnList 
           columns={categoryFilteredColumns}
+          categories={categories}
           isLoading={isColumnsLoading}
-          onEdit={handleEditDialogOpen} 
-          onDelete={handleDeleteDialogOpen}
-          handleStatusChange={handleUpdateColumnStatus}
+          isError={!!columnsError}
+          onEditColumn={handleEditDialogOpen}
+          onDeleteColumn={handleDeleteColumn}
+          onUpdateStatus={handleUpdateColumnStatus}
         />
         
         <AddColumnDialog 
           isOpen={isAddDialogOpen} 
           onClose={() => setIsAddDialogOpen(false)} 
           onAddColumn={handleAddColumn}
-          isSubmitting={isActionLoading}
           categories={categories}
         />
         
-        <EditColumnDialog 
-          isOpen={isEditDialogOpen} 
-          onClose={() => setIsEditDialogOpen(false)} 
-          onEditColumn={handleAddColumn}
-          column={selectedColumn}
-          isSubmitting={isActionLoading}
-          categories={categories}
-        />
+        {selectedColumn && (
+          <EditColumnDialog 
+            isOpen={isEditDialogOpen} 
+            onClose={() => setIsEditDialogOpen(false)} 
+            onEditColumn={handleAddColumn}
+            column={selectedColumn}
+            isSubmitting={isActionLoading}
+            categories={categories}
+          />
+        )}
         
         <DeleteColumnDialog 
           isOpen={isDeleteDialogOpen} 
@@ -155,14 +164,14 @@ const CategorySelect: React.FC<CategorySelectProps> = ({ categories, isLoading, 
   const { t } = useLanguage();
 
   return (
-    <Select onValueChange={onCategoryChange} defaultValue={selectedCategoryId || ""}>
+    <Select onValueChange={onCategoryChange} value={selectedCategoryId || "all"}>
       <SelectTrigger>
         <SelectValue placeholder={t('selectCategory')} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">{t('allCategories')}</SelectItem>
+        <SelectItem value="all">{t('allCategories')}</SelectItem>
         {isLoading ? (
-          <SelectItem value="" disabled>{t('loading')}</SelectItem>
+          <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
         ) : (
           categories.map((category) => (
             <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
