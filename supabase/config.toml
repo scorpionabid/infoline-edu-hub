@@ -30,8 +30,4 @@ site_url = "http://localhost:3000"
 [storage]
 enabled = true
 
-[edge_functions]
-enabled = true
 
-[functions.assign-existing-user-as-school-admin]
-verify_jwt = true

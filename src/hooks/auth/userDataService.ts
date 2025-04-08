@@ -2,6 +2,60 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
 
+// Rol adını normalizə etmək üçün yardımçı funksiya
+function normalizeRole(role: string): UserRole {
+  if (!role) {
+    console.warn('Normalizə üçün boş rol verildi, default "user" qaytarılır');
+    return 'user';
+  }
+  
+  // Rol adını kiçik hərflərə çevir və boşluqları sil
+  const normalizedRole = role.toLowerCase().trim().replace(/\s+/g, '');
+  console.log(`Rol normalizə edilir: "${role}" -> "${normalizedRole}"`);
+  
+  // Valid rolları yoxla
+  switch (normalizedRole) {
+    case 'superadmin':
+    case 'super-admin':
+    case 'super_admin':
+    case 'admin':
+      return 'superadmin';
+    
+    case 'regionadmin':
+    case 'region-admin':
+    case 'region_admin':
+    case 'regionaladmin':
+      return 'regionadmin';
+    
+    case 'sectoradmin':
+    case 'sector-admin':
+    case 'sector_admin':
+      return 'sectoradmin';
+    
+    case 'schooladmin':
+    case 'school-admin':
+    case 'school_admin':
+      return 'schooladmin';
+    
+    case 'teacher':
+    case 'instructor':
+      // UserRole tipində 'teacher' olmadığı üçün 'user' qaytarırıq
+      console.warn(`'teacher/instructor' rolu UserRole tipində yoxdur, 'user' qaytarılır`);
+      return 'user';
+    
+    case 'student':
+    case 'pupil':
+      // UserRole tipində 'student' olmadığı üçün 'user' qaytarırıq
+      console.warn(`'student/pupil' rolu UserRole tipində yoxdur, 'user' qaytarılır`);
+      return 'user';
+    
+    // Default rol
+    default:
+      console.warn(`Naməlum rol formatı: "${role}", default "user" qaytarılır`);
+      return 'user';
+  }
+}
+
 // İstifadəçi məlumatlarını əldə etmə (profil və rol)
 export const fetchUserData = async (userId: string): Promise<FullUserData> => {
   try {
@@ -18,6 +72,12 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     if (!authData.user) {
       console.error('Auth məlumatları alındı, lakin user obyekti yoxdur');
       throw new Error('İstifadəçi avtorizasiyası xətası - istifadəçi obyekti yoxdur');
+    }
+    
+    // Əgər sorğu edilən ID ilə auth user ID eyni deyilsə, xəbərdarlıq edək
+    if (authData.user.id !== userId) {
+      console.warn(`Sorğu edilən istifadəçi ID (${userId}) ilə cari auth istifadəçi ID (${authData.user.id}) eyni deyil`);
+      // Bəzi hallarda bu normal ola bilər (məsələn, admin başqa istifadəçinin məlumatlarını əldə edir)
     }
     
     // Profil məlumatlarını əldə et - xəta halında yeni profil yaratma
@@ -59,6 +119,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
           throw new Error('İstifadəçi profili yaradıla bilmədi');
         }
         
+        console.log('Yeni profil uğurla yaradıldı:', insertedProfile);
         profile = insertedProfile as Profile;
       } catch (createError) {
         console.error('Profil yaratma xətası:', createError);
@@ -75,9 +136,11 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
           throw new Error('İstifadəçi profili yoxlama və ya yaratma xətası');
         }
         
+        console.log('Mövcud profil tapıldı (ikinci cəhd):', existingProfile);
         profile = existingProfile as Profile;
       }
     } else {
+      console.log('Mövcud profil tapıldı:', profileData);
       profile = profileData as Profile;
     }
     
@@ -100,10 +163,13 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       // İstifadəçi metadatasında rol varsa istifadə et
       if (authData.user.user_metadata && authData.user.user_metadata.role) {
         userRole = normalizeRole(authData.user.user_metadata.role);
+        console.log(`Metadata-dan rol əldə edildi: ${userRole}`);
       } else {
         userRole = 'user';
+        console.log('Default rol təyin edildi: user');
       }
     } else {
+      console.log('İstifadəçi rolu tapıldı:', roleData);
       userRole = normalizeRole(roleData.role);
       regionId = roleData.region_id;
       sectorId = roleData.sector_id;
@@ -115,13 +181,19 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
     
     try {
       if (userRole === 'regionadmin' && regionId) {
-        const { data: regionData } = await supabase
+        console.log(`Region admin məlumatları əldə edilir, regionId: ${regionId}`);
+        const { data: regionData, error: regionError } = await supabase
           .from('regions')
           .select('name, status')
           .eq('id', regionId)
           .maybeSingle();
         
+        if (regionError) {
+          console.warn('Region məlumatları əldə edərkən xəta:', regionError);
+        }
+        
         if (regionData) {
+          console.log('Region məlumatları tapıldı:', regionData);
           adminEntityData = {
             type: 'region',
             name: regionData.name,
@@ -129,13 +201,19 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
           };
         }
       } else if (userRole === 'sectoradmin' && sectorId) {
-        const { data: sectorData } = await supabase
+        console.log(`Sektor admin məlumatları əldə edilir, sectorId: ${sectorId}`);
+        const { data: sectorData, error: sectorError } = await supabase
           .from('sectors')
           .select('name, status, regions(name)')
           .eq('id', sectorId)
           .maybeSingle();
         
+        if (sectorError) {
+          console.warn('Sektor məlumatları əldə edərkən xəta:', sectorError);
+        }
+        
         if (sectorData) {
+          console.log('Sektor məlumatları tapıldı:', sectorData);
           adminEntityData = {
             type: 'sector',
             name: sectorData.name,
@@ -144,13 +222,19 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
           };
         }
       } else if (userRole === 'schooladmin' && schoolId) {
-        const { data: schoolData } = await supabase
+        console.log(`Məktəb admin məlumatları əldə edilir, schoolId: ${schoolId}`);
+        const { data: schoolData, error: schoolError } = await supabase
           .from('schools')
           .select('name, status, type, sectors(name), regions(name)')
           .eq('id', schoolId)
           .maybeSingle();
         
+        if (schoolError) {
+          console.warn('Məktəb məlumatları əldə edərkən xəta:', schoolError);
+        }
+        
         if (schoolData) {
+          console.log('Məktəb məlumatları tapıldı:', schoolData);
           adminEntityData = {
             type: 'school',
             name: schoolData.name,
@@ -160,6 +244,12 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
             regionName: schoolData.regions?.name
           };
         }
+      } else if (userRole === 'superadmin') {
+        console.log('Superadmin rolü üçün əlavə məlumat tələb olunmur');
+        adminEntityData = {
+          type: 'superadmin',
+          name: 'System Administrator'
+        };
       }
     } catch (entityError) {
       console.error('Admin entity məlumatlarını əldə edərkən xəta:', entityError);
@@ -204,46 +294,18 @@ export const fetchUserData = async (userId: string): Promise<FullUserData> => {
       }
     };
     
-    console.log('İstifadəçi məlumatları uğurla əldə edildi:', {
+    console.log('Tam istifadəçi məlumatları hazırlandı:', { 
       id: fullUserData.id,
       email: fullUserData.email,
+      full_name: fullUserData.full_name,
       role: fullUserData.role,
-      adminEntity: fullUserData.adminEntity?.name || 'yoxdur'
+      adminEntity: adminEntityData 
     });
-    
     return fullUserData;
   } catch (error) {
-    console.error('İstifadəçi məlumatlarını əldə edərkən xəta baş verdi:', error);
-    throw error;
+    console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', error);
+    throw new Error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı');
   }
-};
-
-// Rol adını normalize et (kiçik hərflərə çevir, xüsusi simvolları təmizlə)
-const normalizeRole = (role: string): UserRole => {
-  if (!role) return 'user'; // Default rol
-  
-  // Əvvəlcə string-ə çevir (əgər obyekt və ya başqa bir tip olarsa)
-  const roleStr = String(role).toLowerCase().trim();
-  
-  // Rol adlarının müxtəlif formatlarının xəritəsi
-  const roleMap: Record<string, UserRole> = {
-    'superadmin': 'superadmin',
-    'super_admin': 'superadmin',
-    'super-admin': 'superadmin',
-    'regionadmin': 'regionadmin',
-    'region_admin': 'regionadmin', 
-    'region-admin': 'regionadmin',
-    'sectoradmin': 'sectoradmin',
-    'sector_admin': 'sectoradmin',
-    'sector-admin': 'sectoradmin',
-    'schooladmin': 'schooladmin',
-    'school_admin': 'schooladmin',
-    'school-admin': 'schooladmin',
-    'user': 'user'
-  };
-  
-  // Xəritəmizdə uyğun olan rolu qaytar, yoxdursa default olaraq user
-  return roleMap[roleStr] || 'user';
 };
 
 // Audit loq əlavə etmək üçün funksiya

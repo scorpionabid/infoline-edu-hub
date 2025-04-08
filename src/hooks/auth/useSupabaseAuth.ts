@@ -49,11 +49,13 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         }
         
         console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
+        
+        // Sessiyanı sinxron olaraq təyin edək
         if (mounted) setSession(currentSession);
         
         // Auth state dəyişikliklərinə abunə olaq
         unsubscribe = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          console.log('Auth state dəyişdi:', event);
+          console.log('Auth state dəyişdi:', event, newSession ? 'Session var' : 'Session yoxdur');
           
           if (!mounted) return;
           
@@ -62,6 +64,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           
           // SIGNED_OUT halında user-i null-layıb state yeniləyib bitirək
           if (event === 'SIGNED_OUT') {
+            console.log('İstifadəçi çıxış etdi, state təmizlənir');
             setUser(null);
             setLoading(false);
             return;
@@ -70,9 +73,17 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           // Sonra asinxron əməliyyatlar - yalnız lazım olduqda
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && newSession?.user) {
             try {
+              console.log(`İstifadəçi məlumatları əldə edilir, ID: ${newSession.user.id}`);
               setLoading(true);
+              
+              // İstifadəçi məlumatlarını əldə edək
               const userData = await fetchUserData(newSession.user.id);
-              if (mounted) setUser(userData);
+              console.log('İstifadəçi məlumatları əldə edildi:', userData ? 'Uğurlu' : 'Uğursuz');
+              
+              if (mounted) {
+                setUser(userData);
+                console.log('İstifadəçi state-i yeniləndi');
+              }
             } catch (userError: any) {
               console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
               
@@ -99,11 +110,15 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         });
         
         // Əgər sessiya varsa, istifadəçi məlumatlarını əldə edək
-        // Amma rekursiv çağrıları önləmək üçün yalnız bir dəfə
         if (currentSession?.user && mounted) {
           try {
+            console.log(`İlkin sessiya üçün istifadəçi məlumatları əldə edilir, ID: ${currentSession.user.id}`);
             const userData = await fetchUserData(currentSession.user.id);
-            if (mounted) setUser(userData);
+            
+            if (mounted) {
+              console.log('İlkin sessiya üçün istifadəçi məlumatları təyin edilir');
+              setUser(userData);
+            }
           } catch (userError: any) {
             console.error('İlkin istifadəçi məlumatlarını əldə edərkən xəta:', userError);
             
@@ -148,8 +163,31 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   
   // signIn-in bağlı variantını yaradaq
   const handleSignIn = useCallback(async (email: string, password: string) => {
-    return await signIn(email, password, setLoading);
-  }, [setLoading]);
+    setLoading(true);
+    try {
+      console.log(`useSupabaseAuth: ${email} ilə giriş edilir...`);
+      const result = await signIn(email, password, setLoading);
+      
+      // Giriş uğurlu olduqda, istifadəçi məlumatlarını yenidən əldə edək
+      if (result && result.user) {
+        console.log(`Giriş uğurlu oldu, istifadəçi məlumatları yenilənir, ID: ${result.user.id}`);
+        try {
+          const userData = await fetchUserData(result.user.id);
+          setUser(userData);
+          console.log('İstifadəçi məlumatları uğurla yeniləndi');
+        } catch (userError) {
+          console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('useSupabaseAuth signIn xətası:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setUser, fetchUserData]);
   
   // signOut-un bağlı variantını yaradaq
   const handleSignOut = useCallback(async () => {

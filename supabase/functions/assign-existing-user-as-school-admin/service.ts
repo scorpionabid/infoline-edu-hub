@@ -1,5 +1,5 @@
 
-import { createRpcFunction, getUserById } from './rpc';
+import { createRpcFunction } from './rpc';
 
 // Mövcud istifadəçini məktəb admini kimi təyin etmək üçün əsas funksiya
 export async function assignUserAsSchoolAdmin(supabase: any, userId: string, schoolId: string) {
@@ -16,152 +16,34 @@ export async function assignUserAsSchoolAdmin(supabase: any, userId: string, sch
       };
     }
     
-    // 2. Məktəbin mövcud olduğunu yoxlayaq
-    const { data: school, error: schoolError } = await supabase
-      .from('schools')
-      .select('id, name, region_id, sector_id')
-      .eq('id', schoolId)
-      .single();
-    
-    if (schoolError) {
-      console.error('Məktəb yoxlama xətası:', schoolError);
-      return { 
-        success: false, 
-        error: `Məktəb tapılmadı: ${schoolError.message}` 
-      };
-    }
-    
-    if (!school) {
-      return { 
-        success: false, 
-        error: 'Məktəb tapılmadı' 
-      };
-    }
-    
-    console.log('Məktəb tapıldı:', JSON.stringify(school));
-    
-    // 3. İstifadəçi məlumatlarını alaq
-    const { data: user, error: userError } = await getUserById(supabase, userId);
-    
-    if (userError || !user) {
-      console.error('İstifadəçi məlumatları xətası:', userError);
-      return { 
-        success: false, 
-        error: `İstifadəçi tapılmadı: ${userError?.message || 'Bilinməyən xəta'}` 
-      };
-    }
-    
-    console.log('İstifadəçi tapıldı:', JSON.stringify(user));
-    
-    // 4. İstifadəçinin mövcud rollarını silək
+    // 2. SQL funksiyasını çağıraq
     try {
-      const deleteRolesRpc = createRpcFunction(supabase, 'delete_user_roles');
-      await deleteRolesRpc({ user_id: userId });
-      console.log('Köhnə roller silindi');
-    } catch (error) {
-      console.error('Rol silmə xətası:', error);
-      return { 
-        success: false, 
-        error: `Köhnə rolları silmək mümkün olmadı: ${error.message}` 
-      };
-    }
-    
-    // 5. Yeni rol təyin edək
-    try {
-      const { data: newRole, error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: 'schooladmin',
-          school_id: schoolId,
-          region_id: school.region_id,
-          sector_id: school.sector_id
-        })
-        .select()
-        .single();
-      
-      if (roleError) {
-        console.error('Rol təyin etmə xətası:', roleError);
-        return { 
-          success: false, 
-          error: `Rol təyin edilərkən xəta: ${roleError.message}` 
-        };
-      }
-      
-      console.log('Yeni rol təyin edildi:', JSON.stringify(newRole));
-    } catch (error) {
-      console.error('Rol təyin etmə istisna:', error);
-      return { 
-        success: false, 
-        error: `Rol təyin edilərkən xəta: ${error.message}` 
-      };
-    }
-    
-    // 6. Məktəbin admin məlumatlarını yeniləyək
-    try {
-      const { data: updatedSchool, error: updateError } = await supabase
-        .from('schools')
-        .update({
-          admin_id: userId,
-          admin_email: user.email,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', schoolId)
-        .select()
-        .single();
-      
-      if (updateError) {
-        console.error('Məktəb yeniləmə xətası:', updateError);
-        return { 
-          success: false, 
-          error: `Məktəb yenilərkən xəta: ${updateError.message}` 
-        };
-      }
-      
-      console.log('Məktəb yeniləndi:', JSON.stringify(updatedSchool));
-    } catch (error) {
-      console.error('Məktəb yeniləmə istisna:', error);
-      return { 
-        success: false, 
-        error: `Məktəb yenilərkən xəta: ${error.message}` 
-      };
-    }
-    
-    // 7. Audit log əlavə edək
-    try {
-      await supabase.from('audit_logs').insert({
-        user_id: userId,
-        action: 'assign_school_admin',
-        entity_type: 'school',
-        entity_id: schoolId,
-        new_value: {
-          school_id: schoolId,
-          school_name: school.name,
-          admin_id: userId,
-          admin_email: user.email
-        }
+      const assignSchoolAdminRpc = createRpcFunction(supabase, 'assign_school_admin');
+      const { data, error } = await assignSchoolAdminRpc({ 
+        user_id_param: userId, 
+        school_id_param: schoolId 
       });
-      console.log('Audit log əlavə edildi');
-    } catch (auditError) {
-      // Audit log xətasının əsas əməliyyata təsir etməsinə imkan verməyin
-      console.error('Audit log xətası (kritik deyil):', auditError);
+      
+      if (error) {
+        console.error('assign_school_admin RPC xətası:', error);
+        return { 
+          success: false, 
+          error: `Məktəb admini təyin edilərkən xəta: ${error.message}` 
+        };
+      }
+      
+      console.log('assign_school_admin RPC nəticəsi:', data);
+      
+      // 3. SQL funksiyasının nəticəsini qaytaraq
+      return data;
+      
+    } catch (error) {
+      console.error('RPC çağırışı istisna:', error);
+      return {
+        success: false,
+        error: `RPC çağırışı xətası: ${error.message}`
+      };
     }
-    
-    // 8. Uğurlu nəticə qaytaraq
-    return {
-      success: true,
-      data: {
-        school: {
-          id: schoolId,
-          name: school.name
-        },
-        admin: {
-          id: userId,
-          email: user.email
-        }
-      },
-      message: 'İstifadəçi məktəb admini kimi uğurla təyin edildi'
-    };
     
   } catch (error) {
     console.error('Ümumi xəta:', error);

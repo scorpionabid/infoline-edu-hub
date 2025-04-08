@@ -1,55 +1,51 @@
-
 import React, { useState, useEffect } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useLanguage } from '@/context/LanguageContext';
-import { UserSelectCommand } from './UserSelectParts/UserSelectCommand';
+import { SimpleUserSelect } from "./UserSelectParts/SimpleUserSelect";
 import { useUserSelectData } from './UserSelectParts/useUserSelectData';
-import { UserLoadingState } from './UserSelectParts/UserLoadingState';
 
 interface UserSelectProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  label?: string;
+  description?: string;
 }
 
-export function UserSelect({ value, onChange, placeholder, disabled }: UserSelectProps) {
+export function UserSelect({ value, onChange, placeholder, disabled, label, description }: UserSelectProps) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // İstifadəçi verilərini əldə etmək üçün xüsusi hook
-  const { 
-    users, 
-    loading, 
-    error, 
-    selectedUserData,
-    fetchUsers
-  } = useUserSelectData(value, open, searchTerm);
-
-  // İstifadəçi seçildikdə
+  const {
+    users,
+    loading,
+    error,
+    fetchUsers,
+    selectedUser
+  } = useUserSelectData(value);
+  
+  // Təhlükəsiz istifadə üçün users massivini əlavə yoxlama
+  const safeUsers = users && Array.isArray(users) ? users : [];
+  
+  const displayText = selectedUser
+    ? (selectedUser.full_name || selectedUser.email || 'İsimsiz İstifadəçi')
+    : (placeholder || 'İstifadəçi seçin');
+  
   const handleSelect = (userId: string) => {
-    const newValue = userId === value ? '' : userId;
-    console.log(`İstifadəçi seçildi: ${userId} -> ${newValue}`);
-    onChange(newValue);
+    onChange(userId);
     setOpen(false);
   };
-
-  // Göstərilən mətn
-  const displayText = selectedUserData 
-    ? `${selectedUserData.full_name || 'İsimsiz İstifadəçi'} (${selectedUserData.email || ''})`
-    : value 
-      ? 'Yüklənir...' 
-      : placeholder || t('selectUser') || 'İstifadəçi seçin';
-
-  // Komponentin yüklənməsində yenidən bir dəfə istifadəçiləri yükləyək
+  
+  // Popover açıldıqda istifadəçiləri yenidən yüklə
   useEffect(() => {
     if (open) {
       fetchUsers();
@@ -57,31 +53,38 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
   }, [open, fetchUsers]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-          disabled={disabled}
-        >
-          {displayText}
-          <UserLoadingState loading={loading} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0">
-        <UserSelectCommand 
-          users={users}
-          loading={loading}
-          error={error}
-          value={value}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onSelect={handleSelect}
-          onRetry={fetchUsers}
-        />
-      </PopoverContent>
-    </Popover>
+    <div className="space-y-1">
+      {label && <Label htmlFor="user">{label}</Label>}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+            disabled={disabled}
+            onClick={() => setOpen(true)}
+          >
+            <span>{displayText}</span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0" align="start">
+          <SimpleUserSelect
+            users={safeUsers}
+            value={value}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onSelect={handleSelect}
+            loading={loading}
+            error={error}
+            onRetry={fetchUsers}
+          />
+        </PopoverContent>
+      </Popover>
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
+    </div>
   );
 }

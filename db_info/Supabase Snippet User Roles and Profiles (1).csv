@@ -1,0 +1,14 @@
+table_schema,constraint_name,table_name,column_name,foreign_table_schema,foreign_table_name,foreign_column_name
+public,columns_category_id_fkey,columns,category_id,public,categories,id
+public,data_entries_category_id_fkey,data_entries,category_id,public,categories,id
+public,data_entries_column_id_fkey,data_entries,column_id,public,columns,id
+public,data_entries_school_id_fkey,data_entries,school_id,public,schools,id
+public,sectors_region_id_fkey,sectors,region_id,public,regions,id
+public,schools_region_id_fkey,schools,region_id,public,regions,id
+public,schools_sector_id_fkey,schools,sector_id,public,sectors,id
+public,fk_user_roles_region_id,user_roles,region_id,public,regions,id
+public,fk_user_roles_school_id,user_roles,school_id,public,schools,id
+public,fk_user_roles_sector_id,user_roles,sector_id,public,sectors,id
+public,user_roles_region_id_fkey,user_roles,region_id,public,regions,id
+public,user_roles_school_id_fkey,user_roles,school_id,public,schools,id
+public,user_roles_sector_id_fkey,user_roles,sector_id,public,sectors,id

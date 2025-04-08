@@ -48,21 +48,33 @@ export const useAvailableUsers = () => {
       // data.users-in massiv olduğunu yoxlayaq
       if (!data.users || !Array.isArray(data.users)) {
         console.log('Edge function düzgün formatda data qaytarmadı');
-        data.users = []; // Boş massiv ilə əvəz edək ki, növbəti əməliyyatlar xəta verməsin
+        // Burada data.users-i yeni bir boş massiv olaraq təyin edirik
+        const safeUsers: any[] = [];
+        // Növbəti əməliyyatlarda data.users əvəzinə safeUsers istifadə edəcəyik
+        data.users = safeUsers;
       }
       
       console.log(`${data.users.length} istifadəçi əldə edildi`);
       
-      // Özünü çıxaraq
-      const otherUsers = data.users.filter(user => user.id !== currentUser.id);
+      // Özünü çıxaraq - data.users-in təhlükəsiz olduğundan əmin olaq
+      const safeUsers = Array.isArray(data.users) ? data.users : [];
+      const otherUsers = safeUsers.filter(user => user && user.id && user.id !== currentUser.id);
       console.log(`Cari istifadəçi çıxarıldıqdan sonra ${otherUsers.length} istifadəçi qalır`);
       
       // Admin təyinatı üçün lazımi statusda olan istifadəçiləri filtrlə
       const availableUsers = otherUsers.filter(user => {
         // İstifadəçi aktiv vəziyyətdədirsə və profiles cədvəlində tam məlumatları varsa
-        // və admin təyin edilməyibsə (role user və ya boşdursa)
-        return user.status !== 'blocked' && user.full_name && 
-          (['user', ''].includes(user.role || '') || !user.role);
+        const isActive = user.status !== 'blocked' && user.full_name;
+        
+        // Təyin edilməmiş istifadəçilər (rolu user və ya boşdursa)
+        const isUnassigned = (['user', ''].includes(user.role || '') || !user.role);
+        
+        // Məktəb direktoru (schooladmin) amma məktəbə təyin edilməyib
+        const isUnassignedSchoolAdmin = user.role === 'schooladmin' && !user.school_id;
+        
+        console.log(`İstifadəçi ${user.id} (${user.full_name}): isActive=${isActive}, isUnassigned=${isUnassigned}, isUnassignedSchoolAdmin=${isUnassignedSchoolAdmin}`);
+        
+        return isActive && (isUnassigned || isUnassignedSchoolAdmin);
       });
       
       console.log(`Admin təyinatı üçün uyğun olan ${availableUsers.length} istifadəçi filtrləndi`);

@@ -82,7 +82,8 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase clients
+    // Create Supabase clients with service role key
+    // İcazə problemi üçün service role key ilə konfiqurasiya edilmiş klient
     const supabaseAdmin = createClient(
       SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY,
@@ -91,8 +92,17 @@ serve(async (req) => {
           autoRefreshToken: false,
           persistSession: false,
         },
+        global: {
+          headers: {
+            // Service role key ilə işləyərkən, RLS (Row Level Security) bypass edilir
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+          }
+        }
       }
     );
+    
+    // İcazə problemi üçün xüsusi log
+    console.log(`Supabase Admin klienti yaradıldı. URL: ${SUPABASE_URL.substring(0, 20)}...`);
 
     const supabaseClient = createClient(
       SUPABASE_URL,
@@ -234,28 +244,36 @@ serve(async (req) => {
     let errorMessage = "";
 
     // 1. İstifadəçinin rolunu təyin et (yeni əlavə et və ya mövcudu yenilə)
-    const roleOperation = existingRole
-      ? supabaseAdmin
-          .from("user_roles")
-          .update({
-            role: "schooladmin",
-            school_id: schoolId,
-            region_id: schoolData.region_id,
-            sector_id: schoolData.sector_id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", userId)
-      : supabaseAdmin
-          .from("user_roles")
-          .insert({
-            user_id: userId,
-            role: "schooladmin",
-            school_id: schoolId,
-            region_id: schoolData.region_id,
-            sector_id: schoolData.sector_id,
-          });
-
-    const { error: roleUpdateError } = await roleOperation;
+    console.log(`İstifadəçi rolu yenilənir. UserId: ${userId}, SchoolId: ${schoolId}`);
+    
+    let roleUpdateError: any = null;
+    
+    try {
+      // RPC funksiyası ilə istifadəçi rolunu təyin et
+      console.log(`assign_school_admin_role RPC funksiyası çağırılır...`);
+      
+      const { data: roleResult, error } = await supabaseAdmin.rpc('assign_school_admin_role', {
+        p_user_id: userId,
+        p_school_id: schoolId,
+        p_region_id: schoolData.region_id,
+        p_sector_id: schoolData.sector_id
+      });
+      
+      if (error) {
+        console.error('RPC assign_school_admin_role xətası:', error);
+        roleUpdateError = error;
+      } else {
+        console.log('RPC assign_school_admin_role nəticəsi:', roleResult);
+        
+        if (roleResult && !roleResult.success) {
+          console.error('RPC assign_school_admin_role uğursuz oldu:', roleResult.error);
+          roleUpdateError = new Error(roleResult.error);
+        }
+      }
+    } catch (prepError: any) {
+      console.error('Rol əməliyyatı zamanı istisna:', prepError);
+      roleUpdateError = { message: `İstisna: ${prepError?.message || 'Bilinməyən xəta'}` };
+    }
 
     if (roleUpdateError) {
       console.error("Error updating user role:", roleUpdateError);
@@ -265,45 +283,63 @@ serve(async (req) => {
 
     // 2. Məktəbi yenilə
     if (success) {
-      const { error: schoolUpdateError } = await supabaseAdmin
-        .from("schools")
-        .update({
-          admin_id: userId,
-          admin_email: userData.email,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", schoolId);
+      try {
+        console.log(`Məktəb yenilənir. SchoolId: ${schoolId}, AdminId: ${userId}`);
+        const { error: schoolUpdateError } = await supabaseAdmin
+          .from("schools")
+          .update({
+            admin_id: userId,
+            admin_email: userData.email,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", schoolId);
 
-      if (schoolUpdateError) {
-        console.error("Error updating school:", schoolUpdateError);
+        if (schoolUpdateError) {
+          console.error("Error updating school:", schoolUpdateError);
+          success = false;
+          errorMessage = `Error updating school: ${schoolUpdateError.message}`;
+        } else {
+          console.log(`Məktəb uğurla yeniləndi. SchoolId: ${schoolId}`);
+        }
+      } catch (schoolUpdateException: any) {
+        console.error("Exception during school update:", schoolUpdateException);
         success = false;
-        errorMessage = `Error updating school: ${schoolUpdateError.message}`;
+        errorMessage = `Exception during school update: ${schoolUpdateException?.message || 'Unknown error'}`;
       }
     }
 
     // 3. Audit log əlavə et
     if (success) {
       try {
-        const { error: auditLogError } = await supabaseAdmin
-          .from("audit_logs")
-          .insert({
-            entity_type: "school_admin",
-            action: "assign",
-            entity_id: schoolId,
-            user_id: userId,
-            old_value: existingSchoolAdmin
-              ? { admin_id: existingSchoolAdmin.admin_id, admin_email: existingSchoolAdmin.admin_email }
-              : null,
-            new_value: { admin_id: userId, admin_email: userData.email },
-          });
-
+        console.log(`Audit log yaradılır. SchoolId: ${schoolId}, UserId: ${userId}`);
+        
+        // Audit log üçün məlumatları hazırla
+        const oldValue = existingSchoolAdmin
+          ? { admin_id: existingSchoolAdmin.admin_id, admin_email: existingSchoolAdmin.admin_email }
+          : null;
+        
+        const newValue = { admin_id: userId, admin_email: userData.email };
+        
+        // RPC funksiyası ilə audit log yarat
+        const { data: auditResult, error: auditLogError } = await supabaseAdmin.rpc('create_audit_log', {
+          p_user_id: userId,
+          p_action: 'assign',
+          p_entity_type: 'school_admin',
+          p_entity_id: schoolId,
+          p_old_value: oldValue,
+          p_new_value: newValue
+        });
+        
         if (auditLogError) {
           console.error("Error creating audit log:", auditLogError);
-          // Audit log xətası əsas əməliyyatı dayandırmasın
+          // Audit log xətası uğursuzluq sayılmır, sadəcə qeyd edirik
+        } else {
+          console.log('Audit log uğurla yaradıldı');
         }
-      } catch (err) {
-        console.error("Exception in audit log:", err);
-        // Audit log xətası əsas əməliyyatı dayandırmasın
+      } catch (auditError: any) {
+        console.error("Exception creating audit log:", auditError);
+        console.error("Error message:", auditError?.message || 'Bilinməyən xəta');
+        // Audit log istisnaları uğursuzluq sayılmır, sadəcə qeyd edirik
       }
     }
 

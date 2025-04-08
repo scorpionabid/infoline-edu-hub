@@ -3,12 +3,12 @@ import React from 'react';
 import { Check, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
+import { SafeCommand } from './SafeCommand';
 import { useLanguage } from '@/context/LanguageContext';
 import { User } from './types';
 import { UserErrorState } from './UserErrorState';
@@ -38,10 +38,25 @@ export const UserSelectCommand: React.FC<UserSelectCommandProps> = ({
   const { t } = useLanguage();
   
   // Təhlükəsiz istifadə üçün users massivini əlavə yoxlama
-  const safeUsers = Array.isArray(users) ? users : [];
+  // undefined və null elementləri filtrləyirik və əmin oluruq ki, hər bir istifadəçinin id-si var
+  const safeUsers = Array.isArray(users) 
+    ? users.filter(user => user && typeof user === 'object' && user.id)
+    : [];
+
+  // Xəta halında göstəriləcək fallback UI
+  const fallbackUI = (
+    <div className="p-4">
+      <button 
+        className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        onClick={onRetry}
+      >
+        Yenidən cəhd et
+      </button>
+    </div>
+  );
 
   return (
-    <Command>
+    <SafeCommand fallback={fallbackUI}>
       <CommandInput 
         placeholder={t('searchUser') || "İstifadəçi axtar..."} 
         value={searchTerm}
@@ -58,24 +73,26 @@ export const UserSelectCommand: React.FC<UserSelectCommandProps> = ({
         <>
           <CommandEmpty>{t('noUsersFound') || 'İstifadəçi tapılmadı'}</CommandEmpty>
           <CommandGroup className="max-h-[300px] overflow-auto">
-            {safeUsers.length > 0 ? (
+            {safeUsers && safeUsers.length > 0 ? (
               safeUsers.map((user) => (
-                <CommandItem
-                  key={user.id}
-                  value={user.id}
-                  onSelect={() => onSelect(user.id)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === user.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <div className="flex flex-col">
-                    <span>{user.full_name || 'İsimsiz İstifadəçi'}</span>
-                    <span className="text-xs text-muted-foreground">{user.email || ''}</span>
-                  </div>
-                </CommandItem>
+                user && user.id ? (
+                  <CommandItem
+                    key={user.id}
+                    value={user.id}
+                    onSelect={() => onSelect(user.id)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === user.id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex flex-col">
+                      <span>{user.full_name || 'İsimsiz İstifadəçi'}</span>
+                      <span className="text-xs text-muted-foreground">{user.email || ''}</span>
+                    </div>
+                  </CommandItem>
+                ) : null
               ))
             ) : (
               <UserEmptyState />
@@ -83,6 +100,6 @@ export const UserSelectCommand: React.FC<UserSelectCommandProps> = ({
           </CommandGroup>
         </>
       )}
-    </Command>
+    </SafeCommand>
   );
 };
