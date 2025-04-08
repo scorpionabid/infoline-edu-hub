@@ -1,131 +1,85 @@
+
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import {
+import { useLanguage } from '@/context/LanguageContext';
+import { CategoryFilter } from '@/types/category';
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, X } from 'lucide-react';
-import { CategoryFilter } from '@/types/category';
+import { Label } from '@/components/ui/label';
 
-export interface CategoryFilterCardProps {
+interface CategoryFilterCardProps {
   filter: CategoryFilter;
-  onFilterChange: (newFilter: CategoryFilter) => void;
+  onFilterChange: (newFilter: Partial<CategoryFilter>) => void;
 }
 
 const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
   filter,
   onFilterChange
 }) => {
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({ ...filter, search: e.target.value });
-  };
-  
-  const handleStatusChange = (value: string) => {
-    onFilterChange({ ...filter, status: value as CategoryFilter['status'] });
-  };
-  
-  const handleAssignmentChange = (value: string) => {
-    onFilterChange({ ...filter, assignment: value === 'none' ? '' : value as 'all' | 'sectors' | '' });
-  };
-  
-  const handleDeadlineChange = (value: string) => {
-    onFilterChange({ ...filter, deadline: value === 'none' ? '' : value as 'upcoming' | 'past' | 'all' | '' });
-  };
-  
-  const clearFilters = () => {
-    onFilterChange({
-      search: '',
-      status: 'all',
-      assignment: '',
-      deadline: ''
-    });
-  };
-  
-  const hasActiveFilters = 
-    !!filter.search || 
-    filter.status !== 'all' || 
-    !!filter.assignment || 
-    !!filter.deadline;
+  const { t } = useLanguage();
   
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Axtar..."
-              className="pl-8"
-              value={filter.search || ''}
-              onChange={handleSearchChange}
-            />
-          </div>
-          
-          <Select 
-            value={filter.status || 'all'} 
-            onValueChange={handleStatusChange}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>{t('status')}</Label>
+          <Select
+            value={filter.status || 'all'}
+            onValueChange={(value) => onFilterChange({ status: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('allStatuses')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Bütün statuslar</SelectItem>
-              <SelectItem value="active">Aktiv</SelectItem>
-              <SelectItem value="inactive">Deaktiv</SelectItem>
-              <SelectItem value="draft">Qaralama</SelectItem>
+              <SelectItem value="all">{t('allStatuses')}</SelectItem>
+              <SelectItem value="active">{t('active')}</SelectItem>
+              <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              <SelectItem value="draft">{t('draft')}</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Select 
-            value={filter.assignment || 'none'} 
-            onValueChange={handleAssignmentChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Təyinat" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Bütün təyinatlar</SelectItem>
-              <SelectItem value="all">Hamısı</SelectItem>
-              <SelectItem value="sectors">Sektorlar</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select 
-            value={filter.deadline || 'none'} 
-            onValueChange={handleDeadlineChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Son tarix" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Bütün tarixlər</SelectItem>
-              <SelectItem value="upcoming">Gələcək</SelectItem>
-              <SelectItem value="past">Keçmiş</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {hasActiveFilters && (
-            <div className="md:col-span-4 flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="flex items-center gap-1 text-muted-foreground"
-              >
-                <X className="h-4 w-4" />
-                Filtirləri təmizlə
-              </Button>
-            </div>
-          )}
         </div>
-      </CardContent>
-    </Card>
+        
+        <div className="space-y-2">
+          <Label>{t('assignment')}</Label>
+          <Select
+            value={filter.assignment || ''}
+            onValueChange={(value) => onFilterChange({ assignment: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={t('allAssignments')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{t('allAssignments')}</SelectItem>
+              <SelectItem value="all">{t('allSchools')}</SelectItem>
+              <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>{t('deadline')}</Label>
+          <Select
+            value={filter.deadline || ''}
+            onValueChange={(value) => onFilterChange({ deadline: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={t('allDeadlines')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{t('allDeadlines')}</SelectItem>
+              <SelectItem value="upcoming">{t('upcomingDeadlines')}</SelectItem>
+              <SelectItem value="past">{t('pastDeadlines')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
   );
 };
 

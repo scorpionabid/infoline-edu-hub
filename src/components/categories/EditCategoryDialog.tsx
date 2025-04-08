@@ -1,54 +1,63 @@
 
-import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Category, CategoryStatus } from '@/types/category';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { az } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { Category } from '@/types/category';
 
 // Form validation schema
-const categorySchema = z.object({
-  name: z.string().min(3, 'Ad ən az 3 simvol olmalıdır'),
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Kateqoriya adı ən az 2 hərfdən ibarət olmalıdır",
+  }),
   description: z.string().optional(),
-  assignment: z.enum(['all', 'sectors']).default('all'),
-  status: z.enum(['active', 'inactive', 'draft']).default('active'),
-  deadline: z.string().optional().nullable(),
-  priority: z.coerce.number().int().min(0).optional().nullable(),
+  assignment: z.enum(["all", "sectors"]),
+  deadline: z.date().optional().nullable(),
+  priority: z.coerce.number().min(0).default(0),
 });
 
-export type CategoryFormValues = z.infer<typeof categorySchema>;
+type FormValues = z.infer<typeof formSchema>;
 
-export interface EditCategoryDialogProps {
+interface EditCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onEditCategory: (categoryData: Category) => Promise<boolean>;
+  onEditCategory: (data: Category) => Promise<boolean>;
   category: Category | null;
-  isSubmitting: boolean;
+  isSubmitting?: boolean;
 }
 
 const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
@@ -56,92 +65,75 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
   onClose,
   onEditCategory,
   category,
-  isSubmitting
+  isSubmitting = false,
 }) => {
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { t } = useLanguage();
   
-  // Form
-  const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
       assignment: 'all',
-      status: 'active',
       deadline: null,
       priority: 0,
-    }
+    },
   });
   
-  // Kategoriyanın məlumatlarını forma yüklə
+  // Kategoriya dəyişdikdə formu yeniləyək
   useEffect(() => {
     if (category) {
       form.reset({
         name: category.name,
         description: category.description || '',
-        assignment: (category.assignment as 'all' | 'sectors') || 'all',
-        status: category.status,
-        deadline: category.deadline || null,
-        priority: category.priority || null,
+        assignment: category.assignment || 'all',
+        deadline: category.deadline ? new Date(category.deadline) : null,
+        priority: category.priority || 0,
       });
     }
   }, [category, form]);
   
-  const handleSubmit = async (values: CategoryFormValues) => {
+  const onSubmit = async (data: FormValues) => {
     if (!category) return;
     
-    setSubmitError(null);
+    const updatedCategory: Category = {
+      ...category,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
     
-    try {
-      // Prepare category data
-      const updatedCategory: Category = {
-        ...category,
-        name: values.name,
-        description: values.description || '',
-        assignment: values.assignment,
-        status: values.status as CategoryStatus,
-        deadline: values.deadline || undefined,
-        priority: values.priority || undefined,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      const success = await onEditCategory(updatedCategory);
-      
-      if (success) {
-        onClose();
-      }
-    } catch (error: any) {
-      console.error('Kateqoriya redaktə etmə xətası:', error);
-      setSubmitError(error.message || 'Kateqoriya redaktə edilərkən xəta baş verdi');
+    const success = await onEditCategory(updatedCategory);
+    if (success) {
+      onClose();
     }
   };
+  
+  if (!category) return null;
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Kateqoriyanı Redaktə Et</DialogTitle>
+          <DialogTitle>{t('editCategory')}</DialogTitle>
           <DialogDescription>
-            Kateqoriya məlumatlarını redaktə edin
+            {t('editCategoryDescription')}
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {submitError && (
-              <div className="p-2 bg-destructive/20 text-destructive text-sm rounded-md">
-                {submitError}
-              </div>
-            )}
-            
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ad</FormLabel>
+                  <FormLabel>{t('categoryName')}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Kateqoriyanın adı" />
+                    <Input 
+                      placeholder={t('categoryName')} 
+                      {...field} 
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,13 +145,13 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Təsvir</FormLabel>
+                  <FormLabel>{t('categoryDescription')}</FormLabel>
                   <FormControl>
                     <Textarea 
+                      placeholder={t('categoryDescription')} 
                       {...field} 
-                      placeholder="Kateqoriyanın təsviri" 
-                      className="resize-none" 
                       value={field.value || ''}
+                      disabled={isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -167,104 +159,114 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="assignment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Təyinat</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Təyinat seçin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="all">Hamısı</SelectItem>
-                        <SelectItem value="sectors">Sektorlar</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Status seçin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Aktiv</SelectItem>
-                        <SelectItem value="inactive">Deaktiv</SelectItem>
-                        <SelectItem value="draft">Qaralama</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="assignment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('assignment')}</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('selectAssignment')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="all">{t('allSchools')}</SelectItem>
+                      <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {field.value === 'all' 
+                      ? t('allSchoolsDescription') 
+                      : t('onlySectorsDescription')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="deadline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Son Tarix</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
-                        value={field.value || ''} 
+            <FormField
+              control={form.control}
+              name="deadline"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t('deadline')}</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                          disabled={isSubmitting}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: az })
+                          ) : (
+                            <span>{t('selectDate')}</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prioritet</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        value={field.value || ''}
-                        min={0}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    {t('deadlineDescription')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('priority')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t('priorityDescription')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-                Ləğv et
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                {t('cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Yadda saxlanılır...' : 'Yadda saxla'}
+                {isSubmitting ? t('saving') : t('saveCategory')}
               </Button>
             </DialogFooter>
           </form>

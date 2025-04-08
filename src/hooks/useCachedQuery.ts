@@ -1,73 +1,85 @@
 
-import { QueryKey, UseQueryOptions, useQuery, QueryClient } from '@tanstack/react-query';
+import { useQuery, QueryKey, UseQueryOptions } from '@tanstack/react-query';
 import { getCache, setCache, CacheConfig } from '@/utils/cacheUtils';
+import { QueryClient } from '@tanstack/react-query';
 
 /**
- * LocalStorage keşləmə ilə React Query hook-u
- * @description Həm React Query, həm də localStorage ilə keşləmə təmin edir
+ * Həm client-side, həm də server-side keşləməni birləşdirən hook
+ * @param queryKey - Sorğu açarı
+ * @param queryFn - Məlumat əldə etmək üçün funksiya
+ * @param queryOptions - React Query seçimləri
+ * @param cacheConfig - Client-side keş konfiqurasiyası
  */
 export function useCachedQuery<TData = unknown, TError = unknown>(
   queryKey: QueryKey,
   queryFn: () => Promise<TData>,
-  options?: UseQueryOptions<TData, TError, TData, QueryKey>,
+  queryOptions?: UseQueryOptions<TData, TError, TData, QueryKey>,
   cacheConfig?: CacheConfig
 ) {
-  // Keş açarını yaradaq
-  const cacheKey = Array.isArray(queryKey) ? queryKey.join('_') : String(queryKey);
-  
-  // Custom queryFn yaradaq ki, əvvəlcə localStorage yoxlasın
-  const cachedQueryFn = async () => {
-    // LocalStorage-dan yoxla
-    const cachedData = getCache<TData>(cacheKey);
-    
-    if (cachedData) {
-      console.log(`Keşdən məlumat istifadə olunur: ${cacheKey}`);
-      return cachedData;
-    }
-    
-    // Keşdə tapılmadısa, sorğu göndər
-    console.log(`Sorğu göndərilir: ${cacheKey}`);
-    const data = await queryFn();
-    
-    // Nəticəni keşdə saxla
-    setCache(cacheKey, data, cacheConfig);
-    
-    return data;
-  };
-  
-  // React Query hook-unu istifadə edək
-  return useQuery<TData, TError>({
+  // İlk olaraq client-side keşdən məlumatları almağa çalışaq
+  const cacheKey = Array.isArray(queryKey) ? queryKey.join('-') : String(queryKey);
+  const cachedData = getCache<TData>(cacheKey);
+
+  // React Query istifadə edək
+  const query = useQuery<TData, TError, TData, QueryKey>({
     queryKey,
-    queryFn: cachedQueryFn,
-    ...options
+    queryFn: async () => {
+      try {
+        const data = await queryFn();
+        
+        // LocalStorage-də saxlayaq (əgər konfiqurasiya verilibsə)
+        if (cacheConfig?.expiryInMinutes) {
+          setCache(cacheKey, data, cacheConfig);
+        }
+        
+        return data;
+      } catch (error) {
+        console.error(`Keşlənmiş sorğu zamanı xəta (${cacheKey}):`, error);
+        throw error;
+      }
+    },
+    initialData: cachedData,
+    ...queryOptions,
   });
+  
+  return query;
 }
 
 /**
- * Bütün keşlənmiş sorğular üçün React Query invalidasiya funksiyası hazırlayan utilit
- * @param queryClient - React Query client-i
+ * Keş üçün invalidasiya utiliti yaradır
  */
 export function createCacheInvalidator(queryClient: QueryClient) {
   return {
-    /**
-     * Xüsusi bir sorğunu invalidasiya edir
-     */
+    // Xüsusi bir sorğunu yeniləmək
     invalidateQuery: (queryKey: QueryKey) => {
-      const cacheKey = Array.isArray(queryKey) ? queryKey.join('_') : String(queryKey);
-      clearCache(cacheKey);
-      queryClient.invalidateQueries({ queryKey });
+      const cacheKey = Array.isArray(queryKey) ? queryKey.join('-') : String(queryKey);
+      // LocalStorage keşini silin
+      try {
+        localStorage.removeItem(`infoline_cache_${cacheKey}`);
+      } catch (error) {
+        console.error('LocalStorage keşini silmə xətası:', error);
+      }
+      
+      // React Query keşini yeniləyin
+      return queryClient.invalidateQueries({queryKey});
     },
     
-    /**
-     * Bütün sorğuları invalidasiya edir
-     */
+    // Bütün keşləri yeniləmək
     invalidateAll: () => {
-      clearAllCache();
-      queryClient.invalidateQueries();
+      // Bütün LocalStorage keşlərini silin
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith('infoline_cache_')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (error) {
+        console.error('Bütün lokalStorage keşlərini silmə xətası:', error);
+      }
+      
+      // Bütün React Query keşlərini yeniləyin
+      return queryClient.invalidateQueries();
     }
   };
 }
-
-// LocalStorage funksiyalarını yenidən ixrac edirik
-import { clearCache, clearAllCache } from '@/utils/cacheUtils';
-export { clearCache, clearAllCache };

@@ -8,6 +8,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
+      .eq('archived', false)
       .order('priority', { ascending: true });
       
     if (error) {
@@ -15,74 +16,10 @@ export const fetchCategories = async (): Promise<Category[]> => {
       throw error;
     }
     
-    // Mock data, əgər real data olmasa
-    if (!data || data.length === 0) {
-      return [
-        {
-          id: '1',
-          name: 'Əsas məktəb məlumatları',
-          assignment: 'all',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          status: 'active',
-          priority: 1,
-          description: 'Məktəb haqqında əsas məlumatlar',
-          columnCount: 8,
-          archived: false
-        },
-        {
-          id: '2',
-          name: 'Müəllim statistikası',
-          assignment: 'sectors',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          status: 'active',
-          priority: 2,
-          description: 'Müəllimlər haqqında statistik məlumatlar',
-          columnCount: 12,
-          archived: false
-        },
-        {
-          id: '3',
-          name: 'Şagird məlumatları',
-          assignment: 'all',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          status: 'active',
-          priority: 3,
-          description: 'Şagirdlər haqqında ətraflı məlumatlar',
-          columnCount: 15,
-          archived: false
-        },
-        {
-          id: '4',
-          name: 'İnfrastruktur',
-          assignment: 'sectors',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          status: 'active',
-          priority: 4,
-          description: 'Məktəb infrastrukturu haqqında məlumatlar',
-          columnCount: 6,
-          archived: false
-        },
-        {
-          id: '5',
-          name: 'Maddi-texniki baza',
-          assignment: 'sectors',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          status: 'inactive',
-          priority: 5,
-          description: 'Maddi-texniki baza haqqında məlumatlar',
-          columnCount: 10,
-          archived: false
-        }
-      ];
-    }
-    
     // Supabase datalarını uyğunlaşdıraq
-    return data.map(adaptSupabaseCategory);
+    return data?.length > 0 
+      ? data.map(adaptSupabaseCategory)
+      : [];
   } catch (error) {
     console.error('Kateqoriyaları əldə edərkən xəta:', error);
     throw error;
@@ -92,43 +29,61 @@ export const fetchCategories = async (): Promise<Category[]> => {
 // Kateqoriya əlavə etmək və ya yeniləmək üçün funksiya
 export const addCategory = async (categoryData: Partial<Category> & { name: string }): Promise<Category> => {
   try {
+    const now = new Date().toISOString();
+    
     // Type compatibility üçün id öncədən təyin edək
     const categoryWithId: Category = {
       id: categoryData.id || '',
       name: categoryData.name,
-      description: categoryData.description,
+      description: categoryData.description || '',
       assignment: categoryData.assignment || 'all',
       status: categoryData.status || 'active',
       deadline: categoryData.deadline,
-      priority: categoryData.priority,
+      priority: categoryData.priority || 0,
       columnCount: categoryData.columnCount || 0,
-      createdAt: categoryData.createdAt || new Date().toISOString(),
-      updatedAt: categoryData.updatedAt || new Date().toISOString(),
-      archived: categoryData.archived || false
+      createdAt: categoryData.createdAt || now,
+      updatedAt: now,
+      archived: false
     };
     
     const supabaseData = adaptCategoryToSupabase(categoryWithId);
     
     // Yeni kateqoriya yaratma və ya mövcud olanı yeniləmə
-    const { data, error } = categoryData.id 
-      ? await supabase
-          .from('categories')
-          .update(supabaseData)
-          .eq('id', categoryData.id)
-          .select()
-          .single()
-      : await supabase
-          .from('categories')
-          .insert(supabaseData)
-          .select()
-          .single();
+    if (categoryData.id) {
+      const { data, error } = await supabase
+        .from('categories')
+        .update({
+          ...supabaseData,
+          updated_at: now
+        })
+        .eq('id', categoryData.id)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Kateqoriya əməliyyatı zamanı xəta:', error);
-      throw error;
+      if (error) {
+        console.error('Kateqoriya yeniləmə zamanı xəta:', error);
+        throw error;
+      }
+
+      return adaptSupabaseCategory(data);
+    } else {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          ...supabaseData,
+          created_at: now,
+          updated_at: now
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Kateqoriya əlavə etmə zamanı xəta:', error);
+        throw error;
+      }
+
+      return adaptSupabaseCategory(data);
     }
-
-    return adaptSupabaseCategory(data);
   } catch (error) {
     console.error('Kateqoriya əlavə etmə/yeniləmə zamanı xəta:', error);
     throw error;
@@ -141,7 +96,11 @@ export const deleteCategory = async (id: string): Promise<void> => {
     // Əslində silmək yerinə arxivləşdiririk
     const { error } = await supabase
       .from('categories')
-      .update({ archived: true, status: 'inactive' })
+      .update({ 
+        archived: true, 
+        status: 'inactive',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id);
 
     if (error) {
@@ -155,11 +114,14 @@ export const deleteCategory = async (id: string): Promise<void> => {
 };
 
 // Kateqoriya statusunu yeniləmək üçün funksiya
-export const updateCategoryStatus = async (id: string, status: 'active' | 'inactive'): Promise<void> => {
+export const updateCategoryStatus = async (id: string, status: 'active' | 'inactive' | 'draft'): Promise<void> => {
   try {
     const { error } = await supabase
       .from('categories')
-      .update({ status })
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id);
 
     if (error) {

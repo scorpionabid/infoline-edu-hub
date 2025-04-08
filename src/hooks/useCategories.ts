@@ -1,102 +1,86 @@
 
-import { useState, useEffect } from 'react';
-import { Category } from '@/types/category';
+import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from 'react';
+import { fetchCategories } from "@/api/categoryApi";
+import { Category } from "@/types/category";
 
-export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export const useCategories = () => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [assignmentFilter, setAssignmentFilter] = useState<string>('');
   
-  const fetchCategories = async () => {
-    setLoading(true);
-    setError(null);
+  // Fetch categories data
+  const {
+    data: categories = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+
+  // Filtrlənmiş kateqoriyalar
+  const filteredCategories = useMemo(() => {
+    return categories.filter((category: Category) => {
+      // Axtarış filtri
+      if (searchQuery && !category.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !(category.description?.toLowerCase().includes(searchQuery.toLowerCase()))) {
+        return false;
+      }
+      
+      // Status filtri
+      if (statusFilter && statusFilter !== 'all' && category.status !== statusFilter) {
+        return false;
+      }
+      
+      // Assignment filtri
+      if (assignmentFilter && assignmentFilter !== '' && category.assignment !== assignmentFilter) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [categories, searchQuery, statusFilter, assignmentFilter]);
+
+  // Kateqoriyaların statistikası
+  const stats = useMemo(() => {
+    const total = categories.length;
+    const active = categories.filter(c => c.status === 'active').length;
+    const inactive = categories.filter(c => c.status === 'inactive').length;
+    const draft = categories.filter(c => c.status === 'draft').length;
     
-    try {
-      // Burada real Supabase sorğusu olacaq
-      // const { data, error } = await supabase.from('categories').select('*');
-      
-      // Fake API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Fake data
-      const mockCategories: Category[] = [
-        {
-          id: '1',
-          name: 'Təhsil statistikası',
-          description: 'Ümumi təhsil statistikası',
-          assignment: 'all',
-          status: 'active',
-          deadline: '2023-10-15',
-          priority: 1,
-          columnCount: 8,
-          createdAt: '2023-06-10T12:00:00Z',
-          updatedAt: '2023-06-10T12:00:00Z'
-        },
-        {
-          id: '2',
-          name: 'Şagird məlumatları',
-          description: 'Şagirdlər haqqında məlumatlar',
-          assignment: 'sectors',
-          status: 'active',
-          deadline: '2023-09-20',
-          priority: 2,
-          columnCount: 12,
-          createdAt: '2023-06-12T14:30:00Z',
-          updatedAt: '2023-06-12T14:30:00Z'
-        },
-        {
-          id: '3',
-          name: 'Müəllim məlumatları',
-          description: 'Müəllim heyəti haqqında məlumatlar',
-          assignment: 'all',
-          status: 'inactive',
-          deadline: '2023-08-30',
-          priority: 3,
-          columnCount: 10,
-          createdAt: '2023-06-15T10:45:00Z',
-          updatedAt: '2023-06-15T10:45:00Z'
-        },
-        {
-          id: '4',
-          name: 'İnfrastruktur',
-          description: 'Məktəb binası və təchizat',
-          assignment: 'all',
-          status: 'draft',
-          priority: 4,
-          columnCount: 6,
-          createdAt: '2023-07-01T09:15:00Z',
-          updatedAt: '2023-07-01T09:15:00Z'
-        },
-        {
-          id: '5',
-          name: 'Tədris proqramı',
-          description: 'Tədris proqramı və fənlər haqqında məlumatlar',
-          assignment: 'sectors',
-          status: 'active',
-          deadline: '2023-11-05',
-          priority: 0,
-          columnCount: 7,
-          createdAt: '2023-07-05T11:20:00Z',
-          updatedAt: '2023-07-05T11:20:00Z'
-        }
-      ];
-      
-      setCategories(mockCategories);
-    } catch (err: any) {
-      console.error('Categories fetch error:', err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
+    const assignment = {
+      all: categories.filter(c => c.assignment === 'all').length,
+      sectors: categories.filter(c => c.assignment === 'sectors').length
+    };
+    
+    const withDeadline = categories.filter(c => c.deadline).length;
+    
+    return {
+      total,
+      active,
+      inactive,
+      draft,
+      assignment,
+      withDeadline
+    };
+  }, [categories]);
+
+  return {
+    categories,
+    filteredCategories,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    assignmentFilter,
+    setAssignmentFilter,
+    stats
   };
-  
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-  
-  const refetch = async () => {
-    await fetchCategories();
-  };
-  
-  return { categories, loading, error, refetch };
-}
+};

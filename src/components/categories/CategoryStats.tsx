@@ -1,98 +1,105 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Category } from '@/types/category';
+import { Card, CardContent } from '@/components/ui/card';
+import { CircleCheck, Archive, FileEdit, CalendarClock, School, Factory } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
-export interface CategoryStatsProps {
-  categoriesData: Category[];
-  isLoading: boolean;
+interface CategoryStatsProps {
+  stats: {
+    total: number;
+    active: number;
+    inactive: number;
+    draft: number;
+    assignment: {
+      all: number;
+      sectors: number;
+    };
+    withDeadline: number;
+  };
+  isLoading?: boolean;
 }
 
-const CategoryStats: React.FC<CategoryStatsProps> = ({ categoriesData, isLoading }) => {
-  // Yüklənmə halı
+const CategoryStats: React.FC<CategoryStatsProps> = ({ stats, isLoading = false }) => {
+  const { t } = useLanguage();
+  
   if (isLoading) {
     return (
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="p-4 pb-2">
-              <div className="h-5 w-24 bg-muted rounded"></div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="h-9 w-16 bg-muted rounded"></div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, index) => (
+          <Card key={index} className="animate-pulse">
+            <CardContent className="p-6 flex items-center space-x-4">
+              <div className="h-10 w-10 rounded-full bg-primary/10"></div>
+              <div className="space-y-2 flex-1">
+                <div className="h-4 w-24 bg-muted rounded"></div>
+                <div className="h-6 w-12 bg-muted rounded"></div>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
     );
   }
-
-  // Statistikaları hesablayaq
-  const totalCategories = categoriesData.length;
-  const activeCategories = categoriesData.filter(cat => cat.status === 'active').length;
-  const inactiveCategories = categoriesData.filter(cat => cat.status === 'inactive').length;
-  const draftCategories = categoriesData.filter(cat => cat.status === 'draft').length;
   
-  // Deadline statuslarını hesablayaq
-  const categoriesWithDeadline = categoriesData.filter(cat => cat.deadline);
-  const upcomingDeadlines = categoriesWithDeadline.filter(cat => {
-    try {
-      const deadlineDate = new Date(cat.deadline!);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return deadlineDate >= today;
-    } catch (e) {
-      return false;
+  const statItems = [
+    {
+      label: t('totalCategories'),
+      value: stats.total,
+      icon: <FileEdit className="h-8 w-8 text-primary" />,
+      bgClass: 'bg-primary/10'
+    },
+    {
+      label: t('activeCategories'),
+      value: stats.active,
+      icon: <CircleCheck className="h-8 w-8 text-green-500" />,
+      bgClass: 'bg-green-50 dark:bg-green-900/20'
+    },
+    {
+      label: t('inactiveCategories'),
+      value: stats.inactive,
+      icon: <Archive className="h-8 w-8 text-yellow-500" />,
+      bgClass: 'bg-yellow-50 dark:bg-yellow-900/20'
+    },
+    {
+      label: t('draftCategories'),
+      value: stats.draft,
+      icon: <FileEdit className="h-8 w-8 text-blue-500" />,
+      bgClass: 'bg-blue-50 dark:bg-blue-900/20'
+    },
+    {
+      label: t('categoriesForAllSchools'),
+      value: stats.assignment.all,
+      icon: <School className="h-8 w-8 text-indigo-500" />,
+      bgClass: 'bg-indigo-50 dark:bg-indigo-900/20'
+    },
+    {
+      label: t('categoriesForSectors'),
+      value: stats.assignment.sectors,
+      icon: <Factory className="h-8 w-8 text-purple-500" />,
+      bgClass: 'bg-purple-50 dark:bg-purple-900/20'
+    },
+    {
+      label: t('categoriesWithDeadline'),
+      value: stats.withDeadline,
+      icon: <CalendarClock className="h-8 w-8 text-red-500" />,
+      bgClass: 'bg-red-50 dark:bg-red-900/20'
     }
-  }).length;
+  ];
   
-  const pastDeadlines = categoriesWithDeadline.length - upcomingDeadlines;
-
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Ümumi Kateqoriyalar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="text-2xl font-bold">{totalCategories}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Aktiv Kateqoriyalar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="text-2xl font-bold">{activeCategories}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Gələcək Son Tarixlər
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="text-2xl font-bold">{upcomingDeadlines}</div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Keçmiş Son Tarixlər
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="text-2xl font-bold">{pastDeadlines}</div>
-        </CardContent>
-      </Card>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {statItems.map((stat, index) => (
+        <Card key={index}>
+          <CardContent className="p-6 flex items-center space-x-4">
+            <div className={`rounded-full p-2 ${stat.bgClass}`}>
+              {stat.icon}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+              <h2 className="text-2xl font-bold">{stat.value}</h2>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
