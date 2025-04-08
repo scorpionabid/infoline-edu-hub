@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -20,8 +19,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [email, setEmail] = useState('superadmin@infoline.az');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
   const [directLoginError, setDirectLoginError] = useState<string | null>(null);
@@ -80,67 +79,8 @@ const Login = () => {
     }
   };
 
-  // Manual login attempt
-  const handleDirectLogin = async () => {
-    setLoginInProgress(true);
-    clearError();
-    setDirectLoginError(null);
-    
-    try {
-      console.log('Birbaşa login cəhdi edilir...');
-      
-      // Əvvəlcə mövcud sessiyaları təmizləyək
-      await supabase.auth.signOut();
-      
-      // Direct login with Admin API
-      const functionUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/direct-login';
-      
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`,
-        },
-        body: JSON.stringify({
-          email: email || 'superadmin@infoline.az',
-          password: password || 'Admin123!'
-        })
-      });
-      
-      const responseData = await response.json();
-      console.log('Direct login cavabı:', responseData);
-      
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Birbaşa login uğursuz oldu');
-      }
-      
-      if (responseData.session) {
-        // Sessiyanı manual olaraq təyin edək
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: responseData.session.access_token,
-          refresh_token: responseData.session.refresh_token
-        });
-        
-        if (sessionError) {
-          console.error("Sessiya təyin etmə xətası:", sessionError);
-          throw sessionError;
-        }
-        
-        toast.success('Birbaşa login uğurlu oldu');
-        navigate('/dashboard');
-      } else {
-        throw new Error('Sessiya qaytarılmadı');
-      }
-    } catch (error: any) {
-      console.error('Direct login error:', error);
-      setDirectLoginError(error.message || 'Gözlənilməz xəta');
-      toast.error('Birbaşa login uğursuz oldu', {
-        description: error.message || 'Gözlənilməz xəta'
-      });
-    } finally {
-      setLoginInProgress(false);
-    }
-  };
+  // Bu metodu tam olaraq silirik, alternativ giriş üsulunu ləğv edirik
+  const handleDirectLogin = undefined;
 
   // Yüklənmə zamanı göstəriləcək
   if (isLoading) {
@@ -250,22 +190,8 @@ const Login = () => {
           </Button>
         </form>
         
-        <div className="mt-6 pt-6 border-t border-border">
-          <h3 className="text-sm font-medium mb-2">Alternativ giriş üsulu</h3>
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleDirectLogin}
-            disabled={loginInProgress}
-          >
-            Birbaşa Supabase ilə daxil ol
-          </Button>
-        </div>
+        {/* Alternativ giriş bölməsini tam silirk */}
         
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          <p>SuperAdmin: <span className="font-medium">superadmin@infoline.az</span></p>
-          <p>Şifrə: <span className="font-medium">Admin123!</span></p>
-        </div>
       </motion.div>
     </div>
   );

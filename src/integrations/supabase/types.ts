@@ -543,6 +543,19 @@ export type Database = {
         Args: { user_id_param: string; region_id_param: string }
         Returns: Json
       }
+      assign_school_admin: {
+        Args: { user_id_param: string; school_id_param: string }
+        Returns: Json
+      }
+      assign_school_admin_role: {
+        Args: {
+          p_user_id: string
+          p_school_id: string
+          p_region_id: string
+          p_sector_id: string
+        }
+        Returns: Json
+      }
       assign_sector_admin: {
         Args:
           | {
@@ -553,6 +566,21 @@ export type Database = {
             }
           | { user_id_param: string; sector_id_param: string }
         Returns: Json
+      }
+      create_audit_log: {
+        Args: {
+          p_user_id: string
+          p_action: string
+          p_entity_type: string
+          p_entity_id: string
+          p_old_value: Json
+          p_new_value: Json
+        }
+        Returns: Json
+      }
+      delete_user_roles: {
+        Args: { user_id: string }
+        Returns: undefined
       }
       get_auth_user_role: {
         Args: Record<PropertyKey, never>
@@ -678,12 +706,30 @@ export type Database = {
           is_anonymous: boolean
         }[]
       }
+      safe_get_user_by_id: {
+        Args: { user_id: string }
+        Returns: Json
+      }
       update_admin_emails: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       update_admin_emails_and_ids: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_user_metadata: {
+        Args: { p_user_id: string; p_metadata: Json }
+        Returns: undefined
+      }
+      update_user_role: {
+        Args: {
+          p_user_id: string
+          p_role: string
+          p_school_id?: string
+          p_region_id?: string
+          p_sector_id?: string
+        }
         Returns: undefined
       }
       uuid_generate_v4: {
