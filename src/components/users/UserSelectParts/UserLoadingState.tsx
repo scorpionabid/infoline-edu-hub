@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Loader2, ChevronsUpDown } from 'lucide-react';
 
 interface UserLoadingStateProps {
   loading: boolean;
@@ -8,7 +8,7 @@ interface UserLoadingStateProps {
 
 export const UserLoadingState: React.FC<UserLoadingStateProps> = ({ loading }) => {
   return loading ? (
-    <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin" />
+    <Loader2 className="ml-2 h-4 w-4 shrink-0 opacity-50 animate-spin" />
   ) : (
     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
   );

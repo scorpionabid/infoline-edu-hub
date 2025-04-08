@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from './types';
+import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 
 export const useUserSelectData = (
   selectedId: string,
@@ -12,34 +13,60 @@ export const useUserSelectData = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedUserData, setSelectedUserData] = useState<User | null>(null);
+  
+  // Admin olmayan istifadəçiləri əldə etmək üçün hook
+  const { 
+    users: availableUsers, 
+    loading: availableUsersLoading, 
+    error: availableUsersError,
+    fetchAvailableUsers
+  } = useAvailableUsers();
 
   // İstifadəçiləri yükləmə
   useEffect(() => {
-    const fetchUsers = async () => {
+    const loadUsers = async () => {
       if (!isOpen) return; // Popover açıq deyilsə, istifadəçiləri yükləməyə ehtiyac yoxdur
       
       setLoading(true);
       setError(null);
       
       try {
-        console.log('İstifadəçilər sorğulanır...');
-        let query = supabase.from('profiles').select('id, full_name, email');
+        console.log('İstifadəçilər yüklənir...');
         
-        if (searchTerm) {
-          query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        // Admin olmayan istifadəçiləri əldə etmək üçün useAvailableUsers hook-unu istifadə edirik
+        if (availableUsersError) {
+          throw new Error(availableUsersError.message);
         }
         
-        const { data, error } = await query.limit(20);
-        
-        if (error) {
-          console.error('İstifadəçiləri yükləyərkən xəta:', error);
-          throw new Error(error.message || 'İstifadəçiləri yükləyərkən xəta baş verdi');
+        // AvailableUsers boşdursa və yüklənməyibsə, yenidən yükləyək
+        if (!availableUsersLoading && (!availableUsers || availableUsers.length === 0)) {
+          console.log('Əlavə istifadəçilər yüklənir...');
+          await fetchAvailableUsers();
         }
         
-        // Təhlükəsizlik üçün data-nın array olduğunu yoxla
-        const safeData = Array.isArray(data) ? data : [];
-        console.log(`${safeData.length} istifadəçi yükləndi`);
-        setUsers(safeData as User[]);
+        // Əmin olaq ki, availableUsers massivdir
+        const safeAvailableUsers = Array.isArray(availableUsers) ? availableUsers : [];
+        
+        // Axtarış termini ilə filtrlənmiş istifadəçilər
+        let filteredUsers = safeAvailableUsers;
+        
+        if (searchTerm && searchTerm.length > 0) {
+          const lowercaseSearchTerm = searchTerm.toLowerCase();
+          filteredUsers = safeAvailableUsers.filter(user => 
+            (user.full_name && user.full_name.toLowerCase().includes(lowercaseSearchTerm)) || 
+            (user.email && user.email.toLowerCase().includes(lowercaseSearchTerm))
+          );
+        }
+        
+        // Minimal User interfacesinə çevir
+        const mappedUsers: User[] = filteredUsers.map(user => ({
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email
+        }));
+        
+        console.log(`${mappedUsers.length} istifadəçi yükləndi`);
+        setUsers(mappedUsers);
       } catch (err) {
         console.error('İstifadəçiləri yükləyərkən istisna:', err);
         setError(err instanceof Error ? err.message : 'İstifadəçilər yüklənərkən xəta baş verdi');
@@ -49,13 +76,13 @@ export const useUserSelectData = (
       }
     };
 
-    fetchUsers();
-  }, [isOpen, searchTerm]);
+    loadUsers();
+  }, [isOpen, searchTerm, availableUsers, availableUsersLoading, availableUsersError, fetchAvailableUsers]);
 
   // Seçilmiş istifadəçini yüklə (əgər varsa və users massivində yoxdursa)
   useEffect(() => {
     const loadSelectedUser = async () => {
-      if (!selectedId || selectedUserData) return;
+      if (!selectedId || selectedUserData?.id === selectedId) return;
       
       // Users massivini təhlükəsiz şəkildə istifadə et
       const safeUsers = Array.isArray(users) ? users : [];
@@ -111,31 +138,29 @@ export const useUserSelectData = (
 
   // İstifadəçiləri yeniləmək üçün funksiya
   const fetchUsers = async () => {
-    // Bu funksiya manual yeniləmə üçün istifadə oluna bilər
     setLoading(true);
-    setError(null);
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .limit(20);
-      
-      if (error) throw new Error(error.message);
-      
-      const safeData = Array.isArray(data) ? data : [];
-      setUsers(safeData as User[]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'İstifadəçilər yüklənərkən xəta baş verdi');
-    } finally {
-      setLoading(false);
-    }
+    await fetchAvailableUsers();
+    setLoading(false);
   };
+
+  // Refresh eventi dinlə
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('refresh-users eventi alındı, istifadəçilər yenilənir...');
+      fetchUsers();
+    };
+    
+    document.addEventListener('refresh-users', handleRefresh);
+    
+    return () => {
+      document.removeEventListener('refresh-users', handleRefresh);
+    };
+  }, []);
 
   return {
     users,
-    loading,
-    error,
+    loading: loading || availableUsersLoading,
+    error: error || (availableUsersError ? availableUsersError.message : null),
     selectedUserData,
     fetchUsers
   };

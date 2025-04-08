@@ -1,10 +1,22 @@
 
-import { useLanguage } from "@/context/LanguageContext";
+import { useLanguage } from '@/context/LanguageContext';
+
+export interface ValidationResult {
+  isValid: boolean;
+  errorMessage: string;
+}
 
 export const useAssignParamValidation = () => {
   const { t } = useLanguage();
-  
-  const validateParams = (schoolId?: string, userId?: string): { isValid: boolean; errorMessage?: string } => {
+
+  const validateParams = (schoolId?: string, userId?: string): ValidationResult => {
+    if (!schoolId && !userId) {
+      return { 
+        isValid: false, 
+        errorMessage: t('schoolAndUserIdMissing') || 'Məktəb ID və İstifadəçi ID təyin edilməyib'
+      };
+    }
+    
     if (!schoolId) {
       return { 
         isValid: false, 
@@ -19,8 +31,8 @@ export const useAssignParamValidation = () => {
       };
     }
     
-    return { isValid: true };
+    return { isValid: true, errorMessage: '' };
   };
-  
+
   return { validateParams };
 };

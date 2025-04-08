@@ -12,7 +12,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { UserSelectCommand } from './UserSelectParts/UserSelectCommand';
 import { useUserSelectData } from './UserSelectParts/useUserSelectData';
 import { UserLoadingState } from './UserSelectParts/UserLoadingState';
-import { User } from './UserSelectParts/types';
 
 interface UserSelectProps {
   value: string;

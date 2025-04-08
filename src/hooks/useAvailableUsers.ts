@@ -53,10 +53,19 @@ export const useAvailableUsers = () => {
       // Admin təyinatı üçün lazımi statusda olan istifadəçiləri filtrlə
       const availableUsers = otherUsers.filter(user => {
         // İstifadəçi aktiv vəziyyətdədirsə və profiles cədvəlində tam məlumatları varsa
-        return user.status !== 'blocked' && user.full_name;
+        // və admin təyin edilməyibsə (role user və ya boşdursa)
+        return user.status !== 'blocked' && user.full_name && 
+          (['user', ''].includes(user.role || '') || !user.role);
       });
       
       console.log(`Admin təyinatı üçün uyğun olan ${availableUsers.length} istifadəçi filtrləndi`);
+      
+      if (availableUsers.length === 0) {
+        console.log('Heç bir uyğun istifadəçi tapılmadı');
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
       
       // İstifadəçi məlumatlarını FullUserData formatına çeviririk
       const formattedUsers = availableUsers.map(user => ({
@@ -94,6 +103,7 @@ export const useAvailableUsers = () => {
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);
       setError(err instanceof Error ? err : new Error('İstifadəçilər yüklənərkən xəta baş verdi'));
+      setUsers([]);
     } finally {
       setLoading(false);
     }
