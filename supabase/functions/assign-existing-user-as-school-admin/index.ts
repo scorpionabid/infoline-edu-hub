@@ -1,20 +1,22 @@
 
 // Supabase Edge Function: assign-existing-user-as-school-admin
-// Bu funksiya mövcud istifadəçini məktəb adminı kimi təyin edir
+// Mövcud istifadəçini məktəb adminı kimi təyin edən funksiya
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 import { corsHeaders } from './cors.ts';
 
-console.log("Seçilmiş istifadəçini məktəb admini təyin etmə funksiyası başladıldı!");
+console.log("Mövcud istifadəçini məktəb adminı təyin etmə funksiyası başladıldı!");
 
 serve(async (req) => {
-  // CORS sorğularını idarə et
+  // CORS sorğularını emal et
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Request body-ni JSON olaraq parse et
+    console.log("Sorğu alındı:", req.method);
+    
+    // Request parametrlərini yoxla
     let requestData;
     try {
       requestData = await req.json();
@@ -33,7 +35,7 @@ serve(async (req) => {
       );
     }
 
-    // Parametrləri əldə et və yoxla
+    // Zəruri parametrləri yoxla
     const { userId, schoolId } = requestData;
     
     if (!userId) {
@@ -64,12 +66,12 @@ serve(async (req) => {
       );
     }
 
-    // Supabase müştərisini yaradaq
+    // Supabase konfiqurasiyasını yoxla və düzgün müştəri yarat
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error("Supabase konfiqurasiya xətası: URL veya Service Role Key mövcud deyil");
+      console.error("Supabase konfiqurasiya xətası: URL və ya Service Role Key mövcud deyil");
       return new Response(
         JSON.stringify({
           success: false,
@@ -89,7 +91,7 @@ serve(async (req) => {
       }
     });
 
-    // İstifadəçi məlumatlarını yoxla
+    // İstifadəçi məlumatlarını əldə et
     console.log(`İstifadəçi məlumatlarını əldə etmək: ${userId}`);
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
     
@@ -124,7 +126,7 @@ serve(async (req) => {
     const user = userData.user;
     console.log('İstifadəçi tapıldı:', user.email);
     
-    // Məktəbin mövcud olduğunu yoxlayaq
+    // Məktəb məlumatlarını əldə et
     console.log(`Məktəb məlumatlarını əldə etmək: ${schoolId}`);
     const { data: school, error: schoolError } = await supabaseAdmin
       .from('schools')
@@ -162,8 +164,8 @@ serve(async (req) => {
     
     console.log('Məktəb tapıldı:', JSON.stringify(school));
     
+    // 1. Köhnə rolları sil
     try {
-      // İstifadəçinin mövcud rollarını silək (user_roles cədvəlində)
       console.log(`Köhnə rol məlumatlarını silmək: ${userId}`);
       const { error: deleteRolesError } = await supabaseAdmin
         .from('user_roles')
@@ -187,10 +189,19 @@ serve(async (req) => {
       console.log('Köhnə roller silindi');
     } catch (error) {
       console.error('Rol silmə istisna:', error.message);
-      // Xəta baş versə də, davam edək
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Rollər silinərkən xəta: ${error.message}`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      );
     }
     
-    // Yeni rol təyin edək
+    // 2. Yeni rol təyin et
     try {
       console.log(`Yeni rol təyin etmək: ${userId}, məktəb: ${schoolId}`);
       const { data: newRole, error: roleError } = await supabaseAdmin
@@ -205,7 +216,7 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         })
         .select()
-        .maybeSingle();
+        .single();
       
       if (roleError) {
         console.error('Rol təyin etmə xətası:', roleError);
@@ -236,7 +247,7 @@ serve(async (req) => {
       );
     }
     
-    // Məktəbin admin məlumatlarını yeniləyək
+    // 3. Məktəbin admin məlumatlarını yenilə
     try {
       console.log(`Məktəb admin məlumatlarını yeniləmək: ${schoolId}, admin: ${userId}`);
       const { data: updatedSchool, error: updateError } = await supabaseAdmin
@@ -248,7 +259,7 @@ serve(async (req) => {
         })
         .eq('id', schoolId)
         .select()
-        .maybeSingle();
+        .single();
       
       if (updateError) {
         console.error('Məktəb yeniləmə xətası:', updateError);
@@ -267,10 +278,19 @@ serve(async (req) => {
       console.log('Məktəb yeniləndi:', updatedSchool ? JSON.stringify(updatedSchool) : 'No data returned');
     } catch (error) {
       console.error('Məktəb yeniləmə istisna:', error.message);
-      // Xəta baş versə də, davam edək
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Məktəb yenilərkən xəta: ${error.message}`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      );
     }
     
-    // Audit log əlavə edək
+    // 4. Audit log əlavə et
     try {
       console.log(`Audit log əlavə edilir: ${userId}, ${schoolId}`);
       const { error: auditError } = await supabaseAdmin
@@ -294,7 +314,7 @@ serve(async (req) => {
         console.log('Audit log əlavə edildi');
       }
     } catch (auditError) {
-      // Audit log xətasının əsas əməliyyata təsir etməsinə imkan verməyin
+      // Audit log xətasını ignor et (kritik deyil)
       console.warn('Audit log istisna (kritik deyil):', auditError.message);
     }
     
@@ -322,7 +342,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    // Xətaları idarə et
+    // Ümumi xətaları emal et
     console.error("Admin təyin etmə xətası:", error.message || error);
     
     return new Response(

@@ -46,38 +46,45 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
     }
   }, [isOpen]);
 
+  // İstifadəçi seçimi dəyişdikdə
   const onUserSelect = (userId: string) => {
+    console.log('İstifadəçi seçimi dəyişdi:', userId);
     if (userId !== selectedUserId) {
       setSelectedUserId(userId);
       setError(null); // İstifadəçi dəyişdirildikdə xətanı sıfırla
     }
   };
 
+  // Form təqdimatı
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
+    // Form validasiyası
     if (!selectedUserId || !schoolId) {
       const errorMessage = !selectedUserId
         ? t('pleaseSelectUser') || 'Zəhmət olmasa istifadəçi seçin'
         : t('schoolIdNotProvided') || 'Məktəb ID təyin edilməyib';
         
       setError(errorMessage);
+      console.error('Form validasiya xətası:', errorMessage);
+      
       toast.error(t('formValidationError') || 'Form validasiya xətası', {
         description: errorMessage
       });
       return;
     }
     
+    console.log(`Məktəb admini təyin etmə başlayır: Məktəb=${schoolId}, İstifadəçi=${selectedUserId}`);
+    
     try {
-      console.log(`Məktəb admini təyin etmə üçün sorğu göndərilir: ${schoolId}, ${selectedUserId}`);
       const result = await assignUserAsSchoolAdmin(schoolId, selectedUserId);
       
       if (result.success) {
         console.log('Admin təyin etmə uğurlu:', result);
         setIsSuccess(true);
         
-        // 1.5 saniyə sonra dialoqu bağla
+        // 1.5 saniyə sonra dialoqu bağla və uğurlu callback-i işlət
         setTimeout(() => {
           onClose();
           onSuccess();
@@ -96,24 +103,27 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('assignExistingUserAsSchoolAdmin')}</DialogTitle>
+          <DialogTitle>{t('assignExistingUserAsSchoolAdmin') || 'İstifadəçini məktəb admini olaraq təyin et'}</DialogTitle>
           <DialogDescription>
-            {t('assignExistingUserAsSchoolAdminDesc')}
+            {t('assignExistingUserAsSchoolAdminDesc') || 'Mövcud bir istifadəçini seçərək məktəb admini kimi təyin edin.'}
           </DialogDescription>
         </DialogHeader>
         
         {isSuccess ? (
+          // Uğurlu təyinat mesajı
           <div className="flex flex-col items-center justify-center py-6 space-y-4">
             <div className="flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-600">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <p className="text-center font-medium text-lg">{t('adminAssigned')}</p>
+            <p className="text-center font-medium text-lg">{t('adminAssigned') || 'Admin təyin edildi'}</p>
             <p className="text-center text-muted-foreground">
-              {t('adminAssignedDesc')}
+              {t('adminAssignedDesc') || 'İstifadəçi məktəb admini olaraq uğurla təyin edildi'}
             </p>
           </div>
         ) : (
+          // Təyinat formu
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Xəta mesajı */}
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -122,13 +132,15 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
             )}
             
             <div className="space-y-4 py-2">
+              {/* Məktəb məlumatları */}
               <div className="flex flex-col space-y-2">
                 <p className="text-sm font-medium">Məktəb: <span className="font-bold">{schoolName}</span></p>
                 <p className="text-sm text-muted-foreground">ID: {schoolId}</p>
               </div>
               
+              {/* İstifadəçi seçimi */}
               <div className="flex flex-col space-y-2">
-                <label className="text-sm font-medium">{t('selectUser')}</label>
+                <label className="text-sm font-medium">{t('selectUser') || 'İstifadəçi seçin'}</label>
                 <UserSelect 
                   value={selectedUserId}
                   onChange={onUserSelect} 
@@ -138,6 +150,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
               </div>
             </div>
             
+            {/* Dialoq düymələri */}
             <DialogFooter>
               <Button 
                 type="button" 
@@ -145,7 +158,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
                 onClick={onClose}
                 disabled={loading}
               >
-                {t('cancel')}
+                {t('cancel') || 'Ləğv et'}
               </Button>
               <Button 
                 type="submit" 
