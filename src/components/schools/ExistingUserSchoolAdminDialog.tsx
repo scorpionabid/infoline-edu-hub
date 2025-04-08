@@ -58,9 +58,13 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
     setError(null);
     
     if (!selectedUserId || !schoolId) {
-      setError(t('pleaseSelectUser') || 'Zəhmət olmasa istifadəçi seçin');
-      toast.error(t('formValidationError'), {
-        description: t('pleaseSelectUser')
+      const errorMessage = !selectedUserId
+        ? t('pleaseSelectUser') || 'Zəhmət olmasa istifadəçi seçin'
+        : t('schoolIdNotProvided') || 'Məktəb ID təyin edilməyib';
+        
+      setError(errorMessage);
+      toast.error(t('formValidationError') || 'Form validasiya xətası', {
+        description: errorMessage
       });
       return;
     }
@@ -82,7 +86,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
         console.error('Admin təyin etmə uğursuz:', result.error);
         setError(result.error || t('unexpectedError') || 'Bilinməyən xəta');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Admin təyin etmə xətası:', error);
       setError(error instanceof Error ? error.message : (t('unexpectedError') || 'Bilinməyən xəta'));
     }
@@ -120,6 +124,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
             <div className="space-y-4 py-2">
               <div className="flex flex-col space-y-2">
                 <p className="text-sm font-medium">Məktəb: <span className="font-bold">{schoolName}</span></p>
+                <p className="text-sm text-muted-foreground">ID: {schoolId}</p>
               </div>
               
               <div className="flex flex-col space-y-2">
@@ -148,7 +153,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
                 className="gap-2"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {loading ? t('assigning') : t('assign')}
+                {loading ? t('assigning') || 'Təyin edilir...' : t('assign') || 'Təyin et'}
               </Button>
             </DialogFooter>
           </form>

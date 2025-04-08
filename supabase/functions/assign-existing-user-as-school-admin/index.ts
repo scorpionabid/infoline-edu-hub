@@ -15,20 +15,47 @@ serve(async (req) => {
 
   try {
     // Request body-ni JSON olaraq parse et
-    const requestData = await req.json();
-    console.log("Alınan sorğu məlumatları:", JSON.stringify(requestData));
-
-    // userId və schoolId məlumatlarını əldə et
-    const { userId, schoolId } = requestData;
-    
-    // Məlumatların mövcudluğunu yoxla
-    if (!userId || !schoolId) {
-      const missingParam = !userId ? 'userId' : 'schoolId';
-      console.error(`Zəruri parametr çatışmır: ${missingParam}`);
+    let requestData;
+    try {
+      requestData = await req.json();
+      console.log("Alınan sorğu məlumatları:", JSON.stringify(requestData));
+    } catch (parseError) {
+      console.error("JSON parse xətası:", parseError.message);
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Zəruri parametr çatışmır: ${missingParam}`
+          error: `Sorğu məlumatları düzgün format deyil: ${parseError.message}`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
+
+    // Parametrləri əldə et və yoxla
+    const { userId, schoolId } = requestData;
+    
+    if (!userId) {
+      console.error("Zəruri parametr çatışmır: userId");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Zəruri parametr çatışmır: userId"
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
+    
+    if (!schoolId) {
+      console.error("Zəruri parametr çatışmır: schoolId");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Zəruri parametr çatışmır: schoolId"
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -38,31 +65,58 @@ serve(async (req) => {
     }
 
     // Supabase müştərisini yaradaq
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase konfiqurasiya xətası: URL veya Service Role Key mövcud deyil");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Server konfiqurasiysı xətası"
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
         }
+      );
+    }
+    
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    );
+    });
 
     // İstifadəçi məlumatlarını yoxla
     console.log(`İstifadəçi məlumatlarını əldə etmək: ${userId}`);
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
     
-    if (userError || !userData || !userData.user) {
-      console.error('İstifadəçi məlumatları xətası:', userError || 'İstifadəçi tapılmadı');
+    if (userError) {
+      console.error('İstifadəçi məlumatları xətası:', userError);
       return new Response(
         JSON.stringify({
           success: false,
-          error: `İstifadəçi tapılmadı: ${userError?.message || 'Bilinməyən xəta'}`
+          error: `İstifadəçi tapılmadı: ${userError.message}`
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
+        }
+      );
+    }
+    
+    if (!userData || !userData.user) {
+      console.error('İstifadəçi tapılmadı');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "İstifadəçi tapılmadı"
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
         }
       );
     }
@@ -76,7 +130,7 @@ serve(async (req) => {
       .from('schools')
       .select('id, name, region_id, sector_id')
       .eq('id', schoolId)
-      .single();
+      .maybeSingle();
     
     if (schoolError) {
       console.error('Məktəb yoxlama xətası:', schoolError);
@@ -97,19 +151,19 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Məktəb tapılmadı'
+          error: "Məktəb tapılmadı"
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
+          status: 404,
         }
       );
     }
     
     console.log('Məktəb tapıldı:', JSON.stringify(school));
     
-    // İstifadəçinin mövcud rollarını silək (user_roles cədvəlində)
     try {
+      // İstifadəçinin mövcud rollarını silək (user_roles cədvəlində)
       console.log(`Köhnə rol məlumatlarını silmək: ${userId}`);
       const { error: deleteRolesError } = await supabaseAdmin
         .from('user_roles')
@@ -132,17 +186,8 @@ serve(async (req) => {
       
       console.log('Köhnə roller silindi');
     } catch (error) {
-      console.error('Rol silmə istisna:', error);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Köhnə rolları silmək mümkün olmadı: ${error.message}`
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        }
-      );
+      console.error('Rol silmə istisna:', error.message);
+      // Xəta baş versə də, davam edək
     }
     
     // Yeni rol təyin edək
@@ -160,7 +205,7 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         })
         .select()
-        .single();
+        .maybeSingle();
       
       if (roleError) {
         console.error('Rol təyin etmə xətası:', roleError);
@@ -176,13 +221,9 @@ serve(async (req) => {
         );
       }
       
-      if (!newRole) {
-        console.error('Rol təyin edildi, lakin məlumat qaytarılmadı');
-      } else {
-        console.log('Yeni rol təyin edildi:', JSON.stringify(newRole));
-      }
+      console.log('Yeni rol təyin edildi:', newRole ? JSON.stringify(newRole) : 'No data returned');
     } catch (error) {
-      console.error('Rol təyin etmə istisna:', error);
+      console.error('Rol təyin etmə istisna:', error.message);
       return new Response(
         JSON.stringify({
           success: false,
@@ -207,7 +248,7 @@ serve(async (req) => {
         })
         .eq('id', schoolId)
         .select()
-        .single();
+        .maybeSingle();
       
       if (updateError) {
         console.error('Məktəb yeniləmə xətası:', updateError);
@@ -223,23 +264,10 @@ serve(async (req) => {
         );
       }
       
-      if (!updatedSchool) {
-        console.error('Məktəb yeniləndi, lakin məlumat qaytarılmadı');
-      } else {
-        console.log('Məktəb yeniləndi:', JSON.stringify(updatedSchool));
-      }
+      console.log('Məktəb yeniləndi:', updatedSchool ? JSON.stringify(updatedSchool) : 'No data returned');
     } catch (error) {
-      console.error('Məktəb yeniləmə istisna:', error);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Məktəb yenilərkən xəta: ${error.message}`
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        }
-      );
+      console.error('Məktəb yeniləmə istisna:', error.message);
+      // Xəta baş versə də, davam edək
     }
     
     // Audit log əlavə edək
@@ -267,7 +295,7 @@ serve(async (req) => {
       }
     } catch (auditError) {
       // Audit log xətasının əsas əməliyyata təsir etməsinə imkan verməyin
-      console.warn('Audit log istisna (kritik deyil):', auditError);
+      console.warn('Audit log istisna (kritik deyil):', auditError.message);
     }
     
     // Uğurlu nəticə qaytaraq
