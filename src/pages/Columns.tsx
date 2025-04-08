@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,16 +42,13 @@ const Columns: React.FC = () => {
   
   const { t } = useLanguage();
   
-  // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
 
-  // Category selection state
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   
-  // Handlers
   const handleAddDialogOpen = () => {
     setIsAddDialogOpen(true);
   };
@@ -71,7 +67,6 @@ const Columns: React.FC = () => {
     setSelectedCategoryId(categoryId === "all" ? null : categoryId);
   };
 
-  // Filter columns based on selected category
   const categoryFilteredColumns = React.useMemo(() => {
     if (!selectedCategoryId) {
       return filteredColumns;
@@ -81,7 +76,6 @@ const Columns: React.FC = () => {
 
   const { categories, isLoading } = useCategories();
   
-  // Wrapper function for deleting columns
   const deleteColumnWrapper = async (id: string): Promise<void> => {
     await handleDeleteColumn(id);
   };
@@ -124,7 +118,7 @@ const Columns: React.FC = () => {
           isLoading={isColumnsLoading}
           isError={!!columnsError}
           onEditColumn={handleEditDialogOpen}
-          onDeleteColumn={deleteColumnWrapper}
+          onDeleteColumn={handleDeleteDialogOpen}
           onUpdateStatus={handleUpdateColumnStatus}
         />
         
