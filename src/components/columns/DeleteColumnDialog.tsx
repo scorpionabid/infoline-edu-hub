@@ -23,6 +23,7 @@ const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
 
   const handleDelete = async () => {
     if (column) {
+      // Yalnız sütun ID-sini ötürürük
       await onConfirm(column.id);
       onClose();
     }

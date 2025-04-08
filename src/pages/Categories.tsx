@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,10 +65,11 @@ const Categories: React.FC = () => {
   };
   
   const handleAssignmentFilterChange = (value: string) => {
+    // Burada boş string üçün yoxlama əlavə edirik
     if (value === 'sectors') {
       setAssignmentFilter('sectors');
     } else {
-      // Hər hansı başqa dəyər 'all' kimi təyin edilir
+      // Boş string də daxil olmaqla hər hansı başqa dəyər 'all' kimi təyin edilir
       setAssignmentFilter('all');
     }
   };
