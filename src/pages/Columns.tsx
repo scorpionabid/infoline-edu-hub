@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -118,7 +119,7 @@ const Columns: React.FC = () => {
           isLoading={isColumnsLoading}
           isError={!!columnsError}
           onEditColumn={handleEditDialogOpen}
-          onDeleteColumn={handleDeleteDialogOpen}
+          onDeleteColumn={handleDeleteColumn}
           onUpdateStatus={handleUpdateColumnStatus}
         />
         

@@ -65,11 +65,10 @@ const Categories: React.FC = () => {
   };
   
   const handleAssignmentFilterChange = (value: string) => {
-    // Boş string mümkün olduğu üçün 'all' kimi təyin edirik
     if (value === 'sectors') {
       setAssignmentFilter('sectors');
     } else {
-      // Hər hansı başqa dəyər, o cümlədən boş string, 'all' kimi təyin edilir
+      // Hər hansı başqa dəyər 'all' kimi təyin edilir
       setAssignmentFilter('all');
     }
   };
