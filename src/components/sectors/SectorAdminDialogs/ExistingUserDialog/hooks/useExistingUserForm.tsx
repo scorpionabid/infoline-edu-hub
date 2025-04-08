@@ -1,37 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useLanguage } from '@/context/LanguageContext';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAuth } from '@/context/AuthContext';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 import { useAssignExistingUserAsSectorAdmin } from '@/hooks/useAssignExistingUserAsSectorAdmin';
 import { Sector, FullUserData } from '@/types/supabase';
-import { useAuth } from '@/context/AuthContext';
-import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useForm } from 'react-hook-form';
 
-import { 
-  SectorAdminDialogHeader, 
-  SectorAdminAlert, 
-  SectorAdminUserSelector, 
-  SectorAdminDialogFooter 
-} from './';
-
-interface ExistingUserSectorAdminDialogProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  sector: Sector | null;
-  onSuccess?: () => void;
-  isEmbedded?: boolean;
-}
-
-export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDialogProps> = ({ 
-  open, 
-  setOpen,
-  sector,
-  onSuccess,
-  isEmbedded = false
-}) => {
+export const useExistingUserForm = (sector: Sector | null, onSuccess?: () => void, setOpen?: (open: boolean) => void) => {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -103,21 +79,19 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
   }, [users, showExistingAdmins]);
   
   // Dialog açıldığında seçimləri sıfırla və istifadəçiləri yenidən yüklə
-  useEffect(() => {
-    if (open) {
-      console.log('Dialog açıldı, istifadəçiləri yenidən yükləmə başladı...');
-      setSelectedUserId("");
-      setError(null);
-      setShowExistingAdmins(false);
-      form.reset({ showExistingAdmins: false });
-      
-      if (isAuthenticated) {
-        fetchAvailableUsers();
-      } else {
-        setError(t('authRequiredForUsers') || 'İstifadəçiləri əldə etmək üçün giriş etməlisiniz');
-      }
+  const resetForm = () => {
+    console.log('Form sıfırlanır, istifadəçiləri yenidən yükləmə başladı...');
+    setSelectedUserId("");
+    setError(null);
+    setShowExistingAdmins(false);
+    form.reset({ showExistingAdmins: false });
+    
+    if (isAuthenticated) {
+      fetchAvailableUsers();
+    } else {
+      setError(t('authRequiredForUsers') || 'İstifadəçiləri əldə etmək üçün giriş etməlisiniz');
     }
-  }, [open, fetchAvailableUsers, isAuthenticated, t, form]);
+  };
 
   // İstifadəçi seçimini emal et
   const handleUserSelect = (userId: string) => {
@@ -144,7 +118,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       
       if (result.success) {
         console.log('Admin uğurla təyin edildi:', result);
-        setOpen(false);
+        if (setOpen) setOpen(false);
         
         // Tətbiqi yeniləmək üçün event triggerlə
         document.dispatchEvent(new Event('refresh-users'));
@@ -172,71 +146,28 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       fetchAvailableUsers();
     }
   };
+  
+  // Checkbox dəyişikliyi
+  const handleCheckboxChange = (checked: boolean) => {
+    const isChecked = Boolean(checked);
+    console.log('Checkbox dəyişdi:', isChecked);
+    setShowExistingAdmins(isChecked);
+    form.setValue('showExistingAdmins', isChecked);
+  };
 
-  // Dialog content
-  const dialogContent = (
-    <Form {...form}>
-      <SectorAdminDialogHeader 
-        sector={sector} 
-        isEmbedded={isEmbedded} 
-      />
-
-      <SectorAdminAlert 
-        error={error} 
-        usersError={usersError} 
-      />
-
-      <div className="py-4 space-y-4">
-        <SectorAdminUserSelector
-          users={filteredUsers}
-          loading={loadingUsers}
-          selectedUserId={selectedUserId}
-          onUserSelect={handleUserSelect}
-          onRefresh={handleForceRefresh}
-        />
-        
-        <FormField
-          control={form.control}
-          name="showExistingAdmins"
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2 mt-2">
-              <FormControl>
-                <Checkbox
-                  checked={showExistingAdmins}
-                  onCheckedChange={(checked) => {
-                    const isChecked = Boolean(checked);
-                    console.log('Checkbox dəyişdi:', isChecked);
-                    setShowExistingAdmins(isChecked);
-                    field.onChange(isChecked);
-                  }}
-                />
-              </FormControl>
-              <div className="space-y-0 leading-none">
-                <FormLabel>{t("showExistingAdmins") || 'Mövcud adminləri göstər'}</FormLabel>
-              </div>
-            </FormItem>
-          )}
-        />
-
-        <SectorAdminDialogFooter
-          assigningUser={assigningUser}
-          selectedUserId={selectedUserId}
-          onCancel={() => setOpen(false)}
-          onAssignAdmin={handleAssignAdmin}
-        />
-      </div>
-    </Form>
-  );
-
-  if (isEmbedded) {
-    return dialogContent;
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
-        {dialogContent}
-      </DialogContent>
-    </Dialog>
-  );
+  return {
+    form,
+    selectedUserId,
+    error,
+    usersError,
+    filteredUsers,
+    loadingUsers,
+    assigningUser,
+    showExistingAdmins,
+    handleUserSelect,
+    handleAssignAdmin,
+    handleForceRefresh,
+    handleCheckboxChange,
+    resetForm
+  };
 };
