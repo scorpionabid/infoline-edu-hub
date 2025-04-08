@@ -22,6 +22,7 @@ interface UserSelectCommandProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSelect: (value: string) => void;
+  onRetry?: () => void;
 }
 
 export const UserSelectCommand: React.FC<UserSelectCommandProps> = ({
@@ -31,7 +32,8 @@ export const UserSelectCommand: React.FC<UserSelectCommandProps> = ({
   value,
   searchTerm,
   onSearchChange,
-  onSelect
+  onSelect,
+  onRetry
 }) => {
   const { t } = useLanguage();
   
@@ -47,7 +49,7 @@ export const UserSelectCommand: React.FC<UserSelectCommandProps> = ({
       />
       
       {error ? (
-        <UserErrorState error={error} />
+        <UserErrorState error={error} onRetry={onRetry} />
       ) : loading ? (
         <div className="flex items-center justify-center py-6">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />

@@ -6,14 +6,19 @@ import { Button } from '@/components/ui/button';
 
 interface UserErrorStateProps {
   error: string | null;
+  onRetry?: () => void;
 }
 
-export const UserErrorState: React.FC<UserErrorStateProps> = ({ error }) => {
+export const UserErrorState: React.FC<UserErrorStateProps> = ({ error, onRetry }) => {
   const { t } = useLanguage();
   
   const handleRefresh = () => {
-    // Yeniləmə event-i yayımlayaq
-    document.dispatchEvent(new Event('refresh-users'));
+    if (onRetry) {
+      onRetry();
+    } else {
+      // Yeniləmə event-i yayımlayaq
+      document.dispatchEvent(new Event('refresh-users'));
+    }
   };
   
   return (

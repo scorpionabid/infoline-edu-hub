@@ -37,11 +37,18 @@ export const useAvailableUsers = () => {
         throw new Error(`İstifadəçilər əldə edilərkən xəta: ${functionError.message}`);
       }
       
-      if (!data || !data.users || data.users.length === 0) {
-        console.log('Heç bir istifadəçi tapılmadı');
+      // Dataların təhlükəsiz şəkildə yoxlanması
+      if (!data) {
+        console.log('Edge function boş data qaytardı');
         setUsers([]);
         setLoading(false);
         return;
+      }
+      
+      // data.users-in massiv olduğunu yoxlayaq
+      if (!data.users || !Array.isArray(data.users)) {
+        console.log('Edge function düzgün formatda data qaytarmadı');
+        data.users = []; // Boş massiv ilə əvəz edək ki, növbəti əməliyyatlar xəta verməsin
       }
       
       console.log(`${data.users.length} istifadəçi əldə edildi`);

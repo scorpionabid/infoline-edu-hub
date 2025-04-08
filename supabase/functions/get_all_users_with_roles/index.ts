@@ -168,7 +168,7 @@ serve(async (req) => {
       }
       
       // İstifadəçi profilləri üçün map yaradırıq
-      const profilesMap = {};
+      const profilesMap: Record<string, any> = {};
       if (profiles && Array.isArray(profiles)) {
         profiles.forEach(profile => {
           profilesMap[profile.id] = profile;
@@ -187,7 +187,7 @@ serve(async (req) => {
       }
 
       // Rolların map-ını yaradırıq
-      const roleMap = {};
+      const roleMap: Record<string, any> = {};
       if (userRoles && Array.isArray(userRoles)) {
         userRoles.forEach(role => {
           roleMap[role.user_id] = role;

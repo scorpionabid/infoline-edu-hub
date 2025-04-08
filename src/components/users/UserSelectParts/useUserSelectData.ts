@@ -1,14 +1,14 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from './types';
+import { User, UserSelectDataResult } from './types';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 
 export const useUserSelectData = (
   selectedId: string,
   isOpen: boolean,
   searchTerm: string
-) => {
+): UserSelectDataResult => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,11 +137,11 @@ export const useUserSelectData = (
   }, [selectedId, users, selectedUserData]);
 
   // İstifadəçiləri yeniləmək üçün funksiya
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     await fetchAvailableUsers();
     setLoading(false);
-  };
+  }, [fetchAvailableUsers]);
 
   // Refresh eventi dinlə
   useEffect(() => {
@@ -155,7 +155,7 @@ export const useUserSelectData = (
     return () => {
       document.removeEventListener('refresh-users', handleRefresh);
     };
-  }, []);
+  }, [fetchUsers]);
 
   return {
     users,

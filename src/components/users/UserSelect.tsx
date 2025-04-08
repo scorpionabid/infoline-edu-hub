@@ -49,6 +49,13 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
       ? 'Yüklənir...' 
       : placeholder || t('selectUser') || 'İstifadəçi seçin';
 
+  // Komponentin yüklənməsində yenidən bir dəfə istifadəçiləri yükləyək
+  useEffect(() => {
+    if (open) {
+      fetchUsers();
+    }
+  }, [open, fetchUsers]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -72,6 +79,7 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onSelect={handleSelect}
+          onRetry={fetchUsers}
         />
       </PopoverContent>
     </Popover>
