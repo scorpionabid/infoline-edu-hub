@@ -4,11 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
+interface AssignUserResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}
+
 export const useAssignExistingUserAsSchoolAdmin = () => {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 
-  const assignUserAsSchoolAdmin = async (schoolId: string, userId: string) => {
+  const assignUserAsSchoolAdmin = async (schoolId: string, userId: string): Promise<AssignUserResult> => {
     try {
       setLoading(true);
       
@@ -68,7 +74,7 @@ export const useAssignExistingUserAsSchoolAdmin = () => {
       
       console.log('Admin təyinatı uğurla başa çatdı:', data);
       return { success: true, data };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Admin təyin etmə xətası:', error);
       toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
         description: error.message || t('unexpectedError') || 'Gözlənilməz xəta'

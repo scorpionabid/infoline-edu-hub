@@ -11,10 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { UserSelect } from '@/components/users/UserSelect';
+import { useAssignExistingUserAsSchoolAdmin } from '@/hooks/useAssignExistingUserAsSchoolAdmin';
 
 interface ExistingUserSchoolAdminDialogProps {
   isOpen: boolean;
@@ -32,64 +31,48 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
   onSuccess
 }) => {
   const { t } = useLanguageSafe();
-  const [loading, setLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  
-  const { handleSubmit, reset, formState: { isValid } } = useForm({
-    defaultValues: { userId: '' }
-  });
+  const [isSuccess, setIsSuccess] = useState(false);
+  const { assignUserAsSchoolAdmin, loading } = useAssignExistingUserAsSchoolAdmin();
 
-  // Formu resetlə və vəziyyətləri təmizlə
+  // Dialoq bağlandıqda vəziyyətləri sıfırla
   useEffect(() => {
     if (!isOpen) {
-      reset();
       setSelectedUserId('');
       setIsSuccess(false);
     }
-  }, [isOpen, reset]);
+  }, [isOpen]);
 
   const onUserSelect = (userId: string) => {
-    setSelectedUserId(userId);
+    if (userId !== selectedUserId) {
+      setSelectedUserId(userId);
+    }
   };
 
-  const onSubmit = async () => {
-    if (!selectedUserId) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setLoading(true);
+    if (!selectedUserId || !schoolId) {
+      toast.error(t('formValidationError'), {
+        description: t('pleaseSelectUser')
+      });
+      return;
+    }
     
     try {
-      const { data, error } = await supabase.functions.invoke('assign-existing-user-as-school-admin', {
-        body: { 
-          schoolId, 
-          userId: selectedUserId 
-        }
-      });
+      const result = await assignUserAsSchoolAdmin(schoolId, selectedUserId);
       
-      if (error) throw error;
-      
-      if (!data.success) {
-        throw new Error(data.error || t('errorAssigningAdmin'));
+      if (result.success) {
+        setIsSuccess(true);
+        
+        // 1.5 saniyə sonra dialoqu bağla
+        setTimeout(() => {
+          onClose();
+          onSuccess();
+        }, 1500);
       }
-      
-      // Uğurlu olduğunu göstər
-      setIsSuccess(true);
-      
-      // 1.5 saniyə sonra dialoqu bağla
-      setTimeout(() => {
-        onClose();
-        onSuccess();
-        toast.success(t('adminAssigned'), {
-          description: t('adminAssignedDesc')
-        });
-      }, 1500);
     } catch (error) {
-      console.error('Error assigning admin:', error);
-      toast.error(t('errorAssigningAdmin'), {
-        description: error.message
-      });
-    } finally {
-      setLoading(false);
+      console.error('Admin təyin etmə xətası:', error);
     }
   };
 
@@ -114,7 +97,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4 py-2">
               <div className="flex flex-col space-y-2">
                 <p className="text-sm font-medium">Məktəb: <span className="font-bold">{schoolName}</span></p>
@@ -126,6 +109,7 @@ export const ExistingUserSchoolAdminDialog: React.FC<ExistingUserSchoolAdminDial
                   value={selectedUserId}
                   onChange={onUserSelect} 
                   placeholder={t('selectUserPlaceholder')}
+                  disabled={loading}
                 />
               </div>
             </div>

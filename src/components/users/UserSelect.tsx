@@ -46,10 +46,10 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
           query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
         }
         
-        const { data, error } = await query.limit(10);
+        const { data, error } = await query.limit(20);
         
         if (error) throw error;
-        setUsers(data as User[]);
+        setUsers(Array.isArray(data) ? data as User[] : []);
       } catch (error) {
         console.error('İstifadəçiləri yükləyərkən xəta:', error);
       } finally {
@@ -70,7 +70,7 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
       ? 'Yüklənir...' 
       : placeholder || 'İstifadəçi seçin';
 
-  // Seçilmiş istifadəçi gözlənilmirsə, yüklə
+  // Seçilmiş istifadəçi məlumatda yoxdursa yüklə
   useEffect(() => {
     const loadSelectedUser = async () => {
       if (value && !selectedUser) {
@@ -133,7 +133,7 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
           ) : (
             <>
               <CommandEmpty>İstifadəçi tapılmadı</CommandEmpty>
-              <CommandGroup>
+              <CommandGroup className="max-h-[300px] overflow-auto">
                 {users.map((user) => (
                   <CommandItem
                     key={user.id}
@@ -150,8 +150,8 @@ export function UserSelect({ value, onChange, placeholder, disabled }: UserSelec
                       )}
                     />
                     <div className="flex flex-col">
-                      <span>{user.full_name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                      <span>{user.full_name || 'İsimsiz İstifadəçi'}</span>
+                      <span className="text-xs text-muted-foreground">{user.email || ''}</span>
                     </div>
                   </CommandItem>
                 ))}

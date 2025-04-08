@@ -33,6 +33,11 @@ export async function getUserById(supabase: any, userId: string) {
       return { data: null, error };
     }
     
+    // Əgər istifadəçi tapılmadısa
+    if (!data) {
+      return { data: null, error: new Error(`İstifadəçi tapılmadı: ${userId}`) };
+    }
+    
     return { data, error: null };
   } catch (error) {
     console.error('getUserById istisna:', error);
