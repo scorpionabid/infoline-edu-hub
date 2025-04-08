@@ -2,6 +2,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0';
 
+// CORS başlıqları
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cache-key, x-cache-expiry, x-bypass-cache',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+};
+
 // In-memory keş
 const CACHE = new Map<string, { data: any; timestamp: number; expiry: number }>();
 
@@ -9,20 +16,20 @@ const CACHE = new Map<string, { data: any; timestamp: number; expiry: number }>(
 const DEFAULT_EXPIRY_SECONDS = 300; // 5 dəqiqə
 
 serve(async (req) => {
+  // CORS OPTIONS sorğusunu işləyək
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+  
   try {
     const url = new URL(req.url);
-    const apiKey = url.searchParams.get('apikey');
-    const cacheKey = url.searchParams.get('cacheKey') || '';
-    const expirySeconds = parseInt(url.searchParams.get('expiry') || String(DEFAULT_EXPIRY_SECONDS), 10);
-    const bypassCache = url.searchParams.get('bypassCache') === 'true';
+    const cacheKey = req.headers.get('x-cache-key') || '';
+    const expirySeconds = parseInt(req.headers.get('x-cache-expiry') || String(DEFAULT_EXPIRY_SECONDS), 10);
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true';
     
-    // API açarı tələb olunur
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'API açarı tələb olunur' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    // API açarı əldə edək
+    const authHeader = req.headers.get('Authorization') || '';
+    const apiKey = authHeader.replace('Bearer ', '');
     
     // Request body-ni əldə edək
     const requestBody = await req.json();
@@ -32,7 +39,7 @@ serve(async (req) => {
     if (!query) {
       return new Response(JSON.stringify({ error: 'Sorğu tələb olunur' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     
@@ -51,7 +58,7 @@ serve(async (req) => {
           source: 'cache',
           cachedAt: new Date(cachedItem.timestamp).toISOString()
         }), {
-          headers: { 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } else {
         // Vaxtı keçmiş keşi silin
@@ -123,7 +130,7 @@ serve(async (req) => {
       console.error('Sorğu yerinə yetirilən zaman xəta:', error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
     
@@ -141,13 +148,13 @@ serve(async (req) => {
       source: 'database',
       cachedAt: new Date(now).toISOString()
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Ümumi xəta:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });

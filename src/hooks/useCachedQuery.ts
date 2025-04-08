@@ -1,5 +1,5 @@
 
-import { QueryKey, UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { QueryKey, UseQueryOptions, useQuery, QueryClient } from '@tanstack/react-query';
 import { getCache, setCache, CacheConfig } from '@/utils/cacheUtils';
 
 /**
@@ -9,7 +9,7 @@ import { getCache, setCache, CacheConfig } from '@/utils/cacheUtils';
 export function useCachedQuery<TData = unknown, TError = unknown>(
   queryKey: QueryKey,
   queryFn: () => Promise<TData>,
-  options?: UseQueryOptions<TData, TError>,
+  options?: UseQueryOptions<TData, TError, TData, QueryKey>,
   cacheConfig?: CacheConfig
 ) {
   // Keş açarını yaradaq
@@ -47,7 +47,7 @@ export function useCachedQuery<TData = unknown, TError = unknown>(
  * Bütün keşlənmiş sorğular üçün React Query invalidasiya funksiyası hazırlayan utilit
  * @param queryClient - React Query client-i
  */
-export function createCacheInvalidator(queryClient: any) {
+export function createCacheInvalidator(queryClient: QueryClient) {
   return {
     /**
      * Xüsusi bir sorğunu invalidasiya edir

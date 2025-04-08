@@ -1,11 +1,11 @@
 
 import React, { createContext, useContext } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryKey } from '@tanstack/react-query';
 import { createCacheInvalidator } from '@/hooks/useCachedQuery';
 
 // Keş idarəsi üçün kontekst yaradaq
 type CacheContextType = {
-  invalidateQuery: (queryKey: string | string[]) => void;
+  invalidateQuery: (queryKey: QueryKey) => void;
   invalidateAll: () => void;
 };
 
@@ -31,7 +31,7 @@ export function AppQueryProvider({ children }: AppQueryProviderProps) {
         retry: 1,
         retryDelay: 1000,
         staleTime: 1000 * 60 * 5, // 5 dəqiqə
-        cacheTime: 1000 * 60 * 30, // 30 dəqiqə
+        gcTime: 1000 * 60 * 30, // 30 dəqiqə (əvvəlki cacheTime əvəzinə)
         refetchOnWindowFocus: false,
         refetchOnMount: true,
         refetchOnReconnect: true,

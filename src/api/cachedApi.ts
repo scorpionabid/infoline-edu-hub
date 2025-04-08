@@ -44,10 +44,10 @@ export async function fetchCached<T = any>(
         query,
         params: {}
       },
-      query: {
-        cacheKey,
-        expiry: expirySeconds,
-        bypassCache: bypassCache ? 'true' : 'false'
+      headers: {
+        'x-cache-key': cacheKey,
+        'x-cache-expiry': expirySeconds.toString(),
+        'x-bypass-cache': bypassCache ? 'true' : 'false'
       }
     });
     
@@ -56,13 +56,13 @@ export async function fetchCached<T = any>(
     }
     
     return response.data;
-  } catch (error) {
-    console.error('Keşlənmiş APİ sorğusu zamanı xəta:', error);
+  } catch (apiError) {
+    console.error('Keşlənmiş APİ sorğusu zamanı xəta:', apiError);
     
     // Edge Function xəta verərsə, birbaşa Supabase-ə sorğu göndərək
     console.log('Ehtiyat üsul: Birbaşa supabase sorğusu göndərilir');
     
-    let queryBuilder = supabase.from(query.table).select(query.select || '*', { count: 'exact' });
+    let queryBuilder = supabase.from(query.table).select(query.select || '*');
     
     // Filtrləri əlavə edək
     if (query.filters) {
@@ -106,18 +106,23 @@ export async function fetchCached<T = any>(
       queryBuilder = queryBuilder.range(query.offset, query.offset + (query.limit || 10) - 1);
     }
     
-    const { data, error, count } = await queryBuilder;
-    
-    if (error) {
-      throw error;
+    try {
+      const { data, error, count } = await queryBuilder;
+      
+      if (error) {
+        throw error;
+      }
+      
+      return {
+        data: data as T[],
+        count,
+        source: 'database',
+        cachedAt: new Date().toISOString()
+      };
+    } catch (dbError) {
+      console.error('Verilənlər bazası sorğusu zamanı xəta:', dbError);
+      throw dbError;
     }
-    
-    return {
-      data: data as T[],
-      count,
-      source: 'database',
-      cachedAt: new Date().toISOString()
-    };
   }
 }
 
