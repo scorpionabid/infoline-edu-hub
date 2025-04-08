@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import ColumnList from '@/components/columns/ColumnList';
 import AddColumnDialog from '@/components/columns/AddColumnDialog';
+import EditColumnDialog from '@/components/columns/EditColumnDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 import { Column } from '@/types/column';
 import { useColumns } from '@/hooks/useColumns';
