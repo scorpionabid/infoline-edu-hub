@@ -1,7 +1,6 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth, useRole } from "@/context/AuthContext";
+import { useAuth, useRole } from "@/context/auth";
 
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -40,11 +39,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
   
   if (!isAuthenticated) {
-    // Authenticate olmayan istifadəçiləri login səhifəsinə yönləndir və cari yolu saxla
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
-  // Əgər allowedRoles varsa və istifadəçinin rolu bu siyahıda deyilsə
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -69,7 +66,6 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
     );
   }
   
-  // Əgər istifadəçi daxil olubsa və route məhdudlaşdırılıbsa (məs. login səhifəsi), dashboard-a yönləndir
   if (isAuthenticated && restricted) {
     return <Navigate to="/dashboard" replace />;
   }

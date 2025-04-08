@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

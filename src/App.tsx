@@ -1,40 +1,35 @@
 
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AppRoutes } from './routes/AppRoutes';
-import { LanguageProvider } from './context/LanguageContext';
-import { AuthProvider } from './context/AuthContext';
-import { NotificationProvider } from './context/NotificationContext';
-import { Toaster } from './components/ui/toaster';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import './App.css';
+import { BrowserRouter } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { NotificationProvider } from '@/context/NotificationContext';
+import { AuthProvider } from '@/context/auth';
+import { AppRoutes } from '@/routes/AppRoutes';
+import { Toaster } from '@/components/ui/sonner';
 
 function App() {
-  // AppRoutes-dan yolu alaq
-  const routes = AppRoutes;
-  const router = createBrowserRouter(routes);
-  
-  // React Query üçün yeni QueryClient yaradaq
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: 1,
-        refetchOnWindowFocus: false,
-        staleTime: 1000 * 60 * 5, // 5 dəqiqə
-      },
-    },
-  });
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <RouterProvider router={router} />
-            <Toaster />
-          </NotificationProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <Routes>
+                {AppRoutes.map((route, index) => (
+                  <Route
+                    key={index}
+                    path={route.path}
+                    element={route.element}
+                  />
+                ))}
+              </Routes>
+              <Toaster position="top-right" closeButton richColors />
+            </NotificationProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 
