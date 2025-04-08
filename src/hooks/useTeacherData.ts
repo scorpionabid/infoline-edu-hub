@@ -6,8 +6,10 @@ import { fetchCached } from '@/api/cachedApi';
  * Müəllim məlumatlarını keşləyərək əldə etmək üçün hook
  */
 export function useTeacherData(schoolId?: string) {
+  const queryKey = ['teachers', schoolId];
+  
   return useCachedQuery(
-    ['teachers', schoolId], 
+    queryKey, 
     async () => {
       // Edge Function əsaslı keşləmə
       if (schoolId) {
@@ -37,6 +39,7 @@ export function useTeacherData(schoolId?: string) {
       return response.data;
     },
     {
+      queryKey,
       enabled: true,
       staleTime: 1000 * 60 * 5, // 5 dəqiqə ərzində məlumatın "təzə" sayılması
       gcTime: 1000 * 60 * 60, // 1 saat ərzində keşdə saxlanılması (əvvəlki cacheTime əvəzinə gcTime)

@@ -62,7 +62,7 @@ export async function fetchCached<T = any>(
     // Edge Function xəta verərsə, birbaşa Supabase-ə sorğu göndərək
     console.log('Ehtiyat üsul: Birbaşa supabase sorğusu göndərilir');
     
-    let queryBuilder = supabase.from(query.table).select(query.select || '*');
+    let queryBuilder = supabase.from(query.table as any).select(query.select || '*');
     
     // Filtrləri əlavə edək
     if (query.filters) {
@@ -119,7 +119,7 @@ export async function fetchCached<T = any>(
         source: 'database',
         cachedAt: new Date().toISOString()
       };
-    } catch (dbError) {
+    } catch (dbError: any) {
       console.error('Verilənlər bazası sorğusu zamanı xəta:', dbError);
       throw dbError;
     }
