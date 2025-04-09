@@ -99,6 +99,7 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
   try {
     // Əmin olaq ki, template.type ReportType tipindədir
     const reportType = template.type as ReportType;
+    const tagsArray = template.tags || [];
     
     // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
@@ -115,7 +116,7 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
         },
         status: 'active',
         created_by: template.createdBy,
-        tags: template.tags || []
+        tags: tagsArray
       }])
       .select()
       .single();
@@ -132,7 +133,7 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
       createdAt: data.created_at,
       status: 'published' as 'draft' | 'published' | 'archived',
       createdBy: data.created_by || '',
-      tags: Array.isArray(data.tags) ? data.tags : []
+      tags: [] // Əgər bazada tags saxlanmırsa, boş massiv qaytarırıq
     };
   } catch (error: any) {
     handleReportError(error, 'Hesabat şablonu yaradılarkən xəta baş verdi');
