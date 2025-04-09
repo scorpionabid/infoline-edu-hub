@@ -1,63 +1,54 @@
 
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Column, adaptSupabaseColumn } from '@/types/column';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { Column } from '@/types/column';
+import { useColumnsQuery } from './useColumnsQuery';
+import { useColumnFilters } from './useColumnFilters';
+import { useColumnMutations } from './useColumnMutations';
 
-const useColumns = (categoryId: string) => {
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export const useColumns = (categoryId?: string) => {
+  const {
+    data: columns = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useColumnsQuery(categoryId);
 
-  const getColumns = useCallback(async () => {
-    if (!categoryId) return;
+  const {
+    filters,
+    setSearchQuery,
+    setCategoryFilter,
+    setTypeFilter,
+    setStatusFilter,
+    applyFilters
+  } = useColumnFilters();
 
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('category_id', categoryId)
-        .order('order_index', { ascending: true });
+  const {
+    addColumn,
+    updateColumn,
+    deleteColumn
+  } = useColumnMutations();
 
-      if (error) throw error;
-
-      const adaptedColumns = (data || []).map(adaptSupabaseColumn);
-      setColumns(adaptedColumns);
-    } catch (error) {
-      console.error('Sütunları əldə edərkən xəta:', error);
-      toast.error('Sütunları yükləmək mümkün olmadı');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [categoryId]);
-
-  const deleteColumn = useCallback(async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('columns')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Sütun silindikdən sonra siyahını yeniləyirik
-      setColumns(prevColumns => 
-        prevColumns.filter(column => column.id !== id)
-      );
-
-      return true;
-    } catch (error) {
-      console.error('Sütunu silmək mümkün olmadı:', error);
-      return false;
-    }
-  }, []);
+  // Filterlənmiş sütunları alırıq
+  const filteredColumns = applyFilters(columns);
 
   return {
     columns,
+    filteredColumns,
     isLoading,
-    getColumns,
+    isError,
+    error,
+    refetch,
+    searchQuery: filters.searchQuery,
+    setSearchQuery,
+    categoryFilter: filters.categoryFilter,
+    setCategoryFilter,
+    typeFilter: filters.typeFilter,
+    setTypeFilter,
+    statusFilter: filters.statusFilter,
+    setStatusFilter,
+    addColumn,
+    updateColumn,
     deleteColumn
   };
 };
-
-export default useColumns;

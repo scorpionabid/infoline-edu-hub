@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,7 +9,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import AddColumnDialog from '@/components/columns/AddColumnDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
 import EditColumnDialog from '@/components/columns/EditColumnDialog';
-import { useColumns } from '@/hooks/useColumns';
+import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
 
@@ -29,7 +30,7 @@ const Columns: React.FC = () => {
 
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
-    columnId: '',
+    column: '',
     columnName: ''
   });
 
@@ -55,7 +56,7 @@ const Columns: React.FC = () => {
   const handleOpenDeleteDialog = (columnId: string, columnName: string) => {
     setDeleteDialog({
       isOpen: true,
-      columnId,
+      column: columnId,
       columnName
     });
   };
@@ -63,7 +64,7 @@ const Columns: React.FC = () => {
   const handleCloseDeleteDialog = () => {
     setDeleteDialog({
       isOpen: false,
-      columnId: '',
+      column: '',
       columnName: ''
     });
   };
@@ -176,7 +177,7 @@ const Columns: React.FC = () => {
           isOpen={deleteDialog.isOpen}
           onClose={handleCloseDeleteDialog}
           onConfirm={handleDeleteColumn}
-          columnId={deleteDialog.columnId}
+          column={deleteDialog.column}
           columnName={deleteDialog.columnName}
         />
       )}
