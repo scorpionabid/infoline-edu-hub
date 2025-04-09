@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Notification } from '@/types/notification';
-import { Form, FormStatus } from '@/types/form';
+import { Form } from '@/types/form';
 import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
 import { toast } from 'sonner';
 
@@ -20,6 +20,7 @@ const mockDashboardData: SchoolAdminDashboardData = {
     pending: 5,
     approved: 12,
     rejected: 2,
+    total: 20,
     dueSoon: 3,
     overdue: 1
   },
@@ -52,6 +53,7 @@ const mockDashboardData: SchoolAdminDashboardData = {
       title: 'Şagird statistikası',
       date: '2025-04-15',
       status: 'pending',
+      completionPercentage: 75,
       category: 'Təhsil statistikası'
     },
     {
@@ -59,6 +61,7 @@ const mockDashboardData: SchoolAdminDashboardData = {
       title: 'Müəllim heyəti',
       date: '2025-04-20',
       status: 'pending',
+      completionPercentage: 50,
       category: 'Kadr məlumatları'
     },
     {
@@ -66,10 +69,10 @@ const mockDashboardData: SchoolAdminDashboardData = {
       title: 'İnfrastruktur hesabatı',
       date: '2025-04-18',
       status: 'dueSoon',
+      completionPercentage: 30,
       category: 'İnfrastruktur'
     }
-  ],
-  categories: 8
+  ]
 };
 
 export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardReturn => {
@@ -152,6 +155,7 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardReturn => {
             title: `Form #${form.id.substring(0, 8)}`,
             date: new Date(form.created_at).toLocaleDateString(),
             status: form.status,
+            completionPercentage: 0, // Default olaraq 0 veririk
             category: form.category_id
           })) : [];
           
@@ -185,13 +189,13 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardReturn => {
               pending: pendingCount,
               approved: approvedCount,
               rejected: rejectedCount,
+              total: pendingCount + approvedCount + rejectedCount,
               dueSoon: 0, // Hələlik 0 verilir
               overdue: 0, // Hələlik 0 verilir
             },
             completionRate: 0, // Hələlik 0 verilir
             notifications: typedNotifications,
-            pendingForms: formItems,
-            categories: 0 // Hələlik 0 verilir
+            pendingForms: formItems
           });
         } catch (error) {
           console.error('Məlumatların alınmasında xəta:', error);

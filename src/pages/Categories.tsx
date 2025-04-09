@@ -18,8 +18,8 @@ import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
 import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
 import { supabase } from '@/integrations/supabase/client';
-import EmptyState from '@/components/common/EmptyState';
 import PageHeader from '@/components/layout/PageHeader';
+import EmptyState from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -66,7 +66,7 @@ const Categories: React.FC = () => {
         query = query.eq('status', filter.status as CategoryStatus);
       }
 
-      if (filter.assignment !== 'all') {
+      if (filter.assignment !== 'all' && filter.assignment !== '') {
         query = query.eq('assignment', filter.assignment);
       }
 
@@ -123,14 +123,21 @@ const Categories: React.FC = () => {
     setAddDialog({ isOpen: false });
   };
 
-  const handleAddCategory = async (newCategory: Partial<Category>): Promise<boolean> => {
+  const handleAddCategory = async (newCategory: Partial<Category> & { name: string }): Promise<boolean> => {
     try {
-      // Əlavə edəcəyimiz kateqoriya üçün status, created_at və updated_at əlavə edirik
+      const now = new Date().toISOString();
+      
+      // Category obyektini yaradaq
       const categoryToAdd = {
-        ...newCategory,
-        status: newCategory.status || 'active' as CategoryStatus,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        name: newCategory.name,
+        description: newCategory.description || '',
+        assignment: newCategory.assignment || 'all',
+        status: (newCategory.status as CategoryStatus) || 'active',
+        deadline: newCategory.deadline,
+        priority: newCategory.priority || 0,
+        created_at: now,
+        updated_at: now,
+        archived: false
       };
       
       const { error } = await supabase
@@ -245,7 +252,7 @@ const Categories: React.FC = () => {
           <Label htmlFor="assignment">{t('assignment')}:</Label>
           <Select 
             value={filter.assignment} 
-            onValueChange={(value) => handleFilterChange({ assignment: value as 'sectors' | 'all' })}
+            onValueChange={(value) => handleFilterChange({ assignment: value as 'sectors' | 'all' | '' })}
           >
             <SelectTrigger id="assignment">
               <SelectValue placeholder={t('all')} />
@@ -259,7 +266,7 @@ const Categories: React.FC = () => {
           <Label htmlFor="deadline">{t('deadline')}:</Label>
           <Select 
             value={filter.deadline} 
-            onValueChange={(value) => handleFilterChange({ deadline: value as 'all' | 'upcoming' | 'past' })}
+            onValueChange={(value) => handleFilterChange({ deadline: value as 'all' | 'upcoming' | 'past' | '' })}
           >
             <SelectTrigger id="deadline">
               <SelectValue placeholder={t('all')} />

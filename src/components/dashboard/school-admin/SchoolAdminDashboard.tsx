@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
-import { FormStatus } from '@/types/form';
-import { SchoolAdminDashboardData } from '@/hooks/useSchoolAdminDashboard';
+import { FormStatus } from '@/types/category';
+import { SchoolAdminDashboardData } from '@/types/dashboard';
 import NotificationsCard from '../NotificationsCard';
 
 interface SchoolAdminDashboardProps {

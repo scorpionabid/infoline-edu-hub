@@ -5,10 +5,10 @@ import { Notification } from '@/types/notification';
 import NotificationsCard from './NotificationsCard';
 import StatsRow from './StatsRow';
 import StatusCards from './StatusCards';
-import { AdminDashboardData } from '@/types/dashboard';
+import { SuperAdminDashboardData } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
-  data: AdminDashboardData;
+  data: SuperAdminDashboardData;
 }
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {

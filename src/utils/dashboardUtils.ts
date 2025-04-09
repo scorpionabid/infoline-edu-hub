@@ -1,140 +1,277 @@
 
-import { v4 as uuidv4 } from 'uuid';
+import { 
+  SuperAdminDashboardData, 
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData, 
+  SchoolAdminDashboardData,
+  ChartData,
+  StatsItem
+} from '@/types/dashboard';
 import { Notification } from '@/types/notification';
 
-// Mock bildiriş yaratma funksiyası
-export const createMockNotification = (type: string, title: string, message: string, isRead = false): Notification => {
-  return {
-    id: uuidv4(),
-    title,
-    message,
-    type: type as any,
-    isRead,
-    createdAt: new Date().toISOString(),
-    userId: 'user-1', // Mock user ID
-    priority: 'normal'
-  };
+// Mock bildiriş data generasiyası
+const generateMockNotifications = (): Notification[] => {
+  return [
+    {
+      id: '1',
+      title: 'Yeni kateqoriya əlavə edildi',
+      message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
+      type: 'category',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      userId: 'user-1',
+      priority: 'normal'
+    },
+    {
+      id: '2',
+      title: 'Son tarix bildirişi',
+      message: 'Müəllim heyəti məlumatlarının doldurulma vaxtı sabah bitir',
+      type: 'deadline',
+      isRead: true,
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      userId: 'user-1',
+      priority: 'high'
+    },
+    {
+      id: '3',
+      title: 'Məlumat təsdiqi',
+      message: 'Şagird statistikası təsdiq edildi',
+      type: 'approval',
+      isRead: false,
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+      userId: 'user-1',
+      priority: 'normal'
+    }
+  ];
 };
 
-// SuperAdmin üçün mock dashboard məlumatlarını generasiya et
-export const generateSuperAdminDashboardData = () => {
+// Mock statistika generasiyası
+const generateMockStats = (): StatsItem[] => {
+  return [
+    {
+      id: '1',
+      title: 'Ümumi məlumat doldurulma faizi',
+      value: 78,
+      change: 12,
+      changeType: 'increase'
+    },
+    {
+      id: '2',
+      title: 'Bu ay əlavə edilən məlumatlar',
+      value: 156,
+      change: 8,
+      changeType: 'increase'
+    },
+    {
+      id: '3',
+      title: 'Keçən aya nəzərən dəyişiklik',
+      value: 23,
+      change: 5,
+      changeType: 'decrease'
+    },
+    {
+      id: '4',
+      title: 'Formların ortalama tamamlanma müddəti',
+      value: 2.4,
+      change: 0,
+      changeType: 'neutral'
+    }
+  ];
+};
+
+// SuperAdmin üçün mock data generasiyası
+export const generateSuperAdminData = (): SuperAdminDashboardData => {
   return {
     regions: 12,
     sectors: 48,
-    schools: 630,
-    users: 750,
-    completionRate: 72,
-    pendingApprovals: 25,
-    notifications: [
-      createMockNotification('system', 'Sistem yeniləndi', 'Sistem v2.1.0 versiyasına yeniləndi'),
-      createMockNotification('approval', 'Təsdiq tələbi', '12 məktəbin məlumatları təsdiq gözləyir'),
-      createMockNotification('category', 'Yeni kateqoriya', 'Tədris planı kateqoriyası əlavə edildi')
-    ],
-    stats: [
-      { id: '1', title: 'Ümumi regionlar', value: 12, change: 0, changeType: 'neutral' },
-      { id: '2', title: 'Ümumi sektorlar', value: 48, change: 2, changeType: 'increase' },
-      { id: '3', title: 'Ümumi məktəblər', value: 630, change: 15, changeType: 'increase' },
-      { id: '4', title: 'Aktiv istifadəçilər', value: 750, change: 50, changeType: 'increase' }
+    schools: 645,
+    users: 872,
+    completionRate: 76,
+    pendingApprovals: 34,
+    notifications: generateMockNotifications(),
+    stats: generateMockStats(),
+    formsByStatus: {
+      pending: 78,
+      approved: 542,
+      rejected: 21
+    },
+    regionStats: [
+      {
+        id: '1',
+        name: 'Bakı',
+        sectorCount: 12,
+        schoolCount: 185,
+        completionRate: 82
+      },
+      {
+        id: '2',
+        name: 'Sumqayıt',
+        sectorCount: 8,
+        schoolCount: 76,
+        completionRate: 74
+      },
+      {
+        id: '3',
+        name: 'Gəncə',
+        sectorCount: 6,
+        schoolCount: 54,
+        completionRate: 68
+      }
     ]
   };
 };
 
-// RegionAdmin üçün mock dashboard məlumatlarını generasiya et
-export const generateRegionAdminDashboardData = () => {
+// RegionAdmin üçün mock data generasiyası
+export const generateRegionAdminData = (): RegionAdminDashboardData => {
   return {
     sectors: 8,
     schools: 120,
-    users: 150,
-    completionRate: 68,
-    pendingApprovals: 15,
+    users: 145,
+    completionRate: 72,
+    pendingApprovals: 18,
     pendingSchools: 12,
     approvedSchools: 98,
     rejectedSchools: 10,
-    notifications: [
-      createMockNotification('approval', 'Təsdiq tələbi', '8 məktəbin məlumatları təsdiq gözləyir'),
-      createMockNotification('deadline', 'Son tarix yaxınlaşır', 'Şagird statistikası formu üçün son tarix: 2025-04-15')
+    notifications: generateMockNotifications(),
+    stats: generateMockStats(),
+    sectorCompletions: [
+      {
+        id: '1',
+        name: 'Xətai',
+        schoolCount: 24,
+        completionPercentage: 85
+      },
+      {
+        id: '2',
+        name: 'Yasamal',
+        schoolCount: 18,
+        completionPercentage: 78
+      },
+      {
+        id: '3',
+        name: 'Nəsimi',
+        schoolCount: 21,
+        completionPercentage: 65
+      }
     ]
   };
 };
 
-// SectorAdmin üçün mock dashboard məlumatlarını generasiya et
-export const generateSectorAdminDashboardData = () => {
+// SectorAdmin üçün mock data generasiyası
+export const generateSectorAdminData = (): SectorAdminDashboardData => {
   return {
-    schools: 25,
-    completionRate: 75,
-    pendingApprovals: 8,
-    pendingSchools: 6,
-    approvedSchools: 18,
-    rejectedSchools: 1,
-    notifications: [
-      createMockNotification('deadline', 'Son tarix yaxınlaşır', '3 məktəb üçün son tarix yaxınlaşır'),
-      createMockNotification('approval', 'Təsdiq tələbi', '6 məktəbin məlumatları təsdiq gözləyir')
+    schools: 24,
+    completionRate: 68,
+    pendingApprovals: 12,
+    pendingSchools: 8,
+    approvedSchools: 14,
+    rejectedSchools: 2,
+    notifications: generateMockNotifications(),
+    stats: generateMockStats(),
+    schoolList: [
+      {
+        id: '1',
+        name: '20 nömrəli məktəb',
+        completionPercentage: 92
+      },
+      {
+        id: '2',
+        name: '45 nömrəli məktəb',
+        completionPercentage: 76
+      },
+      {
+        id: '3',
+        name: '158 nömrəli məktəb',
+        completionPercentage: 54
+      }
     ]
   };
 };
 
-// SchoolAdmin üçün mock dashboard məlumatlarını generasiya et
-export const generateSchoolAdminDashboardData = () => {
+// SchoolAdmin üçün mock data generasiyası
+export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
   return {
     forms: {
       pending: 5,
       approved: 12,
       rejected: 2,
+      total: 19,
       dueSoon: 3,
       overdue: 1
     },
     completionRate: 68,
-    categories: 8,
-    notifications: [
-      createMockNotification('category', 'Yeni kateqoriya', 'Tədris planı kateqoriyası əlavə edildi'),
-      createMockNotification('deadline', 'Son tarix yaxınlaşır', 'Şagird statistikası formu üçün son tarix: 2025-04-15')
-    ],
+    notifications: generateMockNotifications(),
     pendingForms: [
-      { id: 'form-1', title: 'Şagird statistikası', status: 'pending', date: '2025-04-15', category: 'Təhsil' },
-      { id: 'form-2', title: 'Müəllim heyəti', status: 'pending', date: '2025-04-20', category: 'Kadrlar' }
+      {
+        id: 'form-1',
+        title: 'Şagird statistikası',
+        date: '2025-04-15',
+        status: 'pending',
+        completionPercentage: 75
+      },
+      {
+        id: 'form-2',
+        title: 'Müəllim heyəti',
+        date: '2025-04-20',
+        status: 'pending',
+        completionPercentage: 50
+      },
+      {
+        id: 'form-3',
+        title: 'İnfrastruktur hesabatı',
+        date: '2025-04-18',
+        status: 'dueSoon',
+        completionPercentage: 30
+      }
     ]
   };
 };
 
-// İstifadəçi roluna əsasən müvafiq dashboard məlumatlarını qaytarır
-export const generateDashboardDataByRole = (role: string) => {
-  switch (role.toLowerCase()) {
+// İstifadəçi roluna görə mock data generasiyası
+export const generateDashboardDataByRole = (role: string): any => {
+  switch (role) {
     case 'superadmin':
-      return generateSuperAdminDashboardData();
+      return generateSuperAdminData();
     case 'regionadmin':
-      return generateRegionAdminDashboardData();
+      return generateRegionAdminData();
     case 'sectoradmin':
-      return generateSectorAdminDashboardData();
+      return generateSectorAdminData();
     case 'schooladmin':
     default:
-      return generateSchoolAdminDashboardData();
+      return generateSchoolAdminData();
   }
 };
 
-// Mock qrafik məlumatlarını generasiya et
-export const generateMockChartData = () => {
+// Chart data generasiyası üçün funksiya
+export const generateMockChartData = (): ChartData => {
+  const activityData = [
+    { name: 'Yan', value: 34 },
+    { name: 'Fev', value: 45 },
+    { name: 'Mar', value: 58 },
+    { name: 'Apr', value: 42 },
+    { name: 'May', value: 68 },
+    { name: 'İyn', value: 72 }
+  ];
+
+  const regionSchoolsData = [
+    { name: 'Bakı', value: 185 },
+    { name: 'Sumqayıt', value: 76 },
+    { name: 'Gəncə', value: 54 },
+    { name: 'Lənkəran', value: 42 },
+    { name: 'Şəki', value: 38 }
+  ];
+
+  const categoryCompletionData = [
+    { name: 'Şagird statistikası', completed: 85 },
+    { name: 'Müəllim heyəti', completed: 72 },
+    { name: 'İnfrastruktur', completed: 64 },
+    { name: 'Tədris proqramı', completed: 92 },
+    { name: 'Maliyyə hesabatları', completed: 58 }
+  ];
+
   return {
-    activityData: [
-      { name: 'Login', value: 120 },
-      { name: 'Form doldurma', value: 85 },
-      { name: 'Məlumat əlavə etmə', value: 65 },
-      { name: 'Hesabat', value: 45 },
-      { name: 'İdxal/İxrac', value: 30 }
-    ],
-    regionSchoolsData: [
-      { name: 'Bakı', value: 150 },
-      { name: 'Sumqayıt', value: 80 },
-      { name: 'Gəncə', value: 70 },
-      { name: 'Mingəçevir', value: 40 },
-      { name: 'Şəki', value: 35 },
-      { name: 'Quba', value: 30 }
-    ],
-    categoryCompletionData: [
-      { name: 'Şagird statistikası', completed: 85 },
-      { name: 'Müəllim heyəti', completed: 75 },
-      { name: 'İnfrastruktur', completed: 65 },
-      { name: 'Maddi-texniki baza', completed: 55 },
-      { name: 'Maliyyə', completed: 45 }
-    ]
+    activityData,
+    regionSchoolsData,
+    categoryCompletionData
   };
 };

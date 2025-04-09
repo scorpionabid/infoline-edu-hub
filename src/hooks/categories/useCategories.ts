@@ -18,8 +18,12 @@ const useCategories = () => {
 
       if (error) throw error;
 
-      const adaptedCategories = (data || []).map(adaptSupabaseCategory);
-      setCategories(adaptedCategories);
+      if (data && data.length > 0) {
+        const adaptedCategories = data.map(item => adaptSupabaseCategory(item));
+        setCategories(adaptedCategories);
+      } else {
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Kateqoriyaları əldə edərkən xəta:', error);
       toast.error('Kateqoriyaları yükləmək mümkün olmadı');

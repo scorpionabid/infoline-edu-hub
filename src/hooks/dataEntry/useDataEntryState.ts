@@ -57,7 +57,7 @@ export const useDataEntryState = ({
           id: category.id,
           name: category.name,
           description: category.description || '',
-          assignment: category.assignment || 'all',
+          assignment: category.assignment as 'sectors' | 'all',
           deadline: category.deadline,
           status: category.status,
           priority: category.priority || 0,

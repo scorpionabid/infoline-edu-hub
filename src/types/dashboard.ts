@@ -20,6 +20,7 @@ export interface FormItem {
   date: string;
   status: string;
   completionPercentage: number;
+  category?: string; // Əlavə edək
 }
 
 export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft';
@@ -30,13 +31,15 @@ export interface SchoolAdminDashboardData {
     approved: number;
     rejected: number;
     total: number;
+    dueSoon?: number; // Əlavə edildi
+    overdue?: number; // Əlavə edildi
   };
   notifications: Notification[];
   completionRate: number;
   pendingForms: FormItem[];
-  recentlySubmitted: FormItem[];
-  recentlyApproved: FormItem[];
-  formsByStatus: {
+  recentlySubmitted?: FormItem[];
+  recentlyApproved?: FormItem[];
+  formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;
