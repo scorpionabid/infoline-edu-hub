@@ -86,22 +86,15 @@ const SchoolColumnTable: React.FC = () => {
     }
   };
 
-  const handleStatusFilterChange = (status: 'pending' | 'approved' | 'rejected', checked: boolean) => {
-    setStatusFilter({
-      ...statusFilter,
-      [status]: checked
-    });
+  const handleStatusChange = (newStatus: 'all' | 'pending' | 'approved' | 'rejected') => {
+    setStatusFilter(newStatus);
   };
 
   const resetFilters = () => {
     setCategoryId(undefined);
     setRegionId(undefined);
     setSectorId(undefined);
-    setStatusFilter({
-      pending: true,
-      approved: true,
-      rejected: false
-    });
+    setStatusFilter('all');
     setSearchTerm('');
   };
 
@@ -257,24 +250,24 @@ const SchoolColumnTable: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="pending" 
-                      checked={statusFilter.pending}
-                      onCheckedChange={(checked) => handleStatusFilterChange('pending', checked as boolean)}
+                      checked={statusFilter === 'pending'}
+                      onCheckedChange={() => handleStatusChange('pending')}
                     />
                     <label htmlFor="pending" className="text-sm">{t('pending')}</label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="approved" 
-                      checked={statusFilter.approved}
-                      onCheckedChange={(checked) => handleStatusFilterChange('approved', checked as boolean)}
+                      checked={statusFilter === 'approved'}
+                      onCheckedChange={() => handleStatusChange('approved')}
                     />
                     <label htmlFor="approved" className="text-sm">{t('approved')}</label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="rejected" 
-                      checked={statusFilter.rejected}
-                      onCheckedChange={(checked) => handleStatusFilterChange('rejected', checked as boolean)}
+                      checked={statusFilter === 'rejected'}
+                      onCheckedChange={() => handleStatusChange('rejected')}
                     />
                     <label htmlFor="rejected" className="text-sm">{t('rejected')}</label>
                   </div>

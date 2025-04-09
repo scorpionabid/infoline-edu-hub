@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useLanguage } from '@/context/LanguageContext';
@@ -14,7 +14,7 @@ import StatusIndicators from '@/components/dataEntry/StatusIndicators';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Save, CheckCircle, AlertCircle } from 'lucide-react';
-import { DataEntryDialogs } from '@/components/dataEntry/DataEntryDialogs';
+import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
 
 const DataEntry: React.FC = () => {
   const { t } = useLanguage();
@@ -23,31 +23,97 @@ const DataEntry: React.FC = () => {
   const [activeTab, setActiveTab] = useState('entry');
   
   const { categories, isLoading: categoriesLoading } = useCategories();
+  const [dialogState, setDialogState] = useState({
+    isSubmitDialogOpen: false,
+    isHelpDialogOpen: false,
+    isRejectionDialogOpen: false,
+    isApprovalDialogOpen: false
+  });
+  
   const {
-    category,
-    columns,
-    status,
-    completionPercentage,
-    saveStatus,
-    handleSave,
-    handleApprove,
-    showRejectionDialog,
-    handleSubmit,
-    canSubmit,
-    errorMessage,
-    successMessage,
+    categories: dataEntryCategories,
+    currentCategoryIndex,
+    formData,
+    isAutoSaving,
     isSubmitting,
-    dialogsState,
-    closeDialogs,
-    handleDialogConfirm,
+    isLoading,
+    errors,
+    saveForm,
+    submitForApproval,
+    downloadExcelTemplate,
+    uploadExcelData
   } = useDataEntry(categoryId);
+  
+  // Aktiv kateqoriyanı hesablayırıq
+  const currentCategory = useMemo(() => {
+    if (dataEntryCategories && dataEntryCategories.length > 0) {
+      return dataEntryCategories[currentCategoryIndex];
+    }
+    return null;
+  }, [dataEntryCategories, currentCategoryIndex]);
+  
+  // Kateqoriya statusu və tamamlama faizini hesablayırıq
+  const status = useMemo(() => {
+    if (!currentCategory) return 'pending';
+    const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
+    return entry?.approvalStatus || 'pending';
+  }, [currentCategory, formData.entries]);
+  
+  const completionPercentage = useMemo(() => {
+    if (!currentCategory) return 0;
+    const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
+    return entry?.completionPercentage || 0;
+  }, [currentCategory, formData.entries]);
+  
+  // Göstərilən kateqoriyanın sütunları
+  const columns = useMemo(() => {
+    return currentCategory?.columns || [];
+  }, [currentCategory]);
+  
+  // Dəyişiklikləri saxlama
+  const handleSave = () => {
+    saveForm();
+  };
+  
+  // Təsdiq üçün göndərmə dialoqu
+  const handleSubmitClick = () => {
+    setDialogState(prev => ({...prev, isSubmitDialogOpen: true}));
+  };
+  
+  // Rədd etmə dialoqu
+  const showRejectionDialog = () => {
+    setDialogState(prev => ({...prev, isRejectionDialogOpen: true}));
+  };
+  
+  // Təsdiq dialoqu
+  const handleApprove = () => {
+    setDialogState(prev => ({...prev, isApprovalDialogOpen: true}));
+  };
+  
+  // Dialogların bağlanması
+  const closeDialogs = () => {
+    setDialogState({
+      isSubmitDialogOpen: false,
+      isHelpDialogOpen: false,
+      isRejectionDialogOpen: false,
+      isApprovalDialogOpen: false
+    });
+  };
+  
+  // Dialog təsdiqi
+  const handleDialogConfirm = (type: string) => {
+    if (type === 'submit') {
+      submitForApproval();
+    }
+    closeDialogs();
+  };
   
   // Əgər kateqoriya yoxdursa və yükləmə bitibsə, kateqoriyalar səhifəsinə yönləndir
   useEffect(() => {
-    if (!categoriesLoading && categories.length > 0 && !category) {
+    if (!categoriesLoading && categories.length > 0 && !currentCategory) {
       navigate('/categories');
     }
-  }, [category, categories, categoriesLoading, navigate]);
+  }, [currentCategory, categories, categoriesLoading, navigate]);
   
   const getHeaderAction = () => {
     if (status === 'approved') {
@@ -73,15 +139,15 @@ const DataEntry: React.FC = () => {
         <Button 
           variant="outline" 
           onClick={handleSave} 
-          disabled={isSubmitting || saveStatus === 'saving'}
+          disabled={isSubmitting || isAutoSaving}
         >
           <Save className="h-4 w-4 mr-2" />
-          {saveStatus === 'saving' ? t('saving') : t('save')}
+          {isAutoSaving ? t('saving') : t('save')}
         </Button>
         
         <Button 
-          onClick={handleSubmit} 
-          disabled={!canSubmit || isSubmitting}
+          onClick={handleSubmitClick} 
+          disabled={completionPercentage < 100 || isSubmitting}
         >
           <CheckCircle className="h-4 w-4 mr-2" />
           {isSubmitting ? t('submitting') : t('submit')}
@@ -90,7 +156,7 @@ const DataEntry: React.FC = () => {
     );
   };
   
-  if (categoriesLoading || !category) {
+  if (categoriesLoading || !currentCategory) {
     return (
       <SidebarLayout>
         <div className="flex items-center justify-center h-[60vh]">
@@ -107,8 +173,8 @@ const DataEntry: React.FC = () => {
     <SidebarLayout>
       <div className="pb-6">
         <PageHeader
-          title={category?.name || t('dataEntry')}
-          description={category?.description || t('dataEntryDescription')}
+          title={currentCategory?.name || t('dataEntry')}
+          description={currentCategory?.description || t('dataEntryDescription')}
         >
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => navigate('/categories')}>
@@ -124,9 +190,12 @@ const DataEntry: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <StatusIndicators 
                 status={status}
-                completionPercentage={completionPercentage}
+                errors={errors}
               />
-              <ExcelActions categoryId={category.id} />
+              <ExcelActions 
+                onDownloadTemplate={() => downloadExcelTemplate(currentCategory.id)}
+                onUploadData={(file) => uploadExcelData(file, currentCategory.id)}
+              />
             </div>
             
             <div className="bg-card rounded-lg border shadow-sm">
@@ -142,16 +211,16 @@ const DataEntry: React.FC = () => {
                 
                 <TabsContent value="entry" className="p-6">
                   <DataEntryForm 
-                    columns={columns}
-                    category={category as Category}
-                    status={status}
+                    initialCategoryId={categoryId}
+                    statusFilter={status}
+                    onDataChanged={handleSave}
                   />
                 </TabsContent>
                 
                 <TabsContent value="progress" className="p-6">
                   <DataEntryProgress 
-                    columns={columns}
-                    completionPercentage={completionPercentage}
+                    percentage={completionPercentage}
+                    total={columns.length}
                   />
                 </TabsContent>
               </Tabs>
@@ -162,7 +231,7 @@ const DataEntry: React.FC = () => {
             {/* Burada kateqoriya haqqında əlavə məlumatlar və köməkçi elementlər ola bilər */}
             <div className="bg-card rounded-lg border shadow-sm p-6">
               <h3 className="font-medium text-lg mb-3">{t('aboutCategory')}</h3>
-              <p className="text-muted-foreground">{category.description}</p>
+              <p className="text-muted-foreground">{currentCategory.description}</p>
               
               {/* Kateqoriya məlumatları */}
               <div className="mt-4 space-y-2">
@@ -187,7 +256,7 @@ const DataEntry: React.FC = () => {
         
         {/* Dialoglar: Təsdiq, Rədd etmə, Xəbərdarlıq və s. */}
         <DataEntryDialogs 
-          state={dialogsState}
+          state={dialogState}
           onClose={closeDialogs}
           onConfirm={handleDialogConfirm}
         />

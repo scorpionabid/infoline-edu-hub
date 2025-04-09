@@ -11,32 +11,42 @@ import {
 import { Button } from '@/components/ui/button';
 import { useLanguageSafe } from '@/context/LanguageContext';
 
-export interface DataEntryDialogsProps {
+export interface DialogsState {
   isSubmitDialogOpen: boolean;
-  setIsSubmitDialogOpen: (open: boolean) => void;
   isHelpDialogOpen: boolean;
-  setIsHelpDialogOpen: (open: boolean) => void;
-  submitForApproval: () => void;
+  isRejectionDialogOpen: boolean;
+  isApprovalDialogOpen: boolean;
 }
 
-const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
-  isSubmitDialogOpen,
-  setIsSubmitDialogOpen,
-  isHelpDialogOpen,
-  setIsHelpDialogOpen,
-  submitForApproval
+export interface DataEntryDialogsProps {
+  state: DialogsState;
+  onClose: () => void;
+  onConfirm: (type: string) => void;
+}
+
+export const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
+  state,
+  onClose,
+  onConfirm
 }) => {
   const { t } = useLanguageSafe();
   
   const handleSubmitConfirm = () => {
-    submitForApproval();
-    setIsSubmitDialogOpen(false);
+    onConfirm('submit');
+  };
+  
+  const handleApprovalConfirm = () => {
+    onConfirm('approve');
+  };
+  
+  const handleRejectionConfirm = () => {
+    onConfirm('reject');
   };
   
   return (
     <>
       {/* Submit Confirmation Dialog */}
-      <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+      <Dialog open={state.isSubmitDialogOpen} onOpenChange={() => onClose()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('submitForApproval')}</DialogTitle>
@@ -45,7 +55,7 @@ const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)}>
+            <Button variant="outline" onClick={() => onClose()}>
               {t('cancel')}
             </Button>
             <Button onClick={handleSubmitConfirm}>
@@ -56,7 +66,7 @@ const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
       </Dialog>
       
       {/* Help Dialog */}
-      <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
+      <Dialog open={state.isHelpDialogOpen} onOpenChange={() => onClose()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('aboutDataEntry')}</DialogTitle>
@@ -106,8 +116,48 @@ const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
             </li>
           </ul>
           <DialogFooter>
-            <Button onClick={() => setIsHelpDialogOpen(false)}>
+            <Button onClick={() => onClose()}>
               {t('understood')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Approval Dialog */}
+      <Dialog open={state.isApprovalDialogOpen} onOpenChange={() => onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('approveData')}</DialogTitle>
+            <DialogDescription>
+              {t('approvalWarning')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onClose()}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={handleApprovalConfirm} className="bg-green-600 hover:bg-green-700">
+              {t('approve')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Rejection Dialog */}
+      <Dialog open={state.isRejectionDialogOpen} onOpenChange={() => onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('rejectData')}</DialogTitle>
+            <DialogDescription>
+              {t('rejectionWarning')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onClose()}>
+              {t('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleRejectionConfirm}>
+              {t('reject')}
             </Button>
           </DialogFooter>
         </DialogContent>

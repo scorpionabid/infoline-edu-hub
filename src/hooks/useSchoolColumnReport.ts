@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { SchoolColumnData, ExportOptions } from '@/types/report';
-import { fetchSchoolColumnData } from '@/services/reportService';
+import { SchoolColumnData, ExportOptions, StatusFilterOptions } from '@/types/report';
+import { fetchSchoolColumnData, exportDataToExcel } from '@/services/reportService';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -12,6 +12,8 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | undefined>(initialCategoryId);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [regionId, setRegionId] = useState<string | undefined>(undefined);
+  const [sectorId, setSectorId] = useState<string | undefined>(undefined);
   
   const loadData = useCallback(async () => {
     if (!categoryId) return;
@@ -20,7 +22,7 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
     setError(null);
     
     try {
-      const reportData = await fetchSchoolColumnData(categoryId);
+      const reportData = await fetchSchoolColumnData(categoryId, regionId, sectorId);
       setData(reportData);
     } catch (err: any) {
       setError(err.message || t('errorLoadingData'));
@@ -28,7 +30,7 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [categoryId, t]);
+  }, [categoryId, regionId, sectorId, t]);
   
   const exportData = useCallback(async (options?: ExportOptions) => {
     if (!categoryId || data.length === 0) {
@@ -36,21 +38,28 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
       return null;
     }
     
-    // Eksport funksiyası - daha sonra tamamlanacaq
     try {
+      const url = await exportDataToExcel(data, options);
       toast.success(t('exportSuccess'));
-      return 'mock-url.xlsx';
+      return url;
     } catch (err) {
       toast.error(t('exportError'));
       return null;
     }
   }, [categoryId, data, t]);
   
+  const exportToExcel = useCallback(() => {
+    exportData({
+      fileName: `school-data-${categoryId}`,
+      includeStatus: true
+    });
+  }, [exportData, categoryId]);
+  
   useEffect(() => {
     if (categoryId) {
       loadData();
     }
-  }, [categoryId, loadData]);
+  }, [categoryId, regionId, sectorId, loadData]);
   
   const filteredData = useCallback(() => {
     if (statusFilter === 'all') return data;
@@ -66,7 +75,12 @@ export const useSchoolColumnReport = (initialCategoryId?: string) => {
     setCategoryId,
     statusFilter,
     setStatusFilter,
+    regionId,
+    setRegionId,
+    sectorId,
+    setSectorId,
     loadData,
-    exportData
+    exportData,
+    exportToExcel
   };
 };
