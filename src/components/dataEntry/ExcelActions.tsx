@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileSpreadsheet, Upload } from 'lucide-react';
+import { Loader2, FileDown, Upload } from 'lucide-react';
 import { useLanguageSafe } from '@/context/LanguageContext';
 
 export interface ExcelActionsProps {
@@ -53,7 +53,7 @@ const ExcelActions: React.FC<ExcelActionsProps> = ({ onDownload, onUpload }) => 
         {isDownloading ? (
           <Loader2 className="h-4 w-4 mr-1 animate-spin" />
         ) : (
-          <FileSpreadsheet className="h-4 w-4 mr-1" />
+          <FileDown className="h-4 w-4 mr-1" />
         )}
         {t('excelTemplate')}
       </Button>

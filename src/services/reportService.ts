@@ -40,7 +40,7 @@ const mapReportToDbReport = (report: Partial<Report>) => {
     content: report.content || {},
     filters: report.filters || {},
     created_by: report.createdBy,
-    created_at: report.createdAt || report.created || report.dateCreated,
+    created_at: report.createdAt || report.created || report.dateCreated || new Date().toISOString(),
     updated_at: report.updatedAt || report.lastUpdated || new Date().toISOString(),
     is_template: report.isTemplate || false,
     shared_with: report.sharedWith || [],

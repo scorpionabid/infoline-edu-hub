@@ -13,7 +13,7 @@ import ExcelActions from '@/components/dataEntry/ExcelActions';
 import StatusIndicators from '@/components/dataEntry/StatusIndicators';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Save, CheckCircle, AlertCircle, Upload, FileDown } from 'lucide-react';
 import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
 
 // Type for validation errors
@@ -196,7 +196,7 @@ const DataEntry: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <StatusIndicators 
                 status={status}
-                errors={errors}
+                errors={errors as ColumnValidationError[]}
               />
               <div className="flex space-x-2">
                 <Button 
@@ -204,7 +204,7 @@ const DataEntry: React.FC = () => {
                   size="sm"
                   onClick={() => downloadExcelTemplate(currentCategory.id)}
                 >
-                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  <FileDown className="h-4 w-4 mr-1" />
                   {t('excelTemplate')}
                 </Button>
                 
