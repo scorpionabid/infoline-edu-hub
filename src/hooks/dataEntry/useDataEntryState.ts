@@ -4,6 +4,7 @@ import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryStatus } from '@/types/category';
 
 interface UseDataEntryStateProps {
   initialCategoryId?: string;
@@ -59,7 +60,7 @@ export const useDataEntryState = ({
           description: category.description || '',
           assignment: category.assignment as 'sectors' | 'all',
           deadline: category.deadline,
-          status: category.status,
+          status: category.status as CategoryStatus,
           priority: category.priority || 0,
           created_at: category.created_at,
           updated_at: category.updated_at,

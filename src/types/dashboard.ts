@@ -10,8 +10,9 @@ export interface StatsItem {
 }
 
 export interface ChartData {
-  name: string;
-  value: number;
+  activityData: Array<{ name: string; value: number }>;
+  regionSchoolsData: Array<{ name: string; value: number }>;
+  categoryCompletionData: Array<{ name: string; completed: number }>;
 }
 
 export interface FormItem {
@@ -20,10 +21,10 @@ export interface FormItem {
   date: string;
   status: string;
   completionPercentage: number;
-  category?: string; // Əlavə edək
+  category?: string; // Əlavə edildi
 }
 
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'completed' | 'dueSoon' | 'overdue';
 
 export interface SchoolAdminDashboardData {
   forms: {
@@ -50,20 +51,23 @@ export interface SectorAdminDashboardData {
   schools: number;
   completionRate: number;
   pendingApprovals: number;
+  pendingSchools?: number; // Əlavə edildi
+  approvedSchools?: number; // Əlavə edildi
+  rejectedSchools?: number; // Əlavə edildi
   notifications: Notification[];
   stats: StatsItem[];
-  formsByStatus: {
+  formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;
   };
-  schoolStats: {
+  schoolStats?: {
     id: string;
     name: string;
     completionRate: number;
     pending: number;
   }[];
-  pendingItems: {
+  pendingItems?: {
     id: string;
     school: string;
     category: string;
@@ -74,20 +78,30 @@ export interface SectorAdminDashboardData {
 export interface RegionAdminDashboardData {
   sectors: number;
   schools: number;
+  users?: number; // Əlavə edildi
   completionRate: number;
   pendingApprovals: number;
+  pendingSchools?: number; // Əlavə edildi
+  approvedSchools?: number; // Əlavə edildi
+  rejectedSchools?: number; // Əlavə edildi
   notifications: Notification[];
   stats: StatsItem[];
-  formsByStatus: {
+  formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;
   };
-  sectorStats: {
+  sectorStats?: {
     id: string;
     name: string;
     schoolCount: number;
     completionRate: number;
+  }[];
+  sectorCompletions?: {
+    id: string;
+    name: string;
+    schoolCount: number;
+    completionPercentage: number;
   }[];
 }
 
@@ -100,12 +114,12 @@ export interface SuperAdminDashboardData {
   pendingApprovals: number;
   notifications: Notification[];
   stats: StatsItem[];
-  formsByStatus: {
+  formsByStatus?: {
     pending: number;
     approved: number;
     rejected: number;
   };
-  regionStats: {
+  regionStats?: {
     id: string;
     name: string;
     sectorCount: number;

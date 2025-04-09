@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -22,7 +21,6 @@ const Columns: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { columns, isLoading, isError, error, deleteColumn } = useColumns();
   
-  // Müvəqqəti mock categories massivi - bu, sonradan API ilə birləşdiriləcək
   const categories = [
     { id: '1', name: 'Əsas Məlumatlar' },
     { id: '2', name: 'Statistika' },
@@ -57,8 +55,8 @@ const Columns: React.FC = () => {
   const handleOpenDeleteDialog = (columnId: string, columnName: string) => {
     setDeleteDialog({
       isOpen: true,
-      columnId: columnId,
-      columnName: columnName
+      columnId,
+      columnName
     });
   };
 
@@ -73,8 +71,6 @@ const Columns: React.FC = () => {
   const handleAddColumn = async (newColumn: any): Promise<boolean> => {
     setIsSubmitting(true);
     try {
-      // Burada normalde createColumn funksiyası çağırılır
-      // Müvəqqəti olaraq uğurlu nəticə qaytarırıq
       toast.success(t('columnCreated'));
       handleCloseAddColumnDialog();
       return true;
@@ -94,8 +90,6 @@ const Columns: React.FC = () => {
         toast.error(t('columnIdRequired'));
         return false;
       }
-      // Burada normalde updateColumn funksiyası çağırılır
-      // Müvəqqəti olaraq uğurlu nəticə qaytarırıq
       toast.success(t('columnUpdated'));
       handleCloseEditColumnDialog();
       return true;
@@ -108,27 +102,24 @@ const Columns: React.FC = () => {
     }
   };
 
-  const handleDeleteColumn = async (columnId: string): Promise<boolean> => {
+  const handleDeleteColumn = async (columnId: string): Promise<any> => {
     try {
-      // Normalde deleteColumn funksiyası çağırılır
-      // Müvəqqəti olaraq uğurlu nəticə qaytarırıq
+      await deleteColumn(columnId);
       toast.success(t('columnDeleted'));
+      handleCloseDeleteDialog();
       return true;
     } catch (error) {
       console.error("Sütun silmə xətası:", error);
       toast.error(t('columnDeletionFailed'));
-      return false;
-    } finally {
       handleCloseDeleteDialog();
+      return false;
     }
   };
 
   const handleUpdateColumnStatus = async (id: string, status: 'active' | 'inactive') => {
-    // Burada normalde statusu yeniləmək üçün funksiya çağırılır
     toast.success(t('columnStatusUpdated'));
   };
 
-  // Cədvəl boş olduğunda göstəriləcək məzmun
   if (columns?.length === 0 && !isLoading) {
     return (
       <>

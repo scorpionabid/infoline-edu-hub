@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -83,7 +82,6 @@ const Categories: React.FC = () => {
       }
 
       if (data) {
-        // Data-nı Category tipinə çeviririk
         const typedCategories: Category[] = data.map(item => ({
           id: item.id,
           name: item.name,
@@ -123,16 +121,22 @@ const Categories: React.FC = () => {
     setAddDialog({ isOpen: false });
   };
 
-  const handleAddCategory = async (newCategory: Partial<Category> & { name: string }): Promise<boolean> => {
+  const handleAddCategory = async (newCategory: { 
+    name: string;
+    description?: string;
+    assignment?: 'sectors' | 'all';
+    deadline?: string;
+    priority?: number;
+    status?: CategoryStatus;
+  }): Promise<boolean> => {
     try {
       const now = new Date().toISOString();
       
-      // Category obyektini yaradaq
       const categoryToAdd = {
         name: newCategory.name,
         description: newCategory.description || '',
         assignment: newCategory.assignment || 'all',
-        status: (newCategory.status as CategoryStatus) || 'active',
+        status: newCategory.status || 'active' as CategoryStatus,
         deadline: newCategory.deadline,
         priority: newCategory.priority || 0,
         created_at: now,
@@ -370,7 +374,6 @@ const Categories: React.FC = () => {
         </div>
       )}
 
-      {/* Add category dialoqu */}
       {addDialog.isOpen && (
         <AddCategoryDialog
           isOpen={addDialog.isOpen}
@@ -379,7 +382,6 @@ const Categories: React.FC = () => {
         />
       )}
 
-      {/* Silmə dialoqu */}
       {deleteDialog.isOpen && (
         <DeleteCategoryDialog
           isOpen={deleteDialog.isOpen}

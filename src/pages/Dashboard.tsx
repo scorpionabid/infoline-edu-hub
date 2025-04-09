@@ -13,6 +13,13 @@ const Dashboard: React.FC = () => {
   
   const isSchoolAdmin = user?.role === 'schooladmin';
   
+  // ChartData tipini düzgün şəkildə təyin edirik
+  const safeChartData = chartData || {
+    activityData: [] as Array<{ name: string; value: number }>,
+    regionSchoolsData: [] as Array<{ name: string; value: number }>,
+    categoryCompletionData: [] as Array<{ name: string; completed: number }>
+  };
+  
   return (
     <SidebarLayout>
       <div className="space-y-4">
@@ -23,11 +30,7 @@ const Dashboard: React.FC = () => {
         <DashboardContent 
           userRole={userRole}
           dashboardData={dashboardData}
-          chartData={chartData || {
-            activityData: [],
-            regionSchoolsData: [],
-            categoryCompletionData: []
-          }}
+          chartData={safeChartData}
           isLoading={isLoading}
         />
       </div>

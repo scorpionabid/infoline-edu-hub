@@ -1,6 +1,6 @@
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft';
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'completed' | 'dueSoon' | 'overdue';
 
 export interface Category {
   id: string;

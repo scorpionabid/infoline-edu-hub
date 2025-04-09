@@ -1,4 +1,3 @@
-
 import { 
   SuperAdminDashboardData, 
   RegionAdminDashboardData, 
@@ -168,21 +167,24 @@ export const generateSectorAdminData = (): SectorAdminDashboardData => {
     rejectedSchools: 2,
     notifications: generateMockNotifications(),
     stats: generateMockStats(),
-    schoolList: [
+    schoolStats: [
       {
         id: '1',
         name: '20 nömrəli məktəb',
-        completionPercentage: 92
+        completionRate: 92,
+        pending: 2
       },
       {
         id: '2',
         name: '45 nömrəli məktəb',
-        completionPercentage: 76
+        completionRate: 76,
+        pending: 5
       },
       {
         id: '3',
         name: '158 nömrəli məktəb',
-        completionPercentage: 54
+        completionRate: 54,
+        pending: 8
       }
     ]
   };
@@ -207,21 +209,24 @@ export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
         title: 'Şagird statistikası',
         date: '2025-04-15',
         status: 'pending',
-        completionPercentage: 75
+        completionPercentage: 75,
+        category: 'Təhsil statistikası'
       },
       {
         id: 'form-2',
         title: 'Müəllim heyəti',
         date: '2025-04-20',
         status: 'pending',
-        completionPercentage: 50
+        completionPercentage: 50,
+        category: 'Kadr məlumatları'
       },
       {
         id: 'form-3',
         title: 'İnfrastruktur hesabatı',
         date: '2025-04-18',
         status: 'dueSoon',
-        completionPercentage: 30
+        completionPercentage: 30,
+        category: 'İnfrastruktur'
       }
     ]
   };
@@ -244,34 +249,28 @@ export const generateDashboardDataByRole = (role: string): any => {
 
 // Chart data generasiyası üçün funksiya
 export const generateMockChartData = (): ChartData => {
-  const activityData = [
-    { name: 'Yan', value: 34 },
-    { name: 'Fev', value: 45 },
-    { name: 'Mar', value: 58 },
-    { name: 'Apr', value: 42 },
-    { name: 'May', value: 68 },
-    { name: 'İyn', value: 72 }
-  ];
-
-  const regionSchoolsData = [
-    { name: 'Bakı', value: 185 },
-    { name: 'Sumqayıt', value: 76 },
-    { name: 'Gəncə', value: 54 },
-    { name: 'Lənkəran', value: 42 },
-    { name: 'Şəki', value: 38 }
-  ];
-
-  const categoryCompletionData = [
-    { name: 'Şagird statistikası', completed: 85 },
-    { name: 'Müəllim heyəti', completed: 72 },
-    { name: 'İnfrastruktur', completed: 64 },
-    { name: 'Tədris proqramı', completed: 92 },
-    { name: 'Maliyyə hesabatları', completed: 58 }
-  ];
-
   return {
-    activityData,
-    regionSchoolsData,
-    categoryCompletionData
+    activityData: [
+      { name: 'Yan', value: 34 },
+      { name: 'Fev', value: 45 },
+      { name: 'Mar', value: 58 },
+      { name: 'Apr', value: 42 },
+      { name: 'May', value: 68 },
+      { name: 'İyn', value: 72 }
+    ],
+    regionSchoolsData: [
+      { name: 'Bakı', value: 185 },
+      { name: 'Sumqayıt', value: 76 },
+      { name: 'Gəncə', value: 54 },
+      { name: 'Lənkəran', value: 42 },
+      { name: 'Şəki', value: 38 }
+    ],
+    categoryCompletionData: [
+      { name: 'Şagird statistikası', completed: 85 },
+      { name: 'Müəllim heyəti', completed: 72 },
+      { name: 'İnfrastruktur', completed: 64 },
+      { name: 'Tədris proqramı', completed: 92 },
+      { name: 'Maliyyə hesabatları', completed: 58 }
+    ]
   };
 };
