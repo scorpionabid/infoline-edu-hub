@@ -12,8 +12,7 @@ const ReportHeader: React.FC = () => {
     <PageHeader 
       title={t('reportTitle')}
       description={t('reportDescription')}
-      icon={<BarChart2 className="h-5 w-5" />}
-      action={
+      children={
         <Button>
           <Plus className="h-4 w-4 mr-2" />
           {t('createReport')}

@@ -36,9 +36,13 @@ const SchoolColumnTable: React.FC = () => {
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   
-  const { data: categoriesData, isLoading: categoriesLoading } = useCachedQuery('categories');
-  const { data: regionsData, isLoading: regionsLoading } = useCachedQuery('regions');
-  const { data: sectorsData, isLoading: sectorsLoading } = useCachedQuery('sectors', () => {}, regionId ? { region_id: regionId } : undefined);
+  const { data: categoriesData, isLoading: categoriesLoading } = useCachedQuery(['categories']);
+  const { data: regionsData, isLoading: regionsLoading } = useCachedQuery(['regions']);
+  const { data: sectorsData, isLoading: sectorsLoading } = useCachedQuery(
+    ['sectors', regionId], 
+    async () => {}, 
+    { enabled: !!regionId }
+  );
 
   // Kateqoriyalar
   const categories = categoriesData || [];
@@ -95,7 +99,7 @@ const SchoolColumnTable: React.FC = () => {
     if (regionId) {
       setSectorId(undefined);
     }
-  }, [regionId]);
+  }, [regionId, setSectorId]);
 
   // Status badge'i
   const getStatusBadge = (status: string) => {
@@ -183,8 +187,8 @@ const SchoolColumnTable: React.FC = () => {
                   <SelectContent>
                     {categoriesLoading ? (
                       <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
-                    ) : categories.length > 0 ? (
-                      categories.map((category) => (
+                    ) : categories && Array.isArray(categories) && categories.length > 0 ? (
+                      categories.map((category: any) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
@@ -209,8 +213,8 @@ const SchoolColumnTable: React.FC = () => {
                   <SelectContent>
                     {regionsLoading ? (
                       <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
-                    ) : regions.length > 0 ? (
-                      regions.map((region) => (
+                    ) : regions && Array.isArray(regions) && regions.length > 0 ? (
+                      regions.map((region: any) => (
                         <SelectItem key={region.id} value={region.id}>
                           {region.name}
                         </SelectItem>
@@ -236,8 +240,8 @@ const SchoolColumnTable: React.FC = () => {
                   <SelectContent>
                     {sectorsLoading ? (
                       <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
-                    ) : sectors.length > 0 ? (
-                      sectors.map((sector) => (
+                    ) : sectors && Array.isArray(sectors) && sectors.length > 0 ? (
+                      sectors.map((sector: any) => (
                         <SelectItem key={sector.id} value={sector.id}>
                           {sector.name}
                         </SelectItem>

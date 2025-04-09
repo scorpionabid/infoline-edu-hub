@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Report, ReportType, SchoolColumnData, StatusFilterOptions } from '@/types/report';
+import { ReportTable, ReportTemplateTable } from '@/types/db';
 import { toast } from 'sonner';
 
 /**
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
  */
 export const fetchReports = async (): Promise<Report[]> => {
   try {
+    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
     const { data, error } = await supabase
       .from('reports')
       .select('*')
@@ -15,7 +17,8 @@ export const fetchReports = async (): Promise<Report[]> => {
 
     if (error) throw error;
 
-    return data.map(report => ({
+    // Type assertion ilə düzgün tipə çeviririk
+    return (data as ReportTable[]).map(report => ({
       id: report.id,
       name: report.title,
       title: report.title,
@@ -24,7 +27,7 @@ export const fetchReports = async (): Promise<Report[]> => {
       createdAt: report.created_at,
       lastUpdated: report.updated_at,
       status: report.status,
-      createdBy: report.created_by,
+      createdBy: report.created_by || '',
       data: report.content?.data || [],
       insights: report.content?.insights || [],
       recommendations: report.content?.recommendations || []
@@ -41,6 +44,7 @@ export const fetchReports = async (): Promise<Report[]> => {
  */
 export const fetchReportTemplates = async (): Promise<Report[]> => {
   try {
+    // @ts-ignore - Supabase tipləri report_templates cədvəlinə uyğun olmadığı üçün ignorə edilir
     const { data, error } = await supabase
       .from('report_templates')
       .select('*')
@@ -49,7 +53,8 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
 
     if (error) throw error;
 
-    return data.map(template => ({
+    // Type assertion ilə düzgün tipə çeviririk
+    return (data as ReportTemplateTable[]).map(template => ({
       id: template.id,
       name: template.name,
       title: template.name,
@@ -57,7 +62,7 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
       type: template.type as ReportType,
       createdAt: template.created_at,
       status: 'published', // Şablonlar nəşr olunmuş kimi göstərilir
-      createdBy: template.created_by
+      createdBy: template.created_by || ''
     }));
   } catch (error: any) {
     console.error('Hesabat şablonları yüklənərkən xəta baş verdi:', error);
@@ -71,6 +76,7 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
  */
 export const createReport = async (report: Partial<Report>): Promise<Report | null> => {
   try {
+    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
     const { data, error } = await supabase
       .from('reports')
       .insert([{
@@ -90,18 +96,20 @@ export const createReport = async (report: Partial<Report>): Promise<Report | nu
 
     if (error) throw error;
 
+    // Type assertion ilə düzgün tipə çeviririk
+    const reportData = data as ReportTable;
     return {
-      id: data.id,
-      name: data.title,
-      title: data.title,
-      description: data.description || '',
-      type: data.type as ReportType,
-      createdAt: data.created_at,
-      status: data.status,
-      createdBy: data.created_by,
-      data: data.content?.data || [],
-      insights: data.content?.insights || [],
-      recommendations: data.content?.recommendations || []
+      id: reportData.id,
+      name: reportData.title,
+      title: reportData.title,
+      description: reportData.description || '',
+      type: reportData.type as ReportType,
+      createdAt: reportData.created_at,
+      status: reportData.status,
+      createdBy: reportData.created_by || '',
+      data: reportData.content?.data || [],
+      insights: reportData.content?.insights || [],
+      recommendations: reportData.content?.recommendations || []
     };
   } catch (error: any) {
     console.error('Hesabat yaradılarkən xəta baş verdi:', error);
@@ -123,6 +131,7 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
     
     // Content yeniləmək
     if (report.data || report.insights || report.recommendations) {
+      // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
       const { data: existingReport } = await supabase
         .from('reports')
         .select('content')
@@ -138,6 +147,7 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
       updates.content = content;
     }
     
+    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
     const { error } = await supabase
       .from('reports')
       .update(updates)
@@ -158,6 +168,7 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
  */
 export const createReportTemplate = async (template: Partial<Report>): Promise<Report | null> => {
   try {
+    // @ts-ignore - Supabase tipləri report_templates cədvəlinə uyğun olmadığı üçün ignorə edilir
     const { data, error } = await supabase
       .from('report_templates')
       .insert([{
@@ -176,15 +187,17 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
 
     if (error) throw error;
 
+    // Type assertion ilə düzgün tipə çeviririk
+    const templateData = data as ReportTemplateTable;
     return {
-      id: data.id,
-      name: data.name,
-      title: data.name,
-      description: data.description || '',
-      type: data.type as ReportType,
-      createdAt: data.created_at,
+      id: templateData.id,
+      name: templateData.name,
+      title: templateData.name,
+      description: templateData.description || '',
+      type: templateData.type as ReportType,
+      createdAt: templateData.created_at,
       status: 'published',
-      createdBy: data.created_by
+      createdBy: templateData.created_by || ''
     };
   } catch (error: any) {
     console.error('Hesabat şablonu yaradılarkən xəta baş verdi:', error);
@@ -309,6 +322,7 @@ export const fetchSchoolColumnData = async (
  */
 export const exportReport = async (reportId: string): Promise<string | null> => {
   try {
+    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
     const { data: report, error } = await supabase
       .from('reports')
       .select('*')
