@@ -40,9 +40,9 @@ export const addCategory = async (categoryData: Partial<Category> & { name: stri
       status: categoryData.status || 'active',
       deadline: categoryData.deadline,
       priority: categoryData.priority || 0,
-      columnCount: categoryData.columnCount || 0,
-      createdAt: categoryData.createdAt || now,
-      updatedAt: now,
+      column_count: categoryData.column_count || 0,
+      created_at: categoryData.created_at || now,
+      updated_at: now,
       archived: false
     };
     

@@ -1,91 +1,60 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const SchoolAdminSetupCheck: React.FC = () => {
-  const [isChecking, setIsChecking] = useState(true);
-  const [hasRequiredFunctions, setHasRequiredFunctions] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [checkingFunction, setCheckingFunction] = useState(true);
+  const [functionExists, setFunctionExists] = useState(false);
 
   useEffect(() => {
-    const checkSetup = async () => {
+    const checkFunctionExists = async () => {
       try {
-        setIsChecking(true);
+        // Direkt SQL sorğu ilə yoxlayaq
+        const { data, error } = await supabase.rpc('check_function_exists', {
+          function_name: 'get_school_admin_stats'
+        });
         
-        // Custom sorğu ilə funksiya adını yoxlayaq
-        const { data, error } = await supabase.from('_functions')
-          .select('name')
-          .eq('name', 'get_school_admin_stats')
-          .maybeSingle();
-        
-        if (error) throw error;
-        
-        // Boolean tipinə çevir
-        setHasRequiredFunctions(Boolean(data));
-      } catch (err: any) {
-        console.error('Funksiyaların yoxlanması zamanı xəta:', err);
-        setError(err.message || 'Funksiyaların yoxlanması zamanı xəta baş verdi');
-        setHasRequiredFunctions(false);
+        if (error) {
+          console.error('Funksiya yoxlanması zamanı xəta:', error);
+          setFunctionExists(false);
+        } else {
+          setFunctionExists(Boolean(data));
+        }
+      } catch (err) {
+        console.error('Funksiya yoxlanması xətası:', err);
+        setFunctionExists(false);
       } finally {
-        setIsChecking(false);
+        setCheckingFunction(false);
       }
     };
-    
-    checkSetup();
+
+    checkFunctionExists();
   }, []);
-  
-  if (isChecking) {
+
+  if (checkingFunction) {
     return (
-      <Alert className="bg-blue-50">
-        <AlertTriangle className="h-4 w-4 text-blue-700" />
-        <AlertTitle>Yoxlanılır...</AlertTitle>
+      <div className="flex items-center justify-center p-4">
+        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+        <p>Funksiya yoxlanılır...</p>
+      </div>
+    );
+  }
+
+  if (!functionExists) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertTitle>Funksiyalar tapılmadı</AlertTitle>
         <AlertDescription>
-          Məktəb admin funksionallığı üçün lazımi konfiqurasiyalar yoxlanılır.
+          Məktəb administratoru funksiyaları bazada tapılmadı. Mock data istifadə olunacaq.
         </AlertDescription>
       </Alert>
     );
   }
-  
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Yoxlama zamanı xəta</AlertTitle>
-        <AlertDescription>
-          {error}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  if (!hasRequiredFunctions) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Məktəb admin funksionallığı hazır deyil</AlertTitle>
-        <AlertDescription className="space-y-4">
-          <p>Məktəb admin funksionallığı üçün lazımi SQL funksiyaları tapılmadı. Zəhmət olmasa, aşağıdakı SQL funksiyalarını əlavə edin:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>get_school_admin_stats</li>
-            <li>schools_required_columns</li>
-          </ul>
-          <p className="text-sm">Bu funksiyaları "SQL Editor" vasitəsilə əlavə edə bilərsiniz.</p>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  return (
-    <Alert className="bg-green-50">
-      <CheckCircle2 className="h-4 w-4 text-green-700" />
-      <AlertTitle>Məktəb admin funksionallığı hazırdır</AlertTitle>
-      <AlertDescription>
-        Bütün lazımi SQL funksiyaları tapıldı və məktəb admin funksionallığı istifadəyə hazırdır.
-      </AlertDescription>
-    </Alert>
-  );
+
+  return null;
 };
 
 export default SchoolAdminSetupCheck;

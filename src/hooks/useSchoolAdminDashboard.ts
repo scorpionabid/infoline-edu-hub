@@ -50,11 +50,10 @@ export const useSchoolAdminDashboard = () => {
   // Lazımi funksiyaların olub-olmadığını yoxlayaq
   const checkFunctions = useCallback(async () => {
     try {
-      // Custom sorğu ilə funksiya adını yoxlayaq
-      const { data, error } = await supabase.from('_functions')
-        .select('name')
-        .eq('name', 'get_school_admin_stats')
-        .maybeSingle();
+      // Direkt RPC sorğusu ilə yoxlayaq
+      const { data, error } = await supabase.rpc('check_function_exists', {
+        function_name: 'get_school_admin_stats'
+      });
       
       if (error) {
         console.error('Funksiya yoxlaması zamanı xəta:', error);
@@ -123,26 +122,23 @@ export const useSchoolAdminDashboard = () => {
 
     try {
       // Statistika məlumatlarını əldə edək - birbaşa data_entries tablesindən
-      const { data: pendingData, error: pendingError } = await supabase
+      const { data: pendingEntries, error: pendingError } = await supabase
         .from('data_entries')
         .select('id')
         .eq('school_id', user.schoolId)
-        .eq('status', 'pending')
-        .count();
+        .eq('status', 'pending');
         
-      const { data: approvedData, error: approvedError } = await supabase
+      const { data: approvedEntries, error: approvedError } = await supabase
         .from('data_entries')
         .select('id')
         .eq('school_id', user.schoolId)
-        .eq('status', 'approved')
-        .count();
+        .eq('status', 'approved');
         
-      const { data: rejectedData, error: rejectedError } = await supabase
+      const { data: rejectedEntries, error: rejectedError } = await supabase
         .from('data_entries')
         .select('id')
         .eq('school_id', user.schoolId)
-        .eq('status', 'rejected')
-        .count();
+        .eq('status', 'rejected');
       
       if (pendingError || approvedError || rejectedError) {
         throw new Error(`Statistika məlumatlarını əldə etmək mümkün olmadı`);
@@ -180,9 +176,9 @@ export const useSchoolAdminDashboard = () => {
       }
       
       // Kateqoriyaların sayını əldə edək
-      const { count: categoryCount, error: categoryError } = await supabase
+      const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
-        .select('*', { count: 'exact', head: true });
+        .select('id');
         
       if (categoryError) {
         throw new Error(`Kateqoriyaların sayını əldə etmək mümkün olmadı: ${categoryError.message}`);
@@ -202,9 +198,9 @@ export const useSchoolAdminDashboard = () => {
       
       // Statistika məlumatlarını formatlaşdıraq
       const formStats: SchoolStats = {
-        pending: pendingData?.count || 0,
-        approved: approvedData?.count || 0,
-        rejected: rejectedData?.count || 0,
+        pending: pendingEntries?.length || 0,
+        approved: approvedEntries?.length || 0,
+        rejected: rejectedEntries?.length || 0,
         dueSoon: 0, // Bu məlumatı əldə etmək üçün əlavə sorğu lazımdır
         overdue: 0   // Bu məlumatı əldə etmək üçün əlavə sorğu lazımdır
       };
@@ -215,19 +211,24 @@ export const useSchoolAdminDashboard = () => {
       const completionRate = totalForms > 0 ? Math.round((completedForms / totalForms) * 100) : 0;
       
       // Gözləyən formaları formatlaşdıraq
-      const pendingForms: FormItem[] = Array.isArray(pendingFormsData) ? pendingFormsData.map((item: any) => ({
-        id: item.id,
-        title: item.columns?.name || 'Unknown Column',
-        date: new Date(item.created_at).toLocaleDateString(),
-        status: item.status
-      })) : [];
+      const pendingForms: FormItem[] = pendingFormsData ? pendingFormsData.map((item: any) => {
+        const columnName = item.columns?.name || 'Naməlum sütun';
+        const categoryName = item.categories?.name || 'Naməlum kateqoriya';
+        
+        return {
+          id: item.id,
+          title: `${categoryName} - ${columnName}`,
+          date: new Date(item.created_at).toLocaleDateString(),
+          status: item.status
+        };
+      }) : [];
       
       return {
         forms: formStats,
         completionRate: completionRate,
         notifications: notifications,
         pendingForms: pendingForms,
-        categories: categoryCount || 0
+        categories: categoryData?.length || 0
       };
     } catch (err) {
       console.error('Əsl dashboard məlumatlarını əldə edərkən xəta:', err);

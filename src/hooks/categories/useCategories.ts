@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, adaptSupabaseCategory } from '@/types/category';
 import { toast } from 'sonner';
 
 const useCategories = () => {
@@ -18,7 +18,8 @@ const useCategories = () => {
 
       if (error) throw error;
 
-      setCategories(data || []);
+      const adaptedCategories = (data || []).map(adaptSupabaseCategory);
+      setCategories(adaptedCategories);
     } catch (error) {
       console.error('Kateqoriyaları əldə edərkən xəta:', error);
       toast.error('Kateqoriyaları yükləmək mümkün olmadı');
@@ -37,7 +38,7 @@ const useCategories = () => {
 
       if (error) throw error;
 
-      return data;
+      return adaptSupabaseCategory(data);
     } catch (error) {
       console.error('Kateqoriya məlumatlarını əldə edərkən xəta:', error);
       return null;

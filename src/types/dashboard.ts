@@ -1,82 +1,11 @@
+
 import { Notification } from './notification';
 
 export interface FormItem {
   id: string;
   title: string;
-  date: string;
   status: string;
-}
-
-export interface AdminDashboardData {
-  regions: number;
-  sectors: number;
-  schools: number;
-  users: number;
-  completionRate: number;
-  pendingApprovals: number;
-  notifications: Notification[];
-  activityData?: {
-    id: string;
-    action: string;
-    actor: string;
-    target: string;
-    time: string;
-  }[];
-  pendingSchools?: number;
-  approvedSchools?: number;
-  rejectedSchools?: number;
-  statusData?: {
-    completed: number;
-    pending: number;
-    rejected: number;
-    notStarted: number;
-  };
-}
-
-export interface RegionAdminDashboardData {
-  sectors: number;
-  schools: number;
-  users: number;
-  completionRate: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
-  notifications: Notification[];
-  categories?: { 
-    id?: string;
-    name: string; 
-    completionRate: number; 
-    color: string;
-    deadline?: string;
-    status?: string;
-  }[];
-  sectorCompletions?: { 
-    id?: string;
-    name: string; 
-    completionRate: number;
-    schoolCount?: number;
-  }[];
-}
-
-export interface SectorAdminDashboardData {
-  schools: number;
-  users: number;
-  completionRate: number;
-  pendingApprovals: number;
-  pendingSchools: number;
-  approvedSchools: number;
-  rejectedSchools: number;
-  notifications: Notification[];
-  categories?: { 
-    name: string; 
-    completionRate: number; 
-    color: string;
-  }[];
-  schoolsCompletions?: { 
-    name: string; 
-    completionRate: number; 
-  }[];
+  date: string;
 }
 
 export interface SchoolAdminDashboardData {
@@ -89,18 +18,6 @@ export interface SchoolAdminDashboardData {
   };
   completionRate: number;
   notifications: Notification[];
-  categories?: number;
-  totalForms?: number;
-  completedForms?: number;
-  pendingForms: FormItem[]; // Bu xəta üçün məcburi sahə etdik
-  rejectedForms?: number;
-  dueDates?: {
-    category: string;
-    dueDate: string;
-  }[];
-  recentForms?: {
-    name: string;
-    date: string;
-    status: string;
-  }[];
+  pendingForms: FormItem[];
+  categories: number;
 }

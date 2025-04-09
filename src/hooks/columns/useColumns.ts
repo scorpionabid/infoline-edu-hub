@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+import { Column, adaptSupabaseColumn } from '@/types/column';
 import { toast } from 'sonner';
 
 const useColumns = (categoryId: string) => {
@@ -21,7 +21,8 @@ const useColumns = (categoryId: string) => {
 
       if (error) throw error;
 
-      setColumns(data || []);
+      const adaptedColumns = (data || []).map(adaptSupabaseColumn);
+      setColumns(adaptedColumns);
     } catch (error) {
       console.error('Sütunları əldə edərkən xəta:', error);
       toast.error('Sütunları yükləmək mümkün olmadı');

@@ -1,26 +1,11 @@
 
-// Bildiriş tipi
-export type NotificationType = 
-  | 'warning' 
-  | 'error' 
-  | 'success' 
-  | 'info' 
-  | 'system' 
-  | 'category' 
-  | 'deadline' 
-  | 'approval';
-
-// Bildiriş interfeysi
 export interface Notification {
   id: string;
   title: string;
-  message?: string;
-  type: NotificationType;
-  createdAt: string;
-  time?: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
   isRead: boolean;
-  userId?: string;
-  relatedEntityId?: string;
-  relatedEntityType?: string;
-  priority?: string;
+  createdAt: string;
+  userId: string;
+  priority: 'low' | 'normal' | 'high' | 'critical';
 }

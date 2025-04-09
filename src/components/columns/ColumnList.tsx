@@ -50,7 +50,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
       key: "order",
       header: "#",
       className: "w-[40px]",
-      cell: (column: Column) => <span className="font-medium">{column.order}</span>
+      cell: (column: Column) => <span className="font-medium">{column.order_index}</span>
     },
     {
       key: "name",
@@ -60,7 +60,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
     {
       key: "category",
       header: t("category"),
-      cell: (column: Column) => getCategoryName(column.categoryId)
+      cell: (column: Column) => getCategoryName(column.category_id)
     },
     {
       key: "type",
@@ -75,7 +75,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
       key: "required",
       header: t("required"),
       cell: (column: Column) => (
-        column.isRequired ? (
+        column.is_required ? (
           <Badge variant="default">
             {t("required")}
           </Badge>

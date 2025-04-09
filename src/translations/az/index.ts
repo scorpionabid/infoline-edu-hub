@@ -1,13 +1,10 @@
+// Azərbaycan dili tərcümələri
+import dashboardTranslations from './dashboard';
 
-import { dashboardTranslations } from './dashboard';
-import { authTranslations } from './auth';
-import { settingsTranslations } from './settings';
-import { dataEntryTranslations } from './dataEntry';
-
-export const azTranslations = {
+// Tərcümələri bir yerə toplamaq
+const azTranslations = {
   ...dashboardTranslations,
-  ...authTranslations,
-  ...settingsTranslations,
-  ...dataEntryTranslations,
   // Digər tərcümələr
 };
+
+export default azTranslations;

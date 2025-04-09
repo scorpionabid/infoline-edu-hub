@@ -103,7 +103,7 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
       assignment: data.assignment,
       deadline: data.deadline ? data.deadline.toISOString() : undefined,
       priority: data.priority,
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
     
     const success = await onEditCategory(updatedCategory);

@@ -225,9 +225,9 @@ const CategoryList: React.FC<CategoryListProps> = ({
                   
                   <div className="flex flex-wrap gap-2 mt-2">
                     {renderDeadlineBadge(category.deadline)}
-                    {category.columnCount !== undefined && (
+                    {category.column_count !== undefined && (
                       <Badge variant="outline" className="flex items-center gap-1">
-                        Sütunlar: {category.columnCount}
+                        Sütunlar: {category.column_count}
                       </Badge>
                     )}
                   </div>
