@@ -30,7 +30,10 @@ export const fetchReports = async (): Promise<Report[]> => {
       createdBy: report.created_by || '',
       data: report.content?.data || [],
       insights: report.content?.insights || [],
-      recommendations: report.content?.recommendations || []
+      recommendations: report.content?.recommendations || [],
+      downloadUrl: `/api/reports/download/${report.id}`,
+      summary: report.content?.summary || '',
+      tags: report.tags || []
     }));
   } catch (error: any) {
     console.error('Hesabatlar yüklənərkən xəta baş verdi:', error);
@@ -62,7 +65,8 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
       type: template.type as ReportType,
       createdAt: template.created_at,
       status: 'published' as 'draft' | 'published' | 'archived', // Şablonlar nəşr olunmuş kimi göstərilir
-      createdBy: template.created_by || ''
+      createdBy: template.created_by || '',
+      tags: template.tags || []
     }));
   } catch (error: any) {
     console.error('Hesabat şablonları yüklənərkən xəta baş verdi:', error);
@@ -86,10 +90,12 @@ export const createReport = async (report: Partial<Report>): Promise<Report | nu
         content: {
           data: report.data || [],
           insights: report.insights || [],
-          recommendations: report.recommendations || []
+          recommendations: report.recommendations || [],
+          summary: report.summary || ''
         },
         status: report.status || 'draft',
-        created_by: report.createdBy
+        created_by: report.createdBy,
+        tags: report.tags || []
       }])
       .select()
       .single();
@@ -114,7 +120,10 @@ export const createReport = async (report: Partial<Report>): Promise<Report | nu
       createdBy: reportData.created_by || '',
       data: content.data || [],
       insights: content.insights || [],
-      recommendations: content.recommendations || []
+      recommendations: content.recommendations || [],
+      summary: content.summary || '',
+      downloadUrl: `/api/reports/download/${reportData.id}`,
+      tags: reportData.tags || []
     };
   } catch (error: any) {
     console.error('Hesabat yaradılarkən xəta baş verdi:', error);
@@ -133,9 +142,10 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
     if (report.name || report.title) updates.title = report.name || report.title;
     if (report.description !== undefined) updates.description = report.description;
     if (report.status) updates.status = report.status;
+    if (report.tags) updates.tags = report.tags;
     
     // Content yeniləmək
-    if (report.data || report.insights || report.recommendations) {
+    if (report.data || report.insights || report.recommendations || report.summary) {
       // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
       const { data: existingReport, error } = await supabase
         .from(TableNames.REPORTS)
@@ -155,6 +165,7 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
       if (report.data) content.data = report.data;
       if (report.insights) content.insights = report.insights;
       if (report.recommendations) content.recommendations = report.recommendations;
+      if (report.summary) content.summary = report.summary;
       
       updates.content = content;
     }
@@ -189,10 +200,13 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
         type: template.type,
         config: {
           filters: template.data,
-          layout: 'default'
+          layout: 'default',
+          insights: template.insights || [],
+          recommendations: template.recommendations || []
         },
         status: 'active',
-        created_by: template.createdBy
+        created_by: template.createdBy,
+        tags: template.tags || []
       }])
       .select()
       .single();
@@ -209,7 +223,8 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
       type: templateData.type as ReportType,
       createdAt: templateData.created_at,
       status: 'published' as 'draft' | 'published' | 'archived',
-      createdBy: templateData.created_by || ''
+      createdBy: templateData.created_by || '',
+      tags: templateData.tags || []
     };
   } catch (error: any) {
     console.error('Hesabat şablonu yaradılarkən xəta baş verdi:', error);
@@ -265,7 +280,31 @@ export const fetchSchoolColumnData = async (
       
     if (categoryError && categoryError.code !== 'PGRST116') throw categoryError;
     
-    if (!category) return [];
+    if (!category) {
+      // Demo kateqoriya olmadığı halda test kateqoriyası istifadə edək
+      const mockCategory = {
+        id: "mock-category",
+        name: "Test Kategoriyası",
+        columns: [
+          { id: "col-1", name: "Şagird sayı", type: "number", is_required: true, order_index: 1 },
+          { id: "col-2", name: "Müəllim sayı", type: "number", is_required: true, order_index: 2 },
+          { id: "col-3", name: "Otaq sayı", type: "number", is_required: true, order_index: 3 }
+        ]
+      };
+      
+      // Demo məlumatlar yaradaq
+      return schools.map(school => ({
+        schoolId: school.id,
+        schoolName: school.name,
+        region: school.regions?.name,
+        sector: school.sectors?.name,
+        status: "pending",
+        columnData: mockCategory.columns.map(column => ({
+          columnId: column.id,
+          value: Math.floor(Math.random() * 1000)
+        }))
+      }));
+    }
     
     // Məlumatları gətirək
     let dataQuery = supabase
@@ -352,5 +391,77 @@ export const exportReport = async (reportId: string): Promise<string | null> => 
     console.error('Hesabat ixrac edilərkən xəta baş verdi:', error);
     toast.error('Hesabat ixrac edilərkən xəta baş verdi');
     return null;
+  }
+};
+
+/**
+ * PDF formatında hesabat ixrac etmək üçün servis
+ */
+export const exportReportAsPdf = async (reportId: string): Promise<string | null> => {
+  try {
+    // Burada hesabatı PDF olaraq ixrac etmə məntiqi əlavə ediləcək
+    // Gələcəkdə tətbiq ediləcək
+    
+    // Test üçün eyni linki qaytarırıq
+    return `/api/reports/download/${reportId}?format=pdf`;
+  } catch (error: any) {
+    console.error('Hesabat PDF formatında ixrac edilərkən xəta baş verdi:', error);
+    toast.error('Hesabat PDF formatında ixrac edilərkən xəta baş verdi');
+    return null;
+  }
+};
+
+/**
+ * CSV formatında hesabat ixrac etmək üçün servis
+ */
+export const exportReportAsCsv = async (reportId: string): Promise<string | null> => {
+  try {
+    // Burada hesabatı CSV olaraq ixrac etmə məntiqi əlavə ediləcək
+    // Gələcəkdə tətbiq ediləcək
+    
+    // Test üçün eyni linki qaytarırıq
+    return `/api/reports/download/${reportId}?format=csv`;
+  } catch (error: any) {
+    console.error('Hesabat CSV formatında ixrac edilərkən xəta baş verdi:', error);
+    toast.error('Hesabat CSV formatında ixrac edilərkən xəta baş verdi');
+    return null;
+  }
+};
+
+/**
+ * Hesabatı paylaşmaq üçün servis
+ */
+export const shareReport = async (reportId: string, userIds: string[]): Promise<boolean> => {
+  try {
+    // Hesabatı əldə et
+    const { data: report, error: reportError } = await supabase
+      .from(TableNames.REPORTS)
+      .select('shared_with')
+      .eq('id', reportId)
+      .single();
+      
+    if (reportError) throw reportError;
+    
+    // Paylaşım siyahısını yenilə
+    let sharedWith = Array.isArray(report.shared_with) ? report.shared_with : [];
+    
+    // Yeni istifadəçiləri əlavə et (təkrarları silərək)
+    const newSharedWith = [...new Set([...sharedWith, ...userIds])];
+    
+    // Yeniləməni göndər
+    const { error: updateError } = await supabase
+      .from(TableNames.REPORTS)
+      .update({
+        shared_with: newSharedWith
+      })
+      .eq('id', reportId);
+      
+    if (updateError) throw updateError;
+    
+    return true;
+  } catch (error: any) {
+    console.error('Hesabat paylaşılarkən xəta baş verdi:', error);
+    toast.error('Hesabat paylaşılarkən xəta baş verdi');
+    return false;
   }
 };

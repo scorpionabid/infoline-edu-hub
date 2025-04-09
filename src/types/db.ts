@@ -17,6 +17,10 @@ export type ReportTable = {
   filters: any;
   insights: string[] | null;
   recommendations: string[] | null;
+  thumbnail_url?: string | null;
+  view_count?: number;
+  last_viewed_at?: string | null;
+  tags?: string[] | null;
 };
 
 export type ReportTemplateTable = {
@@ -29,6 +33,8 @@ export type ReportTemplateTable = {
   created_at: string;
   updated_at: string;
   status: string;
+  thumbnail_url?: string | null;
+  tags?: string[] | null;
 };
 
 // Genişləndirilmiş Supabase client tipləri

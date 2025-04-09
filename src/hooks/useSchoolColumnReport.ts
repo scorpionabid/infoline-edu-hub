@@ -14,6 +14,7 @@ export const useSchoolColumnReport = () => {
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [regionId, setRegionId] = useState<string | undefined>(undefined);
   const [sectorId, setSectorId] = useState<string | undefined>(undefined);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilterOptions>({
     pending: true,
     approved: true,
@@ -93,6 +94,26 @@ export const useSchoolColumnReport = () => {
     }
   }, [data, t]);
 
+  const toggleSchoolSelection = useCallback((schoolId: string) => {
+    setSelectedSchools(prev => 
+      prev.includes(schoolId) 
+        ? prev.filter(id => id !== schoolId) 
+        : [...prev, schoolId]
+    );
+  }, []);
+
+  const selectAllSchools = useCallback(() => {
+    setSelectedSchools(data.map(school => school.schoolId));
+  }, [data]);
+
+  const deselectAllSchools = useCallback(() => {
+    setSelectedSchools([]);
+  }, []);
+
+  const getSelectedSchoolsData = useCallback(() => {
+    return data.filter(school => selectedSchools.includes(school.schoolId));
+  }, [data, selectedSchools]);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -109,6 +130,11 @@ export const useSchoolColumnReport = () => {
     setSectorId,
     statusFilter,
     setStatusFilter,
+    selectedSchools,
+    toggleSchoolSelection,
+    selectAllSchools,
+    deselectAllSchools,
+    getSelectedSchoolsData,
     loadData,
     exportToExcel
   };

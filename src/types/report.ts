@@ -38,6 +38,7 @@ export type ExportOptions = {
   includeHiddenColumns?: boolean;
   includeStatus?: boolean;
   customFileName?: string; // Excel ixracı üçün əlavə edildi
+  format?: 'xlsx' | 'csv' | 'pdf'; // İxrac formatı
 };
 
 // Hesabat növü
@@ -61,6 +62,10 @@ export type Report = {
   summary?: string; // Hesabat xülasəsi
   insights?: string[]; // Hesabat təhlilləri
   recommendations?: string[]; // Tövsiyələr
+  tags?: string[]; // Hesabat təqləri
+  thumbnailUrl?: string; // Hesabat miniaturu
+  viewCount?: number; // Baxış sayı
+  lastViewedAt?: string; // Son baxış tarixi
 };
 
 // Kateqoriya hesabat tipi
@@ -82,4 +87,22 @@ export type StatusFilterOptions = {
   pending?: boolean;
   approved?: boolean;
   rejected?: boolean;
+};
+
+// Hesabat analiz nəticəsi
+export type ReportAnalysis = {
+  title: string;
+  description: string;
+  value: number | string;
+  change?: number; // Dəyişiklik faizi
+  trend?: 'up' | 'down' | 'neutral'; // Trend istiqaməti
+  chartData?: any[]; // Qrafik üçün məlumatlar
+};
+
+// Hesabat paylaşım tipi
+export type ReportShare = {
+  reportId: string;
+  userId: string;
+  permissions: 'view' | 'edit' | 'admin';
+  createdAt: string;
 };

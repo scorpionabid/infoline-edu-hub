@@ -1,7 +1,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Report, SchoolColumnData, StatusFilterOptions } from '@/types/report';
-import { fetchReports, fetchReportTemplates, createReport, updateReport, createReportTemplate, fetchSchoolColumnData, exportReport } from '@/services/reportService';
+import { Report, SchoolColumnData, StatusFilterOptions, ReportType } from '@/types/report';
+import { 
+  fetchReports, 
+  fetchReportTemplates, 
+  createReport, 
+  updateReport, 
+  createReportTemplate, 
+  fetchSchoolColumnData, 
+  exportReport,
+  exportReportAsPdf,
+  exportReportAsCsv,
+  shareReport
+} from '@/services/reportService';
 import { useAuth } from '@/context/auth';
 
 export const useReports = () => {
@@ -9,6 +20,10 @@ export const useReports = () => {
   const [templates, setTemplates] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<ReportType | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
   const { user } = useAuth();
 
   const loadReports = useCallback(async () => {
@@ -17,12 +32,13 @@ export const useReports = () => {
     try {
       const data = await fetchReports();
       setReports(data);
+      applyFilters(data, searchTerm, typeFilter, statusFilter);
     } catch (err: any) {
       setError(err.message || 'Hesabatlar yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchTerm, typeFilter, statusFilter]);
 
   const loadTemplates = useCallback(async () => {
     setLoading(true);
@@ -35,6 +51,30 @@ export const useReports = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const applyFilters = useCallback((data: Report[], search: string, type: ReportType | 'all', status: 'all' | 'draft' | 'published' | 'archived') => {
+    let filtered = [...data];
+    
+    // Axtarış filtrini tətbiq et
+    if (search) {
+      filtered = filtered.filter(report => 
+        report.title?.toLowerCase().includes(search.toLowerCase()) ||
+        report.description?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Növ filtrini tətbiq et
+    if (type !== 'all') {
+      filtered = filtered.filter(report => report.type === type);
+    }
+    
+    // Status filtrini tətbiq et
+    if (status !== 'all') {
+      filtered = filtered.filter(report => report.status === status);
+    }
+    
+    setFilteredReports(filtered);
   }, []);
 
   const addReport = useCallback(async (report: Partial<Report>): Promise<Report | null> => {
@@ -50,6 +90,7 @@ export const useReports = () => {
       const newReport = await createReport(reportWithUser);
       if (newReport) {
         setReports(prev => [newReport, ...prev]);
+        applyFilters([newReport, ...reports], searchTerm, typeFilter, statusFilter);
       }
       return newReport;
     } catch (err: any) {
@@ -58,7 +99,7 @@ export const useReports = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, reports, searchTerm, typeFilter, statusFilter, applyFilters]);
 
   const editReport = useCallback(async (id: string, report: Partial<Report>): Promise<boolean> => {
     setLoading(true);
@@ -66,9 +107,9 @@ export const useReports = () => {
     try {
       const success = await updateReport(id, report);
       if (success) {
-        setReports(prev => 
-          prev.map(r => r.id === id ? { ...r, ...report } : r)
-        );
+        const updatedReports = reports.map(r => r.id === id ? { ...r, ...report } : r);
+        setReports(updatedReports);
+        applyFilters(updatedReports, searchTerm, typeFilter, statusFilter);
       }
       return success;
     } catch (err: any) {
@@ -77,7 +118,7 @@ export const useReports = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reports, searchTerm, typeFilter, statusFilter, applyFilters]);
 
   const addTemplate = useCallback(async (template: Partial<Report>): Promise<Report | null> => {
     setLoading(true);
@@ -102,15 +143,39 @@ export const useReports = () => {
     }
   }, [user]);
 
-  const downloadReport = useCallback(async (reportId: string): Promise<string | null> => {
+  const downloadReport = useCallback(async (reportId: string, format?: 'pdf' | 'csv'): Promise<string | null> => {
     setLoading(true);
     setError(null);
     try {
-      const url = await exportReport(reportId);
+      let url;
+      
+      // Format seçiminə əsaslanaraq müvafiq funksiyanı çağırırıq
+      if (format === 'pdf') {
+        url = await exportReportAsPdf(reportId);
+      } else if (format === 'csv') {
+        url = await exportReportAsCsv(reportId);
+      } else {
+        url = await exportReport(reportId);
+      }
+      
       return url;
     } catch (err: any) {
       setError(err.message || 'Hesabat ixrac edilərkən xəta baş verdi');
       return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const shareReportWithUsers = useCallback(async (reportId: string, userIds: string[]): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const success = await shareReport(reportId, userIds);
+      return success;
+    } catch (err: any) {
+      setError(err.message || 'Hesabat paylaşılarkən xəta baş verdi');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -121,16 +186,29 @@ export const useReports = () => {
     loadTemplates();
   }, [loadReports, loadTemplates]);
 
+  // Search və filter dəyişdikdə tətbiq et
+  useEffect(() => {
+    applyFilters(reports, searchTerm, typeFilter, statusFilter);
+  }, [reports, searchTerm, typeFilter, statusFilter, applyFilters]);
+
   return {
     reports,
+    filteredReports,
     templates,
     loading,
     error,
+    searchTerm,
+    setSearchTerm,
+    typeFilter,
+    setTypeFilter,
+    statusFilter,
+    setStatusFilter,
     loadReports,
     loadTemplates,
     addReport,
     editReport,
     addTemplate,
-    downloadReport
+    downloadReport,
+    shareReportWithUsers
   };
 };
