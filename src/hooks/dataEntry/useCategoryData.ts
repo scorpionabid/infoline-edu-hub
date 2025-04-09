@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, ColumnType } from '@/types/column';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ const mockCategoriesData = [
         id: '101',
         categoryId: '1',
         name: 'Ad',
-        type: 'text',
+        type: 'text' as ColumnType,
         isRequired: true,
         order: 1,
         status: 'active',
@@ -38,7 +38,7 @@ const mockCategoriesData = [
         id: '102',
         categoryId: '1',
         name: 'Soyad',
-        type: 'text',
+        type: 'text' as ColumnType,
         isRequired: true,
         order: 2,
         status: 'active',
@@ -62,7 +62,7 @@ const mockCategoriesData = [
         id: '201',
         categoryId: '2',
         name: 'Ad',
-        type: 'text',
+        type: 'text' as ColumnType,
         isRequired: true,
         order: 1,
         status: 'active',
@@ -74,7 +74,7 @@ const mockCategoriesData = [
         id: '202',
         categoryId: '2',
         name: 'Soyad',
-        type: 'text',
+        type: 'text' as ColumnType,
         isRequired: true,
         order: 2,
         status: 'active',
@@ -132,7 +132,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
               id: col.id,
               category_id: col.categoryId || col.category_id,
               name: col.name,
-              type: col.type,
+              type: col.type as ColumnType,
               is_required: col.isRequired || col.is_required,
               order_index: col.order || col.order_index,
               status: col.status,
@@ -176,9 +176,9 @@ export const useCategoryData = (): UseCategoryDataReturn => {
           id: category.id,
           name: category.name,
           description: category.description || '',
-          assignment: category.assignment as 'all' | 'sectors', // Tipi düzəltmək üçün as ilə konvertasiya edirik
+          assignment: category.assignment as 'all' | 'sectors',
           deadline: category.deadline,
-          status: category.status as 'active' | 'inactive' | 'draft', // Burada status tipini düzəldirik
+          status: category.status as 'active' | 'inactive' | 'draft',
           priority: category.priority || 0,
           created_at: category.created_at,
           updated_at: category.updated_at,
@@ -186,7 +186,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             id: col.id,
             category_id: col.category_id,
             name: col.name,
-            type: col.type,
+            type: col.type as ColumnType,
             is_required: col.is_required || false,
             order_index: col.order_index || 0,
             status: col.status,
@@ -216,9 +216,9 @@ export const useCategoryData = (): UseCategoryDataReturn => {
           id: category.id,
           name: category.name,
           description: category.description,
-          assignment: category.assignment as 'all' | 'sectors', // Burada da eyni konvertasiyanı edirik
+          assignment: category.assignment as 'all' | 'sectors',
           deadline: category.deadline,
-          status: category.status as 'active' | 'inactive' | 'draft', // Burada da status tipini düzəldirik
+          status: category.status as 'active' | 'inactive' | 'draft',
           priority: category.priority,
           created_at: category.createdAt || category.created_at,
           updated_at: category.updatedAt || category.updated_at,
@@ -226,7 +226,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             id: col.id,
             category_id: col.categoryId || col.category_id,
             name: col.name,
-            type: col.type,
+            type: col.type as ColumnType,
             is_required: col.isRequired || col.is_required,
             order_index: col.order || col.order_index,
             status: col.status,
