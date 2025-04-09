@@ -1,4 +1,3 @@
-
 import { StatusFilterOptions, Report, SchoolColumnData, ExportOptions } from '@/types/report';
 import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/utils/errorHandler';
