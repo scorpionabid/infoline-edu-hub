@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
@@ -13,7 +12,6 @@ import { useDataEntries } from '@/hooks/useDataEntries';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-// Tipləri əlavə edək
 interface UseDataEntryStateReturn {
   categories: CategoryWithColumns[];
   isLoading: boolean;
@@ -32,11 +30,10 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   const urlCategoryId = queryParams.get('categoryId');
   const selectedCategoryId = initialCategoryId || urlCategoryId;
 
-  // DataEntry state-i və funksiyaları
   const dataEntryState = useDataEntryState({
     initialCategoryId: selectedCategoryId || undefined
   });
-  
+
   const { 
     categories,
     isLoading,
@@ -67,10 +64,10 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   } = useForm(categories);
   
   const { errors, validateForm, getErrorForColumn } = useValidation(categories, formData.entries);
-  
-  // Kateqoriya məlumatları yükləmək
+
   const loadCategoryData = useCallback(async () => {
     if (!user?.schoolId) {
+      console.warn("İstifadəçi məktəb ID-si tapılmadı:", user);
       toast.error(t('notAuthenticated'), {
         description: t('pleaseLogin')
       });
@@ -78,78 +75,80 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     }
 
     try {
-      // Kateqoriyaları yükləyək
+      console.log("Məktəb ID ilə məlumatlar yüklənir:", user.schoolId);
+      
       await fetchCategories();
 
-      // Kateqoriyalar yükləndikdən sonra mövcud daxil edilmiş məlumatları yükləyək
-      if (user.schoolId) {
-        const { data: existingData, error } = await supabase
-          .from('data_entries')
-          .select('*')
-          .eq('school_id', user.schoolId);
+      const { data: existingData, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('school_id', user.schoolId);
 
-        if (error) throw error;
+      if (error) {
+        console.error("Məlumat girdilərini əldə edərkən xəta:", error);
+        throw error;
+      }
 
-        // Mövcud məlumatları forma formatına çevirək
-        if (existingData && existingData.length > 0) {
-          const entriesByCategory = existingData.reduce((acc, entry) => {
-            if (!acc[entry.category_id]) {
-              acc[entry.category_id] = {
-                categoryId: entry.category_id,
-                values: [],
-                isCompleted: false,
-                isSubmitted: entry.status === 'pending' || entry.status === 'approved',
-                completionPercentage: 0,
-                approvalStatus: entry.status
-              };
-            }
+      console.log("Məktəb üçün tapılan mövcud məlumat girdilərinin sayı:", existingData?.length || 0);
+      
+      if (existingData && existingData.length > 0) {
+        const entriesByCategory: Record<string, any> = {};
+        
+        existingData.forEach(entry => {
+          if (!entriesByCategory[entry.category_id]) {
+            entriesByCategory[entry.category_id] = {
+              categoryId: entry.category_id,
+              values: [],
+              isCompleted: false,
+              isSubmitted: entry.status === 'pending' || entry.status === 'approved',
+              completionPercentage: 0,
+              approvalStatus: entry.status
+            };
+          }
 
-            acc[entry.category_id].values.push({
-              columnId: entry.column_id,
-              value: entry.value,
-              status: entry.status,
-              errorMessage: entry.status === 'rejected' ? entry.rejection_reason : undefined
-            });
-
-            return acc;
-          }, {} as Record<string, any>);
-
-          // Kateqoriyalar üçün tamamlanma faizini hesablayaq
-          Object.keys(entriesByCategory).forEach(categoryId => {
-            const category = categories.find(c => c.id === categoryId);
-            if (category) {
-              const requiredColumns = category.columns.filter(col => col.is_required);
-              const filledRequiredValues = entriesByCategory[categoryId].values.filter(val => {
-                const column = category.columns.find(col => col.id === val.columnId);
-                return column?.is_required && val.value !== '' && val.value !== null && val.value !== undefined;
-              });
-              
-              entriesByCategory[categoryId].completionPercentage = requiredColumns.length > 0 
-                ? (filledRequiredValues.length / requiredColumns.length) * 100 
-                : 100;
-                
-              entriesByCategory[categoryId].isCompleted = entriesByCategory[categoryId].completionPercentage === 100;
-            }
+          entriesByCategory[entry.category_id].values.push({
+            columnId: entry.column_id,
+            value: entry.value,
+            status: entry.status,
+            errorMessage: entry.status === 'rejected' ? entry.rejection_reason : undefined
           });
+        });
 
-          // Forma məlumatlarını inisializasiya edək
-          initializeForm(Object.values(entriesByCategory), 'draft');
-        }
+        Object.keys(entriesByCategory).forEach(categoryId => {
+          const category = categories.find(c => c.id === categoryId);
+          if (category) {
+            const requiredColumns = category.columns.filter(col => col.is_required);
+            const filledRequiredValues = entriesByCategory[categoryId].values.filter(val => {
+              const column = category.columns.find(col => col.id === val.columnId);
+              return column?.is_required && val.value && val.value.trim() !== '';
+            });
+            
+            entriesByCategory[categoryId].completionPercentage = requiredColumns.length > 0 
+              ? (filledRequiredValues.length / requiredColumns.length) * 100 
+              : 100;
+              
+            entriesByCategory[categoryId].isCompleted = entriesByCategory[categoryId].completionPercentage === 100;
+          }
+        });
+
+        console.log("Formalaşdırılmış kateqoriya məlumatları:", entriesByCategory);
+        
+        initializeForm(Object.values(entriesByCategory), 'draft');
+      } else {
+        console.log("Bu məktəb üçün heç bir məlumat girişi tapılmadı");
       }
     } catch (err) {
-      console.error('Error loading category data:', err);
+      console.error('Kateqoriya məlumatlarını yükləmə xətası:', err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotLoadData')
       });
     }
   }, [fetchCategories, user, categories, t, initializeForm]);
 
-  // Məlumatları serverə yerləşdirmək
   const saveDataToServer = useCallback(async (categoryId: string, columnId: string, value: any) => {
     if (!user?.schoolId) return;
 
     try {
-      // Bu sütün və məktəb üçün mövcud məlumat olub-olmadığını yoxlayaq
       const { data: existingData, error: fetchError } = await supabase
         .from('data_entries')
         .select('id, status')
@@ -160,10 +159,8 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
 
       if (fetchError) throw fetchError;
 
-      // Əgər artıq məlumat varsa və təsdiqlənməyibsə, update edək
       if (existingData) {
         if (existingData.status === 'approved') {
-          // Təsdiqlənmiş məlumatları dəyişmək olmaz
           toast.error(t('cannotModifyApprovedData'), {
             description: t('contactAdmin')
           });
@@ -176,9 +173,7 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
           .eq('id', existingData.id);
 
         if (updateError) throw updateError;
-      } 
-      // Əgər məlumat yoxdursa, əlavə edək
-      else {
+      } else {
         const { error: insertError } = await supabase
           .from('data_entries')
           .insert([{
@@ -198,13 +193,10 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     }
   }, [user, t]);
 
-  // Forma dəyərini yeniləmək və serverə saxlamaq
   const handleUpdateValue = useCallback(async (categoryId: string, columnId: string, value: any) => {
     try {
-      // Forma vəziyyətini yeniləmək
       updateValue(categoryId, columnId, value);
       
-      // Məlumatı serverdə saxlamaq
       await saveDataToServer(categoryId, columnId, value);
     } catch (err) {
       console.error('Error updating value:', err);
@@ -214,7 +206,6 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     }
   }, [updateValue, saveDataToServer, t]);
 
-  // Kateqoriyanı təsdiq üçün göndərmək
   const handleSubmitForApproval = useCallback(async () => {
     if (!user?.schoolId || categories.length === 0) return;
 
@@ -222,10 +213,8 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     if (!currentCategory) return;
 
     try {
-      // Məlumatları saxlayaq
       saveForm();
 
-      // Bütün məcburi sahələrin doldurulduğunu yoxlayaq
       const isValid = validateForm();
       if (!isValid) {
         toast.error(t('validationError'), {
@@ -234,10 +223,8 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
         return;
       }
 
-      // Cari kateqoriyanı təsdiqə göndərək
       await submitCategoryForApproval(currentCategory.id, user.schoolId);
 
-      // Kateqoriyaları yenidən yükləyək və vəziyyəti yeniləyək
       fetchCategories();
 
       toast.success(t('categorySubmitted'), {
@@ -251,7 +238,6 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     }
   }, [categories, currentCategoryIndex, user, saveForm, validateForm, submitCategoryForApproval, fetchCategories, t]);
 
-  // Excel əməliyyatları
   const { updateFormDataFromExcel, changeCategory } = useDataUpdates({
     categories,
     formData,
@@ -265,10 +251,8 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   });
 
   const { downloadExcelTemplate, uploadExcelData } = useExcelOperations(categories, async (data, categoryId) => {
-    // Excel məlumatlarını forma vəziyyətinə əlavə edək
     updateFormDataFromExcel(data, categoryId);
     
-    // Həmçinin məlumatları serverdə də saxlayaq
     if (user?.schoolId && categoryId) {
       try {
         for (const [columnId, value] of Object.entries(data)) {
@@ -286,22 +270,23 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
       }
     }
   });
-  
-  // Komponent yükləndikdə məlumatları yükləyək
-  useEffect(() => {
-    loadCategoryData();
-  }, [loadCategoryData]);
 
-  // AutoSave funksiyasını quraq
+  useEffect(() => {
+    if (user?.schoolId) {
+      console.log("İstifadəçi məktəb ID-si ilə yüklənmə başladı:", user.schoolId);
+      loadCategoryData();
+    } else {
+      console.warn("İstifadəçi məktəb ID-si olmadan yüklənmə:", user);
+    }
+  }, [loadCategoryData, user]);
+
   useEffect(() => {
     return setupAutoSave(validateForm);
   }, [setupAutoSave, validateForm]);
 
-  // Status dəyişdikdə filtri tətbiq edək
   useEffect(() => {
     if (!statusFilter || !categories.length) return;
     
-    // Verilən statusa uyğun kateqoriyanı tapaq
     const categoryIndex = categories.findIndex(c => c.status === statusFilter);
     if (categoryIndex !== -1) {
       setCurrentCategoryIndex(categoryIndex);

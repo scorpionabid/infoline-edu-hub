@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert";
 import { toast } from 'sonner';
 import { FormStatus } from '@/types/form';
+import { useAuth } from '@/context/AuthContext';
 
 interface DataEntryFormProps {
   initialCategoryId?: string | null; 
@@ -53,6 +54,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   onDataChanged
 }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   // useDataEntry hookundan məlumatları alırıq
@@ -73,8 +75,33 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     uploadExcelData
   } = useDataEntry(initialCategoryId);
 
+  // Debug məlumatları
+  useEffect(() => {
+    console.log("Kateqoriyalar yükləndi:", categories.length, "kateqoriya");
+    console.log("İstifadəçi məlumatları:", user);
+    console.log("Form məlumatları:", formData);
+  }, [categories, user, formData]);
+
   // Faylı yükləmək üçün referens
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Kateqoriyalar olmadığı və yükləndiyi halda yüklənmə ekranı göstəririk
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('dataEntryForm')}</CardTitle>
+          <CardDescription>{t('enterDataCarefully')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center p-12">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-sm text-muted-foreground">{t('loadingCategories')}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   // Əgər kateqoriya olmasa və data yüklənmişsə, "Kateqoriya tapılmadı" mesajı göstəririk
   if (categories.length === 0 && !isLoading) {
@@ -101,24 +128,6 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
               <RefreshCcw className="h-4 w-4" />
               {t('refreshPage')}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Yüklənir vəziyyəti
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('dataEntryForm')}</CardTitle>
-          <CardDescription>{t('enterDataCarefully')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center p-12">
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            <p className="text-sm text-muted-foreground">{t('loadingCategories')}</p>
           </div>
         </CardContent>
       </Card>
@@ -319,32 +328,41 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 )}
                 
                 <div className="space-y-4 mt-4">
-                  {currentCategory.columns.map((column) => {
-                    // Sütuna aid dəyər və xəta mesajını tapırıq
-                    const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
-                    const valueObj = entry?.values.find(v => v.columnId === column.id);
-                    const error = getErrorForColumn(column.id);
-                    
-                    return (
-                      <FormField
-                        key={column.id}
-                        id={column.id}
-                        label={column.name}
-                        type={column.type}
-                        required={column.is_required}
-                        disabled={formData.status === 'submitted' || isCategoryApproved()}
-                        options={column.options as string[]}
-                        placeholder={column.placeholder}
-                        helpText={column.help_text}
-                        value={valueObj?.value || ''}
-                        onChange={(value) => {
-                          updateValue(currentCategory.id, column.id, value);
-                          if (onDataChanged) onDataChanged();
-                        }}
-                        error={error}
-                      />
-                    );
-                  })}
+                  {currentCategory.columns && currentCategory.columns.length > 0 ? (
+                    currentCategory.columns.map((column) => {
+                      // Sütuna aid dəyər və xəta mesajını tapırıq
+                      const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
+                      const valueObj = entry?.values.find(v => v.columnId === column.id);
+                      const error = getErrorForColumn(column.id);
+                      
+                      return (
+                        <FormField
+                          key={column.id}
+                          id={column.id}
+                          label={column.name}
+                          type={column.type}
+                          required={column.is_required}
+                          disabled={formData.status === 'submitted' || isCategoryApproved()}
+                          options={column.options as string[]}
+                          placeholder={column.placeholder}
+                          helpText={column.help_text}
+                          value={valueObj?.value || ''}
+                          onChange={(value) => {
+                            updateValue(currentCategory.id, column.id, value);
+                            if (onDataChanged) onDataChanged();
+                          }}
+                          error={error}
+                        />
+                      );
+                    })
+                  ) : (
+                    <Alert className="bg-yellow-50 border-yellow-100">
+                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                      <AlertDescription>
+                        {t('noColumnsInCategory')}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </>
             )}

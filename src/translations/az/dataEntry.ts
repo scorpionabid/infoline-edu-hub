@@ -47,6 +47,9 @@ const dataEntryTranslations = {
   unsupportedFieldType: 'Dəstəklənməyən sahə növü',
   noDataToSubmit: 'Təqdim ediləcək məlumat yoxdur',
   selectCategory: 'Kateqoriya seçin',
+  noPendingForms: 'Heç bir gözləyən form tapılmadı',
+  noColumnsInCategory: 'Bu kateqoriyada heç bir sütun mövcud deyil. Zəhmət olmasa administratorla əlaqə saxlayın.',
+  latestNotifications: 'Ən son bildirişlər',
   excel: {
     import: 'Excel idxal et',
     export: 'Excel ixrac et',
