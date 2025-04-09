@@ -1,16 +1,9 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { ColumnValidationError } from '@/types/dataEntry';
-import { CategoryWithColumns, Column, ValidationRules } from '@/types/column';
+import { CategoryWithColumns, Column, ValidationRules, DependsOnCondition } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Json } from '@/integrations/supabase/types';
-
-interface DependsOnCondition {
-  columnId: string;
-  condition: {
-    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
-    value: any;
-  };
-}
 
 export const useValidation = (categories: CategoryWithColumns[], entries: any[]) => {
   const [errors, setErrors] = useState<ColumnValidationError[]>([]);
@@ -32,7 +25,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
       
       if (categoryEntry) {
         category.columns.forEach(column => {
-          if (column.isRequired) {
+          if (column.is_required) {
             const valueObj = categoryEntry.values.find((v: any) => v.columnId === column.id);
             const value = valueObj?.value;
             
@@ -67,8 +60,8 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 if (valueObj) {
                   valueObj.errorMessage = t('invalidFormat');
                 }
-              } else if (column.validation || column.validationRules) {
-                const validationRules = ensureValidationRules(column.validation || column.validationRules);
+              } else if (column.validation || column.validation) {
+                const validationRules = ensureValidationRules(column.validation);
                 if (validationRules?.minValue !== undefined && numValue < validationRules.minValue) {
                   newErrors.push({
                     columnId: column.id,
@@ -111,9 +104,9 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
             }
             
-            else if (column.type === 'text' && (column.validation || column.validationRules)) {
+            else if (column.type === 'text' && column.validation) {
               const strValue = String(value);
-              const validationRules = ensureValidationRules(column.validation || column.validationRules);
+              const validationRules = ensureValidationRules(column.validation);
               
               if (validationRules?.minLength !== undefined && strValue.length < validationRules.minLength) {
                 newErrors.push({
@@ -152,9 +145,9 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
               }
             }
             
-            else if (column.type === 'date' && (column.validation || column.validationRules)) {
+            else if (column.type === 'date' && column.validation) {
               const dateValue = new Date(value);
-              const validationRules = ensureValidationRules(column.validation || column.validationRules);
+              const validationRules = ensureValidationRules(column.validation);
               
               if (isNaN(dateValue.getTime())) {
                 newErrors.push({
@@ -235,7 +228,8 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
         
         category.columns.forEach(column => {
           if (column.dependsOn) {
-            const dependsOn = column.dependsOn as DependsOnCondition;
+            // column.dependsOn tipini DependsOnCondition tipinə çeviririk
+            const dependsOn = column.dependsOn as unknown as DependsOnCondition;
             const parentValueObj = categoryEntry.values.find((v: any) => v.columnId === dependsOn.columnId);
             const currentValueObj = categoryEntry.values.find((v: any) => v.columnId === column.id);
             
@@ -253,7 +247,7 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
                 conditionMet = true;
               }
               
-              if (conditionMet && column.isRequired) {
+              if (conditionMet && column.is_required) {
                 const value = currentValueObj?.value;
                 
                 if (value === undefined || value === null || value === '') {

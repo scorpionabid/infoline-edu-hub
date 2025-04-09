@@ -32,10 +32,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   
   // Məktəb admin üçün əsl məlumatları yükləyirik
   const { 
-    dashboardData: schoolAdminData, 
+    data: schoolAdminData, 
     isLoading: schoolAdminLoading,
     error: schoolAdminError,
-    refreshData: refreshSchoolAdminData 
+    refetch: refreshSchoolAdminData 
   } = useSchoolAdminDashboard();
 
   // Data entry səhifəsinə keçid

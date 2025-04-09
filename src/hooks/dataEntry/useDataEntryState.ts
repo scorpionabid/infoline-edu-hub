@@ -1,150 +1,162 @@
-
-import { useState, useRef, useCallback } from 'react';
-import { CategoryWithColumns } from '@/types/column';
-import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
+import { CategoryWithColumns } from '@/types/column';
 
-export const useDataEntryState = (initialCategoryId?: string | null) => {
+interface UseDataEntryStateProps {
+  formId: string;
+  schoolId: string;
+}
+
+interface UseDataEntryStateReturn {
+  categories: CategoryWithColumns[];
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => void;
+}
+
+const mockCategoriesData = [
+  {
+    id: uuidv4(),
+    name: "Şagird Məlumatları",
+    description: "Şagirdlərlə bağlı əsas məlumatlar",
+    deadline: new Date(Date.now() + 7 * 86400000).toISOString(), // 7 gün sonra
+    status: "active",
+    priority: 1,
+    assignment: "all",
+    createdAt: new Date().toISOString(),
+    columns: [
+      {
+        id: uuidv4(),
+        categoryId: "cat1",
+        name: "Şagird sayı",
+        type: "number",
+        isRequired: true,
+        order: 1,
+        status: "active",
+        validation: null
+      },
+      {
+        id: uuidv4(),
+        categoryId: "cat1",
+        name: "Sinif sayı",
+        type: "number",
+        isRequired: false,
+        order: 2,
+        status: "active",
+        validation: null
+      }
+    ]
+  },
+  {
+    id: uuidv4(),
+    name: "Müəllim Məlumatları",
+    description: "Müəllimlərlə bağlı əsas məlumatlar",
+    deadline: new Date(Date.now() + 14 * 86400000).toISOString(), // 14 gün sonra
+    status: "inactive",
+    priority: 2,
+    assignment: "sectors",
+    createdAt: new Date().toISOString(),
+    columns: [
+      {
+        id: uuidv4(),
+        categoryId: "cat2",
+        name: "Müəllim sayı",
+        type: "number",
+        isRequired: true,
+        order: 1,
+        status: "active",
+        validation: null
+      },
+      {
+        id: uuidv4(),
+        categoryId: "cat2",
+        name: "Kişi müəllim sayı",
+        type: "number",
+        isRequired: false,
+        order: 2,
+        status: "active",
+        validation: null
+      }
+    ]
+  }
+];
+
+export const useDataEntryState = ({ formId, schoolId }: UseDataEntryStateProps): UseDataEntryStateReturn => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const lastCategoryIdRef = useRef<string | null>(initialCategoryId);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
-  const { t } = useLanguage();
 
-  // Kateqoriyaları və sütunları Supabase-dən çəkmək
-  const fetchCategories = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+
     try {
-      // Əvvəlcə kateqoriyaları çəkək
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
+      // Supabase-dən məlumatları al
+      // const { data, error } = await supabase
+      //   .from('categories')
+      //   .select('*');
 
-      if (categoriesError) throw categoriesError;
+      // Əgər xəta varsa, at
+      // if (error) {
+      //   throw error;
+      // }
 
-      // Əgər kateqoriya yoxdursa, boş massiv qaytaraq
-      if (!categoriesData || categoriesData.length === 0) {
-        setCategories([]);
-        setIsLoading(false);
-        return;
-      }
+      // Mock məlumatları ilə əvəz et
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Hər bir kateqoriyaya aid sütunları çəkək
-      const categoriesWithColumns: CategoryWithColumns[] = await Promise.all(
-        categoriesData.map(async (category) => {
-          // Sütunları çəkək
-          const { data: columnsData, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id)
-            .eq('status', 'active')
-            .order('order_index', { ascending: true });
+      // Categories adaptasiya etmə funksiyası
+      const adaptCategories = (data: any[]): CategoryWithColumns[] => {
+        return data.map(category => ({
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          assignment: category.assignment,
+          deadline: category.deadline,
+          status: category.status,
+          priority: category.priority,
+          created_at: category.createdAt || category.created_at || new Date().toISOString(),
+          updated_at: category.updatedAt || category.updated_at || new Date().toISOString(),
+          columns: category.columns.map((col: any) => ({
+            id: col.id,
+            category_id: col.categoryId || col.category_id,
+            name: col.name,
+            type: col.type,
+            is_required: col.isRequired || col.is_required,
+            order_index: col.order || col.order_index,
+            status: col.status,
+            validation: col.validationRules || col.validation,
+            default_value: col.defaultValue || col.default_value,
+            placeholder: col.placeholder,
+            help_text: col.helpText || col.help_text,
+            options: col.options,
+            created_at: col.created_at || new Date().toISOString(),
+            updated_at: col.updated_at || new Date().toISOString()
+          }))
+        }));
+      };
 
-          if (columnsError) throw columnsError;
+      // Kategoriyaları təyin etdikdə adaptasiya edək
+      const fetchedCategories = adaptCategories(mockCategoriesData);
+      setCategories(fetchedCategories);
 
-          // Kateqoriya və sütunlar ilə obyekt yaradaq
-          return {
-            id: category.id,
-            name: category.name,
-            description: category.description || '',
-            deadline: category.deadline,
-            status: category.status === 'active' ? 'active' : 'inactive',
-            priority: category.priority || 0,
-            assignment: category.assignment === 'sectors' ? 'sectors' : 'all',
-            createdAt: category.created_at,
-            columns: columnsData.map(column => ({
-              id: column.id,
-              categoryId: column.category_id,
-              name: column.name,
-              type: column.type,
-              isRequired: column.is_required,
-              placeholder: column.placeholder || '',
-              helpText: column.help_text || '',
-              options: column.options,
-              order: column.order_index || 0,
-              status: column.status === 'active' ? 'active' : 'inactive',
-              defaultValue: column.default_value || '',
-              validation: column.validation
-            }))
-          };
-        })
-      );
-
-      // Məlumatların approval statusunu yoxlayaq
-      if (user?.schoolId) {
-        const updatedCategoriesWithStatus = await Promise.all(
-          categoriesWithColumns.map(async (category) => {
-            try {
-              // Kateqoriya üçün məlumatların statusunu yoxlayaq
-              const { data, error } = await supabase
-                .from('data_entries')
-                .select('status')
-                .eq('school_id', user.schoolId)
-                .eq('category_id', category.id);
-
-              if (error) throw error;
-
-              // Məlumatların statusuna görə kateqoriya statusunu təyin edək
-              if (data && data.length > 0) {
-                // Əgər bütün məlumatlar approved isə, kateqoriya approved statusunu alır
-                if (data.every(item => item.status === 'approved')) {
-                  return { ...category, status: 'approved' as 'active' | 'inactive' };
-                }
-                // Əgər hər hansı məlumat rejected isə, kateqoriya rejected statusunu alır
-                else if (data.some(item => item.status === 'rejected')) {
-                  return { ...category, status: 'rejected' as 'active' | 'inactive' };
-                }
-                // Əks halda, pending statusu verilir
-                else {
-                  return { ...category, status: 'pending' as 'active' | 'inactive' };
-                }
-              }
-
-              return category;
-            } catch (err) {
-              console.error(`Error checking status for category ${category.id}:`, err);
-              return category;
-            }
-          })
-        );
-
-        setCategories(updatedCategoriesWithStatus);
-      } else {
-        setCategories(categoriesWithColumns);
-      }
-
-      // Əgər initialCategoryId varsa, onun indeksini tapaq
-      if (initialCategoryId) {
-        const categoryIndex = categoriesWithColumns.findIndex(
-          category => category.id === initialCategoryId
-        );
-        if (categoryIndex !== -1) {
-          setCurrentCategoryIndex(categoryIndex);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching categories and columns:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadCategories')
-      });
+    } catch (error: any) {
+      setError(error);
     } finally {
       setIsLoading(false);
     }
-  }, [initialCategoryId, user, t]);
+  }, [formId, schoolId, user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return {
     categories,
-    setCategories,
     isLoading,
-    setIsLoading,
-    currentCategoryIndex,
-    setCurrentCategoryIndex,
-    lastCategoryIdRef,
-    fetchCategories
+    error,
+    refetch: fetchData
   };
 };

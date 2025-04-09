@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { School } from '@/types/school';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { useColumns } from './useColumns';
 
 // Test/demo verilənləri
@@ -22,11 +22,42 @@ const mockCategories: CategoryWithColumns[] = [
     status: "active",
     priority: 1,
     assignment: "all",
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     columns: [
-      { id: "col-1", categoryId: "cat-1", name: "Şagird sayı", type: "number", isRequired: true, order: 1, status: "active" },
-      { id: "col-2", categoryId: "cat-1", name: "Müəllim sayı", type: "number", isRequired: true, order: 2, status: "active" },
-      { id: "col-3", categoryId: "cat-1", name: "Otaq sayı", type: "number", isRequired: true, order: 3, status: "active" },
+      { 
+        id: "col-1", 
+        category_id: "cat-1", 
+        name: "Şagird sayı", 
+        type: "number", 
+        is_required: true, 
+        order_index: 1, 
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      { 
+        id: "col-2", 
+        category_id: "cat-1", 
+        name: "Müəllim sayı", 
+        type: "number", 
+        is_required: true, 
+        order_index: 2, 
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      { 
+        id: "col-3", 
+        category_id: "cat-1", 
+        name: "Otaq sayı", 
+        type: "number", 
+        is_required: true, 
+        order_index: 3, 
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
     ]
   },
   {
@@ -36,9 +67,20 @@ const mockCategories: CategoryWithColumns[] = [
     status: "active",
     priority: 2,
     assignment: "all",
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     columns: [
-      { id: "col-4", categoryId: "cat-2", name: "Buraxılış faizi", type: "number", isRequired: true, order: 1, status: "active" },
+      { 
+        id: "col-4", 
+        category_id: "cat-2", 
+        name: "Buraxılış faizi", 
+        type: "number", 
+        is_required: true, 
+        order_index: 1, 
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
     ]
   },
   {
@@ -48,10 +90,31 @@ const mockCategories: CategoryWithColumns[] = [
     status: "active",
     priority: 3,
     assignment: "all",
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     columns: [
-      { id: "col-5", categoryId: "cat-3", name: "İdman zalı", type: "boolean", isRequired: true, order: 1, status: "active" },
-      { id: "col-6", categoryId: "cat-3", name: "Kitabxana", type: "boolean", isRequired: true, order: 2, status: "active" },
+      { 
+        id: "col-5", 
+        category_id: "cat-3", 
+        name: "İdman zalı", 
+        type: "checkbox", 
+        is_required: true, 
+        order_index: 1, 
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      { 
+        id: "col-6", 
+        category_id: "cat-3", 
+        name: "Kitabxana", 
+        type: "checkbox", 
+        is_required: true, 
+        order_index: 2, 
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
     ]
   }
 ];

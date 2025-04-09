@@ -1,315 +1,350 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import PageHeader from '@/components/layout/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  PlusCircle,
-  Search,
-  SlidersHorizontal,
-  RefreshCw,
-  CircleOff,
-  CheckCircle,
-  Trash2,
-  Edit,
-} from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Skeleton } from '@/components/ui/skeleton';
-import CategoryList from '@/components/categories/CategoryList';
-import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
-import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
-import EmptyState from '@/components/common/EmptyState';
-import { useCategories } from '@/hooks/useCategories';
-import { updateCategoryStatus, deleteCategory } from '@/api/categoryApi';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
+import { supabase } from '@/integrations/supabase/client';
+import { EmptyState } from '@/components/common/EmptyState';
+import PageHeader from '@/components/layout/PageHeader';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon } from '@radix-ui/react-icons';
+import { DateRange } from 'react-day-picker';
 
-const Categories = () => {
+const Categories: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
-  // Kategori verileri
-  const {
-    categories,
-    filteredCategories,
-    isLoading,
-    error,
-    searchQuery,
-    setSearchQuery,
-    refetch,
-  } = useCategories();
-  
-  // Dialoglar üçün dəyişənlər
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [filter, setFilter] = useState({
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [addDialog, setAddDialog] = useState({ isOpen: false });
+  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, categoryId: '', categoryName: '' });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<CategoryFilter>({
     status: 'all',
     assignment: 'all',
-    deadline: 'all',
+    deadline: 'all'
   });
-  
-  // Status dəyişdirmə mutasyonu
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: CategoryStatus }) => 
-      updateCategoryStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast({
-        title: 'Status yeniləndi',
-        description: 'Kateqoriya statusu uğurla yeniləndi.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Xəta!',
-        description: 'Status yeniləmək mümkün olmadı.',
-      });
-      console.error('Status yeniləmə xətası:', error);
-    },
-  });
-  
-  // Silmə mutasyonu
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast({
-        title: 'Kateqoriya silindi',
-        description: 'Kateqoriya uğurla silindi.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Xəta!',
-        description: 'Kateqoriyanı silmək mümkün olmadı.',
-      });
-      console.error('Kateqoriya silinmə xətası:', error);
-    },
-  });
-  
-  // Redaktə dialoqunu aç
-  const openEditDialog = (category: Category) => {
-    setEditingCategory(category);
-    setIsEditDialogOpen(true);
-  };
-  
-  // Silmə dialoqunu aç
-  const openDeleteDialog = (category: Category) => {
-    setDeletingCategory(category);
-    setIsDeleteDialogOpen(true);
-  };
-  
-  // Status dəyişmə
-  const handleStatusChange = async (id: string, status: CategoryStatus) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [date, setDate] = useState<DateRange | undefined>(undefined);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      await updateStatusMutation.mutateAsync({ id, status });
+      let query = supabase
+        .from('categories')
+        .select('*')
+        .ilike('name', `%${searchQuery}%`);
+
+      if (filter.status !== 'all') {
+        query = query.eq('status', filter.status);
+      }
+
+      if (filter.assignment !== 'all') {
+        query = query.eq('assignment', filter.assignment);
+      }
+
+      if (filter.deadline === 'upcoming') {
+        query = query.gt('deadline', new Date().toISOString());
+      } else if (filter.deadline === 'past') {
+        query = query.lt('deadline', new Date().toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data) {
+        setCategories(data);
+      } else {
+        setCategories([]);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(t('errorFetchingCategories'), {
+        description: err.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filter, searchQuery, t]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleOpenAddDialog = () => {
+    setAddDialog({ isOpen: true });
+  };
+
+  const handleCloseAddDialog = () => {
+    setAddDialog({ isOpen: false });
+  };
+
+  const handleAddCategory = async (newCategory: Omit<Category, 'id'>) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .insert([newCategory]);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success(t('categoryAddedSuccessfully'), {
+        description: t('categoryAddedSuccessfullyDesc')
+      });
+      fetchData();
       return true;
-    } catch (error) {
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(t('errorAddingCategory'), {
+        description: err.message
+      });
       return false;
     }
   };
-  
-  // Kateqoriyanı yeniləmə
-  const handleEditCategory = async (category: Category) => {
+
+  const handleOpenDeleteDialog = (categoryId: string, categoryName: string) => {
+    setDeleteDialog({ isOpen: true, categoryId: categoryId, categoryName: categoryName });
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ isOpen: false, categoryId: '', categoryName: '' });
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
     try {
-      // Burada kateqoriya yeniləmə API çağırışı olmalıdır
-      // Aşağıdakı kod sadəcə taymaut ilə simulyasiya edir
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast({
-        title: 'Kateqoriya yeniləndi',
-        description: 'Kateqoriya uğurla yeniləndi.',
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success(t('categoryDeletedSuccessfully'), {
+        description: t('categoryDeletedSuccessfullyDesc')
       });
-      return true;
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Xəta!',
-        description: 'Kateqoriyanı yeniləmək mümkün olmadı.',
+      fetchData();
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(t('errorDeletingCategory'), {
+        description: err.message
       });
-      console.error('Kateqoriya yeniləmə xətası:', error);
-      return false;
     }
   };
-  
-  // Kateqoriyanı silmə
-  const handleDeleteCategory = async (id: string) => {
-    try {
-      await deleteMutation.mutateAsync(id);
-      return true;
-    } catch (error) {
-      return false;
-    }
+
+  const handleEditCategory = (categoryId: string) => {
+    navigate(`/categories/${categoryId}`);
   };
-  
-  // Filter dəyişikliyi
-  const handleFilterChange = (newFilter: any) => {
-    setFilter(prev => ({ ...prev, ...newFilter }));
+
+  const handleFilterChange = (newFilter: Partial<CategoryFilter>) => {
+    setFilter({ ...filter, ...newFilter });
   };
-  
-  // Filtrlə
-  const applyFilters = (categories: Category[]) => {
-    return categories.filter(category => {
-      // Status filtri
-      if (filter.status !== 'all' && category.status !== filter.status) {
-        return false;
-      }
-      
-      // Assignment filtri
-      if (filter.assignment !== 'all' && category.assignment !== filter.assignment) {
-        return false;
-      }
-      
-      // Deadline filtri
-      if (filter.deadline !== 'all') {
-        if (!category.deadline) return false;
-        
-        const deadlineDate = new Date(category.deadline);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (
-          filter.deadline === 'upcoming' && deadlineDate < today ||
-          filter.deadline === 'past' && deadlineDate >= today
-        ) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
-  
-  // Filtrlənmiş və axtarış edilmiş kateqoriyalar
-  const displayedCategories = applyFilters(filteredCategories);
-  
-  if (error) {
-    return (
-      <div className="container py-6">
-        <PageHeader
-          title={t('categories')}
-          description={t('categoriesDescription')}
-        />
-        <EmptyState
-          icon={<CircleOff className="h-12 w-12 text-muted-foreground" />}
-          title="Xəta baş verdi"
-          description="Kateqoriyaları yükləmək mümkün olmadı. Yenidən cəhd edin."
-          action={<Button onClick={() => refetch()}>Yenidən cəhd et</Button>}
-        />
-      </div>
-    );
-  }
-  
+
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    setDate(newDate);
+  };
+
   return (
-    <div className="container py-6">
+    <div>
       <PageHeader
         title={t('categories')}
-        description={t('categoriesDescription')}
-      />
-      
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t('searchCategories')}
-              className="w-full sm:w-[300px] pl-8"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
+        description={t('availableCategories')}
+      >
+        <Button onClick={handleOpenAddDialog}>
+          <Plus className="mr-2 h-4 w-4" />
+          {t('addCategory')}
+        </Button>
+      </PageHeader>
+
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+        <Input
+          type="search"
+          placeholder={t('search')}
+          className="max-w-sm"
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="status">{t('status')}:</Label>
+          <Select onValueChange={(value) => handleFilterChange({ status: value })}>
+            <SelectTrigger id="status">
+              <SelectValue placeholder={t('all')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('all')}</SelectItem>
+              <SelectItem value="active">{t('active')}</SelectItem>
+              <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              <SelectItem value="draft">{t('draft')}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Label htmlFor="assignment">{t('assignment')}:</Label>
+          <Select onValueChange={(value) => handleFilterChange({ assignment: value })}>
+            <SelectTrigger id="assignment">
+              <SelectValue placeholder={t('all')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('all')}</SelectItem>
+              <SelectItem value="sectors">Sectors</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Label htmlFor="deadline">{t('deadline')}:</Label>
+          <Select onValueChange={(value) => handleFilterChange({ deadline: value })}>
+            <SelectTrigger id="deadline">
+              <SelectValue placeholder={t('all')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('all')}</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="past">Past</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon">
-                <SlidersHorizontal className="h-4 w-4" />
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date?.from ? (
+                  date.to ? (
+                    `${format(date.from, "LLL dd, y")} - ${format(date.to, "LLL dd, y")}`
+                  ) : (
+                    format(date.from, "LLL dd, y")
+                  )
+                ) : (
+                  <span>Pick a date</span>
+                )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h4 className="font-medium">Filterlər</h4>
-                <CategoryFilterCard 
-                  filter={filter} 
-                  onFilterChange={handleFilterChange} 
-                />
-              </div>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                defaultMonth={date?.from}
+                selected={date}
+                onSelect={setDate}
+                numberOfMonths={2}
+                pagedNavigation
+              />
             </PopoverContent>
           </Popover>
-          
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
         </div>
-        
-        <Button onClick={() => navigate('/categories/new')}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Yeni kateqoriya
-        </Button>
       </div>
-      
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-6 w-[250px]" />
-                  <Skeleton className="h-4 w-[350px]" />
-                  <div className="flex gap-2 mt-2">
-                    <Skeleton className="h-4 w-[100px]" />
-                    <Skeleton className="h-4 w-[100px]" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+      {isLoading && (
+        <div className="flex items-center justify-center h-48">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
-      ) : (
-        <CategoryList
-          categories={displayedCategories}
-          isLoading={isLoading}
-          onEdit={openEditDialog}
-          onDelete={openDeleteDialog}
-          handleStatusChange={handleStatusChange}
+      )}
+
+      {error && (
+        <div className="text-red-500">Error: {error}</div>
+      )}
+
+      {!isLoading && categories.length === 0 && (
+        <EmptyState
+          title={t('noCategoriesFound')}
+          description={t('noCategoriesFoundDesc')}
+          action={{
+            label: t('addFirstCategory'),
+            onClick: handleOpenAddDialog
+          }}
         />
       )}
-      
-      {/* Redaktə dialoqu */}
-      {editingCategory && (
-        <EditCategoryDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          onEditCategory={handleEditCategory}
-          category={editingCategory}
-          isSubmitting={updateStatusMutation.isPending}
+
+      {!isLoading && categories.length > 0 && (
+        <div className="w-full">
+          <Table>
+            <TableCaption>A list of your categories.</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell>{category.description}</TableCell>
+                  <TableCell>{category.status}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => handleEditCategory(category.id)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      {t('edit')}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleOpenDeleteDialog(category.id, category.name)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {t('delete')}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Add category dialoqu */}
+      {addDialog.isOpen && (
+        <AddCategoryDialog
+          isOpen={addDialog.isOpen}
+          onClose={handleCloseAddDialog}
+          onAddCategory={handleAddCategory}
         />
       )}
-      
+
       {/* Silmə dialoqu */}
-      {deletingCategory && (
+      {deleteDialog.isOpen && (
         <DeleteCategoryDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={() => setIsDeleteDialogOpen(false)}
+          isOpen={deleteDialog.isOpen}
+          onClose={handleCloseDeleteDialog}
           onConfirm={handleDeleteCategory}
-          category={deletingCategory}
-          isSubmitting={deleteMutation.isPending}
+          category={deleteDialog.categoryId} // categoryId property-ni category ilə əvəz edək
+          categoryName={deleteDialog.categoryName}
         />
       )}
     </div>

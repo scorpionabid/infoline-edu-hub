@@ -1,121 +1,137 @@
 
-import { CategoryWithColumns, ColumnType } from '@/types/column';
-import { generateId } from '@/utils/generateId';
+import { v4 as uuidv4 } from 'uuid';
+import { CategoryWithColumns, Column } from '@/types/column';
 
-export const createDemoCategories = (): CategoryWithColumns[] => {
-  const t = (key: string) => key; // Lokalizasiya əvəzinə sadə funksiya
-
-  const demoCategory1: CategoryWithColumns = {
-    id: generateId(),
-    name: t('demoCategory1'),
-    description: t('demoCategory1Description'),
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-    assignment: 'all',
-    createdAt: new Date().toISOString(),
-    priority: 1,
-    columns: [
-      {
-        id: generateId(),
-        categoryId: '',
-        name: t('demoCategory1Column1'),
-        type: 'number' as ColumnType,
-        isRequired: true,
-        order: 1,
-        status: 'active',
-        helpText: t('demoCategory1Column1HelpText'),
-        validationRules: { minValue: 0, maxValue: 1000 },
+export const createDemoCategory = (index: number): CategoryWithColumns => {
+  const categoryId = uuidv4();
+  const now = new Date().toISOString();
+  
+  // Sütunlar üçün demo məlumatlar
+  const demoColumns: Column[] = [];
+  
+  // İlk kateqoriya: Şagird məlumatları
+  if (index === 0) {
+    demoColumns.push({
+      id: uuidv4(),
+      category_id: categoryId,
+      name: "Şagird sayı (ümumi)",
+      type: "number",
+      is_required: true,
+      order_index: 1,
+      status: "active",
+      help_text: "Məktəbdəki ümumi şagird sayı",
+      validation: {
+        minValue: 0,
+        maxValue: 5000
       },
-      {
-        id: generateId(),
-        categoryId: '',
-        name: t('demoCategory1Column2'),
-        type: 'text' as ColumnType,
-        isRequired: false,
-        order: 2,
-        status: 'active',
-        helpText: t('demoCategory1Column2HelpText'),
+      created_at: now,
+      updated_at: now
+    });
+    
+    demoColumns.push({
+      id: uuidv4(),
+      category_id: categoryId,
+      name: "Məktəbə online qeydiyyat mövcuddur?",
+      type: "checkbox",
+      is_required: false,
+      order_index: 2,
+      status: "active",
+      help_text: "Məktəbə qeydiyyat elektron formada aparılır?",
+      created_at: now,
+      updated_at: now
+    });
+  }
+  
+  // İkinci kateqoriya: Müəllim məlumatları
+  else if (index === 1) {
+    demoColumns.push({
+      id: uuidv4(),
+      category_id: categoryId,
+      name: "Müəllim sayı (ümumi)",
+      type: "number",
+      is_required: true,
+      order_index: 1,
+      status: "active",
+      help_text: "Məktəbdəki ümumi müəllim sayı",
+      validation: {
+        minValue: 0,
+        maxValue: 500
       },
-    ]
-  };
-
-  const demoCategory2: CategoryWithColumns = {
-    id: generateId(),
-    name: t('demoCategory2'),
-    description: t('demoCategory2Description'),
-    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-    assignment: 'sectors',
-    createdAt: new Date().toISOString(),
-    priority: 2,
-    columns: [
-      {
-        id: generateId(),
-        categoryId: '',
-        name: t('demoCategory2Column1'),
-        type: 'number' as ColumnType,
-        isRequired: true,
-        order: 1,
-        status: 'active',
-        helpText: t('demoCategory2Column1HelpText'),
-        validationRules: { minValue: 0, maxValue: 500 },
+      created_at: now,
+      updated_at: now
+    });
+    
+    demoColumns.push({
+      id: uuidv4(),
+      category_id: categoryId,
+      name: "İxtisas yüksəltmə kursu keçmiş müəllimlərin sayı",
+      type: "select",
+      is_required: true,
+      order_index: 2,
+      status: "active",
+      help_text: "Son 1 il ərzində ixtisas yüksəltmə kursu keçmiş müəllimlərin sayı",
+      options: [
+        { label: "5-dən az", value: "5-dən az" },
+        { label: "5-10", value: "5-10" },
+        { label: "10-20", value: "10-20" },
+        { label: "20-dən çox", value: "20-dən çox" }
+      ],
+      created_at: now,
+      updated_at: now
+    });
+  }
+  
+  // Üçüncü kateqoriya: İnfrastruktur
+  else if (index === 2) {
+    demoColumns.push({
+      id: uuidv4(),
+      category_id: categoryId,
+      name: "Otaq sayı",
+      type: "number",
+      is_required: true,
+      order_index: 1,
+      status: "active",
+      help_text: "Məktəbdəki ümumi otaq sayı",
+      validation: {
+        minValue: 1,
+        maxValue: 200
       },
-      {
-        id: generateId(),
-        categoryId: '',
-        name: t('demoCategory2Column2'),
-        type: 'select' as ColumnType,
-        isRequired: true,
-        order: 2,
-        status: 'active',
-        helpText: t('demoCategory2Column2HelpText'),
-        options: [
-          { label: t('option1'), value: 'option1' },
-          { label: t('option2'), value: 'option2' },
-        ],
+      created_at: now,
+      updated_at: now
+    });
+    
+    demoColumns.push({
+      id: uuidv4(),
+      category_id: categoryId,
+      name: "İdman zalı mövcuddur?",
+      type: "checkbox",
+      is_required: true,
+      order_index: 2,
+      status: "active",
+      help_text: "Məktəbdə idman zalı varmı?",
+      validation: {
+        minValue: 0,
+        maxValue: 1
       },
-    ]
-  };
-
-  return [demoCategory1, demoCategory2];
-};
-
-// Müəllimlər üçün demo kateqoriya
-export const createTeachersDemoCategory = (): CategoryWithColumns => {
-  const t = (key: string) => key; // Lokalizasiya əvəzinə sadə funksiya
+      created_at: now,
+      updated_at: now
+    });
+  }
+  
+  // Zaman seriyası üçün demo kateqoriya
+  const creationDate = new Date();
+  creationDate.setDate(creationDate.getDate() - (3 - index) * 10); // Hər kateqoriya 10 gün əvvəl
   
   return {
-    id: generateId(),
-    name: "Müəllimlər haqqında məlumat",
-    description: "Məktəbin müəllim heyəti haqqında ətraflı məlumatlar",
-    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-    assignment: 'all',
-    createdAt: new Date().toISOString(),
-    priority: 3,
-    columns: [
-      {
-        id: generateId(),
-        categoryId: '',
-        name: "Müəllimlərin ümumi sayı",
-        type: 'number' as ColumnType,
-        isRequired: true,
-        order: 1,
-        status: 'active',
-        helpText: "Məktəbdə çalışan bütün müəllimlərin sayı",
-        validationRules: { minValue: 0, maxValue: 1000 },
-      },
-      {
-        id: generateId(),
-        categoryId: '',
-        name: "Ali təhsilli müəllimlərin sayı",
-        type: 'number' as ColumnType,
-        isRequired: true,
-        order: 2,
-        status: 'active',
-        helpText: "Ali təhsilə malik müəllim sayı",
-        validationRules: { minValue: 0, maxValue: 1000 },
-      }
-    ]
+    id: categoryId,
+    name: `Demo Kateqoriya ${index + 1}`,
+    description: `Bu ${index + 1} nömrəli demo kateqoriyadır.`,
+    assignment: "all",
+    deadline: new Date(Date.now() + (index + 1) * 86400000 * 7).toISOString(), // Hər biri 1 həftə sonra
+    status: "active",
+    priority: index + 1,
+    created_at: creationDate.toISOString(),
+    updated_at: creationDate.toISOString(),
+    columns: demoColumns
   };
 };

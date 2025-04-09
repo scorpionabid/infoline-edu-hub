@@ -31,7 +31,7 @@ const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
 
   const handleConfirm = async () => {
     try {
-      await onConfirm(columnId); // Yalnız columnId parametrini ötürürük
+      await onConfirm(columnId); // onConfirm funksiyası yalnız columnId qəbul edir
       onClose();
     } catch (error) {
       console.error("Sütunu silmək mümkün olmadı:", error);

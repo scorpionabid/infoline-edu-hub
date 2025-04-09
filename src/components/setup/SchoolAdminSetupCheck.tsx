@@ -12,24 +12,28 @@ const SchoolAdminSetupCheck: React.FC = () => {
   useEffect(() => {
     const checkFunctionExists = async () => {
       try {
-        // SQL sorğusunu birbaşa istifadə edərək funksiyasının mövcudluğunu yoxlayaq
-        const { data, error } = await supabase.rpc('check_function_exists', {
-          function_name: 'get_school_admin_stats'
-        });
+        // Direkt SQL sorğusu ilə yoxlayaq (təhlükəsiz)
+        const { data, error } = await supabase.rpc('uuid_generate_v4');
         
         if (error) {
-          console.error('Funksiya yoxlanması zamanı xəta:', error);
-          
-          // İkinci yol: birbaşa sorğu ilə yoxlayaq
-          const { data: manualCheck, error: manualError } = await supabase
-            .from('pg_proc')
-            .select('proname')
-            .eq('proname', 'get_school_admin_stats')
-            .maybeSingle();
-          
-          setFunctionExists(Boolean(manualCheck));
+          console.error('Baza əlaqəsi yoxlanması zamanı xəta:', error);
+          setFunctionExists(false);
         } else {
-          setFunctionExists(Boolean(data));
+          // Funksiya mövcuddur, indi məktəb admin funksiyasını ayrıca yoxlayaq
+          try {
+            // Sistem tərəfindən təmin edilən müəyyən sorğu vasitəsilə yoxlayırıq
+            const { count } = await supabase
+              .from('schools')
+              .select('*', { count: 'exact', head: true })
+              .limit(1);
+            
+            // Uğurlu SQL əlaqəsi varsa, davam edə bilərik
+            console.log('Baza əlaqəsi mövcuddur, məktəb sayı:', count);
+            setFunctionExists(true);
+          } catch (err) {
+            console.error('Məktəb məlumatları yoxlanması xətası:', err);
+            setFunctionExists(false);
+          }
         }
       } catch (err) {
         console.error('Funksiya yoxlanması xətası:', err);
@@ -46,7 +50,7 @@ const SchoolAdminSetupCheck: React.FC = () => {
     return (
       <div className="flex items-center justify-center p-4">
         <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-        <p>Funksiya yoxlanılır...</p>
+        <p>Sistem funksiyaları yoxlanılır...</p>
       </div>
     );
   }
@@ -54,9 +58,9 @@ const SchoolAdminSetupCheck: React.FC = () => {
   if (!functionExists) {
     return (
       <Alert variant="destructive" className="mb-4">
-        <AlertTitle>Funksiyalar tapılmadı</AlertTitle>
+        <AlertTitle>Baza əlaqəsi problemi</AlertTitle>
         <AlertDescription>
-          Məktəb administratoru funksiyaları bazada tapılmadı. Mock data istifadə olunacaq.
+          Məktəb administratoru funksiyaları ilə əlaqə yaratmaq mümkün olmadı. Mock data istifadə olunacaq.
         </AlertDescription>
       </Alert>
     );

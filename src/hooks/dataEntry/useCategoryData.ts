@@ -1,182 +1,185 @@
-
-import { useCallback, useEffect } from 'react';
-import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData } from '@/types/dataEntry';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { CategoryWithColumns } from '@/types/column';
+import { useAuth } from '@/context/AuthContext';
 
-interface UseCategoryDataProps {
-  selectedCategoryId: string | null | undefined;
-  lastCategoryIdRef: React.MutableRefObject<string | null>;
-  setIsLoading: (loading: boolean) => void;
-  setCategories: (categories: CategoryWithColumns[]) => void;
-  setCurrentCategoryIndex: (index: number) => void;
-  initializeForm: (entries: CategoryEntryData[], status: 'draft' | 'submitted' | 'approved' | 'rejected') => void;
-  validateForm: () => boolean;
-  queryParams: URLSearchParams;
+interface UseCategoryDataReturn {
+  categories: CategoryWithColumns[];
+  isLoading: boolean;
+  error: Error | null;
 }
 
-export const useCategoryData = ({
-  selectedCategoryId,
-  lastCategoryIdRef,
-  setIsLoading,
-  setCategories,
-  setCurrentCategoryIndex,
-  initializeForm,
-  validateForm,
-  queryParams
-}: UseCategoryDataProps) => {
-  const { t } = useLanguage();
-  
-  // Kateqoriyaları və sütunları Supabasedən yükləmək
-  const loadCategoryData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Supabase sorğusu ilə kateqoriyaları əldə edirik
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
-        
-      if (categoriesError) throw categoriesError;
-      
-      if (!categoriesData || categoriesData.length === 0) {
-        setIsLoading(false);
-        return;
+const mockCategoriesData = [
+  {
+    id: '1',
+    name: 'Şagird Məlumatları',
+    description: 'Şagirdlərlə bağlı əsas məlumatlar',
+    assignment: 'all',
+    deadline: '2024-12-31',
+    status: 'active',
+    priority: 1,
+    createdAt: new Date().toISOString(),
+    columns: [
+      {
+        id: '101',
+        categoryId: '1',
+        name: 'Ad',
+        type: 'text',
+        isRequired: true,
+        order: 1,
+        status: 'active',
+        validationRules: { maxLength: 50 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '102',
+        categoryId: '1',
+        name: 'Soyad',
+        type: 'text',
+        isRequired: true,
+        order: 2,
+        status: 'active',
+        validationRules: { maxLength: 50 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
-      
-      // Sütunları əldə edirik
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('status', 'active')
-        .order('order_index', { ascending: true });
-        
-      if (columnsError) throw columnsError;
-      
-      // Kateqoriyaları və sütunları birləşdiririk
-      const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
-        return {
-          id: category.id,
-          name: category.name,
-          description: category.description || '',
-          assignment: category.assignment === 'sectors' ? 'sectors' : 'all',
-          deadline: category.deadline,
-          status: 'active',
-          priority: category.priority || 0,
-          createdAt: category.created_at,
-          updatedAt: category.updated_at,
-          columns: columnsData.filter(column => column.category_id === category.id).map(column => ({
-            id: column.id,
-            categoryId: column.category_id,
-            name: column.name,
-            type: column.type,
-            isRequired: column.is_required,
-            placeholder: column.placeholder || '',
-            helpText: column.help_text || '',
-            order: column.order_index || 0,
-            status: 'active',
-            validationRules: column.validation,
-            defaultValue: column.default_value || '',
-            options: column.options || []
-          }))
-        };
-      });
-      
-      setCategories(categoriesWithColumns);
-      
-      // Əgər URL-də kateqoriya ID-si varsa, onu seçirik
-      if (selectedCategoryId) {
-        const categoryIndex = categoriesWithColumns.findIndex(cat => cat.id === selectedCategoryId);
-        if (categoryIndex !== -1) {
-          lastCategoryIdRef.current = selectedCategoryId;
-          setCurrentCategoryIndex(categoryIndex);
+    ]
+  },
+  {
+    id: '2',
+    name: 'Müəllim Məlumatları',
+    description: 'Müəllimlərlə bağlı əsas məlumatlar',
+    assignment: 'all',
+    deadline: '2024-12-31',
+    status: 'active',
+    priority: 2,
+    createdAt: new Date().toISOString(),
+    columns: [
+      {
+        id: '201',
+        categoryId: '2',
+        name: 'Ad',
+        type: 'text',
+        isRequired: true,
+        order: 1,
+        status: 'active',
+        validationRules: { maxLength: 50 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '202',
+        categoryId: '2',
+        name: 'Soyad',
+        type: 'text',
+        isRequired: true,
+        order: 2,
+        status: 'active',
+        validationRules: { maxLength: 50 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]
+  }
+];
+
+export const useCategoryData = (): UseCategoryDataReturn => {
+  const [categories, setMockCategories] = useState<CategoryWithColumns[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Supabase-dən kateqoriyaları al
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select(`
+            id,
+            name,
+            description,
+            assignment,
+            deadline,
+            status,
+            priority,
+            createdAt:created_at,
+            updatedAt:updated_at,
+            columns (
+              id,
+              categoryId:category_id,
+              name,
+              type,
+              isRequired:is_required,
+              order:order_index,
+              status,
+              validationRules:validation,
+              defaultValue:default_value,
+              placeholder,
+              helpText:help_text,
+              options,
+              createdAt:created_at,
+              updatedAt:updated_at
+            )
+          `);
+
+        if (categoriesError) {
+          throw new Error(categoriesError.message);
         }
-      }
-      
-      // Məlumatları lokaldan yükləyirik
-      const localFormData = localStorage.getItem('infolineFormData');
-      if (localFormData) {
-        try {
-          const parsedData = JSON.parse(localFormData);
-          initializeForm(parsedData.entries, parsedData.status);
-          
-          // Form validasiyası
-          setTimeout(() => {
-            validateForm();
-          }, 500);
-        } catch (err) {
-          console.error('Local data parsing error:', err);
-          // Xəta halında yeni boş forma yaradırıq
-          const initialEntries = categoriesWithColumns.map(cat => ({
-            categoryId: cat.id,
-            values: [],
-            isCompleted: false,
-            isSubmitted: false,
-            completionPercentage: 0
+
+        // Categories adaptasiya etmə funksiyası
+        const adaptCategories = (data: any[]): CategoryWithColumns[] => {
+          return data.map(category => ({
+            id: category.id,
+            name: category.name,
+            description: category.description,
+            assignment: category.assignment,
+            deadline: category.deadline,
+            status: category.status,
+            priority: category.priority,
+            created_at: category.createdAt || category.created_at,
+            updated_at: category.updatedAt || category.updated_at,
+            columns: category.columns.map((col: any) => ({
+              id: col.id,
+              category_id: col.categoryId || col.category_id,
+              name: col.name,
+              type: col.type,
+              is_required: col.isRequired || col.is_required,
+              order_index: col.order || col.order_index,
+              status: col.status,
+              validation: col.validationRules || col.validation,
+              default_value: col.defaultValue || col.default_value,
+              placeholder: col.placeholder,
+              help_text: col.helpText || col.help_text,
+              options: col.options,
+              created_at: col.created_at || new Date().toISOString(),
+              updated_at: col.updated_at || new Date().toISOString()
+            }))
           }));
-          
-          initializeForm(initialEntries, 'draft');
+        };
+
+        // setMockCategories funksiyasında adaptasiya edək
+        setMockCategories(adaptCategories(mockCategoriesData));
+
+        // Əgər məlumat varsa, onu state-ə yaz
+        if (categoriesData) {
+          // Adaptasiya funksiyasını istifadə edərək state-i yenilə
+          setMockCategories(adaptCategories(categoriesData));
         }
-      } else {
-        // Lokal data yoxdursa, yeni forma yaradırıq
-        const initialEntries = categoriesWithColumns.map(cat => ({
-          categoryId: cat.id,
-          values: [],
-          isCompleted: false,
-          isSubmitted: false,
-          completionPercentage: 0
-        }));
-        
-        initializeForm(initialEntries, 'draft');
+      } catch (err: any) {
+        setError(err);
+        console.error("Kateqoriyaları əldə etmə xətası:", err);
+      } finally {
+        setIsLoading(false);
       }
-      
-      // URL-dəki statusFilter parametrinə əsasən işləyirik
-      const statusFilter = queryParams.get('status');
-      if (statusFilter && !selectedCategoryId) {
-        // Status filtrinə uyğun ilk kateqoriyanı tapırıq
-        const filteredIndex = categoriesWithColumns.findIndex(cat => {
-          // Burada status filtrinə uyğun kateqoriyanı seçirik
-          // Bu hissə bizim tətbiqdə bu məntiqə uyğun genişləndirilə bilər
-          if (statusFilter === 'pending' && cat.status === 'pending') return true;
-          if (statusFilter === 'approved' && cat.status === 'approved') return true;
-          if (statusFilter === 'rejected' && cat.status === 'rejected') return true;
-          if (statusFilter === 'dueSoon') {
-            // Son tarix yaxınlaşırsa
-            const deadline = cat.deadline ? new Date(cat.deadline) : null;
-            if (deadline) {
-              const today = new Date();
-              const diffDays = Math.floor((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-              return diffDays >= 0 && diffDays <= 3;
-            }
-          }
-          if (statusFilter === 'overdue') {
-            // Son tarix keçibsə
-            const deadline = cat.deadline ? new Date(cat.deadline) : null;
-            if (deadline) {
-              const today = new Date();
-              return deadline < today;
-            }
-          }
-          return false;
-        });
-        
-        if (filteredIndex !== -1) {
-          setCurrentCategoryIndex(filteredIndex);
-          lastCategoryIdRef.current = categoriesWithColumns[filteredIndex].id;
-        }
-      }
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      toast.error(t('errorLoadingCategories'), {
-        description: t('pleaseTryAgainLater')
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedCategoryId, lastCategoryIdRef, setIsLoading, setCategories, setCurrentCategoryIndex, initializeForm, validateForm, queryParams, t]);
-  
-  return { loadCategoryData };
+    };
+
+    fetchCategories();
+  }, [user]);
+
+  return { categories, isLoading, error };
 };

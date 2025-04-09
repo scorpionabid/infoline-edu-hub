@@ -1,64 +1,47 @@
 
 import React from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
   title: string;
   description?: string;
   backButtonUrl?: string;
-  actions?: React.ReactNode;
-  className?: string;
+  children?: React.ReactNode;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
   backButtonUrl,
-  actions,
-  className,
+  children
 }) => {
   const navigate = useNavigate();
 
-  const handleBackClick = () => {
-    if (backButtonUrl) {
-      navigate(backButtonUrl);
-    } else {
-      navigate(-1);
-    }
-  };
-
   return (
-    <div className={cn("pb-4 mb-6", className)}>
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            {backButtonUrl !== undefined && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleBackClick}
-                className="mr-1"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            )}
-            <h1 className="text-2xl font-semibold">{title}</h1>
-          </div>
-          {description && (
-            <p className="text-muted-foreground">{description}</p>
-          )}
-        </div>
-        {actions && (
-          <div className="flex items-center gap-2">
-            {actions}
-          </div>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 mb-6 border-b">
+      <div className="flex flex-col">
+        {backButtonUrl && (
+          <Button
+            variant="link"
+            className="p-0 h-auto font-normal flex items-center gap-1 mb-2 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate(backButtonUrl)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Geri qayıt</span>
+          </Button>
+        )}
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        {description && (
+          <p className="text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      <Separator className="mt-4" />
+      {children && (
+        <div className="flex flex-wrap gap-2 ml-auto">
+          {children}
+        </div>
+      )}
     </div>
   );
 };

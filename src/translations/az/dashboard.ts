@@ -1,83 +1,107 @@
 
-// Dashboard səhifəsinin Azərbaycan dili tərcümələri
-
 const dashboardTranslations = {
-  // Ümumi
-  dashboard: 'İdarə paneli',
-  overview: 'Ümumi icmal',
+  // Dashboard üçün ümumi tərcümələr
+  dashboard: 'Göstəricilər Paneli',
+  overview: 'Ümumi baxış',
   statistics: 'Statistika',
-  analytics: 'Analiz',
-  todayIs: 'Bu gün:',
+  activityLog: 'Fəaliyyət qeydi',
+  welcomeBack: 'Xoş gəlmisiniz',
+  yourOverview: 'Ümumi baxışınız',
   
   // Statistika kartları
-  regions: 'Regionlar',
-  sectors: 'Sektorlar',
-  schools: 'Məktəblər',
-  users: 'İstifadəçilər',
-  activeSchools: 'Aktiv məktəblər',
-  pendingSchools: 'Gözləyən məktəblər',
-  activeUsers: 'Aktiv istifadəçilər',
+  totalSchools: 'Ümumi Məktəblər',
+  totalUsers: 'Ümumi İstifadəçilər',
+  totalRegions: 'Ümumi Bölgələr',
+  totalSectors: 'Ümumi Sektorlar',
+  completionRate: 'Tamamlanma Faizi',
+  pendingApprovals: 'Gözləyən Təsdiqlər',
   
-  // Doldurma dərəcəsi
-  completionRate: 'Tamamlanma dərəcəsi',
+  // Məktəb admin dashboard
+  pendingForms: 'Gözləyən Formlar',
+  pendingFormsDesc: 'Təsdiqlənməmiş formlar',
+  approvedForms: 'Təsdiqlənmiş Formlar',
+  approvedFormsDesc: 'Təsdiqlənmiş məlumat formları',
+  rejectedForms: 'Rədd Edilmiş Formlar',
+  rejectedFormsDesc: 'Rədd edilmiş məlumat formları',
+  dueSoonForms: 'Vaxtı Yaxınlaşan',
+  dueSoonFormsDesc: 'Yaxında bitəcək formlar',
+  overdueForms: 'Vaxtı Keçmiş',
+  overdueFormsDesc: 'Son tarixi keçmiş formlar',
   completionRateDesc: 'Məlumatların doldurulma faizi',
   
-  // Təsdiq gözləyənlər
-  pendingApprovals: 'Təsdiq gözləyənlər',
-  pendingApprovalsDesc: 'Təsdiq gözləyən məlumatlar',
+  // Bildirişlər
+  latestNotifications: 'Son Bildirişlər',
+  noNotificationsYet: 'Hələ bildiriş yoxdur',
+  viewAllNotifications: 'Bütün bildirişlərə baxın',
   
-  // Notifikasiyalar
-  notifications: 'Bildirişlər',
-  markAllAsRead: 'Hamısını oxunmuş kimi qeyd et',
-  clearAll: 'Hamısını təmizlə',
-  notificationCount: '{count} yeni bildiriş',
-  noNotifications: 'Bildiriş yoxdur',
-  viewAll: 'Hamısına baxın',
+  // Fəaliyyət jurnalı
+  recentActivity: 'Son Fəaliyyətlər',
+  allActivity: 'Bütün Fəaliyyətlər',
+  noActivityYet: 'Hələ fəaliyyət yoxdur',
   
-  // Formlar
-  forms: 'Formlar',
-  recentForms: 'Son formlar',
-  pendingForms: 'Gözləyən formlar',
-  urgentForms: 'Təcili formlar',
-  noPendingForms: 'Gözləyən form yoxdur',
-  noFormsFound: 'Form tapılmadı',
-  allFormsCompleted: 'Bütün formlar tamamlanıb',
-  noUrgentForms: 'Təcili form yoxdur',
-  allFormsOnTrack: 'Bütün formlar qrafikə uyğundur',
+  // Qrafiklər və analitik
+  regionDistribution: 'Region Paylaşımı',
+  sectorDistribution: 'Sektor Paylaşımı',
+  schoolsByRegion: 'Regiona görə Məktəblər',
+  completionByCategory: 'Kateqoriyaya görə Tamamlanma',
+  userActivity: 'İstifadəçi Fəaliyyəti',
   
-  // Filtrləmə
-  searchForms: 'Formları axtar...',
-  filterByCategory: 'Kateqoriyaya görə filtr',
-  filterByStatus: 'Statusa görə filtr',
-  adjustSearchFilters: 'Axtarış filtrlərini dəyişdirin',
-  noFormsInThisCategory: 'Bu kateqoriyada form yoxdur',
-  allCategories: 'Bütün kateqoriyalar',
-  allStatuses: 'Bütün statuslar',
+  // Region admin dashboard
+  regionStatistics: 'Region Statistikası',
+  sectorPerformance: 'Sektor Göstəriciləri',
   
-  // Form statusları
-  pending: 'Gözləyir',
-  approved: 'Təsdiqləndi',
-  rejected: 'Rədd edildi',
-  completed: 'Tamamlandı',
+  // Sektor admin dashboard
+  sectorStatistics: 'Sektor Statistikası',
+  schoolPerformance: 'Məktəb Göstəriciləri',
+  
+  // Məlumat əlavə etmək
+  addData: 'Məlumat Əlavə Et',
+  dataEntryDesc: 'Yeni məlumatlar daxil edin',
+  
+  // Status tərcümələri
+  pending: 'Gözləmədə',
+  approved: 'Təsdiqlənib',
+  rejected: 'Rədd Edilib',
   draft: 'Qaralama',
-  dueSoon: 'Vaxtı yaxınlaşır',
-  overdue: 'Vaxtı keçib',
+  dueSoon: 'Vaxtı Yaxınlaşır',
+  overdue: 'Vaxtı Keçib',
+  completed: 'Tamamlanıb',
+  formStatus: 'Form Statusu',
   
-  // Məktəb admin
-  addData: 'Məlumat əlavə et',
-  pendingFormsDesc: 'Təsdiq gözləyən formlar',
-  approvedFormsDesc: 'Təsdiqlənmiş formlar',
-  rejectedFormsDesc: 'Rədd edilmiş formlar',
-  completionRateDesc: 'Məlumatların tamamlanma faizi',
-  lastUpdated: 'Son yenilənmə',
+  // Əlavə tərcümələr
   view: 'Bax',
+  edit: 'Redaktə et',
+  formDetails: 'Form Detalları',
+  noFormsYet: 'Hələ form yoxdur',
+  categories: 'Kateqoriyalar',
+  availableCategories: 'Mövcud Kateqoriyalar',
   
-  // Xəta mesajları
+  // Məlumat əməliyyatları
+  navigatingToDataEntry: 'Məlumat daxiletmə səhifəsinə keçid edilir',
+  navigatingToDataEntryDesc: 'Məlumat daxil etmək üçün formlar yüklənir...',
+  openingForm: 'Form açılır',
+  formId: 'Form ID',
+  
+  // Xəta və yüklənmə mesajları
   errorOccurred: 'Xəta baş verdi',
-  tryAgain: 'Yenidən cəhd edin',
-  noDataAvailable: 'Məlumat mövcud deyil',
-  loadingStats: 'Statistikalar yüklənir...',
-  refresh: 'Yenilə',
+  dashboardRenderError: 'Dashboard məlumatlarını yükləmək mümkün olmadı',
+  loadingDashboard: 'Dashboard yüklənir...',
+  
+  // Digər məlumatlar
+  topPerformers: 'Ən Yaxşı Nəticələr',
+  lowPerformers: 'Aşağı Nəticələr',
+  recentSubmissions: 'Son Göndərilənlər',
+  
+  // Form tabları
+  allForms: 'Bütün Formlar',
+  pendingTab: 'Gözləyən',
+  approvedTab: 'Təsdiqlənən',
+  rejectedTab: 'Rədd Edilən',
+  
+  // Form tabı məlumatları
+  noFormsInThisCategory: 'Bu kateqoriyada form tapılmadı',
+  formCategory: 'Form Kateqoriyası',
+  deadline: 'Son Tarix'
 };
 
 export default dashboardTranslations;
