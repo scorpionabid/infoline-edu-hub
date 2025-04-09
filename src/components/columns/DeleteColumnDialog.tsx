@@ -15,7 +15,7 @@ import { useLanguage } from '@/context/LanguageContext';
 interface DeleteColumnDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (id: string) => Promise<boolean>;
+  onConfirm: () => Promise<boolean>; // Parametrsiz funksiya - çünki artıq içəridən id'ni ötürürük
   column: string;
   columnName: string;
   isSubmitting?: boolean;
@@ -33,8 +33,8 @@ const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
 
   const handleConfirm = async () => {
     if (!column) return;
-    await onConfirm(column);
-    onClose();
+    await onConfirm();
+    // onClose'u onConfirm içində çağırılır, bu səbəbdən burada təkrar çağırmağa ehtiyac yoxdur
   };
 
   return (

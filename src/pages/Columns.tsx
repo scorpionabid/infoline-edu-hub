@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -151,7 +150,7 @@ const Columns: React.FC = () => {
           isLoading={isLoading}
           isError={!!error}
           onEditColumn={handleOpenEditColumnDialog}
-          onDeleteColumn={handleOpenDeleteDialog}
+          onDeleteColumn={handleOpenDeleteDialog} // Bu funksiya iki parametr qəbul edir
           onUpdateStatus={handleUpdateColumnStatus}
         />
       )}
@@ -176,7 +175,7 @@ const Columns: React.FC = () => {
         <DeleteColumnDialog
           isOpen={deleteDialog.isOpen}
           onClose={handleCloseDeleteDialog}
-          onConfirm={handleDeleteColumn}
+          onConfirm={() => handleDeleteColumn(deleteDialog.column)} // Funksiyanı əhatə edərək yalnız bir parametr təqdim edirik
           column={deleteDialog.column}
           columnName={deleteDialog.columnName}
         />

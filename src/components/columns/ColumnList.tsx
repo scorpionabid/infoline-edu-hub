@@ -14,7 +14,7 @@ interface ColumnListProps {
   isLoading: boolean;
   isError: boolean;
   onEditColumn: (column: Column) => void;
-  onDeleteColumn: (id: string) => Promise<any>;
+  onDeleteColumn: (id: string, columnName: string) => void; // Burada id və columnName qəbul edirik
   onUpdateStatus: (id: string, status: "active" | "inactive") => Promise<any>;
 }
 
