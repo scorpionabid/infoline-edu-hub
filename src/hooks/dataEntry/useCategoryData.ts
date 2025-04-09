@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, ColumnType } from '@/types/column';
+import { CategoryWithColumns, ColumnType, Column } from '@/types/column';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ const mockCategoriesData = [
         type: 'text' as ColumnType,
         isRequired: true,
         order: 1,
-        status: 'active',
+        status: 'active' as 'active' | 'inactive' | 'draft',
         validationRules: { maxLength: 50 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -41,7 +41,7 @@ const mockCategoriesData = [
         type: 'text' as ColumnType,
         isRequired: true,
         order: 2,
-        status: 'active',
+        status: 'active' as 'active' | 'inactive' | 'draft',
         validationRules: { maxLength: 50 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -65,7 +65,7 @@ const mockCategoriesData = [
         type: 'text' as ColumnType,
         isRequired: true,
         order: 1,
-        status: 'active',
+        status: 'active' as 'active' | 'inactive' | 'draft',
         validationRules: { maxLength: 50 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -77,7 +77,7 @@ const mockCategoriesData = [
         type: 'text' as ColumnType,
         isRequired: true,
         order: 2,
-        status: 'active',
+        status: 'active' as 'active' | 'inactive' | 'draft',
         validationRules: { maxLength: 50 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -135,7 +135,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
               type: col.type as ColumnType,
               is_required: col.isRequired || col.is_required,
               order_index: col.order || col.order_index,
-              status: col.status,
+              status: col.status as 'active' | 'inactive' | 'draft',
               validation: col.validationRules || col.validation,
               default_value: col.defaultValue || col.default_value,
               placeholder: col.placeholder,
@@ -189,7 +189,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             type: col.type as ColumnType,
             is_required: col.is_required || false,
             order_index: col.order_index || 0,
-            status: col.status,
+            status: col.status as 'active' | 'inactive' | 'draft',
             validation: col.validation,
             default_value: col.default_value,
             placeholder: col.placeholder,
@@ -229,7 +229,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             type: col.type as ColumnType,
             is_required: col.isRequired || col.is_required,
             order_index: col.order || col.order_index,
-            status: col.status,
+            status: col.status as 'active' | 'inactive' | 'draft',
             validation: col.validationRules || col.validation,
             default_value: col.defaultValue || col.default_value,
             placeholder: col.placeholder,

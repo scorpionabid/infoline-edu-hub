@@ -1,19 +1,22 @@
 
 import { useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData, DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
+import { CategoryEntryData } from '@/types/dataEntry';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
-  formData: DataEntryForm;
-  errors: ColumnValidationError[];
-  initializeForm: (entries: CategoryEntryData[], status: 'draft' | 'submitted' | 'approved' | 'rejected') => void;
+  formData: {
+    entries: CategoryEntryData[];
+    lastSaved?: string;
+    overallProgress: number;
+    status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  };
+  errors: Record<string, string>;
+  initializeForm: (entries: CategoryEntryData[], status: string) => void;
   validateForm: () => boolean;
-  submitForm: (validateFn: () => boolean) => boolean;
+  submitForm: () => Promise<void>;
   setCurrentCategoryIndex: (index: number) => void;
   updateValue: (categoryId: string, columnId: string, value: any) => void;
   saveForm: () => void;
@@ -31,173 +34,60 @@ export const useDataUpdates = ({
   saveForm
 }: UseDataUpdatesProps) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  
-  // Excel əməliyyatları üçün updateFormData funksiyası
-  const updateFormDataFromExcel = useCallback(async (excelData: Record<string, any>, categoryId?: string) => {
-    console.log("Excel məlumatları alındı:", excelData);
-    
-    const newEntries = [...formData.entries];
-    
-    // Excel-dən alınan məlumatları forma daxil edirik
-    Object.entries(excelData).forEach(([columnId, value]) => {
-      // Əgər konkret kateqoriya göstərilibsə, yalnız ona aid olan sütunları yeniləyirik
-      const category = categoryId 
-        ? categories.find(cat => cat.id === categoryId && cat.columns.some(col => col.id === columnId))
-        : categories.find(cat => cat.columns.some(col => col.id === columnId));
-      
-      if (category) {
-        const categoryIndex = newEntries.findIndex(entry => entry.categoryId === category.id);
-        
-        if (categoryIndex !== -1) {
-          const valueIndex = newEntries[categoryIndex].values.findIndex(v => v.columnId === columnId);
-          
-          if (valueIndex !== -1) {
-            newEntries[categoryIndex].values[valueIndex] = {
-              ...newEntries[categoryIndex].values[valueIndex],
-              value,
-              status: 'pending'
-            };
-            
-            // Xəta mesajını silirik
-            delete newEntries[categoryIndex].values[valueIndex].errorMessage;
-          } else {
-            newEntries[categoryIndex].values.push({
-              columnId,
-              value,
-              status: 'pending'
-            });
-          }
-        }
-      }
-    });
-    
-    // Kateqoriya tamamlanma faizini yeniləmək
-    newEntries.forEach(entry => {
-      const category = categories.find(c => c.id === entry.categoryId);
-      if (category) {
-        const requiredColumns = category.columns.filter(col => col.is_required);
-        const filledRequiredValues = entry.values.filter(val => {
-          const column = category.columns.find(col => col.id === val.columnId);
-          return column?.is_required && val.value !== '' && val.value !== null && val.value !== undefined;
-        });
-        
-        entry.completionPercentage = requiredColumns.length > 0 
-          ? (filledRequiredValues.length / requiredColumns.length) * 100 
-          : 100;
-        
-        entry.isCompleted = entry.completionPercentage === 100;
-      }
-    });
-    
-    // Ümumi tamamlanma faizini yeniləmək
-    const overallProgress = newEntries.reduce((sum, entry) => sum + entry.completionPercentage, 0) / newEntries.length;
-    
-    // Excel yüklənməsindən sonra məlumatları da saxlayaq
-    const updatedFormData = {
-      ...formData,
-      entries: newEntries,
-      overallProgress,
-      lastSaved: new Date().toISOString()
-    };
-    
-    // LocalStorage-də saxlayaq
-    localStorage.setItem('infolineFormData', JSON.stringify(updatedFormData));
-    
-    initializeForm(newEntries, formData.status);
-    
-    // Həmçinin Excel məlumatlarını serverdə də saxlayaq
-    if (user?.schoolId && categoryId) {
-      try {
-        for (const [columnId, value] of Object.entries(excelData)) {
-          // Bu sütün və məktəb üçün mövcud məlumat olub-olmadığını yoxlayaq
-          const { data: existingData, error: fetchError } = await supabase
-            .from('data_entries')
-            .select('id, status')
-            .eq('school_id', user.schoolId)
-            .eq('category_id', categoryId)
-            .eq('column_id', columnId)
-            .maybeSingle();
 
-          if (fetchError) throw fetchError;
-
-          // Əgər artıq məlumat varsa və təsdiqlənməyibsə, update edək
-          if (existingData) {
-            if (existingData.status === 'approved') {
-              // Təsdiqlənmiş məlumatları atlayırıq
-              continue;
-            }
-
-            const { error: updateError } = await supabase
-              .from('data_entries')
-              .update({ value, updated_at: new Date().toISOString() })
-              .eq('id', existingData.id);
-
-            if (updateError) throw updateError;
-          } 
-          // Əgər məlumat yoxdursa, əlavə edək
-          else {
-            const { error: insertError } = await supabase
-              .from('data_entries')
-              .insert([{
-                school_id: user.schoolId,
-                category_id: categoryId,
-                column_id: columnId,
-                value,
-                status: 'pending',
-                created_by: user.id
-              }]);
-
-            if (insertError) throw insertError;
-          }
-        }
-      } catch (err) {
-        console.error('Error saving Excel data to server:', err);
-        toast.error(t('errorOccurred'), {
-          description: t('someDataMayNotBeSaved')
-        });
-      }
-    }
-    
-    // Excel yüklənib bitdikdən sonra formanı validasiya etmək
-    setTimeout(() => {
-      validateForm();
-    }, 500);
-  }, [categories, formData, initializeForm, validateForm, user, t]);
-
-  // Kateqoriya dəyişmək - təkmilləşdirilmiş funksiya
+  // Kateqoriyanı dəyişdirmək metodu
   const changeCategory = useCallback((index: number) => {
     if (index >= 0 && index < categories.length) {
-      // Kateqoriya dəyişməzdən əvvəl cari məlumatları saxlayaq
-      saveForm(); // <-- Manual olaraq saxlayırıq
-      
-      // İndi kateqoriyanı dəyişək
       setCurrentCategoryIndex(index);
+      saveForm(); // Kateqoriya dəyişdikdə əvvəlki kateqoriyanın məlumatlarını saxla
+    }
+  }, [categories, setCurrentCategoryIndex, saveForm]);
+
+  // Excel faylından məlumatları formanı yeniləmək metodu
+  const updateFormDataFromExcel = useCallback((data: Record<string, any>, categoryId: string) => {
+    try {
+      const categoryIndex = categories.findIndex(c => c.id === categoryId);
+      if (categoryIndex === -1) {
+        toast.error(t('categoryNotFound'));
+        return;
+      }
+
+      const category = categories[categoryIndex];
       
-      // Kateqoriya dəyişdiyi haqqında daha detallı məlumat verək
-      console.log(`Kateqoriya dəyişdirilib: ${categories[index].name}`);
-      console.log(`Kateqoriya sütunları:`, categories[index].columns);
+      // Cari kateqoriya üçün mövcud giriş məlumatlarını tapmaq
+      let existingEntryIndex = formData.entries.findIndex(e => e.categoryId === categoryId);
+      const newValues = [];
       
-      // Kateqoriya daxilində məlumatların mövcudluğunu yoxlayaq
-      const entry = formData.entries.find(e => e.categoryId === categories[index].id);
-      if (entry) {
-        console.log(`Kateqoriya məlumatları:`, entry.values);
-      } else {
-        console.log(`Kateqoriya üçün məlumatlar tapılmadı`);
+      // Excel datası əsasında sütunları yeniləyək
+      for (const [columnId, value] of Object.entries(data)) {
+        // Sütunun cari kateqoriyaya aid olduğunu yoxlayırıq
+        const column = category.columns.find(c => c.id === columnId);
+        if (column) {
+          newValues.push({
+            columnId,
+            value,
+            status: 'pending' as 'pending' | 'approved' | 'rejected'
+          });
+          
+          // Sütun dəyərini birbaşa yeniləyək
+          updateValue(categoryId, columnId, value);
+        }
       }
       
-      // Yeni kateqoriyaya keçdiyimizi bildirək
-      toast.success(t('categoryChanged'), {
-        description: categories[index].name
-      });
+      // Formada dəyişiklikləri saxla
+      saveForm();
       
-      // Kateqoriya dəyişən kimi formanın üstünə scroll etmək
-      window.scrollTo(0, 0);
+      // Kateqoriyanı aktiv et
+      setCurrentCategoryIndex(categoryIndex);
+      
+    } catch (error) {
+      console.error('Excel ilə məlumatları yeniləyərkən xəta:', error);
+      toast.error(t('errorUpdatingExcelData'));
     }
-  }, [categories, setCurrentCategoryIndex, saveForm, t, formData.entries]);
+  }, [categories, formData.entries, updateValue, saveForm, setCurrentCategoryIndex, t]);
 
   return {
-    updateFormDataFromExcel,
-    changeCategory
+    changeCategory,
+    updateFormDataFromExcel
   };
 };
