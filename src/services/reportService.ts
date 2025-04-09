@@ -18,7 +18,7 @@ export const fetchReports = async (): Promise<Report[]> => {
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    return (data as unknown as ReportTable[]).map(report => ({
+    return (data as ReportTable[]).map(report => ({
       id: report.id,
       name: report.title,
       title: report.title,
@@ -54,7 +54,7 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    return (data as unknown as ReportTemplateTable[]).map(template => ({
+    return (data as ReportTemplateTable[]).map(template => ({
       id: template.id,
       name: template.name,
       title: template.name,
@@ -97,7 +97,12 @@ export const createReport = async (report: Partial<Report>): Promise<Report | nu
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    const reportData = data as unknown as ReportTable;
+    const reportData = data as ReportTable;
+    // JSON kontentini düzgün işləyirik
+    const content = typeof reportData.content === 'string' 
+      ? JSON.parse(reportData.content) 
+      : reportData.content || {};
+      
     return {
       id: reportData.id,
       name: reportData.title,
@@ -107,9 +112,9 @@ export const createReport = async (report: Partial<Report>): Promise<Report | nu
       createdAt: reportData.created_at,
       status: reportData.status as 'draft' | 'published' | 'archived',
       createdBy: reportData.created_by || '',
-      data: reportData.content?.data || [],
-      insights: reportData.content?.insights || [],
-      recommendations: reportData.content?.recommendations || []
+      data: content.data || [],
+      insights: content.insights || [],
+      recommendations: content.recommendations || []
     };
   } catch (error: any) {
     console.error('Hesabat yaradılarkən xəta baş verdi:', error);
@@ -140,7 +145,12 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
       
       if (error) throw error;
       
-      const content = existingReport?.content || {};
+      // JSON kontentini düzgün işləyirik
+      let content = typeof existingReport.content === 'string'
+        ? JSON.parse(existingReport.content)
+        : existingReport.content || {};
+        
+      if (!content) content = {};
       
       if (report.data) content.data = report.data;
       if (report.insights) content.insights = report.insights;
@@ -190,7 +200,7 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    const templateData = data as unknown as ReportTemplateTable;
+    const templateData = data as ReportTemplateTable;
     return {
       id: templateData.id,
       name: templateData.name,

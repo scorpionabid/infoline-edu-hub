@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Download, Filter, Search, CheckSquare, X } from 'lucide-react';
+import { Download, Filter, Search } from 'lucide-react';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { supabase } from '@/integrations/supabase/client';
 

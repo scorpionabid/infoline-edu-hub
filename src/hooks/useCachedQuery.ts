@@ -1,21 +1,21 @@
 
 import { useQuery, QueryKey, UseQueryOptions } from '@tanstack/react-query';
 import { getCache, setCache, CacheConfig } from '@/utils/cacheUtils';
-import { QueryClient } from '@tanstack/react-query';
 
 /**
  * Həm client-side, həm də server-side keşləməni birləşdirən hook
- * @param queryKey - Sorğu açarı
- * @param queryFn - Məlumat əldə etmək üçün funksiya
- * @param queryOptions - React Query seçimləri
- * @param cacheConfig - Client-side keş konfiqurasiyası
  */
-export function useCachedQuery<TData = unknown, TError = unknown>(
-  queryKey: QueryKey,
-  queryFn: () => Promise<TData>,
-  queryOptions?: UseQueryOptions<TData, TError, TData, QueryKey>,
-  cacheConfig?: CacheConfig
-) {
+export function useCachedQuery<TData = unknown, TError = unknown>({
+  queryKey,
+  queryFn,
+  queryOptions,
+  cacheConfig
+}: {
+  queryKey: QueryKey;
+  queryFn: () => Promise<TData>;
+  queryOptions?: UseQueryOptions<TData, TError, TData, QueryKey>;
+  cacheConfig?: CacheConfig;
+}) {
   // İlk olaraq client-side keşdən məlumatları almağa çalışaq
   const cacheKey = Array.isArray(queryKey) ? queryKey.join('-') : String(queryKey);
   const cachedData = getCache<TData>(cacheKey);
