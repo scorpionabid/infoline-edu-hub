@@ -9,16 +9,16 @@ import { toast } from 'sonner';
  */
 export const fetchReports = async (): Promise<Report[]> => {
   try {
-    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
+    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
-      .from('reports' as string)
+      .from(TableNames.REPORTS)
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    return (data as ReportTable[]).map(report => ({
+    return (data as unknown as ReportTable[]).map(report => ({
       id: report.id,
       name: report.title,
       title: report.title,
@@ -44,9 +44,9 @@ export const fetchReports = async (): Promise<Report[]> => {
  */
 export const fetchReportTemplates = async (): Promise<Report[]> => {
   try {
-    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
+    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
-      .from('report_templates' as string)
+      .from(TableNames.REPORT_TEMPLATES)
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -54,7 +54,7 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    return (data as ReportTemplateTable[]).map(template => ({
+    return (data as unknown as ReportTemplateTable[]).map(template => ({
       id: template.id,
       name: template.name,
       title: template.name,
@@ -76,9 +76,9 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
  */
 export const createReport = async (report: Partial<Report>): Promise<Report | null> => {
   try {
-    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
+    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
-      .from('reports' as string)
+      .from(TableNames.REPORTS)
       .insert([{
         title: report.name || report.title,
         description: report.description,
@@ -97,7 +97,7 @@ export const createReport = async (report: Partial<Report>): Promise<Report | nu
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    const reportData = data as ReportTable;
+    const reportData = data as unknown as ReportTable;
     return {
       id: reportData.id,
       name: reportData.title,
@@ -131,12 +131,14 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
     
     // Content yeniləmək
     if (report.data || report.insights || report.recommendations) {
-      // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
-      const { data: existingReport } = await supabase
-        .from('reports' as string)
+      // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
+      const { data: existingReport, error } = await supabase
+        .from(TableNames.REPORTS)
         .select('content')
         .eq('id', id)
         .single();
+      
+      if (error) throw error;
       
       const content = existingReport?.content || {};
       
@@ -147,9 +149,9 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
       updates.content = content;
     }
     
-    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
+    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { error } = await supabase
-      .from('reports' as string)
+      .from(TableNames.REPORTS)
       .update(updates)
       .eq('id', id);
 
@@ -168,9 +170,9 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
  */
 export const createReportTemplate = async (template: Partial<Report>): Promise<Report | null> => {
   try {
-    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
+    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
-      .from('report_templates' as string)
+      .from(TableNames.REPORT_TEMPLATES)
       .insert([{
         name: template.name || template.title,
         description: template.description,
@@ -188,7 +190,7 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
     if (error) throw error;
 
     // Type assertion ilə düzgün tipə çeviririk
-    const templateData = data as ReportTemplateTable;
+    const templateData = data as unknown as ReportTemplateTable;
     return {
       id: templateData.id,
       name: templateData.name,
@@ -322,9 +324,9 @@ export const fetchSchoolColumnData = async (
  */
 export const exportReport = async (reportId: string): Promise<string | null> => {
   try {
-    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
+    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data: report, error } = await supabase
-      .from('reports' as string)
+      .from(TableNames.REPORTS)
       .select('*')
       .eq('id', reportId)
       .single();

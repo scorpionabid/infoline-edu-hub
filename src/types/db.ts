@@ -38,19 +38,20 @@ export type ExtendedSupabaseClient = SupabaseClient & {
 };
 
 // Supabase verilənlər bazasındakı cədvəllərin adları
-export type TableNames = 
-  | 'audit_logs' 
-  | 'categories' 
-  | 'columns' 
-  | 'data_entries' 
-  | 'notifications' 
-  | 'profiles' 
-  | 'regions' 
-  | 'reports' 
-  | 'report_templates' 
-  | 'schools' 
-  | 'sectors' 
-  | 'user_roles';
+export enum TableNames {
+  AUDIT_LOGS = 'audit_logs',
+  CATEGORIES = 'categories',
+  COLUMNS = 'columns',
+  DATA_ENTRIES = 'data_entries',
+  NOTIFICATIONS = 'notifications',
+  PROFILES = 'profiles',
+  REGIONS = 'regions',
+  REPORTS = 'reports',
+  REPORT_TEMPLATES = 'report_templates',
+  SCHOOLS = 'schools',
+  SECTORS = 'sectors',
+  USER_ROLES = 'user_roles'
+}
 
 // Report statusu üçün tipler
 export type ReportStatus = 'draft' | 'published' | 'archived';

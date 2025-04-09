@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
@@ -11,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Download, Filter, Search, CheckSquare, X } from 'lucide-react';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
@@ -36,7 +37,7 @@ const SchoolColumnTable: React.FC = () => {
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   
-  const { data: regions } = useCachedQuery({
+  const regionsQuery = useCachedQuery({
     queryKey: ['regions'],
     queryFn: async () => {
       const { data } = await supabase.from('regions').select('*');
@@ -44,7 +45,7 @@ const SchoolColumnTable: React.FC = () => {
     }
   });
 
-  const { data: sectors } = useCachedQuery({
+  const sectorsQuery = useCachedQuery({
     queryKey: ['sectors'],
     queryFn: async () => {
       const { data } = await supabase.from('sectors').select('*');
@@ -52,18 +53,18 @@ const SchoolColumnTable: React.FC = () => {
     }
   });
 
-  const { data: categories } = useCachedQuery({
+  const categoriesQuery = useCachedQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const { data } = await supabase.from('categories').select('*');
       return data || [];
-    },
-    enabled: true
+    }
   });
 
-  const categories = categories || [];
-  const regions = regions || [];
-  const sectors = sectors || [];
+  // TypeScript tiplemesini düzəldək - unknown tipindən array tipinə çeviririk
+  const regionsData = (regionsQuery.data || []) as any[];
+  const sectorsData = (sectorsQuery.data || []) as any[];
+  const categoriesData = (categoriesQuery.data || []) as any[];
 
   const filteredData = data.filter(school => 
     school.schoolName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -190,8 +191,8 @@ const SchoolColumnTable: React.FC = () => {
                     <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories && categories.length > 0 ? (
-                      categories.map((category: any) => (
+                    {categoriesData && categoriesData.length > 0 ? (
+                      categoriesData.map((category: any) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
@@ -213,8 +214,8 @@ const SchoolColumnTable: React.FC = () => {
                     <SelectValue placeholder={t('selectRegion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {regions && regions.length > 0 ? (
-                      regions.map((region: any) => (
+                    {regionsData && regionsData.length > 0 ? (
+                      regionsData.map((region: any) => (
                         <SelectItem key={region.id} value={region.id}>
                           {region.name}
                         </SelectItem>
@@ -237,8 +238,8 @@ const SchoolColumnTable: React.FC = () => {
                     <SelectValue placeholder={regionId ? t('selectSector') : t('selectRegionFirst')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {sectors && sectors.length > 0 ? (
-                      sectors.map((sector: any) => (
+                    {sectorsData && sectorsData.length > 0 ? (
+                      sectorsData.map((sector: any) => (
                         <SelectItem key={sector.id} value={sector.id}>
                           {sector.name}
                         </SelectItem>
