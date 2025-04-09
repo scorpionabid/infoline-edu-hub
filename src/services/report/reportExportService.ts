@@ -1,98 +1,62 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { TableNames } from '@/types/db';
+import { Report } from '@/types/report';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { handleReportError } from './reportBaseService';
 
-/**
- * Hesabatı ixrac etmək üçün servis
- */
-export const exportReport = async (reportId: string): Promise<string | null> => {
+export const exportReportToExcel = async (report: Report): Promise<void> => {
   try {
-    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
-    const { data: report, error } = await supabase
-      .from(TableNames.REPORTS)
-      .select('*')
-      .eq('id', reportId)
-      .single();
+    // Hesabatdan məlumatları alırıq
+    const reportData = report.content;
+    
+    // Excel üçün data array yaradırıq
+    const worksheetData: any[] = [];
+    
+    // Əgər report content-də data array varsa, onu işlədirik
+    if (reportData && reportData.data && Array.isArray(reportData.data)) {
+      // Başlıqlar üçün ilk sətir
+      if (reportData.columns && Array.isArray(reportData.columns)) {
+        const headers = reportData.columns.map((col: any) => col.title || col.name);
+        worksheetData.push(headers);
+      }
       
-    if (error) throw error;
+      // Məlumat sətirləri
+      reportData.data.forEach((row: any) => {
+        const rowData = reportData.columns.map((col: any) => {
+          const key = col.key || col.name;
+          return row[key] || '';
+        });
+        worksheetData.push(rowData);
+      });
+    } else {
+      // Əgər data formatı fərqlidirsə, sadəcə JSON-u flatlayırıq
+      worksheetData.push(['Açar', 'Dəyər']);
+      Object.entries(reportData || {}).forEach(([key, value]) => {
+        worksheetData.push([key, JSON.stringify(value)]);
+      });
+    }
     
-    // Burada hesabat ixrac əməliyyatını həyata keçirmək üçün 
-    // əlavə məntiq və serverlə əlaqə əlavə edilə bilər
+    // Worksheet yaradırıq
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
     
-    // Bu versiyada sadəcə bir link qaytarırıq
-    return `/api/reports/download/${reportId}`;
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat ixrac edilərkən xəta baş verdi');
-    return null;
+    // Workbook yaradırıq və worksheet əlavə edirik
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+    
+    // Excel faylını yaradırıq
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const fileData = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    
+    // Faylı yükləyirik
+    saveAs(fileData, `${report.title || 'Report'}-${new Date().toISOString()}.xlsx`);
+  } catch (error) {
+    throw handleReportError(error);
   }
 };
 
-/**
- * PDF formatında hesabat ixrac etmək üçün servis
- */
-export const exportReportAsPdf = async (reportId: string): Promise<string | null> => {
-  try {
-    // Burada hesabatı PDF olaraq ixrac etmə məntiqi əlavə ediləcək
-    // Gələcəkdə tətbiq ediləcək
-    
-    // Test üçün eyni linki qaytarırıq
-    return `/api/reports/download/${reportId}?format=pdf`;
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat PDF formatında ixrac edilərkən xəta baş verdi');
-    return null;
-  }
-};
-
-/**
- * CSV formatında hesabat ixrac etmək üçün servis
- */
-export const exportReportAsCsv = async (reportId: string): Promise<string | null> => {
-  try {
-    // Burada hesabatı CSV olaraq ixrac etmə məntiqi əlavə ediləcək
-    // Gələcəkdə tətbiq ediləcək
-    
-    // Test üçün eyni linki qaytarırıq
-    return `/api/reports/download/${reportId}?format=csv`;
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat CSV formatında ixrac edilərkən xəta baş verdi');
-    return null;
-  }
-};
-
-/**
- * Hesabatı paylaşmaq üçün servis
- */
-export const shareReport = async (reportId: string, userIds: string[]): Promise<boolean> => {
-  try {
-    // Hesabatı əldə et
-    const { data: report, error: reportError } = await supabase
-      .from(TableNames.REPORTS)
-      .select('shared_with')
-      .eq('id', reportId)
-      .single();
-      
-    if (reportError) throw reportError;
-    
-    // Paylaşım siyahısını yenilə
-    let sharedWith = Array.isArray(report.shared_with) ? report.shared_with : [];
-    
-    // Yeni istifadəçiləri əlavə et (təkrarları silərək)
-    const newSharedWith = [...new Set([...sharedWith, ...userIds])];
-    
-    // Yeniləməni göndər
-    const { error: updateError } = await supabase
-      .from(TableNames.REPORTS)
-      .update({
-        shared_with: newSharedWith
-      })
-      .eq('id', reportId);
-      
-    if (updateError) throw updateError;
-    
-    return true;
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat paylaşılarkən xəta baş verdi');
-    return false;
-  }
+export const exportReportToPDF = async (report: Report): Promise<void> => {
+  // PDF ixracı üçün funksionallıq
+  // Bu funksionallığı tamamlamaq üçün PDF kitabxanası əlavə etmək lazımdır
+  console.log('PDF export functionality will be implemented later');
+  throw new Error('PDF export functionality is not implemented yet');
 };

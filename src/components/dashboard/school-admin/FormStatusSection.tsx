@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/context/LanguageContext';
 import { Clock, AlertCircle } from 'lucide-react';
 
-interface FormStatusSectionProps {
+export interface FormStatusSectionProps {
   dueSoonCount: number;
   overdueCount: number;
   totalCount: number;

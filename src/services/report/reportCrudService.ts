@@ -1,142 +1,77 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Report, ReportType } from '@/types/report';
-import { TableNames } from '@/types/db';
-import { mapReportTableToReport, handleReportError } from './reportBaseService';
+import { Report } from '@/types/report';
+import { getReportTableName, mapReportTableToReport, handleReportError } from './reportBaseService';
 
-/**
- * Hesabat yaratmaq üçün servis
- */
-export const createReport = async (report: Partial<Report>): Promise<Report | null> => {
+export const createReport = async (report: Partial<Report>): Promise<Report> => {
   try {
-    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
-      .from(TableNames.REPORTS)
-      .insert([{
-        title: report.name || report.title,
+      .from(getReportTableName())
+      .insert({
+        title: report.title,
         description: report.description,
         type: report.type,
-        content: {
-          data: report.data || [],
-          insights: report.insights || [],
-          recommendations: report.recommendations || [],
-          summary: report.summary || ''
-        },
         status: report.status || 'draft',
+        content: report.content || {},
+        filters: report.filters || {},
         created_by: report.createdBy,
-        tags: report.tags || []
-      }])
-      .select()
+        is_template: report.isTemplate || false,
+        shared_with: report.sharedWith || [],
+        insights: report.insights || [],
+        recommendations: report.recommendations || []
+      })
+      .select('*')
       .single();
 
     if (error) throw error;
-
-    // Type assertion ilə düzgün tipə çeviririk
-    return mapReportTableToReport(data as any);
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat yaradılarkən xəta baş verdi');
-    return null;
+    return mapReportTableToReport(data);
+  } catch (error) {
+    throw handleReportError(error);
   }
 };
 
-/**
- * Hesabat yeniləmək üçün servis
- */
-export const updateReport = async (id: string, report: Partial<Report>): Promise<boolean> => {
+export const updateReport = async (id: string, report: Partial<Report>): Promise<Report> => {
   try {
-    const updates: any = {};
+    const updatePayload: any = {};
     
-    if (report.name || report.title) updates.title = report.name || report.title;
-    if (report.description !== undefined) updates.description = report.description;
-    if (report.status) updates.status = report.status;
-    if (report.tags) updates.tags = report.tags;
+    if (report.title !== undefined) updatePayload.title = report.title;
+    if (report.description !== undefined) updatePayload.description = report.description;
+    if (report.type !== undefined) updatePayload.type = report.type;
+    if (report.status !== undefined) updatePayload.status = report.status;
+    if (report.content !== undefined) updatePayload.content = report.content;
+    if (report.filters !== undefined) updatePayload.filters = report.filters;
+    if (report.isTemplate !== undefined) updatePayload.is_template = report.isTemplate;
+    if (report.sharedWith !== undefined) updatePayload.shared_with = report.sharedWith;
+    if (report.insights !== undefined) updatePayload.insights = report.insights;
+    if (report.recommendations !== undefined) updatePayload.recommendations = report.recommendations;
     
-    // Content yeniləmək
-    if (report.data || report.insights || report.recommendations || report.summary) {
-      // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
-      const { data: existingReport, error } = await supabase
-        .from(TableNames.REPORTS)
-        .select('content')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      
-      // JSON kontentini düzgün işləyirik
-      let content = typeof existingReport.content === 'string'
-        ? JSON.parse(existingReport.content)
-        : existingReport.content || {};
-        
-      if (!content) content = {};
-      
-      if (report.data) content.data = report.data;
-      if (report.insights) content.insights = report.insights;
-      if (report.recommendations) content.recommendations = report.recommendations;
-      if (report.summary) content.summary = report.summary;
-      
-      updates.content = content;
-    }
-    
-    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
+    // Yeniləmə tarixini yeni dəyərə təyin edirik
+    updatePayload.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from(getReportTableName())
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return mapReportTableToReport(data);
+  } catch (error) {
+    throw handleReportError(error);
+  }
+};
+
+export const deleteReport = async (id: string): Promise<boolean> => {
+  try {
     const { error } = await supabase
-      .from(TableNames.REPORTS)
-      .update(updates)
+      .from(getReportTableName())
+      .delete()
       .eq('id', id);
 
     if (error) throw error;
-
     return true;
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat yenilənərkən xəta baş verdi');
-    return false;
-  }
-};
-
-/**
- * Hesabat şablonu yaratmaq üçün servis
- */
-export const createReportTemplate = async (template: Partial<Report>): Promise<Report | null> => {
-  try {
-    // Əmin olaq ki, template.type ReportType tipindədir
-    const reportType = template.type as ReportType;
-    const tagsArray = template.tags || [];
-    
-    // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
-    const { data, error } = await supabase
-      .from(TableNames.REPORT_TEMPLATES)
-      .insert([{
-        name: template.name || template.title,
-        description: template.description,
-        type: reportType,
-        config: {
-          filters: template.data,
-          layout: 'default',
-          insights: template.insights || [],
-          recommendations: template.recommendations || []
-        },
-        status: 'active',
-        created_by: template.createdBy,
-        tags: tagsArray
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // data obyektini düzgün formada qaytarırıq
-    return {
-      id: data.id,
-      name: data.name,
-      title: data.name,
-      description: data.description || '',
-      type: data.type as ReportType,
-      createdAt: data.created_at,
-      status: 'published' as 'draft' | 'published' | 'archived',
-      createdBy: data.created_by || '',
-      tags: [] // Əgər bazada tags saxlanmırsa, boş massiv qaytarırıq
-    };
-  } catch (error: any) {
-    handleReportError(error, 'Hesabat şablonu yaradılarkən xəta baş verdi');
-    return null;
+  } catch (error) {
+    throw handleReportError(error);
   }
 };
