@@ -1,5 +1,5 @@
 
-import { useQuery, QueryKey, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, QueryKey, UseQueryOptions, QueryClient } from '@tanstack/react-query';
 import { getCache, setCache, CacheConfig } from '@/utils/cacheUtils';
 
 /**

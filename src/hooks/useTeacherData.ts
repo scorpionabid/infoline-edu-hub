@@ -8,9 +8,9 @@ import { fetchCached } from '@/api/cachedApi';
 export function useTeacherData(schoolId?: string) {
   const queryKey = ['teachers', schoolId];
   
-  return useCachedQuery(
-    queryKey, 
-    async () => {
+  return useCachedQuery({
+    queryKey,
+    queryFn: async () => {
       // Edge Function əsaslı keşləmə
       if (schoolId) {
         const response = await fetchCached({
@@ -38,14 +38,13 @@ export function useTeacherData(schoolId?: string) {
       
       return response.data;
     },
-    {
-      queryKey,
+    queryOptions: {
       enabled: true,
       staleTime: 1000 * 60 * 5, // 5 dəqiqə ərzində məlumatın "təzə" sayılması
       gcTime: 1000 * 60 * 60, // 1 saat ərzində keşdə saxlanılması (əvvəlki cacheTime əvəzinə gcTime)
     },
-    {
+    cacheConfig: {
       expiryInMinutes: 60 // localStorage-da da 1 saat saxla
     }
-  );
+  });
 }
