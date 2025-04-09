@@ -7,7 +7,7 @@ import { handleReportError } from './reportBaseService';
 export const exportReportToExcel = async (report: Report): Promise<void> => {
   try {
     // Hesabatdan məlumatları alırıq
-    const reportData = report.content;
+    const reportData = report.content || {};
     
     // Excel üçün data array yaradırıq
     const worksheetData: any[] = [];

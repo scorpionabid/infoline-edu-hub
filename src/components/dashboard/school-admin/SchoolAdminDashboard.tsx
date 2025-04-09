@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Notification } from '@/types/notification';
 import NotificationsCard from '../NotificationsCard';
 import { 
-  SchoolAdminDashboardData, 
+  SchoolAdminDashboardData,
   FormItem 
 } from '@/types/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

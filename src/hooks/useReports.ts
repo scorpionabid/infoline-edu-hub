@@ -1,11 +1,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { Report, SchoolColumnData, StatusFilterOptions, ReportType } from '@/types/report';
+import { Report, ReportType } from '@/types/report';
 import { 
   fetchReports, 
   fetchReportTemplates, 
-  createReport, 
-  updateReport, 
+  addReport,
+  editReport as updateReport, 
   createReportTemplate, 
   fetchSchoolColumnData, 
   exportReport,
@@ -77,7 +77,7 @@ export const useReports = () => {
     setFilteredReports(filtered);
   }, []);
 
-  const addReport = useCallback(async (report: Partial<Report>): Promise<Report | null> => {
+  const createNewReport = useCallback(async (report: Partial<Report>): Promise<Report | null> => {
     setLoading(true);
     setError(null);
     try {
@@ -87,7 +87,7 @@ export const useReports = () => {
         createdBy: user?.id || ''
       };
       
-      const newReport = await createReport(reportWithUser);
+      const newReport = await addReport(reportWithUser);
       if (newReport) {
         setReports(prev => [newReport, ...prev]);
         applyFilters([newReport, ...reports], searchTerm, typeFilter, statusFilter);
@@ -101,20 +101,20 @@ export const useReports = () => {
     }
   }, [user, reports, searchTerm, typeFilter, statusFilter, applyFilters]);
 
-  const editReport = useCallback(async (id: string, report: Partial<Report>): Promise<boolean> => {
+  const editReport = useCallback(async (id: string, report: Partial<Report>): Promise<Report | null> => {
     setLoading(true);
     setError(null);
     try {
-      const success = await updateReport(id, report);
-      if (success) {
-        const updatedReports = reports.map(r => r.id === id ? { ...r, ...report } : r);
-        setReports(updatedReports);
-        applyFilters(updatedReports, searchTerm, typeFilter, statusFilter);
+      const updatedReport = await updateReport(id, report);
+      
+      if (updatedReport) {
+        setReports(prev => prev.map(r => r.id === id ? updatedReport : r));
+        applyFilters(reports.map(r => r.id === id ? updatedReport : r), searchTerm, typeFilter, statusFilter);
       }
-      return success;
+      return updatedReport;
     } catch (err: any) {
       setError(err.message || 'Hesabat yenilənərkən xəta baş verdi');
-      return false;
+      return null;
     } finally {
       setLoading(false);
     }
@@ -205,7 +205,7 @@ export const useReports = () => {
     setStatusFilter,
     loadReports,
     loadTemplates,
-    addReport,
+    addReport: createNewReport,
     editReport,
     addTemplate,
     downloadReport,

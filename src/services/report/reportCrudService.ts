@@ -2,11 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Report } from '@/types/report';
 import { getReportTableName, mapReportTableToReport, handleReportError } from './reportBaseService';
+import { TableNames } from '@/types/db';
 
 export const createReport = async (report: Partial<Report>): Promise<Report> => {
   try {
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .insert({
         title: report.title,
         description: report.description,
@@ -49,7 +50,7 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
     updatePayload.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .update(updatePayload)
       .eq('id', id)
       .select('*')
@@ -65,7 +66,7 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
 export const deleteReport = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .delete()
       .eq('id', id);
 

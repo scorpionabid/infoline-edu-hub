@@ -8,11 +8,12 @@ import {
   mapTemplateTableToReport, 
   handleReportError 
 } from './reportBaseService';
+import { TableNames } from '@/types/db';
 
 export const getReports = async (): Promise<Report[]> => {
   try {
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .select('*')
       .eq('is_template', false)
       .order('created_at', { ascending: false });
@@ -27,7 +28,7 @@ export const getReports = async (): Promise<Report[]> => {
 export const getReportById = async (id: string): Promise<Report> => {
   try {
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .select('*')
       .eq('id', id)
       .single();
@@ -43,7 +44,7 @@ export const getReportTemplates = async (): Promise<Report[]> => {
   try {
     // Əvvəlcə template cədvəlindən şablonları əldə edək
     const { data: templateData, error: templateError } = await supabase
-      .from(getReportTemplateTableName())
+      .from(TableNames.REPORT_TEMPLATES)
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -52,7 +53,7 @@ export const getReportTemplates = async (): Promise<Report[]> => {
     
     // Sonra əsas cədvəldən template kimi işarələnmiş hesabatları əldə edək
     const { data: reportData, error: reportError } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .select('*')
       .eq('is_template', true)
       .order('created_at', { ascending: false });
@@ -72,7 +73,7 @@ export const getReportTemplates = async (): Promise<Report[]> => {
 export const getReportsByType = async (type: string): Promise<Report[]> => {
   try {
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .select('*')
       .eq('type', type)
       .eq('is_template', false)
@@ -88,7 +89,7 @@ export const getReportsByType = async (type: string): Promise<Report[]> => {
 export const getReportsByUser = async (userId: string): Promise<Report[]> => {
   try {
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .select('*')
       .eq('created_by', userId)
       .eq('is_template', false)
@@ -104,7 +105,7 @@ export const getReportsByUser = async (userId: string): Promise<Report[]> => {
 export const getSharedReports = async (userId: string): Promise<Report[]> => {
   try {
     const { data, error } = await supabase
-      .from(getReportTableName())
+      .from(TableNames.REPORTS)
       .select('*')
       .contains('shared_with', [userId])
       .eq('is_template', false)

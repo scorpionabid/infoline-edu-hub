@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,7 +33,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
       filteredForms = filteredForms.filter(form => 
         form.status === 'rejected' || 
         form.status === 'overdue' ||
-        (form.status === 'due') || // Son tarixi yaxınlaşan formlar
+        form.status === 'dueSoon' || // Son tarixi yaxınlaşan formlar
         (form.deadline && new Date(form.deadline) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)) // 3 gün içində olanlar
       );
     }

@@ -45,28 +45,29 @@ export type ExportOptions = {
 export type ReportType = 'column' | 'category' | 'school' | 'region' | 'sector' | 'completion' | 'custom' | 'statistics' | 'comparison';
 
 // Hesabat tipi
-export type Report = {
+export interface Report {
   id: string;
-  name: string;
-  title?: string; // ReportList və digər komponentlərdə istifadə olunur
+  title: string;
+  name?: string;
   description: string;
   type: ReportType;
-  dateCreated?: string;
-  createdAt?: string; // Yaradılma tarixi (alternativ)
-  created?: string; // Yaradılma tarixi (alternativ)
-  lastUpdated?: string;
   status: 'draft' | 'published' | 'archived';
+  content?: any;
+  filters?: any;
   createdBy: string;
+  createdAt?: string;
+  created?: string;
+  dateCreated?: string;
+  updatedAt?: string;
+  lastUpdated?: string;
+  isTemplate?: boolean;
+  sharedWith?: string[];
+  insights?: string[];
+  recommendations?: string[];
+  data?: any[];
+  summary?: string;
   downloadUrl?: string;
-  data?: any[]; // Hesabat üçün məlumatlar massivi
-  summary?: string; // Hesabat xülasəsi
-  insights?: string[]; // Hesabat təhlilləri
-  recommendations?: string[]; // Tövsiyələr
-  tags?: string[]; // Hesabat təqləri
-  thumbnailUrl?: string; // Hesabat miniaturu
-  viewCount?: number; // Baxış sayı
-  lastViewedAt?: string; // Son baxış tarixi
-};
+}
 
 // Kateqoriya hesabat tipi
 export type CategoryReport = {
