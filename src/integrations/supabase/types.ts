@@ -333,6 +333,93 @@ export type Database = {
         }
         Relationships: []
       }
+      report_templates: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          filters: Json | null
+          id: string
+          insights: string[] | null
+          is_template: boolean | null
+          recommendations: string[] | null
+          shared_with: Json | null
+          status: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          id?: string
+          insights?: string[] | null
+          is_template?: boolean | null
+          recommendations?: string[] | null
+          shared_with?: Json | null
+          status?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          id?: string
+          insights?: string[] | null
+          is_template?: boolean | null
+          recommendations?: string[] | null
+          shared_with?: Json | null
+          status?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       schools: {
         Row: {
           address: string | null

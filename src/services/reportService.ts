@@ -9,9 +9,9 @@ import { toast } from 'sonner';
  */
 export const fetchReports = async (): Promise<Report[]> => {
   try {
-    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
+    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
     const { data, error } = await supabase
-      .from('reports' as TableNames)
+      .from('reports' as string)
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -44,9 +44,9 @@ export const fetchReports = async (): Promise<Report[]> => {
  */
 export const fetchReportTemplates = async (): Promise<Report[]> => {
   try {
-    // @ts-ignore - Supabase tipləri report_templates cədvəlinə uyğun olmadığı üçün ignorə edilir
+    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
     const { data, error } = await supabase
-      .from('report_templates' as TableNames)
+      .from('report_templates' as string)
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -76,9 +76,9 @@ export const fetchReportTemplates = async (): Promise<Report[]> => {
  */
 export const createReport = async (report: Partial<Report>): Promise<Report | null> => {
   try {
-    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
+    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
     const { data, error } = await supabase
-      .from('reports' as TableNames)
+      .from('reports' as string)
       .insert([{
         title: report.name || report.title,
         description: report.description,
@@ -131,9 +131,9 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
     
     // Content yeniləmək
     if (report.data || report.insights || report.recommendations) {
-      // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
+      // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
       const { data: existingReport } = await supabase
-        .from('reports' as TableNames)
+        .from('reports' as string)
         .select('content')
         .eq('id', id)
         .single();
@@ -147,9 +147,9 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
       updates.content = content;
     }
     
-    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
+    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
     const { error } = await supabase
-      .from('reports' as TableNames)
+      .from('reports' as string)
       .update(updates)
       .eq('id', id);
 
@@ -168,9 +168,9 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
  */
 export const createReportTemplate = async (template: Partial<Report>): Promise<Report | null> => {
   try {
-    // @ts-ignore - Supabase tipləri report_templates cədvəlinə uyğun olmadığı üçün ignorə edilir
+    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
     const { data, error } = await supabase
-      .from('report_templates' as TableNames)
+      .from('report_templates' as string)
       .insert([{
         name: template.name || template.title,
         description: template.description,
@@ -322,9 +322,9 @@ export const fetchSchoolColumnData = async (
  */
 export const exportReport = async (reportId: string): Promise<string | null> => {
   try {
-    // @ts-ignore - Supabase tipləri reports cədvəlinə uyğun olmadığı üçün ignorə edilir
+    // @ts-ignore - Supabase tipindən gələn xətanı ignorə edirik
     const { data: report, error } = await supabase
-      .from('reports' as TableNames)
+      .from('reports' as string)
       .select('*')
       .eq('id', reportId)
       .single();

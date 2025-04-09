@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Download, Filter, Search, CheckSquare, X } from 'lucide-react';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
+import { supabase } from '@/lib/supabase';
 
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
@@ -35,36 +36,39 @@ const SchoolColumnTable: React.FC = () => {
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   
-  const { data: categoriesData, isLoading: categoriesLoading } = useCachedQuery(['categories'], async () => {
-    return [];
-  });
-  
-  const { data: regionsData, isLoading: regionsLoading } = useCachedQuery(['regions'], async () => {
-    return [];
-  });
-  
-  const { data: sectorsData, isLoading: sectorsLoading } = useCachedQuery(
-    ['sectors', regionId], 
-    async () => {
-      return [];
-    },
-    { 
-      enabled: !!regionId,
-      queryKey: ['sectors', regionId]
+  const { data: regions } = useCachedQuery({
+    queryKey: ['regions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('regions').select('*');
+      return data || [];
     }
-  );
+  });
 
-  // Kateqoriyalar
-  const categories = categoriesData || [];
-  const regions = regionsData || [];
-  const sectors = sectorsData || [];
+  const { data: sectors } = useCachedQuery({
+    queryKey: ['sectors'],
+    queryFn: async () => {
+      const { data } = await supabase.from('sectors').select('*');
+      return data || [];
+    }
+  });
 
-  // Filtirlənmiş məlumatlar
+  const { data: categories } = useCachedQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('categories').select('*');
+      return data || [];
+    },
+    enabled: true
+  });
+
+  const categories = categories || [];
+  const regions = regions || [];
+  const sectors = sectors || [];
+
   const filteredData = data.filter(school => 
     school.schoolName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Hamısını seç/ləğv et
   useEffect(() => {
     if (selectAll) {
       setSelectedSchools(filteredData.map(school => school.schoolId));
@@ -73,7 +77,6 @@ const SchoolColumnTable: React.FC = () => {
     }
   }, [selectAll, filteredData]);
 
-  // Məktəbi seç/ləğv et
   const toggleSchoolSelection = (schoolId: string) => {
     if (selectedSchools.includes(schoolId)) {
       setSelectedSchools(selectedSchools.filter(id => id !== schoolId));
@@ -82,7 +85,6 @@ const SchoolColumnTable: React.FC = () => {
     }
   };
 
-  // Status filtri dəyişdikdə
   const handleStatusFilterChange = (status: 'pending' | 'approved' | 'rejected', checked: boolean) => {
     setStatusFilter({
       ...statusFilter,
@@ -90,7 +92,6 @@ const SchoolColumnTable: React.FC = () => {
     });
   };
 
-  // Bütün filtrləri sıfırla
   const resetFilters = () => {
     setCategoryId(undefined);
     setRegionId(undefined);
@@ -103,15 +104,12 @@ const SchoolColumnTable: React.FC = () => {
     setSearchTerm('');
   };
 
-  // Sektorları yenilə (region dəyişdikdə)
   useEffect(() => {
-    // Region dəyişdikdə sektoru sıfırla
     if (regionId) {
       setSectorId(undefined);
     }
   }, [regionId, setSectorId]);
 
-  // Status badge'i
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -125,7 +123,6 @@ const SchoolColumnTable: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Yuxarı panel */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           <Button 
@@ -167,7 +164,6 @@ const SchoolColumnTable: React.FC = () => {
         </div>
       </div>
       
-      {/* Filtrlər */}
       {showFilters && (
         <Card className="mb-4">
           <CardHeader className="pb-2">
@@ -184,7 +180,6 @@ const SchoolColumnTable: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Kateqoriya seçimi */}
               <div className="space-y-1">
                 <label className="text-sm font-medium">{t('selectCategory')}</label>
                 <Select 
@@ -195,22 +190,19 @@ const SchoolColumnTable: React.FC = () => {
                     <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categoriesLoading ? (
-                      <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
-                    ) : categories && Array.isArray(categories) && categories.length > 0 ? (
+                    {categories && categories.length > 0 ? (
                       categories.map((category: any) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="empty" disabled>{t('noCategories')}</SelectItem>
+                      <SelectItem value="no-categories">{t('noCategoriesFound')}</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
               </div>
               
-              {/* Region seçimi */}
               <div className="space-y-1">
                 <label className="text-sm font-medium">{t('selectRegion')}</label>
                 <Select 
@@ -221,22 +213,19 @@ const SchoolColumnTable: React.FC = () => {
                     <SelectValue placeholder={t('selectRegion')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {regionsLoading ? (
-                      <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
-                    ) : regions && Array.isArray(regions) && regions.length > 0 ? (
+                    {regions && regions.length > 0 ? (
                       regions.map((region: any) => (
                         <SelectItem key={region.id} value={region.id}>
                           {region.name}
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="empty" disabled>{t('noRegions')}</SelectItem>
+                      <SelectItem value="no-regions">{t('noRegionsFound')}</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
               </div>
               
-              {/* Sektor seçimi */}
               <div className="space-y-1">
                 <label className="text-sm font-medium">{t('selectSector')}</label>
                 <Select 
@@ -248,22 +237,19 @@ const SchoolColumnTable: React.FC = () => {
                     <SelectValue placeholder={regionId ? t('selectSector') : t('selectRegionFirst')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {sectorsLoading ? (
-                      <SelectItem value="loading" disabled>{t('loading')}</SelectItem>
-                    ) : sectors && Array.isArray(sectors) && sectors.length > 0 ? (
+                    {sectors && sectors.length > 0 ? (
                       sectors.map((sector: any) => (
                         <SelectItem key={sector.id} value={sector.id}>
                           {sector.name}
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="empty" disabled>{regionId ? t('noSectors') : t('selectRegionFirst')}</SelectItem>
+                      <SelectItem value="no-sectors">{t('noSectorsFound')}</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
               </div>
               
-              {/* Status filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('status')}</label>
                 <div className="flex flex-col space-y-2">
@@ -298,7 +284,6 @@ const SchoolColumnTable: React.FC = () => {
         </Card>
       )}
       
-      {/* Cədvəl */}
       <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
@@ -314,7 +299,6 @@ const SchoolColumnTable: React.FC = () => {
               <TableHead>{t('sector')}</TableHead>
               <TableHead>{t('status')}</TableHead>
               
-              {/* Dinamik sütunlar - real datada kateqoriyadan gələcək */}
               {filteredData.length > 0 && filteredData[0].columnData.map((_, index) => (
                 <TableHead key={index}>Sütun {index + 1}</TableHead>
               ))}
@@ -324,7 +308,6 @@ const SchoolColumnTable: React.FC = () => {
           </TableHeader>
           <TableBody>
             {loading ? (
-              // Yüklənmə skeleton
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell><Skeleton className="h-4 w-4" /></TableCell>
@@ -337,14 +320,12 @@ const SchoolColumnTable: React.FC = () => {
                 </TableRow>
               ))
             ) : error ? (
-              // Xəta mesajı
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {error}
                 </TableCell>
               </TableRow>
             ) : filteredData.length === 0 ? (
-              // Məlumat yoxdur
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {t('noDataAvailable')}
@@ -352,7 +333,6 @@ const SchoolColumnTable: React.FC = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              // Məlumatları göstər
               filteredData.map((school) => (
                 <TableRow key={school.schoolId}>
                   <TableCell>
@@ -366,7 +346,6 @@ const SchoolColumnTable: React.FC = () => {
                   <TableCell>{school.sector}</TableCell>
                   <TableCell>{getStatusBadge(school.status)}</TableCell>
                   
-                  {/* Dinamik sütun məlumatları */}
                   {school.columnData.map((col, index) => (
                     <TableCell key={index}>{col.value || "-"}</TableCell>
                   ))}
