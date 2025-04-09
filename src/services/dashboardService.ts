@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { TableNames } from '@/types/db';
 import {
   DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, 
-  SectorAdminDashboardData, SchoolAdminDashboardData
+  SectorAdminDashboardData, SchoolAdminDashboardData, StatsItem
 } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
 
@@ -411,35 +411,35 @@ const formatTime = (timestamp: string): string => {
 };
 
 // Statistika elementləri üçün nümunə data yaratmaq
-const generateStatItems = () => {
+const generateStatItems = (): StatsItem[] => {
   return [
     {
       id: '1',
       title: 'Aylıq aktivlik',
       value: Math.floor(Math.random() * 1000),
       change: Math.floor(Math.random() * 30),
-      changeType: Math.random() > 0.5 ? 'increase' : 'decrease'
+      changeType: (Math.random() > 0.5 ? 'increase' : 'decrease') as 'increase' | 'decrease' | 'neutral'
     },
     {
       id: '2',
       title: 'Məlumat dolduranlar',
       value: Math.floor(Math.random() * 500),
       change: Math.floor(Math.random() * 20),
-      changeType: Math.random() > 0.5 ? 'increase' : 'decrease'
+      changeType: (Math.random() > 0.5 ? 'increase' : 'decrease') as 'increase' | 'decrease' | 'neutral'
     },
     {
       id: '3',
       title: 'Tamamlanmış formlar',
       value: Math.floor(Math.random() * 200),
       change: Math.floor(Math.random() * 15),
-      changeType: Math.random() > 0.5 ? 'increase' : 'decrease'
+      changeType: (Math.random() > 0.5 ? 'increase' : 'decrease') as 'increase' | 'decrease' | 'neutral'
     },
     {
       id: '4',
       title: 'Vaxtı keçmiş məlumatlar',
       value: Math.floor(Math.random() * 50),
       change: Math.floor(Math.random() * 10),
-      changeType: Math.random() > 0.6 ? 'decrease' : 'increase'
+      changeType: (Math.random() > 0.6 ? 'decrease' : 'increase') as 'increase' | 'decrease' | 'neutral'
     }
   ];
 };

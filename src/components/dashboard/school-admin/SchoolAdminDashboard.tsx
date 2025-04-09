@@ -1,17 +1,22 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
+import { Notification } from '@/types/notification';
+import NotificationsCard from '../NotificationsCard';
+import { 
+  SchoolAdminDashboardData, 
+  FormItem 
+} from '@/types/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
-import { FormStatus } from '@/types/category';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
-import NotificationsCard from '../NotificationsCard';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { FormStatus } from '@/types/form';
+import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import FormStatusSection from './FormStatusSection';
 
 interface SchoolAdminDashboardProps {
-  data: SchoolAdminDashboardData | null;
+  data: SchoolAdminDashboardData;
   isLoading: boolean;
   error: Error | null;
   onRefresh: () => void;
@@ -19,7 +24,7 @@ interface SchoolAdminDashboardProps {
   handleFormClick: (formId: string) => void;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
   data,
   isLoading,
   error,
@@ -28,34 +33,6 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   handleFormClick
 }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <p className="text-destructive text-lg">{t('errorOccurred')}</p>
-        <p className="text-muted-foreground mb-4">{error.message}</p>
-        <Button onClick={onRefresh}>{t('tryAgain')}</Button>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <p className="text-muted-foreground">{t('noDataAvailable')}</p>
-        <Button onClick={onRefresh} className="mt-4">{t('refresh')}</Button>
-      </div>
-    );
-  }
 
   // Status rəngləri üçün funksiya
   const getStatusColor = (status: FormStatus) => {
@@ -66,10 +43,58 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         return 'bg-green-100 text-green-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
+      case 'dueSoon':
+        return 'bg-blue-100 text-blue-800';
+      case 'overdue':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array(4).fill(0).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-[120px]" />
+                <Skeleton className="h-3 w-[150px]" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-[60px]" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-4 w-[120px]" />
+          </CardHeader>
+          <CardContent className="h-[400px]">
+            <Skeleton className="h-full w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+          <h3 className="text-lg font-semibold">{t('errorLoadingData')}</h3>
+          <p className="text-muted-foreground text-center">{error.message}</p>
+          <Button onClick={onRefresh} variant="outline" className="mt-4">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('tryAgain')}
+          </Button>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -81,7 +106,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('pendingFormsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.forms.pending}</div>
+            <div className="text-2xl font-bold">{data.forms?.pending || 0}</div>
           </CardContent>
         </Card>
 
@@ -91,7 +116,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('approvedFormsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.forms.approved}</div>
+            <div className="text-2xl font-bold">{data.forms?.approved || 0}</div>
           </CardContent>
         </Card>
 
@@ -101,7 +126,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('rejectedFormsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.forms.rejected}</div>
+            <div className="text-2xl font-bold">{data.forms?.rejected || 0}</div>
           </CardContent>
         </Card>
 
@@ -115,6 +140,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Vaxt və status statistikası */}
+      <FormStatusSection 
+        dueSoonCount={data.forms?.dueSoon || 0}
+        overdueCount={data.forms?.overdue || 0}
+        totalCount={data.forms?.total || 0}
+      />
 
       {/* Bildirişlər kartı */}
       <NotificationsCard notifications={data.notifications} />
@@ -133,9 +165,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                   <div key={form.id} className="p-4 flex items-center justify-between">
                     <div>
                       <div className="font-semibold">{form.title}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {form.date}
-                      </div>
+                      <div className="text-sm text-muted-foreground">{form.date}</div>
                     </div>
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status as FormStatus)}`}>
                       {t(form.status)}
@@ -147,20 +177,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">{t('noPendingForms')}</p>
+              <div className="flex flex-col items-center justify-center h-full">
+                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                <p className="text-center text-muted-foreground">{t('noDataToProcess')}</p>
               </div>
             )}
           </ScrollArea>
         </CardContent>
       </Card>
 
-      {/* Məlumat əlavə etmək düyməsi */}
-      <div className="flex justify-end">
-        <Button onClick={navigateToDataEntry} size="lg" className="gap-2">
-          {t('addData')}
-        </Button>
-      </div>
+      {/* Yeni məlumat əlavə etmək üçün düymə */}
+      <Button onClick={navigateToDataEntry}>{t('addData')}</Button>
     </div>
   );
 };

@@ -1,112 +1,63 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  AlertCircle, 
-  FileInput 
-} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/context/LanguageContext';
-import { cn } from '@/lib/utils';
-
-interface FormStatusCounts {
-  pending: number;
-  approved: number;
-  rejected: number;
-  dueSoon: number;
-  overdue: number;
-}
+import { Clock, AlertCircle } from 'lucide-react';
 
 interface FormStatusSectionProps {
-  forms: FormStatusCounts;
-  navigateToDataEntry: (status: string | null) => void;
-  activeStatus: string | null;
-  compact?: boolean;
+  dueSoonCount: number;
+  overdueCount: number;
+  totalCount: number;
 }
 
 const FormStatusSection: React.FC<FormStatusSectionProps> = ({
-  forms,
-  navigateToDataEntry,
-  activeStatus,
-  compact = false
+  dueSoonCount,
+  overdueCount,
+  totalCount
 }) => {
   const { t } = useLanguage();
   
-  const statusItems = [
-    {
-      id: 'pending',
-      label: t('pending'),
-      count: forms.pending,
-      icon: <Clock className="h-4 w-4" />,
-      color: 'bg-yellow-100 text-yellow-700'
-    },
-    {
-      id: 'approved',
-      label: t('approved'),
-      count: forms.approved,
-      icon: <CheckCircle2 className="h-4 w-4" />,
-      color: 'bg-green-100 text-green-700'
-    },
-    {
-      id: 'rejected',
-      label: t('rejected'),
-      count: forms.rejected,
-      icon: <XCircle className="h-4 w-4" />,
-      color: 'bg-red-100 text-red-700'
-    },
-    {
-      id: 'dueSoon',
-      label: t('dueSoon'),
-      count: forms.dueSoon,
-      icon: <AlertTriangle className="h-4 w-4" />,
-      color: 'bg-orange-100 text-orange-700'
-    },
-    {
-      id: 'overdue',
-      label: t('overdue'),
-      count: forms.overdue,
-      icon: <AlertCircle className="h-4 w-4" />,
-      color: 'bg-red-100 text-red-700'
-    }
-  ];
+  // Əgər heç bir form yoxdursa, 0-a bölməni qarşısını alaq
+  const dueSoonPercentage = totalCount > 0 ? Math.round((dueSoonCount / totalCount) * 100) : 0;
+  const overduePercentage = totalCount > 0 ? Math.round((overdueCount / totalCount) * 100) : 0;
   
   return (
-    <Card>
-      <CardContent className={cn("flex flex-wrap gap-2", compact ? "py-3" : "py-6")}>
-        {compact && (
-          <Button
-            variant={activeStatus === null ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={() => navigateToDataEntry(null)}
-          >
-            <FileInput className="h-4 w-4" />
-            {t('all')}
-          </Button>
-        )}
-        
-        {statusItems.map(item => (
-          <Button
-            key={item.id}
-            variant={activeStatus === item.id ? "default" : "outline"}
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={() => navigateToDataEntry(item.id)}
-            disabled={item.count === 0}
-          >
-            <span className={cn("flex items-center gap-1 px-1 py-0.5 rounded", item.color)}>
-              {item.icon}
-              <span>{item.count}</span>
-            </span>
-            <span>{item.label}</span>
-          </Button>
-        ))}
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-md font-medium">{t('dueSoonForms')}</CardTitle>
+          <Clock className="h-5 w-5 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-2xl font-bold">{dueSoonCount}</span>
+            <span className="text-sm text-muted-foreground">{dueSoonPercentage}% of total</span>
+          </div>
+          <Progress value={dueSoonPercentage} className="h-2 bg-muted" indicatorClassName="bg-blue-500" />
+          <p className="text-sm text-muted-foreground mt-2">
+            {t('dueSoonFormsDescription')}
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-md font-medium">{t('overdueForms')}</CardTitle>
+          <AlertCircle className="h-5 w-5 text-red-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-2xl font-bold">{overdueCount}</span>
+            <span className="text-sm text-muted-foreground">{overduePercentage}% of total</span>
+          </div>
+          <Progress value={overduePercentage} className="h-2 bg-muted" indicatorClassName="bg-red-500" />
+          <p className="text-sm text-muted-foreground mt-2">
+            {t('overdueFormsDescription')}
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

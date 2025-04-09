@@ -1,234 +1,208 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Notification } from '@/types/notification';
-import { Form } from '@/types/form';
+import { supabase } from '@/integrations/supabase/client';
+import { TableNames } from '@/types/db';
 import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { Notification } from '@/types/notification';
 import { toast } from 'sonner';
 
-interface UseSchoolAdminDashboardReturn {
+interface UseSchoolAdminDashboardResult {
   data: SchoolAdminDashboardData;
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
 }
 
-// Mock məlumatları
-const mockDashboardData: SchoolAdminDashboardData = {
-  forms: {
-    pending: 5,
-    approved: 12,
-    rejected: 2,
-    total: 20,
-    dueSoon: 3,
-    overdue: 1
-  },
-  completionRate: 68,
-  notifications: [
-    {
-      id: '1',
-      title: 'Yeni kateqoriya əlavə edildi',
-      message: 'Tədris planlaması kateqoriyası əlavə edildi',
-      type: 'category',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      userId: 'user-1',
-      priority: 'normal'
-    },
-    {
-      id: '2',
-      title: 'Məlumat təsdiqi',
-      message: 'Şagird statistikası formu təsdiq edildi',
-      type: 'approval',
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      userId: 'user-1',
-      priority: 'high'
-    }
-  ],
-  pendingForms: [
-    {
-      id: 'form-1',
-      title: 'Şagird statistikası',
-      date: '2025-04-15',
-      status: 'pending',
-      completionPercentage: 75,
-      category: 'Təhsil statistikası'
-    },
-    {
-      id: 'form-2',
-      title: 'Müəllim heyəti',
-      date: '2025-04-20',
-      status: 'pending',
-      completionPercentage: 50,
-      category: 'Kadr məlumatları'
-    },
-    {
-      id: 'form-3',
-      title: 'İnfrastruktur hesabatı',
-      date: '2025-04-18',
-      status: 'dueSoon',
-      completionPercentage: 30,
-      category: 'İnfrastruktur'
-    }
-  ]
-};
-
-export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardReturn => {
-  const [data, setData] = useState<SchoolAdminDashboardData>(mockDashboardData);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
   const { user } = useAuth();
+  const [data, setData] = useState<SchoolAdminDashboardData>({
+    forms: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      total: 0,
+      dueSoon: 0,
+      overdue: 0
+    },
+    notifications: [],
+    completionRate: 0,
+    pendingForms: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!user) {
+    if (!user?.schoolId) {
       setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Məktəb admin dashboard məlumatları alınır...');
-      
-      // Mövcud endpoint funksiyasını yoxlayaq
-      let functionAvailable = false;
-      
-      try {
-        // Başqa bir mövcud RPC funksiyası ilə yoxlayaq
-        const { data: uuidResult } = await supabase.rpc('uuid_generate_v4');
-        
-        if (uuidResult) {
-          console.log('UUID funksiyası əlçatandır, əsas funksiyaları yoxlayırıq');
-          functionAvailable = true;
-        }
-      } catch (rpcError) {
-        console.error('RPC funksiyası xətası, mock data istifadə ediləcək:', rpcError);
-        functionAvailable = false;
-      }
-      
-      // Əgər supabase əlçatandırsa, real data almağa çalışaq
-      if (functionAvailable && user.id) {
-        // Məlumatları Supabase-dən almağa çalışaq
-        try {
-          // Təsdiq gözləyən form sayı
-          const pendingData = await supabase
-            .from('schools')
-            .select('*', { count: 'exact', head: true })
-            .eq('admin_id', user.id);
-            
-          const pendingCount = pendingData.count || 0;
-          
-          // Təsdiqlənmiş form sayı
-          const approvedData = await supabase
-            .from('schools')
-            .select('*', { count: 'exact', head: true })
-            .eq('admin_id', user.id);
-          
-          const approvedCount = approvedData.count || 0;
-          
-          // Rədd edilmiş form sayı
-          const rejectedData = await supabase
-            .from('schools')
-            .select('*', { count: 'exact', head: true })
-            .eq('admin_id', user.id);
-          
-          const rejectedCount = rejectedData.count || 0;
-          
-          // Bitmə müddəti yaxınlaşan formlar
-          const { data: pendingForms, error: pendingFormsError } = await supabase
-            .from('data_entries')
-            .select('id, category_id, created_at, status, value')
-            .eq('created_by', user.id)
-            .eq('status', 'pending')
-            .limit(10);
-            
-          if (pendingFormsError) {
-            throw pendingFormsError;
-          }
-          
-          // Gələn data-nı FormItem formatına çevirək
-          const formItems: FormItem[] = pendingForms ? pendingForms.map((form: any) => ({
-            id: form.id,
-            title: `Form #${form.id.substring(0, 8)}`,
-            date: new Date(form.created_at).toLocaleDateString(),
-            status: form.status,
-            completionPercentage: 0, // Default olaraq 0 veririk
-            category: form.category_id
-          })) : [];
-          
-          // Bildirişləri alaq
-          const { data: notifications, error: notificationsError } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(5);
-          
-          if (notificationsError) {
-            throw notificationsError;
-          }
-          
-          // Notification tipinə çevirək
-          const typedNotifications: Notification[] = notifications ? notifications.map((notification: any) => ({
-            id: notification.id,
-            userId: notification.user_id,
-            title: notification.title,
-            message: notification.message || '',
-            type: notification.type,
-            isRead: notification.is_read,
-            createdAt: notification.created_at,
-            priority: notification.priority || 'normal'
-          })) : [];
-          
-          // Məlumatları birləşdirək
-          setData({
-            forms: {
-              pending: pendingCount,
-              approved: approvedCount,
-              rejected: rejectedCount,
-              total: pendingCount + approvedCount + rejectedCount,
-              dueSoon: 0, // Hələlik 0 verilir
-              overdue: 0, // Hələlik 0 verilir
-            },
-            completionRate: 0, // Hələlik 0 verilir
-            notifications: typedNotifications,
-            pendingForms: formItems
-          });
-        } catch (error) {
-          console.error('Məlumatların alınmasında xəta:', error);
-          // Xəta halında mock məlumatları istifadə edirik
-          setData(mockDashboardData);
-        }
-      } else {
-        // Supabase əlçatan deyilsə və ya user.id yoxdursa, mock məlumatları göstər
-        console.log('Real məlumatları almaq mümkün olmadı, mock data istifadə edilir');
-        setData(mockDashboardData);
-      }
-      
-      setIsLoading(false);
-    } catch (error: any) {
-      console.error('Məktəb admin dashboard məlumatlarını əldə edərkən xəta:', error);
-      setError(error);
-      setData(mockDashboardData);
-      setIsLoading(false);
-      
-      toast.error('Məlumatları yükləyərkən xəta baş verdi', {
-        description: error.message
-      });
-    }
-  }, [user]);
 
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log(`Fetching dashboard data for school admin, school ID: ${user.schoolId}`);
+      
+      // Pending məlumatların sayını əldə et
+      const { count: pendingCount, error: pendingError } = await supabase
+        .from(TableNames.DATA_ENTRIES)
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', user.schoolId)
+        .eq('status', 'pending');
+      
+      if (pendingError) throw pendingError;
+      
+      // Approved məlumatların sayını əldə et
+      const { count: approvedCount, error: approvedError } = await supabase
+        .from(TableNames.DATA_ENTRIES)
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', user.schoolId)
+        .eq('status', 'approved');
+      
+      if (approvedError) throw approvedError;
+      
+      // Rejected məlumatların sayını əldə et
+      const { count: rejectedCount, error: rejectedError } = await supabase
+        .from(TableNames.DATA_ENTRIES)
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', user.schoolId)
+        .eq('status', 'rejected');
+      
+      if (rejectedError) throw rejectedError;
+      
+      // Son tarixə görə deadline-i yaxınlaşan məlumatlar
+      const { count: dueSoonCount, error: dueSoonError } = await supabase
+        .from(TableNames.CATEGORIES)
+        .select('*', { count: 'exact', head: true })
+        .gte('deadline', new Date().toISOString())
+        .lte('deadline', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()); // 7 gün
+      
+      if (dueSoonError) throw dueSoonError;
+      
+      // Vaxtı keçmiş məlumatlar
+      const { count: overdueCount, error: overdueError } = await supabase
+        .from(TableNames.CATEGORIES)
+        .select('*', { count: 'exact', head: true })
+        .lt('deadline', new Date().toISOString());
+      
+      if (overdueError) throw overdueError;
+      
+      // Məktəb üçün bildirişləri əldə et
+      const { data: notifications, error: notificationsError } = await supabase
+        .from(TableNames.NOTIFICATIONS)
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (notificationsError) throw notificationsError;
+      
+      // Pending formları əldə et
+      const { data: pendingForms, error: pendingFormsError } = await supabase
+        .from(TableNames.DATA_ENTRIES)
+        .select(`
+          id,
+          status,
+          created_at,
+          updated_at,
+          category:${TableNames.CATEGORIES}(name)
+        `)
+        .eq('school_id', user.schoolId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (pendingFormsError) throw pendingFormsError;
+      
+      // Formları formatlayırıq
+      const formattedPendingForms: FormItem[] = pendingForms.map(form => ({
+        id: form.id,
+        title: form.category?.name || 'Unknown Category',
+        date: new Date(form.created_at).toLocaleDateString(),
+        status: form.status,
+        completionPercentage: 100, // Tam doldurulmuş sayırıq çünki təqdim edilib
+        category: form.category?.name
+      }));
+      
+      // Tamamlanma faizini hesablayırıq - hələlik sadə bir formula
+      const totalEntries = pendingCount + approvedCount + rejectedCount;
+      const approvalRate = totalEntries > 0 
+        ? Math.round((approvedCount / totalEntries) * 100) 
+        : 0;
+      
+      // Data state-ni yeniləyirik
+      setData({
+        forms: {
+          pending: pendingCount || 0,
+          approved: approvedCount || 0,
+          rejected: rejectedCount || 0,
+          total: (pendingCount || 0) + (approvedCount || 0) + (rejectedCount || 0),
+          dueSoon: dueSoonCount || 0,
+          overdue: overdueCount || 0
+        },
+        notifications: formatNotifications(notifications || []),
+        completionRate: approvalRate,
+        pendingForms: formattedPendingForms,
+        formsByStatus: {
+          pending: pendingCount || 0,
+          approved: approvedCount || 0, 
+          rejected: rejectedCount || 0
+        }
+      });
+      
+      console.log('School admin dashboard data loaded successfully');
+    } catch (err: any) {
+      console.error('Error fetching school admin dashboard data:', err);
+      setError(err instanceof Error ? err : new Error(err.message || 'Bilinməyən xəta'));
+      toast.error('Məlumatları yükləyərkən xəta baş verdi', {
+        description: err.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.schoolId, user?.id]);
+  
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
+  
   return {
     data,
     isLoading,
     error,
     refetch: fetchData
   };
+};
+
+// Bildirişləri formatlamaq üçün köməkçi funksiya
+const formatNotifications = (notifications: any[]): Notification[] => {
+  return notifications.map(notification => ({
+    id: notification.id,
+    title: notification.title,
+    message: notification.message || '',
+    type: notification.type,
+    isRead: notification.is_read,
+    createdAt: notification.created_at,
+    userId: notification.user_id,
+    priority: notification.priority || 'normal',
+    time: formatTime(notification.created_at)
+  }));
+};
+
+// Zaman formatlaması üçün köməkçi funksiya
+const formatTime = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return 'İndicə';
+  if (diffMins < 60) return `${diffMins} dəqiqə əvvəl`;
+  if (diffHours < 24) return `${diffHours} saat əvvəl`;
+  if (diffDays < 7) return `${diffDays} gün əvvəl`;
+  
+  return date.toLocaleDateString();
 };
