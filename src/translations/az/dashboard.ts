@@ -23,7 +23,13 @@ const dashboard = {
   
   // Məlumat kartları
   completionRate: "Tamamlanma faizi",
-  completionRateDescription: "Ümumi tamamlanma faizi",
+  completionRateDesc: "Ümumi tamamlanma faizi",
+  pendingForms: "Gözləmədə olan formlar",
+  pendingFormsDesc: "Təsdiq gözləyən formlar",
+  approvedForms: "Təsdiqlənmiş formlar",
+  approvedFormsDesc: "Təsdiqlənmiş formların sayı",
+  rejectedForms: "Rədd edilmiş formlar",
+  rejectedFormsDesc: "Rədd edilmiş formların sayı",
   totalSchools: "Ümumi məktəb sayı",
   totalUsers: "Ümumi istifadəçi sayı",
   activeUsers: "Aktiv istifadəçilər",
@@ -42,6 +48,21 @@ const dashboard = {
   recentForms: "Son formlar",
   noDataAvailable: "Məlumat mövcud deyil",
   dataLastUpdated: "Son yenilənmə",
+  view: "Bax",
+  refresh: "Yenilə",
+  tryAgain: "Yenidən cəhd et",
+  errorOccurred: "Xəta baş verdi",
+  dashboardRenderError: "Dashboard göstərilməsi zamanı xəta",
+  unexpectedError: "Gözlənilməyən xəta",
+  errorLoadingDashboard: "Dashboard yüklənməsi zamanı xəta",
+  
+  // Data entry
+  addData: "Məlumat əlavə et",
+  navigatingToDataEntry: "Məlumat daxiletmə səhifəsinə keçid edilir",
+  navigatingToDataEntryDesc: "Məlumat daxil etmək üçün formaya yönləndirilirsiniz",
+  openingForm: "Form açılır",
+  formId: "Form ID",
+  noPendingForms: "Gözləmədə olan form yoxdur",
   
   // Region Admin
   regionStatistics: "Region statistikası",
@@ -63,7 +84,22 @@ const dashboard = {
   notifications: "Bildirişlər",
   notificationsEmpty: "Bildiriş yoxdur",
   markAllAsRead: "Hamısını oxunmuş kimi işarələ",
-  newNotifications: "Yeni bildirişlər"
+  newNotifications: "Yeni bildirişlər",
+  
+  // Formalar
+  forms: "Formlar",
+  allCategories: "Bütün kateqoriyalar",
+  allStatuses: "Bütün statuslar",
+  searchForms: "Formları axtar",
+  filterByCategory: "Kateqoriya ilə filtrlə",
+  filterByStatus: "Status ilə filtrlə",
+  noFormsFound: "Form tapılmadı",
+  adjustSearchFilters: "Axtarış filtrlərinizi yenidən qurun",
+  noFormsInThisCategory: "Bu kateqoriyada form yoxdur",
+  allFormsCompleted: "Bütün formlar tamamlanıb",
+  noUrgentForms: "Təcili diqqət tələb edən form yoxdur",
+  allFormsOnTrack: "Bütün formlar nəzarət altındadır",
+  urgentForms: "Təcili formlar"
 };
 
 export default dashboard;

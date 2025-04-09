@@ -1,183 +1,324 @@
 
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import SidebarLayout from '@/components/layout/SidebarLayout';
-import CategoryList from '@/components/categories/CategoryList';
-import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
-import CategoryStats from '@/components/categories/CategoryStats';
-import CategoryChart from '@/components/categories/CategoryChart';
-import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
-import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
-import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
-import { Category, CategoryFilter, CategoryStatus } from '@/types/category';
-import { useCategories } from '@/hooks/useCategories';
-import { useCategoryActions } from '@/hooks/useCategoryActions';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import { useLanguage } from '@/context/LanguageContext';
-import CategoryHeader from '@/components/categories/CategoryHeader';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import SidebarLayout from '@/components/layout/SidebarLayout';
+import {
+  MoreHorizontal,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Loader2
+} from 'lucide-react';
+import CategoryDialog from '@/components/categories/CategoryDialog';
+import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
+import CategoryDetailsDialog from '@/components/categories/CategoryDetailsDialog';
+import useCategories from '@/hooks/categories/useCategories';
+import { Category } from '@/types/category';
 
 const Categories: React.FC = () => {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
   const { 
     categories, 
-    filteredCategories,
     isLoading, 
-    error, 
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    assignmentFilter,
-    setAssignmentFilter,
-    stats
+    deleteCategory,
+    getCategories
   } = useCategories();
   
-  const {
-    isActionLoading,
-    handleAddCategory,
-    handleDeleteCategory,
-    handleUpdateCategoryStatus
-  } = useCategoryActions();
-  
-  const { t } = useLanguage();
-  
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [assignmentFilter, setAssignmentFilter] = useState<'all' | 'sectors' | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  
-  const handleAddDialogOpen = () => {
-    setIsAddDialogOpen(true);
+
+  useEffect(() => {
+    getCategories();
+  }, [getCategories]);
+
+  const filteredCategories = categories.filter(category => {
+    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesAssignment = assignmentFilter === 'all' || 
+                              category.assignment === assignmentFilter;
+    
+    const matchesStatus = statusFilter === 'all' || 
+                          category.status === statusFilter;
+    
+    return matchesSearch && matchesAssignment && matchesStatus;
+  });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
-  
-  const handleEditDialogOpen = (category: Category) => {
+
+  const handleAssignmentFilterChange = (value: 'all' | 'sectors') => {
+    setAssignmentFilter(value);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+  };
+
+  const handleOpenDialog = () => {
+    setSelectedCategory(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditCategory = (category: Category) => {
     setSelectedCategory(category);
-    setIsEditDialogOpen(true);
+    setIsDialogOpen(true);
   };
-  
-  const handleDeleteDialogOpen = (category: Category) => {
+
+  const handleViewDetails = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const handleDeleteCategory = (category: Category) => {
     setSelectedCategory(category);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value as CategoryStatus | 'all');
-  };
-  
-  const handleAssignmentFilterChange = (value: string) => {
-    if (value === 'sectors') {
-      setAssignmentFilter('sectors');
-    } else {
-      // Hər hansı başqa dəyər 'all' kimi təyin edilir
-      setAssignmentFilter('all');
+  const handleConfirmDelete = async (id: string) => {
+    try {
+      await deleteCategory(id);
+      toast.success(t('categoryDeleted'), {
+        description: t('categoryDeletedDesc')
+      });
+      return true;
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error(t('errorDeletingCategory'), {
+        description: t('errorDeletingCategoryDesc')
+      });
+      return false;
     }
   };
-  
+
+  const handleAddColumns = (categoryId: string) => {
+    navigate(`/columns?categoryId=${categoryId}`);
+  };
+
+  const getBadgeForAssignment = (assignment: string) => {
+    switch (assignment) {
+      case 'sectors':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">{t('sectors')}</Badge>;
+      case 'all':
+      default:
+        return <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">{t('all')}</Badge>;
+    }
+  };
+
+  const getBadgeForStatus = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">{t('active')}</Badge>;
+      case 'inactive':
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 hover:bg-gray-50">{t('inactive')}</Badge>;
+      case 'draft':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 hover:bg-yellow-50">{t('draft')}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   return (
     <SidebarLayout>
-      <div className="container mx-auto py-6 space-y-6">
-        <CategoryHeader
-          onAddCategory={handleAddDialogOpen}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          statusFilter={statusFilter}
-          onStatusFilterChange={handleStatusFilterChange}
-          assignmentFilter={assignmentFilter}
-          onAssignmentFilterChange={handleAssignmentFilterChange}
-          isLoading={isLoading}
-        />
-        
-        <CategoryStats 
-          stats={stats}
-          isLoading={isLoading} 
-        />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <CategoryChart 
-            categoriesData={categories} 
-            loading={isLoading} 
-          />
-          
-          <Card>
-            <CardContent className="p-4">
-              <h2 className="text-lg font-semibold mb-4">{t('filterCategories')}</h2>
-              <CategoryFilterCard 
-                filter={{
-                  search: searchQuery,
-                  status: statusFilter,
-                  assignment: assignmentFilter,
-                  deadline: 'all'
-                }}
-                onFilterChange={(newFilter) => {
-                  if (newFilter.search !== undefined) setSearchQuery(newFilter.search);
-                  if (newFilter.status !== undefined) setStatusFilter(newFilter.status);
-                  if (newFilter.assignment !== undefined) setAssignmentFilter(newFilter.assignment);
-                }}
-              />
-            </CardContent>
-          </Card>
+      <Helmet>
+        <title>{t('categories')} | InfoLine</title>
+      </Helmet>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('categories')}</h1>
+            <p className="text-muted-foreground">
+              {t('categoriesDescription')}
+            </p>
+          </div>
+          <Button onClick={handleOpenDialog}>
+            <Plus className="mr-2 h-4 w-4" /> {t('addCategory')}
+          </Button>
         </div>
         
-        <CategoryList 
-          categories={filteredCategories} 
-          isLoading={isLoading}
-          onEdit={handleEditDialogOpen} 
-          onDelete={handleDeleteDialogOpen}
-          handleStatusChange={handleUpdateCategoryStatus}
-        />
-        
-        <AddCategoryDialog 
-          isOpen={isAddDialogOpen} 
-          onClose={() => setIsAddDialogOpen(false)} 
-          onAddCategory={(data) => {
-            const categoryData: Omit<Category, "id"> = {
-              name: data.name || '',
-              description: data.description || '',
-              assignment: data.assignment || 'all',
-              status: 'active',
-              deadline: data.deadline ? new Date(data.deadline).toISOString() : undefined,
-              priority: data.priority || 0,
-              columnCount: 0,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            };
-            return handleAddCategory(categoryData);
-          }}
-          isSubmitting={isActionLoading}
-        />
-        
-        <EditCategoryDialog 
-          isOpen={isEditDialogOpen} 
-          onClose={() => setIsEditDialogOpen(false)} 
-          onEditCategory={(data) => {
-            if (!selectedCategory) return Promise.resolve(false);
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder={t('searchCategories')}
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              <div className="flex gap-4">
+                <div className="w-[180px]">
+                  <Select 
+                    defaultValue={assignmentFilter}
+                    onValueChange={(value: 'all' | 'sectors') => handleAssignmentFilterChange(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('filterByAssignment')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('all')}</SelectItem>
+                      <SelectItem value="sectors">{t('sectors')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-[180px]">
+                  <Select 
+                    defaultValue={statusFilter}
+                    onValueChange={handleStatusFilterChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('filterByStatus')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('allStatuses')}</SelectItem>
+                      <SelectItem value="active">{t('active')}</SelectItem>
+                      <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                      <SelectItem value="draft">{t('draft')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" size="icon">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
             
-            const categoryData: Omit<Category, "id"> & { id: string } = {
-              id: selectedCategory.id,
-              name: data.name || selectedCategory.name,
-              description: data.description || selectedCategory.description || '',
-              assignment: data.assignment || selectedCategory.assignment || 'all',
-              status: selectedCategory.status || 'active',
-              deadline: data.deadline ? new Date(data.deadline).toISOString() : selectedCategory.deadline,
-              priority: data.priority !== undefined ? data.priority : selectedCategory.priority || 0,
-              columnCount: selectedCategory.columnCount || 0,
-              createdAt: selectedCategory.createdAt,
-              updatedAt: new Date().toISOString()
-            };
-            return handleAddCategory(categoryData);
-          }}
-          category={selectedCategory}
-          isSubmitting={isActionLoading}
-        />
-        
-        <DeleteCategoryDialog 
-          isOpen={isDeleteDialogOpen} 
-          onClose={() => setIsDeleteDialogOpen(false)} 
-          onConfirm={handleDeleteCategory}
-          category={selectedCategory}
-          isSubmitting={isActionLoading}
-        />
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('name')}</TableHead>
+                        <TableHead>{t('description')}</TableHead>
+                        <TableHead>{t('assignment')}</TableHead>
+                        <TableHead>{t('deadline')}</TableHead>
+                        <TableHead>{t('status')}</TableHead>
+                        <TableHead className="text-right">{t('actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCategories.length > 0 ? (
+                        filteredCategories.map((category) => (
+                          <TableRow key={category.id}>
+                            <TableCell className="font-medium">{category.name}</TableCell>
+                            <TableCell>{category.description || '-'}</TableCell>
+                            <TableCell>{getBadgeForAssignment(category.assignment)}</TableCell>
+                            <TableCell>
+                              {category.deadline 
+                                ? new Date(category.deadline).toLocaleDateString() 
+                                : '-'}
+                            </TableCell>
+                            <TableCell>{getBadgeForStatus(category.status)}</TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">{t('openMenu')}</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleViewDetails(category)}>
+                                    {t('viewDetails')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEditCategory(category)}>
+                                    {t('edit')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleAddColumns(category.id)}>
+                                    {t('manageColumns')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeleteCategory(category)}
+                                    className="text-destructive"
+                                  >
+                                    {t('delete')}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            {t('noCategories')}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
+      
+      {/* Dialogs */}
+      <CategoryDialog 
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        category={selectedCategory}
+      />
+      
+      <CategoryDetailsDialog
+        isOpen={isDetailsDialogOpen}
+        onClose={() => setIsDetailsDialogOpen(false)}
+        category={selectedCategory}
+        onEdit={handleEditCategory}
+        onDelete={handleDeleteCategory}
+        onAddColumns={handleAddColumns}
+      />
+      
+      <DeleteCategoryDialog 
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        categoryId={selectedCategory?.id || ''}
+        categoryName={selectedCategory?.name || ''}
+      />
     </SidebarLayout>
   );
 };

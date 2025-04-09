@@ -1,5 +1,5 @@
 
-export type FormStatus = "pending" | "approved" | "rejected" | "due" | "overdue" | "draft" | "empty" | "dueSoon";
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
 
 export interface Form {
   id: string;
@@ -8,4 +8,5 @@ export interface Form {
   status: FormStatus;
   completionPercentage: number;
   deadline?: string;
+  date?: string;
 }

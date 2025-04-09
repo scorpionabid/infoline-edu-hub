@@ -1,53 +1,56 @@
 
-import React from "react";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { useLanguage } from "@/context/LanguageContext";
-import { Column } from "@/types/column";
+import React from 'react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DeleteColumnDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (id: string) => Promise<void>;
-  column: Column | null;
-  isSubmitting?: boolean;
+  onConfirm: (id: string) => Promise<any>; // Yalnız id qəbul edir
+  columnId: string;
+  columnName: string;
 }
 
 const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  column,
-  isSubmitting = false
+  columnId,
+  columnName,
 }) => {
   const { t } = useLanguage();
 
-  const handleDelete = async () => {
-    if (column) {
-      // Yalnız sütun ID-sini ötürürük
-      await onConfirm(column.id);
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(columnId); // Yalnız columnId parametrini ötürürük
       onClose();
+    } catch (error) {
+      console.error("Sütunu silmək mümkün olmadı:", error);
     }
   };
 
-  if (!column) return null;
-
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("deleteColumn")}</AlertDialogTitle>
+          <AlertDialogTitle>{t('deleteColumnTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("deleteColumnConfirmationMessage", { name: column.name })}
+            {t('deleteColumnWarning', { name: columnName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isSubmitting}>{t("cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            disabled={isSubmitting}
-            className="bg-destructive hover:bg-destructive/90"
-          >
-            {isSubmitting ? t("deleting") : t("delete")}
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm} className="bg-destructive">
+            {t('delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
