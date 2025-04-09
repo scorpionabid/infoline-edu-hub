@@ -18,7 +18,7 @@ const mockCategoriesData = [
     description: 'Şagirdlərlə bağlı əsas məlumatlar',
     assignment: 'all' as 'all' | 'sectors',
     deadline: '2024-12-31',
-    status: 'active',
+    status: 'active' as 'active' | 'inactive' | 'draft',
     priority: 1,
     createdAt: new Date().toISOString(),
     columns: [
@@ -54,7 +54,7 @@ const mockCategoriesData = [
     description: 'Müəllimlərlə bağlı əsas məlumatlar',
     assignment: 'all' as 'all' | 'sectors',
     deadline: '2024-12-31',
-    status: 'active',
+    status: 'active' as 'active' | 'inactive' | 'draft',
     priority: 2,
     createdAt: new Date().toISOString(),
     columns: [
@@ -124,7 +124,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             description: category.description,
             assignment: category.assignment as 'all' | 'sectors',
             deadline: category.deadline,
-            status: category.status,
+            status: category.status as 'active' | 'inactive' | 'draft',
             priority: category.priority,
             created_at: category.createdAt || category.created_at,
             updated_at: category.updatedAt || category.updated_at,
@@ -178,7 +178,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
           description: category.description || '',
           assignment: category.assignment as 'all' | 'sectors', // Tipi düzəltmək üçün as ilə konvertasiya edirik
           deadline: category.deadline,
-          status: category.status,
+          status: category.status as 'active' | 'inactive' | 'draft', // Burada status tipini düzəldirik
           priority: category.priority || 0,
           created_at: category.created_at,
           updated_at: category.updated_at,
@@ -218,7 +218,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
           description: category.description,
           assignment: category.assignment as 'all' | 'sectors', // Burada da eyni konvertasiyanı edirik
           deadline: category.deadline,
-          status: category.status,
+          status: category.status as 'active' | 'inactive' | 'draft', // Burada da status tipini düzəldirik
           priority: category.priority,
           created_at: category.createdAt || category.created_at,
           updated_at: category.updatedAt || category.updated_at,
