@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns, Column, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,7 +68,7 @@ export const useDataEntryState = ({
             id: col.id,
             category_id: col.category_id,
             name: col.name,
-            type: col.type,
+            type: col.type as ColumnType,
             is_required: col.is_required || true,
             order_index: col.order_index || 0,
             status: col.status || 'active',

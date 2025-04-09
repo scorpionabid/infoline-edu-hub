@@ -120,40 +120,6 @@ const Columns: React.FC = () => {
     toast.success(t('columnStatusUpdated'));
   };
 
-  if (columns?.length === 0 && !isLoading) {
-    return (
-      <>
-        <PageHeader
-          title={t('columnsPageTitle')}
-          description={t('columnsPageDescription')}
-          backButtonUrl="/categories"
-        >
-          <Button onClick={handleOpenAddColumnDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('addColumn')}
-          </Button>
-        </PageHeader>
-
-        <EmptyState
-          icon={<Database className="h-12 w-12" />}
-          title={t('noColumnsFound')}
-          description={t('noColumnsFoundDescription')}
-          action={{
-            label: t('addColumn'),
-            onClick: handleOpenAddColumnDialog
-          }}
-        />
-
-        <AddColumnDialog
-          isOpen={addColumnDialogOpen}
-          onClose={handleCloseAddColumnDialog}
-          onAddColumn={handleAddColumn}
-          categories={categories || []}
-        />
-      </>
-    );
-  }
-
   return (
     <>
       <PageHeader
@@ -167,15 +133,27 @@ const Columns: React.FC = () => {
         </Button>
       </PageHeader>
 
-      <ColumnList
-        columns={columns || []}
-        categories={categories || []}
-        isLoading={isLoading}
-        isError={!!error}
-        onEditColumn={handleOpenEditColumnDialog}
-        onDeleteColumn={handleOpenDeleteDialog}
-        onUpdateStatus={handleUpdateColumnStatus}
-      />
+      {columns?.length === 0 && !isLoading ? (
+        <EmptyState
+          icon={<Database className="h-12 w-12" />}
+          title={t('noColumnsFound')}
+          description={t('noColumnsFoundDescription')}
+          action={{
+            label: t('addColumn'),
+            onClick: handleOpenAddColumnDialog
+          }}
+        />
+      ) : (
+        <ColumnList
+          columns={columns || []}
+          categories={categories || []}
+          isLoading={isLoading}
+          isError={!!error}
+          onEditColumn={handleOpenEditColumnDialog}
+          onDeleteColumn={handleOpenDeleteDialog}
+          onUpdateStatus={handleUpdateColumnStatus}
+        />
+      )}
 
       <AddColumnDialog
         isOpen={addColumnDialogOpen}

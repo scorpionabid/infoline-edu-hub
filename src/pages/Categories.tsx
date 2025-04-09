@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -34,6 +35,16 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { DateRange } from 'react-day-picker';
+
+// AddCategoryDialog prop tipini təyin edək
+interface AddCategoryFormData {
+  name: string;
+  description?: string;
+  assignment?: 'sectors' | 'all';
+  deadline?: Date | string;
+  priority?: number;
+  status?: CategoryStatus;
+}
 
 const Categories: React.FC = () => {
   const { t } = useLanguage();
@@ -121,23 +132,21 @@ const Categories: React.FC = () => {
     setAddDialog({ isOpen: false });
   };
 
-  const handleAddCategory = async (newCategory: { 
-    name: string;
-    description?: string;
-    assignment?: 'sectors' | 'all';
-    deadline?: string;
-    priority?: number;
-    status?: CategoryStatus;
-  }): Promise<boolean> => {
+  const handleAddCategory = async (newCategory: AddCategoryFormData): Promise<boolean> => {
     try {
       const now = new Date().toISOString();
+      
+      // Form tipinin Date formatını string formatına çeviririk
+      const deadline = newCategory.deadline instanceof Date 
+        ? newCategory.deadline.toISOString() 
+        : newCategory.deadline;
       
       const categoryToAdd = {
         name: newCategory.name,
         description: newCategory.description || '',
         assignment: newCategory.assignment || 'all',
         status: newCategory.status || 'active' as CategoryStatus,
-        deadline: newCategory.deadline,
+        deadline: deadline,
         priority: newCategory.priority || 0,
         created_at: now,
         updated_at: now,
