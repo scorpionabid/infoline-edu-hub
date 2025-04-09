@@ -71,7 +71,7 @@ export const useDataEntryState = ({
             type: col.type as ColumnType,
             is_required: col.is_required || true,
             order_index: col.order_index || 0,
-            status: col.status || 'active',
+            status: col.status as "active" | "inactive" | "draft",
             validation: col.validation,
             default_value: col.default_value,
             placeholder: col.placeholder,

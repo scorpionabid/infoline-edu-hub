@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/context/LanguageContext';
+import { Category } from '@/types/category';
 
 interface DeleteCategoryDialogProps {
   isOpen: boolean;
