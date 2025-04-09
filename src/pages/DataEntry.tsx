@@ -16,6 +16,12 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Save, CheckCircle, AlertCircle } from 'lucide-react';
 import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
 
+// Type for validation errors
+interface ColumnValidationError {
+  columnId: string;
+  message: string;
+}
+
 const DataEntry: React.FC = () => {
   const { t } = useLanguage();
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -192,10 +198,37 @@ const DataEntry: React.FC = () => {
                 status={status}
                 errors={errors}
               />
-              <ExcelActions 
-                onDownloadTemplate={() => downloadExcelTemplate(currentCategory.id)}
-                onUploadData={(file) => uploadExcelData(file, currentCategory.id)}
-              />
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => downloadExcelTemplate(currentCategory.id)}
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  {t('excelTemplate')}
+                </Button>
+                
+                <div className="relative">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    {t('uploadExcel')}
+                  </Button>
+                  <input
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        uploadExcelData(e.target.files[0], currentCategory.id);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
             
             <div className="bg-card rounded-lg border shadow-sm">

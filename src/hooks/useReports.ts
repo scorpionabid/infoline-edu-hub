@@ -5,7 +5,7 @@ import {
   fetchReports, 
   fetchReportTemplates, 
   addReport,
-  editReport as updateReport, 
+  editReport, 
   createReportTemplate, 
   fetchSchoolColumnData, 
   exportReport,
@@ -101,11 +101,11 @@ export const useReports = () => {
     }
   }, [user, reports, searchTerm, typeFilter, statusFilter, applyFilters]);
 
-  const editReport = useCallback(async (id: string, report: Partial<Report>): Promise<Report | null> => {
+  const updateReport = useCallback(async (id: string, report: Partial<Report>): Promise<Report | null> => {
     setLoading(true);
     setError(null);
     try {
-      const updatedReport = await updateReport(id, report);
+      const updatedReport = await editReport(id, report);
       
       if (updatedReport) {
         setReports(prev => prev.map(r => r.id === id ? updatedReport : r));
@@ -206,7 +206,7 @@ export const useReports = () => {
     loadReports,
     loadTemplates,
     addReport: createNewReport,
-    editReport,
+    editReport: updateReport,
     addTemplate,
     downloadReport,
     shareReportWithUsers

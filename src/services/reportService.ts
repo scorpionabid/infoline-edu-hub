@@ -1,8 +1,53 @@
+
 import { StatusFilterOptions, Report, SchoolColumnData, ExportOptions } from '@/types/report';
 import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/utils/errorHandler';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+
+// Helpers for data conversion
+const mapDbReportToReport = (dbReport: any): Report => {
+  return {
+    id: dbReport.id,
+    title: dbReport.title || dbReport.name || '',
+    name: dbReport.name,
+    description: dbReport.description || '',
+    type: dbReport.type,
+    status: dbReport.status,
+    content: dbReport.content || {},
+    filters: dbReport.filters || {},
+    createdBy: dbReport.created_by,
+    createdAt: dbReport.created_at,
+    created: dbReport.created_at,
+    dateCreated: dbReport.created_at,
+    updatedAt: dbReport.updated_at,
+    lastUpdated: dbReport.updated_at,
+    isTemplate: dbReport.is_template || false,
+    sharedWith: Array.isArray(dbReport.shared_with) ? dbReport.shared_with : [],
+    insights: Array.isArray(dbReport.insights) ? dbReport.insights : [],
+    recommendations: Array.isArray(dbReport.recommendations) ? dbReport.recommendations : []
+  };
+};
+
+const mapReportToDbReport = (report: Partial<Report>) => {
+  return {
+    id: report.id,
+    title: report.title || report.name || 'Untitled Report',
+    name: report.name,
+    description: report.description || '',
+    type: report.type || 'custom',
+    status: report.status || 'draft',
+    content: report.content || {},
+    filters: report.filters || {},
+    created_by: report.createdBy,
+    created_at: report.createdAt || report.created || report.dateCreated,
+    updated_at: report.updatedAt || report.lastUpdated || new Date().toISOString(),
+    is_template: report.isTemplate || false,
+    shared_with: report.sharedWith || [],
+    insights: report.insights || [],
+    recommendations: report.recommendations || []
+  };
+};
 
 // Reports
 export const fetchReports = async (): Promise<Report[]> => {
@@ -13,7 +58,23 @@ export const fetchReports = async (): Promise<Report[]> => {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data as Report[];
+    return data ? data.map(mapDbReportToReport) : [];
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+// Fetch report templates (filter for is_template = true)
+export const fetchReportTemplates = async (): Promise<Report[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('is_template', true)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data ? data.map(mapDbReportToReport) : [];
   } catch (error) {
     throw handleError(error);
   }
@@ -28,38 +89,44 @@ export const fetchReportById = async (reportId: string): Promise<Report> => {
       .single();
     
     if (error) throw error;
-    return data as Report;
+    return data ? mapDbReportToReport(data) : null;
   } catch (error) {
     throw handleError(error);
   }
 };
 
-export const createReport = async (report: Partial<Report>): Promise<Report> => {
+// Add/create a new report
+export const addReport = async (report: Partial<Report>): Promise<Report> => {
   try {
+    const dbReport = mapReportToDbReport(report);
+    
     const { data, error } = await supabase
       .from('reports')
-      .insert([report])
+      .insert([dbReport])
       .select()
       .single();
     
     if (error) throw error;
-    return data as Report;
+    return data ? mapDbReportToReport(data) : null;
   } catch (error) {
     throw handleError(error);
   }
 };
 
-export const updateReport = async (reportId: string, updates: Partial<Report>): Promise<Report> => {
+// Edit/update an existing report
+export const editReport = async (reportId: string, updates: Partial<Report>): Promise<Report> => {
   try {
+    const dbUpdates = mapReportToDbReport(updates);
+    
     const { data, error } = await supabase
       .from('reports')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', reportId)
       .select()
       .single();
     
     if (error) throw error;
-    return data as Report;
+    return data ? mapDbReportToReport(data) : null;
   } catch (error) {
     throw handleError(error);
   }
@@ -80,22 +147,66 @@ export const deleteReport = async (reportId: string): Promise<void> => {
 
 export const createReportTemplate = async (template: Partial<Report>): Promise<Report> => {
   try {
-    const reportWithTemplate = {
+    const dbTemplate = mapReportToDbReport({
       ...template,
-      is_template: true,
+      isTemplate: true,
       status: 'published'
-    };
+    });
     
     const { data, error } = await supabase
       .from('reports')
-      .insert([reportWithTemplate])
+      .insert([dbTemplate])
       .select()
       .single();
     
     if (error) throw error;
-    return data as Report;
+    return data ? mapDbReportToReport(data) : null;
   } catch (error) {
     throw handleError(error);
+  }
+};
+
+// Export report in various formats
+export const exportReport = async (reportId: string): Promise<string | null> => {
+  try {
+    const report = await fetchReportById(reportId);
+    if (!report) throw new Error("Report not found");
+    
+    await exportReportToExcel(report);
+    return `${report.title || 'Report'}.xlsx`;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const exportReportAsPdf = async (reportId: string): Promise<string | null> => {
+  try {
+    // PDF export logic would go here
+    // For now, we'll just return a placeholder
+    return `report-${reportId}.pdf`;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+export const exportReportAsCsv = async (reportId: string): Promise<string | null> => {
+  try {
+    // CSV export logic would go here
+    // For now, we'll just return a placeholder
+    return `report-${reportId}.csv`;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+// Share report with users
+export const shareReport = async (reportId: string, userIds: string[]): Promise<boolean> => {
+  try {
+    // Implement share logic here
+    return true;
+  } catch (error) {
+    throw handleError(error);
+    return false;
   }
 };
 
