@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -37,6 +36,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { az } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
 
 // Form validation schema
 const formSchema = z.object({
@@ -54,7 +54,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface AddCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddCategory: (data: FormValues) => Promise<boolean>;
+  onAddCategory: (data: AddCategoryFormData) => Promise<boolean>;
   isSubmitting?: boolean;
 }
 
@@ -78,7 +78,7 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
   });
   
   const onSubmit = async (data: FormValues) => {
-    const success = await onAddCategory(data);
+    const success = await onAddCategory(data as AddCategoryFormData);
     if (success) {
       form.reset();
       onClose();

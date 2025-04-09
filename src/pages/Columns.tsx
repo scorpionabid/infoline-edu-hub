@@ -103,7 +103,7 @@ const Columns: React.FC = () => {
     }
   };
 
-  const handleDeleteColumn = async (columnId: string): Promise<any> => {
+  const handleDeleteColumn = async (columnId: string): Promise<boolean> => {
     try {
       await deleteColumn(columnId);
       toast.success(t('columnDeleted'));
