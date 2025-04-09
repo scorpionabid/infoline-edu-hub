@@ -1,113 +1,166 @@
 
 import React from 'react';
-import { BarChart, LineChart, PieChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, Pie, Line } from 'recharts';
-import { useTheme } from 'next-themes';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Report } from '@/types/report';
+import { useLanguage } from '@/context/LanguageContext';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line
+} from 'recharts';
 
 interface ReportChartProps {
-  reportType: string;
-  data: any[];
+  report: Report;
 }
 
-const ReportChart: React.FC<ReportChartProps> = ({ reportType, data = [] }) => {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
+  const { t } = useLanguage();
   
-  const colors = [
-    '#8B5CF6', // Purple
-    '#0EA5E9', // Blue 
-    '#10B981', // Green
-    '#F97316', // Orange
-    '#EC4899', // Pink
-    '#F43F5E', // Red
-    '#A78BFA', // Light purple
-    '#60A5FA', // Light blue
+  // Demo məlumatları (real həyata keçirilmədə hesabatın data hissəsindən gələcək)
+  const demoData = [
+    { name: 'Bakı', value: 400, count: 120 },
+    { name: 'Sumqayıt', value: 300, count: 80 },
+    { name: 'Gəncə', value: 300, count: 70 },
+    { name: 'Şəki', value: 200, count: 50 },
+    { name: 'Lənkəran', value: 278, count: 60 },
+    { name: 'Quba', value: 189, count: 40 }
   ];
   
-  const chartConfig = {
-    purple: { color: colors[0] },
-    blue: { color: colors[1] },
-    green: { color: colors[2] },
-    orange: { color: colors[3] },
-    pink: { color: colors[4] },
-    red: { color: colors[5] },
-    lightPurple: { color: colors[6] },
-    lightBlue: { color: colors[7] },
-  };
+  const completionData = [
+    { name: 'Tamamlanmış', value: 68 },
+    { name: 'Gözləyən', value: 23 },
+    { name: 'Rədd edilmiş', value: 9 }
+  ];
   
+  const timeSeriesData = [
+    { name: 'Yanvar', value: 40 },
+    { name: 'Fevral', value: 45 },
+    { name: 'Mart', value: 60 },
+    { name: 'Aprel', value: 90 },
+    { name: 'May', value: 120 },
+    { name: 'İyun', value: 145 }
+  ];
+  
+  // Hesabat növünə görə müxtəlif qrafiklər göstər
   const renderChart = () => {
-    switch (reportType) {
+    switch (report.type) {
       case 'statistics':
         return (
-          <ChartContainer config={chartConfig}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={report.data || demoData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="value" fill={colors[0]} name="value" />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#0088FE" name={t('value')} />
+              <Bar dataKey="count" fill="#00C49F" name={t('count')} />
             </BarChart>
-          </ChartContainer>
+          </ResponsiveContainer>
         );
-      
+        
       case 'completion':
         return (
-          <ChartContainer config={chartConfig}>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={data}
+                data={report.data || completionData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={120}
-                innerRadius={60}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
-                nameKey="name"
               >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                {(report.data || completionData).map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <Tooltip />
+              <Legend />
             </PieChart>
-          </ChartContainer>
+          </ResponsiveContainer>
         );
         
       case 'comparison':
         return (
-          <ChartContainer config={chartConfig}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={report.data || demoData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              layout="vertical"
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="name" type="category" />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#8884d8" name={t('value')} />
+              <Bar dataKey="count" fill="#82ca9d" name={t('count')} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+        
+      case 'custom':
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={report.data || timeSeriesData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke={colors[0]}
-                activeDot={{ r: 8 }}
-                strokeWidth={2}
-              />
-              {data[0]?.comparisonValue && (
-                <Line
-                  type="monotone"
-                  dataKey="comparisonValue"
-                  stroke={colors[1]}
-                  strokeWidth={2}
-                />
-              )}
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} />
             </LineChart>
-          </ChartContainer>
+          </ResponsiveContainer>
         );
         
       default:
-        return <div>Chart type not supported</div>;
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={report.data || demoData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#0088FE" name={t('value')} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
     }
   };
   
   return (
-    <div className="w-full h-full">
+    <div className="w-full">
+      <div className="mb-4">
+        <h3 className="font-medium text-lg mb-1">{report.title || report.name}</h3>
+        {report.summary && (
+          <p className="text-sm text-muted-foreground">{report.summary}</p>
+        )}
+      </div>
+      
       {renderChart()}
     </div>
   );

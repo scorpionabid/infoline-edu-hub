@@ -1,13 +1,23 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Printer, Share2 } from 'lucide-react';
 import { Report } from '@/types/report';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useReports } from '@/hooks/useReports';
+import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, Download, Share2, Edit } from 'lucide-react';
+import { formatRelative } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import ReportChart from './ReportChart';
-import { toast } from 'sonner';
 
 interface ReportPreviewDialogProps {
   report: Report;
@@ -15,161 +25,139 @@ interface ReportPreviewDialogProps {
   onClose: () => void;
 }
 
-const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
-  report,
-  open,
-  onClose,
-}) => {
+const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({ report, open, onClose }) => {
   const { t } = useLanguage();
-  const [loading, setLoading] = useState<{ [key: string]: boolean }>({
-    print: false,
-    share: false,
-    download: false
-  });
+  const { downloadReport } = useReports();
   
-  // Print hesabatı
-  const handlePrint = () => {
-    setLoading(prev => ({ ...prev, print: true }));
-    
-    // Print prosesini simulyasiya et
-    setTimeout(() => {
-      setLoading(prev => ({ ...prev, print: false }));
-      toast.success(t('printInitiated'), {
-        description: t('printInitiatedDesc')
-      });
-      // Real tətbiqdə window.print() əlavə edilə bilər
-    }, 1000);
+  const handleDownload = async () => {
+    const url = await downloadReport(report.id);
+    if (url) {
+      window.open(url, '_blank');
+    }
   };
   
-  // Hesabatı paylaş
-  const handleShare = () => {
-    setLoading(prev => ({ ...prev, share: true }));
-    
-    // Paylaşma prosesini simulyasiya et
-    setTimeout(() => {
-      setLoading(prev => ({ ...prev, share: false }));
-      toast.success(t('reportShared'), {
-        description: t('reportSharedDesc')
-      });
-    }, 1000);
+  // Hesabat növü tərcüməsi
+  const getReportTypeTranslation = (type: string): string => {
+    switch (type) {
+      case 'statistics':
+        return t('statistics');
+      case 'completion':
+        return t('completion');
+      case 'comparison':
+        return t('comparison');
+      case 'column':
+        return t('column');
+      case 'category':
+        return t('category');
+      case 'school':
+        return t('school');
+      case 'region':
+        return t('region');
+      case 'sector':
+        return t('sector');
+      case 'custom':
+        return t('custom');
+      default:
+        return type;
+    }
   };
   
-  // Hesabatı yüklə
-  const handleDownload = () => {
-    setLoading(prev => ({ ...prev, download: true }));
-    
-    // Yükləmə prosesini simulyasiya et
-    setTimeout(() => {
-      setLoading(prev => ({ ...prev, download: false }));
-      toast.success(t('reportDownloaded'), {
-        description: t('reportDownloadedDesc')
-      });
-    }, 1500);
+  // Hesabat statusu tərcüməsi
+  const getReportStatusBadge = (status: string) => {
+    switch (status) {
+      case 'published':
+        return <Badge variant="success">{t('published')}</Badge>;
+      case 'archived':
+        return <Badge variant="outline">{t('archived')}</Badge>;
+      default:
+        return <Badge>{t('draft')}</Badge>;
+    }
+  };
+  
+  // Formatlanmış tarix
+  const formattedDate = (dateString?: string) => {
+    try {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return formatRelative(date, new Date());
+    } catch (error) {
+      return dateString;
+    }
   };
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{report.title || report.name}</DialogTitle>
-          <DialogDescription>{report.description}</DialogDescription>
+          <DialogTitle className="flex items-center justify-between">
+            <span>{report.title || report.name}</span>
+            {getReportStatusBadge(report.status)}
+          </DialogTitle>
+          <DialogDescription className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <span>{getReportTypeTranslation(report.type)}</span>
+            <span>•</span>
+            <span className="flex items-center">
+              <Calendar className="h-3 w-3 mr-1" />
+              {formattedDate(report.createdAt || report.created || report.dateCreated)}
+            </span>
+          </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="chart">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="chart">{t('chart')}</TabsTrigger>
-            <TabsTrigger value="data">{t('data')}</TabsTrigger>
-            <TabsTrigger value="summary">{t('summary')}</TabsTrigger>
-          </TabsList>
+        <div className="py-4">
+          {/* Hesabat təsviri */}
+          <p className="text-sm text-muted-foreground mb-4">{report.description}</p>
           
-          <TabsContent value="chart" className="pt-4">
-            <div className="h-96 w-full">
-              {report.data && <ReportChart reportType={report.type} data={report.data} />}
-            </div>
-          </TabsContent>
+          <Separator className="my-4" />
           
-          <TabsContent value="data" className="pt-4">
-            <div className="border rounded-md">
-              {report.data && report.data.length > 0 ? (
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-muted">
-                      <th className="p-2 text-left">{t('name')}</th>
-                      <th className="p-2 text-left">{t('value')}</th>
-                      <th className="p-2 text-left">{t('category')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.data.map((item, index) => (
-                      <tr key={index} className="border-t">
-                        <td className="p-2">{item.name}</td>
-                        <td className="p-2">{item.value}</td>
-                        <td className="p-2">{item.category}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="p-4 text-center text-muted-foreground">{t('noDataAvailable')}</div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="summary" className="pt-4">
-            <div className="prose dark:prose-invert max-w-none">
-              {report.summary ? <p>{report.summary}</p> : <p>{t('noSummaryAvailable')}</p>}
-              
-              {report.insights && report.insights.length > 0 && (
-                <>
-                  <h4>{t('keyInsights')}</h4>
-                  <ul>
-                    {report.insights.map((insight, idx) => (
-                      <li key={idx}>{insight}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              
-              {report.recommendations && report.recommendations.length > 0 && (
-                <>
-                  <h4>{t('recommendations')}</h4>
-                  <ul>
-                    {report.recommendations.map((rec, idx) => (
-                      <li key={idx}>{rec}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+          {/* Hesabat məlumatları */}
+          <div className="space-y-4">
+            {/* Hesabat qrafiki */}
+            <Card>
+              <CardContent className="p-4">
+                <ReportChart report={report} />
+              </CardContent>
+            </Card>
+            
+            {/* Əgər varsa, əlavə məlumatlar */}
+            {report.insights && report.insights.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium">{t('insights')}</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  {report.insights.map((insight, index) => (
+                    <li key={index} className="text-sm">{insight}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Əgər varsa, tövsiyələr */}
+            {report.recommendations && report.recommendations.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-medium">{t('recommendations')}</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  {report.recommendations.map((recommendation, index) => (
+                    <li key={index} className="text-sm">{recommendation}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
         
-        <DialogFooter className="flex justify-between sm:justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            {t('close')}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handlePrint}
-            disabled={loading.print}
-          >
-            <Printer className="h-4 w-4 mr-2" />
-            {loading.print ? t('printing') : t('print')}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleShare}
-            disabled={loading.share}
-          >
-            <Share2 className="h-4 w-4 mr-2" />
-            {loading.share ? t('sharing') : t('share')}
-          </Button>
-          <Button
-            onClick={handleDownload}
-            disabled={loading.download}
-          >
+        <DialogFooter className="flex justify-between">
+          <div className="flex space-x-2">
+            <Button variant="ghost" size="sm">
+              <Edit className="h-4 w-4 mr-2" />
+              {t('edit')}
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Share2 className="h-4 w-4 mr-2" />
+              {t('share')}
+            </Button>
+          </div>
+          <Button onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
-            {loading.download ? t('downloading') : t('download')}
+            {t('download')}
           </Button>
         </DialogFooter>
       </DialogContent>
