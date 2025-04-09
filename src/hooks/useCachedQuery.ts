@@ -13,7 +13,7 @@ export function useCachedQuery<TData = unknown, TError = unknown>({
 }: {
   queryKey: QueryKey;
   queryFn: () => Promise<TData>;
-  queryOptions?: UseQueryOptions<TData, TError, TData, QueryKey>;
+  queryOptions?: Omit<UseQueryOptions<TData, TError, TData>, 'queryKey' | 'queryFn'>;
   cacheConfig?: CacheConfig;
 }) {
   // İlk olaraq client-side keşdən məlumatları almağa çalışaq
@@ -21,7 +21,7 @@ export function useCachedQuery<TData = unknown, TError = unknown>({
   const cachedData = getCache<TData>(cacheKey);
 
   // React Query istifadə edək
-  const query = useQuery<TData, TError, TData, QueryKey>({
+  const query = useQuery<TData, TError, TData>({
     queryKey,
     queryFn: async () => {
       try {
