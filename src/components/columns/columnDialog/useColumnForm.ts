@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -105,14 +106,14 @@ export const useColumnForm = (
       
       form.reset({
         name: editColumn.name,
-        categoryId: editColumn.categoryId,
+        categoryId: editColumn.category_id,
         type: editColumn.type as ColumnType,
-        isRequired: editColumn.isRequired,
-        validationRules: editColumn.validationRules as any || editColumn.validation as any || {},
-        defaultValue: editColumn.defaultValue || "",
+        isRequired: editColumn.is_required,
+        validationRules: editColumn.validation as any || {},
+        defaultValue: editColumn.default_value || "",
         placeholder: editColumn.placeholder || "",
-        helpText: editColumn.helpText || "",
-        order: editColumn.order || 1,
+        helpText: editColumn.help_text || "",
+        order: editColumn.order_index || 1,
         parentColumnId: editColumn.parentColumnId,
         status: editColumn.status as "active" | "inactive" || "active",
         options: editColumn.options 

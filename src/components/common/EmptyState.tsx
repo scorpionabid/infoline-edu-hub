@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface EmptyStateProps {
-  icon?: React.ReactNode;
   title: string;
   description?: string;
+  icon?: React.ReactNode;
   action?: {
     label: string;
     onClick: () => void;
@@ -15,35 +15,28 @@ interface EmptyStateProps {
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
-  icon,
   title,
   description,
+  icon,
   action,
-  className,
+  className
 }) => {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center p-8 text-center",
-      "rounded-lg border border-dashed border-border bg-background",
-      "min-h-[300px]",
+      "flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed",
       className
     )}>
       {icon && (
-        <div className="mb-4 text-muted-foreground">
-          {icon}
+        <div className="rounded-full bg-primary/10 p-3 mb-4">
+          <div className="text-primary">{icon}</div>
         </div>
       )}
-      <h3 className="text-lg font-medium">{title}</h3>
+      <h3 className="text-lg font-medium mb-2">{title}</h3>
       {description && (
-        <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-          {description}
-        </p>
+        <p className="text-muted-foreground max-w-sm mb-4">{description}</p>
       )}
       {action && (
-        <Button
-          onClick={action.onClick}
-          className="mt-4"
-        >
+        <Button onClick={action.onClick}>
           {action.label}
         </Button>
       )}

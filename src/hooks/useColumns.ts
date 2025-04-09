@@ -51,7 +51,7 @@ export const useColumns = (categoryId?: string) => {
     }
     
     // Category filter
-    if (categoryFilter && column.categoryId !== categoryFilter) {
+    if (categoryFilter && column.category_id !== categoryFilter) {
       return false;
     }
     
@@ -93,7 +93,7 @@ export const useColumns = (categoryId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success(t('columnAdded'), {
-        description: t('columnAddedDesc')
+        description: t('columnAddedSuccessfully')
       });
     },
     onError: (error) => {
@@ -130,7 +130,7 @@ export const useColumns = (categoryId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success(t('columnUpdated'), {
-        description: t('columnUpdatedDesc')
+        description: t('columnUpdatedSuccessfully')
       });
     },
     onError: (error) => {
@@ -156,7 +156,7 @@ export const useColumns = (categoryId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
       toast.success(t('columnDeleted'), {
-        description: t('columnDeletedDesc')
+        description: t('columnDeletedSuccessfully')
       });
     },
     onError: (error) => {
@@ -196,8 +196,8 @@ export const useColumns = (categoryId?: string) => {
     const result = await addColumnMutation.mutateAsync(column);
     
     // Kateqoriyadakı sütun sayını yeniləyirik
-    if (column.categoryId) {
-      await updateCategoryColumnCount(column.categoryId);
+    if (column.category_id) {
+      await updateCategoryColumnCount(column.category_id);
     }
     
     return result;
@@ -210,7 +210,7 @@ export const useColumns = (categoryId?: string) => {
   const deleteColumn = async (id: string) => {
     // Əvvəlcə silinən sütunun kategoriya ID-sini alaq
     const column = columns.find(c => c.id === id);
-    const categoryId = column?.categoryId;
+    const categoryId = column?.category_id;
     
     await deleteColumnMutation.mutateAsync(id);
     

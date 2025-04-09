@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -17,7 +18,7 @@ import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
 import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
 import { supabase } from '@/integrations/supabase/client';
-import { EmptyState } from '@/components/common/EmptyState';
+import EmptyState from '@/components/common/EmptyState';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,7 +63,7 @@ const Categories: React.FC = () => {
         .ilike('name', `%${searchQuery}%`);
 
       if (filter.status !== 'all') {
-        query = query.eq('status', filter.status);
+        query = query.eq('status', filter.status as CategoryStatus);
       }
 
       if (filter.assignment !== 'all') {
@@ -82,7 +83,21 @@ const Categories: React.FC = () => {
       }
 
       if (data) {
-        setCategories(data);
+        // Data-nı Category tipinə çeviririk
+        const typedCategories: Category[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          assignment: (item.assignment as 'sectors' | 'all') || 'all',
+          deadline: item.deadline,
+          status: item.status as CategoryStatus,
+          priority: item.priority || 0,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          archived: item.archived || false,
+          column_count: item.column_count || 0
+        }));
+        setCategories(typedCategories);
       } else {
         setCategories([]);
       }
@@ -108,11 +123,19 @@ const Categories: React.FC = () => {
     setAddDialog({ isOpen: false });
   };
 
-  const handleAddCategory = async (newCategory: Omit<Category, 'id'>) => {
+  const handleAddCategory = async (newCategory: Partial<Category>): Promise<boolean> => {
     try {
+      // Əlavə edəcəyimiz kateqoriya üçün status, created_at və updated_at əlavə edirik
+      const categoryToAdd = {
+        ...newCategory,
+        status: newCategory.status || 'active' as CategoryStatus,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
       const { error } = await supabase
         .from('categories')
-        .insert([newCategory]);
+        .insert([categoryToAdd]);
 
       if (error) {
         throw new Error(error.message);
@@ -140,7 +163,7 @@ const Categories: React.FC = () => {
     setDeleteDialog({ isOpen: false, categoryId: '', categoryName: '' });
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
+  const handleDeleteCategory = async (categoryId: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('categories')
@@ -155,11 +178,13 @@ const Categories: React.FC = () => {
         description: t('categoryDeletedSuccessfullyDesc')
       });
       fetchData();
+      return true;
     } catch (err: any) {
       setError(err.message);
       toast.error(t('errorDeletingCategory'), {
         description: err.message
       });
+      return false;
     }
   };
 
@@ -168,7 +193,7 @@ const Categories: React.FC = () => {
   };
 
   const handleFilterChange = (newFilter: Partial<CategoryFilter>) => {
-    setFilter({ ...filter, ...newFilter });
+    setFilter(prevFilter => ({ ...prevFilter, ...newFilter }));
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +227,10 @@ const Categories: React.FC = () => {
 
         <div className="flex items-center space-x-2">
           <Label htmlFor="status">{t('status')}:</Label>
-          <Select onValueChange={(value) => handleFilterChange({ status: value })}>
+          <Select 
+            value={filter.status} 
+            onValueChange={(value) => handleFilterChange({ status: value as CategoryStatus | 'all' })}
+          >
             <SelectTrigger id="status">
               <SelectValue placeholder={t('all')} />
             </SelectTrigger>
@@ -215,7 +243,10 @@ const Categories: React.FC = () => {
           </Select>
 
           <Label htmlFor="assignment">{t('assignment')}:</Label>
-          <Select onValueChange={(value) => handleFilterChange({ assignment: value })}>
+          <Select 
+            value={filter.assignment} 
+            onValueChange={(value) => handleFilterChange({ assignment: value as 'sectors' | 'all' })}
+          >
             <SelectTrigger id="assignment">
               <SelectValue placeholder={t('all')} />
             </SelectTrigger>
@@ -226,7 +257,10 @@ const Categories: React.FC = () => {
           </Select>
 
           <Label htmlFor="deadline">{t('deadline')}:</Label>
-          <Select onValueChange={(value) => handleFilterChange({ deadline: value })}>
+          <Select 
+            value={filter.deadline} 
+            onValueChange={(value) => handleFilterChange({ deadline: value as 'all' | 'upcoming' | 'past' })}
+          >
             <SelectTrigger id="deadline">
               <SelectValue placeholder={t('all')} />
             </SelectTrigger>
@@ -284,6 +318,7 @@ const Categories: React.FC = () => {
 
       {!isLoading && categories.length === 0 && (
         <EmptyState
+          icon={<Plus className="h-12 w-12" />}
           title={t('noCategoriesFound')}
           description={t('noCategoriesFoundDesc')}
           action={{
@@ -343,7 +378,7 @@ const Categories: React.FC = () => {
           isOpen={deleteDialog.isOpen}
           onClose={handleCloseDeleteDialog}
           onConfirm={handleDeleteCategory}
-          category={deleteDialog.categoryId} // categoryId property-ni category ilə əvəz edək
+          category={deleteDialog.categoryId}
           categoryName={deleteDialog.categoryName}
         />
       )}

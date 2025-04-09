@@ -76,10 +76,10 @@ export const useDataUpdates = ({
     newEntries.forEach(entry => {
       const category = categories.find(c => c.id === entry.categoryId);
       if (category) {
-        const requiredColumns = category.columns.filter(col => col.isRequired);
+        const requiredColumns = category.columns.filter(col => col.is_required);
         const filledRequiredValues = entry.values.filter(val => {
           const column = category.columns.find(col => col.id === val.columnId);
-          return column?.isRequired && val.value !== '' && val.value !== null && val.value !== undefined;
+          return column?.is_required && val.value !== '' && val.value !== null && val.value !== undefined;
         });
         
         entry.completionPercentage = requiredColumns.length > 0 

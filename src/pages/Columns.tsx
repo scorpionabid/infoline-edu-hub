@@ -179,7 +179,7 @@ const Columns: React.FC = () => {
         isLoading={isLoading}
         isError={!!error}
         onEditColumn={handleOpenEditColumnDialog}
-        onDeleteColumn={handleDeleteColumn}
+        onDeleteColumn={handleOpenDeleteDialog}
         onUpdateStatus={handleUpdateColumnStatus}
       />
 

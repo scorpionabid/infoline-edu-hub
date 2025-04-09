@@ -22,14 +22,19 @@ const SchoolAdminSetupCheck: React.FC = () => {
           // Funksiya mövcuddur, indi məktəb məlumatlarını ayrıca yoxlayaq
           try {
             // Baza cədvəllərinə əlaqə yoxlayırıq
-            const { data: schools } = await supabase
+            const { data: schools, error: schoolsError } = await supabase
               .from('schools')
               .select('*', { count: 'exact', head: true })
               .limit(1);
             
-            // Uğurlu SQL əlaqəsi varsa, davam edə bilərik
-            console.log('Baza əlaqəsi mövcuddur');
-            setFunctionExists(true);
+            if (schoolsError) {
+              console.error('Məktəb məlumatları yoxlanması xətası:', schoolsError);
+              setFunctionExists(false);
+            } else {
+              // Uğurlu SQL əlaqəsi varsa, davam edə bilərik
+              console.log('Baza əlaqəsi mövcuddur');
+              setFunctionExists(true);
+            }
           } catch (err) {
             console.error('Məktəb məlumatları yoxlanması xətası:', err);
             setFunctionExists(false);

@@ -13,6 +13,16 @@ import { useDataEntries } from '@/hooks/useDataEntries';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+// Tipləri əlavə edək
+interface UseDataEntryStateReturn {
+  categories: CategoryWithColumns[];
+  isLoading: boolean;
+  currentIndex: number;
+  setCategoryIndex: (index: number) => void;
+  categoryIdRef: React.RefObject<string | null>;
+  fetchCategoryData: () => Promise<void>;
+}
+
 export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: string | null) => {
   const { t } = useLanguage();
   const location = useLocation();
@@ -22,16 +32,19 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   const urlCategoryId = queryParams.get('categoryId');
   const selectedCategoryId = initialCategoryId || urlCategoryId;
 
+  // DataEntry state-i və funksiyaları
+  const dataEntryState = useDataEntryState({
+    initialCategoryId: selectedCategoryId || undefined
+  });
+  
   const { 
-    categories, 
-    setCategories, 
-    isLoading, 
-    setIsLoading, 
-    currentCategoryIndex, 
-    setCurrentCategoryIndex, 
-    lastCategoryIdRef,
-    fetchCategories
-  } = useDataEntryState(selectedCategoryId);
+    categories,
+    isLoading,
+    currentIndex: currentCategoryIndex,
+    setCategoryIndex: setCurrentCategoryIndex,
+    categoryIdRef: lastCategoryIdRef,
+    fetchCategoryData: fetchCategories
+  } = dataEntryState;
 
   const { 
     dataEntries,
@@ -63,8 +76,6 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
       });
       return;
     }
-
-    setIsLoading(true);
 
     try {
       // Kateqoriyaları yükləyək
@@ -107,10 +118,10 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
           Object.keys(entriesByCategory).forEach(categoryId => {
             const category = categories.find(c => c.id === categoryId);
             if (category) {
-              const requiredColumns = category.columns.filter(col => col.isRequired);
+              const requiredColumns = category.columns.filter(col => col.is_required);
               const filledRequiredValues = entriesByCategory[categoryId].values.filter(val => {
                 const column = category.columns.find(col => col.id === val.columnId);
-                return column?.isRequired && val.value !== '' && val.value !== null && val.value !== undefined;
+                return column?.is_required && val.value !== '' && val.value !== null && val.value !== undefined;
               });
               
               entriesByCategory[categoryId].completionPercentage = requiredColumns.length > 0 
@@ -130,10 +141,8 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
       toast.error(t('errorOccurred'), {
         description: t('couldNotLoadData')
       });
-    } finally {
-      setIsLoading(false);
     }
-  }, [fetchCategories, user, categories, t, initializeForm, setIsLoading]);
+  }, [fetchCategories, user, categories, t, initializeForm]);
 
   // Məlumatları serverə yerləşdirmək
   const saveDataToServer = useCallback(async (categoryId: string, columnId: string, value: any) => {
