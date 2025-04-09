@@ -50,9 +50,11 @@ export const useSchoolAdminDashboard = () => {
   // Lazımi funksiyaların olub-olmadığını yoxlayaq
   const checkFunctions = useCallback(async () => {
     try {
-      const { data, error } = await supabase.rpc('check_function_exists', {
-        function_name: 'get_school_admin_stats'
-      });
+      // Custom sorğu ilə funksiya adını yoxlayaq
+      const { data, error } = await supabase.from('_functions')
+        .select('name')
+        .eq('name', 'get_school_admin_stats')
+        .maybeSingle();
       
       if (error) {
         console.error('Funksiya yoxlaması zamanı xəta:', error);
@@ -88,7 +90,6 @@ export const useSchoolAdminDashboard = () => {
     const mockForms: FormItem[] = Array.from({ length: 8 }, (_, i) => ({
       id: `form-${i}`,
       title: `Test Form ${i + 1}`,
-      category: `Kateqoriya ${Math.floor(Math.random() * 5) + 1}`,
       status: ['pending', 'approved', 'rejected'][Math.floor(Math.random() * 3)],
       date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
     }));
@@ -121,13 +122,30 @@ export const useSchoolAdminDashboard = () => {
     }
 
     try {
-      // Statistika məlumatlarını əldə edək
-      const { data: statsData, error: statsError } = await supabase.rpc('get_school_admin_stats', {
-        school_id_param: user.schoolId
-      });
+      // Statistika məlumatlarını əldə edək - birbaşa data_entries tablesindən
+      const { data: pendingData, error: pendingError } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('school_id', user.schoolId)
+        .eq('status', 'pending')
+        .count();
+        
+      const { data: approvedData, error: approvedError } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('school_id', user.schoolId)
+        .eq('status', 'approved')
+        .count();
+        
+      const { data: rejectedData, error: rejectedError } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('school_id', user.schoolId)
+        .eq('status', 'rejected')
+        .count();
       
-      if (statsError) {
-        throw new Error(`Statistika məlumatlarını əldə etmək mümkün olmadı: ${statsError.message}`);
+      if (pendingError || approvedError || rejectedError) {
+        throw new Error(`Statistika məlumatlarını əldə etmək mümkün olmadı`);
       }
       
       // Məktəbə aid bildirişləri əldə edək
@@ -142,14 +160,23 @@ export const useSchoolAdminDashboard = () => {
         throw new Error(`Bildirişləri əldə etmək mümkün olmadı: ${notificationsError.message}`);
       }
       
-      // Son gözləyən formları əldə edək
-      const { data: pendingFormsData, error: pendingError } = await supabase.rpc('get_school_pending_forms', {
-        school_id_param: user.schoolId,
-        limit_param: 10
-      });
+      // Son gözləyən formları əldə edək - birbaşa query ilə
+      const { data: pendingFormsData, error: pendingFormsError } = await supabase
+        .from('data_entries')
+        .select(`
+          id,
+          columns(name),
+          categories(name),
+          status,
+          created_at
+        `)
+        .eq('school_id', user.schoolId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(10);
       
-      if (pendingError) {
-        throw new Error(`Gözləyən formaları əldə etmək mümkün olmadı: ${pendingError.message}`);
+      if (pendingFormsError) {
+        throw new Error(`Gözləyən formaları əldə etmək mümkün olmadı: ${pendingFormsError.message}`);
       }
       
       // Kateqoriyaların sayını əldə edək
@@ -162,7 +189,7 @@ export const useSchoolAdminDashboard = () => {
       }
       
       // Bildirişləri formatlayaq
-      const notifications: Notification[] = (notificationsData || []).map((item: any) => ({
+      const notifications: Notification[] = Array.isArray(notificationsData) ? notificationsData.map((item: any) => ({
         id: item.id,
         title: item.title,
         message: item.message,
@@ -171,31 +198,33 @@ export const useSchoolAdminDashboard = () => {
         createdAt: item.created_at,
         userId: item.user_id,
         priority: item.priority
-      }));
+      })) : [];
       
       // Statistika məlumatlarını formatlaşdıraq
-      const stats = statsData as any;
-      
       const formStats: SchoolStats = {
-        pending: stats?.pending_forms || 0,
-        approved: stats?.approved_forms || 0,
-        rejected: stats?.rejected_forms || 0,
-        dueSoon: stats?.due_soon_forms || 0,
-        overdue: stats?.overdue_forms || 0
+        pending: pendingData?.count || 0,
+        approved: approvedData?.count || 0,
+        rejected: rejectedData?.count || 0,
+        dueSoon: 0, // Bu məlumatı əldə etmək üçün əlavə sorğu lazımdır
+        overdue: 0   // Bu məlumatı əldə etmək üçün əlavə sorğu lazımdır
       };
       
+      // Tamamlanma faizini hesablayaq
+      const totalForms = formStats.pending + formStats.approved + formStats.rejected;
+      const completedForms = formStats.approved;
+      const completionRate = totalForms > 0 ? Math.round((completedForms / totalForms) * 100) : 0;
+      
       // Gözləyən formaları formatlaşdıraq
-      const pendingForms: FormItem[] = (pendingFormsData || []).map((item: any) => ({
+      const pendingForms: FormItem[] = Array.isArray(pendingFormsData) ? pendingFormsData.map((item: any) => ({
         id: item.id,
-        title: item.title,
-        date: item.date,
-        status: item.status,
-        category: item.category,
-      }));
+        title: item.columns?.name || 'Unknown Column',
+        date: new Date(item.created_at).toLocaleDateString(),
+        status: item.status
+      })) : [];
       
       return {
         forms: formStats,
-        completionRate: stats?.completion_rate || 0,
+        completionRate: completionRate,
         notifications: notifications,
         pendingForms: pendingForms,
         categories: categoryCount || 0

@@ -1,20 +1,13 @@
 
-import common from './common';
-import auth from './auth';
-import dashboard from './dashboard';
-import user from './user';
+import { dashboardTranslations } from './dashboard';
+import { authTranslations } from './auth';
+import { settingsTranslations } from './settings';
+import { dataEntryTranslations } from './dataEntry';
 
-const az = {
-  ...common,
-  ...auth,
-  ...dashboard,
-  
-  // User translations
-  ...user,
-  
-  // Əlavə tərcümələr - bunlar başqa fayllara köçürülə bilər
-  tryAnotherFilter: 'Başqa filtrdən istifadə edin',
-  openMenu: 'Menyu aç',
+export const azTranslations = {
+  ...dashboardTranslations,
+  ...authTranslations,
+  ...settingsTranslations,
+  ...dataEntryTranslations,
+  // Digər tərcümələr
 };
-
-export default az;

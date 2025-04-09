@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useLanguage } from '@/context/LanguageContext';
 import { Category } from '@/types/category';
 
 interface DeleteCategoryDialogProps {
@@ -17,7 +18,7 @@ interface DeleteCategoryDialogProps {
   onClose: () => void;
   onConfirm: (id: string) => Promise<boolean>;
   category: Category | null;
-  isSubmitting: boolean;
+  isSubmitting?: boolean;
 }
 
 const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
@@ -25,8 +26,10 @@ const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
   onClose,
   onConfirm,
   category,
-  isSubmitting
+  isSubmitting = false
 }) => {
+  const { t } = useLanguage();
+
   const handleConfirm = async () => {
     if (!category) return;
     await onConfirm(category.id);
@@ -37,7 +40,7 @@ const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Kateqoriyanı silmək istədiyinizə əminsiniz?</AlertDialogTitle>
+          <AlertDialogTitle>{t('deleteConfirmationTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
             <span className="font-medium">{category?.name}</span> kateqoriyasını silmək istədiyinizə əminsiniz?
             <br />
@@ -46,13 +49,13 @@ const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isSubmitting}>Ləğv et</AlertDialogCancel>
+          <AlertDialogCancel disabled={isSubmitting}>{t('cancel')}</AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleConfirm} 
             disabled={isSubmitting}
             className="bg-destructive hover:bg-destructive/90"
           >
-            {isSubmitting ? 'Silinir...' : 'Bəli, sil'}
+            {isSubmitting ? 'Silinir...' : t('delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

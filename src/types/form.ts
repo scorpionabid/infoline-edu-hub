@@ -1,12 +1,12 @@
 
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'overdue' | 'due' | 'empty';
+export type FormStatus = 'pending' | 'approved' | 'rejected';
 
-export interface Form {
+export interface FormData {
   id: string;
-  title: string;
-  category: string;
+  categoryId: string;
+  schoolId: string;
   status: FormStatus;
-  completionPercentage: number;
-  deadline?: string;
-  date?: string;
+  createdAt: string;
+  updatedAt: string;
+  entries?: Record<string, any>;
 }

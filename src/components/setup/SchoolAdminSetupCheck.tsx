@@ -14,11 +14,11 @@ const SchoolAdminSetupCheck: React.FC = () => {
       try {
         setIsChecking(true);
         
-        // Məktəb admin üçün zəruri olan funksiyaları yoxla
-        const { data, error } = await supabase
-          .rpc('check_function_exists', {
-            function_name: 'get_school_admin_stats'
-          });
+        // Custom sorğu ilə funksiya adını yoxlayaq
+        const { data, error } = await supabase.from('_functions')
+          .select('name')
+          .eq('name', 'get_school_admin_stats')
+          .maybeSingle();
         
         if (error) throw error;
         

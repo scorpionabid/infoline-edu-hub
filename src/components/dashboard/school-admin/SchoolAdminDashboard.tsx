@@ -133,7 +133,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                   <div key={form.id} className="p-4 flex items-center justify-between">
                     <div>
                       <div className="font-semibold">{form.title}</div>
-                      <div className="text-sm text-muted-foreground">{form.category} - {form.date}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {form.date}
+                      </div>
                     </div>
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status as FormStatus)}`}>
                       {t(form.status)}
