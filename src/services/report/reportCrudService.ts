@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Report } from '@/types/report';
+import { Report, ReportType } from '@/types/report';
 import { TableNames } from '@/types/db';
 import { mapReportTableToReport, handleReportError } from './reportBaseService';
 
@@ -97,13 +97,16 @@ export const updateReport = async (id: string, report: Partial<Report>): Promise
  */
 export const createReportTemplate = async (template: Partial<Report>): Promise<Report | null> => {
   try {
+    // Əmin olaq ki, template.type ReportType tipindədir
+    const reportType = template.type as ReportType;
+    
     // Supabase tipini any kimi istifadə edərək xətadan qaçırıq
     const { data, error } = await supabase
       .from(TableNames.REPORT_TEMPLATES)
       .insert([{
         name: template.name || template.title,
         description: template.description,
-        type: template.type,
+        type: reportType,
         config: {
           filters: template.data,
           layout: 'default',
@@ -119,17 +122,17 @@ export const createReportTemplate = async (template: Partial<Report>): Promise<R
 
     if (error) throw error;
 
-    // Type assertion ilə düzgün tipə çeviririk
+    // data obyektini düzgün formada qaytarırıq
     return {
       id: data.id,
       name: data.name,
       title: data.name,
       description: data.description || '',
-      type: data.type,
+      type: data.type as ReportType,
       createdAt: data.created_at,
       status: 'published' as 'draft' | 'published' | 'archived',
       createdBy: data.created_by || '',
-      tags: data.tags || []
+      tags: Array.isArray(data.tags) ? data.tags : []
     };
   } catch (error: any) {
     handleReportError(error, 'Hesabat şablonu yaradılarkən xəta baş verdi');
