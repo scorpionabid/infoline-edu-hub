@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   Table,
@@ -10,13 +10,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import AddCategoryDialog from '@/components/categories/AddCategoryDialog';
 import DeleteCategoryDialog from '@/components/categories/DeleteCategoryDialog';
-import { Category, CategoryStatus, CategoryFilter } from '@/types/category';
-import { supabase } from '@/integrations/supabase/client';
+import { Category } from '@/types/category';
 import PageHeader from '@/components/layout/PageHeader';
 import EmptyState from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
@@ -27,23 +26,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from '@radix-ui/react-icons';
-import { DateRange } from 'react-day-picker';
-
-// AddCategoryDialog prop tipini təyin edək
-interface AddCategoryFormData {
-  name: string;
-  description?: string;
-  assignment?: 'sectors' | 'all';
-  deadline?: Date | string;
-  priority?: number;
-  status?: CategoryStatus;
-}
+import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
+import { useCategoryOperations, AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
 
 const Categories: React.FC = () => {
   const { t } = useLanguage();
@@ -52,72 +42,37 @@ const Categories: React.FC = () => {
   const [addDialog, setAddDialog] = useState({ isOpen: false });
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, categoryId: '', categoryName: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<CategoryFilter>({
-    status: 'all',
-    assignment: 'all',
-    deadline: 'all'
-  });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [date, setDate] = useState<DateRange | undefined>(undefined);
+
+  // Custom hooklarımızı istifadə edək
+  const {
+    filter,
+    handleFilterChange,
+    searchQuery,
+    handleSearchChange,
+    date,
+    handleDateChange
+  } = useCategoryFilters();
+
+  const {
+    error,
+    isSubmitting,
+    fetchCategories,
+    addCategory,
+    deleteCategory,
+    setError
+  } = useCategoryOperations();
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      let query = supabase
-        .from('categories')
-        .select('*')
-        .ilike('name', `%${searchQuery}%`);
-
-      if (filter.status !== 'all') {
-        query = query.eq('status', filter.status as CategoryStatus);
-      }
-
-      if (filter.assignment !== 'all' && filter.assignment !== '') {
-        query = query.eq('assignment', filter.assignment);
-      }
-
-      if (filter.deadline === 'upcoming') {
-        query = query.gt('deadline', new Date().toISOString());
-      } else if (filter.deadline === 'past') {
-        query = query.lt('deadline', new Date().toISOString());
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (data) {
-        const typedCategories: Category[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          assignment: (item.assignment as 'sectors' | 'all') || 'all',
-          deadline: item.deadline,
-          status: item.status as CategoryStatus,
-          priority: item.priority || 0,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          archived: item.archived || false,
-          column_count: item.column_count || 0
-        }));
-        setCategories(typedCategories);
-      } else {
-        setCategories([]);
-      }
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorFetchingCategories'), {
-        description: err.message
-      });
+      const data = await fetchCategories(searchQuery, filter);
+      setCategories(data);
     } finally {
       setIsLoading(false);
     }
-  }, [filter, searchQuery, t]);
+  }, [fetchCategories, filter, searchQuery, setError]);
 
   useEffect(() => {
     fetchData();
@@ -132,46 +87,11 @@ const Categories: React.FC = () => {
   };
 
   const handleAddCategory = async (newCategory: AddCategoryFormData): Promise<boolean> => {
-    try {
-      const now = new Date().toISOString();
-      
-      // Form tipinin Date formatını string formatına çeviririk
-      const deadline = newCategory.deadline instanceof Date 
-        ? newCategory.deadline.toISOString() 
-        : newCategory.deadline;
-      
-      const categoryToAdd = {
-        name: newCategory.name,
-        description: newCategory.description || '',
-        assignment: newCategory.assignment || 'all',
-        status: newCategory.status || 'active' as CategoryStatus,
-        deadline: deadline,
-        priority: newCategory.priority || 0,
-        created_at: now,
-        updated_at: now,
-        archived: false
-      };
-      
-      const { error } = await supabase
-        .from('categories')
-        .insert([categoryToAdd]);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      toast.success(t('categoryAddedSuccessfully'), {
-        description: t('categoryAddedSuccessfullyDesc')
-      });
-      fetchData();
-      return true;
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorAddingCategory'), {
-        description: err.message
-      });
-      return false;
+    const success = await addCategory(newCategory);
+    if (success) {
+      await fetchData();
     }
+    return success;
   };
 
   const handleOpenDeleteDialog = (categoryId: string, categoryName: string) => {
@@ -183,44 +103,15 @@ const Categories: React.FC = () => {
   };
 
   const handleDeleteCategory = async (categoryId: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      toast.success(t('categoryDeletedSuccessfully'), {
-        description: t('categoryDeletedSuccessfullyDesc')
-      });
-      fetchData();
-      return true;
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(t('errorDeletingCategory'), {
-        description: err.message
-      });
-      return false;
+    const success = await deleteCategory(categoryId);
+    if (success) {
+      await fetchData();
     }
+    return success;
   };
 
   const handleEditCategory = (categoryId: string) => {
     navigate(`/categories/${categoryId}`);
-  };
-
-  const handleFilterChange = (newFilter: Partial<CategoryFilter>) => {
-    setFilter(prevFilter => ({ ...prevFilter, ...newFilter }));
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate);
   };
 
   return (
@@ -248,7 +139,7 @@ const Categories: React.FC = () => {
           <Label htmlFor="status">{t('status')}:</Label>
           <Select 
             value={filter.status} 
-            onValueChange={(value) => handleFilterChange({ status: value as CategoryStatus | 'all' })}
+            onValueChange={(value) => handleFilterChange({ status: value as any })}
           >
             <SelectTrigger id="status">
               <SelectValue placeholder={t('all')} />
@@ -264,7 +155,7 @@ const Categories: React.FC = () => {
           <Label htmlFor="assignment">{t('assignment')}:</Label>
           <Select 
             value={filter.assignment} 
-            onValueChange={(value) => handleFilterChange({ assignment: value as 'sectors' | 'all' | '' })}
+            onValueChange={(value) => handleFilterChange({ assignment: value as any })}
           >
             <SelectTrigger id="assignment">
               <SelectValue placeholder={t('all')} />
@@ -278,7 +169,7 @@ const Categories: React.FC = () => {
           <Label htmlFor="deadline">{t('deadline')}:</Label>
           <Select 
             value={filter.deadline} 
-            onValueChange={(value) => handleFilterChange({ deadline: value as 'all' | 'upcoming' | 'past' | '' })}
+            onValueChange={(value) => handleFilterChange({ deadline: value as any })}
           >
             <SelectTrigger id="deadline">
               <SelectValue placeholder={t('all')} />
@@ -316,7 +207,7 @@ const Categories: React.FC = () => {
                 mode="range"
                 defaultMonth={date?.from}
                 selected={date}
-                onSelect={setDate}
+                onSelect={handleDateChange}
                 numberOfMonths={2}
                 pagedNavigation
               />
@@ -348,38 +239,11 @@ const Categories: React.FC = () => {
       )}
 
       {!isLoading && categories.length > 0 && (
-        <div className="w-full">
-          <Table>
-            <TableCaption>A list of your categories.</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[200px]">Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell>{category.description}</TableCell>
-                  <TableCell>{category.status}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => handleEditCategory(category.id)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t('edit')}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleOpenDeleteDialog(category.id, category.name)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t('delete')}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <CategoryTable 
+          categories={categories}
+          onEdit={handleEditCategory}
+          onDelete={handleOpenDeleteDialog}
+        />
       )}
 
       {addDialog.isOpen && (
@@ -387,6 +251,7 @@ const Categories: React.FC = () => {
           isOpen={addDialog.isOpen}
           onClose={handleCloseAddDialog}
           onAddCategory={handleAddCategory}
+          isSubmitting={isSubmitting}
         />
       )}
 
@@ -397,8 +262,53 @@ const Categories: React.FC = () => {
           onConfirm={handleDeleteCategory}
           category={deleteDialog.categoryId}
           categoryName={deleteDialog.categoryName}
+          isSubmitting={isSubmitting}
         />
       )}
+    </div>
+  );
+};
+
+// Kategoriya cədvəli komponenti
+const CategoryTable: React.FC<{
+  categories: Category[];
+  onEdit: (id: string) => void;
+  onDelete: (id: string, name: string) => void;
+}> = ({ categories, onEdit, onDelete }) => {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="w-full">
+      <Table>
+        <TableCaption>A list of your categories.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[200px]">Name</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {categories.map((category) => (
+            <TableRow key={category.id}>
+              <TableCell className="font-medium">{category.name}</TableCell>
+              <TableCell>{category.description}</TableCell>
+              <TableCell>{category.status}</TableCell>
+              <TableCell>
+                <Button variant="ghost" size="sm" onClick={() => onEdit(category.id)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t('edit')}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => onDelete(category.id, category.name)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t('delete')}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
