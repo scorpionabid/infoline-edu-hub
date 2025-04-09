@@ -1,22 +1,16 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData } from '@/types/dataEntry';
-import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
 
 interface UseDataUpdatesProps {
   categories: CategoryWithColumns[];
-  formData: {
-    entries: CategoryEntryData[];
-    lastSaved?: string;
-    overallProgress: number;
-    status: 'draft' | 'submitted' | 'approved' | 'rejected';
-  };
-  errors: Record<string, string>;
-  initializeForm: (entries: CategoryEntryData[], status: string) => void;
+  formData: DataEntryForm;
+  errors: ColumnValidationError[];
+  initializeForm: (data: any, status: string) => void;
   validateForm: () => boolean;
-  submitForm: () => Promise<void>;
+  submitForm: () => void;
   setCurrentCategoryIndex: (index: number) => void;
   updateValue: (categoryId: string, columnId: string, value: any) => void;
   saveForm: () => void;
@@ -34,59 +28,46 @@ export const useDataUpdates = ({
   saveForm
 }: UseDataUpdatesProps) => {
   const { t } = useLanguage();
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Kateqoriyanı dəyişdirmək metodu
+  // Kateqoriya dəyişmə metodu
   const changeCategory = useCallback((index: number) => {
-    if (index >= 0 && index < categories.length) {
+    if (categories.length > 0 && index >= 0 && index < categories.length) {
       setCurrentCategoryIndex(index);
-      saveForm(); // Kateqoriya dəyişdikdə əvvəlki kateqoriyanın məlumatlarını saxla
+      saveForm();
     }
   }, [categories, setCurrentCategoryIndex, saveForm]);
 
-  // Excel faylından məlumatları formanı yeniləmək metodu
+  // Excel dataları ilə form datasını yeniləmə metodu
   const updateFormDataFromExcel = useCallback((data: Record<string, any>, categoryId: string) => {
-    try {
-      const categoryIndex = categories.findIndex(c => c.id === categoryId);
-      if (categoryIndex === -1) {
-        toast.error(t('categoryNotFound'));
-        return;
-      }
+    if (!categoryId || !data || Object.keys(data).length === 0) return;
 
-      const category = categories[categoryIndex];
+    setIsUpdating(true);
+    
+    try {
+      // Mövcud dəyərləri saxlayaq
+      const categoryIndex = categories.findIndex(c => c.id === categoryId);
+      if (categoryIndex === -1) return;
       
-      // Cari kateqoriya üçün mövcud giriş məlumatlarını tapmaq
-      let existingEntryIndex = formData.entries.findIndex(e => e.categoryId === categoryId);
-      const newValues = [];
+      // Hər bir columnId üçün dəyəri yeniləyək
+      Object.entries(data).forEach(([columnId, value]) => {
+        updateValue(categoryId, columnId, value);
+      });
       
-      // Excel datası əsasında sütunları yeniləyək
-      for (const [columnId, value] of Object.entries(data)) {
-        // Sütunun cari kateqoriyaya aid olduğunu yoxlayırıq
-        const column = category.columns.find(c => c.id === columnId);
-        if (column) {
-          newValues.push({
-            columnId,
-            value,
-            status: 'pending' as 'pending' | 'approved' | 'rejected'
-          });
-          
-          // Sütun dəyərini birbaşa yeniləyək
-          updateValue(categoryId, columnId, value);
-        }
-      }
+      // Formu validasiya edək
+      validateForm();
       
-      // Formada dəyişiklikləri saxla
+      // Formu saxlayaq
       saveForm();
-      
-      // Kateqoriyanı aktiv et
-      setCurrentCategoryIndex(categoryIndex);
-      
-    } catch (error) {
-      console.error('Excel ilə məlumatları yeniləyərkən xəta:', error);
-      toast.error(t('errorUpdatingExcelData'));
+    } catch (err) {
+      console.error('Excel ilə dataları yeniləmə xətası:', err);
+    } finally {
+      setIsUpdating(false);
     }
-  }, [categories, formData.entries, updateValue, saveForm, setCurrentCategoryIndex, t]);
+  }, [categories, updateValue, validateForm, saveForm]);
 
   return {
+    isUpdating,
     changeCategory,
     updateFormDataFromExcel
   };

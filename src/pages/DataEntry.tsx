@@ -180,7 +180,7 @@ const DataEntry: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <StatusIndicators 
                 status={status}
-                errors={Array.isArray(errors) ? errors : []}
+                errors={errors}
               />
               <div className="flex space-x-2">
                 <Button 
