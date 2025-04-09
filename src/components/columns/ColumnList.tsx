@@ -14,7 +14,7 @@ interface ColumnListProps {
   isLoading: boolean;
   isError: boolean;
   onEditColumn: (column: Column) => void;
-  onDeleteColumn: (id: string, columnName: string) => void; // Burada id və columnName qəbul edirik
+  onDeleteColumn: (id: string, columnName: string) => void;
   onUpdateStatus: (id: string, status: "active" | "inactive") => Promise<any>;
 }
 
@@ -104,6 +104,20 @@ const ColumnList: React.FC<ColumnListProps> = ({
     }
   ];
 
+  // Dataları silmək üçün istifadə olunan funksiya - DataTable-ın gözlədiyi formatda
+  // Bu funksiya tək parametr qəbul edəcək və Boolean Promise qaytaracaq
+  const handleDelete = async (id: string): Promise<boolean> => {
+    // Silinən sütunun adını tapırıq
+    const columnToBeDeleted = columns.find(col => col.id === id);
+    
+    if (columnToBeDeleted) {
+      // Artıq iki parametrli funksiyamızı çağırırıq
+      onDeleteColumn(id, columnToBeDeleted.name);
+      return true; // Əməliyyat uğurlu olduğunu göstərir
+    }
+    return false; // Sütun tapılmadı
+  };
+
   return (
     <DataTable 
       data={columns}
@@ -136,7 +150,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
         description: t("deleteColumnConfirmation"),
         itemToDelete: columnToDelete,
         setItemToDelete: setColumnToDelete,
-        onDelete: onDeleteColumn
+        onDelete: handleDelete // Burada yeni wrapper funksiyamızı istifadə edirik
       }}
     />
   );

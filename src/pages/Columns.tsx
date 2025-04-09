@@ -150,7 +150,7 @@ const Columns: React.FC = () => {
           isLoading={isLoading}
           isError={!!error}
           onEditColumn={handleOpenEditColumnDialog}
-          onDeleteColumn={handleOpenDeleteDialog} // Bu funksiya iki parametr qəbul edir
+          onDeleteColumn={handleOpenDeleteDialog}
           onUpdateStatus={handleUpdateColumnStatus}
         />
       )}
@@ -175,7 +175,7 @@ const Columns: React.FC = () => {
         <DeleteColumnDialog
           isOpen={deleteDialog.isOpen}
           onClose={handleCloseDeleteDialog}
-          onConfirm={() => handleDeleteColumn(deleteDialog.column)} // Funksiyanı əhatə edərək yalnız bir parametr təqdim edirik
+          onConfirm={() => handleDeleteColumn(deleteDialog.column)}
           column={deleteDialog.column}
           columnName={deleteDialog.columnName}
         />
