@@ -12,23 +12,23 @@ const SchoolAdminSetupCheck: React.FC = () => {
   useEffect(() => {
     const checkFunctionExists = async () => {
       try {
-        // Direkt SQL sorğusu ilə yoxlayaq (təhlükəsiz)
+        // Direkt uuid_generate_v4 funksiyasını çağırırıq - bu funksiya bütün Supabase layihələrində var
         const { data, error } = await supabase.rpc('uuid_generate_v4');
         
         if (error) {
           console.error('Baza əlaqəsi yoxlanması zamanı xəta:', error);
           setFunctionExists(false);
         } else {
-          // Funksiya mövcuddur, indi məktəb admin funksiyasını ayrıca yoxlayaq
+          // Funksiya mövcuddur, indi məktəb məlumatlarını ayrıca yoxlayaq
           try {
-            // Sistem tərəfindən təmin edilən müəyyən sorğu vasitəsilə yoxlayırıq
-            const { count } = await supabase
+            // Baza cədvəllərinə əlaqə yoxlayırıq
+            const { data: schools } = await supabase
               .from('schools')
               .select('*', { count: 'exact', head: true })
               .limit(1);
             
             // Uğurlu SQL əlaqəsi varsa, davam edə bilərik
-            console.log('Baza əlaqəsi mövcuddur, məktəb sayı:', count);
+            console.log('Baza əlaqəsi mövcuddur');
             setFunctionExists(true);
           } catch (err) {
             console.error('Məktəb məlumatları yoxlanması xətası:', err);

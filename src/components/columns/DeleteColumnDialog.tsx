@@ -15,7 +15,7 @@ import { useLanguage } from '@/context/LanguageContext';
 interface DeleteColumnDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (id: string) => Promise<any>; // Yalnız id qəbul edir
+  onConfirm: (id: string) => Promise<any>;
   columnId: string;
   columnName: string;
 }
@@ -31,7 +31,7 @@ const DeleteColumnDialog: React.FC<DeleteColumnDialogProps> = ({
 
   const handleConfirm = async () => {
     try {
-      await onConfirm(columnId); // onConfirm funksiyası yalnız columnId qəbul edir
+      await onConfirm(columnId);
       onClose();
     } catch (error) {
       console.error("Sütunu silmək mümkün olmadı:", error);
