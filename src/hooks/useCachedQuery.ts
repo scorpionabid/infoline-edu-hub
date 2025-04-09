@@ -13,7 +13,7 @@ export function useCachedQuery<TData = unknown, TError = unknown>({
 }: {
   queryKey: QueryKey;
   queryFn: () => Promise<TData>;
-  queryOptions?: Omit<UseQueryOptions<TData, TError, TData>, 'queryKey' | 'queryFn'>;
+  queryOptions?: Omit<UseQueryOptions<TData, TError, TData, QueryKey>, 'queryKey' | 'queryFn'>;
   cacheConfig?: CacheConfig;
 }) {
   // İlk olaraq client-side keşdən məlumatları almağa çalışaq
