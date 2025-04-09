@@ -26,7 +26,8 @@ import {
   Save,
   Send,
   FileSpreadsheet,
-  Upload
+  Upload,
+  RefreshCcw
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -84,12 +85,23 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
           <CardDescription>{t('enterDataCarefully')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
+          <div className="flex flex-col items-center justify-center py-8 gap-4">
+            <AlertCircle className="h-12 w-12 text-orange-500" />
+            <h3 className="text-lg font-semibold">
               {statusFilter ? t('noCategoriesWithSelectedStatus') : t('noCategoriesAvailable')}
-            </AlertDescription>
-          </Alert>
+            </h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {t('noCategoriesDescription')}
+            </p>
+            <Button 
+              onClick={() => window.location.reload()}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCcw className="h-4 w-4" />
+              {t('refreshPage')}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -115,6 +127,27 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
 
   const currentCategory = categories[currentCategoryIndex];
   
+  // Əgər seçilmiş kateqoriya yoxdursa
+  if (!currentCategory) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('dataEntryForm')}</CardTitle>
+          <CardDescription>{t('enterDataCarefully')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 gap-4">
+            <AlertCircle className="h-12 w-12 text-orange-500" />
+            <h3 className="text-lg font-semibold">{t('categoryNotFound')}</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              {t('selectAnotherCategory')}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   // Kateqoriyanın tamamlanma vəziyyətini hesablayırıq
   const getCurrentCategoryCompletion = () => {
     if (!currentCategory) return 0;
@@ -126,15 +159,15 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   // Kateqoriya təsdiq edilib mi?
   const isCategoryApproved = () => {
     if (!currentCategory) return false;
-    const status = currentCategory.status as string;
-    return status === 'approved';
+    const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
+    return entry?.approvalStatus === 'approved';
   };
 
   // Kateqoriya rədd edilib mi?
   const isCategoryRejected = () => {
     if (!currentCategory) return false;
-    const status = currentCategory.status as string;
-    return status === 'rejected';
+    const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
+    return entry?.approvalStatus === 'rejected';
   };
   
   // Kateqoriyanın son tarixi yaxınlaşır?
@@ -209,30 +242,33 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
         ) : (
           <>
             <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
-                {categories.map((category, index) => (
-                  <Button
-                    key={category.id}
-                    variant={index === currentCategoryIndex ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => changeCategory(index)}
-                    className={cn(
-                      "relative",
-                      (category.status as string === 'rejected') && "border-red-500 text-red-500",
-                      (category.status as string === 'approved') && "border-green-500 text-green-500",
-                      isCategoryDueSoon() && "border-orange-500",
-                      isCategoryOverdue() && "border-red-500"
-                    )}
-                  >
-                    {category.name}
-                    {category.status as string === 'pending' && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
-                      </span>
-                    )}
-                  </Button>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category, index) => {
+                  const entry = formData.entries.find(e => e.categoryId === category.id);
+                  return (
+                    <Button
+                      key={category.id}
+                      variant={index === currentCategoryIndex ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => changeCategory(index)}
+                      className={cn(
+                        "relative",
+                        entry?.approvalStatus === 'rejected' && "border-red-500 text-red-500",
+                        entry?.approvalStatus === 'approved' && "border-green-500 text-green-500",
+                        isCategoryDueSoon() && "border-orange-500",
+                        isCategoryOverdue() && "border-red-500"
+                      )}
+                    >
+                      {category.name}
+                      {entry?.approvalStatus === 'pending' && (
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                        </span>
+                      )}
+                    </Button>
+                  );
+                })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -274,11 +310,11 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 />
                 <Separator className="my-4" />
                 
-                {(currentCategory.status as string) === 'approved' && (
+                {isCategoryApproved() && (
                   <ApprovalAlert isApproved={true} />
                 )}
                 
-                {(currentCategory.status as string) === 'rejected' && (
+                {isCategoryRejected() && (
                   <RejectionAlert errorMessage={currentCategory.description || t('formRejected')} />
                 )}
                 
@@ -296,7 +332,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                         label={column.name}
                         type={column.type}
                         required={column.is_required}
-                        disabled={formData.status === 'submitted' || (currentCategory.status as string) === 'approved'}
+                        disabled={formData.status === 'submitted' || isCategoryApproved()}
                         options={column.options as string[]}
                         placeholder={column.placeholder}
                         helpText={column.help_text}
