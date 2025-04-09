@@ -60,8 +60,9 @@ export const useSchoolAdminDashboard = () => {
         return false;
       }
       
-      setHasFunctions(data);
-      return data;
+      // Booleana çevir
+      setHasFunctions(Boolean(data));
+      return Boolean(data);
     } catch (err) {
       console.error('Funksiya yoxlaması istisna:', err);
       setHasFunctions(false);
@@ -121,7 +122,7 @@ export const useSchoolAdminDashboard = () => {
 
     try {
       // Statistika məlumatlarını əldə edək
-      const { data: stats, error: statsError } = await supabase.rpc('get_school_admin_stats', {
+      const { data: statsData, error: statsError } = await supabase.rpc('get_school_admin_stats', {
         school_id_param: user.schoolId
       });
       
@@ -130,7 +131,7 @@ export const useSchoolAdminDashboard = () => {
       }
       
       // Məktəbə aid bildirişləri əldə edək
-      const { data: notifications, error: notificationsError } = await supabase
+      const { data: notificationsData, error: notificationsError } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
@@ -142,20 +143,11 @@ export const useSchoolAdminDashboard = () => {
       }
       
       // Son gözləyən formları əldə edək
-      const { data: pendingData, error: pendingError } = await supabase
-        .from('data_entries')
-        .select(`
-          id,
-          category: categories (id, name),
-          column: columns (id, name),
-          status,
-          created_at
-        `)
-        .eq('school_id', user.schoolId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(10);
-        
+      const { data: pendingFormsData, error: pendingError } = await supabase.rpc('get_school_pending_forms', {
+        school_id_param: user.schoolId,
+        limit_param: 10
+      });
+      
       if (pendingError) {
         throw new Error(`Gözləyən formaları əldə etmək mümkün olmadı: ${pendingError.message}`);
       }
@@ -169,7 +161,21 @@ export const useSchoolAdminDashboard = () => {
         throw new Error(`Kateqoriyaların sayını əldə etmək mümkün olmadı: ${categoryError.message}`);
       }
       
+      // Bildirişləri formatlayaq
+      const notifications: Notification[] = (notificationsData || []).map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        message: item.message,
+        type: item.type,
+        isRead: item.is_read,
+        createdAt: item.created_at,
+        userId: item.user_id,
+        priority: item.priority
+      }));
+      
       // Statistika məlumatlarını formatlaşdıraq
+      const stats = statsData as any;
+      
       const formStats: SchoolStats = {
         pending: stats?.pending_forms || 0,
         approved: stats?.approved_forms || 0,
@@ -179,18 +185,18 @@ export const useSchoolAdminDashboard = () => {
       };
       
       // Gözləyən formaları formatlaşdıraq
-      const pendingForms: FormItem[] = pendingData?.map((item: any) => ({
+      const pendingForms: FormItem[] = (pendingFormsData || []).map((item: any) => ({
         id: item.id,
-        title: item.column?.name || 'Bilinməyən sütun',
-        date: new Date(item.created_at).toLocaleDateString(),
+        title: item.title,
+        date: item.date,
         status: item.status,
-        category: item.category?.name || 'Bilinməyən kateqoriya',
-      })) || [];
+        category: item.category,
+      }));
       
       return {
         forms: formStats,
         completionRate: stats?.completion_rate || 0,
-        notifications: notifications || [],
+        notifications: notifications,
         pendingForms: pendingForms,
         categories: categoryCount || 0
       };
@@ -227,7 +233,7 @@ export const useSchoolAdminDashboard = () => {
       if (data) {
         setDashboardData(data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Dashboard məlumatlarını əldə edərkən xəta:', err);
       setError(err instanceof Error ? err : new Error('Bilinməyən xəta'));
       toast.error(t('errorLoadingDashboard'), {

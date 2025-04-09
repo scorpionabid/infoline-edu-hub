@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from '@/components/ui/button';
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const SchoolAdminSetupCheck: React.FC = () => {
@@ -16,13 +15,15 @@ const SchoolAdminSetupCheck: React.FC = () => {
         setIsChecking(true);
         
         // Məktəb admin üçün zəruri olan funksiyaları yoxla
-        const { data, error } = await supabase.rpc('check_function_exists', {
-          function_name: 'get_school_admin_stats'
-        });
+        const { data, error } = await supabase
+          .rpc('check_function_exists', {
+            function_name: 'get_school_admin_stats'
+          });
         
         if (error) throw error;
         
-        setHasRequiredFunctions(data);
+        // Boolean tipinə çevir
+        setHasRequiredFunctions(Boolean(data));
       } catch (err: any) {
         console.error('Funksiyaların yoxlanması zamanı xəta:', err);
         setError(err.message || 'Funksiyaların yoxlanması zamanı xəta baş verdi');

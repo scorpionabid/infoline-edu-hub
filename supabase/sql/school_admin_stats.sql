@@ -63,8 +63,7 @@ BEGIN
   
   -- Tamamlanma faizini hesabla
   SELECT COUNT(*) INTO total_entries
-  FROM schools_required_columns
-  WHERE school_id = school_id_param;
+  FROM schools_required_columns(school_id_param);
   
   SELECT COUNT(*) INTO filled_entries
   FROM data_entries
@@ -105,24 +104,31 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- schools_required_columns cədvəli mövcud deyilsə, onu əvəz edəcək bir funksiya
-CREATE OR REPLACE FUNCTION get_schools_required_columns_count(school_id_param UUID)
-RETURNS INTEGER
+-- schools_required_columns cədvəli mövcud deyilsə, bu funksiya ilə əvəz edirik
+CREATE OR REPLACE FUNCTION schools_required_columns(school_id_param UUID)
+RETURNS TABLE(
+  column_id UUID,
+  column_name TEXT,
+  category_id UUID,
+  category_name TEXT,
+  is_required BOOLEAN
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  column_count INTEGER;
 BEGIN
-  -- Bütün məcburi sütunların sayı
-  SELECT COUNT(*) INTO column_count
+  RETURN QUERY
+  SELECT 
+    c.id AS column_id,
+    c.name AS column_name,
+    cat.id AS category_id,
+    cat.name AS category_name,
+    c.is_required
   FROM columns c
   JOIN categories cat ON c.category_id = cat.id
-  WHERE c.is_required = TRUE
-    AND (cat.assignment = 'all' OR cat.assignment = 'sectors');
-  
-  RETURN column_count;
-EXCEPTION WHEN OTHERS THEN
-  RETURN 0;
+  WHERE c.status = 'active'
+    AND cat.status = 'active'
+    AND (cat.assignment = 'all' OR cat.assignment = 'sectors')
+  ORDER BY cat.priority, c.order_index;
 END;
 $$;
