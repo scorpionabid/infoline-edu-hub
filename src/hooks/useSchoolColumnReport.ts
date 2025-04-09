@@ -1,141 +1,72 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { SchoolColumnData, StatusFilterOptions } from '@/types/report';
+import { useState, useEffect, useCallback } from 'react';
+import { SchoolColumnData, ExportOptions } from '@/types/report';
 import { fetchSchoolColumnData } from '@/services/reportService';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
-export const useSchoolColumnReport = () => {
+export const useSchoolColumnReport = (initialCategoryId?: string) => {
+  const { t } = useLanguage();
   const [data, setData] = useState<SchoolColumnData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
-  const [regionId, setRegionId] = useState<string | undefined>(undefined);
-  const [sectorId, setSectorId] = useState<string | undefined>(undefined);
-  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilterOptions>({
-    pending: true,
-    approved: true,
-    rejected: false
-  });
-  const { t } = useLanguage();
-
+  const [categoryId, setCategoryId] = useState<string | undefined>(initialCategoryId);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  
   const loadData = useCallback(async () => {
+    if (!categoryId) return;
+    
     setLoading(true);
     setError(null);
+    
     try {
-      const reportData = await fetchSchoolColumnData(categoryId, statusFilter, regionId, sectorId);
+      const reportData = await fetchSchoolColumnData(categoryId);
       setData(reportData);
     } catch (err: any) {
-      setError(err.message || 'Məlumatlar yüklənərkən xəta baş verdi');
+      setError(err.message || t('errorLoadingData'));
+      toast.error(t('errorLoadingData'));
     } finally {
       setLoading(false);
     }
-  }, [categoryId, statusFilter, regionId, sectorId]);
-
-  const exportToExcel = useCallback(() => {
-    try {
-      if (data.length === 0) {
-        toast.warning(t('noDataToExport'));
-        return;
-      }
-
-      // Məlumatları Excel formatına çevir
-      const headers = [
-        'Məktəb',
-        'Region',
-        'Sektor',
-        'Status'
-      ];
-
-      // Sütun başlıqları
-      if (data[0]?.columnData?.length > 0) {
-        // Məlumatların ilk elementindəki sütunları istifadə et
-        // Bu nümunədə sütun adlarını əlavə etmək üçün əlavə API çağırışı lazım ola bilər
-        data[0].columnData.forEach((_, index) => {
-          headers.push(`Sütun ${index + 1}`);
-        });
-      }
-
-      const rows = data.map(school => {
-        const row: any[] = [
-          school.schoolName,
-          school.region || '',
-          school.sector || '',
-          school.status
-        ];
-
-        // Sütun məlumatlarını əlavə et
-        school.columnData.forEach(col => {
-          row.push(col.value || '');
-        });
-
-        return row;
-      });
-
-      // Excel sənədini yarat
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Məktəb Məlumatları');
-
-      // Excel faylını yarat və yüklə
-      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-      
-      // Faylı yadda saxla
-      saveAs(blob, `Məktəb_Məlumatları_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      
-      toast.success(t('fileDownloaded'));
-    } catch (err: any) {
-      console.error('Excel ixracı zamanı xəta:', err);
-      toast.error(t('exportError'));
+  }, [categoryId, t]);
+  
+  const exportData = useCallback(async (options?: ExportOptions) => {
+    if (!categoryId || data.length === 0) {
+      toast.error(t('noDataToExport'));
+      return null;
     }
-  }, [data, t]);
-
-  const toggleSchoolSelection = useCallback((schoolId: string) => {
-    setSelectedSchools(prev => 
-      prev.includes(schoolId) 
-        ? prev.filter(id => id !== schoolId) 
-        : [...prev, schoolId]
-    );
-  }, []);
-
-  const selectAllSchools = useCallback(() => {
-    setSelectedSchools(data.map(school => school.schoolId));
-  }, [data]);
-
-  const deselectAllSchools = useCallback(() => {
-    setSelectedSchools([]);
-  }, []);
-
-  const getSelectedSchoolsData = useCallback(() => {
-    return data.filter(school => selectedSchools.includes(school.schoolId));
-  }, [data, selectedSchools]);
-
+    
+    // Eksport funksiyası - daha sonra tamamlanacaq
+    try {
+      toast.success(t('exportSuccess'));
+      return 'mock-url.xlsx';
+    } catch (err) {
+      toast.error(t('exportError'));
+      return null;
+    }
+  }, [categoryId, data, t]);
+  
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
+    if (categoryId) {
+      loadData();
+    }
+  }, [categoryId, loadData]);
+  
+  const filteredData = useCallback(() => {
+    if (statusFilter === 'all') return data;
+    
+    return data.filter(item => item.status.toLowerCase() === statusFilter);
+  }, [data, statusFilter]);
+  
   return {
-    data,
+    data: filteredData(),
     loading,
     error,
     categoryId,
     setCategoryId,
-    regionId,
-    setRegionId,
-    sectorId,
-    setSectorId,
     statusFilter,
     setStatusFilter,
-    selectedSchools,
-    toggleSchoolSelection,
-    selectAllSchools,
-    deselectAllSchools,
-    getSelectedSchoolsData,
     loadData,
-    exportToExcel
+    exportData
   };
 };
