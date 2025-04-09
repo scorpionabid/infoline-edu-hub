@@ -11,6 +11,7 @@ import { useDataUpdates } from '@/hooks/dataEntry/useDataUpdates';
 import { useDataEntries } from '@/hooks/useDataEntries';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ColumnValidationError } from '@/types/dataEntry';
 
 interface UseDataEntryStateReturn {
   categories: CategoryWithColumns[];

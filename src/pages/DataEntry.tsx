@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -15,12 +14,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Save, CheckCircle, AlertCircle, Upload, FileDown } from 'lucide-react';
 import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
-
-// Type for validation errors
-interface ColumnValidationError {
-  columnId: string;
-  message: string;
-}
+import { ColumnValidationError } from '@/types/dataEntry';
 
 const DataEntry: React.FC = () => {
   const { t } = useLanguage();
@@ -50,7 +44,6 @@ const DataEntry: React.FC = () => {
     uploadExcelData
   } = useDataEntry(categoryId);
   
-  // Aktiv kateqoriyanı hesablayırıq
   const currentCategory = useMemo(() => {
     if (dataEntryCategories && dataEntryCategories.length > 0) {
       return dataEntryCategories[currentCategoryIndex];
@@ -58,7 +51,6 @@ const DataEntry: React.FC = () => {
     return null;
   }, [dataEntryCategories, currentCategoryIndex]);
   
-  // Kateqoriya statusu və tamamlama faizini hesablayırıq
   const status = useMemo(() => {
     if (!currentCategory) return 'pending';
     const entry = formData.entries.find(e => e.categoryId === currentCategory.id);
@@ -71,32 +63,26 @@ const DataEntry: React.FC = () => {
     return entry?.completionPercentage || 0;
   }, [currentCategory, formData.entries]);
   
-  // Göstərilən kateqoriyanın sütunları
   const columns = useMemo(() => {
     return currentCategory?.columns || [];
   }, [currentCategory]);
   
-  // Dəyişiklikləri saxlama
   const handleSave = () => {
     saveForm();
   };
   
-  // Təsdiq üçün göndərmə dialoqu
   const handleSubmitClick = () => {
     setDialogState(prev => ({...prev, isSubmitDialogOpen: true}));
   };
   
-  // Rədd etmə dialoqu
   const showRejectionDialog = () => {
     setDialogState(prev => ({...prev, isRejectionDialogOpen: true}));
   };
   
-  // Təsdiq dialoqu
   const handleApprove = () => {
     setDialogState(prev => ({...prev, isApprovalDialogOpen: true}));
   };
   
-  // Dialogların bağlanması
   const closeDialogs = () => {
     setDialogState({
       isSubmitDialogOpen: false,
@@ -106,7 +92,6 @@ const DataEntry: React.FC = () => {
     });
   };
   
-  // Dialog təsdiqi
   const handleDialogConfirm = (type: string) => {
     if (type === 'submit') {
       submitForApproval();
@@ -114,7 +99,6 @@ const DataEntry: React.FC = () => {
     closeDialogs();
   };
   
-  // Əgər kateqoriya yoxdursa və yükləmə bitibsə, kateqoriyalar səhifəsinə yönləndir
   useEffect(() => {
     if (!categoriesLoading && categories.length > 0 && !currentCategory) {
       navigate('/categories');
@@ -196,7 +180,7 @@ const DataEntry: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <StatusIndicators 
                 status={status}
-                errors={errors as ColumnValidationError[]}
+                errors={Array.isArray(errors) ? errors : []}
               />
               <div className="flex space-x-2">
                 <Button 
@@ -261,12 +245,10 @@ const DataEntry: React.FC = () => {
           </div>
           
           <div className="md:w-1/3">
-            {/* Burada kateqoriya haqqında əlavə məlumatlar və köməkçi elementlər ola bilər */}
             <div className="bg-card rounded-lg border shadow-sm p-6">
               <h3 className="font-medium text-lg mb-3">{t('aboutCategory')}</h3>
               <p className="text-muted-foreground">{currentCategory.description}</p>
               
-              {/* Kateqoriya məlumatları */}
               <div className="mt-4 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">{t('columns')}</span>
@@ -287,7 +269,6 @@ const DataEntry: React.FC = () => {
           </div>
         </div>
         
-        {/* Dialoglar: Təsdiq, Rədd etmə, Xəbərdarlıq və s. */}
         <DataEntryDialogs 
           state={dialogState}
           onClose={closeDialogs}
