@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSchoolColumnReport } from '@/hooks/useSchoolColumnReport';
@@ -36,12 +35,23 @@ const SchoolColumnTable: React.FC = () => {
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   
-  const { data: categoriesData, isLoading: categoriesLoading } = useCachedQuery(['categories']);
-  const { data: regionsData, isLoading: regionsLoading } = useCachedQuery(['regions']);
+  const { data: categoriesData, isLoading: categoriesLoading } = useCachedQuery(['categories'], async () => {
+    return [];
+  });
+  
+  const { data: regionsData, isLoading: regionsLoading } = useCachedQuery(['regions'], async () => {
+    return [];
+  });
+  
   const { data: sectorsData, isLoading: sectorsLoading } = useCachedQuery(
     ['sectors', regionId], 
-    async () => {}, 
-    { enabled: !!regionId }
+    async () => {
+      return [];
+    },
+    { 
+      enabled: !!regionId,
+      queryKey: ['sectors', regionId]
+    }
   );
 
   // Kateqoriyalar
