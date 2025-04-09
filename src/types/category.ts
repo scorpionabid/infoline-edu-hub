@@ -1,4 +1,7 @@
 
+export type CategoryStatus = 'active' | 'inactive' | 'draft';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'dueSoon' | 'overdue' | 'draft';
+
 export interface Category {
   id: string;
   name: string;
@@ -12,9 +15,6 @@ export interface Category {
   archived?: boolean;
   column_count?: number;
 }
-
-export type CategoryStatus = 'active' | 'inactive' | 'draft';
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'dueSoon' | 'overdue' | 'draft';
 
 export interface CategoryFilter {
   status?: CategoryStatus | 'all';

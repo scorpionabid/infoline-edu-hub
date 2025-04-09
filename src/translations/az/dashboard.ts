@@ -1,111 +1,83 @@
 
-// Dashboard səhifəsi üçün tərcümələr
+// Dashboard səhifəsinin Azərbaycan dili tərcümələri
 
 const dashboardTranslations = {
   // Ümumi
-  dashboard: "İdarəetmə paneli",
-  welcome: "Xoş gəlmisiniz",
-  dataEntry: "Məlumat daxil etmə",
-  reports: "Hesabatlar",
-  categories: "Kateqoriyalar",
-  columns: "Sütunlar",
-  settings: "Parametrlər",
-  profile: "Profil",
-  logout: "Çıxış",
+  dashboard: 'İdarə paneli',
+  overview: 'Ümumi icmal',
+  statistics: 'Statistika',
+  analytics: 'Analiz',
+  todayIs: 'Bu gün:',
   
-  // Dashboard kartları
-  pendingFormsDesc: "Təsdiq gözləyən formalar",
-  approvedFormsDesc: "Təsdiqlənmiş formalar",
-  rejectedFormsDesc: "Rədd edilmiş formalar",
-  completionRate: "Tamamlanma dərəcəsi",
-  completionRateDesc: "Kateqoriyalar üzrə tamamlanma faizi",
+  // Statistika kartları
+  regions: 'Regionlar',
+  sectors: 'Sektorlar',
+  schools: 'Məktəblər',
+  users: 'İstifadəçilər',
+  activeSchools: 'Aktiv məktəblər',
+  pendingSchools: 'Gözləyən məktəblər',
+  activeUsers: 'Aktiv istifadəçilər',
   
-  // Status və əməliyyatlar
-  pending: "Gözləmədə",
-  approved: "Təsdiqlənib",
-  rejected: "Rədd edilib",
-  active: "Aktiv",
-  inactive: "Deaktiv",
-  draft: "Qaralama",
+  // Doldurma dərəcəsi
+  completionRate: 'Tamamlanma dərəcəsi',
+  completionRateDesc: 'Məlumatların doldurulma faizi',
   
-  // Bildirishlər
-  notifications: "Bildirişlər",
-  markAllAsRead: "Hamısını oxunmuş kimi işarələ",
-  noNotifications: "Bildiriş yoxdur",
-  readMore: "Daha çox",
+  // Təsdiq gözləyənlər
+  pendingApprovals: 'Təsdiq gözləyənlər',
+  pendingApprovalsDesc: 'Təsdiq gözləyən məlumatlar',
   
-  // Buttons
-  view: "Bax",
-  edit: "Redaktə et",
-  delete: "Sil",
-  save: "Yadda saxla",
-  cancel: "Ləğv et",
-  confirm: "Təsdiqlə",
-  addData: "Məlumat əlavə et",
-  refresh: "Yenilə",
-  tryAgain: "Yenidən cəhd et",
+  // Notifikasiyalar
+  notifications: 'Bildirişlər',
+  markAllAsRead: 'Hamısını oxunmuş kimi qeyd et',
+  clearAll: 'Hamısını təmizlə',
+  notificationCount: '{count} yeni bildiriş',
+  noNotifications: 'Bildiriş yoxdur',
+  viewAll: 'Hamısına baxın',
   
-  // Form elements
-  formName: "Formanın adı",
-  formDescription: "Formanın təsviri",
-  formStatus: "Status",
-  formDeadline: "Son tarix",
-  selectCategory: "Kateqoriya seçin",
+  // Formlar
+  forms: 'Formlar',
+  recentForms: 'Son formlar',
+  pendingForms: 'Gözləyən formlar',
+  urgentForms: 'Təcili formlar',
+  noPendingForms: 'Gözləyən form yoxdur',
+  noFormsFound: 'Form tapılmadı',
+  allFormsCompleted: 'Bütün formlar tamamlanıb',
+  noUrgentForms: 'Təcili form yoxdur',
+  allFormsOnTrack: 'Bütün formlar qrafikə uyğundur',
   
-  // Errorlar
-  errorOccurred: "Xəta baş verdi",
-  errorLoadingDashboard: "İdarəetmə paneli yüklənərkən xəta",
-  unexpectedError: "Gözlənilməz xəta baş verdi",
-  noDataAvailable: "Məlumat yoxdur",
-  noPendingForms: "Gözləmədə olan form yoxdur",
+  // Filtrləmə
+  searchForms: 'Formları axtar...',
+  filterByCategory: 'Kateqoriyaya görə filtr',
+  filterByStatus: 'Statusa görə filtr',
+  adjustSearchFilters: 'Axtarış filtrlərini dəyişdirin',
+  noFormsInThisCategory: 'Bu kateqoriyada form yoxdur',
+  allCategories: 'Bütün kateqoriyalar',
+  allStatuses: 'Bütün statuslar',
   
-  // Kateqoriyalar
-  categoryName: "Kateqoriya adı",
-  categoryDescription: "Kateqoriya təsviri",
-  createCategory: "Kateqoriya yarat",
-  editCategory: "Kateqoriyanı redaktə et",
-  deleteCategory: "Kateqoriyanı sil",
-  categoryCreated: "Kateqoriya yaradıldı",
-  categoryUpdated: "Kateqoriya yeniləndi",
-  categoryDeleted: "Kateqoriya silindi",
+  // Form statusları
+  pending: 'Gözləyir',
+  approved: 'Təsdiqləndi',
+  rejected: 'Rədd edildi',
+  completed: 'Tamamlandı',
+  draft: 'Qaralama',
+  dueSoon: 'Vaxtı yaxınlaşır',
+  overdue: 'Vaxtı keçib',
   
-  // Sütunlar
-  columnName: "Sütun adı",
-  columnType: "Sütun tipi",
-  createColumn: "Sütun yarat",
-  editColumn: "Sütunu redaktə et",
-  deleteColumn: "Sütunu sil",
-  columnCreated: "Sütun yaradıldı",
-  columnUpdated: "Sütun yeniləndi",
-  columnDeleted: "Sütun silindi",
-  required: "Məcburi",
-  optional: "İxtiyari",
+  // Məktəb admin
+  addData: 'Məlumat əlavə et',
+  pendingFormsDesc: 'Təsdiq gözləyən formlar',
+  approvedFormsDesc: 'Təsdiqlənmiş formlar',
+  rejectedFormsDesc: 'Rədd edilmiş formlar',
+  completionRateDesc: 'Məlumatların tamamlanma faizi',
+  lastUpdated: 'Son yenilənmə',
+  view: 'Bax',
   
-  // Məlumat daxil etmə
-  saveData: "Məlumatları yadda saxla",
-  submitForApproval: "Təsdiqə göndər",
-  savedSuccessfully: "Məlumatlar uğurla yadda saxlanıldı",
-  submittedSuccessfully: "Məlumatlar uğurla təsdiqə göndərildi",
-  
-  // Digər
-  allStatuses: "Bütün statuslar",
-  allAssignments: "Bütün təyinatlar",
-  allDeadlines: "Bütün son tarixlər",
-  upcomingDeadlines: "Yaxınlaşan son tarixlər",
-  pastDeadlines: "Keçmiş son tarixlər",
-  deleteConfirmationTitle: "Silmə təsdiqi",
-  
-  // Region və sektor
-  region: "Region",
-  sector: "Sektor",
-  school: "Məktəb",
-  allRegions: "Bütün regionlar",
-  allSectors: "Bütün sektorlar",
-  allSchools: "Bütün məktəblər",
-  onlySectors: "Yalnız sektorlar",
-  
-  // Yeni elave olunanlar
-  pendingForms: "Gözləyən formalar",
+  // Xəta mesajları
+  errorOccurred: 'Xəta baş verdi',
+  tryAgain: 'Yenidən cəhd edin',
+  noDataAvailable: 'Məlumat mövcud deyil',
+  loadingStats: 'Statistikalar yüklənir...',
+  refresh: 'Yenilə',
 };
 
 export default dashboardTranslations;

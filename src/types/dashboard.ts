@@ -6,6 +6,7 @@ export interface FormItem {
   title: string;
   status: string;
   date: string;
+  category?: string;
 }
 
 export interface SchoolAdminDashboardData {
@@ -20,4 +21,14 @@ export interface SchoolAdminDashboardData {
   notifications: Notification[];
   pendingForms: FormItem[];
   categories: number;
+}
+
+export interface AdminDashboardData {
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
+  notifications: Notification[];
 }

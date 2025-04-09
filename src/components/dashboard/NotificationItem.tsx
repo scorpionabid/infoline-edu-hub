@@ -21,6 +21,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
       case 'success':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'info':
+        return <Info className="h-5 w-5 text-blue-500" />;
       case 'system':
         return <Info className="h-5 w-5 text-blue-500" />;
       case 'category':

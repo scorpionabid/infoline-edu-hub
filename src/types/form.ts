@@ -1,5 +1,5 @@
 
-export type FormStatus = 'pending' | 'approved' | 'rejected';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'due' | 'overdue' | 'completed';
 
 export interface FormData {
   id: string;
@@ -15,10 +15,12 @@ export interface Form {
   id: string;
   title: string;
   description?: string;
-  status: string;
+  status: FormStatus;
   deadline?: string;
   created_at: string;
   updated_at: string;
   category_id: string;
   school_id: string;
+  category?: string; // Kateqoriya adı
+  completionPercentage?: number; // Tamamlanma faizi
 }

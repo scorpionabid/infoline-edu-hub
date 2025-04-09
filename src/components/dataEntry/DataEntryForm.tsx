@@ -38,6 +38,7 @@ import {
   AlertDescription,
 } from "@/components/ui/alert";
 import { toast } from 'sonner';
+import { FormStatus } from '@/types/form';
 
 interface DataEntryFormProps {
   initialCategoryId?: string | null; 
@@ -125,13 +126,15 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
   // Kateqoriya təsdiq edilib mi?
   const isCategoryApproved = () => {
     if (!currentCategory) return false;
-    return currentCategory.status === 'approved';
+    const status = currentCategory.status as string;
+    return status === 'approved';
   };
 
   // Kateqoriya rədd edilib mi?
   const isCategoryRejected = () => {
     if (!currentCategory) return false;
-    return currentCategory.status === 'rejected';
+    const status = currentCategory.status as string;
+    return status === 'rejected';
   };
   
   // Kateqoriyanın son tarixi yaxınlaşır?
@@ -215,14 +218,14 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                     onClick={() => changeCategory(index)}
                     className={cn(
                       "relative",
-                      (category.status === 'rejected') && "border-red-500 text-red-500",
-                      (category.status === 'approved') && "border-green-500 text-green-500",
+                      (category.status as string === 'rejected') && "border-red-500 text-red-500",
+                      (category.status as string === 'approved') && "border-green-500 text-green-500",
                       isCategoryDueSoon() && "border-orange-500",
                       isCategoryOverdue() && "border-red-500"
                     )}
                   >
                     {category.name}
-                    {category.status === 'pending' && (
+                    {category.status as string === 'pending' && (
                       <span className="absolute -top-1 -right-1 flex h-3 w-3">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
@@ -265,17 +268,17 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 <CategoryHeader 
                   name={currentCategory.name}
                   description={currentCategory.description || ''}
-                  deadline={typeof currentCategory.deadline === 'string' ? currentCategory.deadline : currentCategory.deadline?.toISOString()}
+                  deadline={typeof currentCategory.deadline === 'string' ? currentCategory.deadline : undefined}
                   completionPercentage={getCurrentCategoryCompletion()}
                   isSubmitted={formData.status === 'submitted'}
                 />
                 <Separator className="my-4" />
                 
-                {currentCategory.status === 'approved' && (
+                {(currentCategory.status as string) === 'approved' && (
                   <ApprovalAlert isApproved={true} />
                 )}
                 
-                {currentCategory.status === 'rejected' && (
+                {(currentCategory.status as string) === 'rejected' && (
                   <RejectionAlert errorMessage={currentCategory.description || t('formRejected')} />
                 )}
                 
@@ -292,11 +295,11 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
                         id={column.id}
                         label={column.name}
                         type={column.type}
-                        required={column.isRequired}
-                        disabled={formData.status === 'submitted' || currentCategory.status === 'approved'}
+                        required={column.is_required}
+                        disabled={formData.status === 'submitted' || (currentCategory.status as string) === 'approved'}
                         options={column.options as string[]}
                         placeholder={column.placeholder}
-                        helpText={column.helpText}
+                        helpText={column.help_text}
                         value={valueObj?.value || ''}
                         onChange={(value) => {
                           updateValue(currentCategory.id, column.id, value);

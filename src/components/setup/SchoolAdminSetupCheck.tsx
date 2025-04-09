@@ -12,14 +12,22 @@ const SchoolAdminSetupCheck: React.FC = () => {
   useEffect(() => {
     const checkFunctionExists = async () => {
       try {
-        // Direkt SQL sorğu ilə yoxlayaq
+        // SQL sorğusunu birbaşa istifadə edərək funksiyasının mövcudluğunu yoxlayaq
         const { data, error } = await supabase.rpc('check_function_exists', {
           function_name: 'get_school_admin_stats'
         });
         
         if (error) {
           console.error('Funksiya yoxlanması zamanı xəta:', error);
-          setFunctionExists(false);
+          
+          // İkinci yol: birbaşa sorğu ilə yoxlayaq
+          const { data: manualCheck, error: manualError } = await supabase
+            .from('pg_proc')
+            .select('proname')
+            .eq('proname', 'get_school_admin_stats')
+            .maybeSingle();
+          
+          setFunctionExists(Boolean(manualCheck));
         } else {
           setFunctionExists(Boolean(data));
         }

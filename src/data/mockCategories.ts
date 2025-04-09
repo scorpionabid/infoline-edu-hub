@@ -1,254 +1,213 @@
+
 import { CategoryWithColumns } from '@/types/column';
 
 // Mock kateqoriyalar və sütunlar
-export const mockCategories: CategoryWithColumns[] = [
+export const mockCategoriesWithColumns: CategoryWithColumns[] = [
   {
-    id: "cat1",
-    name: "Ümumi məlumatlar",
-    description: "Məktəbin əsas statistik göstəriciləri haqqında məlumatlar",
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 gün sonra
-    status: "active",
+    id: '1',
+    name: 'Şagird məlumatları',
+    description: 'Şagirdlərin ümumi statistik məlumatları',
+    assignment: 'all',
+    deadline: '2023-05-30',
+    status: 'active',
     priority: 1,
-    assignment: "all",
-    createdAt: new Date().toISOString(),
+    created_at: '2023-01-15',
+    updated_at: '2023-01-15',
     columns: [
-      { 
-        id: "col1", 
-        categoryId: "cat1", 
-        name: "Şagird sayı", 
-        type: "number", 
-        isRequired: true, 
-        order: 1, 
-        status: "active",
-        helpText: "Məktəbdə təhsil alan bütün şagirdlərin sayı", 
-        validationRules: { minValue: 0, maxValue: 5000 }
+      {
+        id: '101',
+        category_id: '1',
+        name: 'Şagird sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Məktəbdəki ümumi şagird sayını daxil edin',
+        help_text: 'Cari təhsil ilində qeydiyyatdan keçən şagirdlərin ümumi sayı',
+        order_index: 1,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       },
-      { 
-        id: "col2", 
-        categoryId: "cat1", 
-        name: "Müəllim sayı", 
-        type: "number", 
-        isRequired: true, 
-        order: 2, 
-        status: "active",
-        helpText: "Məktəbdə çalışan bütün müəllimlərin sayı", 
-        validationRules: { minValue: 0, maxValue: 500 }
+      {
+        id: '102',
+        category_id: '1',
+        name: 'Qız şagirdlərin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Qız şagirdlərin sayını daxil edin',
+        help_text: 'Cari təhsil ilində qeydiyyatdan keçən qız şagirdlərin sayı',
+        order_index: 2,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       },
-      { 
-        id: "col3", 
-        categoryId: "cat1", 
-        name: "Sinif otaqlarının sayı", 
-        type: "number", 
-        isRequired: true, 
-        order: 3, 
-        status: "active",
-        helpText: "Tədris məqsədlə istifadə olunan sinif otaqlarının sayı", 
-        validationRules: { minValue: 0 }
+      {
+        id: '103',
+        category_id: '1',
+        name: 'Oğlan şagirdlərin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Oğlan şagirdlərin sayını daxil edin',
+        help_text: 'Cari təhsil ilində qeydiyyatdan keçən oğlan şagirdlərin sayı',
+        order_index: 3,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       },
-      { 
-        id: "col4", 
-        categoryId: "cat1", 
-        name: "Kompüter otaqlarının sayı", 
-        type: "number", 
-        isRequired: false, 
-        order: 4, 
-        status: "active",
-        helpText: "İnformatika dərsləri üçün nəzərdə tutulmuş kompüter otaqlarının sayı"
+      {
+        id: '104',
+        category_id: '1',
+        name: 'Təhsil alan əlilliyi olan şagirdlərin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Əlilliyi olan şagirdlərin sayını daxil edin',
+        help_text: 'Əlilliyi olan və xüsusi qayğıya ehtiyacı olan şagirdlərin sayı',
+        order_index: 4,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       }
     ]
   },
   {
-    id: "cat2",
-    name: "Tədris məlumatları",
-    description: "Məktəbin tədris fəaliyyəti ilə bağlı məlumatlar",
-    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 gün sonra
-    status: "active",
+    id: '2',
+    name: 'Müəllim məlumatları',
+    description: 'Məktəbdə çalışan müəllimlərin statistik məlumatları',
+    assignment: 'all',
+    deadline: '2023-05-30',
+    status: 'active',
     priority: 2,
-    assignment: "all",
-    createdAt: new Date().toISOString(),
+    created_at: '2023-01-15',
+    updated_at: '2023-01-15',
     columns: [
-      { 
-        id: "col5", 
-        categoryId: "cat2", 
-        name: "Tədris dili", 
-        type: "select", 
-        isRequired: true, 
-        options: ["Azərbaycan", "Rus", "İngilis", "Qarışıq"], 
-        order: 1, 
-        status: "active",
-        helpText: "Məktəbdə əsas tədris dili"
+      {
+        id: '201',
+        category_id: '2',
+        name: 'Müəllimlərin ümumi sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Müəllimlərin ümumi sayını daxil edin',
+        help_text: 'Cari təhsil ilində işləyən müəllimlərin ümumi sayı',
+        order_index: 1,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       },
-      { 
-        id: "col6", 
-        categoryId: "cat2", 
-        name: "Tədris proqramı", 
-        type: "text", 
-        isRequired: true, 
-        order: 2, 
-        status: "active",
-        multiline: true,
-        helpText: "Məktəbin istifadə etdiyi əsas tədris proqramı(ları)"
+      {
+        id: '202',
+        category_id: '2',
+        name: 'Qadın müəllimlərin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Qadın müəllimlərin sayını daxil edin',
+        help_text: 'Cari təhsil ilində işləyən qadın müəllimlərin sayı',
+        order_index: 2,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       },
-      { 
-        id: "col7", 
-        categoryId: "cat2", 
-        name: "Təhsil növü", 
-        type: "select", 
-        isRequired: true, 
-        options: ["Tam orta", "Ümumi orta", "İbtidai", "Qarışıq"], 
-        order: 3, 
-        status: "active",
-        helpText: "Məktəbdə verilən təhsilin növü"
+      {
+        id: '203',
+        category_id: '2',
+        name: 'Kişi müəllimlərin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Kişi müəllimlərin sayını daxil edin',
+        help_text: 'Cari təhsil ilində işləyən kişi müəllimlərin sayı',
+        order_index: 3,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
+      },
+      {
+        id: '204',
+        category_id: '2',
+        name: 'Ali təhsilli müəllimlərin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Ali təhsilli müəllimlərin sayını daxil edin',
+        help_text: 'Ali təhsil diplomuna sahib olan müəllimlərin sayı',
+        order_index: 4,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
+      },
+      {
+        id: '205',
+        category_id: '2',
+        name: '5 ildən az təcrübəsi olan müəllimlərin sayı',
+        type: 'number',
+        is_required: false,
+        placeholder: '5 ildən az təcrübəsi olan müəllimlərin sayını daxil edin',
+        help_text: 'Pedaqoji təcrübəsi 5 ildən az olan müəllimlərin sayı',
+        order_index: 5,
+        status: 'active',
+        created_at: '2023-01-15',
+        updated_at: '2023-01-15'
       }
     ]
   },
   {
-    id: "cat3",
-    name: "İnfrastruktur",
-    description: "Məktəb binası və infrastrukturu haqqında məlumatlar",
-    deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 gün sonra
-    status: "active",
+    id: '3',
+    name: 'İnfrastruktur məlumatları',
+    description: 'Məktəb binası və infrastruktur haqqında məlumatlar',
+    assignment: 'all',
+    deadline: '2023-06-15',
+    status: 'active',
     priority: 3,
-    assignment: "all",
-    createdAt: new Date().toISOString(),
+    created_at: '2023-01-20',
+    updated_at: '2023-01-20',
     columns: [
-      { 
-        id: "col8", 
-        categoryId: "cat3", 
-        name: "İdman zalı", 
-        type: "checkbox", 
-        isRequired: false, 
-        order: 1, 
-        status: "active",
-        placeholder: "Məktəbdə idman zalı mövcuddur",
-        helpText: "İdman zalının olub-olmadığını qeyd edin"
+      {
+        id: '301',
+        category_id: '3',
+        name: 'Sinif otaqlarının sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Sinif otaqlarının sayını daxil edin',
+        help_text: 'Məktəbdəki ümumi sinif otaqlarının sayı',
+        order_index: 1,
+        status: 'active',
+        created_at: '2023-01-20',
+        updated_at: '2023-01-20'
       },
-      { 
-        id: "col9", 
-        categoryId: "cat3", 
-        name: "Kitabxana", 
-        type: "checkbox", 
-        isRequired: false, 
-        order: 2, 
-        status: "active",
-        placeholder: "Məktəbdə kitabxana mövcuddur", 
-        helpText: "Kitabxananın olub-olmadığını qeyd edin"
+      {
+        id: '302',
+        category_id: '3',
+        name: 'Laboratoriyaların sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Laboratoriyaların sayını daxil edin',
+        help_text: 'Məktəbdəki ümumi laboratoriyaların sayı',
+        order_index: 2,
+        status: 'active',
+        created_at: '2023-01-20',
+        updated_at: '2023-01-20'
       },
-      { 
-        id: "col10", 
-        categoryId: "cat3", 
-        name: "Yeməkxana", 
-        type: "checkbox", 
-        isRequired: false, 
-        order: 3, 
-        status: "active",
-        placeholder: "Məktəbdə yeməkxana mövcuddur", 
-        helpText: "Yeməkxananın olub-olmadığını qeyd edin"
+      {
+        id: '303',
+        category_id: '3',
+        name: 'İdman zalı mövcuddurmu?',
+        type: 'checkbox',
+        is_required: true,
+        help_text: 'Məktəbdə idman zalının olub-olmadığını qeyd edin',
+        order_index: 3,
+        status: 'active',
+        created_at: '2023-01-20',
+        updated_at: '2023-01-20'
       },
-      { 
-        id: "col11", 
-        categoryId: "cat3", 
-        name: "Binanın vəziyyəti", 
-        type: "select", 
-        isRequired: true, 
-        options: ["Əla", "Yaxşı", "Kafi", "Qənaətbəxş deyil"], 
-        order: 4, 
-        status: "active",
-        helpText: "Məktəb binasının ümumi vəziyyətini qiymətləndirin"
-      },
-      { 
-        id: "col12", 
-        categoryId: "cat3", 
-        name: "Son təmir tarixi", 
-        type: "date", 
-        isRequired: true, 
-        order: 5, 
-        status: "active",
-        helpText: "Məktəbdə son təmir işlərinin aparıldığı tarix"
-      }
-    ]
-  },
-  {
-    id: "cat4",
-    name: "Digər məlumatlar",
-    description: "Əlavə məlumatlar və qeydlər",
-    deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 gün sonra
-    status: "active",
-    priority: 4,
-    assignment: "all",
-    createdAt: new Date().toISOString(),
-    columns: [
-      { 
-        id: "col13", 
-        categoryId: "cat4", 
-        name: "Əlavə qeydlər", 
-        type: "text", 
-        isRequired: false, 
-        order: 1, 
-        status: "active",
-        multiline: true,
-        helpText: "Məktəb haqqında əlavə qeydlər və məlumatlar"
-      },
-      { 
-        id: "col14", 
-        categoryId: "cat4", 
-        name: "Təklif və rəylər", 
-        type: "text", 
-        isRequired: false, 
-        order: 2, 
-        status: "active",
-        multiline: true,
-        helpText: "Tədris prosesinin inkişafı üçün təkliflər"
-      }
-    ]
-  },
-  {
-    id: "cat5",
-    name: "Yeni kateqoriya",
-    description: "Bu kateqoriya yeni əlavə edilib və doldurulması tələb olunur",
-    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 gün sonra
-    status: "active",
-    priority: 5,
-    assignment: "all",
-    createdAt: new Date().toISOString(),
-    columns: [
-      { 
-        id: "col15", 
-        categoryId: "cat5", 
-        name: "Yeni əlavə olunmuş field", 
-        type: "text", 
-        isRequired: true, 
-        order: 1, 
-        status: "active",
-        helpText: "Bu field yeni əlavə olunub və mütləq doldurulmalıdır", 
-      },
-      { 
-        id: "col16", 
-        categoryId: "cat5", 
-        name: "İkinci yeni field", 
-        type: "select", 
-        isRequired: true, 
-        options: ["Seçim 1", "Seçim 2", "Seçim 3"], 
-        order: 2, 
-        status: "active",
-        helpText: "Bu da yeni əlavə olunmuş seçim sahəsidir"
+      {
+        id: '304',
+        category_id: '3',
+        name: 'Elektron lövhələrin sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Elektron lövhələrin sayını daxil edin',
+        help_text: 'Məktəbdəki ümumi elektron lövhələrin sayı',
+        order_index: 4,
+        status: 'active',
+        created_at: '2023-01-20',
+        updated_at: '2023-01-20'
       }
     ]
   }
 ];
-
-// Sütun tipinə görə ilkin dəyər təyin etmək
-export const getDefaultValueByType = (type: string, defaultValue?: string) => {
-  switch (type) {
-    case 'number':
-      return defaultValue ? Number(defaultValue) : '';
-    case 'checkbox':
-      return defaultValue === 'true';
-    case 'date':
-      return defaultValue ? new Date(defaultValue) : '';
-    case 'select':
-      return defaultValue || '';
-    default:
-      return defaultValue || '';
-  }
-};

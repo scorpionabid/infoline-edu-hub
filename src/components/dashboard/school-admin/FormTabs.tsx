@@ -21,7 +21,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
   const [selectedStatus, setSelectedStatus] = useState('all');
   
   // Formaların kateqoriyalarının siyahısını əldə edir
-  const categories = ['all', ...Array.from(new Set(recentForms.map(form => form.category)))];
+  const categories = ['all', ...Array.from(new Set(recentForms.map(form => form.category || '')))];
   
   // Axtarış və filtrləmələrdən sonra formaları süzür
   const filterForms = (forms: Form[], tabValue: string) => {
@@ -54,7 +54,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
       const query = searchQuery.toLowerCase();
       filteredForms = filteredForms.filter(form => 
         form.title.toLowerCase().includes(query) || 
-        form.category.toLowerCase().includes(query)
+        (form.category && form.category.toLowerCase().includes(query))
       );
     }
     
@@ -128,9 +128,9 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.category}
+                  category={form.category || ''}
                   status={form.status}
-                  completionPercentage={form.completionPercentage}
+                  completionPercentage={form.completionPercentage || 0}
                   deadline={form.deadline}
                   onClick={() => handleFormClick(form.id)}
                 />
@@ -152,9 +152,9 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.category}
+                  category={form.category || ''}
                   status={form.status}
-                  completionPercentage={form.completionPercentage}
+                  completionPercentage={form.completionPercentage || 0}
                   deadline={form.deadline}
                   onClick={() => handleFormClick(form.id)}
                 />
@@ -176,9 +176,9 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
                   key={form.id}
                   id={form.id}
                   title={form.title}
-                  category={form.category}
+                  category={form.category || ''}
                   status={form.status}
-                  completionPercentage={form.completionPercentage}
+                  completionPercentage={form.completionPercentage || 0}
                   deadline={form.deadline}
                   onClick={() => handleFormClick(form.id)}
                 />
