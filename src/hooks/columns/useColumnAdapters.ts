@@ -1,14 +1,18 @@
 
 import { Column } from '@/types/column';
 
-// Supabase-dən gələn sütun məlumatlarını bizim Column tipinə adaptasiya etmək
+/**
+ * Supabase-dən gələn sütun məlumatlarını bizim tələb etdiyimiz Column tipinə çevirir
+ * @param data Supabase-dən gələn sütun məlumatları
+ * @returns Column obyekti
+ */
 export const adaptSupabaseColumn = (data: any): Column => {
   return {
     id: data.id,
     category_id: data.category_id,
     name: data.name,
     type: data.type,
-    is_required: data.is_required || true,
+    is_required: data.is_required || false,
     order_index: data.order_index || 0,
     status: data.status || 'active',
     validation: data.validation,
@@ -21,7 +25,11 @@ export const adaptSupabaseColumn = (data: any): Column => {
   };
 };
 
-// Column məlumatlarını Supabase formatına çevirmək
+/**
+ * Column obyektini Supabase formatına çevirir
+ * @param column Column obyekti
+ * @returns Supabase formatında sütun məlumatları
+ */
 export const adaptColumnToSupabase = (column: Partial<Column>): any => {
   return {
     id: column.id,

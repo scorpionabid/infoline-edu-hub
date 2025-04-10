@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ import EditColumnDialog from '@/components/columns/EditColumnDialog';
 import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
+import { useCategories } from '@/hooks/useCategories';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -20,13 +22,8 @@ const Columns: React.FC = () => {
   const [selectedColumn, setSelectedColumn] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { columns, isLoading, isError, error, deleteColumn } = useColumns();
+  const { categories, isLoading: categoriesLoading } = useCategories();
   
-  const categories = [
-    { id: '1', name: 'Əsas Məlumatlar' },
-    { id: '2', name: 'Statistika' },
-    { id: '3', name: 'Tədris' }
-  ];
-
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     column: '',
@@ -120,6 +117,13 @@ const Columns: React.FC = () => {
     toast.success(t('columnStatusUpdated'));
   };
 
+  // Əgər kateqoriyalar yüklənməyibsə, useEffectlə yükləyək
+  useEffect(() => {
+    if (categoriesLoading) {
+      // Kateqoriyalar yükləniyor
+    }
+  }, [categoriesLoading]);
+
   return (
     <>
       <PageHeader
@@ -147,7 +151,7 @@ const Columns: React.FC = () => {
         <ColumnList
           columns={columns || []}
           categories={categories || []}
-          isLoading={isLoading}
+          isLoading={isLoading || categoriesLoading}
           isError={!!error}
           onEditColumn={handleOpenEditColumnDialog}
           onDeleteColumn={handleOpenDeleteDialog}

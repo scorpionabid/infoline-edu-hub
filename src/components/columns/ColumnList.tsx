@@ -31,7 +31,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
   const canManageColumns = useRole(["superadmin", "regionadmin"]);
   const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
 
-  // Get category name by ID
+  // Kateqoriya adını ID-yə əsasən əldə etmək
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : t("unknownCategory");

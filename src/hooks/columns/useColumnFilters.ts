@@ -2,52 +2,66 @@
 import { useState, useCallback } from 'react';
 import { Column } from '@/types/column';
 
-export interface ColumnFilters {
+interface ColumnFilters {
   searchQuery: string;
-  categoryFilter: string | null;
-  typeFilter: string;
-  statusFilter: string;
+  categoryFilter: string | undefined;
+  typeFilter: string | undefined;
+  statusFilter: 'active' | 'inactive' | undefined;
 }
 
 export const useColumnFilters = () => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [filters, setFilters] = useState<ColumnFilters>({
+    searchQuery: '',
+    categoryFilter: undefined,
+    typeFilter: undefined,
+    statusFilter: undefined
+  });
 
-  const applyFilters = useCallback((columns: Column[]): Column[] => {
+  const setSearchQuery = useCallback((query: string) => {
+    setFilters(prev => ({ ...prev, searchQuery: query }));
+  }, []);
+
+  const setCategoryFilter = useCallback((categoryId?: string) => {
+    setFilters(prev => ({ ...prev, categoryFilter: categoryId }));
+  }, []);
+
+  const setTypeFilter = useCallback((type?: string) => {
+    setFilters(prev => ({ ...prev, typeFilter: type }));
+  }, []);
+
+  const setStatusFilter = useCallback((status?: 'active' | 'inactive') => {
+    setFilters(prev => ({ ...prev, statusFilter: status }));
+  }, []);
+
+  const applyFilters = useCallback((columns: Column[]) => {
     return columns.filter(column => {
-      // Search filter
-      if (searchQuery && !column.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      // Axtarış sorğusu
+      if (filters.searchQuery && 
+          !column.name.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
         return false;
       }
-      
-      // Category filter
-      if (categoryFilter && column.category_id !== categoryFilter) {
+
+      // Kateqoriya filtri
+      if (filters.categoryFilter && column.category_id !== filters.categoryFilter) {
         return false;
       }
-      
-      // Type filter
-      if (typeFilter && typeFilter !== 'all' && column.type !== typeFilter) {
+
+      // Tip filtri
+      if (filters.typeFilter && column.type !== filters.typeFilter) {
         return false;
       }
-      
-      // Status filter
-      if (statusFilter && statusFilter !== 'all' && column.status !== statusFilter) {
+
+      // Status filtri
+      if (filters.statusFilter && column.status !== filters.statusFilter) {
         return false;
       }
-      
+
       return true;
     });
-  }, [searchQuery, categoryFilter, typeFilter, statusFilter]);
+  }, [filters]);
 
   return {
-    filters: {
-      searchQuery,
-      categoryFilter,
-      typeFilter,
-      statusFilter
-    },
+    filters,
     setSearchQuery,
     setCategoryFilter,
     setTypeFilter,

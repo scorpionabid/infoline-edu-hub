@@ -73,7 +73,41 @@ const commonTranslations = {
   importFailedDescription: 'İdxal zamanı xəta baş verdi. Lütfən məlumatları yoxlayıb yenidən cəhd edin.',
   exportFailedDescription: 'İxrac zamanı xəta baş verdi. Lütfən yenidən cəhd edin.',
   importSchools: 'Məktəbləri idxal et',
-  importSchoolsDescription: 'Excel faylını istifadə edərək məktəbləri və məktəb adminlərini idxal edin.'
+  importSchoolsDescription: 'Excel faylını istifadə edərək məktəbləri və məktəb adminlərini idxal edin.',
+  
+  // Sütunlar səhifəsi üçün yeni tərcümələr
+  columnsPageTitle: 'Sütunlar',
+  columnsPageDescription: 'Formlardakı sütunları idarə edin',
+  addColumn: 'Sütun əlavə et',
+  columnName: 'Sütun adı',
+  unknownCategory: 'Naməlum kateqoriya',
+  columnCreated: 'Sütun uğurla yaradıldı',
+  columnCreationFailed: 'Sütun yaratma xətası',
+  columnUpdated: 'Sütun uğurla yeniləndi',
+  columnUpdateFailed: 'Sütun yeniləmə xətası',
+  columnDeleted: 'Sütun uğurla silindi',
+  columnDeletionFailed: 'Sütun silmə xətası',
+  columnStatusUpdated: 'Sütun statusu yeniləndi',
+  noColumnsFound: 'Sütun tapılmadı',
+  noColumnsFoundDesc: 'Bu bölməyə hələ sütun əlavə edilməyib',
+  noColumnsFoundDescription: 'Sütun əlavə etmək üçün yuxarıdakı düyməni sıxın',
+  deleteColumn: 'Sütunu sil',
+  deleteColumnConfirmation: 'Bu sütunu silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.',
+  columnIdRequired: 'Sütun ID-si tələb olunur',
+  
+  // Sütun tipləri
+  text: 'Mətn',
+  number: 'Rəqəm',
+  date: 'Tarix',
+  select: 'Seçim',
+  checkbox: 'Seçim qutusu',
+  boolean: 'Bəli/Xeyr',
+  radio: 'Radio düymə',
+  file: 'Fayl',
+  image: 'Şəkil',
+  email: 'E-poçt',
+  phone: 'Telefon',
+  textarea: 'Mətn sahəsi'
 };
 
 export const dashboardMessages = {
