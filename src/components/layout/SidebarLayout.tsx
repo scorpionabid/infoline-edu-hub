@@ -9,7 +9,7 @@ import NotificationControl from '../notifications/NotificationControl';
 import { useNotifications } from '@/context/NotificationContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import SidebarNav from './SidebarNav';
-import { Logo, SidebarContainer } from '@/components/ui/sidebar';
+import { Logo, SidebarContainer, EntityInfo } from '@/components/ui/sidebar';
 import UserProfile from './UserProfile';
 
 interface SidebarLayoutProps {
@@ -41,6 +41,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           <Logo />
         </Link>
       </div>
+      
+      {user && <EntityInfo user={user} />}
       
       <SidebarNav onItemClick={() => setOpen(false)} />
       

@@ -38,6 +38,41 @@ export const Logo: React.FC<LogoProps> = ({ mobile }) => (
   </div>
 );
 
+export interface EntityInfoProps {
+  user: any;
+}
+
+export const EntityInfo: React.FC<EntityInfoProps> = ({ user }) => {
+  if (!user || !user.adminEntity) return null;
+  
+  const { adminEntity } = user;
+  
+  return (
+    <div className="px-4 py-3 border-t border-b">
+      <div className="text-xs text-muted-foreground">
+        {adminEntity.type === 'region' && 'Region admini'}
+        {adminEntity.type === 'sector' && 'Sektor admini'}
+        {adminEntity.type === 'school' && 'Məktəb admini'}
+        {adminEntity.type === 'superadmin' && 'Sistem admini'}
+      </div>
+      <div className="font-medium text-sm truncate" title={adminEntity.name}>
+        {adminEntity.name}
+      </div>
+      {adminEntity.type === 'sector' && adminEntity.regionName && (
+        <div className="text-xs text-muted-foreground mt-1">
+          Region: {adminEntity.regionName}
+        </div>
+      )}
+      {adminEntity.type === 'school' && (
+        <div className="text-xs text-muted-foreground mt-1">
+          <div>Sektor: {adminEntity.sectorName || 'N/A'}</div>
+          <div>Region: {adminEntity.regionName || 'N/A'}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export interface SidebarContainerProps {
   children: React.ReactNode;
 }

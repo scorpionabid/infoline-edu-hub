@@ -1,3 +1,4 @@
+
 const commonTranslations = {
   save: 'Yadda saxla',
   cancel: 'Ləğv et',
@@ -40,7 +41,14 @@ const commonTranslations = {
   settings: 'Parametrlər',
   profile: 'Profil',
   home: 'Ana səhifə',
-  back: 'Geri'
+  back: 'Geri',
+  regionAdmin: 'Region admini',
+  sectorAdmin: 'Sektor admini',
+  schoolAdmin: 'Məktəb admini',
+  superAdmin: 'Sistem admini',
+  region: 'Region',
+  sector: 'Sektor',
+  school: 'Məktəb'
 };
 
 export const dashboardMessages = {
