@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { School } from '@/types/supabase';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SchoolExcelRow {
   'Məktəb ID': string;
@@ -143,7 +144,13 @@ export const importSchoolsFromExcel = async (
       
       reader.onload = (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          if (!e.target || !e.target.result) {
+            toast.error('Fayl oxunarkən xəta baş verdi');
+            reject(new Error('File read error'));
+            return;
+          }
+          
+          const data = new Uint8Array(e.target.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
           
           // İlk worksheeti alırıq

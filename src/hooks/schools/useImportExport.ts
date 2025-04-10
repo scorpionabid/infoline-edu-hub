@@ -78,10 +78,10 @@ export const useImportExport = (onComplete: () => void) => {
       const adminPassword = adminData.password || 'password123'; // Default şifrə təyin et (dəyişdirilməli)
       
       const userData = {
-        name: adminFullName,
+        full_name: adminFullName,
         email: adminData.email,
         password: adminPassword,
-        role: 'schooladmin',
+        role: 'schooladmin' as const, // TypeScript üçün type assertion əlavə etdik
         schoolId: school.id,
         regionId: school.region_id,
         sectorId: school.sector_id,

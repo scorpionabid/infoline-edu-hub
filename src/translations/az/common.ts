@@ -71,7 +71,9 @@ const commonTranslations = {
   checkAdminDataAndTryAgain: 'Admin məlumatlarını yoxlayın və yenidən cəhd edin',
   schoolAdminsAssigned: 'Məktəb adminləri təyin edildi',
   importFailedDescription: 'İdxal zamanı xəta baş verdi. Lütfən məlumatları yoxlayıb yenidən cəhd edin.',
-  exportFailedDescription: 'İxrac zamanı xəta baş verdi. Lütfən yenidən cəhd edin.'
+  exportFailedDescription: 'İxrac zamanı xəta baş verdi. Lütfən yenidən cəhd edin.',
+  importSchools: 'Məktəbləri idxal et',
+  importSchoolsDescription: 'Excel faylını istifadə edərək məktəbləri və məktəb adminlərini idxal edin.'
 };
 
 export const dashboardMessages = {
