@@ -48,7 +48,30 @@ const commonTranslations = {
   superAdmin: 'Sistem admini',
   region: 'Region',
   sector: 'Sektor',
-  school: 'Məktəb'
+  school: 'Məktəb',
+  import: 'İdxal et',
+  export: 'İxrac et',
+  download: 'Yüklə',
+  upload: 'Yüklə',
+  template: 'Şablon',
+  excelTemplate: 'Excel şablonu',
+  uploadExcel: 'Excel yüklə',
+  downloadExcelTemplate: 'Excel şablonunu yüklə',
+  importCompleted: 'İdxal tamamlandı',
+  exportCompleted: 'İxrac tamamlandı',
+  importFailed: 'İdxal uğursuz oldu',
+  exportFailed: 'İxrac uğursuz oldu',
+  noDataToImport: 'İdxal ediləcək məlumat tapılmadı',
+  supportedFormats: 'Dəstəklənən formatlar',
+  schoolsImportedSuccessfully: 'məktəb uğurla idxal edildi',
+  schoolsFailedToImport: 'məktəb idxal edilə bilmədi',
+  checkDataAndTryAgain: 'Məlumatları yoxlayın və yenidən cəhd edin',
+  adminsAssignedSuccessfully: 'admin uğurla təyin edildi',
+  adminsFailedToAssign: 'admin təyin edilə bilmədi',
+  checkAdminDataAndTryAgain: 'Admin məlumatlarını yoxlayın və yenidən cəhd edin',
+  schoolAdminsAssigned: 'Məktəb adminləri təyin edildi',
+  importFailedDescription: 'İdxal zamanı xəta baş verdi. Lütfən məlumatları yoxlayıb yenidən cəhd edin.',
+  exportFailedDescription: 'İxrac zamanı xəta baş verdi. Lütfən yenidən cəhd edin.'
 };
 
 export const dashboardMessages = {

@@ -19,6 +19,9 @@ export interface SchoolExcelRow {
   'Tədris dili': string;
   'Status': string;
   'Admin e-poçt': string;
+  'Admin adı': string;
+  'Admin parolu': string;
+  'Admin telefonu': string;
 }
 
 export const getSchoolTypeLabel = (type: string | null): string => {
@@ -80,12 +83,37 @@ export const exportSchoolsToExcel = (
       'Tədris dili': getLanguageLabel(school.language),
       'Status': getStatusLabel(school.status),
       'Admin e-poçt': school.admin_email || '',
+      'Admin adı': '',
+      'Admin parolu': '',
+      'Admin telefonu': ''
     }));
 
     // Excel workbook və worksheet yaradılır
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Məktəblər');
+    
+    // Sütun enini tənzimləyək
+    const wscols = [
+      { wch: 20 }, // Məktəb ID
+      { wch: 30 }, // Məktəb adı
+      { wch: 15 }, // Region
+      { wch: 15 }, // Sektor
+      { wch: 20 }, // Direktor
+      { wch: 25 }, // Ünvan
+      { wch: 15 }, // Telefon
+      { wch: 25 }, // E-poçt
+      { wch: 10 }, // Şagird sayı
+      { wch: 10 }, // Müəllim sayı
+      { wch: 15 }, // Məktəb növü
+      { wch: 15 }, // Tədris dili
+      { wch: 10 }, // Status
+      { wch: 25 }, // Admin e-poçt
+      { wch: 20 }, // Admin adı
+      { wch: 15 }, // Admin parolu
+      { wch: 15 }  // Admin telefonu
+    ];
+    worksheet['!cols'] = wscols;
     
     // Excel-ə çevrilir və endirilir
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -131,6 +159,8 @@ export const importSchoolsFromExcel = async (
             return;
           }
           
+          console.log('Excel məlumatları:', jsonData);
+          
           // Məlumatları School formatına çeviririk
           const schools: Partial<School>[] = jsonData.map(row => {
             // Excel sütun adları sistemimizdəki adlara uyğunlaşdırılır
@@ -146,9 +176,24 @@ export const importSchoolsFromExcel = async (
               admin_email: row['Admin e-poçt'] || null,
             };
             
-            // Region və Sektor adları əsasında ID-lərini tapaq
-            // NOT: Bu funksionalılq sonradan əlavə ediləcək, 
-            // indiki versiyada istifadəçi region_id və sector_id-i manual təyin etməlidir
+            // Admin məlumatlarını əlavə edək
+            if (row['Admin e-poçt']) {
+              (schoolData as any).adminData = {
+                email: row['Admin e-poçt'],
+                name: row['Admin adı'] || '',
+                password: row['Admin parolu'] || '',
+                phone: row['Admin telefonu'] || ''
+              };
+            }
+            
+            // Region və Sektor məlumatlarını əlavə edək
+            if (row['Region']) {
+              (schoolData as any).regionName = row['Region'];
+            }
+            
+            if (row['Sektor']) {
+              (schoolData as any).sectorName = row['Sektor'];
+            }
             
             return schoolData;
           });
@@ -187,10 +232,10 @@ export const generateExcelTemplate = (): void => {
   try {
     const templateData: SchoolExcelRow[] = [
       {
-        'Məktəb ID': '', // Bu sütun idxal zamanı istifadə olunmur
+        'Məktəb ID': '', // İdxal zamanı istifadə olunmur
         'Məktəb adı': 'Nümunə məktəb',
-        'Region': '', // Bu sütun idxal zamanı istifadə olunmur
-        'Sektor': '', // Bu sütun idxal zamanı istifadə olunmur
+        'Region': 'Nümunə region', // İdxal zamanı regionun adı istifadə olunur
+        'Sektor': 'Nümunə sektor', // İdxal zamanı sektorun adı istifadə olunur
         'Direktor': 'Nümunə Direktor',
         'Ünvan': 'Nümunə ünvan',
         'Telefon': '+994123456789',
@@ -201,6 +246,9 @@ export const generateExcelTemplate = (): void => {
         'Tədris dili': 'Azərbaycan',
         'Status': 'Aktiv',
         'Admin e-poçt': 'admin@numune.edu.az',
+        'Admin adı': 'Admin Nümunə',
+        'Admin parolu': 'şifrə123',
+        'Admin telefonu': '+994501234567'
       },
     ];
 
@@ -208,6 +256,41 @@ export const generateExcelTemplate = (): void => {
     const worksheet = XLSX.utils.json_to_sheet(templateData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Məktəblər');
+    
+    // Sütun enini tənzimləyək
+    const wscols = [
+      { wch: 20 }, // Məktəb ID
+      { wch: 30 }, // Məktəb adı
+      { wch: 15 }, // Region
+      { wch: 15 }, // Sektor
+      { wch: 20 }, // Direktor
+      { wch: 25 }, // Ünvan
+      { wch: 15 }, // Telefon
+      { wch: 25 }, // E-poçt
+      { wch: 10 }, // Şagird sayı
+      { wch: 10 }, // Müəllim sayı
+      { wch: 15 }, // Məktəb növü
+      { wch: 15 }, // Tədris dili
+      { wch: 10 }, // Status
+      { wch: 25 }, // Admin e-poçt
+      { wch: 20 }, // Admin adı
+      { wch: 15 }, // Admin parolu
+      { wch: 15 }  // Admin telefonu
+    ];
+    worksheet['!cols'] = wscols;
+    
+    // Qeydlər əlavə edək
+    const instructions = [
+      { A: "Qeydlər:" },
+      { A: "1. Məktəb ID sütunu yalnız mövcud məktəbləri yeniləmək üçündür. Yeni məktəblər üçün boş saxlayın." },
+      { A: "2. Region və Sektor sütunlarını düzgün doldurun - sistem bu adlara əsasən ID-ləri təyin edəcək." },
+      { A: "3. Admin e-poçt məcburidir. Əgər göstərilsə, admin avtomatik yaradılacaq." },
+      { A: "4. Mövcud admin e-poçtundan istifadə etsəniz, admin yenilənəcək." },
+      { A: "5. Status sütununda 'Aktiv' və ya 'Deaktiv' yazın." }
+    ];
+    
+    // Qeydləri əlavə edək (C2:C7 hüceyrələrinə)
+    XLSX.utils.sheet_add_json(worksheet, instructions, { skipHeader: true, origin: { r: templateData.length + 2, c: 0 } });
     
     // Excel-ə çevrilir və endirilir
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -222,5 +305,48 @@ export const generateExcelTemplate = (): void => {
   } catch (error) {
     console.error('Excel şablonu yaradılarkən xəta:', error);
     toast.error('Excel şablonu yaradılarkən xəta baş verdi');
+  }
+};
+
+export const mapRegionNameToId = async (regionName: string): Promise<string | null> => {
+  if (!regionName) return null;
+  
+  try {
+    const { data, error } = await supabase
+      .from('regions')
+      .select('id')
+      .ilike('name', `%${regionName}%`)
+      .limit(1);
+      
+    if (error) throw error;
+    
+    return data && data.length > 0 ? data[0].id : null;
+  } catch (error) {
+    console.error('Region adını ID-yə çevirərkən xəta:', error);
+    return null;
+  }
+};
+
+export const mapSectorNameToId = async (sectorName: string, regionId?: string): Promise<string | null> => {
+  if (!sectorName) return null;
+  
+  try {
+    let query = supabase
+      .from('sectors')
+      .select('id')
+      .ilike('name', `%${sectorName}%`);
+      
+    if (regionId) {
+      query = query.eq('region_id', regionId);
+    }
+    
+    const { data, error } = await query.limit(1);
+    
+    if (error) throw error;
+    
+    return data && data.length > 0 ? data[0].id : null;
+  } catch (error) {
+    console.error('Sektor adını ID-yə çevirərkən xəta:', error);
+    return null;
   }
 };

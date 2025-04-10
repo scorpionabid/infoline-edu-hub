@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { exportSchoolsToExcel } from '@/utils/excelUtils';
+import { exportSchoolsToExcel, generateExcelTemplate, importSchoolsFromExcel, mapRegionNameToId, mapSectorNameToId } from '@/utils/excelUtils';
 import { useRegions } from '../useRegions';
 import { useSectors } from '../useSectors';
+import { useCreateUser } from '../useCreateUser';
 
 export const useImportExport = (onComplete: () => void) => {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -15,6 +16,7 @@ export const useImportExport = (onComplete: () => void) => {
   const { t } = useLanguage();
   const { regions } = useRegions();
   const { sectors } = useSectors();
+  const { createUser } = useCreateUser();
 
   // Map üçün region və sektorları hazırlayırıq
   const regionNames = regions.reduce((acc, region) => ({
@@ -41,6 +43,62 @@ export const useImportExport = (onComplete: () => void) => {
     }
   }, [regionNames, sectorNames, t]);
 
+  const createSchoolAdmin = useCallback(async (school: Partial<School>, adminData: any) => {
+    if (!adminData || !adminData.email) {
+      return;
+    }
+
+    try {
+      // İstifadəçi adı (email) mövcuddurmu yoxlayaq
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', adminData.email)
+        .limit(1);
+
+      // İstifadəçi mövcuddursa, məktəbə admin olaraq təyin et
+      if (existingUser && existingUser.length > 0) {
+        const adminId = existingUser[0].id;
+        
+        // Məktəb adminini təyin et
+        await supabase.functions.invoke('assign-school-admin', {
+          body: {
+            userId: adminId,
+            schoolId: school.id,
+            regionId: school.region_id,
+            sectorId: school.sector_id
+          }
+        });
+        
+        return;
+      }
+
+      // Yeni admin əlavə et
+      const adminFullName = adminData.name || adminData.email.split('@')[0];
+      const adminPassword = adminData.password || 'password123'; // Default şifrə təyin et (dəyişdirilməli)
+      
+      const userData = {
+        name: adminFullName,
+        email: adminData.email,
+        password: adminPassword,
+        role: 'schooladmin',
+        schoolId: school.id,
+        regionId: school.region_id,
+        sectorId: school.sector_id,
+        phone: adminData.phone || null,
+        language: 'az',
+        status: 'active'
+      };
+      
+      // İstifadəçi yarat
+      await createUser(userData);
+      
+    } catch (error) {
+      console.error('Admin təyin edilərkən xəta:', error);
+      throw error;
+    }
+  }, [createUser]);
+
   const handleImportSchools = useCallback(async (schools: Partial<School>[]) => {
     setIsImporting(true);
     try {
@@ -52,16 +110,33 @@ export const useImportExport = (onComplete: () => void) => {
 
       let successCount = 0;
       let errorCount = 0;
+      let adminSuccessCount = 0;
+      let adminErrorCount = 0;
 
       // Hər bir məktəbi əlavə edirik
       for (const school of schools) {
         try {
+          // Əgər region və sektor adları varsa, ID-lərə çeviririk
+          if ((school as any).regionName) {
+            school.region_id = await mapRegionNameToId((school as any).regionName);
+          }
+          
+          if ((school as any).sectorName) {
+            school.sector_id = await mapSectorNameToId((school as any).sectorName, school.region_id);
+          }
+          
           // Zəruri sahələrin olduğunu yoxlayırıq
           if (!school.name || !school.region_id || !school.sector_id) {
             console.error('Missing required fields for school:', school);
             errorCount++;
             continue;
           }
+
+          // Admin məlumatlarını saxlayaq
+          const adminData = (school as any).adminData;
+          delete (school as any).adminData;
+          delete (school as any).regionName;
+          delete (school as any).sectorName;
 
           // Supabase tələb etdiyi formata uyğunlaşdırırıq
           const schoolData = {
@@ -77,18 +152,32 @@ export const useImportExport = (onComplete: () => void) => {
             status: school.status || 'active',
             type: school.type || null,
             language: school.language || null,
-            admin_email: school.admin_email || null
+            admin_email: adminData?.email || school.admin_email || null
           };
 
-          const { error } = await supabase
+          // Məktəbi əlavə edirik
+          const { data, error } = await supabase
             .from('schools')
-            .insert([schoolData]);
+            .insert([schoolData])
+            .select()
+            .single();
 
           if (error) {
             console.error('Error inserting school:', error);
             errorCount++;
           } else {
             successCount++;
+            
+            // Admin təyin edirik
+            if (adminData && adminData.email) {
+              try {
+                await createSchoolAdmin(data, adminData);
+                adminSuccessCount++;
+              } catch (adminError) {
+                console.error('Admin təyin edilərkən xəta:', adminError);
+                adminErrorCount++;
+              }
+            }
           }
         } catch (err) {
           console.error('School import error:', err);
@@ -102,6 +191,14 @@ export const useImportExport = (onComplete: () => void) => {
           t('importCompleted'), 
           { description: `${successCount} ${t('schoolsImportedSuccessfully')}` }
         );
+        
+        if (adminSuccessCount > 0) {
+          toast.success(
+            `${adminSuccessCount} ${t('adminsAssignedSuccessfully')}`, 
+            { description: t('schoolAdminsAssigned') }
+          );
+        }
+        
         onComplete(); // Məlumatları yeniləmək üçün callback-i çağırırıq
       }
 
@@ -109,6 +206,13 @@ export const useImportExport = (onComplete: () => void) => {
         toast.error(
           `${errorCount} ${t('schoolsFailedToImport')}`,
           { description: t('checkDataAndTryAgain') }
+        );
+      }
+      
+      if (adminErrorCount > 0) {
+        toast.error(
+          `${adminErrorCount} ${t('adminsFailedToAssign')}`,
+          { description: t('checkAdminDataAndTryAgain') }
         );
       }
     } catch (error) {
@@ -119,7 +223,7 @@ export const useImportExport = (onComplete: () => void) => {
     } finally {
       setIsImporting(false);
     }
-  }, [t, onComplete]);
+  }, [t, onComplete, createSchoolAdmin]);
 
   return {
     isImportDialogOpen,

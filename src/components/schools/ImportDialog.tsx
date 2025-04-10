@@ -11,10 +11,11 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { useLanguage } from '@/context/LanguageContext';
-import { FileUp, DownloadCloud, Upload, X } from 'lucide-react';
+import { FileUp, DownloadCloud, Upload, X, HelpCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateExcelTemplate, importSchoolsFromExcel } from '@/utils/excelUtils';
 import { School } from '@/types/supabase';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -79,13 +80,41 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('importSchools')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {t('importSchools')}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-5 w-5">
+                    <HelpCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <p>Məktəbləri Excel ilə idxal etmək üçün şablonu yükləyin, doldurun və yükləyin.</p>
+                  <p className="mt-2">Admin məlumatlarını doldursanız, həmin məktəbə admin təyin ediləcək.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </DialogTitle>
           <DialogDescription>
             {t('importSchoolsDescription')}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
+          <div className="bg-muted/50 rounded-md p-3 text-sm border border-muted">
+            <h4 className="flex items-center font-medium text-sm">
+              <Info className="h-4 w-4 mr-2 text-muted-foreground" />
+              İdxal təlimatları:
+            </h4>
+            <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <li>1. Əvvəlcə şablonu yükləyin və doldurun</li>
+              <li>2. Regionlar və sektorlar sistemdə olmalıdır</li>
+              <li>3. Məktəb adminləri avtomatik yaradılacaq</li>
+              <li>4. Bütün məcburi xanalar doldurulmalıdır</li>
+            </ul>
+          </div>
+          
           <Button 
             variant="outline" 
             className="w-full justify-center" 
