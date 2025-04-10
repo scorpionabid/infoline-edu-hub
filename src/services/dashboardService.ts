@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { TableNames } from '@/types/db';
 import {
@@ -248,13 +249,24 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
     if (pendingApprovalsError) throw pendingApprovalsError;
     
     // Pendingdən başqa statuslara görə məlumatları əldə et
-    const { data: statusCounts, error: statusCountsError } = await supabase.rpc('get_sector_status_counts', {
-      sector_id_param: sectorId
-    });
+    // Burada SQL funksiyasını birbaşa çağırmaq əvəzinə adi sorğu ilə əldə edirik
+    const { data: statusCounts, error: statusCountsError } = await supabase
+      .from(TableNames.DATA_ENTRIES)
+      .select('status, schools!inner(sector_id)')
+      .eq('schools.sector_id', sectorId);
     
     if (statusCountsError) {
       console.error('Status counts error:', statusCountsError);
     }
+    
+    // Statusları qruplaşdırma
+    const statusCountsProcessed = statusCounts ? Array.from(
+      statusCounts.reduce((acc, item) => {
+        if (!acc.has(item.status)) acc.set(item.status, 0);
+        acc.set(item.status, acc.get(item.status)! + 1);
+        return acc;
+      }, new Map<string, number>())
+    ).map(([status, count]) => ({ status, count })) : [];
     
     // Sektorla əlaqəli bildirişləri əldə et
     const { data: notifications, error: notificationsError } = await supabase
@@ -272,30 +284,62 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
       .select(`
         id, 
         name, 
-        completion_rate,
-        data_entries:${TableNames.DATA_ENTRIES}(count)
+        completion_rate
       `)
       .eq('sector_id', sectorId)
       .eq('status', 'active');
     
     if (schoolStatsError) throw schoolStatsError;
     
-    // Məktəblərin statusuna görə saylarını əldə et
-    const { data: schoolStatusData, error: schoolStatusError } = await supabase.rpc('get_school_approval_status_by_sector', {
-      sector_id_param: sectorId
-    });
-    
-    if (schoolStatusError) {
-      console.error('School status error:', schoolStatusError);
+    // Sektordakı məktəblərdən data_entries sorğusu
+    const { data: schoolEntries, error: schoolEntriesError } = await supabase
+      .from(TableNames.DATA_ENTRIES)
+      .select(`
+        school_id,
+        status
+      `)
+      .in('school_id', schoolStats?.map(school => school.id) || []);
+      
+    if (schoolEntriesError) {
+      console.error('School entries error:', schoolEntriesError);
     }
     
-    // Məktəb statuslarını formatla
-    const formattedSchoolStats = schoolStats.map((school) => ({
-      id: school.id,
-      name: school.name,
-      completionRate: school.completion_rate || 0,
-      pending: (school.data_entries || []).filter(entry => entry.status === 'pending').length
-    }));
+    // Məktəblərin statusuna görə saylarını əldə et
+    // RPC əvəzinə manual hesablama
+    const schoolStatusMap = new Map<string, { pending: number, approved: number, rejected: number, no_data: number }>();
+    
+    // Initialize school status map
+    schoolStats?.forEach(school => {
+      schoolStatusMap.set(school.id, {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        no_data: 0
+      });
+    });
+    
+    // Count status for each school
+    schoolEntries?.forEach(entry => {
+      if (entry.school_id && schoolStatusMap.has(entry.school_id)) {
+        const schoolStatus = schoolStatusMap.get(entry.school_id)!;
+        if (entry.status === 'pending') schoolStatus.pending++;
+        else if (entry.status === 'approved') schoolStatus.approved++;
+        else if (entry.status === 'rejected') schoolStatus.rejected++;
+      }
+    });
+    
+    // Determine overall status for each school and count them
+    let pendingSchools = 0;
+    let approvedSchools = 0;
+    let rejectedSchools = 0;
+    let noDataSchools = 0;
+    
+    schoolStatusMap.forEach(status => {
+      if (status.approved > 0) approvedSchools++;
+      else if (status.pending > 0) pendingSchools++;
+      else if (status.rejected > 0) rejectedSchools++;
+      else noDataSchools++;
+    });
     
     // Təsdiq gözləyən elementləri əldə et
     const { data: pendingItems, error: pendingItemsError } = await supabase
@@ -311,16 +355,6 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
       .limit(10);
     
     if (pendingItemsError) throw pendingItemsError;
-    
-    // Kateqoriyalara görə tamamlanma statistikası
-    const { data: categoryData, error: categoryDataError } = await supabase.rpc(
-      'get_category_completion_by_sector',
-      { sector_id_param: sectorId }
-    );
-    
-    if (categoryDataError) {
-      console.error('Category data error:', categoryDataError);
-    }
     
     // Aktivlik jurnalı
     const { data: activityData, error: activityError } = await supabase
@@ -338,15 +372,51 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
     
     if (activityError) throw activityError;
     
-    // Pendingdən başqa statuslar üçün məlumatları quraşdır
-    const pendingSchools = schoolStatusData?.find(item => item.status === 'pending')?.count || 0;
-    const approvedSchools = schoolStatusData?.find(item => item.status === 'approved')?.count || 0;
-    const rejectedSchools = schoolStatusData?.find(item => item.status === 'rejected')?.count || 0;
+    // Kateqoriyalara görə tamamlanma statistikası üçün əsas sorğu
+    const { data: categories, error: categoriesError } = await supabase
+      .from(TableNames.CATEGORIES)
+      .select('id, name')
+      .order('name');
     
-    // Sektorun ümumi tamamlanma faizini hesabla
-    const completionRate = formattedSchoolStats.length > 0 
-      ? Math.round(formattedSchoolStats.reduce((sum, school) => sum + school.completionRate, 0) / formattedSchoolStats.length) 
-      : 0;
+    if (categoriesError) throw categoriesError;
+    
+    // Hər kateqoriya üçün tamamlanma nisbətləri
+    const categoryCompletion = [];
+    
+    for (const category of categories || []) {
+      // Kateqoriya üçün ümumi və təsdiqlənmiş məlumatlar
+      const { data: categoryEntries } = await supabase
+        .from(TableNames.DATA_ENTRIES)
+        .select(`
+          status,
+          school:${TableNames.SCHOOLS}!inner(sector_id)
+        `)
+        .eq('category_id', category.id)
+        .eq('school.sector_id', sectorId);
+      
+      const totalEntries = categoryEntries?.length || 0;
+      const approvedEntries = categoryEntries?.filter(entry => entry.status === 'approved').length || 0;
+      
+      // Tamamlanma nisbəti hesablama
+      const completionRate = totalEntries > 0 ? Math.round((approvedEntries / totalEntries) * 100) : 0;
+      
+      categoryCompletion.push({
+        name: category.name,
+        completionRate,
+        color: getColorForPercentage(completionRate)
+      });
+    }
+    
+    // Məktəb statistikasını formatla
+    const formattedSchoolStats = schoolStats?.map(school => {
+      const schoolData = schoolStatusMap.get(school.id);
+      return {
+        id: school.id,
+        name: school.name,
+        completionRate: school.completion_rate || 0,
+        pending: schoolData?.pending || 0
+      };
+    }) || [];
     
     // Təsdiq gözləyən elementləri formatla
     const formattedPendingItems = pendingItems?.map(item => ({
@@ -360,23 +430,24 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
     const formattedActivity = activityData?.map(item => {
       let action = '';
       let target = '';
+      let newValue = item.new_value as any;
       
       switch (item.action) {
         case 'create_data_entry':
           action = 'Məlumat əlavə edildi';
-          target = item.new_value?.category_name || 'Bilinməyən kateqoriya';
+          target = newValue?.category_name || 'Bilinməyən kateqoriya';
           break;
         case 'update_data_entry':
           action = 'Məlumat yeniləndi';
-          target = item.new_value?.category_name || 'Bilinməyən kateqoriya';
+          target = newValue?.category_name || 'Bilinməyən kateqoriya';
           break;
         case 'approve_data_entry':
           action = 'Məlumatlar təsdiqləndi';
-          target = item.new_value?.school_name || 'Bilinməyən məktəb';
+          target = newValue?.school_name || 'Bilinməyən məktəb';
           break;
         case 'reject_data_entry':
           action = 'Məlumatlar rədd edildi';
-          target = item.new_value?.school_name || 'Bilinməyən məktəb';
+          target = newValue?.school_name || 'Bilinməyən məktəb';
           break;
         default:
           action = item.action.replace(/_/g, ' ');
@@ -391,12 +462,14 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
       };
     }) || [];
     
-    // Kateqoriyaların tamamlanma statistikası
-    const formattedCategoryCompletion = categoryData?.map(item => ({
-      name: item.category_name || 'Bilinməyən kateqoriya',
-      completionRate: parseInt(item.completion_rate) || 0,
-      color: getColorForPercentage(parseInt(item.completion_rate) || 0)
-    })) || [];
+    // Sektorun ümumi tamamlanma faizini hesabla
+    const completionRate = formattedSchoolStats.length > 0 
+      ? Math.round(formattedSchoolStats.reduce((sum, school) => sum + school.completionRate, 0) / formattedSchoolStats.length) 
+      : 0;
+    
+    // Status sayları
+    const approvedCount = statusCountsProcessed.find(s => s.status === 'approved')?.count || 0;
+    const rejectedCount = statusCountsProcessed.find(s => s.status === 'rejected')?.count || 0;
     
     return {
       schools: schoolsCount || 0,
@@ -410,11 +483,11 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<S
       schoolStats: formattedSchoolStats,
       formsByStatus: {
         pending: pendingApprovalsCount || 0,
-        approved: statusCounts?.find(item => item.status === 'approved')?.count || 0,
-        rejected: statusCounts?.find(item => item.status === 'rejected')?.count || 0
+        approved: approvedCount,
+        rejected: rejectedCount
       },
       pendingItems: formattedPendingItems,
-      categoryCompletion: formattedCategoryCompletion,
+      categoryCompletion,
       activityLog: formattedActivity
     };
   } catch (error: any) {
