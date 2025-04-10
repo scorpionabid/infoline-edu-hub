@@ -1,4 +1,3 @@
-
 import { Role } from '@/context/AuthContext';
 import { FullUserData, UserRole } from '@/types/supabase';
 
@@ -65,6 +64,7 @@ export interface UserFormData {
     email: boolean;
     system: boolean;
   };
+  full_name?: string;
 }
 
 export interface UserFilter {

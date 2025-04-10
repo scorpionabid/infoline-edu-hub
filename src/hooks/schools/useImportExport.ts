@@ -77,8 +77,10 @@ export const useImportExport = (onComplete: () => void) => {
       const adminFullName = adminData.name || adminData.email.split('@')[0];
       const adminPassword = adminData.password || 'password123'; // Default şifrə təyin et (dəyişdirilməli)
       
+      // UserFormData tipinə uyğun obyekt yaradırıq
       const userData = {
-        full_name: adminFullName,
+        name: adminFullName, // 'name' xüsusiyyəti əlavə edildi (UserFormData tipində tələb olunur)
+        full_name: adminFullName, 
         email: adminData.email,
         password: adminPassword,
         role: 'schooladmin' as const, // TypeScript üçün type assertion əlavə etdik
