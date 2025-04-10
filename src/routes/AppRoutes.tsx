@@ -1,6 +1,9 @@
+
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth, useRole } from "@/context/auth";
+import { useAuth } from "@/context/auth";
+import { usePermissions } from "@/hooks/auth/usePermissions";
+import AccessDenied from "@/components/AccessDenied";
 
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -25,11 +28,13 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
-// Protected Route Component
+// Protected Route Component - rol əsasında icazə yoxlaması edir
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { userRole } = usePermissions();
   const location = useLocation();
   
+  // Yüklənmə zamanı spinner göstəririk
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -38,12 +43,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     );
   }
   
+  // İstifadəçi login olmayıbsa, login səhifəsinə yönləndiririk
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+  // Əgər rol yoxlaması varsa və istifadəçinin bu səhifəyə icazəsi yoxdursa
+  if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
+    return <AccessDenied />;
   }
   
   return <>{children}</>;
@@ -54,7 +61,7 @@ interface PublicRouteProps {
   restricted?: boolean;
 }
 
-// Public Route Component (redirects to dashboard if already logged in)
+// Public Route Component - login olmuş istifadəçini müəyyən səhifələrə daxil olmağına icazə vermir
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -166,7 +173,7 @@ const AppRoutes = [
   {
     path: "/users",
     element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
         <Users />
       </ProtectedRoute>
     ),

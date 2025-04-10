@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, Profile } from '@/types/supabase';
@@ -28,12 +27,12 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     setState(prevState => ({ ...prevState, loading }));
   }, []);
   
-  // Sessiya dəyişikliklərinə qulaq asaq və yeniləyək
+  // Session dəyişikliklərini izləmək
   useEffect(() => {
     let mounted = true;
     let unsubscribe: { data?: { subscription: { unsubscribe: () => void } } } = {};
     
-    // İlkin yükləmə
+    // Auth vəziyyətini ilkin yükləmə
     const initializeAuth = async () => {
       try {
         console.log('Auth inisializasiya başladı');
@@ -50,7 +49,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         
         console.log('Mövcud sessiya:', currentSession ? 'Var' : 'Yoxdur');
         
-        // Sessiyanı sinxron olaraq təyin edək
+        // Sinxron olaraq sessiyanı təyin edək
         if (mounted) setSession(currentSession);
         
         // Auth state dəyişikliklərinə abunə olaq
@@ -59,7 +58,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           
           if (!mounted) return;
           
-          // Sinxron əməliyyatlar əvvəlcə
+          // Əvvəlcə sinxron əməliyyatlar
           setSession(newSession);
           
           // SIGNED_OUT halında user-i null-layıb state yeniləyib bitirək
@@ -83,6 +82,19 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
               if (mounted) {
                 setUser(userData);
                 console.log('İstifadəçi state-i yeniləndi');
+                
+                // İstifadəçi son giriş tarixini yeniləyək
+                if (userData?.id) {
+                  try {
+                    await supabase
+                      .from('profiles')
+                      .update({ last_login: new Date().toISOString() })
+                      .eq('id', userData.id);
+                    console.log('Son giriş tarixi yeniləndi');
+                  } catch (updateError) {
+                    console.error('Son giriş tarixi yenilənərkən xəta:', updateError);
+                  }
+                }
               }
             } catch (userError: any) {
               console.error('İstifadəçi məlumatlarını əldə edərkən xəta:', userError);
@@ -118,6 +130,19 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
             if (mounted) {
               console.log('İlkin sessiya üçün istifadəçi məlumatları təyin edilir');
               setUser(userData);
+              
+              // İstifadəçi son giriş tarixini yeniləyək
+              if (userData?.id) {
+                try {
+                  await supabase
+                    .from('profiles')
+                    .update({ last_login: new Date().toISOString() })
+                    .eq('id', userData.id);
+                  console.log('Son giriş tarixi yeniləndi');
+                } catch (updateError) {
+                  console.error('Son giriş tarixi yenilənərkən xəta:', updateError);
+                }
+              }
             }
           } catch (userError: any) {
             console.error('İlkin istifadəçi məlumatlarını əldə edərkən xəta:', userError);
@@ -144,7 +169,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       }
     };
     
-    // İnisializasiya edək
+    // Inisializasiya edək
     initializeAuth();
     
     // Cleanup
@@ -175,6 +200,19 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
           const userData = await fetchUserData(result.user.id);
           setUser(userData);
           console.log('İstifadəçi məlumatları uğurla yeniləndi');
+          
+          // İstifadəçi son giriş tarixini yeniləyək
+          if (userData?.id) {
+            try {
+              await supabase
+                .from('profiles')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', userData.id);
+              console.log('Son giriş tarixi yeniləndi');
+            } catch (updateError) {
+              console.error('Son giriş tarixi yenilənərkən xəta:', updateError);
+            }
+          }
         } catch (userError) {
           console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
         }

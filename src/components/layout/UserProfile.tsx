@@ -1,62 +1,111 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
-import { useLanguage } from '@/context/LanguageContext';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, User } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
-import { NavItem } from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useLanguage } from '@/context/LanguageContext';
+import { ChevronDown, LogOut, Settings, User, UserCog } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
-const UserProfile: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
+interface UserProfileProps {
+  onLogout?: () => void;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ onLogout }) => {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const { userRole } = usePermissions();
 
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      logout();
-      navigate('/login');
-    }
+    logout();
+    if (onLogout) onLogout();
+  };
+
+  // İstifadəçi rolunu insan oxuya biləcək formata çevirək
+  const getRoleLabel = (role: string | undefined) => {
+    if (!role) return t('noRole');
+    
+    const roleMap: Record<string, string> = {
+      'superadmin': t('superadmin'),
+      'regionadmin': t('regionadmin'),
+      'sectoradmin': t('sectoradmin'),
+      'schooladmin': t('schooladmin')
+    };
+    
+    return roleMap[role] || role;
+  };
+
+  // İstifadəçi avatarı üçün başlıq hərfləri
+  const getInitials = () => {
+    if (!user?.full_name) return '?';
+    
+    // İstifadəçi adının ilk hərfini alırıq
+    return user.full_name
+      .split(' ')
+      .map(name => name[0]?.toUpperCase())
+      .slice(0, 2)
+      .join('');
   };
 
   return (
-    <div className="p-4 border-t">
-      <div className="flex items-center space-x-3 mb-3">
-        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-          {user?.name?.charAt(0).toUpperCase() || 'U'}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{user?.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{t(user?.role || '')}</p>
-        </div>
-      </div>
-      
-      <div className="space-y-1">
-        <NavItem
-          href="/profile"
-          icon={<User size={18} />}
-          label={t('profile')}
-          isActive={pathname === '/profile'}
-        />
-        <NavItem
-          href="/settings"
-          icon={<Settings size={18} />}
-          label={t('settings')}
-          isActive={pathname === '/settings'}
-        />
-        <Button
-          variant="ghost"
-          className="w-full justify-start px-3 py-2 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
-          onClick={handleLogout}
-        >
-          <LogOut size={18} className="mr-2" />
-          {t('logout')}
-        </Button>
-      </div>
+    <div className="p-3 border-t">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="w-full flex items-center justify-between px-2 py-1 hover:bg-accent hover:text-accent-foreground">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.avatar} alt={user?.full_name || t('user')} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col text-left">
+                <span className="text-sm font-medium truncate" style={{ maxWidth: '140px' }}>
+                  {user?.full_name || t('unknownUser')}
+                </span>
+                <span className="text-xs text-muted-foreground">{getRoleLabel(userRole)}</span>
+              </div>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>
+            {t('userMenu')}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          <Link to="/profile">
+            <DropdownMenuItem>
+              <User className="h-4 w-4 mr-2" />
+              {t('myProfile')}
+            </DropdownMenuItem>
+          </Link>
+          
+          <Link to="/settings">
+            <DropdownMenuItem>
+              <Settings className="h-4 w-4 mr-2" />
+              {t('settings')}
+            </DropdownMenuItem>
+          </Link>
+          
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <LogOut className="h-4 w-4 mr-2" />
+            {t('logout')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

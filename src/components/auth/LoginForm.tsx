@@ -1,150 +1,192 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import LanguageSelector from '@/components/LanguageSelector';
 
 interface LoginFormProps {
   error: string | null;
   clearError: () => void;
 }
 
+interface FormValues {
+  email: string;
+  password: string;
+}
+
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const { login } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
-  const [directLoginError, setDirectLoginError] = useState<string | null>(null);
   
-  // Xəta olduqda və istifadəçi form-a dəyişiklik etdikdə xətanı təmizləyək
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors },
+    setError: setFormError
+  } = useForm<FormValues>();
+
+  // Hər dəfə giriş formu göstərildikdə xəta mesajlarını təmizləyək
   useEffect(() => {
     if (error) {
       clearError();
     }
-    if (directLoginError) {
-      setDirectLoginError(null);
-    }
-  }, [email, password, error, clearError]);
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Yeni girişdən əvvəl xətaları təmizləyək
-    clearError();
-    setDirectLoginError(null);
-    
-    if (!email || !password) {
-      toast.error(t('missingCredentials'), {
-        description: t('enterEmailAndPassword')
-      });
-      return;
-    }
-    
-    setLoginInProgress(true);
-    
+  const onSubmit = async (data: FormValues) => {
     try {
-      console.log('Login prosesi başladı');
+      clearError(); // Əvvəlki xətaları təmizləyək
+      setLoginInProgress(true);
+      console.log('Giriş cəhdi edilir...');
       
-      // Auth context vasitəsilə giriş
-      const success = await login(email, password);
+      const success = await login(data.email, data.password);
       
       if (success) {
-        console.log('Login uğurlu oldu');
+        console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
         toast.success(t('loginSuccess'));
-        // Yönləndirilmə auth context-in useEffect-i tərəfindən ediləcək
+        navigate('/dashboard');
+      } else {
+        console.log('Giriş uğursuz oldu - əlavə xəta yoxdur');
+        setFormError('root', { 
+          type: 'manual',
+          message: t('invalidCredentials')
+        });
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      // Xətaları context vasitəsilə idarə edirik
+    } catch (err: any) {
+      console.error('Login zamanı xəta baş verdi:', err);
+      setFormError('root', { 
+        type: 'manual',
+        message: err.message || t('unexpectedError')
+      });
     } finally {
       setLoginInProgress(false);
     }
   };
 
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
+
   return (
-    <>
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+    <Card className="w-full max-w-md mx-auto shadow-lg">
+      <CardHeader className="space-y-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-2xl font-bold">{t('loginTitle')}</CardTitle>
+          <LanguageSelector />
+        </div>
+        <CardDescription>{t('loginDescription')}</CardDescription>
+      </CardHeader>
       
-      {directLoginError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>{directLoginError}</AlertDescription>
-        </Alert>
-      )}
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="email">{t('emailAddress')}</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          {(error || errors.root) && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                {error || errors.root?.message}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              className="pl-10"
-              required
+              placeholder="name@example.com"
+              {...register('email', { 
+                required: t('emailRequired'),
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: t('invalidEmail')
+                }
+              })}
+              className={errors.email ? "border-destructive" : ""}
             />
+            {errors.email && (
+              <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
+            )}
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          
+          <div className="space-y-2">
             <Label htmlFor="password">{t('password')}</Label>
-            <Button
-              variant="link"
-              size="sm"
-              className="text-xs p-0 h-auto text-muted-foreground"
-              onClick={() => navigate('/forgot-password')}
-              type="button"
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                {...register('password', { 
+                  required: t('passwordRequired'),
+                  minLength: {
+                    value: 6,
+                    message: t('passwordTooShort')
+                  }
+                })}
+                className={errors.password ? "border-destructive pr-10" : "pr-10"}
+              />
+              <button 
+                type="button"
+                className="absolute inset-y-0 right-0 px-3 flex items-center"
+                onClick={togglePasswordVisibility}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
+            )}
+          </div>
+        </CardContent>
+        
+        <CardFooter className="flex flex-col space-y-2">
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={loginInProgress}
+          >
+            {loginInProgress ? (
+              <>
+                <span className="mr-2">{t('loggingIn')}</span>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              </>
+            ) : (
+              <>
+                <LogIn className="mr-2 h-4 w-4" />
+                {t('loginButton')}
+              </>
+            )}
+          </Button>
+          
+          <div className="text-sm text-center mt-4 text-muted-foreground">
+            <a 
+              href="/forgot-password" 
+              className="text-primary hover:underline"
             >
               {t('forgotPassword')}
-            </Button>
+            </a>
           </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 pr-10"
-              required
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-0 h-full px-3"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-        
-        <Button type="submit" className="w-full" disabled={loginInProgress}>
-          {loginInProgress ? t('loggingIn') : t('login')}
-        </Button>
+        </CardFooter>
       </form>
-    </>
+    </Card>
   );
 };
 
