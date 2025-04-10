@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
   Home, 
@@ -16,6 +16,7 @@ import {
   Building, 
   Columns 
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface NavItemProps {
   href: string;
@@ -45,15 +46,19 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { userRole } = usePermissions();
   
-  const isSuperAdmin = user?.role === 'superadmin';
-  const isRegionAdmin = user?.role === 'regionadmin';
-  const isSectorAdmin = user?.role === 'sectoradmin';
+  // Rol əsasında məlumat idarəetmə icazələrini yoxlayırıq
+  const isSuperAdmin = userRole === 'superadmin';
+  const isRegionAdmin = userRole === 'regionadmin';
+  const isSectorAdmin = userRole === 'sectoradmin';
+  const isSchoolAdmin = userRole === 'schooladmin';
   
+  // İcazələri müəyyənləşdiririk
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin || isRegionAdmin;
-  const canManageColumns = isSuperAdmin || isRegionAdmin;
+  const canManageCategories = isSuperAdmin;
+  const canManageColumns = isSuperAdmin;
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   
@@ -86,13 +91,13 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: canManageCategories
+      show: canManageCategories || isRegionAdmin || isSectorAdmin || isSchoolAdmin
     },
     {
       href: "/columns",
       icon: <Columns size={20} />,
       label: t('columns'),
-      show: canManageColumns
+      show: canManageColumns || isRegionAdmin || isSectorAdmin || isSchoolAdmin
     },
     {
       href: "/users",

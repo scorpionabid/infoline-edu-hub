@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Column } from '@/hooks/columns';
 import { Category } from '@/types/category';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface ColumnListProps {
   columns: Column[];
@@ -44,6 +45,10 @@ const ColumnList: React.FC<ColumnListProps> = ({
   canManageColumns = false
 }) => {
   const { t } = useLanguage();
+  const { userRole } = usePermissions();
+
+  // Rol əsasında idarəetmə icazələrini müəyyənləşdiririk
+  const canEdit = canManageColumns || userRole === 'superadmin';
 
   if (isLoading) {
     return (
@@ -96,6 +101,18 @@ const ColumnList: React.FC<ColumnListProps> = ({
     return <Badge className={color}>{t(type)}</Badge>;
   };
 
+  if (columns.length === 0) {
+    return (
+      <div className="bg-card rounded-lg shadow p-8 text-center">
+        <h3 className="text-xl font-semibold mb-2">{t('noColumnsFound')}</h3>
+        <p className="text-muted-foreground">{t('noColumnsFoundDesc')}</p>
+        {canEdit && (
+          <p className="mt-4 text-sm text-muted-foreground">{t('noColumnsFoundDescription')}</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-lg shadow">
       <div className="overflow-x-auto">
@@ -125,7 +142,7 @@ const ColumnList: React.FC<ColumnListProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   <TooltipProvider>
-                    {canManageColumns ? (
+                    {canEdit ? (
                       <>
                         <Tooltip>
                           <TooltipTrigger asChild>

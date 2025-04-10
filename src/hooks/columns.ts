@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
+import { usePermissions } from './auth/usePermissions';
 
 // Sütun üçün tip təyini 
 export interface Column {
@@ -26,7 +27,9 @@ export interface Column {
 export const useColumns = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { userRole } = usePermissions();
   const queryClient = useQueryClient();
+  const isSuperAdmin = userRole === 'superadmin';
 
   // Bütün sütunları əldə et - RLS ilə filtrələnəcək
   const fetchColumns = async () => {
@@ -67,6 +70,12 @@ export const useColumns = () => {
 
   // Sütunu yaradır - SuperAdmin üçün
   const createColumn = async (column: Omit<Column, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!isSuperAdmin) {
+      const error = new Error('Bu əməliyyat üçün SuperAdmin səlahiyyətləri tələb olunur');
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('columns')
@@ -84,6 +93,12 @@ export const useColumns = () => {
 
   // Sütunu yenilə - SuperAdmin üçün
   const updateColumn = async ({ id, ...column }: Partial<Column> & { id: string }) => {
+    if (!isSuperAdmin) {
+      const error = new Error('Bu əməliyyat üçün SuperAdmin səlahiyyətləri tələb olunur');
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('columns')
@@ -102,6 +117,12 @@ export const useColumns = () => {
 
   // Sütunu sil - SuperAdmin üçün
   const removeColumn = async (id: string) => {
+    if (!isSuperAdmin) {
+      const error = new Error('Bu əməliyyat üçün SuperAdmin səlahiyyətləri tələb olunur');
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       const { error } = await supabase
         .from('columns')
@@ -132,7 +153,11 @@ export const useColumns = () => {
     mutationFn: removeColumn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun uğurla silindi');
     },
+    onError: (err: any) => {
+      toast.error(`Sütun silinərkən xəta: ${err.message}`);
+    }
   });
 
   return {
@@ -146,5 +171,6 @@ export const useColumns = () => {
     deleteColumn,
     refetch,
     setError,
+    canManageColumns: isSuperAdmin
   };
 };

@@ -14,10 +14,18 @@ export const usePermissions = () => {
     if (!isAuthenticated || !user) return false;
     
     try {
-      const { data, error } = await supabase.rpc('has_region_access', { region_id_param: regionId });
+      // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role, region_id')
+        .eq('user_id', user.id)
+        .single();
+      
       if (error) throw error;
       
-      if (level === 'read') return !!data;
+      if (level === 'read') {
+        return data?.role === 'superadmin' || (data?.role === 'regionadmin' && data?.region_id === regionId);
+      }
       
       // Yazma və tam icazə üçün superadmin və ya regionadmin olmalıdır
       if (user.role === 'superadmin') return true;
@@ -34,10 +42,29 @@ export const usePermissions = () => {
     if (!isAuthenticated || !user) return false;
     
     try {
-      const { data, error } = await supabase.rpc('has_sector_access', { sector_id_param: sectorId });
-      if (error) throw error;
+      // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
+      const { data: userRoleData, error: userRoleError } = await supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id')
+        .eq('user_id', user.id)
+        .single();
       
-      if (level === 'read') return !!data;
+      if (userRoleError) throw userRoleError;
+      
+      if (level === 'read') {
+        if (userRoleData?.role === 'superadmin') return true;
+        if (userRoleData?.role === 'regionadmin') {
+          const { data: sectorData, error: sectorError } = await supabase
+            .from('sectors')
+            .select('region_id')
+            .eq('id', sectorId)
+            .single();
+          
+          if (sectorError) throw sectorError;
+          return sectorData?.region_id === userRoleData?.region_id;
+        }
+        if (userRoleData?.role === 'sectoradmin' && userRoleData?.sector_id === sectorId) return true;
+      }
       
       // Yazma və tam icazə üçün superadmin, regionadmin və ya sectoradmin olmalıdır
       if (user.role === 'superadmin') return true;
@@ -64,33 +91,47 @@ export const usePermissions = () => {
     if (!isAuthenticated || !user) return false;
     
     try {
-      const { data, error } = await supabase.rpc('has_school_access', { school_id_param: schoolId });
-      if (error) throw error;
+      // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
+      const { data: schoolData, error: schoolError } = await supabase
+        .from('schools')
+        .select('region_id, sector_id')
+        .eq('id', schoolId)
+        .single();
       
-      if (level === 'read') return !!data;
+      if (schoolError) throw schoolError;
+      
+      const { data: userRoleData, error: userRoleError } = await supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id, school_id')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (userRoleError) throw userRoleError;
+      
+      if (level === 'read') {
+        // SuperAdmin bütün məktəblərə icazəlidir
+        if (userRoleData?.role === 'superadmin') return true;
+        
+        // RegionAdmin öz regionundakı məktəblərə icazəlidir
+        if (userRoleData?.role === 'regionadmin' && userRoleData?.region_id === schoolData?.region_id) return true;
+        
+        // SectorAdmin öz sektorundakı məktəblərə icazəlidir
+        if (userRoleData?.role === 'sectoradmin' && userRoleData?.sector_id === schoolData?.sector_id) return true;
+        
+        // SchoolAdmin yalnız öz məktəbinə icazəlidir
+        if (userRoleData?.role === 'schooladmin' && userRoleData?.school_id === schoolId) return true;
+        
+        return false;
+      }
       
       // Yazma və tam icazə üçün superadmin, regionadmin və ya sectoradmin olmalıdır
       if (user.role === 'superadmin') return true;
       
       if (user.role === 'regionadmin' && user.regionId) {
-        // RegionAdmin öz regionuna aid məktəblərdə dəyişiklik edə bilər
-        const { data: schoolData } = await supabase
-          .from('schools')
-          .select('region_id')
-          .eq('id', schoolId)
-          .single();
-        
         return schoolData?.region_id === user.regionId;
       }
       
       if (user.role === 'sectoradmin' && user.sectorId) {
-        // SectorAdmin öz sektoruna aid məktəblərdə dəyişiklik edə bilər
-        const { data: schoolData } = await supabase
-          .from('schools')
-          .select('sector_id')
-          .eq('id', schoolId)
-          .single();
-        
         return schoolData?.sector_id === user.sectorId;
       }
       
@@ -105,13 +146,42 @@ export const usePermissions = () => {
     if (!isAuthenticated || !user) return false;
     
     try {
-      const { data, error } = await supabase.rpc('has_category_access', { category_id_param: categoryId });
-      if (error) throw error;
+      // Kateqoriya məlumatlarını əldə edirik
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('assignment')
+        .eq('id', categoryId)
+        .single();
       
-      if (level === 'read') return !!data;
+      if (categoryError) throw categoryError;
+      
+      // İstifadəçi rolunu əldə edirik
+      const { data: userRoleData, error: userRoleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (userRoleError) throw userRoleError;
+      
+      if (level === 'read') {
+        // SuperAdmin bütün kateqoriyalara icazəlidir
+        if (userRoleData?.role === 'superadmin') return true;
+        
+        // "all" assignment-li kateqoriyalar hər kəsə açıqdır
+        if (categoryData?.assignment === 'all') return true;
+        
+        // "sectors" assignment-li kateqoriyalar sectoradmin, regionadmin və schooladmin üçün açıqdır
+        if (categoryData?.assignment === 'sectors' && 
+            ['regionadmin', 'sectoradmin', 'schooladmin'].includes(userRoleData?.role)) {
+          return true;
+        }
+        
+        return false;
+      }
       
       // Yazma və tam icazə üçün yalnız SuperAdmin
-      return user.role === 'superadmin';
+      return userRoleData?.role === 'superadmin';
     } catch (error) {
       console.error('Kateqoriya icazəsi yoxlanarkən xəta:', error);
       return false;
@@ -122,13 +192,21 @@ export const usePermissions = () => {
     if (!isAuthenticated || !user) return false;
     
     try {
-      const { data, error } = await supabase.rpc('has_column_access', { column_id_param: columnId });
-      if (error) throw error;
+      // Sütun və kateqoriya məlumatlarını əldə edirik
+      const { data: columnData, error: columnError } = await supabase
+        .from('columns')
+        .select('category_id')
+        .eq('id', columnId)
+        .single();
       
-      if (level === 'read') return !!data;
+      if (columnError) throw columnError;
       
-      // Yazma və tam icazə üçün yalnız SuperAdmin
-      return user.role === 'superadmin';
+      // Kateqoriya məlumatlarını əldə edirik
+      const categoryId = columnData?.category_id;
+      if (!categoryId) return false;
+      
+      // Kateqoriyaya icazəni yoxlayırıq
+      return await checkCategoryAccess(categoryId, level);
     } catch (error) {
       console.error('Sütun icazəsi yoxlanarkən xəta:', error);
       return false;
