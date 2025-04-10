@@ -109,7 +109,7 @@ const commonTranslations = {
   boolean: 'Bəli/Xeyr',
   radio: 'Radio düymə',
   file: 'Fayl',
-  image: 'Şəkil',
+  image: 'Şəkil', 
   email: 'E-poçt',
   phone: 'Telefon',
   textarea: 'Mətn sahəsi'
