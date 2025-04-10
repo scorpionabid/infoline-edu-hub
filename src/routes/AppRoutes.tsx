@@ -157,7 +157,7 @@ const AppRoutes = [
   {
     path: "/categories",
     element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
         <Categories />
       </ProtectedRoute>
     ),
@@ -165,7 +165,7 @@ const AppRoutes = [
   {
     path: "/columns",
     element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
         <Columns />
       </ProtectedRoute>
     ),

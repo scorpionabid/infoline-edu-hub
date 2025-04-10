@@ -15,6 +15,7 @@ import EmptyState from '@/components/common/EmptyState';
 import { useCategories } from '@/hooks/useCategories';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useAuth } from '@/context/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -25,10 +26,10 @@ const Columns: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { columns, isLoading, isError, error, deleteColumn } = useColumns();
   const { categories, isLoading: categoriesLoading } = useCategories();
-  const { user } = useAuth();
+  const { userRole } = usePermissions();
   
   // Yalnız SuperAdmin sütun əlavə və redaktə edə bilər
-  const canManageColumns = user?.role === 'superadmin';
+  const canManageColumns = userRole === 'superadmin';
   
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,

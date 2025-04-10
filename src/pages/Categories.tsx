@@ -35,14 +35,19 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
 import { useCategoryOperations, AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
 import SidebarLayout from '@/components/layout/SidebarLayout';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Categories: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { userRole } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
   const [addDialog, setAddDialog] = useState({ isOpen: false });
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, categoryId: '', categoryName: '' });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Yalnız SuperAdmin kateqoriya əlavə və redaktə edə bilər
+  const canManageCategories = userRole === 'superadmin';
 
   // Custom hooklarımızı istifadə edək
   const {
@@ -80,6 +85,9 @@ const Categories: React.FC = () => {
   }, [fetchData]);
 
   const handleOpenAddDialog = () => {
+    if (!canManageCategories) {
+      return;
+    }
     setAddDialog({ isOpen: true });
   };
 
@@ -88,6 +96,10 @@ const Categories: React.FC = () => {
   };
 
   const handleAddCategory = async (newCategory: AddCategoryFormData): Promise<boolean> => {
+    if (!canManageCategories) {
+      return false;
+    }
+    
     const success = await addCategory(newCategory);
     if (success) {
       await fetchData();
@@ -96,6 +108,9 @@ const Categories: React.FC = () => {
   };
 
   const handleOpenDeleteDialog = (categoryId: string, categoryName: string) => {
+    if (!canManageCategories) {
+      return;
+    }
     setDeleteDialog({ isOpen: true, categoryId: categoryId, categoryName: categoryName });
   };
 
@@ -104,6 +119,10 @@ const Categories: React.FC = () => {
   };
 
   const handleDeleteCategory = async (categoryId: string): Promise<boolean> => {
+    if (!canManageCategories) {
+      return false;
+    }
+    
     const success = await deleteCategory(categoryId);
     if (success) {
       await fetchData();
@@ -112,6 +131,9 @@ const Categories: React.FC = () => {
   };
 
   const handleEditCategory = (categoryId: string) => {
+    if (!canManageCategories) {
+      return;
+    }
     navigate(`/categories/${categoryId}`);
   };
 
@@ -121,10 +143,12 @@ const Categories: React.FC = () => {
         title={t('categories')}
         description={t('availableCategories')}
       >
-        <Button onClick={handleOpenAddDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('addCategory')}
-        </Button>
+        {canManageCategories && (
+          <Button onClick={handleOpenAddDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('addCategory')}
+          </Button>
+        )}
       </PageHeader>
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
@@ -232,10 +256,10 @@ const Categories: React.FC = () => {
           icon={<Plus className="h-12 w-12" />}
           title={t('noCategoriesFound')}
           description={t('noCategoriesFoundDesc')}
-          action={{
+          action={canManageCategories ? {
             label: t('addFirstCategory'),
             onClick: handleOpenAddDialog
-          }}
+          } : undefined}
         />
       )}
 
@@ -244,6 +268,7 @@ const Categories: React.FC = () => {
           categories={categories}
           onEdit={handleEditCategory}
           onDelete={handleOpenDeleteDialog}
+          canManageCategories={canManageCategories}
         />
       )}
 
@@ -281,7 +306,8 @@ const CategoryTable: React.FC<{
   categories: Category[];
   onEdit: (id: string) => void;
   onDelete: (id: string, name: string) => void;
-}> = ({ categories, onEdit, onDelete }) => {
+  canManageCategories: boolean;
+}> = ({ categories, onEdit, onDelete, canManageCategories }) => {
   const { t } = useLanguage();
   
   return (
@@ -303,14 +329,20 @@ const CategoryTable: React.FC<{
               <TableCell>{category.description}</TableCell>
               <TableCell>{category.status}</TableCell>
               <TableCell>
-                <Button variant="ghost" size="sm" onClick={() => onEdit(category.id)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  {t('edit')}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => onDelete(category.id, category.name)}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t('delete')}
-                </Button>
+                {canManageCategories ? (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => onEdit(category.id)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      {t('edit')}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => onDelete(category.id, category.name)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {t('delete')}
+                    </Button>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Yalnız baxış üçün</span>
+                )}
               </TableCell>
             </TableRow>
           ))}

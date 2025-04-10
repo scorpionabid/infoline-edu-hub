@@ -180,7 +180,12 @@ export const usePermissions = () => {
         return false;
       }
       
-      // Yazma və tam icazə üçün yalnız SuperAdmin
+      // Yazma icazəsi üçün superadmin və regionadmin
+      if (level === 'write') {
+        return ['superadmin', 'regionadmin'].includes(userRoleData?.role);
+      }
+      
+      // Tam icazə üçün yalnız SuperAdmin
       return userRoleData?.role === 'superadmin';
     } catch (error) {
       console.error('Kateqoriya icazəsi yoxlanarkən xəta:', error);
@@ -213,12 +218,19 @@ export const usePermissions = () => {
     }
   };
 
+  // SectorAdmin rolunun kateqoriya və sütunlara çıxışının olub-olmadığını yoxlamaq üçün əlavə funksiya
+  const canSectorAdminAccessCategoriesColumns = () => {
+    // SectorAdmin həm kateqoriyalar həm də sütunlara çıxış əldə etməlidir
+    return user?.role === 'sectoradmin';
+  };
+
   return {
     checkRegionAccess,
     checkSectorAccess,
     checkSchoolAccess,
     checkCategoryAccess,
     checkColumnAccess,
+    canSectorAdminAccessCategoriesColumns,
     userRole: user?.role,
     userId: user?.id,
     regionId: user?.regionId,
