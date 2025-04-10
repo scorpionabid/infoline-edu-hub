@@ -29,7 +29,7 @@ const commonTranslations = {
   name: 'Ad',
   description: 'Təsvir',
   type: 'Tip',
-  date: 'Tarix',
+  dateField: 'Tarix', // date field renamed to dateField to prevent duplication
   time: 'Vaxt',
   deadline: 'Son tarix',
   required: 'Məcburi',
@@ -109,7 +109,7 @@ const commonTranslations = {
   boolean: 'Bəli/Xeyr',
   radio: 'Radio düymə',
   file: 'Fayl',
-  image: 'Şəkil', 
+  image: 'Şəkil',
   email: 'E-poçt',
   phone: 'Telefon',
   textarea: 'Mətn sahəsi'

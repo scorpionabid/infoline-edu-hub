@@ -34,6 +34,7 @@ import { format } from 'date-fns';
 import { CalendarIcon } from '@radix-ui/react-icons';
 import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
 import { useCategoryOperations, AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 
 const Categories: React.FC = () => {
   const { t } = useLanguage();
@@ -114,7 +115,7 @@ const Categories: React.FC = () => {
     navigate(`/categories/${categoryId}`);
   };
 
-  return (
+  const content = (
     <div>
       <PageHeader
         title={t('categories')}
@@ -266,6 +267,12 @@ const Categories: React.FC = () => {
         />
       )}
     </div>
+  );
+
+  return (
+    <SidebarLayout>
+      {content}
+    </SidebarLayout>
   );
 };
 

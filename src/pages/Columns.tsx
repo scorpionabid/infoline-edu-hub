@@ -13,6 +13,7 @@ import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
 import { useCategories } from '@/hooks/useCategories';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -124,7 +125,7 @@ const Columns: React.FC = () => {
     }
   }, [categoriesLoading]);
 
-  return (
+  const content = (
     <>
       <PageHeader
         title={t('columnsPageTitle')}
@@ -185,6 +186,12 @@ const Columns: React.FC = () => {
         />
       )}
     </>
+  );
+
+  return (
+    <SidebarLayout>
+      {content}
+    </SidebarLayout>
   );
 };
 

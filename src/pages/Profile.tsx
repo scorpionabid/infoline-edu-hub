@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { LogOut } from 'lucide-react';
+import SidebarLayout from '@/components/layout/SidebarLayout';
 
 const Profile: React.FC = () => {
   const { t } = useLanguage();
@@ -69,7 +70,7 @@ const Profile: React.FC = () => {
     navigate('/login');
   };
 
-  return (
+  const content = (
     <div className="container mx-auto py-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('profile')}</h1>
@@ -303,6 +304,12 @@ const Profile: React.FC = () => {
         </Card>
       </div>
     </div>
+  );
+
+  return (
+    <SidebarLayout>
+      {content}
+    </SidebarLayout>
   );
 };
 
