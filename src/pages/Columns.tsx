@@ -101,7 +101,7 @@ const Columns: React.FC = () => {
 
   const handleDeleteColumn = async (columnId: string): Promise<boolean> => {
     try {
-      await deleteColumn(columnId);
+      await deleteColumn.mutate(columnId);
       toast.success(t('columnDeleted'));
       handleCloseDeleteDialog();
       return true;

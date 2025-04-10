@@ -94,12 +94,17 @@ const commonTranslations = {
   deleteColumn: 'Sütunu sil',
   deleteColumnConfirmation: 'Bu sütunu silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.',
   columnIdRequired: 'Sütun ID-si tələb olunur',
+  columnAdded: 'Sütun əlavə edildi',
+  deleteConfirmationTitle: 'Silmək istədiyinizə əminsiniz?',
+  saving: 'Saxlanılır...',
+  saveChanges: 'Dəyişiklikləri saxla',
+  editColumn: 'Sütunu redaktə et',
+  editColumnDescription: 'Sütun məlumatlarını redaktə edin',
   
   // Sütun tipləri
   text: 'Mətn',
   number: 'Rəqəm',
   date: 'Tarix',
-  select: 'Seçim',
   checkbox: 'Seçim qutusu',
   boolean: 'Bəli/Xeyr',
   radio: 'Radio düymə',

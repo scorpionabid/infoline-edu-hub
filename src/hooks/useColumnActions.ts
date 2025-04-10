@@ -16,16 +16,15 @@ export const useColumnActions = (refetchColumns?: () => void) => {
     try {
       if (columnData.id) {
         // Mövcud sütunu yeniləmə
-        await updateColumn(columnData.id, columnData);
-        toast.success(t('columnUpdated'), {
-          description: t('columnUpdatedSuccessfully')
+        await updateColumn.mutate({
+          id: columnData.id,
+          ...columnData
         });
+        toast.success(t('columnUpdated'));
       } else {
         // Yeni sütun əlavə etmə
-        await addColumn(columnData);
-        toast.success(t('columnAdded'), {
-          description: t('columnAddedSuccessfully')
-        });
+        await addColumn.mutate(columnData);
+        toast.success(t('columnAdded'));
       }
       
       if (refetchColumns) {
@@ -35,9 +34,7 @@ export const useColumnActions = (refetchColumns?: () => void) => {
       return true;
     } catch (error) {
       console.error('Error in handleAddColumn:', error);
-      toast.error(t('error'), {
-        description: t('errorProcessingRequest')
-      });
+      toast.error(t('error'));
       return false;
     } finally {
       setIsActionLoading(false);
@@ -48,10 +45,8 @@ export const useColumnActions = (refetchColumns?: () => void) => {
   const handleDeleteColumn = async (id: string) => {
     setIsActionLoading(true);
     try {
-      await deleteColumn(id);
-      toast.success(t('columnDeleted'), {
-        description: t('columnDeletedSuccessfully')
-      });
+      await deleteColumn.mutate(id);
+      toast.success(t('columnDeleted'));
       
       if (refetchColumns) {
         refetchColumns();
@@ -60,9 +55,7 @@ export const useColumnActions = (refetchColumns?: () => void) => {
       return true;
     } catch (error) {
       console.error('Error in handleDeleteColumn:', error);
-      toast.error(t('error'), {
-        description: t('errorProcessingRequest')
-      });
+      toast.error(t('error'));
       return false;
     } finally {
       setIsActionLoading(false);
@@ -73,10 +66,8 @@ export const useColumnActions = (refetchColumns?: () => void) => {
   const handleUpdateColumnStatus = async (id: string, status: 'active' | 'inactive') => {
     setIsActionLoading(true);
     try {
-      await updateColumn(id, { status });
-      toast.success(t('columnStatusUpdated'), {
-        description: t('columnStatusUpdatedSuccessfully')
-      });
+      await updateColumn.mutate({ id, status });
+      toast.success(t('columnStatusUpdated'));
       
       if (refetchColumns) {
         refetchColumns();
@@ -85,9 +76,7 @@ export const useColumnActions = (refetchColumns?: () => void) => {
       return true;
     } catch (error) {
       console.error('Error in handleUpdateColumnStatus:', error);
-      toast.error(t('error'), {
-        description: t('errorProcessingRequest')
-      });
+      toast.error(t('error'));
       return false;
     } finally {
       setIsActionLoading(false);
