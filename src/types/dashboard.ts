@@ -1,4 +1,3 @@
-
 import { Notification } from './notification';
 
 export interface StatsItem {
@@ -72,6 +71,17 @@ export interface SectorAdminDashboardData {
     school: string;
     category: string;
     date: string;
+  }[];
+  categoryCompletion?: {
+    name: string;
+    completionRate: number;
+    color: string;
+  }[];
+  activityLog?: {
+    id: string;
+    action: string;
+    target: string;
+    time: string;
   }[];
 }
 

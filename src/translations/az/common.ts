@@ -1,4 +1,3 @@
-
 const commonTranslations = {
   save: 'Yadda saxla',
   cancel: 'Ləğv et',
@@ -42,6 +41,22 @@ const commonTranslations = {
   profile: 'Profil',
   home: 'Ana səhifə',
   back: 'Geri'
+};
+
+export const dashboardMessages = {
+  schoolsInSector: 'Sektordakı məktəblər',
+  categoryCompletionRates: 'Kateqoriyalar üzrə tamamlanma',
+  recentActivity: 'Son aktivlik',
+  sendNotification: 'Bildiriş göndər',
+  viewReports: 'Hesabatlara bax',
+  reviewAll: 'Hamısına bax',
+  exportActivityLog: 'Aktivlik jurnalını ixrac et',
+  sectorData: 'Sektor məlumatları',
+  sectorDataDescription: 'Sektora aid məktəblər və statistika',
+  noSchoolsFound: 'Məktəb tapılmadı',
+  noPendingApprovals: 'Təsdiq gözləyən məlumat yoxdur',
+  noCategoriesFound: 'Kateqoriya məlumatları tapılmadı',
+  noRecentActivity: 'Son aktivlik tapılmadı'
 };
 
 export default commonTranslations;
