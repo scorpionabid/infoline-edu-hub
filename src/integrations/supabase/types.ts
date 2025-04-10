@@ -712,10 +712,18 @@ export type Database = {
         Returns: string
       }
       get_user_role: {
-        Args: { user_id: string }
+        Args: Record<PropertyKey, never> | { user_id: string }
         Returns: string
       }
       get_user_role_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_school_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_sector_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
@@ -725,6 +733,14 @@ export type Database = {
       }
       has_access_to_sector: {
         Args: { _user_id: string; _sector_id: string }
+        Returns: boolean
+      }
+      has_category_access: {
+        Args: { category_id_param: string }
+        Returns: boolean
+      }
+      has_column_access: {
+        Args: { column_id_param: string }
         Returns: boolean
       }
       has_region_access: {
@@ -742,6 +758,10 @@ export type Database = {
         Args: { role_to_check: string }
         Returns: boolean
       }
+      has_school_access: {
+        Args: { school_id_param: string }
+        Returns: boolean
+      }
       has_sector_access: {
         Args: { sector_id_param: string }
         Returns: boolean
@@ -755,6 +775,14 @@ export type Database = {
         Returns: boolean
       }
       is_regionadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_schooladmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_sectoradmin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

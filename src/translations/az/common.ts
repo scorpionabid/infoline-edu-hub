@@ -100,6 +100,17 @@ const commonTranslations = {
   saveChanges: 'Dəyişiklikləri saxla',
   editColumn: 'Sütunu redaktə et',
   editColumnDescription: 'Sütun məlumatlarını redaktə edin',
+  columnsFound: 'Sütun tapıldı',
+  errorLoadingColumns: 'Sütunları yüklərkən xəta baş verdi',
+  
+  // İcazələr və rollar üçün tərcümələr
+  noPermission: 'İcazə yoxdur',
+  superAdminPermissionRequired: 'Bu əməliyyat üçün SuperAdmin icazəsi tələb olunur',
+  regionAdminPermissionRequired: 'Bu əməliyyat üçün RegionAdmin icazəsi tələb olunur',
+  sectorAdminPermissionRequired: 'Bu əməliyyat üçün SektorAdmin icazəsi tələb olunur',
+  schoolAdminPermissionRequired: 'Bu əməliyyat üçün SchoolAdmin icazəsi tələb olunur',
+  permissionDenied: 'İcazə rədd edildi',
+  permissionDeniedDescription: 'Bu əməliyyatı yerinə yetirmək üçün lazımi icazələrə sahib deyilsiniz',
   
   // Sütun tipləri
   text: 'Mətn',

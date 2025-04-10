@@ -1,103 +1,131 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo } from 'react';
-import { fetchCategories } from "@/api/categoryApi";
-import { Category, CategoryStatus } from "@/types/category";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Category } from '@/types/category';
+import { useAuth } from '@/context/auth';
 
 export const useCategories = () => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<CategoryStatus | 'all'>('all');
-  const [assignmentFilter, setAssignmentFilter] = useState<'all' | 'sectors' | ''>('all');
-  const [deadlineFilter, setDeadlineFilter] = useState<'upcoming' | 'past' | 'all' | ''>('all');
-  
-  // Fetch categories data
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Kateqoriyaları çəkmək üçün funksiya - RLS ilə filtrələnəcək
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('created_at');
+
+    if (error) {
+      throw error;
+    }
+
+    return data as Category[];
+  };
+
+  // Bir kateqoriyanı əldə etmək üçün funksiya
+  const fetchCategory = async (id: string) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data as Category;
+  };
+
+  // Yeni kateqoriya əlavə etmək üçün funksiya - SuperAdmin üçün
+  const addCategory = async (category: Omit<Category, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([category])
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    return data[0] as Category;
+  };
+
+  // Kateqoriyanı yeniləmək üçün funksiya - SuperAdmin üçün
+  const updateCategory = async (id: string, updates: Partial<Category>) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    return data[0] as Category;
+  };
+
+  // Kateqoriyanı silmək üçün funksiya - SuperAdmin üçün
+  const deleteCategory = async (id: string) => {
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  };
+
+  // React Query hooks
   const {
-    data: categories = [],
+    data: categories,
     isLoading,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ['categories'],
     queryFn: fetchCategories,
   });
 
-  // Filtrlənmiş kateqoriyalar
-  const filteredCategories = useMemo(() => {
-    return categories.filter((category: Category) => {
-      // Axtarış filtri
-      if (searchQuery && !category.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !(category.description?.toLowerCase().includes(searchQuery.toLowerCase()))) {
-        return false;
-      }
-      
-      // Status filtri
-      if (statusFilter !== 'all' && category.status !== statusFilter) {
-        return false;
-      }
-      
-      // Assignment filtri
-      if (assignmentFilter && assignmentFilter !== 'all' && category.assignment !== assignmentFilter) {
-        return false;
-      }
-      
-      // Deadline filtri
-      if (deadlineFilter && deadlineFilter !== 'all') {
-        const now = new Date();
-        if (deadlineFilter === 'upcoming' && category.deadline) {
-          const deadlineDate = new Date(category.deadline);
-          return deadlineDate > now;
-        } else if (deadlineFilter === 'past' && category.deadline) {
-          const deadlineDate = new Date(category.deadline);
-          return deadlineDate < now;
-        } else if (!category.deadline) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  }, [categories, searchQuery, statusFilter, assignmentFilter, deadlineFilter]);
+  const addCategoryMutation = useMutation({
+    mutationFn: addCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
 
-  // Kateqoriyaların statistikası
-  const stats = useMemo(() => {
-    const total = categories.length;
-    const active = categories.filter(c => c.status === 'active').length;
-    const inactive = categories.filter(c => c.status === 'inactive').length;
-    const draft = categories.filter(c => c.status === 'draft').length;
-    
-    const assignment = {
-      all: categories.filter(c => c.assignment === 'all').length,
-      sectors: categories.filter(c => c.assignment === 'sectors').length
-    };
-    
-    const withDeadline = categories.filter(c => c.deadline).length;
-    
-    return {
-      total,
-      active,
-      inactive,
-      draft,
-      assignment,
-      withDeadline
-    };
-  }, [categories]);
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Category> }) =>
+      updateCategory(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: deleteCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
 
   return {
     categories,
-    filteredCategories,
     isLoading,
     isError,
     error,
     refetch,
-    searchQuery,
-    setSearchQuery,
-    statusFilter,
-    setStatusFilter,
-    assignmentFilter,
-    setAssignmentFilter,
-    deadlineFilter,
-    setDeadlineFilter,
-    stats
+    fetchCategory,
+    addCategory: addCategoryMutation.mutate,
+    updateCategory: updateCategoryMutation.mutate,
+    deleteCategory: deleteCategoryMutation.mutate,
+    isAddingCategory: addCategoryMutation.isPending,
+    isUpdatingCategory: updateCategoryMutation.isPending,
+    isDeletingCategory: deleteCategoryMutation.isPending,
   };
 };

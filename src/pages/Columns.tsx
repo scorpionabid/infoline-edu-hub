@@ -14,6 +14,7 @@ import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
 import { useCategories } from '@/hooks/useCategories';
 import SidebarLayout from '@/components/layout/SidebarLayout';
+import { useAuth } from '@/context/auth';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -24,6 +25,10 @@ const Columns: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { columns, isLoading, isError, error, deleteColumn } = useColumns();
   const { categories, isLoading: categoriesLoading } = useCategories();
+  const { user } = useAuth();
+  
+  // Yalnız SuperAdmin sütun əlavə və redaktə edə bilər
+  const canManageColumns = user?.role === 'superadmin';
   
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
@@ -32,6 +37,12 @@ const Columns: React.FC = () => {
   });
 
   const handleOpenAddColumnDialog = () => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'), {
+        description: t('superAdminPermissionRequired')
+      });
+      return;
+    }
     setAddColumnDialogOpen(true);
   };
 
@@ -41,6 +52,12 @@ const Columns: React.FC = () => {
   };
 
   const handleOpenEditColumnDialog = (column: any) => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'), {
+        description: t('superAdminPermissionRequired')
+      });
+      return;
+    }
     setSelectedColumn(column);
     setEditColumnDialogOpen(true);
   };
@@ -51,6 +68,12 @@ const Columns: React.FC = () => {
   };
 
   const handleOpenDeleteDialog = (columnId: string, columnName: string) => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'), {
+        description: t('superAdminPermissionRequired')
+      });
+      return;
+    }
     setDeleteDialog({
       isOpen: true,
       column: columnId,
@@ -67,6 +90,11 @@ const Columns: React.FC = () => {
   };
 
   const handleAddColumn = async (newColumn: any): Promise<boolean> => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'));
+      return false;
+    }
+    
     setIsSubmitting(true);
     try {
       toast.success(t('columnCreated'));
@@ -82,6 +110,11 @@ const Columns: React.FC = () => {
   };
 
   const handleEditColumn = async (columnData: any): Promise<boolean> => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'));
+      return false;
+    }
+    
     setIsSubmitting(true);
     try {
       if (!columnData.id) {
@@ -101,6 +134,11 @@ const Columns: React.FC = () => {
   };
 
   const handleDeleteColumn = async (columnId: string): Promise<boolean> => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'));
+      return false;
+    }
+    
     try {
       await deleteColumn.mutate(columnId);
       toast.success(t('columnDeleted'));
@@ -115,6 +153,11 @@ const Columns: React.FC = () => {
   };
 
   const handleUpdateColumnStatus = async (id: string, status: 'active' | 'inactive') => {
+    if (!canManageColumns) {
+      toast.error(t('noPermission'));
+      return;
+    }
+    
     toast.success(t('columnStatusUpdated'));
   };
 
@@ -132,10 +175,12 @@ const Columns: React.FC = () => {
         description={t('columnsPageDescription')}
         backButtonUrl="/categories"
       >
-        <Button onClick={handleOpenAddColumnDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('addColumn')}
-        </Button>
+        {canManageColumns && (
+          <Button onClick={handleOpenAddColumnDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('addColumn')}
+          </Button>
+        )}
       </PageHeader>
 
       {columns?.length === 0 && !isLoading ? (
@@ -143,10 +188,10 @@ const Columns: React.FC = () => {
           icon={<Database className="h-12 w-12" />}
           title={t('noColumnsFound')}
           description={t('noColumnsFoundDescription')}
-          action={{
+          action={canManageColumns ? {
             label: t('addColumn'),
             onClick: handleOpenAddColumnDialog
-          }}
+          } : undefined}
         />
       ) : (
         <ColumnList
@@ -157,24 +202,29 @@ const Columns: React.FC = () => {
           onEditColumn={handleOpenEditColumnDialog}
           onDeleteColumn={handleOpenDeleteDialog}
           onUpdateStatus={handleUpdateColumnStatus}
+          canManageColumns={canManageColumns}
         />
       )}
 
-      <AddColumnDialog
-        isOpen={addColumnDialogOpen}
-        onClose={handleCloseAddColumnDialog}
-        onAddColumn={handleAddColumn}
-        categories={categories || []}
-      />
+      {addColumnDialogOpen && (
+        <AddColumnDialog
+          isOpen={addColumnDialogOpen}
+          onClose={handleCloseAddColumnDialog}
+          onAddColumn={handleAddColumn}
+          categories={categories || []}
+        />
+      )}
 
-      <EditColumnDialog
-        isOpen={editColumnDialogOpen}
-        onClose={handleCloseEditColumnDialog}
-        onEditColumn={handleEditColumn}
-        column={selectedColumn}
-        isSubmitting={isSubmitting}
-        categories={categories || []}
-      />
+      {editColumnDialogOpen && (
+        <EditColumnDialog
+          isOpen={editColumnDialogOpen}
+          onClose={handleCloseEditColumnDialog}
+          onEditColumn={handleEditColumn}
+          column={selectedColumn}
+          isSubmitting={isSubmitting}
+          categories={categories || []}
+        />
+      )}
 
       {deleteDialog.isOpen && (
         <DeleteColumnDialog
