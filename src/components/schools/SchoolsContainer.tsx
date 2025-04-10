@@ -1,7 +1,6 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
 import SchoolPagination from './SchoolPagination';
@@ -10,12 +9,10 @@ import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
-import { FileDown, FileUp } from 'lucide-react';
-import { useImportExport } from '@/hooks/schools/useImportExport';
 import ImportDialog from './ImportDialog';
+import { useImportExport } from '@/hooks/schools/useImportExport';
 
 const SchoolsContainer: React.FC = () => {
-  const { user } = useAuth();
   const {
     currentItems,
     searchTerm,
@@ -37,7 +34,8 @@ const SchoolsContainer: React.FC = () => {
     fetchSchools,
     isOperationComplete,
     setIsOperationComplete,
-    schools
+    schools,
+    userRole
   } = useSchoolsStore();
 
   const {
@@ -80,7 +78,7 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
-  // İstifadəçinin regionuna əsasən sektorları filtirləyirik
+  // İstifadəçinin roluna əsasən sektorları filtrləmək
   const filteredSectors = useMemo(() => {
     let sectorsList = sectors.map(sector => ({
       id: sector.id,
@@ -88,20 +86,17 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // Əgər regionadmin və ya schooladmin-dirsə, yalnız öz regionuna aid sektorları göstər
-    if (user && (user.role === 'regionadmin' || user.role === 'schooladmin') && user.regionId) {
-      sectorsList = sectorsList.filter(sector => sector.regionId === user.regionId);
+    // Sektor admin üçün yalnız öz sektorunu göstərmək
+    if (userRole === 'sectoradmin') {
+      sectorsList = sectorsList.filter(sector => sector.id === selectedSector);
+    }
+    // Region admin üçün yalnız öz regionuna aid sektorları göstərmək
+    else if (userRole === 'regionadmin' && selectedRegion) {
+      sectorsList = sectorsList.filter(sector => sector.regionId === selectedRegion);
     }
     
     return sectorsList;
-  }, [sectors, user]);
-
-  // Avtomatik olaraq istifadəçinin regionuna aid sektorlarla filtrələyirik
-  useEffect(() => {
-    if (user && user.regionId && selectedRegion !== user.regionId) {
-      handleRegionFilter({ target: { value: user.regionId } } as React.ChangeEvent<HTMLSelectElement>);
-    }
-  }, [user, selectedRegion, handleRegionFilter]);
+  }, [sectors, userRole, selectedSector, selectedRegion]);
 
   // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
@@ -115,7 +110,7 @@ const SchoolsContainer: React.FC = () => {
   return (
     <div className="space-y-6">
       <SchoolHeader 
-        userRole={user?.role} 
+        userRole={userRole} 
         onAddClick={handleAddDialogOpen}
         onExportClick={handleExportClick}
         onImportClick={handleImportClick}
@@ -145,7 +140,7 @@ const SchoolsContainer: React.FC = () => {
             handleEditDialogOpen={handleEditDialogOpen}
             handleDeleteDialogOpen={handleDeleteDialogOpen}
             handleAdminDialogOpen={handleAdminDialogOpen}
-            userRole={user?.role}
+            userRole={userRole}
           />
           
           {totalPages > 1 && (

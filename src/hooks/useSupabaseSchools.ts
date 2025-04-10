@@ -6,6 +6,8 @@ import { useRegions } from './useRegions';
 import { useSectors } from './useSectors';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export interface SortConfig {
   key: string | null;
@@ -24,6 +26,8 @@ export const useSupabaseSchools = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { userRole, sectorId } = usePermissions();
   
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
   const { regions } = useRegions();
@@ -35,12 +39,18 @@ export const useSupabaseSchools = () => {
     try {
       let query = supabase.from('schools').select('*');
       
-      if (selectedRegion) {
-        query = query.eq('region_id', selectedRegion);
-      }
-      
-      if (selectedSector) {
-        query = query.eq('sector_id', selectedSector);
+      // Sectoradmin olaraq yalnız öz sektoruna aid məktəbləri görmək
+      if (userRole === 'sectoradmin' && sectorId) {
+        query = query.eq('sector_id', sectorId);
+      } else {
+        // Digər rollar üçün filter funksionalığı
+        if (selectedRegion) {
+          query = query.eq('region_id', selectedRegion);
+        }
+        
+        if (selectedSector) {
+          query = query.eq('sector_id', selectedSector);
+        }
       }
       
       if (selectedStatus) {
@@ -61,7 +71,7 @@ export const useSupabaseSchools = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedRegion, selectedSector, selectedStatus, t]);
+  }, [selectedRegion, selectedSector, selectedStatus, t, userRole, sectorId]);
 
   // Filtrlənmiş məktəblər
   const filteredSchools = schools.filter(school => {
@@ -103,6 +113,23 @@ export const useSupabaseSchools = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
 
+  // Sektoradmin roluna əsasən region və sektor filtrini avtomatik təyin etmək
+  useEffect(() => {
+    if (userRole === 'sectoradmin' && sectorId) {
+      // Sektoradmin üçün sektor ID filtrini təyin edirik
+      setSelectedSector(sectorId);
+      
+      // Sektorun aid olduğu regionu tapmaq
+      const sector = sectors.find(s => s.id === sectorId);
+      if (sector && sector.region_id) {
+        setSelectedRegion(sector.region_id);
+      }
+    } else if (userRole === 'regionadmin' && user?.regionId) {
+      // RegionAdmin üçün region filtri avtomatik təyin edilir
+      setSelectedRegion(user.regionId);
+    }
+  }, [userRole, sectorId, sectors, user]);
+
   // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -141,11 +168,16 @@ export const useSupabaseSchools = () => {
 
   const resetFilters = useCallback(() => {
     setSearchTerm('');
-    setSelectedRegion('');
-    setSelectedSector('');
+    
+    // Sektoradmin üçün sektorId və regionId qalır
+    if (userRole !== 'sectoradmin') {
+      setSelectedRegion('');
+      setSelectedSector('');
+    }
+    
     setSelectedStatus('');
     setCurrentPage(1);
-  }, []);
+  }, [userRole]);
 
   // Məlumatların ilkin yüklənməsi
   useEffect(() => {
@@ -179,5 +211,6 @@ export const useSupabaseSchools = () => {
     resetFilters,
     fetchSchools, // məlumatları yenidən yükləmək üçün
     setSchools, // məktəb əlavə və ya silmək üçün
+    userRole, // istifadəçi rolunu qaytarırıq
   };
 };

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Region } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface SchoolFiltersProps {
   searchTerm: string;
@@ -38,11 +39,15 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
   resetFilters
 }) => {
   const { t } = useLanguage();
+  const { userRole } = usePermissions();
   const hasActiveFilters = searchTerm || selectedRegion || selectedSector || selectedStatus;
+  
+  // sektoradmin olduqda region və sektor filterlərini göstərməmək üçün
+  const isSectorAdmin = userRole === 'sectoradmin';
 
   return (
     <div className="space-y-4 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 ${isSectorAdmin ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'} gap-4`}>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -63,34 +68,40 @@ const SchoolFilters: React.FC<SchoolFiltersProps> = ({
           )}
         </div>
         
-        <div>
-          <select
-            value={selectedRegion}
-            onChange={handleRegionFilter}
-            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label={t('filterByRegion')}
-          >
-            <option value="">{t('allRegions')}</option>
-            {regions.map(region => (
-              <option key={region.id} value={region.id}>{region.name}</option>
-            ))}
-          </select>
-        </div>
+        {/* Region filtri - yalnız superadmin və regionadmin üçün göstərmək */}
+        {!isSectorAdmin && (
+          <div>
+            <select
+              value={selectedRegion}
+              onChange={handleRegionFilter}
+              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={t('filterByRegion')}
+            >
+              <option value="">{t('allRegions')}</option>
+              {regions.map(region => (
+                <option key={region.id} value={region.id}>{region.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         
-        <div>
-          <select
-            value={selectedSector}
-            onChange={handleSectorFilter}
-            disabled={!selectedRegion && filteredSectors.length === 0}
-            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label={t('filterBySector')}
-          >
-            <option value="">{t('allSectors')}</option>
-            {filteredSectors.map(sector => (
-              <option key={sector.id} value={sector.id}>{sector.name}</option>
-            ))}
-          </select>
-        </div>
+        {/* Sektor filtri - yalnız superadmin və regionadmin üçün göstərmək */}
+        {!isSectorAdmin && selectedRegion && (
+          <div>
+            <select
+              value={selectedSector}
+              onChange={handleSectorFilter}
+              disabled={!selectedRegion && filteredSectors.length === 0}
+              className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={t('filterBySector')}
+            >
+              <option value="">{t('allSectors')}</option>
+              {filteredSectors.map(sector => (
+                <option key={sector.id} value={sector.id}>{sector.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         
         <div>
           <select
