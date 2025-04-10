@@ -1,3 +1,4 @@
+
 const commonTranslations = {
   save: 'Yadda saxla',
   cancel: 'Ləğv et',
