@@ -89,7 +89,7 @@ export const useImportExport = (onComplete: () => void) => {
         sectorId: school.sector_id,
         phone: adminData.phone || null,
         language: 'az',
-        status: 'active'
+        status: 'active' as const // TypeScript üçün 'string' əvəzinə konkret tip göstəririk
       };
       
       // İstifadəçi yarat
