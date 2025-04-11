@@ -1,7 +1,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { School, SchoolFormData, mockRegions, mockSectors } from '@/data/schoolsData';
+import { SchoolFormData } from '@/types/school-form';
 import { toast } from 'sonner';
+import { School as SupabaseSchool } from '@/types/supabase';
+import { mapToMockSchool } from './schools/schoolTypeConverters';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 // Initial form data
 export const getInitialFormState = (): SchoolFormData => ({

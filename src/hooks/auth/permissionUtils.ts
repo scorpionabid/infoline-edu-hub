@@ -1,6 +1,6 @@
-
-import { supabase } from '@/integrations/supabase/client';
-import { UserRole, UserRoleData } from '@/types/supabase';
+import { PermissionLevel } from './types';
+import { UserRole } from '@/types/supabase';
+import { UserRoleData } from './types';
 
 /**
  * Verilmiş sorğunun nəticəsini yoxlayır və hər hansı xəta varsa konsola yazır

@@ -44,7 +44,7 @@ export const useSupabaseSchools = (): UseSupabaseSchoolsReturn => {
       }
       
       // Məktəbləri School tipinə çevirmək
-      const convertedSchools = data.map((school: SupabaseSchool) => convertToSchoolType(school));
+      const convertedSchools = data.map((school: any) => convertToSchoolType(school));
       
       setSchools(convertedSchools);
       setLoading(false);

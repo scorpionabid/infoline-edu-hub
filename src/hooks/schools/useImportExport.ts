@@ -8,11 +8,11 @@ import { useLanguage } from '@/context/LanguageContext';
 import { School } from '@/types/supabase';
 import { adaptSchoolToSupabase } from '@/types/supabase';
 
-interface UseImportExportProps {
+export interface UseImportExportProps {
   onSuccess?: () => void;
 }
 
-export const useImportExport = ({ onSuccess }: UseImportExportProps = {}) => {
+export const useImportExport = (onSuccess?: () => void) => {
   const { t } = useLanguage();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -35,7 +35,9 @@ export const useImportExport = ({ onSuccess }: UseImportExportProps = {}) => {
         'Tədris dili': school.language || '',
         'Məktəb növü': school.type || '',
         'Status': (school.status === 'active') ? 'Aktiv' : 'Deaktiv',
-        'Admin e-poçtu': school.adminEmail || school.admin_email || ''
+        'Admin e-poçtu': school.adminEmail || school.admin_email || '',
+        'Region ID': school.regionId || school.region_id || '',
+        'Sektor ID': school.sectorId || school.sector_id || ''
       }));
       
       // Excel sənədi yarat

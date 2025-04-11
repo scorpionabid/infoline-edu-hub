@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
@@ -80,7 +80,7 @@ const SchoolsContainer: React.FC = () => {
   }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
   // İstifadəçinin roluna əsasən sektorları filtrləmək
-  const filteredSectors = useMemo(() => {
+  const filteredSectors = React.useMemo(() => {
     let sectorsList = sectors.map(sector => ({
       id: sector.id,
       name: sector.name,
@@ -109,6 +109,10 @@ const SchoolsContainer: React.FC = () => {
 
   const handleImportClick = () => {
     setIsImportDialogOpen(true);
+  };
+
+  const handleImportConfirm = (file: File) => {
+    handleImportSchools(file);
   };
 
   return (
@@ -184,7 +188,7 @@ const SchoolsContainer: React.FC = () => {
       <ImportDialog 
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImportSchools}
+        onImport={handleImportConfirm}
       />
     </div>
   );

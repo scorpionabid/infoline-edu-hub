@@ -5,25 +5,25 @@ export interface School {
   phone?: string;
   email?: string;
   directorName?: string;
-  principalName?: string; // Əlavə property
+  principalName?: string; 
   studentCount?: number;
   teacherCount?: number;
   schoolType?: 'elementary' | 'middle' | 'high' | 'vocational' | 'special';
-  type?: string; // Daha flexible tip
+  type?: string;
   teachingLanguage?: 'azerbaijani' | 'russian' | 'georgian' | 'turkish' | 'english';
-  language?: string; // Daha flexible dil tipi
+  language?: string;
   regionId: string;
   sectorId: string;
   status: 'active' | 'inactive';
   createdAt?: string;
   updatedAt?: string;
-  completionRate?: number; // Əlavə property
-  logo?: string; // Əlavə property
-  adminEmail?: string; // Əlavə property
-  admin_email?: string; // Supabase adlandırması ilə
-  completion_rate?: number; // Supabase adlandırması ilə
-  region?: string; // Əlaqəli region adı
-  sector?: string; // Əlaqəli sektor adı
+  completionRate?: number;
+  logo?: string;
+  adminEmail?: string;
+  admin_email?: string;
+  completion_rate?: number;
+  region?: string;
+  sector?: string;
   
   // Supabase tipindən gələn daxili adlar
   region_id?: string;
@@ -39,6 +39,14 @@ export interface School {
  * İstifadəçi rolu tipləri
  */
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+// UserRoleData tipini əlavə edək
+export interface UserRoleData {
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}
 
 // Profile interfeysi
 export interface Profile {

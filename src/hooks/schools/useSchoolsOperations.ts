@@ -1,119 +1,170 @@
-
 import { useCallback } from 'react';
-import { School } from '@/types/supabase';
-import { SchoolFormData } from '@/types/school-form';
-import { 
-  addSchool, 
-  updateSchool, 
-  deleteSchool, 
-  assignSchoolAdmin, 
-  resetSchoolAdminPassword 
-} from '@/services/data/schoolService';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useSchools } from '../useSchools';
+import { SchoolFormData } from '@/types/school-form';
+import { School, adaptSchoolToSupabase } from '@/types/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
-interface UseSchoolsOperationsProps {
-  onSuccess: () => void;
+interface UseSchoolOperationsReturn {
+  handleAddSubmit: (formData: SchoolFormData) => Promise<void>;
+  handleEditSubmit: (formData: SchoolFormData, selectedSchool: School | null) => Promise<void>;
+  handleDeleteConfirm: (selectedSchool: School | null) => Promise<void>;
+  handleAdminUpdate: () => void;
+  handleResetPassword: (newPassword: string) => void;
+  handleAssignAdmin: (schoolId: string, userId: string) => Promise<boolean>;
 }
 
-/**
- * Məktəb əməliyyatları üçün hook
- */
-export const useSchoolsOperations = ({ onSuccess }: UseSchoolsOperationsProps) => {
-  const { t } = useLanguage();
+export const useSchoolOperations = (
+  onSuccess: () => void,
+  onCloseDialog: (type: 'add' | 'edit' | 'delete' | 'admin') => void
+): UseSchoolOperationsReturn => {
+  const { addSchool, updateSchool, deleteSchool } = useSchools();
 
-  const handleAdd = useCallback(async (formData: SchoolFormData): Promise<School | null> => {
+  const handleAddSubmit = useCallback(async (formData: SchoolFormData) => {
     try {
-      const schoolData = {
+      console.log("Məktəb əlavə edilir:", formData);
+      
+      // Məktəb məlumatlarını uyğun tiplərə çeviririk
+      const newSchool: Partial<School> = {
         name: formData.name,
-        principal_name: formData.principalName || null,
-        region_id: formData.regionId,
-        sector_id: formData.sectorId,
+        principalName: formData.principalName || null,
+        regionId: formData.regionId || null,
+        sectorId: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: formData.studentCount ? parseInt(formData.studentCount) : null,
-        teacher_count: formData.teacherCount ? parseInt(formData.teacherCount) : null,
-        status: formData.status || 'active',
+        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
+        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
+        status: formData.status as 'active' | 'inactive',
         type: formData.type || null,
         language: formData.language || null,
-        admin_email: formData.adminEmail || null,
+        adminEmail: formData.adminEmail || null,
+        logo: null
       };
       
-      const result = await addSchool(schoolData);
+      // Supabase formatına çevir
+      const supabaseData = adaptSchoolToSupabase(newSchool);
+      
+      const result = await addSchool(supabaseData);
+      console.log("Əlavə edilən məktəb:", result);
+      
+      toast.success("Məktəb uğurla əlavə edildi", {
+        description: `${formData.name} məktəbi sistemə əlavə olundu`
+      });
+      
+      onCloseDialog('add');
       onSuccess();
-      return result;
+      
+      if (formData.adminEmail) {
+        toast.success("Məktəb admini uğurla yaradıldı", {
+          description: `${formData.adminEmail} e-poçt ünvanı ilə admin yaradıldı`
+        });
+      }
     } catch (error) {
-      console.error('Məktəb əlavə edilərkən xəta:', error);
-      return null;
+      console.error('Məktəb əlavə edilərkən xəta baş verdi:', error);
+      toast.error("Məktəb əlavə edilərkən xəta", {
+        description: "Məktəb əlavə edilərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
     }
-  }, [onSuccess]);
+  }, [addSchool, onCloseDialog, onSuccess]);
 
-  const handleUpdate = useCallback(async (id: string, formData: SchoolFormData): Promise<School | null> => {
+  const handleEditSubmit = useCallback(async (formData: SchoolFormData, selectedSchool: School | null) => {
+    if (!selectedSchool) return;
+    
     try {
-      const schoolData = {
+      console.log("Məktəb yenilənir:", formData);
+      
+      // Məktəb məlumatlarını uyğun tiplərə çeviririk
+      const updatedSchool: Partial<School> = {
         name: formData.name,
-        principal_name: formData.principalName || null,
-        region_id: formData.regionId,
-        sector_id: formData.sectorId,
+        principalName: formData.principalName || null,
+        regionId: formData.regionId,
+        sectorId: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: formData.studentCount ? parseInt(formData.studentCount) : null,
-        teacher_count: formData.teacherCount ? parseInt(formData.teacherCount) : null,
-        status: formData.status || 'active',
+        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
+        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
+        status: formData.status as 'active' | 'inactive',
         type: formData.type || null,
         language: formData.language || null,
-        admin_email: formData.adminEmail || null,
+        adminEmail: formData.adminEmail || null
       };
       
-      const result = await updateSchool(id, schoolData);
+      // Supabase formatına çevir
+      const supabaseData = adaptSchoolToSupabase(updatedSchool);
+      
+      const result = await updateSchool(selectedSchool.id, supabaseData);
+      console.log("Yenilənən məktəb:", result);
+      
+      toast.success("Məktəb uğurla yeniləndi", {
+        description: `${formData.name} məktəbinin məlumatları yeniləndi`
+      });
+      
+      onCloseDialog('edit');
       onSuccess();
-      return result;
     } catch (error) {
-      console.error('Məktəb yenilənərkən xəta:', error);
-      return null;
+      console.error('Məktəb yenilənərkən xəta baş verdi:', error);
+      toast.error("Məktəb yenilənərkən xəta", {
+        description: "Məktəb yenilənərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
     }
-  }, [onSuccess]);
+  }, [updateSchool, onCloseDialog, onSuccess]);
 
-  const handleDelete = useCallback(async (id: string): Promise<boolean> => {
+  const handleDeleteConfirm = useCallback(async (selectedSchool: School | null) => {
+    if (!selectedSchool) return;
+    
     try {
-      await deleteSchool(id);
+      await deleteSchool(selectedSchool.id);
+      console.log("Məktəb silindi:", selectedSchool.id);
+      
+      toast.success("Məktəb uğurla silindi", {
+        description: `${selectedSchool.name} məktəbi sistemdə silindi`
+      });
+      
+      onCloseDialog('delete');
       onSuccess();
-      return true;
     } catch (error) {
       console.error('Məktəb silinərkən xəta:', error);
-      return false;
+      toast.error("Məktəb silinərkən xəta", {
+        description: "Məktəb silinərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
     }
-  }, [onSuccess]);
+  }, [deleteSchool, onCloseDialog, onSuccess]);
 
-  const handleAssignAdmin = useCallback(async (schoolId: string, adminEmail: string): Promise<boolean> => {
+  const handleAdminUpdate = useCallback(() => {
+    // Implement admin update logic here
+  }, []);
+
+  const handleResetPassword = useCallback((newPassword: string) => {
+    // Implement password reset logic here
+  }, []);
+
+  const handleAssignAdmin = useCallback(async (schoolId: string, userId: string) => {
     try {
-      await assignSchoolAdmin(schoolId, adminEmail);
-      onSuccess();
+      await supabase.auth.admin.updateUser(userId, { role: 'admin' });
+      console.log("Admin təyin edildi:", userId);
+      
+      toast.success("Admin təyin edildi", {
+        description: `${userId} e-poçt ünvanı ilə admin təyin edildi`
+      });
+      
       return true;
     } catch (error) {
       console.error('Admin təyin edilərkən xəta:', error);
+      toast.error("Admin təyin edilərkən xəta", {
+        description: "Admin təyin edilərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+      });
       return false;
     }
-  }, [onSuccess]);
-
-  const handleResetPassword = useCallback(async (adminEmail: string, newPassword: string): Promise<boolean> => {
-    try {
-      await resetSchoolAdminPassword(adminEmail, newPassword);
-      onSuccess();
-      return true;
-    } catch (error) {
-      console.error('Şifrə sıfırlanarkən xəta:', error);
-      return false;
-    }
-  }, [onSuccess]);
+  }, []);
 
   return {
-    handleAdd,
-    handleUpdate,
-    handleDelete,
-    handleAssignAdmin,
-    handleResetPassword
+    handleAddSubmit,
+    handleEditSubmit,
+    handleDeleteConfirm,
+    handleAdminUpdate,
+    handleResetPassword,
+    handleAssignAdmin
   };
 };

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { School } from '@/data/schoolsData';
 import { School as SupabaseSchool } from '@/types/supabase';
@@ -74,18 +75,18 @@ export const useSchoolDialogHandlers = () => {
     const schoolForEdit = selectedSchool ? {
       id: selectedSchool.id,
       name: selectedSchool.name,
-      principal_name: selectedSchool.principal_name,
+      principalName: selectedSchool.principalName || selectedSchool.principal_name,
       address: selectedSchool.address,
-      region_id: selectedSchool.region_id,
-      sector_id: selectedSchool.sector_id,
+      regionId: selectedSchool.regionId || selectedSchool.region_id,
+      sectorId: selectedSchool.sectorId || selectedSchool.sector_id,
       phone: selectedSchool.phone,
       email: selectedSchool.email,
-      student_count: selectedSchool.student_count,
-      teacher_count: selectedSchool.teacher_count,
+      studentCount: selectedSchool.studentCount || selectedSchool.student_count,
+      teacherCount: selectedSchool.teacherCount || selectedSchool.teacher_count,
       status: selectedSchool.status as 'active' | 'inactive',
       language: selectedSchool.language,
       type: selectedSchool.type,
-      admin_email: selectedSchool.admin_email
+      adminEmail: selectedSchool.adminEmail || selectedSchool.admin_email
     } : null;
     
     await operationEditSubmit(formData, schoolForEdit);
@@ -96,18 +97,18 @@ export const useSchoolDialogHandlers = () => {
     const schoolForDelete = selectedSchool ? {
       id: selectedSchool.id,
       name: selectedSchool.name,
-      principal_name: selectedSchool.principal_name,
+      principalName: selectedSchool.principalName || selectedSchool.principal_name,
       address: selectedSchool.address,
-      region_id: selectedSchool.region_id,
-      sector_id: selectedSchool.sector_id,
+      regionId: selectedSchool.regionId || selectedSchool.region_id,
+      sectorId: selectedSchool.sectorId || selectedSchool.sector_id,
       phone: selectedSchool.phone,
       email: selectedSchool.email,
-      student_count: selectedSchool.student_count,
-      teacher_count: selectedSchool.teacher_count,
+      studentCount: selectedSchool.studentCount || selectedSchool.student_count,
+      teacherCount: selectedSchool.teacherCount || selectedSchool.teacher_count,
       status: selectedSchool.status as 'active' | 'inactive',
       language: selectedSchool.language,
       type: selectedSchool.type,
-      admin_email: selectedSchool.admin_email
+      adminEmail: selectedSchool.adminEmail || selectedSchool.admin_email
     } : null;
     
     await operationDeleteConfirm(schoolForDelete);

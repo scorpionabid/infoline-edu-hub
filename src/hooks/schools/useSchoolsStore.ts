@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import { School, SortConfig } from '@/data/schoolsData';
+import { School } from '@/data/schoolsData';
 import { useEffect } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { adaptSchoolFromSupabase, School as SupabaseSchool } from '@/types/supabase';
 import { convertToSchoolType } from './schoolTypeConverters';
+
+export interface SortConfig {
+  key: string | null;
+  direction: 'asc' | 'desc' | null;
+}
 
 interface SchoolsState {
   schools: School[];
@@ -152,29 +157,25 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Məktəbləri əldə et
       const { data: schoolsData, error: schoolsError } = await supabase
         .from('schools')
         .select('*');
       
       if (schoolsError) throw schoolsError;
       
-      // Regionları əldə et
       const { data: regionsData, error: regionsError } = await supabase
         .from('regions')
         .select('id, name');
       
       if (regionsError) throw regionsError;
       
-      // Sektorları əldə et
       const { data: sectorsData, error: sectorsError } = await supabase
         .from('sectors')
         .select('id, name, region_id');
       
       if (sectorsError) throw sectorsError;
       
-      // Məktəbləri School tipinə çevirmək
-      const schools = schoolsData.map((school: SupabaseSchool) => convertToSchoolType(school));
+      const schools = schoolsData.map((school: any) => convertToSchoolType(school));
       
       set({ 
         schools: schools,

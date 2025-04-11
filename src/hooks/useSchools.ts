@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/supabase';
+import { School, adaptSchoolFromSupabase } from '@/types/supabase';
 import { adaptSchoolToSupabase } from '@/types/supabase';
 
 export const useSchools = () => {
@@ -17,7 +16,9 @@ export const useSchools = () => {
       
       if (error) throw error;
       
-      setSchools(data as School[]);
+      // Verilənləri uyğun School strukturuna çevir
+      const convertedSchools = data.map((item: any) => adaptSchoolFromSupabase(item));
+      setSchools(convertedSchools);
       setLoading(false);
     } catch (error: any) {
       setError(error.message);
@@ -36,7 +37,8 @@ export const useSchools = () => {
       // Məktəblər siyahısını yenilə
       fetchSchools();
       
-      return data?.[0] as School;
+      // Uyğun tipə çevirmədən əvvəl objekt tipinin düzəldilməsi
+      return data?.[0] ? adaptSchoolFromSupabase(data[0]) : null;
     } catch (error: any) {
       setError(error.message);
       return null;
