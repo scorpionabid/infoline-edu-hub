@@ -27,7 +27,7 @@ type FormData = z.infer<typeof formSchema>;
 
 const Login = () => {
   const { t } = useLanguage();
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -47,7 +47,7 @@ const Login = () => {
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      await signIn(data.email, data.password);
+      await login(data.email, data.password);
       navigate(from, { replace: true });
       toast.success(t('loginSuccess'), {
         description: t('welcomeBack'),

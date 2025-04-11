@@ -35,88 +35,90 @@ export interface SchoolAdminDashboardData {
   formsByStatus?: FormStatusCount;
 }
 
+export interface EntityCount {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface UserEntityCount extends EntityCount {
+  byRole: {
+    superadmin: number;
+    regionadmin: number;
+    sectoradmin: number;
+    schooladmin: number;
+  };
+}
+
 export interface RegionAdminDashboardData {
-  schools: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  sectors: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  statistics: {
-    completionRate: number;
-    submissionRate: number;
-    approvalRate: number;
-  };
+  sectors: EntityCount;
+  schools: EntityCount;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
   notifications: Notification[];
-  recentActivities: any[];
-  topSchools: {
+  stats: StatsItem[];
+  sectorCompletions?: Array<{
+    id: string;
     name: string;
-    completionRate: number;
-  }[];
+    schoolCount: number;
+    completionPercentage: number;
+  }>;
 }
 
 export interface SuperAdminDashboardData {
-  regions: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  sectors: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  schools: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  users: {
-    total: number;
-    active: number;
-    inactive: number;
-    byRole: {
-      superadmin: number;
-      regionadmin: number;
-      sectoradmin: number;
-      schooladmin: number;
-    };
-  };
-  statistics: {
+  regions: EntityCount;
+  sectors: EntityCount;
+  schools: EntityCount;
+  users: UserEntityCount;
+  statistics?: {
     completionRate: number;
-    submissionRate: number;
-    approvalRate: number;
+    submissionRate?: number;
+    approvalRate?: number;
   };
-  notifications: Notification[];
-  recentActivities: any[];
-  pendingApprovals?: number;
   completionRate?: number;
+  pendingApprovals?: number;
+  notifications: Notification[];
+  stats?: StatsItem[];
+  formsByStatus?: FormStatusCount;
+  regionStats?: Array<{
+    id: string;
+    name: string;
+    sectorCount: number;
+    schoolCount: number;
+    completionRate: number;
+  }>;
 }
 
 export interface SectorAdminDashboardData {
-  sectors: {
-    name: string;
-    id: string;
-  };
-  schools: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  statistics: {
-    completionRate: number;
-    submissionRate: number;
-    approvalRate: number;
-  };
+  schools: EntityCount;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
   notifications: Notification[];
-  pendingForms: FormItem[];
+  stats: StatsItem[];
+  schoolStats?: Array<{
+    id: string;
+    name: string;
+    completionRate: number;
+    pending: number;
+  }>;
 }
 
 export interface DashboardData {
+  regions?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
+  completionRate?: number;
+  pendingApprovals?: number;
+  notifications?: Notification[];
+  stats?: StatsItem[];
   superAdmin?: SuperAdminDashboardData;
   regionAdmin?: RegionAdminDashboardData;
   sectorAdmin?: SectorAdminDashboardData;
@@ -124,9 +126,12 @@ export interface DashboardData {
 }
 
 export interface StatsItem {
-  label: string;
+  id: string;
+  title: string;
   value: number;
   change?: number;
+  changeType?: 'increase' | 'decrease' | 'neutral';
+  label?: string;
   trend?: 'up' | 'down' | 'neutral';
 }
 

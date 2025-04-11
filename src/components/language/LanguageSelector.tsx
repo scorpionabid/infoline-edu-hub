@@ -9,24 +9,14 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Globe } from 'lucide-react';
+import { Language } from '@/types/language';
 
 const LanguageSelector: React.FC = () => {
-  const { language, setLanguage, supportedLanguages } = useLanguage();
+  const { language, setLanguage, languages } = useLanguage();
   
-  // Dil adlarını göstərmək üçün funksiya
-  const getLanguageName = (code: string) => {
-    switch (code) {
-      case 'az':
-        return 'Azərbaycan';
-      case 'en':
-        return 'English';
-      case 'ru':
-        return 'Русский';
-      case 'tr':
-        return 'Türkçe';
-      default:
-        return code;
-    }
+  // Dil seçimi üçün funksiya
+  const handleLanguageSelect = (lang: Language) => {
+    setLanguage(lang);
   };
   
   return (
@@ -37,13 +27,14 @@ const LanguageSelector: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {supportedLanguages.map((lang) => (
+        {Object.entries(languages).map(([code, langInfo]) => (
           <DropdownMenuItem
-            key={lang}
-            onClick={() => setLanguage(lang)}
-            className={language === lang ? 'bg-muted' : ''}
+            key={code}
+            onClick={() => handleLanguageSelect(code as Language)}
+            className={language === code ? 'bg-muted' : ''}
           >
-            {getLanguageName(lang)}
+            <span className="mr-2">{langInfo.flag}</span>
+            <span>{langInfo.nativeName}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

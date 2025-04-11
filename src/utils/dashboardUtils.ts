@@ -1,12 +1,16 @@
+
 import { 
   SuperAdminDashboardData, 
   RegionAdminDashboardData, 
   SectorAdminDashboardData, 
   SchoolAdminDashboardData,
   ChartData,
-  StatsItem
+  StatsItem,
+  EntityCount,
+  UserEntityCount
 } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
+import { generateRandomId } from '@/utils/helpers';
 
 // Mock bildiriş data generasiyası
 const generateMockNotifications = (): Notification[] => {
@@ -48,28 +52,28 @@ const generateMockNotifications = (): Notification[] => {
 const generateMockStats = (): StatsItem[] => {
   return [
     {
-      id: '1',
+      id: generateRandomId(),
       title: 'Ümumi məlumat doldurulma faizi',
       value: 78,
       change: 12,
       changeType: 'increase'
     },
     {
-      id: '2',
+      id: generateRandomId(),
       title: 'Bu ay əlavə edilən məlumatlar',
       value: 156,
       change: 8,
       changeType: 'increase'
     },
     {
-      id: '3',
+      id: generateRandomId(),
       title: 'Keçən aya nəzərən dəyişiklik',
       value: 23,
       change: 5,
       changeType: 'decrease'
     },
     {
-      id: '4',
+      id: generateRandomId(),
       title: 'Formların ortalama tamamlanma müddəti',
       value: 2.4,
       change: 0,
@@ -80,11 +84,32 @@ const generateMockStats = (): StatsItem[] => {
 
 // SuperAdmin üçün mock data generasiyası
 export const generateSuperAdminData = (): SuperAdminDashboardData => {
+  const entityCount: EntityCount = { total: 0, active: 0, inactive: 0 };
+  const userEntityCount: UserEntityCount = { 
+    ...entityCount, 
+    byRole: {
+      superadmin: 0,
+      regionadmin: 0,
+      sectoradmin: 0,
+      schooladmin: 0
+    }
+  };
+  
   return {
-    regions: 12,
-    sectors: 48,
-    schools: 645,
-    users: 872,
+    regions: { total: 12, active: 10, inactive: 2 },
+    sectors: { total: 48, active: 45, inactive: 3 },
+    schools: { total: 645, active: 620, inactive: 25 },
+    users: { 
+      total: 872, 
+      active: 850, 
+      inactive: 22,
+      byRole: {
+        superadmin: 5,
+        regionadmin: 12,
+        sectoradmin: 48,
+        schooladmin: 645
+      }
+    },
     completionRate: 76,
     pendingApprovals: 34,
     notifications: generateMockNotifications(),
@@ -123,8 +148,8 @@ export const generateSuperAdminData = (): SuperAdminDashboardData => {
 // RegionAdmin üçün mock data generasiyası
 export const generateRegionAdminData = (): RegionAdminDashboardData => {
   return {
-    sectors: 8,
-    schools: 120,
+    sectors: { total: 8, active: 8, inactive: 0 },
+    schools: { total: 120, active: 118, inactive: 2 },
     users: 145,
     completionRate: 72,
     pendingApprovals: 18,
@@ -159,7 +184,7 @@ export const generateRegionAdminData = (): RegionAdminDashboardData => {
 // SectorAdmin üçün mock data generasiyası
 export const generateSectorAdminData = (): SectorAdminDashboardData => {
   return {
-    schools: 24,
+    schools: { total: 24, active: 24, inactive: 0 },
     completionRate: 68,
     pendingApprovals: 12,
     pendingSchools: 8,
@@ -266,11 +291,11 @@ export const generateMockChartData = (): ChartData => {
       { name: 'Şəki', value: 38 }
     ],
     categoryCompletionData: [
-      { name: 'Şagird statistikası', completed: 85 },
-      { name: 'Müəllim heyəti', completed: 72 },
-      { name: 'İnfrastruktur', completed: 64 },
-      { name: 'Tədris proqramı', completed: 92 },
-      { name: 'Maliyyə hesabatları', completed: 58 }
+      { name: 'Şagird statistikası', value: 85 },
+      { name: 'Müəllim heyəti', value: 72 },
+      { name: 'İnfrastruktur', value: 64 },
+      { name: 'Tədris proqramı', value: 92 },
+      { name: 'Maliyyə hesabatları', value: 58 }
     ]
   };
 };

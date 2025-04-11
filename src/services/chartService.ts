@@ -19,7 +19,10 @@ export const fetchDashboardChartData = async (): Promise<ChartData> => {
         value: item.value
       })),
       regionSchoolsData,
-      categoryCompletionData
+      categoryCompletionData: categoryCompletionData.map(item => ({
+        name: item.name,
+        value: item.completed // completed field-i value-ya çeviririk
+      }))
     };
   } catch (error) {
     console.error('Chart məlumatları əldə edilərkən xəta:', error);

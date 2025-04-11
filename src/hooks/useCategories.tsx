@@ -1,8 +1,8 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useFiltering } from "./useFiltering";
 import { fetchCategories } from "@/api/categoryApi";
 import { Category } from "@/types/category";
+import { useState, useMemo } from "react";
 
 export const useCategories = () => {
   // Fetch categories data
@@ -17,12 +17,19 @@ export const useCategories = () => {
     queryFn: fetchCategories,
   });
 
-  // İstifadə edəcəyimiz filtrasiya hook-u
-  const {
-    searchQuery,
-    setSearchQuery,
-    filteredData: filteredCategories
-  } = useFiltering(categories, ["name", "description"]);
+  // Axtarış üçün state və funksiya
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filtrelənmiş kateqoriyalar
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    
+    return categories.filter((category) => {
+      const nameMatch = category.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const descMatch = category.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      return nameMatch || descMatch;
+    });
+  }, [categories, searchQuery]);
 
   return {
     categories,
