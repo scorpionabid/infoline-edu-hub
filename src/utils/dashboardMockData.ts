@@ -1,4 +1,3 @@
-
 import { SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData } from "@/types/dashboard";
 import { generateRandomId } from "./helpers";
 
@@ -39,7 +38,7 @@ export const generateSuperAdminDashboardData = (): SuperAdminDashboardData => {
         title: "Yeni məktəb əlavə edildi",
         message: "45 nömrəli məktəb sistemə əlavə edildi",
         date: new Date().toISOString(),
-        read: false,
+        isRead: false,
         type: "info"
       },
       {
@@ -47,7 +46,7 @@ export const generateSuperAdminDashboardData = (): SuperAdminDashboardData => {
         title: "Yeni kateqoriya",
         message: "Təhsil Nazirliyi yeni kateqoriya yaratdı",
         date: new Date(Date.now() - 86400000).toISOString(),
-        read: true,
+        isRead: true,
         type: "success"
       },
       {
@@ -55,7 +54,7 @@ export const generateSuperAdminDashboardData = (): SuperAdminDashboardData => {
         title: "Təcili bildiriş",
         message: "Son tarixlər yeniləndi. Bütün məlumatlar 20 Aprel tarixinə qədər təqdim edilməlidir",
         date: new Date(Date.now() - 172800000).toISOString(),
-        read: false,
+        isRead: false,
         type: "warning"
       }
     ],
@@ -98,7 +97,7 @@ export const generateRegionAdminDashboardData = (): RegionAdminDashboardData => 
         title: "Yeni məktəb əlavə edildi",
         message: "156 nömrəli məktəb regionunuza əlavə edildi",
         date: new Date().toISOString(),
-        read: false,
+        isRead: false,
         type: "info"
       },
       {
@@ -106,7 +105,7 @@ export const generateRegionAdminDashboardData = (): RegionAdminDashboardData => 
         title: "Təcili bildiriş",
         message: "Sabunçu rayonu üzrə hesabat gözlənilir",
         date: new Date(Date.now() - 86400000).toISOString(),
-        read: false,
+        isRead: false,
         type: "warning"
       }
     ],
@@ -159,7 +158,7 @@ export function generateSectorAdminDashboardData(): SectorAdminDashboardData {
         title: "Yeni məlumat tələbi",
         message: "Müəllim heyəti haqqında məlumatları yeniləyin",
         date: new Date().toISOString(),
-        read: false,
+        isRead: false,
         type: "info"
       }
     ],
@@ -212,7 +211,7 @@ export function generateSchoolAdminDashboardData(): SchoolAdminDashboardData {
         title: "Sənədlər təsdiqləndi",
         message: "Müəllim kadrları sənədi təsdiqləndi",
         date: new Date().toISOString(),
-        read: false,
+        isRead: false,
         type: "success"
       },
       {
@@ -220,7 +219,7 @@ export function generateSchoolAdminDashboardData(): SchoolAdminDashboardData {
         title: "Təcili bildiriş",
         message: "Şagird sayı ilə bağlı məlumatlar son tarixdən əvvəl təqdim edilməlidir",
         date: new Date(Date.now() - 86400000).toISOString(),
-        read: false,
+        isRead: false,
         type: "warning"
       }
     ]

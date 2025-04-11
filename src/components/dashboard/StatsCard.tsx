@@ -12,23 +12,31 @@ import {
 
 export interface StatsCardProps {
   title: string;
-  value: string;
-  icon: string;
-  description?: string; // Əlavə edildi
+  value: string | number;
+  icon: string | React.ReactNode;
+  description?: string;
   changeType?: 'increase' | 'decrease' | 'neutral';
   changeValue?: string;
+  color?: string;
+  onClick?: () => void;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({ 
   title, 
   value, 
   icon,
-  description, // Əlavə edildi
+  description,
   changeType,
-  changeValue
+  changeValue,
+  color,
+  onClick
 }) => {
   // İkon seçimi
   const renderIcon = () => {
+    if (React.isValidElement(icon)) {
+      return icon;
+    }
+    
     switch (icon) {
       case 'region':
         return <Building className="h-8 w-8 text-blue-500" />;
@@ -70,8 +78,10 @@ const StatsCard: React.FC<StatsCardProps> = ({
     );
   };
   
+  const cardClasses = onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : '';
+  
   return (
-    <Card>
+    <Card className={cardClasses} onClick={onClick}>
       <CardContent className="p-6">
         <div className="flex justify-between">
           <div>

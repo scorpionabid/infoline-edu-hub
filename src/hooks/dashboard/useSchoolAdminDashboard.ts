@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -172,11 +171,22 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
         : 0;
       
       // School data-dan məktəb, sektor, region adlarını çıxarış
-      const sectorName = typeof schoolData?.sectors === 'object' && schoolData?.sectors ? 
-        schoolData?.sectors.name : 'Sektor adı';
+      let sectorName = 'Sektor adı';
+      let regionName = 'Region adı';
       
-      const regionName = typeof schoolData?.regions === 'object' && schoolData?.regions ? 
-        schoolData?.regions.name : 'Region adı';
+      if (schoolData?.sectors) {
+        // Əgər sectors bir obyektdirsə
+        if (typeof schoolData.sectors === 'object' && !Array.isArray(schoolData.sectors)) {
+          sectorName = schoolData.sectors.name || 'Sektor adı';
+        }
+      }
+      
+      if (schoolData?.regions) {
+        // Əgər regions bir obyektdirsə
+        if (typeof schoolData.regions === 'object' && !Array.isArray(schoolData.regions)) {
+          regionName = schoolData.regions.name || 'Region adı';
+        }
+      }
       
       // Data state-ni yeniləyirik
       setData({

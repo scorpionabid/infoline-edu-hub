@@ -27,7 +27,7 @@ const Categories = () => {
     isError, 
     error, 
     refetch, 
-    createCategory, 
+    addCategory, 
     updateCategory, 
     deleteCategory,
     canManageCategories,
@@ -36,7 +36,10 @@ const Categories = () => {
   
   const handleUpdateCategory = async (updatedCategory: Category) => {
     try {
-      await updateCategory(updatedCategory);
+      await updateCategory({
+        id: updatedCategory.id,
+        updates: updatedCategory
+      });
       setIsDialogOpen(false);
       setSelectedCategory(null);
       toast.success(t('categoryUpdated'));
@@ -49,7 +52,7 @@ const Categories = () => {
   
   const handleCreateCategory = async (newCategory: Category) => {
     try {
-      await createCategory(newCategory);
+      await addCategory(newCategory);
       setIsDialogOpen(false);
       toast.success(t('categoryCreated'));
     } catch (error: any) {
@@ -68,7 +71,7 @@ const Categories = () => {
     setIsDialogOpen(true);
   };
   
-  // Id yerine Category parametrli olmasi ucun wrapper
+  // Category obyekti ilə işləyən deleteCategory üçün wrapper
   const handleDeleteCategory = (category: Category) => {
     deleteCategory(category.id);
   };
