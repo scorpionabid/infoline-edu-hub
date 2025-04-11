@@ -890,3 +890,5 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<D
   } catch (error) {
     console.error('SectorAdmin dashboard məlumatları əldə edilərkən xəta:', error);
     throw error;
+  }
+};
