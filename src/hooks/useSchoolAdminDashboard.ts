@@ -218,7 +218,7 @@ export const getRegionNames = async () => {
     
     return data.map(region => ({
       id: region.id,
-      name: region.name
+      name: region.name || ''
     }));
   } catch (error) {
     console.error('Region adları əldə edilərkən xəta:', error);
@@ -237,7 +237,7 @@ export const getSectorNames = async () => {
     
     return data.map(sector => ({
       id: sector.id,
-      name: sector.name
+      name: sector.name || ''
     }));
   } catch (error) {
     console.error('Sektor adları əldə edilərkən xəta:', error);
