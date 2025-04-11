@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
@@ -86,8 +87,10 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // Explicit type conversion and checking
-    const userRoleTyped: UserRole | null = userRole as UserRole | null;
+    // Explicitly handle potential undefined or null userRole
+    const userRoleTyped: UserRole | null = userRole && ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole) 
+      ? userRole as UserRole 
+      : null;
     
     // Sektor admin üçün yalnız öz sektorunu göstərmək
     if (userRoleTyped === 'sectoradmin') {
