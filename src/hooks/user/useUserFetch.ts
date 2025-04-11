@@ -5,7 +5,7 @@ import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { UserFilter } from '@/hooks/useUserList';
-import { fetchAdminEntityData } from './useUserData';
+import { fetchAdminEntityData } from '@/services/users/userUtilService';
 
 export const useUserFetch = (
   filter: UserFilter,
@@ -114,7 +114,7 @@ export const useUserFetch = (
       
       const adminEntities = await Promise.all(adminEntityPromises);
       
-      const formattedUsers: FullUserData[] = filteredRolesData.map((roleItem, index) => {
+      const formattedUsers = filteredRolesData.map((roleItem, index) => {
         const profile = profilesMap[roleItem.user_id] || {};
         
         let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
@@ -126,6 +126,12 @@ export const useUserFetch = (
         
         // Rolu UserRole tipinə məcburi çeviririk
         const roleValue = roleItem.role as unknown as UserRole;
+        
+        const adminEntity = adminEntities[index] || {
+          type: '',
+          name: '',
+          status: 'active'
+        };
         
         return {
           id: roleItem.user_id,
@@ -152,7 +158,14 @@ export const useUserFetch = (
           createdAt: profile.created_at || '',
           updatedAt: profile.updated_at || '',
           
-          adminEntity: adminEntities[index],
+          adminEntity: {
+            type: adminEntity.type,
+            name: adminEntity.name || '',
+            status: adminEntity.status,
+            regionName: '', // Bu sahələri əlavə edirik
+            sectorName: '',
+            schoolType: ''
+          },
           
           twoFactorEnabled: false,
           notificationSettings: {
@@ -162,7 +175,7 @@ export const useUserFetch = (
         };
       });
       
-      setUsers(formattedUsers);
+      setUsers(formattedUsers as FullUserData[]);
       setTotalCount(count || filteredRolesData.length);
     } catch (err) {
       console.error('İstifadəçiləri əldə edərkən xəta:', err);

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Regionların siyahısını əldə etmək
@@ -182,6 +183,8 @@ export const fetchAdminEntityData = async (roleData: any) => {
         
       return {
         type: 'region',
+        name: region?.name || '',
+        status: region?.status,
         entity: region
       };
     }
@@ -195,6 +198,8 @@ export const fetchAdminEntityData = async (roleData: any) => {
         
       return {
         type: 'sector',
+        name: sector?.name || '',
+        status: sector?.status,
         entity: sector
       };
     }
@@ -208,6 +213,8 @@ export const fetchAdminEntityData = async (roleData: any) => {
         
       return {
         type: 'school',
+        name: school?.name || '',
+        status: school?.status,
         entity: school
       };
     }
