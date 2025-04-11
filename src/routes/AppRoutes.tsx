@@ -1,223 +1,102 @@
 
-import { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/auth";
-import { usePermissions } from "@/hooks/auth/usePermissions";
-import AccessDenied from "@/components/AccessDenied";
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import Dashboard from '@/pages/Dashboard';
+import SchoolsPage from '@/pages/SchoolsPage';
+import LoginPage from '@/pages/LoginPage';
+import RegionsPage from '@/pages/RegionsPage';
+import SectorsPage from '@/pages/SectorsPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import UsersPage from '@/pages/UsersPage';
+import DataEntryPage from '@/pages/DataEntryPage';
+import ReportsPage from '@/pages/ReportsPage';
+import SettingsPage from '@/pages/SettingsPage';
+import AccessDenied from '@/components/AccessDenied';
+import ProtectedRoute from './ProtectedRoute';
 
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import RegisterSuccess from "@/pages/RegisterSuccess";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import Dashboard from "@/pages/Dashboard";
-import Sectors from "@/pages/Sectors";
-import Regions from "@/pages/Regions";
-import Schools from "@/pages/Schools";
-import Categories from "@/pages/Categories";
-import Columns from "@/pages/Columns";
-import Users from "@/pages/Users";
-import Reports from "@/pages/Reports";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
-import DataEntry from "@/pages/DataEntry";
-import Profile from "@/pages/Profile";
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles?: string[];
+// Marşrut konfiqurasiyaları
+interface RouteConfig {
+  path: string;
+  element: React.ReactNode;
 }
 
-// Protected Route Component - rol əsasında icazə yoxlaması edir
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const { userRole } = usePermissions();
-  const location = useLocation();
-  
-  // Yüklənmə zamanı spinner göstəririk
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+// Əsas marşrutlar - bütün istifadəçilərin giriş edə bildiyi səhifələr
+export const AppRoutes: RouteConfig[] = [
+  {
+    path: '/',
+    element: <Navigate to="/dashboard" replace />
+  },
+  {
+    path: '/login',
+    element: <LoginPage />
+  },
+  {
+    path: '/access-denied',
+    element: <AccessDenied />
+  },
+  {
+    path: '/dashboard',
+    element: <ProtectedRoute element={<Dashboard />} />
+  },
+  {
+    path: '/schools',
+    element: <ProtectedRoute element={<SchoolsPage />} />
+  },
+  {
+    path: '/regions',
+    element: <ProtectedRoute 
+      element={<RegionsPage />} 
+      requiredRoles={['superadmin']} 
+    />
+  },
+  {
+    path: '/sectors',
+    element: <ProtectedRoute 
+      element={<SectorsPage />} 
+      requiredRoles={['superadmin', 'regionadmin']} 
+    />
+  },
+  {
+    path: '/categories',
+    element: <ProtectedRoute 
+      element={<CategoriesPage />} 
+      requiredRoles={['superadmin', 'regionadmin']} 
+    />
+  },
+  {
+    path: '/users',
+    element: <ProtectedRoute 
+      element={<UsersPage />} 
+      requiredRoles={['superadmin', 'regionadmin', 'sectoradmin']} 
+    />
+  },
+  {
+    path: '/data-entry',
+    element: <ProtectedRoute 
+      element={<DataEntryPage />} 
+    />
+  },
+  {
+    path: '/data-entry/:id',
+    element: <ProtectedRoute 
+      element={<DataEntryPage />} 
+    />
+  },
+  {
+    path: '/reports',
+    element: <ProtectedRoute 
+      element={<ReportsPage />} 
+    />
+  },
+  {
+    path: '/settings',
+    element: <ProtectedRoute 
+      element={<SettingsPage />} 
+    />
+  },
+  // İstənilən naməlum yol Dashboard səhifəsinə yönləndirilir
+  {
+    path: '*',
+    element: <Navigate to="/dashboard" replace />
   }
-  
-  // İstifadəçi login olmayıbsa, login səhifəsinə yönləndiririk
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  
-  // Əgər rol yoxlaması varsa və istifadəçinin bu səhifəyə icazəsi yoxdursa
-  if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
-    return <AccessDenied />;
-  }
-  
-  return <>{children}</>;
-};
-
-interface PublicRouteProps {
-  children: React.ReactNode;
-  restricted?: boolean;
-}
-
-// Public Route Component - login olmuş istifadəçini müəyyən səhifələrə daxil olmağına icazə vermir
-const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (isAuthenticated && restricted) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-// Route konfigurasyonları
-const AppRoutes = [
-  {
-    path: "/login",
-    element: (
-      <PublicRoute restricted>
-        <Login />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/register",
-    element: (
-      <PublicRoute restricted>
-        <Register />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/register-success",
-    element: (
-      <PublicRoute restricted>
-        <RegisterSuccess />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/forgot-password",
-    element: (
-      <PublicRoute restricted>
-        <ForgotPassword />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/reset-password",
-    element: (
-      <PublicRoute>
-        <ResetPassword />
-      </PublicRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sectors",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
-        <Sectors />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/regions",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin']}>
-        <Regions />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/schools",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-        <Schools />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/categories",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
-        <Categories />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/columns",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
-        <Columns />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/users",
-    element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
-        <Users />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/reports",
-    element: (
-      <ProtectedRoute>
-        <Reports />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/settings",
-    element: (
-      <ProtectedRoute>
-        <Settings />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/data-entry",
-    element: (
-      <ProtectedRoute>
-        <DataEntry />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/",
-    element: <Navigate to="/dashboard" replace />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
 ];
-
-export { AppRoutes, ProtectedRoute, PublicRoute };

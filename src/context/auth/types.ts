@@ -1,10 +1,10 @@
 
-import { FullUserData, UserRole } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
 
-// User roles
-export type Role = UserRole;
+// Mövcud rol tipləri
+export type Role = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
-// Auth state interface
+// Auth vəziyyəti interfeysi
 export interface AuthState {
   user: FullUserData | null;
   isAuthenticated: boolean;
@@ -12,10 +12,10 @@ export interface AuthState {
   error: string | null;
 }
 
-// Auth context interface
+// Auth kontekst interfeysi
 export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
   clearError: () => void;
 }

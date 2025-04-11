@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, ReactNode } from 'react';
-import { useSupabaseAuth } from '@/hooks/auth';
+import { useAuth as useSupabaseAuth } from '@/hooks/auth/useAuth';
 import { AuthContext } from './context';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -15,9 +15,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isLoading,
     error: authError,
-    signIn,
-    signOut,
-    updateProfile,
+    logout
   } = useSupabaseAuth();
 
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +24,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const authState: AuthState = {
     user,
     isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
-    isLoading: isLoading,
+    isLoading,
     error,
   };
 
@@ -36,11 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       console.log(`AuthContext: ${email} ilə giriş edilir...`);
       
-      if (!signIn) {
-        throw new Error('Sign in functionality is not available');
-      }
-      
-      const { data, error } = await signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         console.error('AuthContext: Giriş uğursuz oldu:', error);
@@ -67,33 +61,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError('Yanlış giriş məlumatları: e-poçt və ya şifrə səhvdir');
       } else if (error.message?.includes('Email not confirmed')) {
         setError('E-poçt təsdiqlənməyib');
-      } else if (error.message?.includes('İstifadəçi profili tapılmadı')) {
-        setError('Bu hesab üçün profil tapılmadı, zəhmət olmasa adminə müraciət edin');
-      } else if (error.message?.includes('rol təyin edilməyib')) {
-        setError('Bu hesab üçün rol təyin edilməyib, zəhmət olmasa adminə müraciət edin');
       } else {
         setError(error.message || 'Bilinməyən giriş xətası');
       }
       
       return false;
-    }
-  };
-
-  // Logout function
-  const logout = async () => {
-    try {
-      setError(null);
-      
-      if (!signOut) {
-        throw new Error('Sign out functionality is not available');
-      }
-      
-      await signOut();
-      console.log('AuthContext: İstifadəçi uğurla çıxış etdi');
-    } catch (error: any) {
-      console.error('AuthContext: Çıxış zamanı xəta:', error);
-      setError(error.message || 'Çıxış zamanı xəta baş verdi');
-      toast.error('Çıxış zamanı xəta baş verdi');
     }
   };
 
@@ -103,10 +75,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       setError(null);
-      
-      if (!updateProfile) {
-        throw new Error('Update profile functionality is not available');
-      }
       
       // Convert FullUserData to Profile format
       const profileUpdates = {
@@ -125,8 +93,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       });
       
-      const success = await updateProfile(profileUpdates);
-      return success;
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      return true;
     } catch (error: any) {
       console.error('Update user error:', error);
       setError(error.message || 'İstifadəçi məlumatlarını yeniləmə zamanı xəta');
