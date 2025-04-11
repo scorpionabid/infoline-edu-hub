@@ -10,5 +10,7 @@ export enum TableNames {
   COLUMNS = 'columns',
   DATA_ENTRIES = 'data_entries',
   NOTIFICATIONS = 'notifications',
-  AUDIT_LOGS = 'audit_logs'
+  AUDIT_LOGS = 'audit_logs',
+  REPORTS = 'reports',
+  REPORT_TEMPLATES = 'report_templates'
 }

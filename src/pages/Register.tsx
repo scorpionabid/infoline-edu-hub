@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -14,7 +15,7 @@ import LanguageSelector from '@/components/LanguageSelector';
 
 const Register = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const { signUp } = useSupabaseAuth();
+  const { register } = useSupabaseAuth(); // signUp əvəzinə register istifadə edirik
   const { t } = useLanguage();
   const navigate = useNavigate();
   
@@ -63,8 +64,8 @@ const Register = () => {
         full_name: fullName,
       };
       
-      if (signUp) {
-        const result = await signUp(email, password, userData);
+      if (register) {
+        const result = await register(email, password, userData.full_name);
         
         if (result) {
           navigate('/register-success');

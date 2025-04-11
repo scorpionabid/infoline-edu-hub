@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Regionların siyahısını əldə etmək
@@ -166,4 +165,78 @@ export const getSimpleSchoolList = async (sectorId?: string, regionId?: string) 
     console.error('Məktəb siyahısı əldə edilərkən xəta:', error);
     return [];
   }
+};
+
+// Admin entity məlumatlarını əldə etmək üçün funksiya
+export const fetchAdminEntityData = async (roleData: any) => {
+  try {
+    // Rol məlumatları əsasında admin entitysini əldə edirik
+    if (!roleData) return null;
+    
+    if (roleData.region_id) {
+      const { data: region } = await supabase
+        .from('regions')
+        .select('id, name, description, status')
+        .eq('id', roleData.region_id)
+        .single();
+        
+      return {
+        type: 'region',
+        entity: region
+      };
+    }
+    
+    if (roleData.sector_id) {
+      const { data: sector } = await supabase
+        .from('sectors')
+        .select('id, name, description, status, region_id')
+        .eq('id', roleData.sector_id)
+        .single();
+        
+      return {
+        type: 'sector',
+        entity: sector
+      };
+    }
+    
+    if (roleData.school_id) {
+      const { data: school } = await supabase
+        .from('schools')
+        .select('id, name, address, status, region_id, sector_id')
+        .eq('id', roleData.school_id)
+        .single();
+        
+      return {
+        type: 'school',
+        entity: school
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Admin entity məlumatları əldə edilərkən xəta:', error);
+    return null;
+  }
+};
+
+// İstifadəçi məlumatlarını formatlayan funksiya
+export const formatUserData = (userData: any, profileData: any, adminEntity: any = null) => {
+  return {
+    id: userData.id,
+    email: userData.email || '',
+    full_name: profileData?.full_name || '',
+    role: userData.role || 'user',
+    region_id: userData.region_id || null,
+    sector_id: userData.sector_id || null,
+    school_id: userData.school_id || null,
+    phone: profileData?.phone || null,
+    position: profileData?.position || null,
+    language: profileData?.language || 'az',
+    avatar: profileData?.avatar || null,
+    status: profileData?.status || 'active',
+    last_login: profileData?.last_login || null,
+    created_at: profileData?.created_at || null,
+    updated_at: profileData?.updated_at || null,
+    adminEntity
+  };
 };

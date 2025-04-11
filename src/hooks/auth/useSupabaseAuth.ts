@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,7 +10,6 @@ export const useSupabaseAuth = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // User-i yükləmək
   const loadUser = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -23,7 +21,6 @@ export const useSupabaseAuth = () => {
         return;
       }
 
-      // Profile məlumatlarını əldə etmək
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -35,7 +32,6 @@ export const useSupabaseAuth = () => {
         throw profileError;
       }
 
-      // İstifadəçi rolunu əldə etmək
       const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('*')
@@ -47,7 +43,6 @@ export const useSupabaseAuth = () => {
         throw roleError;
       }
 
-      // User məlumatlarını yığmaq
       setUser({
         id: session.user.id,
         email: session.user.email || '',
@@ -70,7 +65,6 @@ export const useSupabaseAuth = () => {
     }
   }, []);
 
-  // Login funksiyası
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -92,7 +86,6 @@ export const useSupabaseAuth = () => {
       console.error('Login xətası:', error);
       const errorMessage = error.message || 'Daxil olarkən xəta baş verdi';
       
-      // Azərbaycan dilində xəta mesajları
       let localizedError = errorMessage;
       if (errorMessage.includes('Invalid login credentials')) {
         localizedError = 'Yanlış email və ya şifrə';
@@ -109,7 +102,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Qeydiyyat funksiyası
   const register = async (email: string, password: string, fullName: string) => {
     try {
       setIsLoading(true);
@@ -137,7 +129,6 @@ export const useSupabaseAuth = () => {
       console.error('Qeydiyyat xətası:', error);
       const errorMessage = error.message || 'Qeydiyyat zamanı xəta baş verdi';
       
-      // Azərbaycan dilində xəta mesajları
       let localizedError = errorMessage;
       if (errorMessage.includes('User already registered')) {
         localizedError = 'Bu email artıq qeydiyyatdan keçib';
@@ -155,7 +146,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Çıxış funksiyası
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
@@ -178,7 +168,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Şifrəni sıfırlamaq funksiyası
   const resetPassword = async (email: string) => {
     try {
       setIsLoading(true);
@@ -208,7 +197,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Şifrəni yeniləmək funksiyası
   const updatePassword = async (newPassword: string) => {
     try {
       setIsLoading(true);
@@ -239,7 +227,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Session dəyişikliklərini izləmək
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -252,7 +239,6 @@ export const useSupabaseAuth = () => {
       }
     );
 
-    // İlkin yükləmə
     loadUser();
 
     return () => {
