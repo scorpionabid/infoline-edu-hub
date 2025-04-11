@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Notification } from '@/types/notification';
 import NotificationsCard from './NotificationsCard';
 import StatsRow from './StatsRow';
 import StatusCards from './StatusCards';

@@ -1,44 +1,30 @@
 
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Dashboard from '@/pages/Dashboard';
-import SchoolAdminDashboard from '@/pages/SchoolAdminDashboard';
-import DataEntry from '@/pages/DataEntry';
-import Categories from '@/pages/Categories';
-import Login from '@/pages/auth/Login';
-import { AuthProvider } from '@/context/AuthContext';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { Toaster } from '@/components/ui/toaster';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import UsersPage from '@/pages/UsersPage';
-import RegionsPage from '@/pages/RegionsPage';
-import SectorsPage from '@/pages/SectorsPage';
-import SchoolsPage from '@/pages/SchoolsPage';
-import NotificationProvider from '@/context/NotificationContext';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { AuthProvider } from '@/context/auth/AuthProvider';
+import { LanguageProvider } from '@/context/LanguageContext';
+import ProtectedRoute from '@/routes/ProtectedRoute';
+import { AppRoutes } from '@/routes/AppRoutes';
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <NotificationProvider>
-            <Router>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/school-dashboard" element={<ProtectedRoute><SchoolAdminDashboard /></ProtectedRoute>} />
-                <Route path="/data-entry" element={<ProtectedRoute><DataEntry /></ProtectedRoute>} />
-                <Route path="/data-entry/:categoryId" element={<ProtectedRoute><DataEntry /></ProtectedRoute>} />
-                <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-                <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-                <Route path="/regions" element={<ProtectedRoute><RegionsPage /></ProtectedRoute>} />
-                <Route path="/sectors" element={<ProtectedRoute><SectorsPage /></ProtectedRoute>} />
-                <Route path="/schools" element={<ProtectedRoute><SchoolsPage /></ProtectedRoute>} />
-              </Routes>
-              <Toaster />
-            </Router>
-          </NotificationProvider>
+          <Router>
+            <Routes>
+              {AppRoutes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={route.element}
+                />
+              ))}
+            </Routes>
+            <Toaster position="top-right" />
+          </Router>
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
-  Home, 
+  LayoutDashboard, 
   FileInput, 
   PieChart, 
   Users, 
@@ -57,15 +57,15 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   // İcazələri müəyyənləşdiririk
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin;
-  const canManageColumns = isSuperAdmin;
+  const canManageCategories = isSuperAdmin || isRegionAdmin;
+  const canManageColumns = isSuperAdmin || isRegionAdmin;
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   
   const navItems = [
     {
       href: "/dashboard",
-      icon: <Home size={20} />,
+      icon: <LayoutDashboard size={20} />,
       label: t('dashboard'),
       show: true
     },
@@ -115,6 +115,12 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/reports",
       icon: <PieChart size={20} />,
       label: t('reports'),
+      show: true
+    },
+    {
+      href: "/settings",
+      icon: <Settings size={20} />,
+      label: t('settings'),
       show: true
     }
   ];
