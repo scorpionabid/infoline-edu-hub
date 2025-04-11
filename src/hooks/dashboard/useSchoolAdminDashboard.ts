@@ -171,11 +171,18 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
         ? Math.round((approvedCount / totalEntries) * 100) 
         : 0;
       
+      // School data-dan məktəb, sektor, region adlarını çıxarış
+      const sectorName = typeof schoolData?.sectors === 'object' && schoolData?.sectors ? 
+        schoolData?.sectors.name : 'Sektor adı';
+      
+      const regionName = typeof schoolData?.regions === 'object' && schoolData?.regions ? 
+        schoolData?.regions.name : 'Region adı';
+      
       // Data state-ni yeniləyirik
       setData({
         schoolName: schoolData?.name || 'Məktəb adı',
-        sectorName: schoolData?.sectors?.name || 'Sektor adı',
-        regionName: schoolData?.regions?.name || 'Region adı',
+        sectorName: sectorName,
+        regionName: regionName,
         forms: {
           pending: pendingCount || 0,
           approved: approvedCount || 0,

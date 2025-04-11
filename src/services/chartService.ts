@@ -2,6 +2,16 @@
 import { ChartData } from '@/types/dashboard';
 import { supabase } from '@/integrations/supabase/client';
 
+// Dashboard-da qrafik məlumatlarını əldə etmək üçün
+export const fetchDashboardChartData = async (): Promise<ChartData> => {
+  try {
+    return await fetchChartData();
+  } catch (error) {
+    console.error('Dashboard qrafik məlumatlarını əldə edərkən xəta:', error);
+    throw error;
+  }
+};
+
 export const fetchChartData = async (): Promise<ChartData> => {
   try {
     // Bölgələrdəki aktivlik dərəcəsi (məsələn, tamamlanma nisbəti üzrə)

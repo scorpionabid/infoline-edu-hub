@@ -1,6 +1,34 @@
 
 import { Notification } from './notification';
 
+// Entity sayğacları üçün interfeyslər
+export interface EntityCount {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface UserEntityCount extends EntityCount {
+  byRole: {
+    superadmin?: number;
+    regionadmin?: number;
+    sectoradmin?: number;
+    schooladmin?: number;
+  };
+}
+
+// Statistik məlumat elementi
+export interface StatsItem {
+  id?: string;
+  title: string; 
+  value: number | string;
+  description?: string;
+  increase?: boolean;
+  percent?: number;
+  change?: number;
+  changeType?: 'increase' | 'decrease' | 'neutral';
+}
+
 // Ümumi Dashboard Məlumatları Interfeysi
 export interface DashboardData {
   completionRate?: number;
@@ -11,101 +39,71 @@ export interface DashboardData {
     pendingForms: number;
     totalSchools: number;
   };
-  // İstatistik elementlər və digər məlumatlar üçün genişlənmələr
+  // DashboardData-nın sadə versiyasında bunlar number tipindədir
+  regions?: number | EntityCount;
+  sectors?: number | EntityCount;
+  schools?: number | EntityCount;
+  users?: number | UserEntityCount;
+  // İstatistik elementlər və digər məlumatlar
   stats?: StatsItem[];
-  regions?: number;
-  sectors?: number;
-  schools?: number;
-  users?: number;
-}
-
-// Statistik məlumat elementi
-export interface StatsItem {
-  id?: string; // ID xüsusiyyətini əlavə edirik
-  title: string; 
-  value: number | string;
-  description?: string;
-  increase?: boolean;
-  percent?: number;
-  change?: number;
-  changeType?: 'increase' | 'decrease' | 'neutral';
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
 }
 
 // Super Admin Dashboard Məlumatları
-export interface SuperAdminDashboardData extends DashboardData {
-  regions: {
-    total: number;
-    active: number;
-    inactive: number;
+export interface SuperAdminDashboardData extends Omit<DashboardData, 'regions' | 'sectors' | 'schools' | 'users'> {
+  regions: EntityCount;
+  sectors: EntityCount;
+  schools: EntityCount;
+  users: UserEntityCount;
+  regionStats?: Array<{
+    id: string;
+    name: string;
+    sectorCount: number;
+    schoolCount: number;
+    completionRate: number;
+  }>;
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
   };
-  sectors: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  schools: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  users: {
-    total: number;
-    active: number;
-    inactive: number;
-    byRole: {
-      superadmin: number;
-      regionadmin: number;
-      sectoradmin: number;
-      schooladmin: number;
-    };
-  };
-  stats?: StatsItem[];
 }
 
 // Region Admin Dashboard Məlumatları
-export interface RegionAdminDashboardData extends DashboardData {
-  regionName: string;
-  sectors: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  schools: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  users: {
-    total: number;
-    active: number;
-    inactive: number;
-    byRole: {
-      sectoradmin: number;
-      schooladmin: number;
-    };
-  };
-  stats?: StatsItem[];
+export interface RegionAdminDashboardData extends Omit<DashboardData, 'sectors' | 'schools' | 'users'> {
+  regionName?: string;
+  sectors: EntityCount;
+  schools: EntityCount;
+  users: number | UserEntityCount;
+  sectorCompletions?: Array<{
+    id: string;
+    name: string;
+    schoolCount: number;
+    completionPercentage: number;
+  }>;
+  pendingSchools?: number;
+  approvedSchools?: number;
+  rejectedSchools?: number;
 }
 
 // Sektor Admin Dashboard Məlumatları
-export interface SectorAdminDashboardData extends DashboardData {
-  sectorName: string;
-  regionName: string;
-  schools: {
-    total: number;
-    active: number;
-    inactive: number;
-  };
-  users: {
-    total: number;
-    active: number;
-    inactive: number;
-    byRole: {
-      schooladmin: number;
-    };
-  };
+export interface SectorAdminDashboardData extends Omit<DashboardData, 'schools'> {
+  sectorName?: string;
+  regionName?: string;
+  schools: EntityCount;
+  schoolStats?: Array<{
+    id: string;
+    name: string;
+    completionRate: number;
+    pending: number;
+  }>;
   pendingSchools?: number;
-  stats?: StatsItem[];
+  approvedSchools?: number;
+  rejectedSchools?: number;
 }
 
 // Form statusları
@@ -117,8 +115,8 @@ export interface FormItem {
   title: string;
   date: string;
   status: string;
-  category?: string; // Kateqoriya xüsusiyyətini əlavə edirik
-  completionPercentage?: number; // Tamamlanma faizi xüsusiyyətini əlavə edirik
+  category?: string;
+  completionPercentage?: number;
   deadline?: string;
 }
 
@@ -140,22 +138,6 @@ export interface SchoolAdminDashboardData extends DashboardData {
     pending: number;
     approved: number;
     rejected: number;
-  };
-}
-
-// EntityCount və UserEntityCount interfeyslərini əlavə edək (dashboardUtils.ts üçün)
-export interface EntityCount {
-  total: number;
-  active: number;
-  inactive: number;
-}
-
-export interface UserEntityCount extends EntityCount {
-  byRole: {
-    superadmin?: number;
-    regionadmin?: number;
-    sectoradmin?: number;
-    schooladmin?: number;
   };
 }
 

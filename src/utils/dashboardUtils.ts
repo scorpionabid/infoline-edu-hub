@@ -21,7 +21,7 @@ const generateMockNotifications = (): Notification[] => {
       message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
       type: 'category',
       isRead: false,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       userId: 'user-1',
       priority: 'normal'
     },
@@ -31,7 +31,7 @@ const generateMockNotifications = (): Notification[] => {
       message: 'Müəllim heyəti məlumatlarının doldurulma vaxtı sabah bitir',
       type: 'deadline',
       isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      created_at: new Date(Date.now() - 86400000).toISOString(),
       userId: 'user-1',
       priority: 'high'
     },
@@ -41,7 +41,7 @@ const generateMockNotifications = (): Notification[] => {
       message: 'Şagird statistikası təsdiq edildi',
       type: 'approval',
       isRead: false,
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
+      created_at: new Date(Date.now() - 172800000).toISOString(),
       userId: 'user-1',
       priority: 'normal'
     }
@@ -84,32 +84,26 @@ const generateMockStats = (): StatsItem[] => {
 
 // SuperAdmin üçün mock data generasiyası
 export const generateSuperAdminData = (): SuperAdminDashboardData => {
-  const entityCount: EntityCount = { total: 0, active: 0, inactive: 0 };
-  const userEntityCount: UserEntityCount = { 
-    ...entityCount, 
+  const regions: EntityCount = { total: 12, active: 10, inactive: 2 };
+  const sectors: EntityCount = { total: 48, active: 45, inactive: 3 };
+  const schools: EntityCount = { total: 645, active: 620, inactive: 25 };
+  const users: UserEntityCount = { 
+    total: 872, 
+    active: 850, 
+    inactive: 22,
     byRole: {
-      superadmin: 0,
-      regionadmin: 0,
-      sectoradmin: 0,
-      schooladmin: 0
+      superadmin: 5,
+      regionadmin: 12,
+      sectoradmin: 48,
+      schooladmin: 645
     }
   };
   
   return {
-    regions: { total: 12, active: 10, inactive: 2 },
-    sectors: { total: 48, active: 45, inactive: 3 },
-    schools: { total: 645, active: 620, inactive: 25 },
-    users: { 
-      total: 872, 
-      active: 850, 
-      inactive: 22,
-      byRole: {
-        superadmin: 5,
-        regionadmin: 12,
-        sectoradmin: 48,
-        schooladmin: 645
-      }
-    },
+    regions,
+    sectors,
+    schools,
+    users,
     completionRate: 76,
     pendingApprovals: 34,
     notifications: generateMockNotifications(),
@@ -147,10 +141,23 @@ export const generateSuperAdminData = (): SuperAdminDashboardData => {
 
 // RegionAdmin üçün mock data generasiyası
 export const generateRegionAdminData = (): RegionAdminDashboardData => {
+  const sectors: EntityCount = { total: 8, active: 8, inactive: 0 };
+  const schools: EntityCount = { total: 120, active: 118, inactive: 2 };
+  const users: UserEntityCount = { 
+    total: 145, 
+    active: 140, 
+    inactive: 5,
+    byRole: {
+      sectoradmin: 8,
+      schooladmin: 120
+    }
+  };
+  
   return {
-    sectors: { total: 8, active: 8, inactive: 0 },
-    schools: { total: 120, active: 118, inactive: 2 },
-    users: 145,
+    regionName: 'Bakı',
+    sectors,
+    schools,
+    users,
     completionRate: 72,
     pendingApprovals: 18,
     pendingSchools: 12,
@@ -183,8 +190,12 @@ export const generateRegionAdminData = (): RegionAdminDashboardData => {
 
 // SectorAdmin üçün mock data generasiyası
 export const generateSectorAdminData = (): SectorAdminDashboardData => {
+  const schools: EntityCount = { total: 24, active: 24, inactive: 0 };
+  
   return {
-    schools: { total: 24, active: 24, inactive: 0 },
+    sectorName: 'Xətai',
+    regionName: 'Bakı',
+    schools,
     completionRate: 68,
     pendingApprovals: 12,
     pendingSchools: 8,
@@ -218,6 +229,9 @@ export const generateSectorAdminData = (): SectorAdminDashboardData => {
 // SchoolAdmin üçün mock data generasiyası
 export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
   return {
+    schoolName: '45 nömrəli məktəb',
+    sectorName: 'Xətai',
+    regionName: 'Bakı',
     forms: {
       pending: 5,
       approved: 12,

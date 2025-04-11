@@ -6,6 +6,8 @@ export interface Notification {
   type: string;
   priority?: string;
   isRead?: boolean;
-  date?: string; // Tarix xüsusiyyətini əlavə edirik
+  time?: string;
   created_at?: string;
+  userId?: string;
+  date?: string;
 }

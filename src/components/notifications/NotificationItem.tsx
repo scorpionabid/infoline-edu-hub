@@ -21,7 +21,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   notification, 
   onMarkAsRead
 }) => {
-  const { id, title, message, type, isRead, time } = notification;
+  const { id, title, message, type, isRead } = notification;
   
   const handleClick = () => {
     if (!isRead) {
@@ -67,6 +67,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     }
   };
   
+  // Zaman formatlandırma
+  const notificationTime = notification.time || (notification.created_at ? 
+    new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
+    '');
+  
   return (
     <div 
       className={cn(
@@ -91,7 +96,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">
-              {time}
+              {notificationTime}
             </span>
             {!isRead && (
               <span className="flex h-2 w-2 rounded-full bg-blue-500"></span>

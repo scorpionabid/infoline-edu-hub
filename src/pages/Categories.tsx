@@ -1,115 +1,133 @@
 
 import React, { useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import CategoryList from '@/components/categories/CategoryList';
+import { useCategories } from '@/hooks/useCategories';
 import CategoryHeader from '@/components/categories/CategoryHeader';
+import CategoryGrid from '@/components/categories/CategoryGrid';
+import CategoryList from '@/components/categories/CategoryList';
+import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
 import CategoryStats from '@/components/categories/CategoryStats';
 import CategoryChart from '@/components/categories/CategoryChart';
-import CategoryFilterCard from '@/components/categories/CategoryFilterCard';
 import CategoryDialog from '@/components/categories/CategoryDialog';
-import { useCategories } from '@/hooks/useCategories';
-import { Category } from '@/types/category';
 import { Helmet } from 'react-helmet';
 import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import { Category } from '@/types/category';
 
-function Categories() {
-  const { 
-    categories,
-    filteredCategories,
-    searchQuery,
-    setSearchQuery,
-    isLoading, 
-    error, 
-    addCategory, 
-    updateCategory, 
-    deleteCategory,
-    isAddingCategory,
-    isUpdatingCategory,
-    isDeletingCategory,
-    canManageCategories
-  } = useCategories();
-  
-  const [dialogOpen, setDialogOpen] = useState(false);
+const Categories = () => {
+  const { t } = useLanguage();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const { t } = useLanguage();
-
-  const handleAddCategory = () => {
-    setSelectedCategory(null);
-    setDialogOpen(true);
-  };
-
-  const handleEditCategory = (category: Category) => {
-    setSelectedCategory(category);
-    setDialogOpen(true);
-  };
-
-  const handleDeleteCategory = (categoryId: string) => {
-    if (window.confirm(t('confirmDeleteCategory'))) {
-      deleteCategory(categoryId);
+  const [searchValue, setSearchValue] = useState('');
+  
+  const { 
+    categories, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch, 
+    createCategory, 
+    updateCategory, 
+    deleteCategory,
+    canManageCategories,
+    filteredCategories
+  } = useCategories(searchValue);
+  
+  const handleUpdateCategory = async (updatedCategory: Category) => {
+    try {
+      await updateCategory(updatedCategory);
+      setIsDialogOpen(false);
+      setSelectedCategory(null);
+      toast.success(t('categoryUpdated'));
+    } catch (error: any) {
+      toast.error(t('categoryUpdateError'), {
+        description: error.message
+      });
     }
   };
-
-  const handleCategorySubmit = (data: any) => {
-    if (selectedCategory) {
-      updateCategory({ id: selectedCategory.id, updates: data });
+  
+  const handleCreateCategory = async (newCategory: Category) => {
+    try {
+      await createCategory(newCategory);
+      setIsDialogOpen(false);
+      toast.success(t('categoryCreated'));
+    } catch (error: any) {
+      toast.error(t('categoryCreateError'), {
+        description: error.message
+      });
+    }
+  };
+  
+  const handleOpenDialog = (category?: Category) => {
+    if (category) {
+      setSelectedCategory(category);
     } else {
-      addCategory(data);
+      setSelectedCategory(null);
     }
-    setDialogOpen(false);
+    setIsDialogOpen(true);
   };
-
+  
+  // Id yerine Category parametrli olmasi ucun wrapper
+  const handleDeleteCategory = (category: Category) => {
+    deleteCategory(category.id);
+  };
+  
   return (
     <SidebarLayout>
       <Helmet>
         <title>{t('categories')} | InfoLine</title>
       </Helmet>
       
-      <div className="container mx-auto py-6">
-        <CategoryHeader
-          onAddCategory={handleAddCategory}
-          canAddCategory={canManageCategories}
-          searchValue={searchQuery}
-          onSearchChange={(value) => setSearchQuery(value)}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-2">
-            <CategoryList
-              categories={filteredCategories}
-              isLoading={isLoading}
-              error={error}
-              onEdit={handleEditCategory}
+      <CategoryHeader 
+        onAddCategory={() => handleOpenDialog()}
+        canAddCategory={canManageCategories} 
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+        <div className="lg:col-span-3">
+          {viewMode === 'grid' ? (
+            <CategoryGrid 
+              categories={filteredCategories} 
+              isLoading={isLoading} 
+              onEdit={handleOpenDialog}
               onDelete={handleDeleteCategory}
-              viewMode={viewMode}
-              canManage={canManageCategories}
             />
-          </div>
-          
-          <div className="space-y-6">
-            <CategoryFilterCard 
-              searchValue={searchQuery}
-              onSearchChange={(value) => setSearchQuery(value)}
+          ) : (
+            <CategoryList 
+              categories={filteredCategories} 
+              isLoading={isLoading} 
+              onEdit={handleOpenDialog}
+              onDelete={handleDeleteCategory}
             />
-            
-            <CategoryStats categories={categories} />
-            
-            <CategoryChart categories={categories} />
-          </div>
+          )}
         </div>
         
-        <CategoryDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          category={selectedCategory}
-          onSubmit={handleCategorySubmit}
-          isLoading={isAddingCategory || isUpdatingCategory}
-        />
+        <div className="space-y-6">
+          <CategoryFilterCard 
+            searchValue={searchValue}
+            onSearchChange={(value) => setSearchValue(value)} 
+          />
+          
+          <CategoryStats categories={categories} />
+          
+          <CategoryChart categories={categories} />
+        </div>
       </div>
+      
+      <CategoryDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        category={selectedCategory}
+        onSubmit={selectedCategory ? handleUpdateCategory : handleCreateCategory}
+        isLoading={isLoading}
+      />
     </SidebarLayout>
   );
-}
+};
 
 export default Categories;

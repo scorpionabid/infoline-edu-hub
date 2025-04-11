@@ -8,11 +8,11 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 export interface CategoryHeaderProps {
   onAddCategory: () => void;
-  canAddCategory?: boolean; // Əlavə edildi
-  searchValue: string; // Əlavə edildi
-  onSearchChange: (value: string) => void; // Əlavə edildi
-  viewMode: 'list' | 'grid'; // Əlavə edildi
-  onViewModeChange: (value: 'list' | 'grid') => void; // Əlavə edildi
+  canAddCategory?: boolean;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  viewMode: 'list' | 'grid';
+  onViewModeChange: (value: 'list' | 'grid') => void;
 }
 
 const CategoryHeader: React.FC<CategoryHeaderProps> = ({
@@ -30,13 +30,15 @@ const CategoryHeader: React.FC<CategoryHeaderProps> = ({
       <h1 className="text-2xl font-bold">{t('categories')}</h1>
       
       <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-        <Input
-          placeholder={t('searchCategory')}
-          className="max-w-xs"
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
-          startIcon={<Search className="h-4 w-4" />}
-        />
+        <div className="relative max-w-xs">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t('searchCategory')}
+            className="pl-8"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
         
         <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && onViewModeChange(value as 'list' | 'grid')}>
           <ToggleGroupItem value="list" aria-label="List view">

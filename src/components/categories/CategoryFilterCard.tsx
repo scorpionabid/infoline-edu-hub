@@ -6,8 +6,8 @@ import { Search } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 export interface CategoryFilterCardProps {
-  searchValue?: string; // Added
-  onSearchChange?: (value: string) => void; // Added
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({

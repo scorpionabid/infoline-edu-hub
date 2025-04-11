@@ -1,224 +1,153 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Category } from '@/types/category';
 
-// Form schema with Zod validation
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   description: z.string().optional(),
   assignment: z.enum(['all', 'sectors']),
-  status: z.enum(['active', 'inactive']),
-  priority: z.coerce.number().int().positive(),
-  deadline: z.string().optional()
+  status: z.enum(['active', 'inactive'])
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export interface CategoryDialogProps {
-  open?: boolean; // Added
-  onOpenChange?: (open: boolean) => void; // Added
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   category: Category | null;
-  onSubmit: (data: z.infer<typeof formSchema>) => void;
-  isLoading?: boolean;
+  onSubmit: (data: any) => void;
+  isLoading: boolean;
 }
 
 const CategoryDialog: React.FC<CategoryDialogProps> = ({
-  open = false,
+  open,
   onOpenChange,
   category,
   onSubmit,
-  isLoading = false
+  isLoading
 }) => {
   const { t } = useLanguage();
+  const isEditing = Boolean(category);
   
-  // React Hook Form with Zod resolver
-  const form = useForm<z.infer<typeof formSchema>>({
+  const { register, handleSubmit, formState: { errors }, reset, control, setValue } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: category?.name || '',
       description: category?.description || '',
-      assignment: (category?.assignment as 'all' | 'sectors') || 'all',
-      status: (category?.status as 'active' | 'inactive') || 'active',
-      priority: category?.priority || 1,
-      deadline: category?.deadline ? new Date(category.deadline).toISOString().slice(0, 16) : ''
+      assignment: (category?.assignment as any) || 'all',
+      status: (category?.status as any) || 'active'
     }
   });
   
-  // Reset form when category changes
+  // Dialog açıldığında form değerlerini ayarla
   React.useEffect(() => {
-    if (category) {
-      form.reset({
-        name: category.name || '',
-        description: category.description || '',
-        assignment: (category.assignment as 'all' | 'sectors') || 'all',
-        status: (category.status as 'active' | 'inactive') || 'active',
-        priority: category.priority || 1,
-        deadline: category.deadline ? new Date(category.deadline).toISOString().slice(0, 16) : ''
-      });
-    } else {
-      form.reset({
-        name: '',
-        description: '',
-        assignment: 'all',
-        status: 'active',
-        priority: 1,
-        deadline: ''
+    if (open) {
+      reset({
+        name: category?.name || '',
+        description: category?.description || '',
+        assignment: (category?.assignment as any) || 'all',
+        status: (category?.status as any) || 'active'
       });
     }
-  }, [category, form]);
+  }, [open, category, reset]);
   
-  // Handle form submission
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
+  const handleFormSubmit = (data: FormValues) => {
+    const submitData = {
+      ...data,
+      id: category?.id
+    };
+    onSubmit(submitData);
   };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{category ? t('editCategory') : t('addCategory')}</DialogTitle>
-          <DialogDescription>
-            {category ? t('editCategoryDescription') : t('addCategoryDescription')}
-          </DialogDescription>
+          <DialogTitle>
+            {isEditing ? t('editCategory') : t('addCategory')}
+          </DialogTitle>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('categoryName')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t('enterCategoryName')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">{t('categoryName')} *</Label>
+            <Input
+              id="name"
+              placeholder={t('enterCategoryName')}
+              {...register('name')}
             />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('description')}</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder={t('enterCategoryDescription')} 
-                      {...field} 
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            {errors.name && (
+              <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">{t('description')}</Label>
+            <Textarea
+              id="description"
+              placeholder={t('enterDescription')}
+              {...register('description')}
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="assignment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('assignment')}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectAssignment')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="all">{t('allSchools')}</SelectItem>
-                        <SelectItem value="sectors">{t('onlySectorSchools')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('status')}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectStatus')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">{t('active')}</SelectItem>
-                        <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('priority')}</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="deadline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('deadline')}</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {category ? t('updateCategory') : t('createCategory')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="assignment">{t('assignment')}</Label>
+            <Select 
+              defaultValue={category?.assignment || 'all'}
+              onValueChange={(value) => setValue('assignment', value as 'all' | 'sectors')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectAssignment')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('allSchools')}</SelectItem>
+                <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="status">{t('status')}</Label>
+            <Select 
+              defaultValue={category?.status || 'active'}
+              onValueChange={(value) => setValue('status', value as 'active' | 'inactive')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectStatus')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              {t('cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? t('saveChanges') : t('createCategory')}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
