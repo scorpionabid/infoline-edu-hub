@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSchoolsData } from './useSchoolsData';
 import { useSchoolsFilters } from './useSchoolsFilters';
 import { usePermissions } from '@/services/permissions/usePermissions';

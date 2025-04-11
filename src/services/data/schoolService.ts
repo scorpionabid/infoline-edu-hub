@@ -44,7 +44,7 @@ export const addSchool = async (schoolData: Partial<School>): Promise<School> =>
   try {
     const { data, error } = await supabase
       .from('schools')
-      .insert([schoolData])
+      .insert(schoolData) // Burada array-dən tək obyektə düzəltdik
       .select()
       .single();
     

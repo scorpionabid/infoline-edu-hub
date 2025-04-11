@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { School } from '@/types/supabase';
 import { usePermissions } from '@/services/permissions/usePermissions';
 
