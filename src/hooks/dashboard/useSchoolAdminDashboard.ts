@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -174,16 +175,17 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       let sectorName = 'Sektor adı';
       let regionName = 'Region adı';
       
-      if (schoolData?.sectors) {
-        // Əgər sectors bir obyektdirsə
-        if (typeof schoolData.sectors === 'object' && !Array.isArray(schoolData.sectors)) {
+      // schoolData.sectors və schoolData.regions üçün tip yoxlamalarını təkmilləşdirdik
+      if (schoolData && schoolData.sectors) {
+        // Əgər sectors bir obyektdirsə və name xüsusiyyəti varsa
+        if (typeof schoolData.sectors === 'object' && 'name' in schoolData.sectors) {
           sectorName = schoolData.sectors.name || 'Sektor adı';
         }
       }
       
-      if (schoolData?.regions) {
-        // Əgər regions bir obyektdirsə
-        if (typeof schoolData.regions === 'object' && !Array.isArray(schoolData.regions)) {
+      if (schoolData && schoolData.regions) {
+        // Əgər regions bir obyektdirsə və name xüsusiyyəti varsa
+        if (typeof schoolData.regions === 'object' && 'name' in schoolData.regions) {
           regionName = schoolData.regions.name || 'Region adı';
         }
       }
