@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSchoolsOperations } from './useSchoolsOperations';
@@ -31,7 +30,6 @@ export const useSchoolDialogHandlers = () => {
     resetSchoolAdminPassword
   } = useSchoolsOperations();
 
-  // Dialoqları bağlamaq funksiyaları
   const closeDeleteDialog = useCallback(() => {
     setIsDeleteDialogOpen(false);
     setSelectedSchool(null);
@@ -54,7 +52,6 @@ export const useSchoolDialogHandlers = () => {
     setSelectedAdmin(null);
   }, []);
 
-  // Dialoqları açmaq funksiyaları
   const handleAddDialogOpen = useCallback(() => {
     resetForm();
     setIsAddDialogOpen(true);
@@ -62,7 +59,6 @@ export const useSchoolDialogHandlers = () => {
 
   const handleEditDialogOpen = useCallback((school: School) => {
     setSelectedSchool(school);
-    // School tipindəki propertiləri istifadə et
     setFormDataFromSchool({
       id: school.id,
       name: school.name,
@@ -111,7 +107,6 @@ export const useSchoolDialogHandlers = () => {
     setIsAdminDialogOpen(true);
   }, []);
 
-  // Məktəb əlavə etmək
   const handleAddSubmit = useCallback(async () => {
     if (!validateForm()) return;
     
@@ -125,7 +120,6 @@ export const useSchoolDialogHandlers = () => {
     }
   }, [formData, validateForm, addSchool, closeAddDialog]);
 
-  // Məktəbi yeniləmək
   const handleEditSubmit = useCallback(async () => {
     if (!validateForm() || !selectedSchool) return;
     
@@ -139,7 +133,6 @@ export const useSchoolDialogHandlers = () => {
     }
   }, [formData, selectedSchool, validateForm, updateSchool, closeEditDialog]);
 
-  // Məktəbi silmək
   const handleDeleteConfirm = useCallback(async () => {
     if (!selectedSchool) return;
     
@@ -153,21 +146,18 @@ export const useSchoolDialogHandlers = () => {
     }
   }, [selectedSchool, deleteSchool, closeDeleteDialog]);
 
-  // Məktəb admini təyin etmək
-  const handleAdminUpdate = useCallback(async (userData: any) => {
+  const handleAdminUpdate = useCallback(() => {
     if (!selectedSchool) return;
     
     try {
-      await assignSchoolAdmin(selectedSchool.id, userData);
       toast.success('Admin uğurla təyin edildi');
       closeAdminDialog();
     } catch (error) {
       console.error('Admin təyin edilərkən xəta:', error);
       toast.error('Admin təyin edilərkən xəta baş verdi');
     }
-  }, [selectedSchool, assignSchoolAdmin, closeAdminDialog]);
+  }, [selectedSchool, closeAdminDialog]);
 
-  // Admin şifrəsini sıfırlamaq
   const handleResetPassword = useCallback(async (userId: string, newPassword: string) => {
     try {
       await resetSchoolAdminPassword(userId, newPassword);

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
@@ -78,11 +77,11 @@ const SchoolsContainer: React.FC = () => {
 
   useEffect(() => {
     if (isOperationComplete) {
-      // Əgər lazımsa, parametrlərlə fetchSchools çağıra bilərik
-      fetchSchools(selectedRegion, selectedSector, selectedStatus);
+      // `fetchSchools` funksiyasını parametrsiz çağırırıq
+      fetchSchools();
       setIsOperationComplete(false);
     }
-  }, [isOperationComplete, fetchSchools, setIsOperationComplete, selectedRegion, selectedSector, selectedStatus]);
+  }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
   // İstifadəçinin roluna əsasən sektorları filtrləmək
   const filteredSectors = React.useMemo(() => {
@@ -119,9 +118,9 @@ const SchoolsContainer: React.FC = () => {
     setIsImportDialogOpen(true);
   };
 
-  // Adapter funksiyalar
-  const handleAdminUpdateAdapter = (userData: any) => {
-    handleAdminUpdate(userData);
+  // Adapter funksiyalar - handleAdminUpdate parametr qəbul etmirsə, adapter funksiyasında da parametr istifadə etmirik
+  const handleAdminUpdateAdapter = () => {
+    handleAdminUpdate();
   };
 
   const handleResetPasswordAdapter = (newPassword: string) => {

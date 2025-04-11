@@ -1,4 +1,3 @@
-
 import { School as SupabaseSchool } from "@/types/supabase";
 
 // Supabase School tipindən təyin edilən yeni School tipi
@@ -58,7 +57,7 @@ export const mockSchools: School[] = [
     language: "az",
     adminEmail: "admin3@edu.gov.az",
     completionRate: 92,
-  },
+  }
 ];
 
 // School obyektləri üçün konvertasiya funksiyası
