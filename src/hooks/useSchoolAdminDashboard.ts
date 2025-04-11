@@ -117,11 +117,11 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       // Formları formatlayırıq
       const formattedPendingForms: FormItem[] = pendingForms.map(form => ({
         id: form.id,
-        title: form.category && form.category.name ? form.category.name : 'Unknown Category',
+        title: form.category?.name || 'Unknown Category',
         date: new Date(form.created_at).toLocaleDateString(),
         status: form.status,
         completionPercentage: 100, // Tam doldurulmuş sayırıq çünki təqdim edilib
-        category: form.category && form.category.name ? form.category.name : undefined
+        category: form.category?.name
       }));
       
       // Tamamlanma faizini hesablayırıq - hələlik sadə bir formula

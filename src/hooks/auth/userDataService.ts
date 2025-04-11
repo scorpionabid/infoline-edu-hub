@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
@@ -74,7 +73,7 @@ export const fetchUserData = async (userId: string): Promise<FullUserData | null
       // Admin entity
       adminEntity: {
         type: userRoleData.role.replace('admin', ''),
-        name: userRoleData.role.replace('admin', '')
+        name: userRoleData.role.replace('admin', '') // Tip eyni zamanda ad kimi istifadə edilir
       },
       
       // Notifikasiya parametrləri
