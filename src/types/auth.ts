@@ -4,6 +4,8 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName: string;
+  name?: string; // fullName-in aliası
+  full_name?: string; // fullName-in digər bir aliası
   role: string;
   regionId: string | null;
   sectorId: string | null;
@@ -12,5 +14,12 @@ export interface AuthUser {
   language: string;
   position: string;
   status: string;
-  phone?: string; // phone xüsusiyyətini əlavə etdik
+  phone?: string;
+  lastLogin?: string;
+  last_login?: string;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
 }

@@ -3,20 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth/useSupabaseAuth';
 import { AuthUser } from '@/types/auth';
 import { AuthContext } from './context';
-
-interface AuthContextType {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<boolean>;
-  updatePassword: (newPassword: string) => Promise<boolean>;
-  updateUser: (userData: Partial<AuthUser>) => Promise<boolean>;
-  clearError: () => void;
-}
+import { AuthContextType } from './types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const {

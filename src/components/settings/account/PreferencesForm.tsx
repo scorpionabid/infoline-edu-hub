@@ -47,15 +47,12 @@ const PreferencesForm: React.FC = () => {
     // Dil dəyişdiklərini saxla
     localStorage.setItem('infoline-language', data.language);
     
-    // İstifadəçi məlumatlarını yenilə - User tipində yalnız mövcud olan xüsusiyyətləri istifadə et
+    // İstifadəçi məlumatlarını yenilə
     if (user) {
       updateUser({
-        ...user,
-        twoFactorEnabled: data.twoFactorEnabled,
-        notificationSettings: {
-          email: data.notificationSettings.email,
-          system: data.notificationSettings.system
-        }
+        language: data.language,
+        notificationSettings: data.notificationSettings,
+        twoFactorEnabled: data.twoFactorEnabled
       });
       
       // Dil dəyişikliyini bildirmək üçün məlumat göstəririk

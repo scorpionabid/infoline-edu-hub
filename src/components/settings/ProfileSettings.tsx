@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const ProfileSettings: React.FC = () => {
   const { t } = useLanguage();
   const { user, updateUser } = useAuth();
-  const [name, setName] = useState(user?.name || '');
+  const [name, setName] = useState(user?.fullName || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [position, setPosition] = useState(user?.position || '');
@@ -23,9 +23,8 @@ const ProfileSettings: React.FC = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // User tipine uyğun olsun deyə phone və position xüsusiyyətlərini daxil edirik
     updateUser({ 
-      name, 
+      fullName: name, 
       email,
       phone,
       position
@@ -84,9 +83,9 @@ const ProfileSettings: React.FC = () => {
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={user?.avatar} alt={user?.name} />
+              <AvatarImage src={user?.avatar} alt={user?.fullName} />
               <AvatarFallback className="text-lg">
-                {getInitials(user?.name || '')}
+                {getInitials(user?.fullName || '')}
               </AvatarFallback>
             </Avatar>
             <Button 

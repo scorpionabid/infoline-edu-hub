@@ -87,7 +87,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             <Link to="/profile">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  {user?.fullName?.charAt(0).toUpperCase() || 'U'}
                 </div>
               </Button>
             </Link>

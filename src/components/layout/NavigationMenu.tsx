@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
@@ -111,10 +112,10 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.avatar} />
             <AvatarFallback className="bg-primary text-primary-foreground">
-              {user?.name?.substring(0, 2).toUpperCase()}
+              {user?.fullName?.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="font-medium text-sm">{user?.name}</div>
+          <div className="font-medium text-sm">{user?.fullName}</div>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -194,11 +195,11 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
                 <Avatar className="h-8 w-8 mr-2">
                   <AvatarImage src={user?.avatar} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.name?.substring(0, 2).toUpperCase()}
+                    {user?.fullName?.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start text-left">
-                  <span className="text-sm font-medium">{user?.name}</span>
+                  <span className="text-sm font-medium">{user?.fullName}</span>
                   <span className="text-xs text-muted-foreground">{t(user?.role || '')}</span>
                 </div>
                 <ChevronDown className="ml-2 h-4 w-4 text-muted-foreground" />
@@ -233,4 +234,3 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
 };
 
 export default NavigationMenu;
-
