@@ -1,6 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { generateRandomId, getRandomColor } from '@/utils/helpers';
-import { DashboardData, ChartData } from '@/types/dashboard';
+import { DashboardData, ChartData, StatsItem } from '@/types/dashboard';
+import { getLatestNotifications, getNotificationsByRegion, getNotificationsBySector } from './notificationService';
+import { getCategoryCompletionData } from './categoryService';
+import { getPendingFormsCountBySector } from './formService';
 
 // Funksiya: Bütün rolların sayını əldə et
 export const getAllRolesCount = async (): Promise<number> => {
@@ -473,6 +476,204 @@ export const getRegionsWithSchoolCounts = async () => {
   }
 };
 
+// Region üzrə məlumatları əldə et
+export const getTotalFormsCountByRegion = async (regionId: string): Promise<number> => {
+  try {
+    // Regiona aid məktəbləri əldə et
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('region_id', regionId);
+    
+    if (schoolsError) {
+      console.error("Region məktəbləri əldə edilərkən xəta:", schoolsError);
+      throw schoolsError;
+    }
+    
+    if (!schools || schools.length === 0) {
+      return 0;
+    }
+    
+    // Məktəb ID-lərini siyahı şəklində hazırla
+    const schoolIds = schools.map(school => school.id);
+    
+    // Bu məktəblərə aid bütün formları say
+    const { count, error } = await supabase
+      .from('data_entries')
+      .select('*', { count: 'exact', head: true })
+      .in('school_id', schoolIds);
+    
+    if (error) {
+      console.error("Region üzrə ümumi form sayı əldə edilərkən xəta:", error);
+      throw error;
+    }
+    
+    return count || 0;
+  } catch (error: any) {
+    console.error("Region üzrə ümumi form sayı əldə edilərkən xəta:", error);
+    return 0;
+  }
+};
+
+// Sektor üzrə formların ümumi sayını əldə et
+export const getTotalFormsCountBySector = async (sectorId: string): Promise<number> => {
+  try {
+    // Sektora aid məktəbləri əldə et
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('sector_id', sectorId);
+    
+    if (schoolsError) {
+      console.error("Sektor məktəbləri əldə edilərkən xəta:", schoolsError);
+      throw schoolsError;
+    }
+    
+    if (!schools || schools.length === 0) {
+      return 0;
+    }
+    
+    // Məktəb ID-lərini siyahı şəklində hazırla
+    const schoolIds = schools.map(school => school.id);
+    
+    // Bu məktəblərə aid bütün formları say
+    const { count, error } = await supabase
+      .from('data_entries')
+      .select('*', { count: 'exact', head: true })
+      .in('school_id', schoolIds);
+    
+    if (error) {
+      console.error("Sektor üzrə ümumi form sayı əldə edilərkən xəta:", error);
+      throw error;
+    }
+    
+    return count || 0;
+  } catch (error: any) {
+    console.error("Sektor üzrə ümumi form sayı əldə edilərkən xəta:", error);
+    return 0;
+  }
+};
+
+// Region üzrə tamamlanmış formların sayını əldə et
+export const getCompletedFormsCountByRegion = async (regionId: string): Promise<number> => {
+  try {
+    // Regiona aid məktəbləri əldə et
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('region_id', regionId);
+    
+    if (schoolsError) {
+      console.error("Region məktəbləri əldə edilərkən xəta:", schoolsError);
+      throw schoolsError;
+    }
+    
+    if (!schools || schools.length === 0) {
+      return 0;
+    }
+    
+    // Məktəb ID-lərini siyahı şəklində hazırla
+    const schoolIds = schools.map(school => school.id);
+    
+    // Bu məktəblərə aid təsdiqlənmiş formları say
+    const { count, error } = await supabase
+      .from('data_entries')
+      .select('*', { count: 'exact', head: true })
+      .in('school_id', schoolIds)
+      .eq('status', 'approved');
+    
+    if (error) {
+      console.error("Region üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
+      throw error;
+    }
+    
+    return count || 0;
+  } catch (error: any) {
+    console.error("Region üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
+    return 0;
+  }
+};
+
+// Sektor üzrə tamamlanmış formların sayını əldə et
+export const getCompletedFormsCountBySector = async (sectorId: string): Promise<number> => {
+  try {
+    // Sektora aid məktəbləri əldə et
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('sector_id', sectorId);
+    
+    if (schoolsError) {
+      console.error("Sektor məktəbləri əldə edilərkən xəta:", schoolsError);
+      throw schoolsError;
+    }
+    
+    if (!schools || schools.length === 0) {
+      return 0;
+    }
+    
+    // Məktəb ID-lərini siyahı şəklində hazırla
+    const schoolIds = schools.map(school => school.id);
+    
+    // Bu məktəblərə aid təsdiqlənmiş formları say
+    const { count, error } = await supabase
+      .from('data_entries')
+      .select('*', { count: 'exact', head: true })
+      .in('school_id', schoolIds)
+      .eq('status', 'approved');
+    
+    if (error) {
+      console.error("Sektor üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
+      throw error;
+    }
+    
+    return count || 0;
+  } catch (error: any) {
+    console.error("Sektor üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
+    return 0;
+  }
+};
+
+// Region üzrə gözləmədə olan formların sayını əldə et
+export const getPendingFormsCountByRegion = async (regionId: string): Promise<number> => {
+  try {
+    // Regiona aid məktəbləri əldə et
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('id')
+      .eq('region_id', regionId);
+    
+    if (schoolsError) {
+      console.error("Region məktəbləri əldə edilərkən xəta:", schoolsError);
+      throw schoolsError;
+    }
+    
+    if (!schools || schools.length === 0) {
+      return 0;
+    }
+    
+    // Məktəb ID-lərini siyahı şəklində hazırla
+    const schoolIds = schools.map(school => school.id);
+    
+    // Bu məktəblərə aid gözləyən formları say
+    const { count, error } = await supabase
+      .from('data_entries')
+      .select('*', { count: 'exact', head: true })
+      .in('school_id', schoolIds)
+      .eq('status', 'pending');
+    
+    if (error) {
+      console.error("Region üzrə gözləyən form sayı əldə edilərkən xəta:", error);
+      throw error;
+    }
+    
+    return count || 0;
+  } catch (error: any) {
+    console.error("Region üzrə gözləyən form sayı əldə edilərkən xəta:", error);
+    return 0;
+  }
+};
+
 // SuperAdmin üçün dashboard məlumatlarını əldə et
 export const fetchSuperAdminDashboardData = async (): Promise<DashboardData> => {
   try {
@@ -501,6 +702,38 @@ export const fetchSuperAdminDashboardData = async (): Promise<DashboardData> => 
     const completionRate = totalForms > 0 
       ? Math.round((completedFormsCount / totalForms) * 100) 
       : 0;
+      
+    // Statistika elementləri üçün artım/azalma simulyasiyası
+    const statsItems: StatsItem[] = [
+      {
+        id: generateRandomId(),
+        title: 'Ümumi Regionlar',
+        value: regionsCount,
+        change: 0,
+        changeType: 'neutral'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Ümumi Sektorlar',
+        value: sectorsCount,
+        change: 5,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Ümumi Məktəblər',
+        value: schoolsCount,
+        change: 10,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Ümumi İstifadəçilər',
+        value: usersCount,
+        change: 8,
+        changeType: 'increase'
+      }
+    ];
     
     return {
       regions: regionsCount,
@@ -509,7 +742,8 @@ export const fetchSuperAdminDashboardData = async (): Promise<DashboardData> => 
       users: usersCount,
       completionRate,
       pendingApprovals: pendingApprovalCount,
-      notifications
+      notifications,
+      stats: statsItems
     };
   } catch (error) {
     console.error('SuperAdmin dashboard məlumatları əldə edilərkən xəta:', error);
@@ -543,6 +777,38 @@ export const fetchRegionAdminDashboardData = async (regionId: string): Promise<D
     const completionRate = totalForms > 0 
       ? Math.round((completedFormsCount / totalForms) * 100) 
       : 0;
+      
+    // Statistika elementləri üçün artım/azalma simulyasiyası
+    const statsItems: StatsItem[] = [
+      {
+        id: generateRandomId(),
+        title: 'Ümumi Sektorlar',
+        value: sectorsCount,
+        change: 2,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Ümumi Məktəblər',
+        value: schoolsCount,
+        change: 5,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Ümumi İstifadəçilər',
+        value: usersCount,
+        change: 3,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Tamamlanma Faizi',
+        value: completionRate,
+        change: 15,
+        changeType: 'increase'
+      }
+    ];
     
     return {
       sectors: sectorsCount,
@@ -550,7 +816,8 @@ export const fetchRegionAdminDashboardData = async (regionId: string): Promise<D
       users: usersCount,
       completionRate,
       pendingApprovals: pendingApprovalCount,
-      notifications
+      notifications,
+      stats: statsItems
     };
   } catch (error) {
     console.error('RegionAdmin dashboard məlumatları əldə edilərkən xəta:', error);
@@ -580,312 +847,46 @@ export const fetchSectorAdminDashboardData = async (sectorId: string): Promise<D
     const completionRate = totalForms > 0 
       ? Math.round((completedFormsCount / totalForms) * 100) 
       : 0;
+      
+    // Statistika elementləri üçün artım/azalma simulyasiyası
+    const statsItems: StatsItem[] = [
+      {
+        id: generateRandomId(),
+        title: 'Ümumi Məktəblər',
+        value: schoolsCount,
+        change: 3,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Tamamlanma Faizi',
+        value: completionRate,
+        change: 10,
+        changeType: 'increase'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Gözləyən Təsdiqlər',
+        value: pendingApprovalCount,
+        change: 5,
+        changeType: 'decrease'
+      },
+      {
+        id: generateRandomId(),
+        title: 'Yeni Məlumatlar',
+        value: totalForms,
+        change: 8,
+        changeType: 'increase'
+      }
+    ];
     
     return {
       schools: schoolsCount,
       completionRate,
       pendingApprovals: pendingApprovalCount,
-      notifications
+      notifications,
+      stats: statsItems
     };
   } catch (error) {
     console.error('SectorAdmin dashboard məlumatları əldə edilərkən xəta:', error);
     throw error;
-  }
-};
-
-// Chart məlumatlarını əldə et
-export const fetchDashboardChartData = async (): Promise<ChartData> => {
-  try {
-    // Activity data
-    const [approved, pending, rejected] = await Promise.all([
-      getCompletedFormsCount(),
-      getPendingFormsCount(),
-      getRejectedFormsCount()
-    ]);
-    
-    const activityData = [
-      { name: 'Təsdiqlənmiş', value: approved },
-      { name: 'Gözləmədə', value: pending },
-      { name: 'Rədd edilmiş', value: rejected }
-    ];
-    
-    // Region schools data
-    const regionsData = await getSchoolCountByRegionForChart();
-    
-    // Category completion data
-    const categoryCompletionData = await getCategoryCompletionData();
-    
-    return {
-      activityData,
-      regionSchoolsData: regionsData,
-      categoryCompletionData
-    };
-  } catch (error) {
-    console.error('Dashboard qrafik məlumatları əldə edilərkən xəta:', error);
-    throw error;
-  }
-};
-
-// Region sayını əldə et
-export const getRegionsCount = async (): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('regions')
-      .select('*', { count: 'exact', head: true });
-    
-    if (error) {
-      console.error("Region sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Sektor sayını əldə et
-export const getSectorsCount = async (): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('sectors')
-      .select('*', { count: 'exact', head: true });
-    
-    if (error) {
-      console.error("Sektor sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Sektor sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Məktəb sayını əldə et
-export const getSchoolsCount = async (): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('schools')
-      .select('*', { count: 'exact', head: true });
-    
-    if (error) {
-      console.error("Məktəb sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Məktəb sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Region üzrə sektor sayını əldə et
-export const getSectorsCountByRegion = async (regionId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('sectors')
-      .select('*', { count: 'exact', head: true })
-      .eq('region_id', regionId);
-    
-    if (error) {
-      console.error("Region üzrə sektor sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region üzrə sektor sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Region üzrə məktəb sayını əldə et
-export const getSchoolsCountByRegion = async (regionId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('schools')
-      .select('*', { count: 'exact', head: true })
-      .eq('region_id', regionId);
-    
-    if (error) {
-      console.error("Region üzrə məktəb sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region üzrə məktəb sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Sektor üzrə məktəb sayını əldə et
-export const getSchoolsCountBySector = async (sectorId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('schools')
-      .select('*', { count: 'exact', head: true })
-      .eq('sector_id', sectorId);
-    
-    if (error) {
-      console.error("Sektor üzrə məktəb sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Sektor üzrə məktəb sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Region üzrə istifadəçi sayını əldə et
-export const getUsersCountByRegion = async (regionId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('user_roles')
-      .select('*', { count: 'exact', head: true })
-      .eq('region_id', regionId);
-    
-    if (error) {
-      console.error("Region üzrə istifadəçi sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region üzrə istifadəçi sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Tamamlanmış formların ümumi sayını əldə et
-export const getTotalFormsCount = async (): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('data_entries')
-      .select('*', { count: 'exact', head: true });
-    
-    if (error) {
-      console.error("Ümumi form sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Ümumi form sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Region üzrə formların ümumi sayını əldə et
-export const getTotalFormsCountByRegion = async (regionId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('data_entries')
-      .select('data_entries.*, schools!inner(*)')
-      .eq('schools.region_id', regionId)
-      .count();
-    
-    if (error) {
-      console.error("Region üzrə ümumi form sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region üzrə ümumi form sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Sektor üzrə formların ümumi sayını əldə et
-export const getTotalFormsCountBySector = async (sectorId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('data_entries')
-      .select('data_entries.*, schools!inner(*)')
-      .eq('schools.sector_id', sectorId)
-      .count();
-    
-    if (error) {
-      console.error("Sektor üzrə ümumi form sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Sektor üzrə ümumi form sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Region üzrə tamamlanmış formların sayını əldə et
-export const getCompletedFormsCountByRegion = async (regionId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('data_entries')
-      .select('data_entries.*, schools!inner(*)')
-      .eq('schools.region_id', regionId)
-      .eq('data_entries.status', 'approved')
-      .count();
-    
-    if (error) {
-      console.error("Region üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Sektor üzrə tamamlanmış formların sayını əldə et
-export const getCompletedFormsCountBySector = async (sectorId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('data_entries')
-      .select('data_entries.*, schools!inner(*)')
-      .eq('schools.sector_id', sectorId)
-      .eq('data_entries.status', 'approved')
-      .count();
-    
-    if (error) {
-      console.error("Sektor üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Sektor üzrə tamamlanmış form sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};
-
-// Region üzrə gözləmədə olan formların sayını əldə et
-export const getPendingFormsCountByRegion = async (regionId: string): Promise<number> => {
-  try {
-    const { count, error } = await supabase
-      .from('data_entries')
-      .select('data_entries.*, schools!inner(*)')
-      .eq('schools.region_id', regionId)
-      .eq('data_entries.status', 'pending')
-      .count();
-    
-    if (error) {
-      console.error("Region üzrə gözləmədə olan form sayı əldə edilərkən xəta:", error);
-      throw error;
-    }
-    
-    return count || 0;
-  } catch (error: any) {
-    console.error("Region üzrə gözləmədə olan form sayı əldə edilərkən xəta:", error);
-    return 0;
-  }
-};

@@ -364,8 +364,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     },
     logout: async () => {
       try {
-        const result = await handleSignOut();
-        return result;
+        return await handleSignOut();
       } catch (error) {
         console.error('Logout xətası:', error);
         return false;

@@ -153,3 +153,75 @@ export const formatUserData = (userData: any) => {
   // Burada istifadəçi məlumatlarını formatlamaq üçün məntiqi yazmaq lazımdır
   return userData;
 };
+
+// Bölgə adlarını əldə etmək üçün funksiya
+export const getRegionNames = async (): Promise<{ id: string; name: string }[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('regions')
+      .select('id, name')
+      .order('name');
+      
+    if (error) throw error;
+    
+    return data.map(region => ({
+      id: region.id,
+      name: region.name
+    }));
+  } catch (error) {
+    console.error('Region adları əldə edilərkən xəta:', error);
+    return [];
+  }
+};
+
+// Sektor adlarını əldə etmək üçün funksiya
+export const getSectorNames = async (regionId?: string): Promise<{ id: string; name: string }[]> => {
+  try {
+    let query = supabase
+      .from('sectors')
+      .select('id, name');
+      
+    if (regionId) {
+      query = query.eq('region_id', regionId);
+    }
+    
+    const { data, error } = await query.order('name');
+      
+    if (error) throw error;
+    
+    return data.map(sector => ({
+      id: sector.id,
+      name: sector.name
+    }));
+  } catch (error) {
+    console.error('Sektor adları əldə edilərkən xəta:', error);
+    return [];
+  }
+};
+
+// Məktəb adlarını əldə etmək üçün funksiya
+export const getSchoolNames = async (sectorId?: string, regionId?: string): Promise<{ id: string; name: string }[]> => {
+  try {
+    let query = supabase
+      .from('schools')
+      .select('id, name');
+      
+    if (sectorId) {
+      query = query.eq('sector_id', sectorId);
+    } else if (regionId) {
+      query = query.eq('region_id', regionId);
+    }
+    
+    const { data, error } = await query.order('name');
+      
+    if (error) throw error;
+    
+    return data.map(school => ({
+      id: school.id,
+      name: school.name
+    }));
+  } catch (error) {
+    console.error('Məktəb adları əldə edilərkən xəta:', error);
+    return [];
+  }
+};
