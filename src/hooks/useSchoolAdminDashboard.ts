@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -224,8 +225,7 @@ export const getRegionNames = async (): Promise<RegionItem[]> => {
     
     if (!data) return [];
     
-    // Data obyektinin strukturunu dəqiq təyin edirik
-    return data.map((region: any) => ({
+    return data.map((region) => ({
       id: region.id || '',
       name: region.name || ''
     }));
@@ -245,8 +245,7 @@ export const getSectorNames = async (): Promise<SectorItem[]> => {
     
     if (!data) return [];
     
-    // Data obyektinin strukturunu dəqiq təyin edirik
-    return data.map((sector: any) => ({
+    return data.map((sector) => ({
       id: sector.id || '',
       name: sector.name || ''
     }));
