@@ -1,7 +1,6 @@
-// src/tests/__mocks__/supabase.ts faylı yaradın
+
 import { vi } from 'vitest';
-import { mockUsers } from '../mocks/data/users';
-// src/tests/__mocks__/supabase.ts faylında bütün mock-ları birləşdirin
+
 export const supabase = {
   auth: {
     getSession: vi.fn().mockResolvedValue({
@@ -26,7 +25,7 @@ export const supabase = {
     })
   },
   from: vi.fn().mockImplementation((table) => {
-    // Bütün cədvəllər üçün bütün lazımi metodları göstərin
+    // Cədvəllər üçün mock metodlar
     return {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -34,7 +33,28 @@ export const supabase = {
       update: vi.fn().mockReturnThis(),
       match: vi.fn().mockReturnThis(),
       returning: vi.fn().mockResolvedValue({ data: [], error: null }),
-      // ... və sairə
     };
-  })
+  }),
+  functions: {
+    invoke: vi.fn().mockImplementation((functionName, { body }) => {
+      if (functionName === 'assign-existing-user-as-school-admin') {
+        if (!body.userId || !body.schoolId) {
+          return Promise.resolve({ 
+            data: null, 
+            error: { message: 'Missing required parameters' } 
+          });
+        }
+        return Promise.resolve({
+          data: {
+            success: true,
+            user: { id: body.userId },
+            school: { id: body.schoolId },
+            role: 'schooladmin'
+          },
+          error: null
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    })
+  }
 };

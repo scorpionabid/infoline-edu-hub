@@ -31,5 +31,21 @@ export const handlers = [
     });
   }),
 
-  // Test məlumatlarının əldə edilməsi üçün handlers burada əlavə edilə bilər
+  // Supabase edge function-larını mock etmək üçün
+  http.post('*/functions/v1/assign-existing-user-as-school-admin', async ({ request }) => {
+    const body = await request.json();
+    
+    if (!body.userId || !body.schoolId) {
+      return HttpResponse.json({ success: false, error: 'Missing parameters' }, { status: 400 });
+    }
+    
+    return HttpResponse.json({
+      success: true,
+      data: { 
+        userId: body.userId,
+        schoolId: body.schoolId,
+        role: 'schooladmin'
+      }
+    });
+  }),
 ];
