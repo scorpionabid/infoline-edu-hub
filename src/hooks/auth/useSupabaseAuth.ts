@@ -326,7 +326,8 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   
   const handleSignOut = useCallback(async () => {
     try {
-      return await signOut(setLoading, setUser, setSession);
+      await signOut(setLoading, setUser, setSession);
+      return true; // Uğurlu çıxış üçün true qaytarırıq
     } catch (error) {
       console.error('Çıxış zamanı xəta:', error);
       return false;
@@ -363,7 +364,8 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     },
     logout: async () => {
       try {
-        return await handleSignOut();
+        const result = await handleSignOut();
+        return result;
       } catch (error) {
         console.error('Logout xətası:', error);
         return false;
