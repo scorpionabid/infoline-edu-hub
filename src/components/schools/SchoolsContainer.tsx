@@ -117,7 +117,7 @@ const SchoolsContainer: React.FC = () => {
   return (
     <div className="space-y-6">
       <SchoolHeader 
-        userRole={userRole} 
+        userRole={userRole as UserRole} 
         onAddClick={handleAddDialogOpen}
         onExportClick={handleExportClick}
         onImportClick={handleImportClick}
@@ -147,7 +147,7 @@ const SchoolsContainer: React.FC = () => {
             handleEditDialogOpen={handleEditDialogOpen}
             handleDeleteDialogOpen={handleDeleteDialogOpen}
             handleAdminDialogOpen={handleAdminDialogOpen}
-            userRole={userRole}
+            userRole={userRole as UserRole}
           />
           
           {totalPages > 1 && (
