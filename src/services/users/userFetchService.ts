@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
-import { fetchAdminEntityData } from './userUtilService';
+import { fetchAdminEntityData, formatUserData } from './userUtilService';
 
 // İstifadəçiləri əldə et (filtirlərlə)
 export const getUsers = async (
@@ -142,11 +142,6 @@ export const getUsers = async (
         updatedAt: profile.updated_at,
         
         // Əlavə tətbiq xüsusiyyətləri
-        adminEntity: {
-          type: '',
-          name: '',
-          status: profile.status
-        },
         twoFactorEnabled: false,
         notificationSettings: {
           email: true,
@@ -245,14 +240,7 @@ export const getUser = async (userId: string): Promise<FullUserData | null> => {
       updatedAt: profile.updated_at,
       
       // Admin entitysi haqqında məlumatlar
-      adminEntity: {
-        type: adminEntityData?.type || '',
-        name: adminEntityData?.name || '',
-        status: adminEntityData?.status,
-        regionName: '',
-        sectorName: '',
-        schoolType: ''
-      },
+      adminEntity: adminEntityData,
       
       // Əlavə tətbiq xüsusiyyətləri
       twoFactorEnabled: false,

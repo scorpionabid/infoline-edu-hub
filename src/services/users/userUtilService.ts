@@ -1,117 +1,121 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
-// userUtilService.ts faylında əvvəlki kodda name xüsusiyyətinə aid xəta var
-// Bu xətanı düzəltmək üçün kod hissəsini yeniləyirik:
-
-export const fetchAdminEntityData = async (roleData: any) => {
+export async function fetchAdminEntityData(roleItem: any) {
+  const rolStr = String(roleItem.role);
+  if (!rolStr.includes('admin') || 
+     (rolStr === 'regionadmin' && !roleItem.region_id) ||
+     (rolStr === 'sectoradmin' && !roleItem.sector_id) || 
+     (rolStr === 'schooladmin' && !roleItem.school_id)) {
+    return null;
+  }
+  
   try {
-    if (roleData.role === 'regionadmin' && roleData.region_id) {
-      const { data: region, error } = await supabase
+    let adminEntity: any = null;
+    
+    if (rolStr === 'regionadmin' && roleItem.region_id) {
+      const { data: regionData } = await supabase
         .from('regions')
-        .select('id, name, description, status')
-        .eq('id', roleData.region_id)
-        .single();
+        .select('name, status')
+        .eq('id', roleItem.region_id)
+        .maybeSingle();
       
-      if (error) throw error;
-      
-      if (region) {
-        return {
+      if (regionData) {
+        adminEntity = {
           type: 'region',
-          name: region.name || '', // Əmin oluruq ki, name xüsusiyyəti təyin edilib
-          status: region.status || 'active',
-          regionName: region.name || ''
+          name: regionData.name,
+          status: regionData.status
         };
       }
-    } else if (roleData.role === 'sectoradmin' && roleData.sector_id) {
-      const { data: sector, error } = await supabase
+    } else if (rolStr === 'sectoradmin' && roleItem.sector_id) {
+      const { data: sectorData } = await supabase
         .from('sectors')
-        .select('id, name, description, status, region_id')
-        .eq('id', roleData.sector_id)
-        .single();
+        .select('name, status, regions(name)')
+        .eq('id', roleItem.sector_id)
+        .maybeSingle();
       
-      if (error) throw error;
-      
-      if (sector) {
-        // Region adını əldə edirik
-        const { data: region } = await supabase
-          .from('regions')
-          .select('name')
-          .eq('id', sector.region_id)
-          .single();
-        
-        return {
+      if (sectorData) {
+        adminEntity = {
           type: 'sector',
-          name: sector.name || '', // Əmin oluruq ki, name xüsusiyyəti təyin edilib
-          status: sector.status || 'active',
-          regionName: region ? region.name || '' : ''
+          name: sectorData.name,
+          status: sectorData.status,
+          regionName: sectorData.regions?.name
         };
       }
-    } else if (roleData.role === 'schooladmin' && roleData.school_id) {
-      const { data: school, error } = await supabase
+    } else if (rolStr === 'schooladmin' && roleItem.school_id) {
+      const { data: schoolData } = await supabase
         .from('schools')
-        .select('id, name, address, status, region_id, sector_id, type')
-        .eq('id', roleData.school_id)
-        .single();
+        .select('name, status, type, sectors(name), regions(name)')
+        .eq('id', roleItem.school_id)
+        .maybeSingle();
       
-      if (error) throw error;
-      
-      if (school) {
-        // Region və sektor adlarını əldə edirik
-        const { data: region } = await supabase
-          .from('regions')
-          .select('name')
-          .eq('id', school.region_id)
-          .single();
-        
-        const { data: sector } = await supabase
-          .from('sectors')
-          .select('name')
-          .eq('id', school.sector_id)
-          .single();
-        
-        return {
+      if (schoolData) {
+        adminEntity = {
           type: 'school',
-          name: school.name || '', // Əmin oluruq ki, name xüsusiyyəti təyin edilib
-          status: school.status || 'active',
-          regionName: region ? region.name || '' : '',
-          sectorName: sector ? sector.name || '' : '',
-          schoolType: school.type
+          name: schoolData.name,
+          status: schoolData.status,
+          schoolType: schoolData.type,
+          sectorName: schoolData.sectors?.name,
+          regionName: schoolData.regions?.name
         };
       }
     }
     
-    return {
-      type: '',
-      name: '',
-      status: 'active'
-    };
-  } catch (error) {
-    console.error('Admin məlumatı əldə edilərkən xəta:', error);
-    return {
-      type: '',
-      name: '',
-      status: 'active'
-    };
+    return adminEntity;
+  } catch (err) {
+    console.error('Admin entity məlumatları əldə edilərkən xəta:', err);
+    return null;
   }
-};
+}
 
-export const formatUserData = (user: any) => {
-  return {
-    id: user.id,
-    email: user.email,
-    fullName: user.full_name,
-    role: user.role,
-    regionId: user.region_id,
-    sectorId: user.sector_id,
-    schoolId: user.school_id,
-    phone: user.phone,
-    position: user.position,
-    language: user.language,
-    avatar: user.avatar,
-    status: user.status,
-    lastLogin: user.last_login,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at,
-    adminEntity: user.adminEntity
-  };
-};
+export function formatUserData(
+  userData: any[], 
+  profilesMap: Record<string, any>, 
+  adminEntities: any[]
+) {
+  return userData.map((user, index) => {
+    const profile = profilesMap[user.id] || {};
+    const now = new Date().toISOString();
+    
+    let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
+    const statusValue = profile.status || 'active';
+    
+    if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
+      typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
+    }
+    
+    return {
+      id: user.id,
+      email: user.email || 'N/A',
+      full_name: profile.full_name || 'İsimsiz İstifadəçi',
+      role: user.role,
+      region_id: user.region_id,
+      sector_id: user.sector_id,
+      school_id: user.school_id,
+      phone: profile.phone,
+      position: profile.position,
+      language: profile.language || 'az',
+      avatar: profile.avatar,
+      status: typedStatus,
+      last_login: profile.last_login,
+      created_at: user.created_at || now,
+      updated_at: user.updated_at || now,
+      
+      name: profile.full_name || 'İsimsiz İstifadəçi',
+      regionId: user.region_id,
+      sectorId: user.sector_id,
+      schoolId: user.school_id,
+      lastLogin: profile.last_login,
+      createdAt: user.createdAt || user.created_at || now,
+      updatedAt: user.updatedAt || user.updated_at || now,
+      
+      adminEntity: adminEntities[index],
+      
+      twoFactorEnabled: false,
+      notificationSettings: {
+        email: true,
+        system: true
+      }
+    };
+  });
+}

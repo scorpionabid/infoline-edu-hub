@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -24,6 +25,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Əgər istifadəçi daxil olmayıbsa, login səhifəsinə yönləndiririk
   useEffect(() => {
     // Burada URL parametrlərini də yoxlaya bilərik
     // Şifrə yeniləmə linki Supabase tərəfindən göndərilir və hash parametri olur
@@ -57,25 +59,19 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      if (updatePassword) {
-        const success = await updatePassword(password);
-        
-        if (success) {
-          // If already logged in, redirect to dashboard
-          if (isAuthenticated) {
-            navigate('/dashboard');
-          } else {
-            // Otherwise redirect to login
-            navigate('/login');
-          }
+      const success = await updatePassword(password);
+      
+      if (success) {
+        // If already logged in, redirect to dashboard
+        if (isAuthenticated) {
+          navigate('/dashboard');
+        } else {
+          // Otherwise redirect to login
+          navigate('/login');
         }
-      } else {
-        // updatePassword funksiyası yoxdursa
-        toast.error("Şifrə yeniləmə funksiyası mövcud deyil");
       }
     } catch (error) {
       console.error('Error resetting password:', error);
-      toast.error("Şifrə yeniləmə zamanı xəta baş verdi");
     } finally {
       setIsSubmitting(false);
     }

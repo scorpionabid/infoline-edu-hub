@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -114,7 +113,7 @@ const FormTabs: React.FC<FormTabsProps> = ({ recentForms, handleFormClick }) => 
               <SelectItem value="rejected">{t('rejected')}</SelectItem>
               <SelectItem value="draft">{t('draft')}</SelectItem>
               <SelectItem value="overdue">{t('overdue')}</SelectItem>
-              <SelectItem value="dueSoon">{t('dueSoon')}</SelectItem>
+              <SelectItem value="due">{t('dueSoon')}</SelectItem>
               <SelectItem value="empty">{t('noFormsFound')}</SelectItem>
             </SelectContent>
           </Select>

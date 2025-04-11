@@ -1,9 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { SchoolFormData } from '@/types/school-form';
+import { School, SchoolFormData, mockRegions, mockSectors } from '@/data/schoolsData';
 import { toast } from 'sonner';
-import { School as SupabaseSchool } from '@/types/supabase';
-import { useAuth } from '@/context/AuthContext';
 
 // Initial form data
 export const getInitialFormState = (): SchoolFormData => ({
@@ -22,14 +20,14 @@ export const getInitialFormState = (): SchoolFormData => ({
   adminEmail: '',
   adminFullName: '',
   adminPassword: '',
-  adminStatus: 'active' as 'active' | 'inactive' | 'blocked'
+  adminStatus: 'active'
 });
 
 interface UseSchoolFormReturn {
   formData: SchoolFormData;
   currentTab: string;
   setCurrentTab: (tab: string) => void;
-  setFormDataFromSchool: (school: SupabaseSchool) => void;
+  setFormDataFromSchool: (school: School) => void;
   handleFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   resetForm: () => void;
   validateForm: () => boolean;
@@ -48,8 +46,8 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
     }
   }, []);
 
-  const setFormDataFromSchool = useCallback((school: SupabaseSchool) => {
-    const newFormData: SchoolFormData = {
+  const setFormDataFromSchool = useCallback((school: School) => {
+    const newFormData = {
       name: school.name,
       principalName: school.principalName || '',
       address: school.address || '',

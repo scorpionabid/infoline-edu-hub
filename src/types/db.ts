@@ -1,23 +1,35 @@
 
+// Database tipleri
+
 export enum TableNames {
-  REGIONS = 'regions',
-  SECTORS = 'sectors',
-  SCHOOLS = 'schools', 
   CATEGORIES = 'categories',
   COLUMNS = 'columns',
   DATA_ENTRIES = 'data_entries',
-  USERS = 'users',
-  PROFILES = 'profiles',
-  USER_ROLES = 'user_roles',
   NOTIFICATIONS = 'notifications',
-  AUDIT_LOGS = 'audit_logs',
+  PROFILES = 'profiles',
+  REGIONS = 'regions',
   REPORTS = 'reports',
-  REPORT_TEMPLATES = 'report_templates'
+  REPORT_TEMPLATES = 'report_templates',
+  SCHOOLS = 'schools',
+  SECTORS = 'sectors',
+  USER_ROLES = 'user_roles',
+  AUDIT_LOGS = 'audit_logs'
 }
 
-export interface DatabaseError {
-  code: string;
-  message: string;
-  details?: string;
-  hint?: string;
-}
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
+export type UserStatus = 'active' | 'inactive' | 'blocked';
+
+export type EntityType = 'region' | 'sector' | 'school' | 'category' | 'column' | 'report';
+
+export type ActionType = 
+  | 'create' 
+  | 'update' 
+  | 'delete' 
+  | 'approve' 
+  | 'reject' 
+  | 'assign_admin'
+  | 'submit'
+  | 'share'
+  | 'publish'
+  | 'archive';

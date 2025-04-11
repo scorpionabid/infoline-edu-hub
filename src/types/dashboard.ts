@@ -1,139 +1,44 @@
-
 import { Notification } from './notification';
 
-// Entity sayğacları üçün interfeyslər
-export interface EntityCount {
-  total: number;
-  active: number;
-  inactive: number;
-}
-
-export interface UserEntityCount extends EntityCount {
-  byRole: {
-    superadmin?: number;
-    regionadmin?: number;
-    sectoradmin?: number;
-    schooladmin?: number;
-  };
-}
-
-// Statistik məlumat elementi
 export interface StatsItem {
-  id?: string;
-  title: string; 
-  value: number | string;
-  description?: string;
-  increase?: boolean;
-  percent?: number;
-  change?: number;
-  changeType?: 'increase' | 'decrease' | 'neutral';
+  id: string;
+  title: string;
+  value: number;
+  change: number;
+  changeType: 'increase' | 'decrease' | 'neutral';
 }
 
-// Ümumi Dashboard Məlumatları Interfeysi
-export interface DashboardData {
-  completionRate?: number;
-  pendingApprovals?: number;
-  notifications?: Notification[];
-  statistics?: {
-    completionRate: number;
-    pendingForms: number;
-    totalSchools: number;
-  };
-  // DashboardData-nın sadə versiyasında bunlar number tipindədir
-  regions?: number | EntityCount;
-  sectors?: number | EntityCount;
-  schools?: number | EntityCount;
-  users?: number | UserEntityCount;
-  // İstatistik elementlər və digər məlumatlar
-  stats?: StatsItem[];
-  formsByStatus?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-  };
+export interface ChartData {
+  activityData: Array<{ name: string; value: number }>;
+  regionSchoolsData: Array<{ name: string; value: number }>;
+  categoryCompletionData: Array<{ name: string; completed: number }>;
 }
 
-// Super Admin Dashboard Məlumatları
-export interface SuperAdminDashboardData extends Omit<DashboardData, 'regions' | 'sectors' | 'schools' | 'users'> {
-  regions: EntityCount;
-  sectors: EntityCount;
-  schools: EntityCount;
-  users: UserEntityCount;
-  regionStats?: Array<{
-    id: string;
-    name: string;
-    sectorCount: number;
-    schoolCount: number;
-    completionRate: number;
-  }>;
-  formsByStatus?: {
-    pending: number;
-    approved: number;
-    rejected: number;
-  };
-}
-
-// Region Admin Dashboard Məlumatları
-export interface RegionAdminDashboardData extends Omit<DashboardData, 'sectors' | 'schools' | 'users'> {
-  regionName?: string;
-  sectors: EntityCount;
-  schools: EntityCount;
-  users: number | UserEntityCount;
-  sectorCompletions?: Array<{
-    id: string;
-    name: string;
-    schoolCount: number;
-    completionPercentage: number;
-  }>;
-  pendingSchools?: number;
-  approvedSchools?: number;
-  rejectedSchools?: number;
-}
-
-// Sektor Admin Dashboard Məlumatları
-export interface SectorAdminDashboardData extends Omit<DashboardData, 'schools'> {
-  sectorName?: string;
-  regionName?: string;
-  schools: EntityCount;
-  schoolStats?: Array<{
-    id: string;
-    name: string;
-    completionRate: number;
-    pending: number;
-  }>;
-  pendingSchools?: number;
-  approvedSchools?: number;
-  rejectedSchools?: number;
-}
-
-// Form statusları
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'due' | 'overdue';
-
-// Form elementi
 export interface FormItem {
   id: string;
   title: string;
   date: string;
   status: string;
-  category?: string;
-  completionPercentage?: number;
-  deadline?: string;
+  completionPercentage: number;
+  category?: string; // Əlavə edildi
 }
 
-// Məktəb Admin Dashboard Məlumatları
-export interface SchoolAdminDashboardData extends DashboardData {
-  schoolName: string;
-  sectorName: string;
-  regionName: string;
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'draft' | 'completed' | 'dueSoon' | 'overdue';
+
+export interface SchoolAdminDashboardData {
   forms: {
-    total: number;
     pending: number;
     approved: number;
     rejected: number;
-    dueSoon: number;
-    overdue: number;
+    total: number;
+    dueSoon?: number; // Əlavə edildi
+    overdue?: number; // Əlavə edildi
   };
+  notifications: Notification[];
+  completionRate: number;
   pendingForms: FormItem[];
+  recentlySubmitted?: FormItem[];
+  recentlyApproved?: FormItem[];
   formsByStatus?: {
     pending: number;
     approved: number;
@@ -141,9 +46,96 @@ export interface SchoolAdminDashboardData extends DashboardData {
   };
 }
 
-// Qrafik Məlumatları
-export interface ChartData {
-  activityData: Array<{name: string; value: number}>;
-  regionSchoolsData: Array<{name: string; value: number}>;
-  categoryCompletionData: Array<{name: string; completed?: number; value?: number}>;
+export interface SectorAdminDashboardData {
+  schools: number;
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools?: number; // Əlavə edildi
+  approvedSchools?: number; // Əlavə edildi
+  rejectedSchools?: number; // Əlavə edildi
+  notifications: Notification[];
+  stats: StatsItem[];
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  schoolStats?: {
+    id: string;
+    name: string;
+    completionRate: number;
+    pending: number;
+  }[];
+  pendingItems?: {
+    id: string;
+    school: string;
+    category: string;
+    date: string;
+  }[];
+  categoryCompletion?: {
+    name: string;
+    completionRate: number;
+    color: string;
+  }[];
+  activityLog?: {
+    id: string;
+    action: string;
+    target: string;
+    time: string;
+  }[];
 }
+
+export interface RegionAdminDashboardData {
+  sectors: number;
+  schools: number;
+  users?: number; // Əlavə edildi
+  completionRate: number;
+  pendingApprovals: number;
+  pendingSchools?: number; // Əlavə edildi
+  approvedSchools?: number; // Əlavə edildi
+  rejectedSchools?: number; // Əlavə edildi
+  notifications: Notification[];
+  stats: StatsItem[];
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  sectorStats?: {
+    id: string;
+    name: string;
+    schoolCount: number;
+    completionRate: number;
+  }[];
+  sectorCompletions?: {
+    id: string;
+    name: string;
+    schoolCount: number;
+    completionPercentage: number;
+  }[];
+}
+
+export interface SuperAdminDashboardData {
+  regions: number;
+  sectors: number;
+  schools: number;
+  users: number;
+  completionRate: number;
+  pendingApprovals: number;
+  notifications: Notification[];
+  stats: StatsItem[];
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  regionStats?: {
+    id: string;
+    name: string;
+    sectorCount: number;
+    schoolCount: number;
+    completionRate: number;
+  }[];
+}
+
+export type DashboardData = SuperAdminDashboardData | RegionAdminDashboardData | SectorAdminDashboardData | SchoolAdminDashboardData;

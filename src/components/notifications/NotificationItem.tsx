@@ -1,109 +1,95 @@
 
 import React from 'react';
-import { Notification } from '@/types/notification';
-import { 
-  Bell, 
+import { formatDistanceToNow } from 'date-fns';
+import { az } from 'date-fns/locale';
+import {
+  BellRing, 
+  CalendarClock, 
+  CheckCircle, 
+  XCircle, 
   Info, 
   AlertTriangle, 
-  CheckCircle, 
-  Calendar, 
-  AlertCircle,
   FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Notification, NotificationType } from '@/types/notification';
 
 interface NotificationItemProps {
   notification: Notification;
-  onMarkAsRead: (id: string) => void;
+  onMarkAsRead?: (id: string) => void;
 }
 
-const NotificationItem: React.FC<NotificationItemProps> = ({ 
-  notification, 
-  onMarkAsRead
-}) => {
-  const { id, title, message, type, isRead } = notification;
-  
-  const handleClick = () => {
-    if (!isRead) {
-      onMarkAsRead(id);
-    }
-  };
-  
-  const getIcon = () => {
-    switch (type) {
-      case 'info':
-        return <Info className="h-4 w-4 text-blue-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'deadline':
-        return <Calendar className="h-4 w-4 text-purple-500" />;
+const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
+  const renderIcon = () => {
+    switch (notification.type) {
       case 'category':
-        return <FileText className="h-4 w-4 text-indigo-500" />;
-      default:
-        return <Bell className="h-4 w-4 text-slate-500" />;
-    }
-  };
-  
-  const getTypeClass = () => {
-    switch (type) {
-      case 'info':
-        return 'border-l-blue-500';
-      case 'warning':
-        return 'border-l-amber-500';
-      case 'success':
-        return 'border-l-green-500';
-      case 'error':
-        return 'border-l-red-500';
+        return <FileText className="h-5 w-5 text-blue-500" />;
       case 'deadline':
-        return 'border-l-purple-500';
-      case 'category':
-        return 'border-l-indigo-500';
+        return <CalendarClock className="h-5 w-5 text-orange-500" />;
+      case 'approval':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'system':
+        return <Info className="h-5 w-5 text-indigo-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+      case 'error':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'info':
+        return <Info className="h-5 w-5 text-blue-500" />;
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
       default:
-        return 'border-l-slate-500';
+        return <BellRing className="h-5 w-5 text-slate-500" />;
     }
   };
-  
-  // Zaman formatlandırma
-  const notificationTime = notification.time || (notification.created_at ? 
-    new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
-    '');
-  
+
+  const formatTime = (time?: string) => {
+    if (!time) return '';
+    
+    try {
+      return formatDistanceToNow(new Date(time), { addSuffix: true, locale: az });
+    } catch (error) {
+      console.error('Tarix formatı xətası:', error);
+      return time;
+    }
+  };
+
+  const handleRead = () => {
+    if (onMarkAsRead && !notification.isRead) {
+      onMarkAsRead(notification.id);
+    }
+  };
+
   return (
     <div 
+      onClick={handleRead}
       className={cn(
-        "p-3 cursor-pointer transition-colors border-l-2",
-        getTypeClass(),
-        !isRead ? "bg-blue-50 dark:bg-blue-950/10" : ""
+        "flex items-start p-3 gap-3 border-b border-border transition-colors cursor-pointer",
+        !notification.isRead ? "bg-accent/30 hover:bg-accent/50" : "hover:bg-muted"
       )}
-      onClick={handleClick}
     >
-      <div className="flex gap-3">
-        <div className="flex-shrink-0 mt-1">
-          {getIcon()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium line-clamp-1">{title}</p>
-          
-          {message && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
-              {message}
-            </p>
-          )}
-          
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">
-              {notificationTime}
-            </span>
-            {!isRead && (
-              <span className="flex h-2 w-2 rounded-full bg-blue-500"></span>
-            )}
-          </div>
-        </div>
+      <div className="flex-shrink-0 mt-0.5">
+        {renderIcon()}
       </div>
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          "text-sm font-medium",
+          !notification.isRead && "font-semibold"
+        )}>
+          {notification.title}
+        </p>
+        {notification.message && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {notification.message}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground mt-1">
+          {formatTime(notification.createdAt || notification.time)}
+        </p>
+      </div>
+      {!notification.isRead && (
+        <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0"></div>
+      )}
     </div>
   );
 };

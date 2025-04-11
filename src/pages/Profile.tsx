@@ -19,7 +19,7 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.fullName || '',
+    name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
     position: user?.position || '',
@@ -43,7 +43,8 @@ const Profile: React.FC = () => {
 
   const handleSave = () => {
     updateUser({
-      fullName: formData.name,
+      ...user,
+      name: formData.name,
       phone: formData.phone,
       position: formData.position,
     });
@@ -56,7 +57,7 @@ const Profile: React.FC = () => {
 
   const handleCancel = () => {
     setFormData({
-      name: user.fullName,
+      name: user.name,
       email: user.email,
       phone: user.phone || '',
       position: user.position || '',
@@ -91,12 +92,12 @@ const Profile: React.FC = () => {
           </CardHeader>
           <CardContent className="flex flex-col items-center text-center">
             <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={user.avatar} alt={user.fullName} />
+              <AvatarImage src={user.avatar} alt={user.name} />
               <AvatarFallback className="text-lg">
-                {user.fullName?.substring(0, 2).toUpperCase()}
+                {user.name?.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <h3 className="text-xl font-semibold">{user.fullName}</h3>
+            <h3 className="text-xl font-semibold">{user.name}</h3>
             <p className="text-muted-foreground">{t(user.role)}</p>
             <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
             

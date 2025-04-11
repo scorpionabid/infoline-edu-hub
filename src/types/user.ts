@@ -1,4 +1,3 @@
-
 import { Role } from '@/context/AuthContext';
 import { FullUserData, UserRole } from '@/types/supabase';
 
@@ -140,7 +139,7 @@ export const fullUserDataToUser = (data: FullUserData): User => {
     position: data.position,
     language: data.language || 'az', // Default dəyər veririk
     avatar: data.avatar,
-    status: (data.status || 'active') as 'active' | 'inactive' | 'blocked',
+    status: data.status,
     lastLogin: data.last_login,
     createdAt: data.createdAt || data.created_at, // Default dəyər veririk
     updatedAt: data.updatedAt || data.updated_at, // Default dəyər veririk

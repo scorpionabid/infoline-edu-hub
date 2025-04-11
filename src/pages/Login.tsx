@@ -1,44 +1,42 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/auth';
 import LoginForm from '@/components/auth/LoginForm';
-import LoginHeader from '@/components/auth/LoginHeader';
+import LoadingScreen from '@/components/auth/LoadingScreen';
 import LoginContainer from '@/components/auth/LoginContainer';
-import BackgroundDecorations from '@/components/auth/BackgroundDecorations';
-import { useAuth } from '@/context/auth/useAuth';
-import { useLanguage } from '@/context/LanguageContext';
+import LoginHeader from '@/components/auth/LoginHeader';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
-const Login: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+const Login = () => {
+  const { isAuthenticated, isLoading, error, clearError, user } = useAuth();
+  const { userRole } = usePermissions();
   const navigate = useNavigate();
-  const { t } = useLanguage();
-
+  const location = useLocation();
+  
+  // Daxil olmuş istifadəçini rol əsasında yönləndirmə
   useEffect(() => {
-    if (isAuthenticated && user) {
-      if (user.role === 'schooladmin') {
-        navigate('/school-dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+    if (isAuthenticated && !isLoading && user) {
+      // Sonuncu ziyarət edilmiş səhifə və ya rol əsasında yönləndirmə
+      const from = location.state?.from?.pathname || '/dashboard';
+      console.log(`İstifadəçi auth olundu, "${from}" səhifəsinə yönləndirilir`);
+      console.log(`İstifadəçi rolu: ${userRole}`);
+      
+      // Rol-əsasında əsas dashboard səhifəsinə yönləndirmək də mümkündür
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, isLoading, navigate, location, user, userRole]);
+
+  // Yüklənmə zamanı göstəriləcək
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
-    <>
-      <Helmet>
-        <title>{t('login')} | InfoLine</title>
-      </Helmet>
-      <div className="min-h-screen flex flex-col">
-        <BackgroundDecorations />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <LoginContainer>
-            <LoginHeader />
-            <LoginForm />
-          </LoginContainer>
-        </div>
-      </div>
-    </>
+    <LoginContainer>
+      <LoginHeader />
+      <LoginForm error={error} clearError={clearError} />
+    </LoginContainer>
   );
 };
 

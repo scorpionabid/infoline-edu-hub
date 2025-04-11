@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { Notification } from '@/types/notification';
 import NotificationsCard from './NotificationsCard';
 import StatsRow from './StatsRow';
 import StatusCards from './StatusCards';
@@ -15,21 +16,11 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   
   // Null və undefined yoxlamaları əlavə edək
   const safeData = {
-    regions: data?.regions || { total: 0, active: 0, inactive: 0 },
-    sectors: data?.sectors || { total: 0, active: 0, inactive: 0 },
-    schools: data?.schools || { total: 0, active: 0, inactive: 0 },
-    users: data?.users || { 
-      total: 0, 
-      active: 0, 
-      inactive: 0, 
-      byRole: { 
-        superadmin: 0, 
-        regionadmin: 0, 
-        sectoradmin: 0, 
-        schooladmin: 0 
-      } 
-    },
-    completionRate: data?.completionRate || data?.statistics?.completionRate || 0,
+    regions: data?.regions || 0,
+    sectors: data?.sectors || 0,
+    schools: data?.schools || 0,
+    users: data?.users || 0,
+    completionRate: data?.completionRate || 0,
     pendingApprovals: data?.pendingApprovals || 0,
     notifications: Array.isArray(data?.notifications) ? data.notifications : []
   };
@@ -38,10 +29,10 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     <div className="space-y-6">
       {/* Əsas statistika kartları */}
       <StatsRow stats={{
-        regions: safeData.regions.total,
-        sectors: safeData.sectors.total,
-        schools: safeData.schools.total,
-        users: safeData.users.total,
+        regions: safeData.regions,
+        sectors: safeData.sectors,
+        schools: safeData.schools,
+        users: safeData.users,
       }} />
       
       {/* Tamamlanma və təsdiq kartları */}

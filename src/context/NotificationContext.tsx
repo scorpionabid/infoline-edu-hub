@@ -1,219 +1,241 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Notification } from '@/types/notification';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { Notification, NotificationType } from '@/types/notification';
 import { supabase } from '@/integrations/supabase/client';
-import { formatNotifications } from '@/hooks/dashboard/notificationUtils';
-import { useAuth } from './AuthContext';
-import { useLanguage } from './LanguageContext';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/auth';
 
-interface NotificationContextType {
+// Context interface
+interface NotificationContextProps {
   notifications: Notification[];
   unreadCount: number;
+  addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt'>) => string;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
-  clearAll: () => void;
-  addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt' | 'time'>) => void;
+  removeNotification: (id: string) => void;
+  clearAllNotifications: () => void;
+  clearAll: () => void; // clearAllNotifications için alias
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
-
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
-  }
-  return context;
+// Default context values
+const defaultContext: NotificationContextProps = {
+  notifications: [],
+  unreadCount: 0,
+  addNotification: () => '',
+  markAsRead: () => {},
+  markAllAsRead: () => {},
+  removeNotification: () => {},
+  clearAllNotifications: () => {},
+  clearAll: () => {} // clearAllNotifications için alias
 };
 
-// LanguageSafe hook - dil kontekstinin mövcudluğunu yoxlamadan istifadə üçün
-export const useLanguageSafe = () => {
-  const context = useLanguage();
-  if (!context) {
-    return {
-      t: (key: string) => key,
-      changeLanguage: () => {},
-      language: 'az'
-    };
-  }
-  return context;
-};
+// Create context
+const NotificationContext = createContext<NotificationContextProps>(defaultContext);
 
+// Provider component
 interface NotificationProviderProps {
   children: ReactNode;
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
-  const { t } = useLanguageSafe();
   
-  // Bildirişləri bazadan əldə etmək
-  const fetchNotifications = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      
-      if (error) throw error;
-      
-      const formattedNotifications = formatNotifications(data || []);
-      setNotifications(formattedNotifications);
-      
-      // Oxunmamış bildirişlərin sayını hesablayaq
-      const unread = formattedNotifications.filter(n => !n.isRead).length;
-      setUnreadCount(unread);
-      
-    } catch (error) {
-      console.error('Bildirişlər əldə edilərkən xəta:', error);
-    }
-  }, [user?.id]);
+  const unreadCount = notifications.filter(notification => !notification.isRead).length;
   
-  // İstifadəçi dəyişdikdə bildirişləri yeniləyirik
+  // Fetch notifications from Supabase when user changes
   useEffect(() => {
+    const fetchNotifications = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          
+          if (error) throw error;
+          
+          if (data) {
+            const formattedNotifications: Notification[] = data.map(item => ({
+              id: item.id,
+              userId: item.user_id,
+              title: item.title,
+              message: item.message || '',
+              type: item.type as NotificationType,
+              createdAt: item.created_at,
+              isRead: item.is_read,
+              priority: (item.priority || 'normal') as 'low' | 'normal' | 'high' | 'urgent'
+            }));
+            
+            setNotifications(formattedNotifications);
+          }
+        } catch (error: any) {
+          console.error('Error fetching notifications:', error);
+        }
+      }
+    };
+    
     fetchNotifications();
+  }, [user]);
+  
+  // Add a new notification
+  const addNotification = (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt'>) => {
+    const id = uuidv4();
+    const now = new Date().toISOString();
     
-    // Supabase real-time abunəliyi əlavə edək 
+    const newNotification: Notification = {
+      id,
+      userId: user?.id,
+      title: notification.title,
+      message: notification.message || '',
+      type: notification.type,
+      createdAt: now,
+      isRead: false,
+      priority: notification.priority || 'normal'
+    };
+    
+    // Add to local state
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    // Save to Supabase if user is logged in
     if (user?.id) {
-      const channel = supabase
-        .channel('notifications_changes')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        }, (payload) => {
-          // Yeni bildiriş əlavə olunduqda bildirişləri yeniləyək
-          fetchNotifications();
-        })
-        .subscribe();
-        
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      (async () => {
+        try {
+          const { error } = await supabase
+            .from('notifications')
+            .insert({
+              id: newNotification.id,
+              user_id: user.id,
+              title: newNotification.title,
+              message: newNotification.message,
+              type: newNotification.type,
+              is_read: false,
+              priority: newNotification.priority,
+              created_at: now
+            });
+          
+          if (error) throw error;
+        } catch (error: any) {
+          console.error('Error saving notification:', error);
+        }
+      })();
     }
-  }, [user?.id, fetchNotifications]);
-  
-  // Bildirişi oxunmuş kimi işarələ
-  const markAsRead = useCallback(async (id: string) => {
-    if (!user?.id) return;
     
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id)
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Lokal state yeniləyək
-      setNotifications(prev => prev.map(notification => 
-        notification.id === id ? { ...notification, isRead: true } : notification
-      ));
-      
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      
-    } catch (error) {
-      console.error('Bildiriş oxunmuş kimi işarələnərkən xəta:', error);
-    }
-  }, [user?.id]);
-  
-  // Bütün bildirişləri oxunmuş kimi işarələ
-  const markAllAsRead = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-      
-      if (error) throw error;
-      
-      // Lokal state yeniləyək
-      setNotifications(prev => prev.map(notification => ({ ...notification, isRead: true })));
-      setUnreadCount(0);
-      
-    } catch (error) {
-      console.error('Bütün bildirişlər oxunmuş kimi işarələnərkən xəta:', error);
-    }
-  }, [user?.id]);
-  
-  // Bütün bildirişləri təmizlə
-  const clearAll = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      // Bazadan silmək əvəzinə is_read=true qoymaq daha uyğundur
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Lokal state təmizləyək
-      setNotifications([]);
-      setUnreadCount(0);
-      
-    } catch (error) {
-      console.error('Bildirişlər təmizlənərkən xəta:', error);
-    }
-  }, [user?.id]);
-  
-  // Yeni bildiriş əlavə et
-  const addNotification = useCallback(async (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt' | 'time'>) => {
-    if (!user?.id) return;
-    
-    try {
-      const newNotification = {
-        user_id: user.id,
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        priority: notification.priority || 'normal',
-        is_read: false,
-        created_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('notifications')
-        .insert(newNotification)
-        .select('*')
-        .single();
-      
-      if (error) throw error;
-      
-      // Bildirişləri yenidən əldə et
-      fetchNotifications();
-      
-    } catch (error) {
-      console.error('Bildiriş əlavə edilərkən xəta:', error);
-    }
-  }, [user?.id, fetchNotifications]);
-  
-  const value = {
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    clearAll,
-    addNotification
+    return id;
   };
   
+  // Mark a notification as read
+  const markAsRead = async (id: string) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, isRead: true } : notif
+      )
+    );
+    
+    if (user?.id) {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('id', id)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } catch (error: any) {
+        console.error('Error marking notification as read:', error);
+      }
+    }
+  };
+  
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    setNotifications(prev => 
+      prev.map(notif => ({ ...notif, isRead: true }))
+    );
+    
+    if (user?.id) {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', user.id)
+          .is('is_read', false);
+        
+        if (error) throw error;
+      } catch (error: any) {
+        console.error('Error marking all notifications as read:', error);
+      }
+    }
+  };
+  
+  // Remove a notification
+  const removeNotification = async (id: string) => {
+    setNotifications(prev => 
+      prev.filter(notif => notif.id !== id)
+    );
+    
+    if (user?.id) {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } catch (error: any) {
+        console.error('Error removing notification:', error);
+      }
+    }
+  };
+  
+  // Clear all notifications
+  const clearAllNotifications = async () => {
+    setNotifications([]);
+    
+    if (user?.id) {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } catch (error: any) {
+        console.error('Error clearing notifications:', error);
+        toast.error('Bildirişləri təmizləyərkən xəta baş verdi');
+      }
+    }
+  };
+  
+  // clearAll alias for clearAllNotifications
+  const clearAll = clearAllNotifications;
+  
   return (
-    <NotificationContext.Provider value={value}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        addNotification,
+        markAsRead,
+        markAllAsRead,
+        removeNotification,
+        clearAllNotifications,
+        clearAll
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );
 };
 
-export default NotificationProvider;
+// Custom hook to use the notification context
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (context === undefined) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
+};

@@ -1,16 +1,12 @@
-
 import { 
   SuperAdminDashboardData, 
   RegionAdminDashboardData, 
   SectorAdminDashboardData, 
   SchoolAdminDashboardData,
   ChartData,
-  StatsItem,
-  EntityCount,
-  UserEntityCount
+  StatsItem
 } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
-import { generateRandomId } from '@/utils/helpers';
 
 // Mock bildiriş data generasiyası
 const generateMockNotifications = (): Notification[] => {
@@ -21,7 +17,7 @@ const generateMockNotifications = (): Notification[] => {
       message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
       type: 'category',
       isRead: false,
-      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       userId: 'user-1',
       priority: 'normal'
     },
@@ -31,7 +27,7 @@ const generateMockNotifications = (): Notification[] => {
       message: 'Müəllim heyəti məlumatlarının doldurulma vaxtı sabah bitir',
       type: 'deadline',
       isRead: true,
-      created_at: new Date(Date.now() - 86400000).toISOString(),
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
       userId: 'user-1',
       priority: 'high'
     },
@@ -41,7 +37,7 @@ const generateMockNotifications = (): Notification[] => {
       message: 'Şagird statistikası təsdiq edildi',
       type: 'approval',
       isRead: false,
-      created_at: new Date(Date.now() - 172800000).toISOString(),
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
       userId: 'user-1',
       priority: 'normal'
     }
@@ -52,28 +48,28 @@ const generateMockNotifications = (): Notification[] => {
 const generateMockStats = (): StatsItem[] => {
   return [
     {
-      id: generateRandomId(),
+      id: '1',
       title: 'Ümumi məlumat doldurulma faizi',
       value: 78,
       change: 12,
       changeType: 'increase'
     },
     {
-      id: generateRandomId(),
+      id: '2',
       title: 'Bu ay əlavə edilən məlumatlar',
       value: 156,
       change: 8,
       changeType: 'increase'
     },
     {
-      id: generateRandomId(),
+      id: '3',
       title: 'Keçən aya nəzərən dəyişiklik',
       value: 23,
       change: 5,
       changeType: 'decrease'
     },
     {
-      id: generateRandomId(),
+      id: '4',
       title: 'Formların ortalama tamamlanma müddəti',
       value: 2.4,
       change: 0,
@@ -84,26 +80,11 @@ const generateMockStats = (): StatsItem[] => {
 
 // SuperAdmin üçün mock data generasiyası
 export const generateSuperAdminData = (): SuperAdminDashboardData => {
-  const regions: EntityCount = { total: 12, active: 10, inactive: 2 };
-  const sectors: EntityCount = { total: 48, active: 45, inactive: 3 };
-  const schools: EntityCount = { total: 645, active: 620, inactive: 25 };
-  const users: UserEntityCount = { 
-    total: 872, 
-    active: 850, 
-    inactive: 22,
-    byRole: {
-      superadmin: 5,
-      regionadmin: 12,
-      sectoradmin: 48,
-      schooladmin: 645
-    }
-  };
-  
   return {
-    regions,
-    sectors,
-    schools,
-    users,
+    regions: 12,
+    sectors: 48,
+    schools: 645,
+    users: 872,
     completionRate: 76,
     pendingApprovals: 34,
     notifications: generateMockNotifications(),
@@ -141,23 +122,10 @@ export const generateSuperAdminData = (): SuperAdminDashboardData => {
 
 // RegionAdmin üçün mock data generasiyası
 export const generateRegionAdminData = (): RegionAdminDashboardData => {
-  const sectors: EntityCount = { total: 8, active: 8, inactive: 0 };
-  const schools: EntityCount = { total: 120, active: 118, inactive: 2 };
-  const users: UserEntityCount = { 
-    total: 145, 
-    active: 140, 
-    inactive: 5,
-    byRole: {
-      sectoradmin: 8,
-      schooladmin: 120
-    }
-  };
-  
   return {
-    regionName: 'Bakı',
-    sectors,
-    schools,
-    users,
+    sectors: 8,
+    schools: 120,
+    users: 145,
     completionRate: 72,
     pendingApprovals: 18,
     pendingSchools: 12,
@@ -190,12 +158,8 @@ export const generateRegionAdminData = (): RegionAdminDashboardData => {
 
 // SectorAdmin üçün mock data generasiyası
 export const generateSectorAdminData = (): SectorAdminDashboardData => {
-  const schools: EntityCount = { total: 24, active: 24, inactive: 0 };
-  
   return {
-    sectorName: 'Xətai',
-    regionName: 'Bakı',
-    schools,
+    schools: 24,
     completionRate: 68,
     pendingApprovals: 12,
     pendingSchools: 8,
@@ -229,9 +193,6 @@ export const generateSectorAdminData = (): SectorAdminDashboardData => {
 // SchoolAdmin üçün mock data generasiyası
 export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
   return {
-    schoolName: '45 nömrəli məktəb',
-    sectorName: 'Xətai',
-    regionName: 'Bakı',
     forms: {
       pending: 5,
       approved: 12,
@@ -305,11 +266,11 @@ export const generateMockChartData = (): ChartData => {
       { name: 'Şəki', value: 38 }
     ],
     categoryCompletionData: [
-      { name: 'Şagird statistikası', value: 85 },
-      { name: 'Müəllim heyəti', value: 72 },
-      { name: 'İnfrastruktur', value: 64 },
-      { name: 'Tədris proqramı', value: 92 },
-      { name: 'Maliyyə hesabatları', value: 58 }
+      { name: 'Şagird statistikası', completed: 85 },
+      { name: 'Müəllim heyəti', completed: 72 },
+      { name: 'İnfrastruktur', completed: 64 },
+      { name: 'Tədris proqramı', completed: 92 },
+      { name: 'Maliyyə hesabatları', completed: 58 }
     ]
   };
 };

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
@@ -8,9 +8,9 @@ import SchoolHeader from './SchoolHeader';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
-import { useImportExport } from '@/hooks/schools/useImportExport';
-import { useExportAdapter } from '@/hooks/schools/useExportAdapter';
+import { toast } from 'sonner';
 import ImportDialog from './ImportDialog';
+import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
 
 const SchoolsContainer: React.FC = () => {
@@ -65,16 +65,12 @@ const SchoolsContainer: React.FC = () => {
     handleFormChange
   } = useSchoolDialogHandlers();
 
-  // useImportExport hook'unu çağıraq
-  const importExportHook = useImportExport(() => setIsOperationComplete(true));
   const {
     isImportDialogOpen,
     setIsImportDialogOpen,
+    handleExportToExcel,
     handleImportSchools
-  } = importExportHook;
-
-  // Excel ixrac funksiyasını əldə etmək üçün adapter hook-u istifadə edək
-  const { handleExportClick } = useExportAdapter(schools);
+  } = useImportExport(() => setIsOperationComplete(true));
 
   useEffect(() => {
     if (isOperationComplete) {
@@ -84,51 +80,43 @@ const SchoolsContainer: React.FC = () => {
   }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
   // İstifadəçinin roluna əsasən sektorları filtrləmək
-  const filteredSectors = React.useMemo(() => {
+  const filteredSectors = useMemo(() => {
     let sectorsList = sectors.map(sector => ({
       id: sector.id,
       name: sector.name,
       regionId: sector.region_id
     }));
     
-    // UserRole tipində olduğunu yoxlayırıq
-    const validUserRole = userRole as UserRole | undefined;
+    // Explicitly handle potential undefined or null userRole
+    const userRoleTyped: UserRole | null = userRole && ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole) 
+      ? userRole as UserRole 
+      : null;
     
     // Sektor admin üçün yalnız öz sektorunu göstərmək
-    if (validUserRole === 'sectoradmin') {
+    if (userRoleTyped === 'sectoradmin') {
       sectorsList = sectorsList.filter(sector => sector.id === selectedSector);
     }
     // Region admin üçün yalnız öz regionuna aid sektorları göstərmək
-    else if (validUserRole === 'regionadmin' && selectedRegion) {
+    else if (userRoleTyped === 'regionadmin' && selectedRegion) {
       sectorsList = sectorsList.filter(sector => sector.regionId === selectedRegion);
     }
     
     return sectorsList;
   }, [sectors, userRole, selectedSector, selectedRegion]);
 
-  // Excel idxal funksiyası
+  // Excel ixrac və idxal funksiyaları
+  const handleExportClick = () => {
+    handleExportToExcel(schools);
+  };
+
   const handleImportClick = () => {
     setIsImportDialogOpen(true);
-  };
-
-  // Adapter funksiyalar
-  const handleAdminUpdateAdapter = () => {
-    handleAdminUpdate();
-  };
-
-  const handleResetPasswordAdapter = (newPassword: string) => {
-    handleResetPassword(selectedAdmin?.id || '', newPassword);
-  };
-
-  // ImportDialog komponentini uyğunlaşdıraq
-  const handleImportConfirm = (file: File) => {
-    handleImportSchools(file);
   };
 
   return (
     <div className="space-y-6">
       <SchoolHeader 
-        userRole={userRole as UserRole | undefined} 
+        userRole={userRole} 
         onAddClick={handleAddDialogOpen}
         onExportClick={handleExportClick}
         onImportClick={handleImportClick}
@@ -185,8 +173,8 @@ const SchoolsContainer: React.FC = () => {
         handleDeleteConfirm={handleDeleteConfirm}
         handleAddSubmit={handleAddSubmit}
         handleEditSubmit={handleEditSubmit}
-        handleAdminUpdate={handleAdminUpdateAdapter}
-        handleResetPassword={handleResetPasswordAdapter}
+        handleAdminUpdate={handleAdminUpdate}
+        handleResetPassword={handleResetPassword}
         formData={formData}
         handleFormChange={handleFormChange}
         currentTab={currentTab}
@@ -194,10 +182,11 @@ const SchoolsContainer: React.FC = () => {
         filteredSectors={filteredSectors}
       />
       
+      {/* Import Dialog */}
       <ImportDialog 
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImportConfirm}
+        onImport={handleImportSchools}
       />
     </div>
   );

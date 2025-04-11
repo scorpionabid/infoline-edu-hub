@@ -1,70 +1,124 @@
+// Supabase üçün tip tərifləri
 
-export interface School {
-  id: string;
-  name: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  directorName?: string;
-  principalName: string; // Optional deyil, məcburi edildi
-  studentCount?: number;
-  teacherCount?: number;
-  schoolType?: 'elementary' | 'middle' | 'high' | 'vocational' | 'special';
-  type?: string;
-  teachingLanguage?: 'azerbaijani' | 'russian' | 'georgian' | 'turkish' | 'english';
-  language?: string;
-  regionId: string;
-  sectorId: string;
-  status: 'active' | 'inactive';
-  createdAt?: string;
-  updatedAt?: string;
-  completionRate?: number;
-  logo?: string;
-  adminEmail?: string;
-  admin_email?: string;
-  completion_rate?: number;
-  region?: string;
-  sector?: string;
-  
-  // Supabase tipindən gələn daxili adlar
-  region_id?: string;
-  sector_id?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * İstifadəçi rolu tipləri
- */
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-// UserRoleData tipini əlavə edək
-export interface UserRoleData {
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-// Profile interfeysi
+// Profil interfeysi
 export interface Profile {
   id: string;
   full_name: string;
-  email?: string;
+  avatar?: string;
   phone?: string;
   position?: string;
-  avatar?: string;
-  status?: string;
-  language?: string;
+  language: string;
   last_login?: string;
+  created_at: string;
+  updated_at: string;
+  status: 'active' | 'inactive' | 'blocked';
+}
+
+// İstifadəçi rolu
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+// İstifadəçi rolu cədvəli interfeysi
+export interface UserRoleData {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   created_at: string;
   updated_at: string;
 }
 
-// Tam istifadəçi məlumatını təsvir edən interfeys
+// Bildiriş interfeysi
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message?: string;
+  related_entity_id?: string;
+  related_entity_type?: string;
+  is_read: boolean;
+  priority: string;
+  created_at: string;
+}
+
+// Audit log interfeysi
+export interface AuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  entity_type: string;
+  entity_id?: string;
+  old_value?: Record<string, any>;
+  new_value?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+// Admin entity interfeysi
+export interface AdminEntity {
+  type: 'region' | 'sector' | 'school';
+  name: string;
+  status?: string;
+  regionName?: string;
+  sectorName?: string;
+  schoolType?: string;
+}
+
+// Auth ilə bağlı tiplər
+export interface AuthSession {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  user: AuthUser;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  aud: string;
+  role: string;
+  app_metadata: {
+    provider?: string;
+  };
+  user_metadata: Record<string, any>;
+}
+
+// İstifadəçi yaratmaq üçün data formatı
+export interface CreateUserData {
+  email: string;
+  password: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+}
+
+// İstifadəçi məlumatlarını yeniləmək üçün data formatı
+export interface UpdateUserData {
+  full_name?: string;
+  email?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  password?: string;
+}
+
+// İstifadəçi tam məlumatları (profil + rol)
 export interface FullUserData {
   id: string;
   email: string;
@@ -75,23 +129,23 @@ export interface FullUserData {
   school_id?: string;
   phone?: string;
   position?: string;
-  language?: string;
+  language: string;
   avatar?: string;
-  status?: string;
+  status: 'active' | 'inactive' | 'blocked';
   last_login?: string;
   created_at: string;
   updated_at: string;
   
-  // Alias sahələr
-  name?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  lastLogin?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  // App tərəfindən istifadə edilən alternatif adlar
+  name: string; // full_name ilə eyni
+  regionId?: string; // region_id ilə eyni
+  sectorId?: string; // sector_id ilə eyni 
+  schoolId?: string; // school_id ilə eyni
+  lastLogin?: string; // last_login ilə eyni
+  createdAt: string; // created_at ilə eyni
+  updatedAt: string; // updated_at ilə eyni
   
-  // Admin entity
+  // Admin entity məlumatları
   adminEntity?: {
     type: string;
     name: string;
@@ -101,7 +155,7 @@ export interface FullUserData {
     schoolType?: string;
   };
   
-  // Əlavə sahələr
+  // Əlavə tətbiq xüsusiyyətləri
   twoFactorEnabled?: boolean;
   notificationSettings?: {
     email: boolean;
@@ -109,64 +163,57 @@ export interface FullUserData {
   };
 }
 
-// İstifadəçi yaratmaq üçün verilənlər
-export interface CreateUserData {
-  full_name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  phone?: string;
-  position?: string;
-  language?: string;
-  avatar?: string;
-  status?: string;
-}
+// Digər interfeyslər üçün
 
-// İstifadəçi yeniləmək üçün verilənlər
-export interface UpdateUserData {
-  full_name?: string;
+// Məktəb interfeysi
+export interface School {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
   email?: string;
-  password?: string;
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  phone?: string;
-  position?: string;
+  principal_name?: string;
+  admin_email?: string;
+  admin_id?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
   language?: string;
-  avatar?: string;
+  logo?: string;
+  region_id: string;
+  sector_id: string;
+  completion_rate?: number;
   status?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-// Region interface
+// Region interfeysi
 export interface Region {
   id: string;
   name: string;
   description?: string;
-  admin_id?: string;
   admin_email?: string;
+  admin_id?: string;
   status?: string;
   created_at: string;
   updated_at: string;
 }
 
-// Sector interface
+// Sektor interfeysi
 export interface Sector {
   id: string;
   name: string;
-  description?: string;
   region_id: string;
-  admin_id?: string;
+  description?: string;
   admin_email?: string;
+  admin_id?: string;
   status?: string;
   created_at: string;
   updated_at: string;
 }
 
-// Data entry tipi
+// Data entry interfeysi
 export interface DataEntry {
   id: string;
   category_id: string;
@@ -174,108 +221,11 @@ export interface DataEntry {
   school_id: string;
   value?: string;
   status?: string;
+  created_by?: string;
   created_at: string;
   updated_at: string;
-  created_by?: string;
   approved_by?: string;
   approved_at?: string;
   rejected_by?: string;
   rejection_reason?: string;
-}
-
-// Supabase tipindən app tipinə çevirmək üçün adapter
-export const adaptSchoolFromSupabase = (supabaseSchool: any): School => {
-  return {
-    id: supabaseSchool.id,
-    name: supabaseSchool.name,
-    address: supabaseSchool.address,
-    phone: supabaseSchool.phone,
-    email: supabaseSchool.email,
-    directorName: supabaseSchool.principal_name,
-    principalName: supabaseSchool.principal_name || '', // Boş string ilə fallback təmin edirik
-    studentCount: supabaseSchool.student_count,
-    teacherCount: supabaseSchool.teacher_count,
-    type: supabaseSchool.type,
-    schoolType: mapSchoolType(supabaseSchool.type),
-    language: supabaseSchool.language,
-    teachingLanguage: mapLanguage(supabaseSchool.language),
-    regionId: supabaseSchool.region_id,
-    sectorId: supabaseSchool.sector_id,
-    status: supabaseSchool.status || 'active',
-    createdAt: supabaseSchool.created_at,
-    updatedAt: supabaseSchool.updated_at,
-    completionRate: supabaseSchool.completion_rate,
-    logo: supabaseSchool.logo,
-    adminEmail: supabaseSchool.admin_email,
-    admin_email: supabaseSchool.admin_email,
-    completion_rate: supabaseSchool.completion_rate,
-    
-    // Supabase sahələri
-    region_id: supabaseSchool.region_id,
-    sector_id: supabaseSchool.sector_id,
-    principal_name: supabaseSchool.principal_name,
-    student_count: supabaseSchool.student_count,
-    teacher_count: supabaseSchool.teacher_count,
-    created_at: supabaseSchool.created_at,
-    updated_at: supabaseSchool.updated_at
-  };
-};
-
-// Məktəb tipini supabase formatına çevirmək
-export const adaptSchoolToSupabase = (school: Partial<School>): any => {
-  const {
-    directorName, teachingLanguage, regionId, sectorId, createdAt, updatedAt,
-    schoolType, completionRate, adminEmail, region, sector, ...rest
-  } = school;
-  
-  return {
-    ...rest,
-    principal_name: school.principalName || school.principal_name || directorName,
-    type: school.type || schoolType,
-    language: school.language || teachingLanguage,
-    region_id: school.region_id || regionId,
-    sector_id: school.sector_id || sectorId,
-    completion_rate: school.completion_rate || completionRate,
-    admin_email: school.admin_email || adminEmail,
-    status: school.status || 'active'
-  };
-};
-
-// Köməkçi funksiyalar
-function mapSchoolType(type?: string): 'elementary' | 'middle' | 'high' | 'vocational' | 'special' | undefined {
-  if (!type) return undefined;
-  
-  const typeMapping: { [key: string]: 'elementary' | 'middle' | 'high' | 'vocational' | 'special' } = {
-    'elementary': 'elementary',
-    'middle': 'middle',
-    'high': 'high',
-    'vocational': 'vocational',
-    'special': 'special',
-    'ibtidai': 'elementary',
-    'orta': 'middle',
-    'tam_orta': 'high',
-    'texniki_peşə': 'vocational',
-    'xüsusi': 'special'
-  };
-  
-  return typeMapping[type.toLowerCase()] || 'high';
-}
-
-function mapLanguage(language?: string): 'azerbaijani' | 'russian' | 'georgian' | 'turkish' | 'english' | undefined {
-  if (!language) return undefined;
-  
-  const languageMapping: { [key: string]: 'azerbaijani' | 'russian' | 'georgian' | 'turkish' | 'english' } = {
-    'azerbaijani': 'azerbaijani',
-    'russian': 'russian',
-    'georgian': 'georgian', 
-    'turkish': 'turkish',
-    'english': 'english',
-    'azərbaycan': 'azerbaijani',
-    'rus': 'russian',
-    'gürcü': 'georgian',
-    'türk': 'turkish',
-    'ingilis': 'english'
-  };
-  
-  return languageMapping[language.toLowerCase()] || 'azerbaijani';
 }

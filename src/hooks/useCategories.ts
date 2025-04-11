@@ -5,14 +5,12 @@ import { Category } from '@/types/category';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { usePermissions } from './auth/usePermissions';
-import { useState, useMemo } from 'react';
 
 export const useCategories = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { userRole } = usePermissions();
   const isSuperAdmin = userRole === 'superadmin';
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Kateqoriyaları çəkmək üçün funksiya - RLS ilə filtrələnəcək
   const fetchCategories = async () => {
@@ -112,7 +110,7 @@ export const useCategories = () => {
 
   // React Query hooks
   const {
-    data: categories = [],
+    data: categories,
     isLoading,
     isError,
     error,
@@ -121,17 +119,6 @@ export const useCategories = () => {
     queryKey: ['categories'],
     queryFn: fetchCategories,
   });
-
-  // Filterlənmiş kateqoriyalar
-  const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return categories;
-    
-    return categories.filter((category) => {
-      const nameMatch = category.name?.toLowerCase().includes(searchQuery.toLowerCase());
-      const descMatch = category.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      return nameMatch || descMatch;
-    });
-  }, [categories, searchQuery]);
 
   const addCategoryMutation = useMutation({
     mutationFn: addCategory,
@@ -157,9 +144,6 @@ export const useCategories = () => {
 
   return {
     categories,
-    filteredCategories,
-    searchQuery,
-    setSearchQuery,
     isLoading,
     isError,
     error,

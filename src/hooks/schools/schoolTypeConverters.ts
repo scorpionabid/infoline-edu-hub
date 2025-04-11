@@ -13,7 +13,7 @@ export interface MappedSchool {
   email: string;
   studentCount: number;
   teacherCount: number;
-  status: 'active' | 'inactive';
+  status: string;
   type: string;
   language: string;
   adminEmail: string;
@@ -23,18 +23,18 @@ export const mapToMockSchool = (school: SupabaseSchool): MappedSchool => {
   return {
     id: school.id,
     name: school.name,
-    principalName: school.principalName || school.principal_name || '',
+    principalName: school.principal_name || '',
     address: school.address || '',
-    regionId: school.regionId || school.region_id || '',
-    sectorId: school.sectorId || school.sector_id || '',
+    regionId: school.region_id,
+    sectorId: school.sector_id,
     phone: school.phone || '',
     email: school.email || '',
-    studentCount: school.studentCount || school.student_count || 0,
-    teacherCount: school.teacherCount || school.teacher_count || 0,
-    status: (school.status as 'active' | 'inactive') || 'active',
+    studentCount: school.student_count || 0,
+    teacherCount: school.teacher_count || 0,
+    status: school.status || 'active',
     type: school.type || '',
     language: school.language || '',
-    adminEmail: school.adminEmail || school.admin_email || ''
+    adminEmail: school.admin_email || ''
   };
 };
 
@@ -42,22 +42,22 @@ export const convertToSchoolType = (school: SupabaseSchool): School => {
   return {
     id: school.id,
     name: school.name,
-    principalName: school.principalName || school.principal_name || '',
+    principalName: school.principal_name || '',
     address: school.address || '',
-    regionId: school.regionId || school.region_id || '',
-    sectorId: school.sectorId || school.sector_id || '',
+    regionId: school.region_id,
+    sectorId: school.sector_id,
     phone: school.phone || '',
     email: school.email || '',
-    studentCount: school.studentCount || school.student_count || 0,
-    teacherCount: school.teacherCount || school.teacher_count || 0,
-    status: (school.status as 'active' | 'inactive') || 'active',
+    studentCount: school.student_count || 0,
+    teacherCount: school.teacher_count || 0,
+    status: school.status || 'active',
     type: school.type || '',
     language: school.language || '',
-    createdAt: school.createdAt || school.created_at,
-    completionRate: school.completionRate || school.completion_rate,
+    createdAt: school.created_at,
+    completionRate: school.completion_rate,
     region: '',
     sector: '',
     logo: school.logo || '',
-    adminEmail: school.adminEmail || school.admin_email || ''
+    adminEmail: school.admin_email || ''
   };
 };

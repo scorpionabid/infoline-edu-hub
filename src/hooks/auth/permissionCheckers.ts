@@ -1,190 +1,285 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { PermissionLevel } from "./types";
+import { supabase } from '@/integrations/supabase/client';
+import { PermissionLevel, PermissionCheckResult } from './permissionTypes';
+import { executeQuery } from './permissionUtils';
+import { UserRoleData } from '@/types/supabase';
 
 /**
- * İstifadəçinin regiona girişini yoxlayır
+ * İstifadəçinin müəyyən regiona icazəsinin olub-olmadığını yoxlayır
  */
 export const checkRegionAccess = async (
+  userId: string | undefined,
+  userRole: string | undefined,
+  userRegionId: string | undefined,
   regionId: string,
-  level: PermissionLevel = "read"
-): Promise<boolean> => {
+  level: PermissionLevel = 'read'
+): PermissionCheckResult => {
+  if (!userId) return false;
+  
   try {
-    // Cari istifadəçini əldə et
-    const userResponse = await supabase.auth.getUser();
-    if (!userResponse.data.user) {
-      console.error("İstifadəçi hesabına giriş edilməyib");
-      return false;
+    // Sorğunu düzgün şəkildə yaradıb executeQuery-ə ötürmək
+    const userData = await executeQuery<UserRoleData>(
+      supabase
+        .from('user_roles')
+        .select('role, region_id')
+        .eq('user_id', userId)
+        .single(),
+      'Region icazəsi yoxlanarkən xəta:'
+    );
+    
+    if (!userData) return false;
+    
+    if (level === 'read') {
+      return userData.role === 'superadmin' || (userData.role === 'regionadmin' && userData.region_id === regionId);
     }
-
-    const userId = userResponse.data.user.id;
-
-    // Regionlara giriş icazəsini yoxla
-    const { data, error } = await supabase.rpc("has_region_access", {
-      region_id_param: regionId,
-    });
-
-    if (error) {
-      console.error("Region girişi yoxlanarkən xəta:", error);
-      return false;
-    }
-
-    return !!data;
+    
+    // Yazma və tam icazə üçün superadmin və ya regionadmin olmalıdır
+    if (userRole === 'superadmin') return true;
+    if (userRole === 'regionadmin' && userRegionId === regionId) return true;
+    
+    return false;
   } catch (error) {
-    console.error("Region icazəsi yoxlanarkən xəta:", error);
+    console.error('Region icazəsi yoxlanarkən xəta:', error);
     return false;
   }
 };
 
 /**
- * İstifadəçinin sektora girişini yoxlayır
+ * İstifadəçinin müəyyən sektora icazəsinin olub-olmadığını yoxlayır
  */
 export const checkSectorAccess = async (
+  userId: string | undefined,
+  userRole: string | undefined,
+  userRegionId: string | undefined,
+  userSectorId: string | undefined,
   sectorId: string,
-  level: PermissionLevel = "read"
-): Promise<boolean> => {
+  level: PermissionLevel = 'read'
+): PermissionCheckResult => {
+  if (!userId) return false;
+  
   try {
-    // Cari istifadəçini əldə et
-    const userResponse = await supabase.auth.getUser();
-    if (!userResponse.data.user) {
-      console.error("İstifadəçi hesabına giriş edilməyib");
-      return false;
+    // Sorğunu düzgün şəkildə yaradıb executeQuery-ə ötürürük
+    const userRoleData = await executeQuery<UserRoleData>(
+      supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id')
+        .eq('user_id', userId)
+        .single(),
+      'Sektor icazəsi yoxlanarkən xəta:'
+    );
+    
+    if (!userRoleData) return false;
+    
+    if (level === 'read') {
+      if (userRoleData.role === 'superadmin') return true;
+      if (userRoleData.role === 'regionadmin') {
+        const sectorData = await executeQuery<{ region_id: string }>(
+          supabase
+            .from('sectors')
+            .select('region_id')
+            .eq('id', sectorId)
+            .single(),
+          'Sektor məlumatı alınarkən xəta:'
+        );
+        
+        if (!sectorData) return false;
+        return sectorData.region_id === userRoleData.region_id;
+      }
+      if (userRoleData.role === 'sectoradmin' && userRoleData.sector_id === sectorId) return true;
     }
-
-    const userId = userResponse.data.user.id;
-
-    // Sektora giriş icazəsini yoxla
-    const { data, error } = await supabase.rpc("has_sector_access", {
-      sector_id_param: sectorId,
-    });
-
-    if (error) {
-      console.error("Sektor girişi yoxlanarkən xəta:", error);
-      return false;
+    
+    // Yazma və tam icazə üçün superadmin, regionadmin və ya sectoradmin olmalıdır
+    if (userRole === 'superadmin') return true;
+    if (userRole === 'regionadmin' && userRegionId) {
+      // RegionAdmin öz regionuna aid sektorlarda dəyişiklik edə bilər
+      const sectorData = await executeQuery<{ region_id: string }>(
+        supabase
+          .from('sectors')
+          .select('region_id')
+          .eq('id', sectorId)
+          .single(),
+        'Sektor məlumatı alınarkən xəta:'
+      );
+      
+      if (!sectorData) return false;
+      return sectorData.region_id === userRegionId;
     }
-
-    return !!data;
+    if (userRole === 'sectoradmin' && userSectorId === sectorId) return true;
+    
+    return false;
   } catch (error) {
-    console.error("Sektor icazəsi yoxlanarkən xəta:", error);
+    console.error('Sektor icazəsi yoxlanarkən xəta:', error);
     return false;
   }
 };
 
 /**
- * İstifadəçinin məktəbə girişini yoxlayır
+ * İstifadəçinin müəyyən məktəbə icazəsinin olub-olmadığını yoxlayır
  */
 export const checkSchoolAccess = async (
+  userId: string | undefined,
+  userRole: string | undefined,
+  userRegionId: string | undefined,
+  userSectorId: string | undefined,
   schoolId: string,
-  level: PermissionLevel = "read"
-): Promise<boolean> => {
+  level: PermissionLevel = 'read'
+): PermissionCheckResult => {
+  if (!userId) return false;
+  
   try {
-    // Cari istifadəçini əldə et
-    const userResponse = await supabase.auth.getUser();
-    if (!userResponse.data.user) {
-      console.error("İstifadəçi hesabına giriş edilməyib");
+    // Məktəb məlumatlarını əldə edirik
+    const schoolData = await executeQuery<{ region_id: string; sector_id: string }>(
+      supabase
+        .from('schools')
+        .select('region_id, sector_id')
+        .eq('id', schoolId)
+        .single(),
+      'Məktəb məlumatı alınarkən xəta:'
+    );
+    
+    if (!schoolData) return false;
+    
+    // İstifadəçi rollarını əldə edirik
+    const userRoleData = await executeQuery<UserRoleData>(
+      supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id, school_id')
+        .eq('user_id', userId)
+        .single(),
+      'İstifadəçi rolu alınarkən xəta:'
+    );
+    
+    if (!userRoleData) return false;
+    
+    if (level === 'read') {
+      // SuperAdmin bütün məktəblərə icazəlidir
+      if (userRoleData.role === 'superadmin') return true;
+      
+      // RegionAdmin öz regionundakı məktəblərə icazəlidir
+      if (userRoleData.role === 'regionadmin' && userRoleData.region_id === schoolData.region_id) return true;
+      
+      // SectorAdmin öz sektorundakı məktəblərə icazəlidir
+      if (userRoleData.role === 'sectoradmin' && userRoleData.sector_id === schoolData.sector_id) return true;
+      
+      // SchoolAdmin yalnız öz məktəbinə icazəlidir
+      if (userRoleData.role === 'schooladmin' && userRoleData.school_id === schoolId) return true;
+      
       return false;
     }
-
-    const userId = userResponse.data.user.id;
-
-    // Məktəbə giriş icazəsini yoxla
-    const { data, error } = await supabase.rpc("has_school_access", {
-      school_id_param: schoolId,
-    });
-
-    if (error) {
-      console.error("Məktəb girişi yoxlanarkən xəta:", error);
-      return false;
+    
+    // Yazma və tam icazə üçün superadmin, regionadmin və ya sectoradmin olmalıdır
+    if (userRole === 'superadmin') return true;
+    
+    if (userRole === 'regionadmin' && userRegionId) {
+      return schoolData.region_id === userRegionId;
     }
-
-    return !!data;
+    
+    if (userRole === 'sectoradmin' && userSectorId) {
+      return schoolData.sector_id === userSectorId;
+    }
+    
+    return false;
   } catch (error) {
-    console.error("Məktəb icazəsi yoxlanarkən xəta:", error);
+    console.error('Məktəb icazəsi yoxlanarkən xəta:', error);
     return false;
   }
 };
 
 /**
- * İstifadəçinin kateqoriyaya girişini yoxlayır
+ * İstifadəçinin müəyyən kateqoriyaya icazəsinin olub-olmadığını yoxlayır
  */
 export const checkCategoryAccess = async (
+  userId: string | undefined,
   categoryId: string,
-  level: PermissionLevel = "read"
-): Promise<boolean> => {
+  level: PermissionLevel = 'read'
+): PermissionCheckResult => {
+  if (!userId) return false;
+  
   try {
-    // Cari istifadəçini əldə et
-    const userResponse = await supabase.auth.getUser();
-    if (!userResponse.data.user) {
-      console.error("İstifadəçi hesabına giriş edilməyib");
+    // Kateqoriya məlumatlarını əldə edirik
+    const categoryData = await executeQuery<{ assignment: string }>(
+      supabase
+        .from('categories')
+        .select('assignment')
+        .eq('id', categoryId)
+        .single(),
+      'Kateqoriya məlumatı alınarkən xəta:'
+    );
+    
+    if (!categoryData) return false;
+    
+    // İstifadəçi rolunu əldə edirik
+    const userRoleData = await executeQuery<{ role: string }>(
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single(),
+      'İstifadəçi rolu alınarkən xəta:'
+    );
+    
+    if (!userRoleData) return false;
+    
+    if (level === 'read') {
+      // SuperAdmin bütün kateqoriyalara icazəlidir
+      if (userRoleData.role === 'superadmin') return true;
+      
+      // "all" assignment-li kateqoriyalar hər kəsə açıqdır
+      if (categoryData.assignment === 'all') return true;
+      
+      // "sectors" assignment-li kateqoriyalar sectoradmin, regionadmin və schooladmin üçün açıqdır
+      if (categoryData.assignment === 'sectors' && 
+          ['regionadmin', 'sectoradmin', 'schooladmin'].includes(userRoleData.role)) {
+        return true;
+      }
+      
       return false;
     }
-
-    const userId = userResponse.data.user.id;
-
-    // Kateqoriyaya giriş icazəsini yoxla
-    const { data, error } = await supabase.rpc("has_category_access", {
-      category_id_param: categoryId,
-    });
-
-    if (error) {
-      console.error("Kateqoriya girişi yoxlanarkən xəta:", error);
-      return false;
+    
+    // Yazma icazəsi üçün superadmin və regionadmin
+    if (level === 'write') {
+      return ['superadmin', 'regionadmin'].includes(userRoleData.role);
     }
-
-    return !!data;
+    
+    // Tam icazə üçün yalnız SuperAdmin
+    return userRoleData.role === 'superadmin';
   } catch (error) {
-    console.error("Kateqoriya icazəsi yoxlanarkən xəta:", error);
+    console.error('Kateqoriya icazəsi yoxlanarkən xəta:', error);
     return false;
   }
 };
 
 /**
- * İstifadəçinin sütuna girişini yoxlayır
+ * İstifadəçinin müəyyən sütuna icazəsinin olub-olmadığını yoxlayır
  */
 export const checkColumnAccess = async (
+  userId: string | undefined,
   columnId: string,
-  level: PermissionLevel = "read"
-): Promise<boolean> => {
+  level: PermissionLevel = 'read'
+): PermissionCheckResult => {
+  if (!userId) return false;
+  
   try {
-    // Cari istifadəçini əldə et
-    const userResponse = await supabase.auth.getUser();
-    if (!userResponse.data.user) {
-      console.error("İstifadəçi hesabına giriş edilməyib");
-      return false;
-    }
-
-    const userId = userResponse.data.user.id;
-
-    // Sütuna giriş icazəsini yoxla
-    const { data, error } = await supabase.rpc("has_column_access", {
-      column_id_param: columnId,
-    });
-
-    if (error) {
-      console.error("Sütun girişi yoxlanarkən xəta:", error);
-      return false;
-    }
-
-    return !!data;
-  } catch (error) {
-    console.error("Sütun icazəsi yoxlanarkən xəta:", error);
-    return false;
-  }
-};
-
-/**
- * Sektor admininin kateqoriyalar və sütunlara girişini yoxlayır
- */
-export const canSectorAdminAccessCategoriesColumns = (): boolean => {
-  // Sektor admin istifadəçilərinə aid kateqoriyalara giriş qaydaları
-  try {
-    // Bu funksiya qaydalarına görə true qaytaracaq
-    return true;
-  } catch (error) {
-    console.error(
-      "Sektor admininin kateqoriya girişi yoxlanarkən xəta:",
-      error
+    // Sütun və kateqoriya məlumatlarını əldə edirik
+    const columnData = await executeQuery<{ category_id: string }>(
+      supabase
+        .from('columns')
+        .select('category_id')
+        .eq('id', columnId)
+        .single(),
+      'Sütun məlumatı alınarkən xəta:'
     );
+    
+    if (!columnData) return false;
+    
+    // Kateqoriya məlumatlarını əldə edirik
+    const categoryId = columnData.category_id;
+    if (!categoryId) return false;
+    
+    // Kateqoriyaya icazəni yoxlayırıq
+    return checkCategoryAccess(userId, categoryId, level);
+  } catch (error) {
+    console.error('Sütun icazəsi yoxlanarkən xəta:', error);
     return false;
   }
 };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -9,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { useSupabaseAuth } from '@/hooks/auth';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSelector from '@/components/LanguageSelector';
-import { toast } from 'sonner';
 
 const ForgotPassword = () => {
   const { t } = useLanguage();
@@ -28,18 +28,13 @@ const ForgotPassword = () => {
     setIsSubmitting(true);
     
     try {
-      if (resetPassword) {
-        const success = await resetPassword(email);
-        
-        if (success) {
-          setIsSubmitted(true);
-        }
-      } else {
-        toast.error("Şifrə sıfırlama funksiyası mövcud deyil");
+      const success = await resetPassword(email);
+      
+      if (success) {
+        setIsSubmitted(true);
       }
     } catch (error) {
       console.error('Error resetting password:', error);
-      toast.error("Şifrə sıfırlama zamanı xəta baş verdi");
     } finally {
       setIsSubmitting(false);
     }

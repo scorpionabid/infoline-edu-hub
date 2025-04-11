@@ -7,7 +7,6 @@ import { useAuth, useRole } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
-import { Role } from '@/context/auth/types';
 
 const Users = () => {
   const { t } = useLanguage();
@@ -40,9 +39,6 @@ const Users = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // user.role tipini Role tipinə çeviririk
-  const userRole = user?.role as Role | undefined;
-
   return (
     <SidebarLayout>
       <Helmet>
@@ -54,7 +50,7 @@ const Users = () => {
           onUserAddedOrEdited={handleUserAddedOrEdited}
         />
         <UserList 
-          currentUserRole={userRole} 
+          currentUserRole={user?.role} 
           currentUserRegionId={user?.regionId}
           onUserAddedOrEdited={handleUserAddedOrEdited}
         />

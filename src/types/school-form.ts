@@ -9,11 +9,11 @@ export interface SchoolFormData {
   email: string;
   studentCount: string;
   teacherCount: string;
-  status: 'active' | 'inactive';
+  status: string;
   type: string;
   language: string;
-  adminEmail: string;
-  adminFullName: string;
-  adminPassword: string;
-  adminStatus: 'active' | 'inactive' | 'blocked';
+  adminEmail?: string;
+  adminFullName?: string;
+  adminPassword?: string;
+  adminStatus?: string;
 }

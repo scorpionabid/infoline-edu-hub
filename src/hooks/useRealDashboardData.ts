@@ -5,9 +5,9 @@ import { toast } from 'sonner';
 import { 
   fetchSuperAdminDashboardData, 
   fetchRegionAdminDashboardData,
-  fetchSectorAdminDashboardData
+  fetchSectorAdminDashboardData,
+  fetchDashboardChartData 
 } from '@/services/dashboardService';
-import { fetchDashboardChartData } from '@/services/chartService';
 import { DashboardData, ChartData } from '@/types/dashboard';
 
 interface UseRealDashboardDataProps {

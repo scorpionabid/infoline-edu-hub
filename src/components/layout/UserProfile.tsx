@@ -46,10 +46,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ onLogout }) => {
 
   // İstifadəçi avatarı üçün başlıq hərfləri
   const getInitials = () => {
-    if (!user?.fullName) return '?';
+    if (!user?.full_name) return '?';
     
     // İstifadəçi adının ilk hərfini alırıq
-    return user.fullName
+    return user.full_name
       .split(' ')
       .map(name => name[0]?.toUpperCase())
       .slice(0, 2)
@@ -63,14 +63,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ onLogout }) => {
           <Button variant="ghost" className="w-full flex items-center justify-between px-2 py-1 hover:bg-accent hover:text-accent-foreground">
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} alt={user?.fullName || t('user')} />
+                <AvatarImage src={user?.avatar} alt={user?.full_name || t('user')} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col text-left">
                 <span className="text-sm font-medium truncate" style={{ maxWidth: '140px' }}>
-                  {user?.fullName || t('unknownUser')}
+                  {user?.full_name || t('unknownUser')}
                 </span>
                 <span className="text-xs text-muted-foreground">{getRoleLabel(userRole)}</span>
               </div>

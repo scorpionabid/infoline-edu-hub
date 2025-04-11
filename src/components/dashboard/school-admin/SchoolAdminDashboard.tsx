@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from '../NotificationsCard';
@@ -43,7 +42,6 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       case 'rejected':
         return 'bg-red-100 text-red-800';
       case 'dueSoon':
-      case 'due':
         return 'bg-blue-100 text-blue-800';
       case 'overdue':
         return 'bg-red-100 text-red-800';
