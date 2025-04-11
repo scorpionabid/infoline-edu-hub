@@ -37,7 +37,7 @@ export function createTestWrapper(Provider: React.ComponentType<{children: React
 // Hook-ları test etmək üçün wrapper yaratmaq üçün funksiya
 export function renderHookWithProviders<T>(
   hook: () => T,
-  { wrapper }: { wrapper: React.ComponentType<{children: ReactNode}> }
+  params: { wrapper: React.ComponentType<{children: ReactNode}> }
 ) {
-  return renderHook(hook, { wrapper });
+  return renderHook(hook, params);
 }
