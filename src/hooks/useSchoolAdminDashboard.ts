@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,7 +174,6 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
   };
 };
 
-// Bildirişləri formatlamaq üçün köməkçi funksiya
 const formatNotifications = (notifications: any[]): Notification[] => {
   return notifications.map(notification => ({
     id: notification.id,
@@ -190,7 +188,6 @@ const formatNotifications = (notifications: any[]): Notification[] => {
   }));
 };
 
-// Zaman formatlaması üçün köməkçi funksiya
 const formatTime = (timestamp: string): string => {
   const date = new Date(timestamp);
   const now = new Date();
@@ -207,7 +204,6 @@ const formatTime = (timestamp: string): string => {
   return date.toLocaleDateString();
 };
 
-// Region adlarını əldə etmək üçün funksiya
 export const getRegionNames = async () => {
   try {
     const { data, error } = await supabase
@@ -216,17 +212,16 @@ export const getRegionNames = async () => {
       
     if (error) throw error;
     
-    return (data || []).map(region => ({
+    return Array.isArray(data) ? data.map(region => ({
       id: region.id,
       name: region.name || ''
-    }));
+    })) : [];
   } catch (error) {
     console.error('Region adları əldə edilərkən xəta:', error);
     return [];
   }
 };
 
-// Sektor adlarını əldə etmək üçün funksiya
 export const getSectorNames = async () => {
   try {
     const { data, error } = await supabase
@@ -235,10 +230,10 @@ export const getSectorNames = async () => {
       
     if (error) throw error;
     
-    return (data || []).map(sector => ({
+    return Array.isArray(data) ? data.map(sector => ({
       id: sector.id,
       name: sector.name || ''
-    }));
+    })) : [];
   } catch (error) {
     console.error('Sektor adları əldə edilərkən xəta:', error);
     return [];
