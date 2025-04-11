@@ -1,238 +1,173 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/supabase';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { useLanguage } from '@/context/LanguageContext';
-import { exportSchoolsToExcel, generateExcelTemplate, importSchoolsFromExcel, mapRegionNameToId, mapSectorNameToId } from '@/utils/excelUtils';
-import { useRegions } from '../useRegions';
-import { useSectors } from '../useSectors';
-import { useCreateUser } from '../useCreateUser';
+import { School } from '@/types/supabase';
+import { adaptSchoolToSupabase } from '@/types/supabase';
 
-export const useImportExport = (onComplete: () => void) => {
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
+interface UseImportExportProps {
+  onSuccess?: () => void;
+}
+
+export const useImportExport = ({ onSuccess }: UseImportExportProps = {}) => {
   const { t } = useLanguage();
-  const { regions } = useRegions();
-  const { sectors } = useSectors();
-  const { createUser } = useCreateUser();
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Map üçün region və sektorları hazırlayırıq
-  const regionNames = regions.reduce((acc, region) => ({
-    ...acc,
-    [region.id]: region.name
-  }), {} as {[key: string]: string});
-
-  const sectorNames = sectors.reduce((acc, sector) => ({
-    ...acc,
-    [sector.id]: sector.name
-  }), {} as {[key: string]: string});
-
-  const handleExportToExcel = useCallback(async (schools: School[]) => {
-    setIsExporting(true);
+  // Excel-ə ixrac funksiyası
+  const handleExportToExcel = useCallback((schools: School[]) => {
     try {
-      exportSchoolsToExcel(schools, regionNames, sectorNames);
+      setIsExporting(true);
+      
+      // Excel üçün məlumatları hazırla
+      const data = schools.map(school => ({
+        'Məktəb adı': school.name,
+        'Direktor': school.principalName || school.principal_name || '',
+        'Ünvan': school.address || '',
+        'Telefon': school.phone || '',
+        'E-poçt': school.email || '',
+        'Şagird sayı': school.studentCount || school.student_count || 0,
+        'Müəllim sayı': school.teacherCount || school.teacher_count || 0,
+        'Tədris dili': school.language || '',
+        'Məktəb növü': school.type || '',
+        'Status': (school.status === 'active') ? 'Aktiv' : 'Deaktiv',
+        'Admin e-poçtu': school.adminEmail || school.admin_email || ''
+      }));
+      
+      // Excel sənədi yarat
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Məktəblər');
+      
+      // Excel faylını hazırla və yüklə
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Faylı yüklə
+      saveAs(blob, `Məktəblər_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      toast.success(t('exportSuccess') || 'İxrac uğurla tamamlandı');
+      setIsExporting(false);
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error(t('exportFailed'), {
-        description: t('exportFailedDescription')
-      });
-    } finally {
+      console.error('Excel ixracı zamanı xəta:', error);
+      toast.error(t('exportError') || 'İxrac zamanı xəta baş verdi');
       setIsExporting(false);
     }
-  }, [regionNames, sectorNames, t]);
+  }, [t]);
 
-  const createSchoolAdmin = useCallback(async (school: Partial<School>, adminData: any) => {
-    if (!adminData || !adminData.email) {
+  // Excel-dən idxal funksiyası
+  const handleImportSchools = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error(t('noFileSelected') || 'Fayl seçilməyib');
       return;
     }
-
+    
     try {
-      // İstifadəçi adı (email) mövcuddurmu yoxlayaq
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', adminData.email)
-        .limit(1);
-
-      // İstifadəçi mövcuddursa, məktəbə admin olaraq təyin et
-      if (existingUser && existingUser.length > 0) {
-        const adminId = existingUser[0].id;
-        
-        // Məktəb adminini təyin et
-        await supabase.functions.invoke('assign-school-admin', {
-          body: {
-            userId: adminId,
-            schoolId: school.id,
-            regionId: school.region_id,
-            sectorId: school.sector_id
-          }
-        });
-        
-        return;
-      }
-
-      // Yeni admin əlavə et
-      const adminFullName = adminData.name || adminData.email.split('@')[0];
-      const adminPassword = adminData.password || 'password123'; // Default şifrə təyin et (dəyişdirilməli)
+      setIsImporting(true);
       
-      // UserFormData tipinə uyğun obyekt yaradırıq
-      const userData = {
-        name: adminFullName, // 'name' xüsusiyyəti əlavə edildi (UserFormData tipində tələb olunur)
-        full_name: adminFullName, 
-        email: adminData.email,
-        password: adminPassword,
-        role: 'schooladmin' as const, // TypeScript üçün type assertion əlavə etdik
-        schoolId: school.id,
-        regionId: school.region_id,
-        sectorId: school.sector_id,
-        phone: adminData.phone || null,
-        language: 'az',
-        status: 'active' as const // TypeScript üçün 'string' əvəzinə konkret tip göstəririk
+      // Faylı oxu
+      const reader = new FileReader();
+      
+      reader.onload = async (e: ProgressEvent<FileReader>) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          // Excel məlumatlarını obyektlərə çevir
+          const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+          
+          if (jsonData.length === 0) {
+            toast.error(t('emptyFile') || 'Fayl boşdur və ya düzgün formatda deyil');
+            setIsImporting(false);
+            return;
+          }
+          
+          // Məktəbləri Supabase formatına çevir
+          const schools = jsonData.map(row => ({
+            name: row['Məktəb adı'],
+            principal_name: row['Direktor'],
+            address: row['Ünvan'],
+            phone: row['Telefon'],
+            email: row['E-poçt'],
+            student_count: parseInt(row['Şagird sayı']) || 0,
+            teacher_count: parseInt(row['Müəllim sayı']) || 0,
+            language: row['Tədris dili'],
+            type: row['Məktəb növü'],
+            status: row['Status'] === 'Aktiv' ? 'active' as 'active' | 'inactive' : 'inactive' as 'active' | 'inactive',
+            admin_email: row['Admin e-poçtu'],
+            region_id: row['Region ID'],
+            sector_id: row['Sektor ID']
+          }));
+          
+          // Məlumatları doğrula
+          if (!validateSchools(schools)) {
+            setIsImporting(false);
+            return;
+          }
+          
+          // Məktəbləri Supabase-ə əlavə et
+          const { data: insertedData, error } = await supabase
+            .from('schools')
+            .insert(schools);
+          
+          if (error) throw error;
+          
+          toast.success(t('importSuccess') || 'İdxal uğurla tamamlandı', {
+            description: t('importSuccessCount', { count: schools.length }) || `${schools.length} məktəb uğurla idxal edildi`
+          });
+          
+          // Dialog-u bağla və callback funksiyasını çağır
+          setIsImportDialogOpen(false);
+          if (onSuccess) onSuccess();
+        } catch (error) {
+          console.error('Excel idxalı zamanı xəta:', error);
+          toast.error(t('importError') || 'İdxal zamanı xəta baş verdi');
+        } finally {
+          setIsImporting(false);
+        }
       };
       
-      // İstifadəçi yarat
-      await createUser(userData);
+      reader.onerror = () => {
+        toast.error(t('fileReadError') || 'Fayl oxunarkən xəta baş verdi');
+        setIsImporting(false);
+      };
+      
+      reader.readAsBinaryString(file);
       
     } catch (error) {
-      console.error('Admin təyin edilərkən xəta:', error);
-      throw error;
-    }
-  }, [createUser]);
-
-  const handleImportSchools = useCallback(async (schools: Partial<School>[]) => {
-    setIsImporting(true);
-    try {
-      // Əgər schools boş və ya undefined isə, erkən çıxırıq
-      if (!schools || schools.length === 0) {
-        toast.error(t('noDataToImport'));
-        return;
-      }
-
-      let successCount = 0;
-      let errorCount = 0;
-      let adminSuccessCount = 0;
-      let adminErrorCount = 0;
-
-      // Hər bir məktəbi əlavə edirik
-      for (const school of schools) {
-        try {
-          // Əgər region və sektor adları varsa, ID-lərə çeviririk
-          if ((school as any).regionName) {
-            school.region_id = await mapRegionNameToId((school as any).regionName);
-          }
-          
-          if ((school as any).sectorName) {
-            school.sector_id = await mapSectorNameToId((school as any).sectorName, school.region_id);
-          }
-          
-          // Zəruri sahələrin olduğunu yoxlayırıq
-          if (!school.name || !school.region_id || !school.sector_id) {
-            console.error('Missing required fields for school:', school);
-            errorCount++;
-            continue;
-          }
-
-          // Admin məlumatlarını saxlayaq
-          const adminData = (school as any).adminData;
-          delete (school as any).adminData;
-          delete (school as any).regionName;
-          delete (school as any).sectorName;
-
-          // Supabase tələb etdiyi formata uyğunlaşdırırıq
-          const schoolData = {
-            name: school.name,
-            region_id: school.region_id,
-            sector_id: school.sector_id,
-            principal_name: school.principal_name || null,
-            address: school.address || null,
-            phone: school.phone || null,
-            email: school.email || null,
-            student_count: school.student_count || null,
-            teacher_count: school.teacher_count || null,
-            status: school.status || 'active',
-            type: school.type || null,
-            language: school.language || null,
-            admin_email: adminData?.email || school.admin_email || null
-          };
-
-          // Məktəbi əlavə edirik
-          const { data, error } = await supabase
-            .from('schools')
-            .insert([schoolData])
-            .select()
-            .single();
-
-          if (error) {
-            console.error('Error inserting school:', error);
-            errorCount++;
-          } else {
-            successCount++;
-            
-            // Admin təyin edirik
-            if (adminData && adminData.email) {
-              try {
-                await createSchoolAdmin(data, adminData);
-                adminSuccessCount++;
-              } catch (adminError) {
-                console.error('Admin təyin edilərkən xəta:', adminError);
-                adminErrorCount++;
-              }
-            }
-          }
-        } catch (err) {
-          console.error('School import error:', err);
-          errorCount++;
-        }
-      }
-
-      // Nəticəni bildiririk
-      if (successCount > 0) {
-        toast.success(
-          t('importCompleted'), 
-          { description: `${successCount} ${t('schoolsImportedSuccessfully')}` }
-        );
-        
-        if (adminSuccessCount > 0) {
-          toast.success(
-            `${adminSuccessCount} ${t('adminsAssignedSuccessfully')}`, 
-            { description: t('schoolAdminsAssigned') }
-          );
-        }
-        
-        onComplete(); // Məlumatları yeniləmək üçün callback-i çağırırıq
-      }
-
-      if (errorCount > 0) {
-        toast.error(
-          `${errorCount} ${t('schoolsFailedToImport')}`,
-          { description: t('checkDataAndTryAgain') }
-        );
-      }
-      
-      if (adminErrorCount > 0) {
-        toast.error(
-          `${adminErrorCount} ${t('adminsFailedToAssign')}`,
-          { description: t('checkAdminDataAndTryAgain') }
-        );
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      toast.error(t('importFailed'), {
-        description: t('importFailedDescription')
-      });
-    } finally {
+      console.error('Excel idxalı zamanı xəta:', error);
+      toast.error(t('importError') || 'İdxal zamanı xəta baş verdi');
       setIsImporting(false);
     }
-  }, [t, onComplete, createSchoolAdmin]);
+  }, [t, onSuccess]);
 
+  // Məktəbləri doğrulama funksiyası
+  const validateSchools = (schools: any[]): boolean => {
+    // Zəruri sahələri yoxla
+    const invalidSchools = schools.filter(school => !school.name || !school.region_id || !school.sector_id);
+    
+    if (invalidSchools.length > 0) {
+      toast.error(t('invalidSchoolData') || 'Bəzi məktəblərdə zəruri məlumatlar çatışmır', {
+        description: t('requiredFieldsMissing') || 'Məktəb adı, Region ID və Sektor ID sahələri məcburidir'
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
   return {
     isImportDialogOpen,
-    isExporting,
-    isImporting,
     setIsImportDialogOpen,
     handleExportToExcel,
-    handleImportSchools
+    handleImportSchools,
+    isImporting,
+    isExporting
   };
 };

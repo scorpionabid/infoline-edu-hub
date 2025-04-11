@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { School } from '@/data/schoolsData';
 import { School as SupabaseSchool } from '@/types/supabase';
@@ -70,11 +69,48 @@ export const useSchoolDialogHandlers = () => {
 
   const handleEditSubmit = useCallback(async () => {
     if (!validateForm()) return;
-    await operationEditSubmit(formData, selectedSchool);
+    
+    // School tipini SupabaseSchool tipinə çevirmək
+    const schoolForEdit = selectedSchool ? {
+      id: selectedSchool.id,
+      name: selectedSchool.name,
+      principal_name: selectedSchool.principal_name,
+      address: selectedSchool.address,
+      region_id: selectedSchool.region_id,
+      sector_id: selectedSchool.sector_id,
+      phone: selectedSchool.phone,
+      email: selectedSchool.email,
+      student_count: selectedSchool.student_count,
+      teacher_count: selectedSchool.teacher_count,
+      status: selectedSchool.status as 'active' | 'inactive',
+      language: selectedSchool.language,
+      type: selectedSchool.type,
+      admin_email: selectedSchool.admin_email
+    } : null;
+    
+    await operationEditSubmit(formData, schoolForEdit);
   }, [formData, selectedSchool, validateForm, operationEditSubmit]);
 
   const handleDeleteConfirm = useCallback(async () => {
-    await operationDeleteConfirm(selectedSchool);
+    // School tipini SupabaseSchool tipinə çevirmək
+    const schoolForDelete = selectedSchool ? {
+      id: selectedSchool.id,
+      name: selectedSchool.name,
+      principal_name: selectedSchool.principal_name,
+      address: selectedSchool.address,
+      region_id: selectedSchool.region_id,
+      sector_id: selectedSchool.sector_id,
+      phone: selectedSchool.phone,
+      email: selectedSchool.email,
+      student_count: selectedSchool.student_count,
+      teacher_count: selectedSchool.teacher_count,
+      status: selectedSchool.status as 'active' | 'inactive',
+      language: selectedSchool.language,
+      type: selectedSchool.type,
+      admin_email: selectedSchool.admin_email
+    } : null;
+    
+    await operationDeleteConfirm(schoolForDelete);
   }, [selectedSchool, operationDeleteConfirm]);
 
   const handleAdminUpdate = useCallback(() => {

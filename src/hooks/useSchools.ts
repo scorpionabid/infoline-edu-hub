@@ -1,94 +1,93 @@
-import { useState, useCallback } from 'react';
+
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
 import { School } from '@/types/supabase';
+import { adaptSchoolToSupabase } from '@/types/supabase';
 
 export const useSchools = () => {
-  const [loading, setLoading] = useState(false);
-  const { t } = useLanguage();
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const addSchool = useCallback(async (newSchoolData: Omit<School, 'id' | 'created_at' | 'updated_at' | 'completion_rate'>) => {
-    setLoading(true);
+  // Məktəbləri əldə et
+  const fetchSchools = async () => {
     try {
-      const { data, error } = await supabase
-        .from('schools')
-        .insert([newSchoolData])
-        .select()
-        .single();
-
+      setLoading(true);
+      const { data, error } = await supabase.from('schools').select('*');
+      
       if (error) throw error;
       
-      toast.success(t('schoolAdded'), {
-        description: t('schoolAddedDesc')
-      });
-      
-      return data;
-    } catch (err: any) {
-      console.error('Error adding school:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotAddSchool')
-      });
-      throw err;
-    } finally {
+      setSchools(data as School[]);
+      setLoading(false);
+    } catch (error: any) {
+      setError(error.message);
       setLoading(false);
     }
-  }, [t]);
+  };
 
-  const updateSchool = useCallback(async (id: string, updates: Partial<School>) => {
-    setLoading(true);
+  // Məktəb əlavə et
+  const addSchool = async (newSchool: Omit<School, 'id' | 'completion_rate' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await supabase
-        .from('schools')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
+      const schoolData = adaptSchoolToSupabase(newSchool);
+      const { data, error } = await supabase.from('schools').insert([schoolData]).select();
+      
       if (error) throw error;
       
-      toast.success(t('schoolUpdated'), {
-        description: t('schoolUpdatedDesc')
-      });
+      // Məktəblər siyahısını yenilə
+      fetchSchools();
       
-      return data;
-    } catch (err: any) {
-      console.error('Error updating school:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotUpdateSchool')
-      });
-      throw err;
-    } finally {
-      setLoading(false);
+      return data?.[0] as School;
+    } catch (error: any) {
+      setError(error.message);
+      return null;
     }
-  }, [t]);
+  };
 
-  const deleteSchool = useCallback(async (id: string) => {
-    setLoading(true);
+  // Məktəbi yenilə
+  const updateSchool = async (id: string, updatedSchool: Partial<School>) => {
     try {
-      const { error } = await supabase
-        .from('schools')
-        .delete()
-        .eq('id', id);
-
+      const schoolData = adaptSchoolToSupabase(updatedSchool);
+      const { error } = await supabase.from('schools').update(schoolData).eq('id', id);
+      
       if (error) throw error;
       
-      toast.success(t('schoolDeleted'), {
-        description: t('schoolDeletedDesc')
-      });
-    } catch (err: any) {
-      console.error('Error deleting school:', err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotDeleteSchool')
-      });
-      throw err;
-    } finally {
-      setLoading(false);
+      // Məktəblər siyahısını yenilə
+      fetchSchools();
+      
+      return true;
+    } catch (error: any) {
+      setError(error.message);
+      return false;
     }
-  }, [t]);
+  };
+
+  // Məktəbi sil
+  const deleteSchool = async (id: string) => {
+    try {
+      const { error } = await supabase.from('schools').delete().eq('id', id);
+      
+      if (error) throw error;
+      
+      // Məktəblər siyahısını yenilə
+      fetchSchools();
+      
+      return true;
+    } catch (error: any) {
+      setError(error.message);
+      return false;
+    }
+  };
+
+  // Component mount olduqda məktəbləri əldə et
+  useEffect(() => {
+    fetchSchools();
+  }, []);
 
   return {
+    schools,
     loading,
+    error,
+    fetchSchools,
     addSchool,
     updateSchool,
     deleteSchool

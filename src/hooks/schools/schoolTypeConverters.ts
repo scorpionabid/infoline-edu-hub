@@ -13,7 +13,7 @@ export interface MappedSchool {
   email: string;
   studentCount: number;
   teacherCount: number;
-  status: string;
+  status: 'active' | 'inactive';
   type: string;
   language: string;
   adminEmail: string;
@@ -31,7 +31,7 @@ export const mapToMockSchool = (school: SupabaseSchool): MappedSchool => {
     email: school.email || '',
     studentCount: school.studentCount || school.student_count || 0,
     teacherCount: school.teacherCount || school.teacher_count || 0,
-    status: school.status || 'active',
+    status: (school.status as 'active' | 'inactive') || 'active',
     type: school.type || '',
     language: school.language || '',
     adminEmail: school.adminEmail || school.admin_email || ''
@@ -50,7 +50,7 @@ export const convertToSchoolType = (school: SupabaseSchool): School => {
     email: school.email || '',
     studentCount: school.studentCount || school.student_count || 0,
     teacherCount: school.teacherCount || school.teacher_count || 0,
-    status: school.status || 'active',
+    status: (school.status as 'active' | 'inactive') || 'active',
     type: school.type || '',
     language: school.language || '',
     createdAt: school.createdAt || school.created_at,

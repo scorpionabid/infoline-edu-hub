@@ -1,4 +1,3 @@
-
 export interface School {
   id: string;
   name: string;
@@ -40,16 +39,6 @@ export interface School {
  * İstifadəçi rolu tipləri
  */
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-/**
- * İstifadəçi rolu məlumatları
- */
-export interface UserRoleData {
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
 
 // Profile interfeysi
 export interface Profile {
@@ -238,7 +227,8 @@ export const adaptSchoolToSupabase = (school: Partial<School>): any => {
     region_id: school.region_id || regionId,
     sector_id: school.sector_id || sectorId,
     completion_rate: school.completion_rate || completionRate,
-    admin_email: school.admin_email || adminEmail
+    admin_email: school.admin_email || adminEmail,
+    status: school.status || 'active'
   };
 };
 

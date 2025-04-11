@@ -1,219 +1,203 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/supabase';
-import { useRegions } from '../useRegions';
-import { useSectors } from '../useSectors';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth';
+import { School, SortConfig } from '@/data/schoolsData';
+import { useEffect } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { adaptSchoolFromSupabase, School as SupabaseSchool } from '@/types/supabase';
+import { convertToSchoolType } from './schoolTypeConverters';
 
-export interface SortConfig {
-  key: string | null;
-  direction: 'asc' | 'desc' | null;
+interface SchoolsState {
+  schools: School[];
+  filteredSchools: School[];
+  currentItems: School[];
+  searchTerm: string;
+  selectedRegion: string;
+  selectedSector: string;
+  selectedStatus: string;
+  regions: { id: string; name: string }[];
+  sectors: { id: string; name: string; region_id: string }[];
+  sortConfig: SortConfig;
+  currentPage: number;
+  totalPages: number;
+  isLoading: boolean;
+  error: string | null;
+  userRole?: string;
+  
+  handleSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleRegionFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleSectorFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleStatusFilter: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleSort: (key: string) => void;
+  handlePageChange: (page: number) => void;
+  resetFilters: () => void;
+  fetchSchools: () => void;
+  isOperationComplete: boolean;
+  setIsOperationComplete: (value: boolean) => void;
 }
 
-export const useSchoolsStore = () => {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedSector, setSelectedSector] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isOperationComplete, setIsOperationComplete] = useState(false);
-  const itemsPerPage = 10;
-  const { t } = useLanguage();
-  const { user } = useAuth();
-  const { userRole, sectorId } = usePermissions();
+export const useSchoolsStore = create<SchoolsState>((set, get) => ({
+  schools: [],
+  filteredSchools: [],
+  currentItems: [],
+  searchTerm: '',
+  selectedRegion: '',
+  selectedSector: '',
+  selectedStatus: '',
+  regions: [],
+  sectors: [],
+  sortConfig: { key: null, direction: null },
+  currentPage: 1,
+  totalPages: 1,
+  isLoading: false,
+  error: null,
+  userRole: undefined,
+  isOperationComplete: false,
   
-  // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
-  const { regions } = useRegions();
-  const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
-
-  // Məktəbləri yükləmək metodu
-  const fetchSchools = useCallback(async () => {
-    setLoading(true);
-    try {
-      let query = supabase.from('schools').select('*');
-      
-      // Sectoradmin olaraq yalnız öz sektoruna aid məktəbləri görmək
-      if (userRole === 'sectoradmin' && sectorId) {
-        query = query.eq('sector_id', sectorId);
-      } else {
-        // Digər rollar üçün filter funksionalığı
-        if (selectedRegion) {
-          query = query.eq('region_id', selectedRegion);
-        }
-        
-        if (selectedSector) {
-          query = query.eq('sector_id', selectedSector);
-        }
+  handleSearch: (e) => {
+    const term = e.target.value;
+    set({ searchTerm: term, currentPage: 1 });
+    const state = get();
+    const filtered = state.schools.filter(school => 
+      school.name.toLowerCase().includes(term.toLowerCase()) ||
+      (school.principalName && school.principalName.toLowerCase().includes(term.toLowerCase()))
+    );
+    set({ filteredSchools: filtered });
+    get().updateCurrentItems();
+  },
+  
+  handleRegionFilter: (e) => {
+    const regionId = e.target.value;
+    set({ selectedRegion: regionId, selectedSector: '', currentPage: 1 });
+    const state = get();
+    const filtered = state.schools.filter(school => school.regionId === regionId);
+    set({ filteredSchools: filtered });
+    get().updateCurrentItems();
+  },
+  
+  handleSectorFilter: (e) => {
+    const sectorId = e.target.value;
+    set({ selectedSector: sectorId, currentPage: 1 });
+    const state = get();
+    const filtered = state.schools.filter(school => school.sectorId === sectorId);
+    set({ filteredSchools: filtered });
+    get().updateCurrentItems();
+  },
+  
+  handleStatusFilter: (e) => {
+    const status = e.target.value;
+    set({ selectedStatus: status, currentPage: 1 });
+    const state = get();
+    const filtered = state.schools.filter(school => school.status === status);
+    set({ filteredSchools: filtered });
+    get().updateCurrentItems();
+  },
+  
+  handleSort: (key) => {
+    set(state => {
+      let direction = 'asc';
+      if (state.sortConfig.key === key && state.sortConfig.direction === 'asc') {
+        direction = 'desc';
       }
       
-      if (selectedStatus) {
-        query = query.eq('status', selectedStatus);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setSchools(data as School[]);
-    } catch (err: any) {
-      console.error('Error fetching schools:', err);
-      setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadSchools')
+      const sortedSchools = [...state.filteredSchools].sort((a, b) => {
+        if (a[key] < b[key]) {
+          return direction === 'asc' ? -1 : 1;
+        }
+        if (a[key] > b[key]) {
+          return direction === 'asc' ? 1 : -1;
+        }
+        return 0;
       });
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedRegion, selectedSector, selectedStatus, t, userRole, sectorId]);
-
-  // Filtrlənmiş məktəblər
-  const filteredSchools = schools.filter(school => {
-    const searchMatch = 
-      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.address && school.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.phone && school.phone.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    return searchMatch;
-  });
-
-  // Sıralanmış məktəblər
-  const sortedSchools = [...filteredSchools].sort((a, b) => {
-    if (!sortConfig.key) return 0;
-    
-    const key = sortConfig.key as keyof School;
-    const aValue = a[key] as any;
-    const bValue = b[key] as any;
-    
-    if (!aValue && !bValue) return 0;
-    if (!aValue) return sortConfig.direction === 'asc' ? 1 : -1;
-    if (!bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-    
-    if (aValue < bValue) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
-    }
-    return 0;
-  });
-
-  // Paginated məktəblər
-  const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
-  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
-  const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Sektoradmin roluna əsasən region və sektor filtrini avtomatik təyin etmək
-  useEffect(() => {
-    if (userRole === 'sectoradmin' && sectorId) {
-      // Sektoradmin üçün sektor ID filtrini təyin edirik
-      setSelectedSector(sectorId);
       
-      // Sektorun aid olduğu regionu tapmaq
-      const sector = sectors.find(s => s.id === sectorId);
-      if (sector && sector.region_id) {
-        setSelectedRegion(sector.region_id);
-      }
-    } else if (userRole === 'regionadmin' && user?.regionId) {
-      // RegionAdmin üçün region filtri avtomatik təyin edilir
-      setSelectedRegion(user.regionId);
-    }
-  }, [userRole, sectorId, sectors, user]);
-
-  // Event handlers
-  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRegion(e.target.value);
-    setSelectedSector('');
-    setCurrentPage(1);
-  }, []);
-
-  const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSector(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleSort = useCallback((key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  }, [sortConfig]);
-
-  const handlePageChange = useCallback((page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }, [totalPages]);
-
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
+      return {
+        sortConfig: { key, direction },
+        filteredSchools: sortedSchools,
+        currentPage: 1
+      };
+    });
+    get().updateCurrentItems();
+  },
+  
+  handlePageChange: (page) => {
+    set({ currentPage: page });
+    get().updateCurrentItems();
+  },
+  
+  resetFilters: () => {
+    set({
+      searchTerm: '',
+      selectedRegion: '',
+      selectedSector: '',
+      selectedStatus: '',
+      sortConfig: { key: null, direction: null },
+      currentPage: 1
+    });
+    const state = get();
+    set({ filteredSchools: state.schools });
+    get().updateCurrentItems();
+  },
+  
+  updateCurrentItems: () => {
+    const state = get();
+    const itemsPerPage = 10;
+    const startIndex = (state.currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = state.filteredSchools.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(state.filteredSchools.length / itemsPerPage);
     
-    // Sektoradmin üçün sektorId və regionId qalır
-    if (userRole !== 'sectoradmin') {
-      setSelectedRegion('');
-      setSelectedSector('');
-    }
+    set({ currentItems: currentItems, totalPages: totalPages });
+  },
+  
+  fetchSchools: async () => {
+    set({ isLoading: true, error: null });
     
-    setSelectedStatus('');
-    setCurrentPage(1);
-  }, [userRole]);
-
-  // Məlumatların ilkin yüklənməsi
-  useEffect(() => {
-    fetchSchools();
-  }, [fetchSchools]);
-
-  return {
-    schools,
-    loading,
-    error,
-    searchTerm,
-    selectedRegion,
-    selectedSector,
-    selectedStatus,
-    sortConfig,
-    currentPage: adjustedCurrentPage,
-    itemsPerPage,
-    filteredSchools,
-    sortedSchools,
-    currentItems,
-    totalPages,
-    regions,
-    sectors,
-    sectorsLoading,
-    handleSearch,
-    handleRegionFilter,
-    handleSectorFilter,
-    handleStatusFilter,
-    handleSort,
-    handlePageChange,
-    resetFilters,
-    fetchSchools,
-    setSchools,
-    isOperationComplete,
-    setIsOperationComplete,
-    userRole // istifadəçi rolunu qaytarırıq
-  };
-};
+    try {
+      // Məktəbləri əldə et
+      const { data: schoolsData, error: schoolsError } = await supabase
+        .from('schools')
+        .select('*');
+      
+      if (schoolsError) throw schoolsError;
+      
+      // Regionları əldə et
+      const { data: regionsData, error: regionsError } = await supabase
+        .from('regions')
+        .select('id, name');
+      
+      if (regionsError) throw regionsError;
+      
+      // Sektorları əldə et
+      const { data: sectorsData, error: sectorsError } = await supabase
+        .from('sectors')
+        .select('id, name, region_id');
+      
+      if (sectorsError) throw sectorsError;
+      
+      // Məktəbləri School tipinə çevirmək
+      const schools = schoolsData.map((school: SupabaseSchool) => convertToSchoolType(school));
+      
+      set({ 
+        schools: schools,
+        filteredSchools: schools,
+        regions: regionsData,
+        sectors: sectorsData,
+        isLoading: false 
+      });
+      
+      get().updateCurrentItems();
+      
+    } catch (error) {
+      console.error('Məktəbləri əldə edərkən xəta:', error);
+      set({ 
+        isLoading: false, 
+        error: error instanceof Error ? error.message : 'Bilinməyən xəta' 
+      });
+    }
+  },
+  
+  useEffect: () => {
+    get().fetchSchools();
+  },
+  
+  setIsOperationComplete: (value) => set({ isOperationComplete: value }),
+}));

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FullUserData } from '@/types/supabase';
@@ -106,7 +105,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant={getStatusBadgeVariant(user.status)}>
+                <Badge variant={getStatusBadgeVariant(user.status as 'active' | 'inactive' | 'blocked')}>
                   {t(user.status)}
                 </Badge>
               </TableCell>
