@@ -19,18 +19,12 @@ export const handlers = [
   }),
   
   // Users handlers
-  http.get('https://olbfnauhzpdskqnxtwav.supabase.co/rest/v1/user_roles', ({ request }) => {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('user_id');
-    
-    if (userId) {
-      const userRole = mockUsers.find(user => user.id === userId)?.role;
-      if (userRole) {
-        return HttpResponse.json([{ role: userRole }]);
-      }
-    }
-    
-    return HttpResponse.json(mockUsers.map(user => ({ user_id: user.id, role: user.role })));
+  http.get('https://olbfnauhzpdskqnxtwav.supabase.co/rest/v1/user_roles', () => {
+    return HttpResponse.json({
+      id: '1',
+      email: 'superadmin@test.com',
+      role: 'superadmin'
+    });
   }),
   
   // Categories handlers
