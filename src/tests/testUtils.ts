@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';
 
 // Mock response yaratmaq üçün helper funksiya
-export function createSupabaseMockResponse(data: any, error = null) {
+export function createSupabaseMockResponse<T>(data: T, error = null) {
   return {
     data,
     error
