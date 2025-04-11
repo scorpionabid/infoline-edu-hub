@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { AuthProvider } from '@/context/auth/AuthProvider';
@@ -7,25 +7,24 @@ import { AppQueryProvider } from '@/context/QueryClientProvider';
 import { mockUsers } from '../mocks/data/users';
 import { supabase } from '@/integrations/supabase/client';
 
-// Supabase auth simulyasiyası
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: { role: 'superadmin' }, error: null }),
-    auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: {
-          session: {
-            user: { id: '1', email: 'superadmin@test.com' }
+// Mocking the Supabase client
+vi.mock('@/integrations/supabase/client', () => {
+  return {
+    supabase: {
+      from: vi.fn(),
+      auth: {
+        getSession: vi.fn().mockResolvedValue({
+          data: {
+            session: {
+              user: { id: '1', email: 'superadmin@test.com' }
+            }
           }
-        }
-      }),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
+        }),
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
+      }
     }
-  }
-}));
+  };
+});
 
 // Test wrapper
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -35,15 +34,26 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('usePermissions hook', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should return correct user role when authenticated', async () => {
     // Supabase-ə sorğunu simulyasiya et
-    const mockFromFn = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: { role: 'superadmin' }, error: null })
+    const mockSelectFn = vi.fn().mockReturnThis();
+    const mockEqFn = vi.fn().mockReturnThis();
+    const mockSingleFn = vi.fn().mockResolvedValue({ 
+      data: { role: 'superadmin' }, 
+      error: null 
     });
     
-    vi.spyOn(supabase, 'from').mockImplementation(mockFromFn);
+    const mockFrom = vi.fn().mockReturnValue({
+      select: mockSelectFn,
+      eq: mockEqFn,
+      single: mockSingleFn
+    });
+    
+    (supabase.from as any).mockImplementation(mockFrom);
     
     const { result } = renderHook(() => usePermissions(), { wrapper });
     
@@ -55,7 +65,7 @@ describe('usePermissions hook', () => {
 
   it('should check category access correctly', async () => {
     // Mock RBAC permissions
-    const mockFromFn = vi.fn().mockImplementation((table) => {
+    const mockFrom = vi.fn().mockImplementation((table) => {
       if (table === 'categories') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -76,7 +86,7 @@ describe('usePermissions hook', () => {
       };
     });
     
-    vi.spyOn(supabase, 'from').mockImplementation(mockFromFn);
+    (supabase.from as any).mockImplementation(mockFrom);
     
     const { result } = renderHook(() => usePermissions(), { wrapper });
     
