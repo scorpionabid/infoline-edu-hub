@@ -20,9 +20,11 @@ import {
   LogOut,
 } from 'lucide-react';
 
-interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
+  onItemClick?: () => void; // Əlavə edilmiş onItemClick prop
+}
 
-export function SidebarNav({ className, ...props }: SidebarNavProps) {
+export function SidebarNav({ className, onItemClick, ...props }: SidebarNavProps) {
   const { t } = useLanguage();
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
@@ -102,6 +104,12 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
     },
   ];
 
+  const handleItemClick = () => {
+    if (onItemClick) {
+      onItemClick();
+    }
+  };
+
   return (
     <div className={cn('pb-12', className)} {...props}>
       <div className="space-y-4 py-4">
@@ -128,7 +136,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
             {items
               .filter((item) => item.visible)
               .map((item) => (
-                <Link to={item.href} key={item.href}>
+                <Link to={item.href} key={item.href} onClick={handleItemClick}>
                   <Button
                     variant={pathname === item.href ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
@@ -142,7 +150,10 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
             <Button
               variant="ghost"
               className="w-full justify-start text-destructive hover:text-destructive"
-              onClick={() => logout()}
+              onClick={() => {
+                logout();
+                if (onItemClick) onItemClick();
+              }}
             >
               <LogOut className="mr-2 h-4 w-4" />
               {t('logout')}
@@ -155,3 +166,4 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
 }
 
 export default SidebarNav;
+

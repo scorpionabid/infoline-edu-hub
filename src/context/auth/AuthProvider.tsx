@@ -1,7 +1,8 @@
 
-import React, { createContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth/useSupabaseAuth';
 import { AuthUser } from '@/types/auth';
+import { AuthContext } from './context';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -14,18 +15,6 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (newPassword: string) => Promise<boolean>;
 }
-
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isLoading: true,
-  error: null,
-  login: async () => {},
-  register: async () => false,
-  logout: async () => {},
-  resetPassword: async () => false,
-  updatePassword: async () => false,
-});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const {
@@ -71,3 +60,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
