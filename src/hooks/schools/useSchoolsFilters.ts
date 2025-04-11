@@ -60,9 +60,9 @@ export const useSchoolsFilters = ({
       setSelectedSector(sectorId);
       
       // Sektorun aid olduğu regionu təyin etmək
-      const sector = schools.find(s => s.sector_id === sectorId);
-      if (sector && sector.region_id) {
-        setSelectedRegion(sector.region_id);
+      const sector = schools.find(s => s.sector_id === sectorId || s.sectorId === sectorId);
+      if (sector && (sector.region_id || sector.regionId)) {
+        setSelectedRegion(sector.region_id || sector.regionId || '');
       }
     }
   }, [userRole, sectorId, regionId, schools]);
@@ -72,13 +72,14 @@ export const useSchoolsFilters = ({
     return schools.filter(school => {
       const searchMatch = 
         school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        ((school.principal_name || school.principalName) && 
+         (school.principal_name || school.principalName || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
         (school.address && school.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (school.phone && school.phone.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const regionMatch = !selectedRegion || school.region_id === selectedRegion;
-      const sectorMatch = !selectedSector || school.sector_id === selectedSector;
+      const regionMatch = !selectedRegion || school.region_id === selectedRegion || school.regionId === selectedRegion;
+      const sectorMatch = !selectedSector || school.sector_id === selectedSector || school.sectorId === selectedSector;
       const statusMatch = !selectedStatus || school.status === selectedStatus;
       
       return searchMatch && regionMatch && sectorMatch && statusMatch;
@@ -90,9 +91,38 @@ export const useSchoolsFilters = ({
     return [...filteredSchools].sort((a, b) => {
       if (!sortConfig.key) return 0;
       
-      const key = sortConfig.key as keyof School;
-      const aValue = a[key] as any;
-      const bValue = b[key] as any;
+      // Burada ola biləcək bütün sahələri nəzərə almaq lazımdır
+      let aValue, bValue;
+      
+      switch (sortConfig.key) {
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'principal_name':
+          aValue = a.principal_name || a.principalName;
+          bValue = b.principal_name || b.principalName;
+          break;
+        case 'student_count':
+          aValue = a.student_count || a.studentCount;
+          bValue = b.student_count || b.studentCount;
+          break;
+        case 'teacher_count':
+          aValue = a.teacher_count || a.teacherCount;
+          bValue = b.teacher_count || b.teacherCount;
+          break;
+        case 'admin_email':
+          aValue = a.admin_email || a.adminEmail;
+          bValue = b.admin_email || b.adminEmail;
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          aValue = (a as any)[sortConfig.key];
+          bValue = (b as any)[sortConfig.key];
+      }
       
       if (!aValue && !bValue) return 0;
       if (!aValue) return sortConfig.direction === 'asc' ? 1 : -1;

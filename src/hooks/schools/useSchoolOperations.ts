@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
-import { School } from '@/data/schoolsData';
+import { School, adaptSchoolToSupabase } from '@/types/supabase';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseSchoolOperationsReturn {
@@ -25,25 +25,28 @@ export const useSchoolOperations = (
     try {
       console.log("Məktəb əlavə edilir:", formData);
       
-      // Yoxla region ID-si boşdursa, supabase-ə boş (null) ötürmək üçün
-      const newSchool = {
+      // Məktəb məlumatlarını uyğun tiplərə çeviririk
+      const newSchool: Partial<School> = {
         name: formData.name,
-        principal_name: formData.principalName || null,
-        region_id: formData.regionId || null, // Əgər regionId boşdursa null ötürür
-        sector_id: formData.sectorId,
+        principalName: formData.principalName || null,
+        regionId: formData.regionId || null,
+        sectorId: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: formData.studentCount ? Number(formData.studentCount) : null,
-        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
-        status: formData.status,
+        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
+        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
+        status: formData.status as 'active' | 'inactive',
         type: formData.type || null,
         language: formData.language || null,
-        admin_email: formData.adminEmail || null,
+        adminEmail: formData.adminEmail || null,
         logo: null
       };
       
-      const result = await addSchool(newSchool);
+      // Supabase formatına çevir
+      const supabaseData = adaptSchoolToSupabase(newSchool);
+      
+      const result = await addSchool(supabaseData);
       console.log("Əlavə edilən məktəb:", result);
       
       toast.success("Məktəb uğurla əlavə edildi", {
@@ -72,23 +75,27 @@ export const useSchoolOperations = (
     try {
       console.log("Məktəb yenilənir:", formData);
       
-      const updatedSchool = {
+      // Məktəb məlumatlarını uyğun tiplərə çeviririk
+      const updatedSchool: Partial<School> = {
         name: formData.name,
-        principal_name: formData.principalName || null,
-        region_id: formData.regionId,
-        sector_id: formData.sectorId,
+        principalName: formData.principalName || null,
+        regionId: formData.regionId,
+        sectorId: formData.sectorId,
         address: formData.address || null,
         email: formData.email || null,
         phone: formData.phone || null,
-        student_count: formData.studentCount ? Number(formData.studentCount) : null,
-        teacher_count: formData.teacherCount ? Number(formData.teacherCount) : null,
-        status: formData.status,
+        studentCount: formData.studentCount ? Number(formData.studentCount) : null,
+        teacherCount: formData.teacherCount ? Number(formData.teacherCount) : null,
+        status: formData.status as 'active' | 'inactive',
         type: formData.type || null,
         language: formData.language || null,
-        admin_email: formData.adminEmail || null
+        adminEmail: formData.adminEmail || null
       };
       
-      const result = await updateSchool(selectedSchool.id, updatedSchool);
+      // Supabase formatına çevir
+      const supabaseData = adaptSchoolToSupabase(updatedSchool);
+      
+      const result = await updateSchool(selectedSchool.id, supabaseData);
       console.log("Yenilənən məktəb:", result);
       
       toast.success("Məktəb uğurla yeniləndi", {
@@ -161,7 +168,7 @@ export const useSchoolOperations = (
       toast.success('Məktəb admini uğurla təyin edildi');
       onSuccess();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Məktəb admini təyin edilərkən xəta:', error);
       toast.error('Məktəb admini təyin edilərkən xəta', {
         description: error.message

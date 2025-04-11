@@ -1,3 +1,4 @@
+
 export interface School {
   id: string;
   name: string;
@@ -24,12 +25,21 @@ export interface School {
   completion_rate?: number; // Supabase adlandırması ilə
   region?: string; // Əlaqəli region adı
   sector?: string; // Əlaqəli sektor adı
+  
+  // Supabase tipindən gələn daxili adlar
+  region_id?: string;
+  sector_id?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
  * İstifadəçi rolu tipləri
  */
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 /**
  * İstifadəçi rolu məlumatları
@@ -39,6 +49,140 @@ export interface UserRoleData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+}
+
+// Profile interfeysi
+export interface Profile {
+  id: string;
+  full_name: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  avatar?: string;
+  status?: string;
+  language?: string;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tam istifadəçi məlumatını təsvir edən interfeys
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: string;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Alias sahələr
+  name?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // Admin entity
+  adminEntity?: {
+    type: string;
+    name: string;
+    status?: string;
+    regionName?: string;
+    sectorName?: string;
+    schoolType?: string;
+  };
+  
+  // Əlavə sahələr
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+  };
+}
+
+// İstifadəçi yaratmaq üçün verilənlər
+export interface CreateUserData {
+  full_name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: string;
+}
+
+// İstifadəçi yeniləmək üçün verilənlər
+export interface UpdateUserData {
+  full_name?: string;
+  email?: string;
+  password?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: string;
+}
+
+// Region interface
+export interface Region {
+  id: string;
+  name: string;
+  description?: string;
+  admin_id?: string;
+  admin_email?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Sector interface
+export interface Sector {
+  id: string;
+  name: string;
+  description?: string;
+  region_id: string;
+  admin_id?: string;
+  admin_email?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Data entry tipi
+export interface DataEntry {
+  id: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  value?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
 }
 
 // Supabase tipindən app tipinə çevirmək üçün adapter
@@ -66,7 +210,16 @@ export const adaptSchoolFromSupabase = (supabaseSchool: any): School => {
     logo: supabaseSchool.logo,
     adminEmail: supabaseSchool.admin_email,
     admin_email: supabaseSchool.admin_email,
-    completion_rate: supabaseSchool.completion_rate
+    completion_rate: supabaseSchool.completion_rate,
+    
+    // Supabase sahələri
+    region_id: supabaseSchool.region_id,
+    sector_id: supabaseSchool.sector_id,
+    principal_name: supabaseSchool.principal_name,
+    student_count: supabaseSchool.student_count,
+    teacher_count: supabaseSchool.teacher_count,
+    created_at: supabaseSchool.created_at,
+    updated_at: supabaseSchool.updated_at
   };
 };
 
@@ -79,11 +232,11 @@ export const adaptSchoolToSupabase = (school: Partial<School>): any => {
   
   return {
     ...rest,
-    principal_name: school.principalName || directorName,
+    principal_name: school.principalName || school.principal_name || directorName,
     type: school.type || schoolType,
     language: school.language || teachingLanguage,
-    region_id: regionId,
-    sector_id: sectorId,
+    region_id: school.region_id || regionId,
+    sector_id: school.sector_id || sectorId,
     completion_rate: school.completion_rate || completionRate,
     admin_email: school.admin_email || adminEmail
   };

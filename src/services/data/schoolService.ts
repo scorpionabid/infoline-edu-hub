@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/types/supabase';
+import { School, adaptSchoolFromSupabase, adaptSchoolToSupabase } from '@/types/supabase';
 import { toast } from 'sonner';
 
 /**
@@ -30,7 +30,9 @@ export const fetchSchools = async (
     
     if (error) throw error;
     
-    return data as School[];
+    // Əldə edilən verilənləri app formatına çevirmək
+    const schools = data.map(school => adaptSchoolFromSupabase(school));
+    return schools;
   } catch (error: any) {
     console.error('Məktəblər əldə edilərkən xəta:', error);
     throw new Error(error.message);
@@ -42,9 +44,12 @@ export const fetchSchools = async (
  */
 export const addSchool = async (schoolData: Partial<School>): Promise<School> => {
   try {
+    // Məlumatları Supabase formatına çeviririk
+    const supabaseData = adaptSchoolToSupabase(schoolData);
+    
     const { data, error } = await supabase
       .from('schools')
-      .insert(schoolData) // Burada array-dən tək obyektə düzəltdik
+      .insert(supabaseData)
       .select()
       .single();
     
@@ -54,7 +59,8 @@ export const addSchool = async (schoolData: Partial<School>): Promise<School> =>
       description: `${schoolData.name} məktəbi sistemə əlavə olundu`
     });
     
-    return data as School;
+    // Cavabı app formatına çeviririk
+    return adaptSchoolFromSupabase(data);
   } catch (error: any) {
     console.error('Məktəb əlavə edilərkən xəta:', error);
     toast.error('Məktəb əlavə edilərkən xəta', {
@@ -69,9 +75,12 @@ export const addSchool = async (schoolData: Partial<School>): Promise<School> =>
  */
 export const updateSchool = async (id: string, schoolData: Partial<School>): Promise<School> => {
   try {
+    // Məlumatları Supabase formatına çeviririk
+    const supabaseData = adaptSchoolToSupabase(schoolData);
+    
     const { data, error } = await supabase
       .from('schools')
-      .update(schoolData)
+      .update(supabaseData)
       .eq('id', id)
       .select()
       .single();
@@ -82,7 +91,8 @@ export const updateSchool = async (id: string, schoolData: Partial<School>): Pro
       description: `${schoolData.name} məktəbinin məlumatları yeniləndi`
     });
     
-    return data as School;
+    // Cavabı app formatına çeviririk
+    return adaptSchoolFromSupabase(data);
   } catch (error: any) {
     console.error('Məktəb yenilənərkən xəta:', error);
     toast.error('Məktəb yenilənərkən xəta', {

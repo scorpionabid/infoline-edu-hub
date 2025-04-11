@@ -11,7 +11,7 @@ import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
 import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
-import { UserRole } from '@/services/permissions/permissionTypes';
+import { UserRole } from '@/types/supabase';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -87,8 +87,8 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // userRole dəyişənini güvənli şəkildə istifadə etmək
-    const validUserRole = userRole as UserRole | null;
+    // UserRole tipində olduğunu yoxlayırıq
+    const validUserRole = userRole as UserRole | undefined;
     
     // Sektor admin üçün yalnız öz sektorunu göstərmək
     if (validUserRole === 'sectoradmin') {
@@ -144,7 +144,7 @@ const SchoolsContainer: React.FC = () => {
             handleEditDialogOpen={handleEditDialogOpen}
             handleDeleteDialogOpen={handleDeleteDialogOpen}
             handleAdminDialogOpen={handleAdminDialogOpen}
-            userRole={userRole as UserRole | undefined}
+            userRole={userRole}
           />
           
           {totalPages > 1 && (

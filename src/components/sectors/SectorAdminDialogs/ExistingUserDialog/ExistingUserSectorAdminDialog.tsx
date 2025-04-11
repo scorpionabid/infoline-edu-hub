@@ -41,7 +41,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     if (open) {
       resetForm();
     }
-  }, [open]);
+  }, [open, resetForm]);
 
   // Dialog content
   const dialogContent = (
