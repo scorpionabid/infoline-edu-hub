@@ -87,10 +87,12 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // Explicitly handle potential undefined or null userRole
-    const userRoleTyped: UserRole | null = userRole && ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole) 
-      ? userRole as UserRole 
-      : null;
+    // UserRole tipinə uyğun userRole dəyişənini işlətmək
+    const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+    const userRoleTyped: UserRole | null = 
+      userRole && validRoles.includes(userRole as UserRole) 
+        ? userRole as UserRole 
+        : null;
     
     // Sektor admin üçün yalnız öz sektorunu göstərmək
     if (userRoleTyped === 'sectoradmin') {
@@ -116,7 +118,7 @@ const SchoolsContainer: React.FC = () => {
   return (
     <div className="space-y-6">
       <SchoolHeader 
-        userRole={userRole} 
+        userRole={userRole as UserRole | undefined} 
         onAddClick={handleAddDialogOpen}
         onExportClick={handleExportClick}
         onImportClick={handleImportClick}
@@ -146,7 +148,7 @@ const SchoolsContainer: React.FC = () => {
             handleEditDialogOpen={handleEditDialogOpen}
             handleDeleteDialogOpen={handleDeleteDialogOpen}
             handleAdminDialogOpen={handleAdminDialogOpen}
-            userRole={userRole}
+            userRole={userRole as UserRole | undefined}
           />
           
           {totalPages > 1 && (
