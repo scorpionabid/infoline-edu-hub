@@ -34,7 +34,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   // Tələb olunan rol yoxlama
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+  if (requiredRoles.length > 0 && user.role && !requiredRoles.includes(user.role)) {
     console.log(`ProtectedRoute: İstifadəçinin rolu (${user.role}) tələb olunan rollar (${requiredRoles.join(', ')}) arasında deyil`);
     return <Navigate to="/access-denied" state={{ from: location }} replace />;
   }

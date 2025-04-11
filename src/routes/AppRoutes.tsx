@@ -1,102 +1,122 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
-import SchoolsPage from '@/pages/SchoolsPage';
-import LoginPage from '@/pages/LoginPage';
-import RegionsPage from '@/pages/RegionsPage';
-import SectorsPage from '@/pages/SectorsPage';
-import CategoriesPage from '@/pages/CategoriesPage';
-import UsersPage from '@/pages/UsersPage';
-import DataEntryPage from '@/pages/DataEntryPage';
-import ReportsPage from '@/pages/ReportsPage';
-import SettingsPage from '@/pages/SettingsPage';
+import SchoolAdminDashboard from '@/pages/SchoolAdminDashboard';
+import Categories from '@/pages/Categories';
+import Columns from '@/pages/Columns';
+import Schools from '@/pages/Schools';
+import Regions from '@/pages/Regions';
+import Sectors from '@/pages/Sectors';
+import Users from '@/pages/Users';
+import DataEntry from '@/pages/DataEntry';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
+import NotFound from '@/pages/NotFound';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import AccessDenied from '@/components/AccessDenied';
-import ProtectedRoute from './ProtectedRoute';
 
-// Marşrut konfiqurasiyaları
-interface RouteConfig {
+interface AppRoute {
   path: string;
   element: React.ReactNode;
+  protected?: boolean;
+  requiredRoles?: string[];
 }
 
-// Əsas marşrutlar - bütün istifadəçilərin giriş edə bildiyi səhifələr
-export const AppRoutes: RouteConfig[] = [
-  {
-    path: '/',
-    element: <Navigate to="/dashboard" replace />
-  },
+export const AppRoutes: AppRoute[] = [
   {
     path: '/login',
-    element: <LoginPage />
+    element: <Login />,
+    protected: false
   },
   {
-    path: '/access-denied',
-    element: <AccessDenied />
+    path: '/forgot-password',
+    element: <ForgotPassword />,
+    protected: false
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPassword />,
+    protected: false
+  },
+  {
+    path: '/',
+    element: <Dashboard />,
+    protected: true
   },
   {
     path: '/dashboard',
-    element: <ProtectedRoute element={<Dashboard />} />
+    element: <Dashboard />,
+    protected: true
   },
   {
-    path: '/schools',
-    element: <ProtectedRoute element={<SchoolsPage />} />
-  },
-  {
-    path: '/regions',
-    element: <ProtectedRoute 
-      element={<RegionsPage />} 
-      requiredRoles={['superadmin']} 
-    />
-  },
-  {
-    path: '/sectors',
-    element: <ProtectedRoute 
-      element={<SectorsPage />} 
-      requiredRoles={['superadmin', 'regionadmin']} 
-    />
+    path: '/school-dashboard',
+    element: <SchoolAdminDashboard />,
+    protected: true,
+    requiredRoles: ['schooladmin']
   },
   {
     path: '/categories',
-    element: <ProtectedRoute 
-      element={<CategoriesPage />} 
-      requiredRoles={['superadmin', 'regionadmin']} 
-    />
+    element: <Categories />,
+    protected: true
+  },
+  {
+    path: '/columns',
+    element: <Columns />,
+    protected: true
+  },
+  {
+    path: '/schools',
+    element: <Schools />,
+    protected: true
+  },
+  {
+    path: '/regions',
+    element: <Regions />,
+    protected: true,
+    requiredRoles: ['superadmin', 'regionadmin']
+  },
+  {
+    path: '/sectors',
+    element: <Sectors />,
+    protected: true,
+    requiredRoles: ['superadmin', 'regionadmin', 'sectoradmin']
   },
   {
     path: '/users',
-    element: <ProtectedRoute 
-      element={<UsersPage />} 
-      requiredRoles={['superadmin', 'regionadmin', 'sectoradmin']} 
-    />
+    element: <Users />,
+    protected: true,
+    requiredRoles: ['superadmin', 'regionadmin', 'sectoradmin']
   },
   {
     path: '/data-entry',
-    element: <ProtectedRoute 
-      element={<DataEntryPage />} 
-    />
+    element: <DataEntry />,
+    protected: true
   },
   {
-    path: '/data-entry/:id',
-    element: <ProtectedRoute 
-      element={<DataEntryPage />} 
-    />
+    path: '/data-entry/:formId',
+    element: <DataEntry />,
+    protected: true
   },
   {
     path: '/reports',
-    element: <ProtectedRoute 
-      element={<ReportsPage />} 
-    />
+    element: <Reports />,
+    protected: true
   },
   {
     path: '/settings',
-    element: <ProtectedRoute 
-      element={<SettingsPage />} 
-    />
+    element: <Settings />,
+    protected: true
   },
-  // İstənilən naməlum yol Dashboard səhifəsinə yönləndirilir
+  {
+    path: '/access-denied',
+    element: <AccessDenied />,
+    protected: false
+  },
   {
     path: '*',
-    element: <Navigate to="/dashboard" replace />
+    element: <NotFound />,
+    protected: false
   }
 ];

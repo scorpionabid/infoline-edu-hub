@@ -19,9 +19,19 @@ function App() {
                 <Route
                   key={route.path}
                   path={route.path}
-                  element={route.element}
+                  element={
+                    route.protected ? (
+                      <ProtectedRoute
+                        element={route.element}
+                        requiredRoles={route.requiredRoles}
+                      />
+                    ) : (
+                      route.element
+                    )
+                  }
                 />
               ))}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
             <Toaster position="top-right" />
           </Router>
