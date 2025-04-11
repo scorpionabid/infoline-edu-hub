@@ -87,9 +87,10 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // Explicitly handle potential undefined or null userRole
-    const userRoleTyped: UserRole | null = userRole && ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole) 
-      ? userRole as UserRole 
+    // Əvvəlcə userRole'un düzgün tipə uyğun olduğunu yoxlayaq
+    const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+    const userRoleTyped: UserRole | null = userRole && validRoles.includes(userRole as UserRole) 
+      ? (userRole as UserRole) 
       : null;
     
     // Sektor admin üçün yalnız öz sektorunu göstərmək
