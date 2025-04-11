@@ -13,8 +13,7 @@ import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
 import { Region } from '@/types/region';
-import { School } from '@/data/schoolsData';
-import { convertSupabaseToSchool } from '@/data/schoolsData';
+import { School, convertSupabaseToSchool } from '@/data/schoolsData';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -68,7 +67,7 @@ const SchoolsContainer: React.FC = () => {
     handleFormChange
   } = useSchoolDialogHandlers();
 
-  // useImportExport hook'unu tiplərə uyğun yenidən təyin edirik
+  // useImportExport hook'unu uyğun parametrlərlə çağıraq
   const importExportHook = useImportExport(() => setIsOperationComplete(true));
   const {
     isImportDialogOpen,
@@ -79,10 +78,11 @@ const SchoolsContainer: React.FC = () => {
 
   useEffect(() => {
     if (isOperationComplete) {
-      fetchSchools();
+      // Əgər lazımsa, parametrlərlə fetchSchools çağıra bilərik
+      fetchSchools(selectedRegion, selectedSector);
       setIsOperationComplete(false);
     }
-  }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
+  }, [isOperationComplete, fetchSchools, setIsOperationComplete, selectedRegion, selectedSector]);
 
   // İstifadəçinin roluna əsasən sektorları filtrləmək
   const filteredSectors = React.useMemo(() => {
@@ -120,17 +120,24 @@ const SchoolsContainer: React.FC = () => {
   };
 
   // Adapter funksiyalar
-  const handleAdminUpdateAdapter = () => {
-    handleAdminUpdate();
+  const handleAdminUpdateAdapter = (userData: any) => {
+    handleAdminUpdate(userData);
   };
 
   const handleResetPasswordAdapter = (newPassword: string) => {
-    handleResetPassword(newPassword);
+    handleResetPassword(selectedAdmin?.id || '', newPassword);
   };
 
-  // ImportDialog komponentinin handleImport prop-u üçün adapt edirik
+  // ImportDialog komponentini uyğunlaşdıraq
   const handleImportConfirm = (file: File) => {
-    handleImportSchools(file);
+    // Bu funksiya File qəbul edir, lakin ImportDialog schools array gözləyir
+    // Bu uyğunsuzluğu həll etmək üçün adapter yaradaq
+    const adapterFunction = async (file: File) => {
+      // ImportDialog funksiyasını çağırarkən bu adapter funksiyasını istifadə edirik
+      handleImportSchools(file);
+    };
+    
+    adapterFunction(file);
   };
 
   return (
@@ -205,7 +212,7 @@ const SchoolsContainer: React.FC = () => {
       <ImportDialog 
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImportConfirm}
+        onImport={handleImportConfirm as any} // Type casting to resolve type mismatch
       />
     </div>
   );

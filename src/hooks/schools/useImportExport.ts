@@ -48,7 +48,7 @@ export const useImportExport = (onComplete: UseImportExportCallback): UseImportE
     }
   };
 
-  // Excel idxal funksiyası - tiplərə uyğunlaşdırıldı
+  // Excel idxal funksiyası
   const handleImportSchools = async (file: File): Promise<void> => {
     try {
       const reader = new FileReader();

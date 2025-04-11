@@ -1,7 +1,20 @@
 
 import { useState, useCallback, useMemo } from 'react';
-import { School, SchoolFormData, mockSchools, mockRegions, mockSectors } from '@/data/schoolsData';
-import { toast } from '@/hooks/use-toast';
+import { School, mockSchools } from '@/data/schoolsData';
+import { toast } from 'sonner';
+
+// Mock data
+const mockRegions = [
+  { id: "reg-01", name: "Bakı", description: "Bakı şəhəri", status: "active", created_at: "", updated_at: "" },
+  { id: "reg-02", name: "Sumqayıt", description: "Sumqayıt şəhəri", status: "active", created_at: "", updated_at: "" },
+  { id: "reg-03", name: "Gəncə", description: "Gəncə şəhəri", status: "active", created_at: "", updated_at: "" },
+];
+
+const mockSectors = [
+  { id: "sec-01", name: "Nəsimi", regionId: "reg-01", description: "Nəsimi rayonu", status: "active", created_at: "", updated_at: "" },
+  { id: "sec-02", name: "Suraxanı", regionId: "reg-01", description: "Suraxanı rayonu", status: "active", created_at: "", updated_at: "" },
+  { id: "sec-03", name: "Mərkəz", regionId: "reg-03", description: "Mərkəz rayonu", status: "active", created_at: "", updated_at: "" },
+];
 
 // Define interfaces for hook return
 export interface SortConfig {

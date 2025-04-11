@@ -4,6 +4,126 @@ import { FullUserData, Profile } from '@/types/supabase';
 import { AuthState, AuthActions, UseSupabaseAuthReturn } from './types';
 import { fetchUserData } from './userDataService';
 
+const signIn = async (email: string, password: string, setLoading: (loading: boolean) => void) => {
+  try {
+    console.log(`signIn: ${email} ilə giriş edilir...`);
+    setLoading(true);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('signIn xətası:', error);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const signOut = async (
+  setLoading: (loading: boolean) => void, 
+  setUser: (user: FullUserData | null) => void,
+  setSession: (session: any | null) => void
+) => {
+  try {
+    setLoading(true);
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  } catch (error) {
+    console.error('signOut xətası:', error);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const signUp = async (email: string, password: string, userData: any, setLoading: (loading: boolean) => void) => {
+  try {
+    setLoading(true);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: userData
+      }
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('signUp xətası:', error);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const resetPassword = async (email: string, setLoading: (loading: boolean) => void) => {
+  try {
+    setLoading(true);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('resetPassword xətası:', error);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const updatePassword = async (password: string) => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password
+    });
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('updatePassword xətası:', error);
+    throw error;
+  }
+};
+
+const updateProfile = async (
+  updates: any, 
+  userId: string, 
+  fetchUserDataFn: (userId: string) => Promise<FullUserData | null>, 
+  setUser: (user: FullUserData | null) => void
+) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+      
+    if (error) throw error;
+    
+    const userData = await fetchUserDataFn(userId);
+    
+    if (userData) {
+      setUser(userData);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('updateProfile xətası:', error);
+    throw error;
+  }
+};
+
 export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -176,7 +296,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         console.log(`Giriş uğurlu oldu, istifadəçi məlumatları yenilənir, ID: ${result.user.id}`);
         try {
           const userData = await fetchUserData(result.user.id);
-          setUser(userData);
+          setState(prev => ({ ...prev, user: userData }));
           console.log('İstifadəçi məlumatları uğurla yeniləndi');
           
           if (userData?.id) {
@@ -202,7 +322,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setUser]);
+  }, [setLoading]);
   
   const handleSignOut = useCallback(async () => {
     await signOut(setLoading, setUser, setSession);

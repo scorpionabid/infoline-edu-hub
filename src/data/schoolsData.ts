@@ -1,3 +1,4 @@
+
 import { School as SupabaseSchool } from "@/types/supabase";
 
 // Supabase School tipindən təyin edilən yeni School tipi
@@ -67,3 +68,19 @@ export const convertSupabaseToSchool = (supabaseSchool: SupabaseSchool): School 
     principalName: supabaseSchool.principalName || '',
   };
 };
+
+// Mock məlumatları əlavə edək
+export const mockRegions = [
+  { id: "reg-01", name: "Bakı", description: "Bakı şəhəri", status: "active", created_at: "", updated_at: "" },
+  { id: "reg-02", name: "Sumqayıt", description: "Sumqayıt şəhəri", status: "active", created_at: "", updated_at: "" },
+  { id: "reg-03", name: "Gəncə", description: "Gəncə şəhəri", status: "active", created_at: "", updated_at: "" },
+];
+
+export const mockSectors = [
+  { id: "sec-01", name: "Nəsimi", regionId: "reg-01", description: "Nəsimi rayonu", status: "active", created_at: "", updated_at: "" },
+  { id: "sec-02", name: "Suraxanı", regionId: "reg-01", description: "Suraxanı rayonu", status: "active", created_at: "", updated_at: "" },
+  { id: "sec-03", name: "Mərkəz", regionId: "reg-03", description: "Mərkəz rayonu", status: "active", created_at: "", updated_at: "" },
+];
+
+// SchoolFormData ixrac edək
+export { SchoolFormData } from "@/types/school-form";

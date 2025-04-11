@@ -1,5 +1,5 @@
 
-import { UserRole } from '@/types/supabase';
+import { UserRole, UserRoleData } from '@/types/supabase';
 
 /**
  * İcazə səviyyəsi tipləri
@@ -35,16 +35,6 @@ export interface UsePermissionsResult extends PermissionCheckers {
 }
 
 /**
- * İstifadəçi rolu məlumatlarını saxlayan interfeysi
- */
-export interface UserRoleData {
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-}
-
-/**
  * Auth state tipləri
  */
 export interface AuthState {
@@ -76,4 +66,10 @@ export interface AuthActions {
  */
 export interface UseSupabaseAuthReturn extends AuthState, AuthActions {
   fetchUserData?: (userId: string) => Promise<any>;
+  signIn?: (email: string, password: string) => Promise<any>;
+  signOut?: () => Promise<void>;
+  signUp?: (email: string, password: string, userData: any) => Promise<any>;
+  resetPassword?: (email: string) => Promise<boolean>;
+  updatePassword?: (password: string) => Promise<boolean>;
+  updateProfile?: (updates: any) => Promise<boolean>;
 }
