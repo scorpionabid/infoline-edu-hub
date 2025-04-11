@@ -5,6 +5,7 @@ import { AuthContext } from './context';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { AuthState } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthProviderProps {
   children: ReactNode;
