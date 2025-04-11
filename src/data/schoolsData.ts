@@ -1,3 +1,4 @@
+
 import { School as SupabaseSchool } from "@/types/supabase";
 
 // Supabase School tipindən təyin edilən yeni School tipi
@@ -60,13 +61,20 @@ export const mockSchools: School[] = [
   }
 ];
 
-// School obyektləri üçün konvertasiya funksiyası
+// School obyektləri üçün konvertasiya funksiyası - principalName üçün fallback əlavə edildi
 export const convertSupabaseToSchool = (supabaseSchool: SupabaseSchool): School => {
+  // principal_name və principalName xüsusiyyətlərini əldə edirik
+  const directorName = supabaseSchool.principal_name || '';
+  const optionalPrincipalName = supabaseSchool.principalName || '';
+  
+  // principalName dəyəri üçün birini seçirik: principalName, principal_name və ya boş string
+  const finalPrincipalName = optionalPrincipalName || directorName || '';
+  
   return {
     ...supabaseSchool,
-    principalName: supabaseSchool.principalName || supabaseSchool.principal_name || '',
+    principalName: finalPrincipalName,
   };
 };
 
-// SchoolFormData tipini export edək
+// SchoolFormData tipini export type olaraq edək
 export type { SchoolFormData } from "@/types/school-form";
