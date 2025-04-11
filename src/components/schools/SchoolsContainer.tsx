@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
@@ -87,8 +86,8 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // UserRole tipindən əmin olmaq üçün kontrol - xətanı düzəldirik
-    const userRoleTyped = userRole as UserRole;
+    // Explicit type conversion and checking
+    const userRoleTyped: UserRole | null = userRole as UserRole | null;
     
     // Sektor admin üçün yalnız öz sektorunu göstərmək
     if (userRoleTyped === 'sectoradmin') {
