@@ -79,10 +79,10 @@ const SchoolsContainer: React.FC = () => {
   useEffect(() => {
     if (isOperationComplete) {
       // Əgər lazımsa, parametrlərlə fetchSchools çağıra bilərik
-      fetchSchools(selectedRegion, selectedSector);
+      fetchSchools();
       setIsOperationComplete(false);
     }
-  }, [isOperationComplete, fetchSchools, setIsOperationComplete, selectedRegion, selectedSector]);
+  }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
   // İstifadəçinin roluna əsasən sektorları filtrləmək
   const filteredSectors = React.useMemo(() => {
@@ -110,7 +110,10 @@ const SchoolsContainer: React.FC = () => {
   // Excel ixrac funksiyası
   const handleExportClick = () => {
     // Tip uyğunluğu üçün SupabaseSchool -> School konvertasiyası
-    const schoolsForExport = schools.map(convertSupabaseToSchool);
+    const schoolsForExport = schools.map(school => ({
+      ...school,
+      principalName: school.principal_name || ''
+    }));
     handleExportToExcel(schoolsForExport);
   };
 
@@ -120,8 +123,8 @@ const SchoolsContainer: React.FC = () => {
   };
 
   // Adapter funksiyalar
-  const handleAdminUpdateAdapter = (userData: any) => {
-    handleAdminUpdate(userData);
+  const handleAdminUpdateAdapter = () => {
+    handleAdminUpdate();
   };
 
   const handleResetPasswordAdapter = (newPassword: string) => {
@@ -130,14 +133,8 @@ const SchoolsContainer: React.FC = () => {
 
   // ImportDialog komponentini uyğunlaşdıraq
   const handleImportConfirm = (file: File) => {
-    // Bu funksiya File qəbul edir, lakin ImportDialog schools array gözləyir
-    // Bu uyğunsuzluğu həll etmək üçün adapter yaradaq
-    const adapterFunction = async (file: File) => {
-      // ImportDialog funksiyasını çağırarkən bu adapter funksiyasını istifadə edirik
-      handleImportSchools(file);
-    };
-    
-    adapterFunction(file);
+    // ImportDialog funksiyasını çağırarkən bu adapter funksiyasını istifadə edirik
+    handleImportSchools(file);
   };
 
   return (
@@ -212,7 +209,7 @@ const SchoolsContainer: React.FC = () => {
       <ImportDialog 
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImportConfirm as any} // Type casting to resolve type mismatch
+        onImport={handleImportConfirm}
       />
     </div>
   );

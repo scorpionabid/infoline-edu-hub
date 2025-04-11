@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { School, mockSchools } from '@/data/schoolsData';
 import { toast } from 'sonner';
@@ -168,10 +167,7 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
   // CRUD operations
   const handleAddSchool = useCallback((newSchool: School) => {
     setSchools(prevSchools => [...prevSchools, newSchool]);
-    toast({
-      title: "Məktəb uğurla əlavə edildi",
-      variant: "default",
-    });
+    toast.success("Məktəb uğurla əlavə edildi");
     refreshData();
   }, [refreshData]);
 
@@ -181,19 +177,13 @@ export const useSchoolsData = (): UseSchoolsDataReturn => {
         school.id === updatedSchool.id ? updatedSchool : school
       )
     );
-    toast({
-      title: "Məktəb uğurla yeniləndi",
-      variant: "default",
-    });
+    toast.success("Məktəb uğurla yeniləndi");
     refreshData();
   }, [refreshData]);
 
   const handleDeleteSchool = useCallback((schoolId: string) => {
     setSchools(prevSchools => prevSchools.filter(school => school.id !== schoolId));
-    toast({
-      title: "Məktəb uğurla silindi",
-      variant: "default",
-    });
+    toast.success("Məktəb uğurla silindi");
     refreshData();
   }, [refreshData]);
 

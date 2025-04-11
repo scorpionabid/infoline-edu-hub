@@ -83,4 +83,5 @@ export const mockSectors = [
 ];
 
 // SchoolFormData ixrac edək
-export { SchoolFormData } from "@/types/school-form";
+export type { SchoolFormData } from "@/types/school-form";
+

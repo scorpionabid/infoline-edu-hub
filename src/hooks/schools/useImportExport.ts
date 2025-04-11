@@ -22,18 +22,18 @@ export const useImportExport = (onComplete: UseImportExportCallback): UseImportE
     try {
       const exportData = schools.map(school => ({
         'Məktəb adı': school.name,
-        'Direktor': school.principalName || '',
+        'Direktor': school.principal_name || '',
         'Ünvan': school.address || '',
-        'Region ID': school.regionId,
-        'Sektor ID': school.sectorId,
+        'Region ID': school.region_id,
+        'Sektor ID': school.sector_id,
         'Telefon': school.phone || '',
         'Email': school.email || '',
-        'Şagird sayı': school.studentCount || 0,
-        'Müəllim sayı': school.teacherCount || 0,
+        'Şagird sayı': school.student_count || 0,
+        'Müəllim sayı': school.teacher_count || 0,
         'Status': school.status || 'active',
         'Tip': school.type || '',
         'Tədris dili': school.language || '',
-        'Admin email': school.adminEmail || ''
+        'Admin email': school.admin_email || ''
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);

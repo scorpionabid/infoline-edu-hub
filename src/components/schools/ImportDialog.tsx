@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +14,7 @@ import { FileUp, DownloadCloud, Upload, X, HelpCircle, Info } from 'lucide-react
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { School } from '@/types/supabase';
+import * as XLSX from 'xlsx';
 
 interface ImportDialogProps {
   isOpen: boolean;
