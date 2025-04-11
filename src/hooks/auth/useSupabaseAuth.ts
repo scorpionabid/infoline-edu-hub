@@ -41,10 +41,14 @@ export const useSupabaseAuth = () => {
         throw roleError;
       }
 
+      const fullName = profile?.full_name || '';
+      
       setUser({
         id: session.user.id,
         email: session.user.email || '',
-        fullName: profile?.full_name || '',
+        fullName: fullName,
+        name: fullName,
+        full_name: fullName,
         role: userRole?.role || 'user',
         regionId: userRole?.region_id || null,
         sectorId: userRole?.sector_id || null,
@@ -52,7 +56,14 @@ export const useSupabaseAuth = () => {
         avatar: profile?.avatar || null,
         language: profile?.language || 'az',
         position: profile?.position || '',
-        status: profile?.status || 'active'
+        status: profile?.status || 'active',
+        lastLogin: profile?.last_login,
+        last_login: profile?.last_login,
+        twoFactorEnabled: false,
+        notificationSettings: {
+          email: true,
+          system: true
+        }
       });
     } catch (error) {
       console.error('User yüklənməsində xəta:', error);
