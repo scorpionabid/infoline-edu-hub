@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
@@ -67,11 +68,23 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   const { errors, validateForm, getErrorForColumn } = useValidation(categories, formData.entries);
 
   const loadCategoryData = useCallback(async () => {
-    if (!user?.schoolId) {
-      console.warn("İstifadəçi məktəb ID-si tapılmadı:", user);
+    if (!user) {
+      console.warn("İstifadəçi məlumatları tapılmadı");
       toast.error(t('notAuthenticated'), {
         description: t('pleaseLogin')
       });
+      return;
+    }
+
+    // RegionAdmin və ya başqa admin tipləri üçün məktəb ID-si tələb etmirik
+    if (user.role !== 'schooladmin' && !user.schoolId) {
+      console.log("Məktəb administratoru olmayan istifadəçi:", user.role);
+      toast.info(t('nonSchoolAdmin'), {
+        description: t('viewOnlyMode')
+      });
+      // Məktəb admin olmayan istifadəçilər üçün boş məlumat göstərə bilərik
+      // və ya yalnız statistikanı göstərə bilərik
+      await fetchCategories();
       return;
     }
 
@@ -79,6 +92,11 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
       console.log("Məktəb ID ilə məlumatlar yüklənir:", user.schoolId);
       
       await fetchCategories();
+
+      // Əgər istifadəçi məktəb administratoru deyilsə, data_entries sorğusunu keçirik
+      if (user.role !== 'schooladmin' || !user.schoolId) {
+        return;
+      }
 
       const { data: existingData, error } = await supabase
         .from('data_entries')
@@ -119,14 +137,18 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
           const category = categories.find(c => c.id === categoryId);
           if (category) {
             const requiredColumns = category.columns.filter(col => col.is_required);
-            const filledRequiredValues = entriesByCategory[categoryId].values.filter(val => {
-              const column = category.columns.find(col => col.id === val.columnId);
-              return column?.is_required && val.value && val.value.trim() !== '';
-            });
-            
-            entriesByCategory[categoryId].completionPercentage = requiredColumns.length > 0 
-              ? (filledRequiredValues.length / requiredColumns.length) * 100 
-              : 100;
+            // Əmin olaq ki, requiredColumns null və ya undefined deyil
+            if (requiredColumns && requiredColumns.length > 0) {
+              const filledRequiredValues = entriesByCategory[categoryId].values.filter(val => {
+                const column = category.columns.find(col => col.id === val.columnId);
+                return column?.is_required && val.value && val.value.trim() !== '';
+              });
+              
+              entriesByCategory[categoryId].completionPercentage = 
+                (filledRequiredValues.length / requiredColumns.length) * 100;
+            } else {
+              entriesByCategory[categoryId].completionPercentage = 100;
+            }
               
             entriesByCategory[categoryId].isCompleted = entriesByCategory[categoryId].completionPercentage === 100;
           }
@@ -147,7 +169,10 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   }, [fetchCategories, user, categories, t, initializeForm]);
 
   const saveDataToServer = useCallback(async (categoryId: string, columnId: string, value: any) => {
-    if (!user?.schoolId) return;
+    if (!user?.schoolId) {
+      console.warn("Məlumatları saxlamaq üçün məktəb ID-si lazımdır");
+      return;
+    }
 
     try {
       const { data: existingData, error: fetchError } = await supabase
@@ -273,11 +298,12 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   });
 
   useEffect(() => {
-    if (user?.schoolId) {
-      console.log("İstifadəçi məktəb ID-si ilə yüklənmə başladı:", user.schoolId);
+    // Hər hansı bir istifadəçi giriş etdikdə - məktəb ID-si olub olmamasından asılı olmayaraq
+    if (user) {
+      console.log("İstifadəçi məlumatları ilə yüklənmə başladı:", user);
       loadCategoryData();
     } else {
-      console.warn("İstifadəçi məktəb ID-si olmadan yüklənmə:", user);
+      console.warn("İstifadəçi məlumatları olmadan yüklənmə");
     }
   }, [loadCategoryData, user]);
 

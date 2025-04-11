@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -15,12 +16,14 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Save, CheckCircle, AlertCircle, Upload, FileDown } from 'lucide-react';
 import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
 import { ColumnValidationError } from '@/types/dataEntry';
+import { useAuth } from '@/context/AuthContext';
 
 const DataEntry: React.FC = () => {
   const { t } = useLanguage();
   const { categoryId } = useParams<{ categoryId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('entry');
+  const { user } = useAuth();
   
   const { categories, isLoading: categoriesLoading } = useCategories();
   const [dialogState, setDialogState] = useState({
@@ -105,7 +108,20 @@ const DataEntry: React.FC = () => {
     }
   }, [currentCategory, categories, categoriesLoading, navigate]);
   
+  // İstifadəçi roluna görə əməliyyatların əlçatanlığını müəyyən edirik
+  const isSchoolAdmin = user?.role === 'schooladmin';
+  const canEditData = isSchoolAdmin && user?.schoolId;
+  
   const getHeaderAction = () => {
+    // Məktəb Admin deyilsə yalnız göstər (view-only mode)
+    if (!canEditData) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">{t('viewOnlyMode')}</span>
+        </div>
+      );
+    }
+    
     if (status === 'approved') {
       return (
         <div className="flex items-center gap-2">
@@ -151,7 +167,7 @@ const DataEntry: React.FC = () => {
       <SidebarLayout>
         <div className="flex items-center justify-center h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin h-12 w-12 border-4 border-t-primary rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin h-12 w-12 border-t-2 border-b-2 border-primary rounded-full mx-auto mb-4"></div>
             <p className="text-lg font-medium">{t('loading')}</p>
           </div>
         </div>
@@ -187,31 +203,34 @@ const DataEntry: React.FC = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => downloadExcelTemplate(currentCategory.id)}
+                  disabled={!canEditData}
                 >
                   <FileDown className="h-4 w-4 mr-1" />
                   {t('excelTemplate')}
                 </Button>
                 
-                <div className="relative">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    {t('uploadExcel')}
-                  </Button>
-                  <input
-                    type="file"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    accept=".xlsx,.xls"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        uploadExcelData(e.target.files[0], currentCategory.id);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                </div>
+                {canEditData && (
+                  <div className="relative">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      {t('uploadExcel')}
+                    </Button>
+                    <input
+                      type="file"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          uploadExcelData(e.target.files[0], currentCategory.id);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             
@@ -231,6 +250,7 @@ const DataEntry: React.FC = () => {
                     initialCategoryId={categoryId}
                     statusFilter={status}
                     onDataChanged={handleSave}
+                    readOnly={!canEditData}
                   />
                 </TabsContent>
                 
@@ -264,6 +284,13 @@ const DataEntry: React.FC = () => {
                     {t(status)}
                   </span>
                 </div>
+                {!isSchoolAdmin && (
+                  <div className="mt-4 p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      {t('nonSchoolAdminView')}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
