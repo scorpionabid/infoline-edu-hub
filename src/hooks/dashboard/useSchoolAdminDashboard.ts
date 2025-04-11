@@ -109,15 +109,25 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       
       if (pendingFormsError) throw pendingFormsError;
       
-      // Formları formatlayırıq
-      const formattedPendingForms: FormItem[] = pendingForms.map(form => ({
-        id: form.id,
-        title: form.category && typeof form.category === 'object' ? form.category.name || 'Unknown Category' : 'Unknown Category',
-        date: new Date(form.created_at).toLocaleDateString(),
-        status: form.status,
-        completionPercentage: 100, // Tam doldurulmuş sayırıq çünki təqdim edilib
-        category: form.category && typeof form.category === 'object' ? form.category.name : undefined
-      }));
+      // Formları formatlayırıq - Type xətalarını düzəltmək üçün kodu yenilədik
+      const formattedPendingForms: FormItem[] = pendingForms.map(form => {
+        // Kateqoriya adı almaq üçün düzgün yoxlama
+        let categoryName = 'Unknown Category';
+        
+        if (form.category && typeof form.category === 'object') {
+          // Əgər category bir object-dirsə və name xüsusiyyəti varsa
+          categoryName = form.category.name || 'Unknown Category';
+        }
+        
+        return {
+          id: form.id,
+          title: categoryName,
+          date: new Date(form.created_at).toLocaleDateString(),
+          status: form.status,
+          completionPercentage: 100, // Tam doldurulmuş sayırıq çünki təqdim edilib
+          category: categoryName
+        };
+      });
       
       // Tamamlanma faizini hesablayırıq - hələlik sadə bir formula
       const totalEntries = pendingCount + approvedCount + rejectedCount;
