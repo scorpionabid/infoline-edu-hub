@@ -222,14 +222,13 @@ export const getRegionNames = async (): Promise<RegionItem[]> => {
       
     if (error) throw error;
     
-    if (Array.isArray(data)) {
-      return data.map(region => ({
-        id: region.id,
-        name: region.name || ''
-      }));
-    }
+    if (!data) return [];
     
-    return [];
+    // Data obyektinin strukturunu dəqiq təyin edirik
+    return data.map((region: any) => ({
+      id: region.id || '',
+      name: region.name || ''
+    }));
   } catch (error) {
     console.error('Region adları əldə edilərkən xəta:', error);
     return [];
@@ -244,14 +243,13 @@ export const getSectorNames = async (): Promise<SectorItem[]> => {
       
     if (error) throw error;
     
-    if (Array.isArray(data)) {
-      return data.map(sector => ({
-        id: sector.id,
-        name: sector.name || ''
-      }));
-    }
+    if (!data) return [];
     
-    return [];
+    // Data obyektinin strukturunu dəqiq təyin edirik
+    return data.map((sector: any) => ({
+      id: sector.id || '',
+      name: sector.name || ''
+    }));
   } catch (error) {
     console.error('Sektor adları əldə edilərkən xəta:', error);
     return [];
