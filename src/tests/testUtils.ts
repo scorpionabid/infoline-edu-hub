@@ -1,6 +1,4 @@
 
-// src/tests/utils/testUtils.ts
-
 import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';
