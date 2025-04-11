@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Notification } from '@/types/notification';
-import NotificationItem from './NotificationItem';
 import { useLanguage } from '@/context/LanguageContext';
+import { Notification } from '@/types/notification';
 import { Button } from '@/components/ui/button';
-import { BellOff } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Check, Trash2 } from 'lucide-react';
+import NotificationItem from './NotificationItem';
 
 interface NotificationListProps {
   notifications: Notification[];
@@ -13,56 +14,64 @@ interface NotificationListProps {
   onClearAll: () => void;
 }
 
-const NotificationList: React.FC<NotificationListProps> = ({
-  notifications,
+const NotificationList: React.FC<NotificationListProps> = ({ 
+  notifications, 
   onMarkAsRead,
   onMarkAllAsRead,
-  onClearAll,
+  onClearAll
 }) => {
   const { t } = useLanguage();
-
-  if (notifications.length === 0) {
-    return (
-      <div className="p-6 text-center">
-        <BellOff className="mx-auto h-12 w-12 text-muted-foreground/50" />
-        <h3 className="mt-2 text-base font-semibold text-foreground">
-          {t('noNotifications')}
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('noNotificationsDesc')}
-        </p>
-      </div>
-    );
-  }
-
+  
   return (
-    <div>
-      <div className="flex justify-between p-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onMarkAllAsRead}
-        >
-          {t('markAllAsRead')}
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onClearAll}
-        >
-          {t('clearAll')}
-        </Button>
+    <div className="flex flex-col h-full max-h-[450px]">
+      <div className="flex items-center justify-between p-3 border-b">
+        <div className="font-semibold">{t('notifications')}</div>
+        <div className="flex gap-2">
+          {notifications.length > 0 && (
+            <>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onMarkAllAsRead} 
+                className="h-8 px-2 text-xs"
+              >
+                <Check className="h-3.5 w-3.5 mr-1" />
+                {t('markAllAsRead')}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onClearAll} 
+                className="h-8 px-2 text-xs"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                {t('clearAll')}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       
-      <div className="max-h-[400px] overflow-y-auto p-4">
-        {notifications.map(notification => (
-          <NotificationItem
-            key={notification.id}
-            notification={notification}
-            onMarkAsRead={onMarkAsRead}
-          />
-        ))}
-      </div>
+      <ScrollArea className="flex-1">
+        {notifications.length > 0 ? (
+          <div className="divide-y">
+            {notifications.map((notification) => (
+              <NotificationItem 
+                key={notification.id} 
+                notification={notification} 
+                onMarkAsRead={onMarkAsRead}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
+            <div>
+              <p>{t('noNotifications')}</p>
+              <p className="text-xs mt-1">{t('noNotificationsDesc')}</p>
+            </div>
+          </div>
+        )}
+      </ScrollArea>
     </div>
   );
 };

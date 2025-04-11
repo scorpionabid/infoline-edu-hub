@@ -111,18 +111,31 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       
       // Formları formatlayırıq - Type xətalarını düzəltmək üçün kodu yenilədik
       const formattedPendingForms: FormItem[] = pendingForms.map(form => {
-        // Kateqoriya adı almaq üçün düzgün yoxlama - isArray və JSON formatı yoxlanılır
+        // Kateqoriya adı almaq üçün düzgün və ətraflı yoxlama - bütün mümkün formatları yoxlama
         let categoryName = 'Unknown Category';
         
-        if (form.category && typeof form.category === 'object') {
-          if (Array.isArray(form.category)) {
-            // Əgər massivdirsə və içində element varsa
-            if (form.category.length > 0 && form.category[0] && form.category[0].name) {
-              categoryName = form.category[0].name;
+        if (form.category) {
+          if (typeof form.category === 'string') {
+            // Əgər direktdə string olaraq gəlibsə
+            categoryName = form.category;
+          } else if (typeof form.category === 'object') {
+            if (Array.isArray(form.category)) {
+              // Əgər massivdirsə və içində element varsa
+              if (form.category.length > 0) {
+                const firstItem = form.category[0];
+                if (typeof firstItem === 'string') {
+                  categoryName = firstItem;
+                } else if (typeof firstItem === 'object' && firstItem && 'name' in firstItem) {
+                  categoryName = firstItem.name;
+                }
+              }
+            } else if (form.category !== null) {
+              // Əgər tək obyektdirsə
+              const category = form.category as any;
+              if ('name' in category) {
+                categoryName = category.name;
+              }
             }
-          } else {
-            // Əgər tək obyektdirsə
-            categoryName = (form.category as any).name || 'Unknown Category';
           }
         }
         

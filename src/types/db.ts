@@ -1,16 +1,21 @@
 
-// Database table names
 export enum TableNames {
-  PROFILES = 'profiles',
-  USER_ROLES = 'user_roles',
   REGIONS = 'regions',
   SECTORS = 'sectors',
-  SCHOOLS = 'schools',
+  SCHOOLS = 'schools', 
   CATEGORIES = 'categories',
   COLUMNS = 'columns',
   DATA_ENTRIES = 'data_entries',
+  USERS = 'users',
+  PROFILES = 'profiles',
+  USER_ROLES = 'user_roles',
   NOTIFICATIONS = 'notifications',
-  AUDIT_LOGS = 'audit_logs',
-  REPORTS = 'reports',
-  REPORT_TEMPLATES = 'report_templates'
+  AUDIT_LOGS = 'audit_logs'
+}
+
+export interface DatabaseError {
+  code: string;
+  message: string;
+  details?: string;
+  hint?: string;
 }
