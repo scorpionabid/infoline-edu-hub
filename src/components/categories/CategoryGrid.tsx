@@ -74,7 +74,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
               {category.description || t('noDescription')}
             </p>
             <div className="flex items-center text-xs text-muted-foreground">
-              <span className="mr-4">{t('columnCount')}: {category.columnCount || 0}</span>
+              <span className="mr-4">{t('columnCount')}: {category.column_count || 0}</span>
               <span>{t('assignment')}: {category.assignment === 'all' ? t('all') : t('sectors')}</span>
             </div>
           </CardContent>

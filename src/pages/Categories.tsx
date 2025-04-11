@@ -31,8 +31,9 @@ const Categories = () => {
     updateCategory, 
     deleteCategory,
     canManageCategories,
-    filteredCategories
-  } = useCategories(searchValue);
+    filteredCategories,
+    setSearchQuery
+  } = useCategories();
   
   const handleUpdateCategory = async (updatedCategory: Category) => {
     try {
