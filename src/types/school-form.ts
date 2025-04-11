@@ -12,8 +12,8 @@ export interface SchoolFormData {
   status: 'active' | 'inactive';
   type: string;
   language: string;
-  adminEmail?: string;
-  adminFullName?: string;
-  adminPassword?: string;
+  adminEmail: string;
+  adminFullName: string;
+  adminPassword: string;
   adminStatus: 'active' | 'inactive' | 'blocked';
 }

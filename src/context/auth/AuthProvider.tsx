@@ -13,7 +13,8 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const {
     user,
-    loading,
+    isLoading,
+    error: authError,
     signIn,
     signOut,
     updateProfile,
@@ -25,7 +26,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const authState: AuthState = {
     user,
     isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
-    isLoading: loading,
+    isLoading: isLoading,
     error,
   };
 
@@ -34,6 +35,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       console.log(`AuthContext: ${email} ilə giriş edilir...`);
+      
+      if (!signIn) {
+        throw new Error('Sign in functionality is not available');
+      }
+      
       const { data, error } = await signIn(email, password);
       
       if (error) {
@@ -77,6 +83,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setError(null);
+      
+      if (!signOut) {
+        throw new Error('Sign out functionality is not available');
+      }
+      
       await signOut();
       console.log('AuthContext: İstifadəçi uğurla çıxış etdi');
     } catch (error: any) {
@@ -92,6 +103,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       setError(null);
+      
+      if (!updateProfile) {
+        throw new Error('Update profile functionality is not available');
+      }
+      
       // Convert FullUserData to Profile format
       const profileUpdates = {
         full_name: userData.full_name,
@@ -127,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log('Auth vəziyyəti dəyişdi:', {
       isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
-      isLoading: loading,
+      isLoading,
       user: user ? { 
         id: user.id, 
         email: user.email, 
@@ -136,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } : null,
       error
     });
-  }, [user, loading, error]);
+  }, [user, isLoading, error]);
 
   return (
     <AuthContext.Provider

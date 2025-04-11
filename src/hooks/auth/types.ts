@@ -52,6 +52,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  session: any | null;
+  loading?: boolean;
 }
 
 /**
@@ -61,9 +63,17 @@ export interface AuthActions {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
+  signIn?: (email: string, password: string) => Promise<any>;
+  signOut?: () => Promise<void>;
+  signUp?: (email: string, password: string, userData: any) => Promise<any>;
+  resetPassword?: (email: string) => Promise<boolean>;
+  updatePassword?: (password: string) => Promise<boolean>;
+  updateProfile?: (updates: any) => Promise<boolean>;
 }
 
 /**
  * UseSupabaseAuth hook qaytardığı tip
  */
-export interface UseSupabaseAuthReturn extends AuthState, AuthActions {}
+export interface UseSupabaseAuthReturn extends AuthState, AuthActions {
+  fetchUserData?: (userId: string) => Promise<any>;
+}

@@ -10,6 +10,7 @@ import {
   checkColumnAccess, 
   canSectorAdminAccessCategoriesColumns
 } from './permissionCheckers';
+import { checkPermission } from './permissionUtils';
 import { PermissionLevel, UsePermissionsResult } from './types';
 
 /**
@@ -43,8 +44,8 @@ export const usePermissions = (): UsePermissionsResult => {
     return checkColumnAccess(columnId, level);
   }, [user, isAuthenticated]);
 
-  // canSectorAdminAccessCategoriesColumns artıq boolean qaytardığı üçün Promise-ə bürüməyə ehtiyac yoxdur
-  const canSectorAdminAccessCategoriesColumnsHook = useCallback(() => {
+  // canSectorAdminAccessCategoriesColumns Promise qaytarmadığı üçün wrap edirik
+  const canSectorAdminAccessCategoriesColumnsHook = useCallback((): boolean => {
     return canSectorAdminAccessCategoriesColumns();
   }, []);
 

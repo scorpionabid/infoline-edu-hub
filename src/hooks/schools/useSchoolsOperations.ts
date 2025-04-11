@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School, adaptSchoolToSupabase } from '@/types/supabase';
@@ -28,7 +27,7 @@ export const useSchoolsOperations = (): UseSchoolsOperationsReturn => {
     
     try {
       // Məktəb məlumatlarını hazırla
-      const schoolData = {
+      const newSchoolData = {
         name: formData.name,
         principal_name: formData.principalName,
         region_id: formData.regionId,
@@ -38,16 +37,16 @@ export const useSchoolsOperations = (): UseSchoolsOperationsReturn => {
         phone: formData.phone,
         student_count: parseInt(formData.studentCount) || 0,
         teacher_count: parseInt(formData.teacherCount) || 0,
-        status: formData.status as 'active' | 'inactive', // status tipini spesifikləşdir
+        status: formData.status as 'active' | 'inactive', 
         type: formData.type,
         language: formData.language,
         admin_email: formData.adminEmail
       };
       
       // Məktəbi Supabase-ə əlavə et
-      const { data: schoolData, error: schoolError } = await supabase
+      const { data: schoolResult, error: schoolError } = await supabase
         .from('schools')
-        .insert([schoolData])
+        .insert([newSchoolData])
         .select()
         .single();
       
@@ -55,17 +54,13 @@ export const useSchoolsOperations = (): UseSchoolsOperationsReturn => {
       
       // Admin məlumatları varsa, istifadəçi yarat
       if (formData.adminEmail && formData.adminFullName && formData.adminPassword) {
-        // Admin istifadəçisini yarat
-        const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-          email: formData.adminEmail,
-          password: formData.adminPassword,
-          email_confirm: true,
-          user_metadata: {
-            full_name: formData.adminFullName,
-            role: 'schooladmin',
-            region_id: formData.regionId,
-            sector_id: formData.sectorId,
-            school_id: schoolData.id
+        // Admin funksiyasını çağırırıq
+        const { error: userError } = await supabase.functions.invoke('create-school-admin', {
+          body: {
+            email: formData.adminEmail,
+            fullName: formData.adminFullName,
+            password: formData.adminPassword,
+            schoolId: schoolResult.id
           }
         });
         
@@ -96,7 +91,7 @@ export const useSchoolsOperations = (): UseSchoolsOperationsReturn => {
     
     try {
       // Məktəb məlumatlarını hazırla
-      const schoolData = {
+      const updatedSchoolData = {
         name: formData.name,
         principal_name: formData.principalName,
         region_id: formData.regionId,
@@ -106,7 +101,7 @@ export const useSchoolsOperations = (): UseSchoolsOperationsReturn => {
         phone: formData.phone,
         student_count: parseInt(formData.studentCount) || 0,
         teacher_count: parseInt(formData.teacherCount) || 0,
-        status: formData.status as 'active' | 'inactive', // status tipini spesifikləşdir
+        status: formData.status as 'active' | 'inactive',
         type: formData.type,
         language: formData.language,
         admin_email: formData.adminEmail
@@ -115,7 +110,7 @@ export const useSchoolsOperations = (): UseSchoolsOperationsReturn => {
       // Məktəbi Supabase-də yenilə
       const { error: updateError } = await supabase
         .from('schools')
-        .update(schoolData)
+        .update(updatedSchoolData)
         .eq('id', id);
       
       if (updateError) throw updateError;

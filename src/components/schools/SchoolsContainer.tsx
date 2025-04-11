@@ -13,6 +13,8 @@ import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
 import { Region } from '@/types/region';
+import { School } from '@/data/schoolsData';
+import { convertSupabaseToSchool } from '@/data/schoolsData';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -107,7 +109,9 @@ const SchoolsContainer: React.FC = () => {
 
   // Excel ixrac funksiyası
   const handleExportClick = () => {
-    handleExportToExcel(schools);
+    // Tip uyğunluğu üçün SupabaseSchool -> School konvertasiyası
+    const schoolsForExport = schools.map(convertSupabaseToSchool);
+    handleExportToExcel(schoolsForExport);
   };
 
   // Excel idxal funksiyası
@@ -115,9 +119,17 @@ const SchoolsContainer: React.FC = () => {
     setIsImportDialogOpen(true);
   };
 
+  // Adapter funksiyalar
+  const handleAdminUpdateAdapter = () => {
+    handleAdminUpdate();
+  };
+
+  const handleResetPasswordAdapter = (newPassword: string) => {
+    handleResetPassword(newPassword);
+  };
+
   // ImportDialog komponentinin handleImport prop-u üçün adapt edirik
   const handleImportConfirm = (file: File) => {
-    // ImportDialog-dan gələn File-ı işləyək
     handleImportSchools(file);
   };
 
@@ -181,8 +193,8 @@ const SchoolsContainer: React.FC = () => {
         handleDeleteConfirm={handleDeleteConfirm}
         handleAddSubmit={handleAddSubmit}
         handleEditSubmit={handleEditSubmit}
-        handleAdminUpdate={handleAdminUpdate}
-        handleResetPassword={handleResetPassword}
+        handleAdminUpdate={handleAdminUpdateAdapter}
+        handleResetPassword={handleResetPasswordAdapter}
         formData={formData}
         handleFormChange={handleFormChange}
         currentTab={currentTab}
@@ -190,7 +202,6 @@ const SchoolsContainer: React.FC = () => {
         filteredSectors={filteredSectors}
       />
       
-      {/* Import Dialog */}
       <ImportDialog 
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
