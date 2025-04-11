@@ -9,10 +9,11 @@ import { UserRole, UserRoleData } from '@/types/supabase';
  * @returns Sorğunun nəticəsi və ya null
  */
 export const executeQuery = async <T>(
-  queryPromise: Promise<{ data: T | null; error: any }>,
+  queryPromise: any,
   errorMessage: string
 ): Promise<T | null> => {
   try {
+    // Sorğunu icra et (await əlavə edirik)
     const { data, error } = await queryPromise;
     if (error) throw error;
     return data;

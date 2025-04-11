@@ -17,7 +17,7 @@ export const checkRegionAccess = async (
   if (!userId) return false;
   
   try {
-    // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
+    // Sorğunu düzgün şəkildə yaradıb executeQuery-ə ötürmək
     const userData = await executeQuery<UserRoleData>(
       supabase
         .from('user_roles')
@@ -58,7 +58,7 @@ export const checkSectorAccess = async (
   if (!userId) return false;
   
   try {
-    // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
+    // Sorğunu düzgün şəkildə yaradıb executeQuery-ə ötürürük
     const userRoleData = await executeQuery<UserRoleData>(
       supabase
         .from('user_roles')
@@ -127,7 +127,7 @@ export const checkSchoolAccess = async (
   if (!userId) return false;
   
   try {
-    // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
+    // Məktəb məlumatlarını əldə edirik
     const schoolData = await executeQuery<{ region_id: string; sector_id: string }>(
       supabase
         .from('schools')
@@ -139,6 +139,7 @@ export const checkSchoolAccess = async (
     
     if (!schoolData) return false;
     
+    // İstifadəçi rollarını əldə edirik
     const userRoleData = await executeQuery<UserRoleData>(
       supabase
         .from('user_roles')

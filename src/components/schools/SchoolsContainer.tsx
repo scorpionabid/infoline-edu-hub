@@ -11,6 +11,7 @@ import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
 import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
+import { UserRole } from '@/types/supabase';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -86,12 +87,15 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
+    // UserRole tipindən əmin olmaq üçün kontrol - xətanı düzəldirik
+    const userRoleTyped = userRole as UserRole;
+    
     // Sektor admin üçün yalnız öz sektorunu göstərmək
-    if (userRole === 'sectoradmin') {
+    if (userRoleTyped === 'sectoradmin') {
       sectorsList = sectorsList.filter(sector => sector.id === selectedSector);
     }
     // Region admin üçün yalnız öz regionuna aid sektorları göstərmək
-    else if (userRole === 'regionadmin' && selectedRegion) {
+    else if (userRoleTyped === 'regionadmin' && selectedRegion) {
       sectorsList = sectorsList.filter(sector => sector.regionId === selectedRegion);
     }
     
