@@ -8,12 +8,15 @@ export const mockUsers: FullUserData[] = [
     role: 'superadmin',
     status: 'active',
     full_name: 'Super Admin',
+    name: 'Super Admin',
     regionId: null,
     sectorId: null,
     schoolId: null,
     language: 'az',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '2',
@@ -21,12 +24,15 @@ export const mockUsers: FullUserData[] = [
     role: 'regionadmin',
     status: 'active',
     full_name: 'Region Admin',
+    name: 'Region Admin',
     regionId: 'region1',
     sectorId: null,
     schoolId: null,
     language: 'az',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '3',
@@ -34,12 +40,15 @@ export const mockUsers: FullUserData[] = [
     role: 'sectoradmin',
     status: 'active',
     full_name: 'Sector Admin',
+    name: 'Sector Admin',
     regionId: 'region1',
     sectorId: 'sector1',
     schoolId: null,
     language: 'az',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: '4',
@@ -47,11 +56,14 @@ export const mockUsers: FullUserData[] = [
     role: 'schooladmin',
     status: 'active',
     full_name: 'School Admin',
+    name: 'School Admin',
     regionId: 'region1',
     sectorId: 'sector1',
     schoolId: 'school1',
     language: 'az',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
