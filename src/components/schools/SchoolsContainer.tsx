@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
@@ -109,7 +110,10 @@ const SchoolsContainer: React.FC = () => {
   // Excel ixrac funksiyası
   const handleExportClick = () => {
     // Tip uyğunluğu üçün SupabaseSchool -> School konvertasiyası
-    const schoolsForExport = schools.map(school => convertSupabaseToSchool(school));
+    const schoolsForExport = schools.map(school => {
+      // convertSupabaseToSchool funksiyası artıq principalName-i məcburi edir
+      return convertSupabaseToSchool(school);
+    });
     handleExportToExcel(schoolsForExport);
   };
 

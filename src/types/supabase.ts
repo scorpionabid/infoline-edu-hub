@@ -1,3 +1,4 @@
+
 export interface School {
   id: string;
   name: string;
@@ -5,7 +6,7 @@ export interface School {
   phone?: string;
   email?: string;
   directorName?: string;
-  principalName?: string; 
+  principalName: string; // Optional deyil, məcburi edildi
   studentCount?: number;
   teacherCount?: number;
   schoolType?: 'elementary' | 'middle' | 'high' | 'vocational' | 'special';
@@ -191,7 +192,7 @@ export const adaptSchoolFromSupabase = (supabaseSchool: any): School => {
     phone: supabaseSchool.phone,
     email: supabaseSchool.email,
     directorName: supabaseSchool.principal_name,
-    principalName: supabaseSchool.principal_name,
+    principalName: supabaseSchool.principal_name || '', // Boş string ilə fallback təmin edirik
     studentCount: supabaseSchool.student_count,
     teacherCount: supabaseSchool.teacher_count,
     type: supabaseSchool.type,
