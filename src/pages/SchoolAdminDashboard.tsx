@@ -23,12 +23,12 @@ const SchoolAdminDashboard = () => {
   }, [navigate]);
   
   // Məlumatlardan Form obyektləri yaradırıq
-  const recentForms: Form[] = data.pendingForms.map(form => ({
+  const recentForms: Form[] = (data?.pendingForms || []).map(form => ({
     id: form.id,
     title: form.title,
-    category: form.category,
+    category: form.category || '', // Default boş string əlavə edirik
     status: form.status as any,
-    completionPercentage: form.completionPercentage,
+    completionPercentage: form.completionPercentage || 0, // Default 0 əlavə edirik
     date: form.date,
     deadline: undefined // data-dan deadline əldə edilsə buraya əlavə edilə bilər
   }));

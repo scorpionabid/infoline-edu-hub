@@ -11,6 +11,24 @@ export interface DashboardData {
     pendingForms: number;
     totalSchools: number;
   };
+  // İstatistik elementlər və digər məlumatlar üçün genişlənmələr
+  stats?: StatsItem[];
+  regions?: number;
+  sectors?: number;
+  schools?: number;
+  users?: number;
+}
+
+// Statistik məlumat elementi
+export interface StatsItem {
+  id?: string; // ID xüsusiyyətini əlavə edirik
+  title: string; 
+  value: number | string;
+  description?: string;
+  increase?: boolean;
+  percent?: number;
+  change?: number;
+  changeType?: 'increase' | 'decrease' | 'neutral';
 }
 
 // Super Admin Dashboard Məlumatları
@@ -41,6 +59,7 @@ export interface SuperAdminDashboardData extends DashboardData {
       schooladmin: number;
     };
   };
+  stats?: StatsItem[];
 }
 
 // Region Admin Dashboard Məlumatları
@@ -65,6 +84,7 @@ export interface RegionAdminDashboardData extends DashboardData {
       schooladmin: number;
     };
   };
+  stats?: StatsItem[];
 }
 
 // Sektor Admin Dashboard Məlumatları
@@ -84,6 +104,8 @@ export interface SectorAdminDashboardData extends DashboardData {
       schooladmin: number;
     };
   };
+  pendingSchools?: number;
+  stats?: StatsItem[];
 }
 
 // Form statusları
@@ -95,6 +117,9 @@ export interface FormItem {
   title: string;
   date: string;
   status: string;
+  category?: string; // Kateqoriya xüsusiyyətini əlavə edirik
+  completionPercentage?: number; // Tamamlanma faizi xüsusiyyətini əlavə edirik
+  deadline?: string;
 }
 
 // Məktəb Admin Dashboard Məlumatları
@@ -111,20 +136,32 @@ export interface SchoolAdminDashboardData extends DashboardData {
     overdue: number;
   };
   pendingForms: FormItem[];
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
 }
 
-// Statistik məlumat elementi
-export interface StatsItem {
-  title: string; 
-  value: number | string;
-  description?: string;
-  increase?: boolean;
-  percent?: number;
+// EntityCount və UserEntityCount interfeyslərini əlavə edək (dashboardUtils.ts üçün)
+export interface EntityCount {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface UserEntityCount extends EntityCount {
+  byRole: {
+    superadmin?: number;
+    regionadmin?: number;
+    sectoradmin?: number;
+    schooladmin?: number;
+  };
 }
 
 // Qrafik Məlumatları
 export interface ChartData {
   activityData: Array<{name: string; value: number}>;
   regionSchoolsData: Array<{name: string; value: number}>;
-  categoryCompletionData: Array<{name: string; value: number}>;
+  categoryCompletionData: Array<{name: string; completed?: number; value?: number}>;
 }

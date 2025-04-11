@@ -1,76 +1,63 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { useLanguage } from '@/context/LanguageContext';
 import { Category } from '@/types/category';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 export interface CategoryChartProps {
-  categoriesData: Category[];
-  loading: boolean;
+  categories?: Category[];
 }
 
-const COLORS = ['#10b981', '#6b7280', '#f59e0b'];
-
-const CategoryChart: React.FC<CategoryChartProps> = ({ categoriesData, loading }) => {
-  // Yüklənmə halı
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="p-4">
-          <CardTitle className="text-lg">Kateqoriyaların Statusu</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 h-64 flex items-center justify-center">
-          <div className="animate-pulse h-48 w-48 bg-muted rounded-full"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Status məlumatlarını hazırlayaq
-  const activeCount = categoriesData.filter(cat => cat.status === 'active').length;
-  const inactiveCount = categoriesData.filter(cat => cat.status === 'inactive').length;
-  const draftCount = categoriesData.filter(cat => cat.status === 'draft').length;
+const CategoryChart: React.FC<CategoryChartProps> = ({ categories = [] }) => {
+  const { t } = useLanguage();
   
-  const chartData = [
-    { name: 'Aktiv', value: activeCount },
-    { name: 'Deaktiv', value: inactiveCount },
-    { name: 'Qaralama', value: draftCount }
-  ].filter(item => item.value > 0);
-
+  // Statuslarına görə kateqoriyaları qruplaşdıraq
+  const statusCounts = categories.reduce((acc, category) => {
+    const status = category.status || 'unknown';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  // Chart data formatına çevirək
+  const chartData = Object.entries(statusCounts).map(([name, value]) => ({
+    name: t(name) || name,
+    value
+  }));
+  
+  // Diaqram üçün rənglər
+  const COLORS = ['#4caf50', '#ff9800', '#f44336', '#9e9e9e'];
+  
   return (
     <Card>
-      <CardHeader className="p-4">
-        <CardTitle className="text-lg">Kateqoriyaların Statusu</CardTitle>
+      <CardHeader>
+        <CardTitle>{t('categoryStatusDistribution')}</CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-0 h-64">
-        {chartData.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-muted-foreground">Məlumat yoxdur</p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
+      <CardContent>
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                formatter={(value: number) => [`${value} kateqoriya`, 'Sayı']}
-                labelFormatter={(name) => `${name}`}
-              />
+              <Tooltip />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[200px]">
+            <p className="text-muted-foreground">{t('noDataAvailable')}</p>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -1,84 +1,51 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryFilter } from '@/types/category';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 
-interface CategoryFilterCardProps {
-  filter: CategoryFilter;
-  onFilterChange: (newFilter: Partial<CategoryFilter>) => void;
+export interface CategoryFilterCardProps {
+  searchValue?: string; // Added
+  onSearchChange?: (value: string) => void; // Added
 }
 
 const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
-  filter,
-  onFilterChange
+  searchValue = '',
+  onSearchChange
 }) => {
   const { t } = useLanguage();
   
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onSearchChange) {
+      onSearchChange(e.target.value);
+    }
+  };
+  
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{t('status')}</Label>
-          <Select
-            value={filter.status || 'all'}
-            onValueChange={(value) => onFilterChange({ status: value as CategoryFilter['status'] })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('allStatuses')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allStatuses')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-              <SelectItem value="draft">{t('draft')}</SelectItem>
-            </SelectContent>
-          </Select>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('filterCategories')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">
+              {t('searchByKeyword')}
+            </label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('searchCategory')}
+                className="pl-8"
+                value={searchValue}
+                onChange={handleSearchChange}
+              />
+            </div>
+          </div>
         </div>
-        
-        <div className="space-y-2">
-          <Label>{t('assignment')}</Label>
-          <Select
-            value={filter.assignment || 'all'}
-            onValueChange={(value) => onFilterChange({ assignment: value as CategoryFilter['assignment'] })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('allAssignments')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allAssignments')}</SelectItem>
-              <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{t('deadline')}</Label>
-          <Select
-            value={filter.deadline || 'all'}
-            onValueChange={(value) => onFilterChange({ deadline: value as CategoryFilter['deadline'] })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('allDeadlines')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allDeadlines')}</SelectItem>
-              <SelectItem value="upcoming">{t('upcomingDeadlines')}</SelectItem>
-              <SelectItem value="past">{t('pastDeadlines')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

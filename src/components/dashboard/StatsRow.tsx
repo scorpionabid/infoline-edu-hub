@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { StatsCard } from './StatsCard';
+import StatsCard from './StatsCard';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface StatsRowProps {

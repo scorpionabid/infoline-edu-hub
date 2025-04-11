@@ -1,132 +1,58 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Search, FileSpreadsheet, HelpCircle } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
-import { useRole } from "@/context/AuthContext";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, Grid3X3, List, Search } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
-interface CategoryHeaderProps {
+export interface CategoryHeaderProps {
   onAddCategory: () => void;
-  searchQuery?: string;
-  onSearchChange: (value: string) => void;
-  statusFilter?: string;
-  onStatusFilterChange?: (value: string) => void;
-  assignmentFilter?: string;
-  onAssignmentFilterChange?: (value: string) => void;
-  onImportExport?: () => void;
-  isLoading?: boolean;
+  canAddCategory?: boolean; // Əlavə edildi
+  searchValue: string; // Əlavə edildi
+  onSearchChange: (value: string) => void; // Əlavə edildi
+  viewMode: 'list' | 'grid'; // Əlavə edildi
+  onViewModeChange: (value: 'list' | 'grid') => void; // Əlavə edildi
 }
 
 const CategoryHeader: React.FC<CategoryHeaderProps> = ({
   onAddCategory,
-  searchQuery = "",
+  canAddCategory = true,
+  searchValue = '',
   onSearchChange,
-  statusFilter = "all",
-  onStatusFilterChange,
-  assignmentFilter = "all",
-  onAssignmentFilterChange,
-  onImportExport,
-  isLoading = false
+  viewMode = 'list',
+  onViewModeChange
 }) => {
   const { t } = useLanguage();
-  const canManageCategories = useRole(["superadmin", "regionadmin"]);
-
+  
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("categories")}</h1>
-          <p className="text-muted-foreground">{t("categoriesDescription") || "Kateqoriyaları idarə edin"}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canManageCategories && onImportExport && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={onImportExport} disabled={isLoading}>
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    {t("importExport")}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("importExportCategoriesDesc")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          
-          {canManageCategories && (
-            <Button onClick={onAddCategory} disabled={isLoading}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t("addCategory")}
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-6">
+      <h1 className="text-2xl font-bold">{t('categories')}</h1>
       
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder={t("searchCategories")}
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+        <Input
+          placeholder={t('searchCategory')}
+          className="max-w-xs"
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+          startIcon={<Search className="h-4 w-4" />}
+        />
         
-        {onStatusFilterChange && (
-          <Select
-            value={statusFilter}
-            onValueChange={onStatusFilterChange}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder={t("filterByStatus")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allStatuses")}</SelectItem>
-              <SelectItem value="active">{t("active")}</SelectItem>
-              <SelectItem value="inactive">{t("inactive")}</SelectItem>
-              <SelectItem value="draft">{t("draft")}</SelectItem>
-            </SelectContent>
-          </Select>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && onViewModeChange(value as 'list' | 'grid')}>
+          <ToggleGroupItem value="list" aria-label="List view">
+            <List className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" aria-label="Grid view">
+            <Grid3X3 className="h-4 w-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
+        
+        {canAddCategory && (
+          <Button onClick={onAddCategory}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            {t('addCategory')}
+          </Button>
         )}
-        
-        {onAssignmentFilterChange && (
-          <Select
-            value={assignmentFilter}
-            onValueChange={onAssignmentFilterChange}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder={t("filterByAssignment")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allAssignments")}</SelectItem>
-              <SelectItem value="all-users">{t("allUsers")}</SelectItem>
-              <SelectItem value="sectors">{t("sectorsOnly")}</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-        
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden md:flex">
-                <HelpCircle className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-sm">
-              <p>{t("categoriesHelpText") || "Kateqoriyalar haqqında məlumat"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
     </div>
   );

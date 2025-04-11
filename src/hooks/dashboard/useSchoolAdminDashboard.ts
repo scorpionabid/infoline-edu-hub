@@ -11,6 +11,9 @@ import { UseSchoolAdminDashboardResult } from './types';
 export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
   const { user } = useAuth();
   const [data, setData] = useState<SchoolAdminDashboardData>({
+    schoolName: 'Məktəb adı yüklənir...',
+    sectorName: 'Sektor adı yüklənir...',
+    regionName: 'Region adı yüklənir...',
     forms: {
       pending: 0,
       approved: 0,
@@ -109,6 +112,19 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       
       if (pendingFormsError) throw pendingFormsError;
       
+      // Məktəb məlumatlarını əldə et
+      const { data: schoolData, error: schoolError } = await supabase
+        .from(TableNames.SCHOOLS)
+        .select(`
+          name,
+          sectors(name),
+          regions(name)
+        `)
+        .eq('id', user.schoolId)
+        .single();
+        
+      if (schoolError) throw schoolError;
+      
       // Formları formatlayırıq - Type xətalarını düzəltmək üçün kodu yenilədik
       const formattedPendingForms: FormItem[] = pendingForms.map(form => {
         // Kateqoriya adı almaq üçün düzgün və ətraflı yoxlama - bütün mümkün formatları yoxlama
@@ -157,6 +173,9 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       
       // Data state-ni yeniləyirik
       setData({
+        schoolName: schoolData?.name || 'Məktəb adı',
+        sectorName: schoolData?.sectors?.name || 'Sektor adı',
+        regionName: schoolData?.regions?.name || 'Region adı',
         forms: {
           pending: pendingCount || 0,
           approved: approvedCount || 0,
