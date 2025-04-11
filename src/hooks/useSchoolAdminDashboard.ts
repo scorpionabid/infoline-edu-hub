@@ -205,3 +205,19 @@ const formatTime = (timestamp: string): string => {
   
   return date.toLocaleDateString();
 };
+
+// Bölgə adlarını əldə edirik
+const getRegionNames = (regions: Array<{ id: string, name: string }>) => {
+  return regions.map(region => ({
+    id: region.id,
+    name: region.name
+  }));
+};
+
+// Sektor adlarını əldə edirik
+const getSectorNames = (sectors: Array<{ id: string, name: string }>) => {
+  return sectors.map(sector => ({
+    id: sector.id,
+    name: sector.name
+  }));
+};

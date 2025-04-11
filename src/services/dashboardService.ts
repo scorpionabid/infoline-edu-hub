@@ -535,6 +535,28 @@ export const fetchDashboardChartData = async () => {
       schoolCounts[region.id] = region.schools.length || 0;
     });
     
+    const topRegions = regionData.slice(0, 5).map(region => ({
+      id: region.id,
+      name: region.name,
+      value: region.school_count || 0
+    }));
+    
+    const otherRegions = regionData.slice(5).reduce((acc, region) => acc + (region.school_count || 0), 0);
+    
+    // Bölgələrə görə məktəb sayı
+    const regionSchoolData = regions.map(region => ({
+      id: region.name, // Burada id olaraq bölgə adını istifadə edirik (chart üçün)
+      name: region.name,
+      schools: schools.filter(school => school.region_id === region.id)
+    }));
+    
+    // Chart formatına çeviririk
+    const formattedRegionData = regionSchoolData.map(region => ({
+      id: region.id,
+      name: region.name,
+      value: region.schools.length
+    }));
+    
     const formattedData = {
       activityData: formattedActivityData,
       regionSchoolsData: regions.map(region => {

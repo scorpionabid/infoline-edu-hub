@@ -354,11 +354,25 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   return {
     ...state,
     login: async (email: string, password: string) => {
-      return false;
+      try {
+        await handleSignIn(email, password);
+        return true;
+      } catch (error) {
+        console.error('Login xətası:', error);
+        return false;
+      }
     },
     logout: async () => {
+      try {
+        await handleSignOut();
+        return true;
+      } catch (error) {
+        console.error('Logout xətası:', error);
+        return false;
+      }
     },
     clearError: () => {
+      setState(prev => ({ ...prev, error: null }));
     },
     signIn: handleSignIn,
     signOut: handleSignOut,
