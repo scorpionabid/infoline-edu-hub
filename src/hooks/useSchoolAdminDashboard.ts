@@ -204,7 +204,17 @@ const formatTime = (timestamp: string): string => {
   return date.toLocaleDateString();
 };
 
-export const getRegionNames = async () => {
+interface RegionItem {
+  id: string;
+  name: string;
+}
+
+interface SectorItem {
+  id: string;
+  name: string;
+}
+
+export const getRegionNames = async (): Promise<RegionItem[]> => {
   try {
     const { data, error } = await supabase
       .from('regions')
@@ -212,17 +222,21 @@ export const getRegionNames = async () => {
       
     if (error) throw error;
     
-    return Array.isArray(data) ? data.map(region => ({
-      id: region.id,
-      name: region.name || ''
-    })) : [];
+    if (Array.isArray(data)) {
+      return data.map(region => ({
+        id: region.id,
+        name: region.name || ''
+      }));
+    }
+    
+    return [];
   } catch (error) {
     console.error('Region adları əldə edilərkən xəta:', error);
     return [];
   }
 };
 
-export const getSectorNames = async () => {
+export const getSectorNames = async (): Promise<SectorItem[]> => {
   try {
     const { data, error } = await supabase
       .from('sectors')
@@ -230,10 +244,14 @@ export const getSectorNames = async () => {
       
     if (error) throw error;
     
-    return Array.isArray(data) ? data.map(sector => ({
-      id: sector.id,
-      name: sector.name || ''
-    })) : [];
+    if (Array.isArray(data)) {
+      return data.map(sector => ({
+        id: sector.id,
+        name: sector.name || ''
+      }));
+    }
+    
+    return [];
   } catch (error) {
     console.error('Sektor adları əldə edilərkən xəta:', error);
     return [];
