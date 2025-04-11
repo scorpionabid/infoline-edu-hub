@@ -16,11 +16,11 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   
   // Null və undefined yoxlamaları əlavə edək
   const safeData = {
-    regions: data?.regions || 0,
-    sectors: data?.sectors || 0,
-    schools: data?.schools || 0,
-    users: data?.users || 0,
-    completionRate: data?.completionRate || 0,
+    regions: data?.regions || { total: 0, active: 0, inactive: 0 },
+    sectors: data?.sectors || { total: 0, active: 0, inactive: 0 },
+    schools: data?.schools || { total: 0, active: 0, inactive: 0 },
+    users: data?.users || { total: 0, active: 0, inactive: 0, byRole: { superadmin: 0, regionadmin: 0, sectoradmin: 0, schooladmin: 0 } },
+    completionRate: data?.statistics?.completionRate || 0,
     pendingApprovals: data?.pendingApprovals || 0,
     notifications: Array.isArray(data?.notifications) ? data.notifications : []
   };

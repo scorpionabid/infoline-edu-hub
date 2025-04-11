@@ -10,7 +10,9 @@ export enum TableNames {
   PROFILES = 'profiles',
   USER_ROLES = 'user_roles',
   NOTIFICATIONS = 'notifications',
-  AUDIT_LOGS = 'audit_logs'
+  AUDIT_LOGS = 'audit_logs',
+  REPORTS = 'reports',
+  REPORT_TEMPLATES = 'report_templates'
 }
 
 export interface DatabaseError {

@@ -5,8 +5,8 @@ import SchoolAdminDashboard from '@/pages/SchoolAdminDashboard';
 import DataEntry from '@/pages/DataEntry';
 import Categories from '@/pages/Categories';
 import Login from '@/pages/auth/Login';
-import AuthProvider from '@/context/AuthContext';
-import LanguageProvider from '@/context/LanguageContext';
+import { AuthProvider } from '@/context/AuthContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import UsersPage from '@/pages/UsersPage';
@@ -14,11 +14,12 @@ import RegionsPage from '@/pages/RegionsPage';
 import SectorsPage from '@/pages/SectorsPage';
 import SchoolsPage from '@/pages/SchoolsPage';
 import NotificationProvider from '@/context/NotificationContext';
-import { QueryClientProvider } from '@/context/QueryClientProvider';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 
 function App() {
   return (
-    <QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
           <NotificationProvider>

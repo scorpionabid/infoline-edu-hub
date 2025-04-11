@@ -14,7 +14,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ title = 'InfoLine' }) => {
   const { t } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -36,7 +36,7 @@ const Header: React.FC<HeaderProps> = ({ title = 'InfoLine' }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => signOut()} 
+                onClick={() => logout()} 
                 title={t('logout')}
               >
                 <LogOut className="h-5 w-5" />

@@ -93,4 +93,54 @@ export interface SuperAdminDashboardData {
   };
   notifications: Notification[];
   recentActivities: any[];
+  pendingApprovals?: number;
+  completionRate?: number;
+}
+
+export interface SectorAdminDashboardData {
+  sectors: {
+    name: string;
+    id: string;
+  };
+  schools: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  statistics: {
+    completionRate: number;
+    submissionRate: number;
+    approvalRate: number;
+  };
+  notifications: Notification[];
+  pendingForms: FormItem[];
+}
+
+export interface DashboardData {
+  superAdmin?: SuperAdminDashboardData;
+  regionAdmin?: RegionAdminDashboardData;
+  sectorAdmin?: SectorAdminDashboardData;
+  schoolAdmin?: SchoolAdminDashboardData;
+}
+
+export interface StatsItem {
+  label: string;
+  value: number;
+  change?: number;
+  trend?: 'up' | 'down' | 'neutral';
+}
+
+export interface ChartData {
+  activityData: {
+    name: string;
+    value: number;
+  }[];
+  regionSchoolsData: {
+    name: string;
+    value: number;
+  }[];
+  categoryCompletionData: {
+    name: string;
+    value: number;
+  }[];
 }
