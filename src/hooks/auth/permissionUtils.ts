@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { UserRole, UserRoleData } from '@/types/supabase';
 
 /**
  * Verilmiş sorğunun nəticəsini yoxlayır və hər hansı xəta varsa konsola yazır

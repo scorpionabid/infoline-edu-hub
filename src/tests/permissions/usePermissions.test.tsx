@@ -11,7 +11,14 @@ import { supabase } from '@/integrations/supabase/client';
 vi.mock('@/integrations/supabase/client', () => {
   return {
     supabase: {
-      from: vi.fn(),
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: null
+        })
+      }),
       auth: {
         getSession: vi.fn().mockResolvedValue({
           data: {
@@ -40,20 +47,16 @@ describe('usePermissions hook', () => {
 
   it('should return correct user role when authenticated', async () => {
     // Supabase-ə sorğunu simulyasiya et
-    const mockSelectFn = vi.fn().mockReturnThis();
-    const mockEqFn = vi.fn().mockReturnThis();
-    const mockSingleFn = vi.fn().mockResolvedValue({ 
-      data: { role: 'superadmin' }, 
-      error: null 
-    });
-    
     const mockFrom = vi.fn().mockReturnValue({
-      select: mockSelectFn,
-      eq: mockEqFn,
-      single: mockSingleFn
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ 
+        data: { role: 'superadmin' }, 
+        error: null 
+      })
     });
     
-    (supabase.from as any).mockImplementation(mockFrom);
+    (supabase.from as any) = mockFrom;
     
     const { result } = renderHook(() => usePermissions(), { wrapper });
     
@@ -86,7 +89,7 @@ describe('usePermissions hook', () => {
       };
     });
     
-    (supabase.from as any).mockImplementation(mockFrom);
+    (supabase.from as any) = mockFrom;
     
     const { result } = renderHook(() => usePermissions(), { wrapper });
     

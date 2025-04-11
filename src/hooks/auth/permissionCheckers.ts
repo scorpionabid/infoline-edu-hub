@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PermissionLevel, PermissionCheckResult } from './permissionTypes';
 import { executeQuery } from './permissionUtils';
+import { UserRoleData } from '@/types/supabase';
 
 /**
  * İstifadəçinin müəyyən regiona icazəsinin olub-olmadığını yoxlayır
@@ -17,7 +18,7 @@ export const checkRegionAccess = async (
   
   try {
     // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
-    const userData = await executeQuery(
+    const userData = await executeQuery<UserRoleData>(
       supabase
         .from('user_roles')
         .select('role, region_id')
@@ -58,7 +59,7 @@ export const checkSectorAccess = async (
   
   try {
     // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
-    const userRoleData = await executeQuery(
+    const userRoleData = await executeQuery<UserRoleData>(
       supabase
         .from('user_roles')
         .select('role, region_id, sector_id')
@@ -72,7 +73,7 @@ export const checkSectorAccess = async (
     if (level === 'read') {
       if (userRoleData.role === 'superadmin') return true;
       if (userRoleData.role === 'regionadmin') {
-        const sectorData = await executeQuery(
+        const sectorData = await executeQuery<{ region_id: string }>(
           supabase
             .from('sectors')
             .select('region_id')
@@ -91,7 +92,7 @@ export const checkSectorAccess = async (
     if (userRole === 'superadmin') return true;
     if (userRole === 'regionadmin' && userRegionId) {
       // RegionAdmin öz regionuna aid sektorlarda dəyişiklik edə bilər
-      const sectorData = await executeQuery(
+      const sectorData = await executeQuery<{ region_id: string }>(
         supabase
           .from('sectors')
           .select('region_id')
@@ -127,7 +128,7 @@ export const checkSchoolAccess = async (
   
   try {
     // RPC funksiyasını birbaşa sorğu ilə əvəz edirik
-    const schoolData = await executeQuery(
+    const schoolData = await executeQuery<{ region_id: string; sector_id: string }>(
       supabase
         .from('schools')
         .select('region_id, sector_id')
@@ -138,7 +139,7 @@ export const checkSchoolAccess = async (
     
     if (!schoolData) return false;
     
-    const userRoleData = await executeQuery(
+    const userRoleData = await executeQuery<UserRoleData>(
       supabase
         .from('user_roles')
         .select('role, region_id, sector_id, school_id')
@@ -195,7 +196,7 @@ export const checkCategoryAccess = async (
   
   try {
     // Kateqoriya məlumatlarını əldə edirik
-    const categoryData = await executeQuery(
+    const categoryData = await executeQuery<{ assignment: string }>(
       supabase
         .from('categories')
         .select('assignment')
@@ -207,7 +208,7 @@ export const checkCategoryAccess = async (
     if (!categoryData) return false;
     
     // İstifadəçi rolunu əldə edirik
-    const userRoleData = await executeQuery(
+    const userRoleData = await executeQuery<{ role: string }>(
       supabase
         .from('user_roles')
         .select('role')
@@ -259,7 +260,7 @@ export const checkColumnAccess = async (
   
   try {
     // Sütun və kateqoriya məlumatlarını əldə edirik
-    const columnData = await executeQuery(
+    const columnData = await executeQuery<{ category_id: string }>(
       supabase
         .from('columns')
         .select('category_id')
