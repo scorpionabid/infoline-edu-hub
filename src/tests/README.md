@@ -14,22 +14,35 @@ Bu proyektdə aşağıdakı test növləri istifadə olunur:
 - **Vitest**: Test framework
 - **React Testing Library**: React komponentlərinin testləri üçün
 - **MSW (Mock Service Worker)**: API sorğularının mock edilməsi üçün
-- **Faker.js**: Test məlumatlarının generasiyası üçün
+- **Faker.js**: Test məlumatlarının generasiyası üçün (əlavə edilə bilər)
 
 ## Testlərin İşlədilməsi
 
-Testləri işlətmək üçün:
+Testləri işlətmək üçün qlobal paketin köməyi ilə aşağıdakı əmrləri istifadə edə bilərsiniz:
 
 ```bash
 # Bütün testləri işlət
-npm run test
+npx vitest run
 
-# Konkret bir faylın testlərini işlət
-npm run test -- src/tests/auth/useAuth.test.tsx
+# Testləri izləmə rejimində işlət
+npx vitest
 
 # Test coverage hesabatını əldə et
-npm run test:coverage
+npx vitest run --coverage
+
+# UI interfeysi ilə testləri işlət
+npx vitest --ui
 ```
+
+## Test Strukturu
+
+- `src/tests/`: Əsas test qovluğu
+  - `mocks/`: Mock məlumatlar və serverlər
+  - `utils/`: Test utilitləri və köməkçi funksiyalar
+  - `integration/`: İnteqrasiya testləri
+  - `units/`: Unit testlər
+  - `hooks/`: React hook-ları üçün testlər
+  - `components/`: React komponentləri üçün testlər
 
 ## Mock Məlumat Strukturu
 
@@ -37,8 +50,7 @@ Test üçün istifadə olunan mock məlumatlar `src/tests/mocks/data` qovluğund
 
 - `users.ts`: İstifadəçilər üçün mock məlumatlar
 - `categories.ts`: Kateqoriyalar üçün mock məlumatlar
-- `schools.ts`: Məktəblər üçün mock məlumatlar
-- vb.
+- `schools.ts`: Məktəblər üçün mock məlumatlar və s.
 
 ## API Sorğuları Üçün Moclar
 

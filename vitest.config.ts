@@ -25,5 +25,7 @@ export default defineConfig({
         'src/vite-env.d.ts',
       ],
     },
+    watch: false,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 });

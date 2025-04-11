@@ -19,6 +19,7 @@ afterEach(() => {
 // Bütün testlər bitdikdən sonra serveri bağla
 afterAll(() => server.close());
 
+// matchMedia mock-unu yaradırıq
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -33,9 +34,10 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// localStorage mock-unu yaradırıq
 Object.defineProperty(window, 'localStorage', {
   value: {
-    getItem: vi.fn(),
+    getItem: vi.fn().mockImplementation(key => null),
     setItem: vi.fn(),
     removeItem: vi.fn(),
     clear: vi.fn(),
