@@ -179,14 +179,14 @@ export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
       if (schoolData && schoolData.sectors) {
         // Əgər sectors bir obyektdirsə və name xüsusiyyəti varsa
         if (typeof schoolData.sectors === 'object' && 'name' in schoolData.sectors) {
-          sectorName = schoolData.sectors.name || 'Sektor adı';
+          sectorName = String(schoolData.sectors.name) || 'Sektor adı';
         }
       }
       
       if (schoolData && schoolData.regions) {
         // Əgər regions bir obyektdirsə və name xüsusiyyəti varsa
         if (typeof schoolData.regions === 'object' && 'name' in schoolData.regions) {
-          regionName = schoolData.regions.name || 'Region adı';
+          regionName = String(schoolData.regions.name) || 'Region adı';
         }
       }
       
