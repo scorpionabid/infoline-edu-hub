@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { TableNames } from '@/types/db';
 import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
@@ -206,9 +206,14 @@ const formatTime = (timestamp: string): string => {
   return date.toLocaleDateString();
 };
 
-// Bölgə adlarını əldə etmək üçün funksiya
+// Region adlarını əldə etmək üçün funksiya
 export const getRegionNames = async () => {
   try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://olbfnauhzpdskqnxtwav.supabase.co";
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4";
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
     const { data, error } = await supabase
       .from('regions')
       .select('id, name');
@@ -228,6 +233,11 @@ export const getRegionNames = async () => {
 // Sektor adlarını əldə etmək üçün funksiya
 export const getSectorNames = async () => {
   try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://olbfnauhzpdskqnxtwav.supabase.co";
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4";
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
     const { data, error } = await supabase
       .from('sectors')
       .select('id, name');
