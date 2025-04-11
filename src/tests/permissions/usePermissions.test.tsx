@@ -37,11 +37,13 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('usePermissions hook', () => {
   it('should return correct user role when authenticated', async () => {
     // Supabase-ə sorğunu simulyasiya et
-    vi.spyOn(supabase, 'from').mockImplementation(() => ({
+    const mockFromFn = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: { role: 'superadmin' }, error: null })
-    } as any));
+    });
+    
+    vi.spyOn(supabase, 'from').mockImplementation(mockFromFn);
     
     const { result } = renderHook(() => usePermissions(), { wrapper });
     
@@ -53,7 +55,7 @@ describe('usePermissions hook', () => {
 
   it('should check category access correctly', async () => {
     // Mock RBAC permissions
-    vi.spyOn(supabase, 'from').mockImplementation((table) => {
+    const mockFromFn = vi.fn().mockImplementation((table) => {
       if (table === 'categories') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -62,7 +64,7 @@ describe('usePermissions hook', () => {
             data: { assignment: 'all' }, 
             error: null 
           })
-        } as any;
+        };
       }
       return {
         select: vi.fn().mockReturnThis(),
@@ -71,8 +73,10 @@ describe('usePermissions hook', () => {
           data: { role: 'sectoradmin' }, 
           error: null 
         })
-      } as any;
+      };
     });
+    
+    vi.spyOn(supabase, 'from').mockImplementation(mockFromFn);
     
     const { result } = renderHook(() => usePermissions(), { wrapper });
     
