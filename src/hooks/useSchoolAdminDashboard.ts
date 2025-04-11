@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -206,18 +207,40 @@ const formatTime = (timestamp: string): string => {
   return date.toLocaleDateString();
 };
 
-// Bölgə adlarını əldə edirik
-const getRegionNames = (regions: Array<{ id: string, name: string }>) => {
-  return regions.map(region => ({
-    id: region.id,
-    name: region.name
-  }));
+// Bölgə adlarını əldə etmək üçün funksiya
+export const getRegionNames = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('regions')
+      .select('id, name');
+      
+    if (error) throw error;
+    
+    return data.map(region => ({
+      id: region.id,
+      name: region.name
+    }));
+  } catch (error) {
+    console.error('Region adları əldə edilərkən xəta:', error);
+    return [];
+  }
 };
 
-// Sektor adlarını əldə edirik
-const getSectorNames = (sectors: Array<{ id: string, name: string }>) => {
-  return sectors.map(sector => ({
-    id: sector.id,
-    name: sector.name
-  }));
+// Sektor adlarını əldə etmək üçün funksiya
+export const getSectorNames = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('sectors')
+      .select('id, name');
+      
+    if (error) throw error;
+    
+    return data.map(sector => ({
+      id: sector.id,
+      name: sector.name
+    }));
+  } catch (error) {
+    console.error('Sektor adları əldə edilərkən xəta:', error);
+    return [];
+  }
 };
