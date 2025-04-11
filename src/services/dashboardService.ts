@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { TableNames } from '@/types/db';
 import {
@@ -525,36 +524,29 @@ export const fetchDashboardChartData = async () => {
     }));
     
     // Regionlara görə məktəb saylarını əldə et
-    const { data: regionData, error: regionError } = await supabase
+    const { data: regions, error: regionError } = await supabase
       .from(TableNames.REGIONS)
-      .select('name, schools:schools(count)')
-      .limit(10);
+      .select('name, schools:schools(count)');
     
     if (regionError) throw regionError;
     
-    const regionSchoolsData = regionData.map(region => ({
-      name: region.name,
-      value: region.schools.length || 0
-    }));
+    const schoolCounts: Record<string, number> = {};
+    regions?.forEach(region => {
+      schoolCounts[region.id] = region.schools.length || 0;
+    });
     
-    // Kateqoriyaların tamamlanma statistikası
-    const { data: categoryData, error: categoryError } = await supabase
-      .from(TableNames.CATEGORIES)
-      .select('name, id')
-      .limit(10);
-    
-    if (categoryError) throw categoryError;
-    
-    const categoryCompletionData = categoryData.map(category => ({
-      name: category.name,
-      completed: Math.floor(Math.random() * 100) // Nümunə üçün təsadüfi dəyər
-    }));
-    
-    return {
+    const formattedData = {
       activityData: formattedActivityData,
-      regionSchoolsData,
-      categoryCompletionData
+      regionSchoolsData: regions.map(region => {
+        return {
+          name: region && region.name ? region.name : 'Naməlum region',
+          value: region && region.id ? (schoolCounts[region.id] || 0) : 0
+        };
+      }),
+      categoryCompletionData: []
     };
+    
+    return formattedData;
   } catch (error: any) {
     console.error('Dashboard qrafik məlumatlarını əldə edərkən xəta:', error);
     return {

@@ -9,7 +9,7 @@ import LoginHeader from '@/components/auth/LoginHeader';
 import { Helmet } from 'react-helmet';
 
 const LoginPage: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, error, clearError } = useAuth();
 
   // İstifadəçi autentifikasiya olunubsa, onu dashboard-a yönləndir
   if (isAuthenticated && !isLoading) {
@@ -26,7 +26,7 @@ const LoginPage: React.FC = () => {
         <div className="flex-1 flex items-center justify-center">
           <LoginContainer>
             <LoginHeader />
-            <LoginForm />
+            <LoginForm error={error} clearError={clearError} />
           </LoginContainer>
         </div>
       </div>

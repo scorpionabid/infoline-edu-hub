@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Region } from '@/types/supabase';
 import { useRegions } from './useRegions';
@@ -49,11 +48,13 @@ export const useRegionsStore = () => {
       
       // Məktəbləri regionlara görə qruplaşdırırıq
       const schoolCountsMap: Record<string, number> = {};
-      schools?.forEach(school => {
-        if (school.region_id) {
-          schoolCountsMap[school.region_id] = (schoolCountsMap[school.region_id] || 0) + 1;
-        }
-      });
+      if (Array.isArray(schools)) {
+        schools.forEach(school => {
+          if (school && school.region_id) {
+            schoolCountsMap[school.region_id] = (schoolCountsMap[school.region_id] || 0) + 1;
+          }
+        });
+      }
       setSchoolCounts(schoolCountsMap);
       
       // Sektorları regionlara görə qruplaşdırmaq

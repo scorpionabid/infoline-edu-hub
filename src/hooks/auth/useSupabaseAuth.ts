@@ -325,7 +325,13 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   }, [setLoading]);
   
   const handleSignOut = useCallback(async () => {
-    await signOut(setLoading, setUser, setSession);
+    try {
+      await signOut(setLoading, setUser, setSession);
+      return true;
+    } catch (error) {
+      console.error('Çıxış zamanı xəta:', error);
+      return false;
+    }
   }, [setLoading, setUser, setSession]);
   
   const handleSignUp = useCallback(async (email: string, password: string, userData: any) => {

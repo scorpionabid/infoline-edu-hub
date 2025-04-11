@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 
@@ -88,5 +87,31 @@ export const fetchUserData = async (userId: string): Promise<FullUserData | null
   } catch (error) {
     console.error('İstifadəçi məlumatları əldə edilərkən xəta:', error);
     throw error;
+  }
+};
+
+/**
+ * Audit log əlavə edir
+ */
+export const addAuditLog = async (
+  action: string,
+  entityType: string,
+  entityId: string | null,
+  oldValue: any,
+  newValue: any
+): Promise<void> => {
+  try {
+    // Supabase-də audit_logs cədvəlinə yeni qeyd əlavə edirik
+    await supabase.from('audit_logs').insert({
+      action,
+      entity_type: entityType,
+      entity_id: entityId,
+      old_value: oldValue,
+      new_value: newValue,
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      created_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Audit log əlavə edilərkən xəta:', error);
   }
 };
