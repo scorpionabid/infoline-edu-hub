@@ -79,10 +79,10 @@ const SchoolsContainer: React.FC = () => {
   useEffect(() => {
     if (isOperationComplete) {
       // Əgər lazımsa, parametrlərlə fetchSchools çağıra bilərik
-      fetchSchools();
+      fetchSchools(selectedRegion, selectedSector, selectedStatus);
       setIsOperationComplete(false);
     }
-  }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
+  }, [isOperationComplete, fetchSchools, setIsOperationComplete, selectedRegion, selectedSector, selectedStatus]);
 
   // İstifadəçinin roluna əsasən sektorları filtrləmək
   const filteredSectors = React.useMemo(() => {
@@ -110,10 +110,7 @@ const SchoolsContainer: React.FC = () => {
   // Excel ixrac funksiyası
   const handleExportClick = () => {
     // Tip uyğunluğu üçün SupabaseSchool -> School konvertasiyası
-    const schoolsForExport = schools.map(school => ({
-      ...school,
-      principalName: school.principal_name || ''
-    }));
+    const schoolsForExport = schools.map(school => convertSupabaseToSchool(school));
     handleExportToExcel(schoolsForExport);
   };
 
@@ -123,8 +120,8 @@ const SchoolsContainer: React.FC = () => {
   };
 
   // Adapter funksiyalar
-  const handleAdminUpdateAdapter = () => {
-    handleAdminUpdate();
+  const handleAdminUpdateAdapter = (userData: any) => {
+    handleAdminUpdate(userData);
   };
 
   const handleResetPasswordAdapter = (newPassword: string) => {

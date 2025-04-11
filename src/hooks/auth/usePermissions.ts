@@ -10,7 +10,6 @@ import {
   checkColumnAccess, 
   canSectorAdminAccessCategoriesColumns
 } from './permissionCheckers';
-import { checkPermission } from './permissionUtils';
 import { PermissionLevel, UsePermissionsResult } from './types';
 
 /**
