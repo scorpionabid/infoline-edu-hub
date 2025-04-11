@@ -1,6 +1,6 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { useAssignExistingUserAsSchoolAdmin } from '@/hooks/useAssignExistingUserAsSchoolAdmin'; 
 import { toast } from 'sonner';
