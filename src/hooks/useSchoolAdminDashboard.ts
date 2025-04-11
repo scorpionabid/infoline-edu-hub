@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -216,7 +215,7 @@ export const getRegionNames = async () => {
       
     if (error) throw error;
     
-    return data.map(region => ({
+    return (data || []).map(region => ({
       id: region.id,
       name: region.name || ''
     }));
@@ -235,7 +234,7 @@ export const getSectorNames = async () => {
       
     if (error) throw error;
     
-    return data.map(sector => ({
+    return (data || []).map(sector => ({
       id: sector.id,
       name: sector.name || ''
     }));
