@@ -8,12 +8,10 @@ import SchoolHeader from './SchoolHeader';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
-import { toast } from 'sonner';
-import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
+import { useExportAdapter } from '@/hooks/schools/useExportAdapter';
+import ImportDialog from './ImportDialog';
 import { UserRole } from '@/types/supabase';
-import { Region } from '@/types/region';
-import { School, convertSupabaseToSchool } from '@/data/schoolsData';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -67,18 +65,19 @@ const SchoolsContainer: React.FC = () => {
     handleFormChange
   } = useSchoolDialogHandlers();
 
-  // useImportExport hook'unu uyğun parametrlərlə çağıraq
+  // useImportExport hook'unu çağıraq
   const importExportHook = useImportExport(() => setIsOperationComplete(true));
   const {
     isImportDialogOpen,
     setIsImportDialogOpen,
-    handleExportToExcel,
     handleImportSchools
   } = importExportHook;
 
+  // Excel ixrac funksiyasını əldə etmək üçün adapter hook-u istifadə edək
+  const { handleExportClick } = useExportAdapter(schools);
+
   useEffect(() => {
     if (isOperationComplete) {
-      // `fetchSchools` funksiyasını parametrsiz çağırırıq
       fetchSchools();
       setIsOperationComplete(false);
     }
@@ -107,22 +106,12 @@ const SchoolsContainer: React.FC = () => {
     return sectorsList;
   }, [sectors, userRole, selectedSector, selectedRegion]);
 
-  // Excel ixrac funksiyası
-  const handleExportClick = () => {
-    // Tip uyğunluğu üçün SupabaseSchool -> School konvertasiyası
-    const schoolsForExport = schools.map(school => {
-      // convertSupabaseToSchool funksiyası artıq principalName-i məcburi edir
-      return convertSupabaseToSchool(school);
-    });
-    handleExportToExcel(schoolsForExport);
-  };
-
   // Excel idxal funksiyası
   const handleImportClick = () => {
     setIsImportDialogOpen(true);
   };
 
-  // Adapter funksiyalar - handleAdminUpdate parametr qəbul etmirsə, adapter funksiyasında da parametr istifadə etmirik
+  // Adapter funksiyalar
   const handleAdminUpdateAdapter = () => {
     handleAdminUpdate();
   };
@@ -133,7 +122,6 @@ const SchoolsContainer: React.FC = () => {
 
   // ImportDialog komponentini uyğunlaşdıraq
   const handleImportConfirm = (file: File) => {
-    // ImportDialog funksiyasını çağırarkən bu adapter funksiyasını istifadə edirik
     handleImportSchools(file);
   };
 
@@ -154,7 +142,7 @@ const SchoolsContainer: React.FC = () => {
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
             filteredSectors={filteredSectors}
-            regions={regions as Region[]}
+            regions={regions}
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}
