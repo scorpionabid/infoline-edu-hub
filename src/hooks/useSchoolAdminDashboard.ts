@@ -226,8 +226,8 @@ export const getRegionNames = async (): Promise<RegionItem[]> => {
     
     if (!data || !Array.isArray(data)) return [];
     
-    // Düzgün tip təyin etmə ilə map edilir
-    return data.map((region) => ({
+    // Hər bir region elementini RegionItem tipinə uyğunlaşdırırıq
+    return data.map((region: any) => ({
       id: region.id || '',
       name: region.name || ''
     }));
@@ -247,8 +247,8 @@ export const getSectorNames = async (): Promise<SectorItem[]> => {
     
     if (!data || !Array.isArray(data)) return [];
     
-    // Düzgün tip təyin etmə ilə map edilir
-    return data.map((sector) => ({
+    // Hər bir sektor elementini SectorItem tipinə uyğunlaşdırırıq
+    return data.map((sector: any) => ({
       id: sector.id || '',
       name: sector.name || ''
     }));
