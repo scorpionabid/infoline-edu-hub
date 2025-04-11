@@ -4,8 +4,8 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName: string;
-  name?: string; // fullName-in aliası
-  full_name?: string; // fullName-in digər bir aliası
+  name: string; // fullName-in aliası
+  full_name: string; // fullName-in digər bir aliası
   role: string;
   regionId: string | null;
   sectorId: string | null;

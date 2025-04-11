@@ -12,7 +12,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error,
     login,
     register,
-    logout,
+    logout: supabaseLogout,
     resetPassword,
     updatePassword,
     updateUser,
@@ -32,6 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setIsAuthenticated(!!user);
   }, [user, isLoading, error]);
+  
+  // logout funksiyasını Promise<boolean> qaytaran versiya ilə əvəz edirik
+  const logout = async (): Promise<boolean> => {
+    await supabaseLogout();
+    return true;
+  };
 
   const contextValue: AuthContextType = {
     user,

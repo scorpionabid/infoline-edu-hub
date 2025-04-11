@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import UserForm from './UserForm';
 import { useCreateUser } from '@/hooks/useCreateUser';
 import { Loader2 } from 'lucide-react';
+import { Role } from '@/context/auth/types';
 
 interface AddUserDialogProps {
   open: boolean;
@@ -27,7 +28,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const { createUser, loading } = useCreateUser();
   
   // Set appropriate initial role based on entity type
-  const getInitialRole = () => {
+  const getInitialRole = (): Role => {
     if (entityType === 'region') return 'regionadmin';
     if (entityType === 'sector') return 'sectoradmin';
     if (entityType === 'school') return 'schooladmin';

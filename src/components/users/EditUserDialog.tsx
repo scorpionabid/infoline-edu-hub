@@ -7,6 +7,7 @@ import { User, UserFormData } from '@/types/user';
 import { useAuth, useRole } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
+import { Role } from '@/context/auth/types';
 
 interface EditUserDialogProps {
   open: boolean;
@@ -33,7 +34,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const initialFormData: UserFormData = {
     name: user.name,
     email: user.email,
-    role: user.role,
+    role: user.role as Role,
     regionId: user.regionId,
     sectorId: user.sectorId,
     schoolId: user.schoolId,

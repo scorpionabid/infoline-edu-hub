@@ -51,7 +51,10 @@ const PreferencesForm: React.FC = () => {
     if (user) {
       updateUser({
         language: data.language,
-        notificationSettings: data.notificationSettings,
+        notificationSettings: {
+          email: data.notificationSettings.email,
+          system: data.notificationSettings.system
+        },
         twoFactorEnabled: data.twoFactorEnabled
       });
       
