@@ -1,14 +1,13 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import { AuthUser } from '@/types/auth';
 
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const loadUser = useCallback(async () => {
     try {
@@ -80,7 +79,7 @@ export const useSupabaseAuth = () => {
       }
 
       await loadUser();
-      navigate('/');
+      window.location.href = '/'; // React Router olmadan yönləndirmə
       toast.success('Uğurla daxil oldunuz!');
     } catch (error: any) {
       console.error('Login xətası:', error);
@@ -156,7 +155,7 @@ export const useSupabaseAuth = () => {
       }
       
       setUser(null);
-      navigate('/login');
+      window.location.href = '/login'; // React Router olmadan yönləndirmə
       toast.success('Uğurla çıxış etdiniz');
     } catch (error: any) {
       console.error('Logout xətası:', error);
@@ -213,7 +212,7 @@ export const useSupabaseAuth = () => {
       toast.success('Şifrəniz uğurla yeniləndi', {
         description: 'İndi yeni şifrənizlə daxil ola bilərsiniz'
       });
-      navigate('/login');
+      window.location.href = '/login'; // React Router olmadan yönləndirmə
       return true;
     } catch (error: any) {
       console.error('Şifrə yeniləmə xətası:', error);
@@ -225,6 +224,50 @@ export const useSupabaseAuth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Şirkət məlumatlarını yeniləmək üçün funksiya
+  const updateUser = async (userData: Partial<AuthUser>) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: userData.fullName,
+          avatar: userData.avatar,
+          language: userData.language,
+          position: userData.position,
+          phone: userData.phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // İstifadəçi məlumatlarını yeniləyirik
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+      
+      toast.success('Profil məlumatları yeniləndi');
+      return true;
+    } catch (error: any) {
+      console.error('Profil yeniləmə xətası:', error);
+      setError(error.message);
+      toast.error('Profil yeniləmə xətası', {
+        description: error.message
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Xəta mesajını təmizləmək üçün funksiya
+  const clearError = () => {
+    setError(null);
   };
 
   useEffect(() => {
@@ -254,6 +297,8 @@ export const useSupabaseAuth = () => {
     register,
     logout,
     resetPassword,
-    updatePassword
+    updatePassword,
+    updateUser,
+    clearError
   };
 };

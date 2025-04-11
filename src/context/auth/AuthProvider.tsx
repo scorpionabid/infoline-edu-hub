@@ -14,6 +14,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
   updatePassword: (newPassword: string) => Promise<boolean>;
+  updateUser: (userData: Partial<AuthUser>) => Promise<boolean>;
+  clearError: () => void;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -26,6 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     resetPassword,
     updatePassword,
+    updateUser,
+    clearError
   } = useSupabaseAuth();
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -52,6 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     resetPassword,
     updatePassword,
+    updateUser,
+    clearError
   };
 
   return (
@@ -60,4 +66,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
