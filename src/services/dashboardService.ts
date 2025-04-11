@@ -886,3 +886,6 @@ export const getPendingFormsCountByRegion = async (regionId: string): Promise<nu
     return count || 0;
   } catch (error: any) {
     console.error("Region üzrə gözləmədə olan form sayı əldə edilərkən xəta:", error);
+    return 0;
+  }
+};
