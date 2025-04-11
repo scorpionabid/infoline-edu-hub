@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -64,7 +63,7 @@ export const useSupabaseAuth = () => {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -81,6 +80,7 @@ export const useSupabaseAuth = () => {
       await loadUser();
       window.location.href = '/'; // React Router olmadan yönləndirmə
       toast.success('Uğurla daxil oldunuz!');
+      return true; // Uğurlu login halında true qaytarırıq
     } catch (error: any) {
       console.error('Login xətası:', error);
       const errorMessage = error.message || 'Daxil olarkən xəta baş verdi';
@@ -96,6 +96,7 @@ export const useSupabaseAuth = () => {
       toast.error('Daxil ola bilmədik', {
         description: localizedError
       });
+      return false; // Xəta halında false qaytarırıq
     } finally {
       setIsLoading(false);
     }
@@ -226,7 +227,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Şirkət məlumatlarını yeniləmək üçün funksiya
   const updateUser = async (userData: Partial<AuthUser>) => {
     try {
       setIsLoading(true);
@@ -248,7 +248,6 @@ export const useSupabaseAuth = () => {
         throw error;
       }
 
-      // İstifadəçi məlumatlarını yeniləyirik
       setUser(prev => prev ? { ...prev, ...userData } : null);
       
       toast.success('Profil məlumatları yeniləndi');
@@ -265,7 +264,6 @@ export const useSupabaseAuth = () => {
     }
   };
 
-  // Xəta mesajını təmizləmək üçün funksiya
   const clearError = () => {
     setError(null);
   };

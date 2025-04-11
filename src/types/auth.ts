@@ -12,4 +12,5 @@ export interface AuthUser {
   language: string;
   position: string;
   status: string;
+  phone?: string; // phone xüsusiyyətini əlavə etdik
 }
