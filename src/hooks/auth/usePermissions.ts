@@ -1,8 +1,15 @@
-import { useCallback, useMemo } from 'react';
+
+import { useCallback } from 'react';
 import { UserRole } from '@/types/supabase';
-import { UserRoleData } from './types';
 import { useAuth } from '@/context/AuthContext';
-import { checkPermission } from './permissionUtils';
+import { 
+  checkRegionAccess, 
+  checkSectorAccess, 
+  checkSchoolAccess, 
+  checkCategoryAccess, 
+  checkColumnAccess, 
+  canSectorAdminAccessCategoriesColumns
+} from './permissionCheckers';
 import { PermissionLevel, UsePermissionsResult } from './types';
 
 /**
@@ -11,36 +18,35 @@ import { PermissionLevel, UsePermissionsResult } from './types';
 export const usePermissions = (): UsePermissionsResult => {
   const { user, isAuthenticated } = useAuth();
 
-  const checkRegionAccessHook = useCallback((regionId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-    if (!isAuthenticated || !user || !user.id) return false;
-    return checkPermission(user.id, user.role, user.regionId, regionId, level);
+  const checkRegionAccessHook = useCallback(async (regionId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!isAuthenticated || !user || !user.id) return Promise.resolve(false);
+    return checkRegionAccess(regionId, level);
   }, [user, isAuthenticated]);
 
-  const checkSectorAccessHook = useCallback((sectorId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-    if (!isAuthenticated || !user || !user.id) return false;
-    return checkPermission(user.id, user.role, user.regionId, user.sectorId, sectorId, level);
+  const checkSectorAccessHook = useCallback(async (sectorId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!isAuthenticated || !user || !user.id) return Promise.resolve(false);
+    return checkSectorAccess(sectorId, level);
   }, [user, isAuthenticated]);
 
-  const checkSchoolAccessHook = useCallback((schoolId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-    if (!isAuthenticated || !user || !user.id) return false;
-    return checkPermission(user.id, user.role, user.regionId, user.sectorId, schoolId, level);
+  const checkSchoolAccessHook = useCallback(async (schoolId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!isAuthenticated || !user || !user.id) return Promise.resolve(false);
+    return checkSchoolAccess(schoolId, level);
   }, [user, isAuthenticated]);
 
-  const checkCategoryAccessHook = useCallback((categoryId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-    if (!isAuthenticated || !user || !user.id) return false;
-    return checkPermission(user.id, user.role, categoryId, level);
+  const checkCategoryAccessHook = useCallback(async (categoryId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!isAuthenticated || !user || !user.id) return Promise.resolve(false);
+    return checkCategoryAccess(categoryId, level);
   }, [user, isAuthenticated]);
 
-  const checkColumnAccessHook = useCallback((columnId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
-    if (!isAuthenticated || !user || !user.id) return false;
-    return checkPermission(user.id, user.role, columnId, level);
+  const checkColumnAccessHook = useCallback(async (columnId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!isAuthenticated || !user || !user.id) return Promise.resolve(false);
+    return checkColumnAccess(columnId, level);
   }, [user, isAuthenticated]);
 
-  // SectorAdmin rolunun kateqoriya və sütunlara çıxışının olub-olmadığını yoxlamaq üçün əlavə funksiya
-  const canSectorAdminAccessCategoriesColumns = () => {
-    // SectorAdmin həm kateqoriyalar həm də sütunlara çıxış əldə etməlidir
-    return user?.role === 'sectoradmin';
-  };
+  // canSectorAdminAccessCategoriesColumns artıq boolean qaytardığı üçün Promise-ə bürüməyə ehtiyac yoxdur
+  const canSectorAdminAccessCategoriesColumnsHook = useCallback(() => {
+    return canSectorAdminAccessCategoriesColumns();
+  }, []);
 
   return {
     checkRegionAccess: checkRegionAccessHook,
@@ -48,8 +54,8 @@ export const usePermissions = (): UsePermissionsResult => {
     checkSchoolAccess: checkSchoolAccessHook,
     checkCategoryAccess: checkCategoryAccessHook,
     checkColumnAccess: checkColumnAccessHook,
-    canSectorAdminAccessCategoriesColumns,
-    userRole: user?.role,
+    canSectorAdminAccessCategoriesColumns: canSectorAdminAccessCategoriesColumnsHook,
+    userRole: user?.role as UserRole | undefined,
     userId: user?.id,
     regionId: user?.regionId,
     sectorId: user?.sectorId,

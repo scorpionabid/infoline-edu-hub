@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { SchoolFormData } from '@/types/school-form';
 import { toast } from 'sonner';
-import { School as SupabaseSchool } from '@/types/supabase';
+import { School } from '@/types/supabase';
 import { mapToMockSchool } from './schools/schoolTypeConverters';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,7 +51,7 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
   }, []);
 
   const setFormDataFromSchool = useCallback((school: School) => {
-    const newFormData = {
+    const newFormData: SchoolFormData = {
       name: school.name,
       principalName: school.principalName || '',
       address: school.address || '',

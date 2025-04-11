@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/supabase';
 import { PermissionLevel } from './types';
@@ -19,7 +20,7 @@ export const checkRegionAccess = async (
     const { data: userRoleData, error } = await supabase
       .from('user_roles')
       .select('*')
-      .eq('user_id', supabase.auth.currentUser?.id)
+      .eq('user_id', supabase.auth.getUser().data.user?.id) // currentUser yerine getUser kullanılıyor
       .single();
     
     if (error) {
@@ -63,7 +64,7 @@ export const checkSectorAccess = async (
     const { data: userRoleData, error } = await supabase
       .from('user_roles')
       .select('*')
-      .eq('user_id', supabase.auth.currentUser?.id)
+      .eq('user_id', supabase.auth.getUser().data.user?.id) // currentUser yerine getUser kullanılıyor
       .single();
     
     if (error) {
@@ -107,7 +108,7 @@ export const checkSchoolAccess = async (
     const { data: userRoleData, error } = await supabase
       .from('user_roles')
       .select('*')
-      .eq('user_id', supabase.auth.currentUser?.id)
+      .eq('user_id', supabase.auth.getUser().data.user?.id) // currentUser yerine getUser kullanılıyor
       .single();
     
     if (error) {
@@ -150,7 +151,7 @@ export const checkCategoryAccess = async (
     const { data: userRoleData, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', supabase.auth.currentUser?.id)
+      .eq('user_id', supabase.auth.getUser().data.user?.id) // currentUser yerine getUser kullanılıyor
       .single();
     
     if (error) {
@@ -191,7 +192,7 @@ export const checkColumnAccess = async (
     const { data: userRoleData, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', supabase.auth.currentUser?.id)
+      .eq('user_id', supabase.auth.getUser().data.user?.id) // currentUser yerine getUser kullanılıyor
       .single();
     
     if (error) {
@@ -223,7 +224,8 @@ export const checkColumnAccess = async (
  */
 export const canSectorAdminAccessCategoriesColumns = (): boolean => {
   try {
-    const userRole = supabase.auth.currentUser?.app_metadata?.role as UserRole;
+    const user = supabase.auth.getUser().data.user;
+    const userRole = user?.app_metadata?.role as UserRole;
     return userRole === 'superadmin' || userRole === 'regionadmin';
   } catch (error) {
     console.error('Sektor admin icazəsi yoxlanarkən xəta:', error);

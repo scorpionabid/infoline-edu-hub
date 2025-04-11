@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
+import { Region } from '@/types/region';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -65,12 +66,14 @@ const SchoolsContainer: React.FC = () => {
     handleFormChange
   } = useSchoolDialogHandlers();
 
+  // useImportExport hook'unu tiplərə uyğun yenidən təyin edirik
+  const importExportHook = useImportExport(() => setIsOperationComplete(true));
   const {
     isImportDialogOpen,
     setIsImportDialogOpen,
     handleExportToExcel,
     handleImportSchools
-  } = useImportExport(() => setIsOperationComplete(true));
+  } = importExportHook;
 
   useEffect(() => {
     if (isOperationComplete) {
@@ -102,16 +105,19 @@ const SchoolsContainer: React.FC = () => {
     return sectorsList;
   }, [sectors, userRole, selectedSector, selectedRegion]);
 
-  // Excel ixrac və idxal funksiyaları
+  // Excel ixrac funksiyası
   const handleExportClick = () => {
     handleExportToExcel(schools);
   };
 
+  // Excel idxal funksiyası
   const handleImportClick = () => {
     setIsImportDialogOpen(true);
   };
 
+  // ImportDialog komponentinin handleImport prop-u üçün adapt edirik
   const handleImportConfirm = (file: File) => {
+    // ImportDialog-dan gələn File-ı işləyək
     handleImportSchools(file);
   };
 
@@ -132,7 +138,7 @@ const SchoolsContainer: React.FC = () => {
             selectedSector={selectedSector}
             selectedStatus={selectedStatus}
             filteredSectors={filteredSectors}
-            regions={regions}
+            regions={regions as Region[]}
             handleSearch={handleSearch}
             handleRegionFilter={handleRegionFilter}
             handleSectorFilter={handleSectorFilter}

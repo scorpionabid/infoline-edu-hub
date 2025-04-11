@@ -1,10 +1,9 @@
+
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import { School } from '@/data/schoolsData';
+import { School } from '@/types/supabase';
+import { Region } from '@/types/region';
 import { useEffect } from 'react';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { adaptSchoolFromSupabase, School as SupabaseSchool } from '@/types/supabase';
-import { convertToSchoolType } from './schoolTypeConverters';
 
 export interface SortConfig {
   key: string | null;
@@ -19,7 +18,7 @@ interface SchoolsState {
   selectedRegion: string;
   selectedSector: string;
   selectedStatus: string;
-  regions: { id: string; name: string }[];
+  regions: Region[];
   sectors: { id: string; name: string; region_id: string }[];
   sortConfig: SortConfig;
   currentPage: number;
@@ -67,7 +66,7 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
       (school.principalName && school.principalName.toLowerCase().includes(term.toLowerCase()))
     );
     set({ filteredSchools: filtered });
-    get().updateCurrentItems();
+    updateCurrentItems(get);
   },
   
   handleRegionFilter: (e) => {
@@ -76,7 +75,7 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
     const state = get();
     const filtered = state.schools.filter(school => school.regionId === regionId);
     set({ filteredSchools: filtered });
-    get().updateCurrentItems();
+    updateCurrentItems(get);
   },
   
   handleSectorFilter: (e) => {
@@ -85,7 +84,7 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
     const state = get();
     const filtered = state.schools.filter(school => school.sectorId === sectorId);
     set({ filteredSchools: filtered });
-    get().updateCurrentItems();
+    updateCurrentItems(get);
   },
   
   handleStatusFilter: (e) => {
@@ -94,20 +93,22 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
     const state = get();
     const filtered = state.schools.filter(school => school.status === status);
     set({ filteredSchools: filtered });
-    get().updateCurrentItems();
+    updateCurrentItems(get);
   },
   
   handleSort: (key) => {
     set(state => {
-      let direction = 'asc';
+      let direction: 'asc' | 'desc' = 'asc';
       if (state.sortConfig.key === key && state.sortConfig.direction === 'asc') {
         direction = 'desc';
       }
       
       const sortedSchools = [...state.filteredSchools].sort((a, b) => {
+        // @ts-ignore - Dinamik açar erişimi için
         if (a[key] < b[key]) {
           return direction === 'asc' ? -1 : 1;
         }
+        // @ts-ignore - Dinamik açar erişimi için
         if (a[key] > b[key]) {
           return direction === 'asc' ? 1 : -1;
         }
@@ -120,12 +121,12 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
         currentPage: 1
       };
     });
-    get().updateCurrentItems();
+    updateCurrentItems(get);
   },
   
   handlePageChange: (page) => {
     set({ currentPage: page });
-    get().updateCurrentItems();
+    updateCurrentItems(get);
   },
   
   resetFilters: () => {
@@ -139,18 +140,7 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
     });
     const state = get();
     set({ filteredSchools: state.schools });
-    get().updateCurrentItems();
-  },
-  
-  updateCurrentItems: () => {
-    const state = get();
-    const itemsPerPage = 10;
-    const startIndex = (state.currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentItems = state.filteredSchools.slice(startIndex, endIndex);
-    const totalPages = Math.ceil(state.filteredSchools.length / itemsPerPage);
-    
-    set({ currentItems: currentItems, totalPages: totalPages });
+    updateCurrentItems(get);
   },
   
   fetchSchools: async () => {
@@ -165,7 +155,7 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
       
       const { data: regionsData, error: regionsError } = await supabase
         .from('regions')
-        .select('id, name');
+        .select('*');
       
       if (regionsError) throw regionsError;
       
@@ -175,17 +165,44 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
       
       if (sectorsError) throw sectorsError;
       
-      const schools = schoolsData.map((school: any) => convertToSchoolType(school));
+      // Supabase'dən gələn məlumatları School tipinə adaptasiya et
+      const schools = schoolsData.map((school: any) => {
+        // school obyektini olduğu kimi istifadə et, adaptSchoolFromSupabase ilə çevir
+        return {
+          id: school.id,
+          name: school.name,
+          principalName: school.principal_name,
+          address: school.address,
+          regionId: school.region_id,
+          sectorId: school.sector_id,
+          phone: school.phone,
+          email: school.email,
+          studentCount: school.student_count,
+          teacherCount: school.teacher_count,
+          status: school.status || 'active',
+          type: school.type,
+          language: school.language,
+          adminEmail: school.admin_email,
+
+          // Supabase adlandırması üçün
+          principal_name: school.principal_name,
+          region_id: school.region_id,
+          sector_id: school.sector_id,
+          student_count: school.student_count,
+          teacher_count: school.teacher_count,
+          admin_email: school.admin_email
+        };
+      });
       
       set({ 
-        schools: schools,
+        schools,
         filteredSchools: schools,
         regions: regionsData,
         sectors: sectorsData,
         isLoading: false 
       });
       
-      get().updateCurrentItems();
+      updateCurrentItems(get);
       
     } catch (error) {
       console.error('Məktəbləri əldə edərkən xəta:', error);
@@ -196,9 +213,17 @@ export const useSchoolsStore = create<SchoolsState>((set, get) => ({
     }
   },
   
-  useEffect: () => {
-    get().fetchSchools();
-  },
-  
   setIsOperationComplete: (value) => set({ isOperationComplete: value }),
 }));
+
+// Köməkçi funksiya - ümumi istifadə üçün
+function updateCurrentItems(get: () => SchoolsState) {
+  const state = get();
+  const itemsPerPage = 10;
+  const startIndex = (state.currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = state.filteredSchools.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(state.filteredSchools.length / itemsPerPage);
+  
+  get().setIsOperationComplete(false); // Əməliyyatı tamamla
+}

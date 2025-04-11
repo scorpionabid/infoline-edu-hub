@@ -1,5 +1,7 @@
+
 import { PermissionLevel } from './types';
 import { UserRole } from '@/types/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { UserRoleData } from './types';
 
 /**
@@ -47,4 +49,46 @@ export const checkUserPermissionByRole = async (
   }
   
   return data?.role === role;
+};
+
+/**
+ * İcazə yoxlama funksiyası
+ */
+export const checkPermission = async (
+  userId: string, 
+  role: string | undefined, 
+  userRegionId: string | undefined, 
+  entityId: string, 
+  level: PermissionLevel = 'read'
+): Promise<boolean> => {
+  // Burada icazə məntiqini implemente et
+  if (!userId) return false;
+
+  // Sadə icazə yoxlaması 
+  // SuperAdmin hər şeyə icazəlidir
+  if (role === 'superadmin') return true;
+  
+  // RegionAdmin öz regionuna aid resurslara icazəlidir
+  if (role === 'regionadmin' && userRegionId === entityId) return true;
+  
+  // Digər istifadəçilər üçün icazə sorğusu
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role, region_id, sector_id, school_id')
+    .eq('user_id', userId)
+    .single();
+    
+  if (error) {
+    console.error('İcazə yoxlanarkən xəta:', error);
+    return false;
+  }
+  
+  if (!data) return false;
+  
+  // Oxuma icazəsi üçün daha genişdir
+  if (level === 'read') {
+    return true; // Hər kəs oxuya bilər, daha spesifik məntiq əlavə edilə bilər
+  }
+  
+  return false; // Yazma icazəsi daha məhduddur
 };
