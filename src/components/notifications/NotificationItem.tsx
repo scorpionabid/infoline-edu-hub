@@ -14,7 +14,7 @@ import {
   CalendarClock
 } from 'lucide-react';
 
-interface NotificationItemProps {
+export interface NotificationItemProps {
   notification: Notification;
   onMarkAsRead?: (id: string) => void;
 }

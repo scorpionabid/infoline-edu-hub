@@ -1,290 +1,347 @@
-
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import SidebarLayout from '@/components/layout/SidebarLayout';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  FileText,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Loader2,
-  Plus,
-  Filter
-} from 'lucide-react';
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Calendar } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { CalendarIcon } from "@radix-ui/react-icons"
+import { Separator } from "@/components/ui/separator"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Progress } from "@/components/ui/progress"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { CheckCheck, ChevronsUpDown } from "lucide-react"
+import { Listbox, ListboxContent, ListboxEmpty, ListboxItem, ListboxList, ListboxTrigger } from "@/components/ui/listbox"
+import { HoverCard, HoverCardContent, HoverCardDescription, HoverCardHeader, HoverCardTrigger } from "@/components/ui/hover-card"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
+import { useToast } from "@/components/ui/use-toast"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
-// Komponentdən əvvəl status və canEditData funksiyalarını əlavə et
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'approved':
-      return <CheckCircle className="h-5 w-5 text-green-500" />;
-    case 'rejected':
-      return <AlertCircle className="h-5 w-5 text-red-500" />;
-    case 'pending':
-      return <Clock className="h-5 w-5 text-amber-500" />;
-    default:
-      return <FileText className="h-5 w-5 text-blue-500" />;
-  }
-};
-
-const canEditData = (userRole: string | undefined, dataStatus: string): boolean => {
-  // Məktəb admini yalnız pending statusundakı məlumatları redaktə edə bilər
-  if (userRole === 'schooladmin') {
-    return dataStatus === 'pending';
-  }
-  
-  // SuperAdmin, RegionAdmin, SectorAdmin hər növ məlumatı redaktə edə bilər
-  return ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || '');
-};
-
-const DataEntry: React.FC = () => {
-  const { t } = useLanguage();
-  const location = useLocation();
+const DataEntry = () => {
+  const { categoryId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { user } = useAuth();
-  const { userRole } = usePermissions();
-  
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { toast } = useToast();
+
+  const [categoryData, setCategoryData] = useState<any>(null);
+  const [columns, setColumns] = useState<any[]>([]);
+  const [formData, setFormData] = useState<any>({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [status, setStatus] = useState<string>('pending');
-  
-  const isSchoolAdmin = userRole === 'schooladmin';
-  
-  // URL parametrlərini almanın əsas metodu
-  const queryParams = new URLSearchParams(location.search);
-  const categoryIdFromUrl = queryParams.get('categoryId');
-  const schoolIdFromUrl = queryParams.get('schoolId');
-  
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  // Status dəyişənini təyin edək
+  const status = categoryData?.status || 'pending';
+
+  const userRole = user?.role;
+
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        
-        // TODO: Real API çağırışı
-        // Demo data
-        const mockCategories = [
-          { id: 'cat1', name: 'Əsas Məktəb Məlumatları', deadline: '2025-05-01', status: 'pending' },
-          { id: 'cat2', name: 'Müəllim Statistikası', deadline: '2025-05-15', status: 'approved' },
-          { id: 'cat3', name: 'Şagird Nailiyyətləri', deadline: '2025-05-20', status: 'rejected' },
-          { id: 'cat4', name: 'İnfrastruktur Ehtiyacları', deadline: '2025-06-01', status: 'pending' }
-        ];
-        
-        setCategories(mockCategories);
-        
-        // URL-dən gələn kateqoriya ID-si varsa, onu default seçilmiş kateqoriya edir
-        if (categoryIdFromUrl) {
-          setSelectedCategory(categoryIdFromUrl);
+        // Kateqoriya məlumatlarını əldə et
+        const { data: category, error: categoryError } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('id', categoryId)
+          .single();
+
+        if (categoryError) {
+          console.error('Kateqoriya məlumatlarını əldə edərkən xəta:', categoryError);
+          setError(t('categoryFetchError'));
+          return;
         }
-        
-        setLoading(false);
-      } catch (err) {
-        console.error('Kateqoriyalar yüklənərkən xəta baş verdi:', err);
-        setError('Kateqoriyalar yüklənərkən xəta baş verdi');
+
+        setCategoryData(category);
+
+        // Sütun məlumatlarını əldə et
+        const { data: cols, error: columnsError } = await supabase
+          .from('columns')
+          .select('*')
+          .eq('category_id', categoryId)
+          .order('order_index', { ascending: true });
+
+        if (columnsError) {
+          console.error('Sütun məlumatlarını əldə edərkən xəta:', columnsError);
+          setError(t('columnsFetchError'));
+          return;
+        }
+
+        setColumns(cols);
+
+        // Əgər varsa, əvvəlki məlumatları əldə et
+        const { data: existingData, error: existingDataError } = await supabase
+          .from('data_entries')
+          .select('*')
+          .eq('category_id', categoryId)
+          .eq('school_id', user?.schoolId)
+          .limit(1);
+
+        if (existingDataError) {
+          console.error('Əvvəlki məlumatları əldə edərkən xəta:', existingDataError);
+          setError(t('existingDataFetchError'));
+          return;
+        }
+
+        if (existingData && existingData.length > 0) {
+          const initialFormData: any = {};
+          existingData.forEach(entry => {
+            initialFormData[entry.column_id] = entry.value;
+          });
+          setFormData(initialFormData);
+        }
+      } catch (err: any) {
+        console.error('Məlumatları əldə edərkən xəta:', err);
+        setError(t('dataFetchError'));
+      } finally {
         setLoading(false);
       }
     };
-    
-    fetchCategories();
-  }, [categoryIdFromUrl]);
-  
-  // Kateqoriya seçimi
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(categoryId);
+
+    if (categoryId && user?.schoolId) {
+      fetchData();
+    }
+  }, [categoryId, t, user?.schoolId]);
+
+  const handleInputChange = (columnId: string, value: any) => {
+    setFormData(prev => ({ ...prev, [columnId]: value }));
+    setIsDirty(true);
   };
-  
-  // Seçilmiş kateqoriyanın məlumatlarını əldə et
-  const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
-  
-  // İnput dəyişikliklərini izləmək
-  const handleInputChange = (
-    columnId: string,
-    value: string | number | boolean | null
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
-  };
-  
-  // Formu təqdim et
-  const handleSubmit = () => {
-    console.log('Form təqdim edildi:', {
-      categoryId: selectedCategory,
-      schoolId: schoolIdFromUrl || user?.schoolId,
-      data: formData
-    });
-    
-    // Müvəffəqiyyətli təqdim mesajı
-    if (canEditData(userRole, selectedCategoryData?.status)) {
-      // TODO: Real API çağırışı
-      alert('Məlumatlar uğurla göndərildi!');
-    } else {
-      alert('Bu məlumatları redaktə etmək hüququnuz yoxdur!');
+
+  const handleSubmit = async () => {
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      // Əvvəlki məlumatları yoxla
+      const { data: existingData, error: existingDataError } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('category_id', categoryId)
+        .eq('school_id', user?.schoolId);
+
+      if (existingDataError) {
+        console.error('Əvvəlki məlumatları yoxlayarkən xəta:', existingDataError);
+        setError(t('existingDataCheckError'));
+        return;
+      }
+
+      // Əgər əvvəlki məlumat varsa, onları sil
+      if (existingData && existingData.length > 0) {
+        const idsToDelete = existingData.map(entry => entry.id);
+        const { error: deleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Əvvəlki məlumatları silərkən xəta:', deleteError);
+          setError(t('previousDataDeleteError'));
+          return;
+        }
+      }
+
+      // Yeni məlumatları əlavə et
+      const newData = columns.map(column => ({
+        school_id: user?.schoolId,
+        category_id: categoryId,
+        column_id: column.id,
+        value: formData[column.id] || null,
+        created_by: user?.id
+      }));
+
+      const { error: insertError } = await supabase
+        .from('data_entries')
+        .insert(newData);
+
+      if (insertError) {
+        console.error('Məlumatları əlavə edərkən xəta:', insertError);
+        setError(t('dataInsertError'));
+        return;
+      }
+
+      toast({
+        title: t('success'),
+        description: t('dataSavedSuccessfully'),
+      });
+      setIsDirty(false);
+    } catch (err: any) {
+      console.error('Məlumatları əlavə edərkən xəta:', err);
+      setError(t('dataInsertError'));
+    } finally {
+      setIsSaving(false);
     }
   };
-  
-  // Yeni kateqoriya əlavə etmək
-  const handleAddCategory = () => {
-    // TODO: Yeni kateqoriya əlavə etmək üçün modal göstər
-    console.log('Yeni kateqoriya əlavə et');
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      // Əvvəlki məlumatları yoxla
+      const { data: existingData, error: existingDataError } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('category_id', categoryId)
+        .eq('school_id', user?.schoolId);
+
+      if (existingDataError) {
+        console.error('Əvvəlki məlumatları yoxlayarkən xəta:', existingDataError);
+        setError(t('existingDataCheckError'));
+        return;
+      }
+
+      // Əgər əvvəlki məlumat varsa, onları sil
+      if (existingData && existingData.length > 0) {
+        const idsToDelete = existingData.map(entry => entry.id);
+        const { error: deleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Əvvəlki məlumatları silərkən xəta:', deleteError);
+          setError(t('previousDataDeleteError'));
+          return;
+        }
+
+        toast({
+          title: t('success'),
+          description: t('dataDeletedSuccessfully'),
+        });
+        setFormData({});
+        setIsDirty(false);
+      } else {
+        toast({
+          title: t('info'),
+          description: t('noDataToDelete'),
+        });
+      }
+    } catch (err: any) {
+      console.error('Məlumatları silərkən xəta:', err);
+      setError(t('dataDeleteError'));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirmation(false);
+    }
+  };
+
+  // İstifadəçinin data redaktə edə biləcəyini yoxlayan funksiya
+  const canEditData = (): boolean => {
+    // Pending statusda olan və ya status olmayan datalar redaktə edilə bilər
+    const editableStatuses = [undefined, null, 'pending', 'rejected'];
+    return editableStatuses.includes(status as never) && isSchoolAdmin();
   };
   
-  // Məlumatları filtrləmək
-  const handleFilterData = () => {
-    // TODO: Filtrləmə funksiyası
-    console.log('Məlumatları filtrləmək');
+  // İstifadəçinin SchoolAdmin olduğunu yoxlayan funksiya
+  const isSchoolAdmin = (): boolean => {
+    return userRole === 'schooladmin';
   };
-  
+
   if (loading) {
-    return (
-      <SidebarLayout>
-        <div className="flex items-center justify-center h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </SidebarLayout>
-    );
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+    </div>;
   }
-  
+
   if (error) {
-    return (
-      <SidebarLayout>
-        <div className="flex flex-col items-center justify-center h-[400px]">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-lg font-semibold">{t('errorOccurred')}</h2>
-          <p className="text-muted-foreground">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline"
-            className="mt-4"
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  }
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">{categoryData?.name}</h1>
+      <p className="text-gray-500 mb-6">{categoryData?.description}</p>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('dataEntryForm')}</CardTitle>
+          <CardDescription>{t('fillInTheDetails')}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {columns.map(column => (
+            <div key={column.id}>
+              <Label htmlFor={column.id}>{column.name}</Label>
+              <Input
+                type="text"
+                id={column.id}
+                placeholder={column.placeholder || ''}
+                value={formData[column.id] || ''}
+                onChange={(e) => handleInputChange(column.id, e.target.value)}
+                disabled={!canEditData()}
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <div className="mt-6 flex justify-between">
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          {t('goBack')}
+        </Button>
+        <div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isDeleting || !canEditData()}>
+                {t('deleteData')}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t('deleteConfirmation')}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t('areYouSureToDelete')}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setShowDeleteConfirmation(false)}>{t('cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>{t('delete')}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button
+            className="ml-2"
+            onClick={handleSubmit}
+            disabled={!isDirty || isSaving || !canEditData()}
           >
-            {t('refresh')}
+            {isSaving ? t('saving') + '...' : t('save')}
           </Button>
         </div>
-      </SidebarLayout>
-    );
-  }
-  
-  return (
-    <SidebarLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('dataEntry')}</h1>
-            <p className="text-muted-foreground">
-              {t('dataEntryDescription')}
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            {canEditData(userRole, selectedCategoryData?.status) && (
-              <Button onClick={handleAddCategory}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('addCategory')}
-              </Button>
-            )}
-            <Button variant="outline" onClick={handleFilterData}>
-              <Filter className="mr-2 h-4 w-4" />
-              {t('filter')}
-            </Button>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Kateqoriyalar siyahısı */}
-          <div className="md:col-span-1">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>{t('categories')}</CardTitle>
-                <CardDescription>
-                  {t('selectCategoryToFill')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="space-y-0.5">
-                  {categories.map(category => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category.id)}
-                      className={`w-full flex items-center p-3 hover:bg-muted transition-colors ${
-                        selectedCategory === category.id ? 'bg-muted' : ''
-                      }`}
-                    >
-                      <div className="mr-2">
-                        {getStatusIcon(category.status)}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <div className="font-medium">{category.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {t('deadline')}: {category.deadline}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Form kontenti */}
-          <div className="md:col-span-3">
-            {selectedCategory ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{selectedCategoryData?.name}</CardTitle>
-                  <CardDescription>
-                    {isSchoolAdmin
-                      ? t('fillCategoryDescription')
-                      : t('reviewCategoryDescription')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Form elementləri burada olacaq */}
-                    <p className="text-muted-foreground">
-                      {canEditData(userRole, selectedCategoryData?.status)
-                        ? t('editableFormMessage')
-                        : t('nonEditableFormMessage')}
-                    </p>
-                    
-                    {/* Təqdim düyməsi */}
-                    {canEditData(userRole, selectedCategoryData?.status) && (
-                      <div className="flex justify-end mt-6">
-                        <Button onClick={handleSubmit}>
-                          {t('submit')}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('noSelectedCategory')}</CardTitle>
-                  <CardDescription>
-                    {t('selectCategoryInstruction')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-10">
-                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-center text-muted-foreground">
-                      {t('noCategorySelectedMessage')}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
       </div>
-    </SidebarLayout>
+    </div>
   );
 };
 

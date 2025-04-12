@@ -30,6 +30,24 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
     navigate('/notifications');
   };
   
+  // Dashboard notification tipini bizim tətbiqetmə notification tipinə çevirmək
+  const normalizeNotifications = (notificationArray: any[]): Notification[] => {
+    return notificationArray.map(n => ({
+      id: n.id,
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      isRead: n.isRead,
+      createdAt: n.createdAt || n.date || new Date().toISOString(),
+      userId: n.userId || 'unknown',
+      priority: n.priority || 'normal',
+      date: n.date,
+      time: n.time
+    }));
+  };
+  
+  const normalizedNotifications = normalizeNotifications(displayNotifications || []);
+  
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -43,7 +61,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
           <div className="flex items-center justify-center h-[200px]">
             <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
           </div>
-        ) : displayNotifications.length === 0 ? (
+        ) : normalizedNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center p-4 h-[200px]">
             <Bell className="h-12 w-12 text-muted-foreground mb-2" />
             <p className="text-lg font-medium">{t('noNotifications')}</p>
@@ -53,20 +71,10 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
           <>
             <ScrollArea className="h-[250px]">
               <div className="space-y-3">
-                {displayNotifications.map(notification => (
+                {normalizedNotifications.map(notification => (
                   <NotificationItem 
                     key={notification.id} 
-                    notification={{
-                      id: notification.id,
-                      title: notification.title,
-                      message: notification.message,
-                      createdAt: notification.createdAt || notification.date,
-                      isRead: notification.isRead,
-                      type: notification.type,
-                      priority: notification.priority as any,
-                      userId: notification.userId || '',
-                      date: notification.date || notification.createdAt
-                    }} 
+                    notification={notification}
                   />
                 ))}
               </div>

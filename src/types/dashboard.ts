@@ -18,14 +18,18 @@ export interface FormStatus {
   total: number;
 }
 
+// Notification tipini notification.ts ilə uyğunlaşdırmaq üçün eyni strukturdan istifadə edirik
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  date: string;
-  isRead: boolean;
-  priority: string;
   type: string;
+  isRead: boolean;
+  createdAt: string;
+  userId: string;
+  priority: string;
+  time?: string;
+  date: string;
 }
 
 export interface StatsItem {
@@ -86,6 +90,8 @@ export interface RegionAdminDashboardData {
     name: string;
     completionRate: number;
     id?: string;
+    schoolCount?: number;
+    completionPercentage?: number;
   }[];
 }
 
