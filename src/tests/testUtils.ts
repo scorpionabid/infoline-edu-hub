@@ -1,43 +1,46 @@
 
-import { vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { ReactNode } from 'react';
+import { render, RenderResult } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
+import { NotificationProvider } from '@/context/NotificationContext';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { AuthProvider } from '@/context/auth';
+import { ThemeProvider } from '@/context/ThemeContext';
 
-// Mock response yaratmaq üçün helper funksiya
-export function createSupabaseMockResponse<T>(data: T, error = null) {
-  return {
-    data,
-    error
-  };
+interface RenderWithProvidersOptions {
+  initialEntries?: string[];
+  queryClient?: QueryClient;
 }
 
-// Test wrapper'lar üçün helper funksiyalar
-export function mockAuthContext() {
-  return {
-    isAuthenticated: true,
-    isLoading: false,
-    user: {
-      id: '1',
-      email: 'superadmin@test.com',
-      role: 'superadmin'
-    },
-    login: vi.fn().mockResolvedValue(true),
-    logout: vi.fn().mockResolvedValue(true),
-    error: null
-  };
-}
+export function renderWithProviders(
+  ui: React.ReactElement,
+  options: RenderWithProvidersOptions = {}
+): RenderResult {
+  const {
+    initialEntries = ['/'],
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: Infinity,
+        },
+      },
+    }),
+  } = options;
 
-// Ümumi test wrapper yaratmaq üçün funksiya
-export function createTestWrapper(Provider: React.ComponentType<{children: ReactNode}>) {
-  return ({ children }: { children: ReactNode }) => (
-    <Provider>{children}</Provider>
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <AuthProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <NotificationProvider>
+                {ui}
+              </NotificationProvider>
+            </ThemeProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
-}
-
-// Hook-ları test etmək üçün wrapper yaratmaq üçün funksiya
-export function renderHookWithProviders<T>(
-  hook: () => T,
-  params: { wrapper: React.ComponentType<{children: ReactNode}> }
-) {
-  return renderHook(hook, params);
 }

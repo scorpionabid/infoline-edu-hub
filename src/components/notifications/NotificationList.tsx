@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Notification } from '@/types/notification';
-import NotificationItem from './NotificationItem';
+import { NotificationItem } from './NotificationItem';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { BellOff } from 'lucide-react';
