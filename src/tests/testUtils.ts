@@ -29,3 +29,4 @@ export const customRender = (ui: React.ReactElement, options = {}) => {
 // Re-export testing-library metodları
 export * from '@testing-library/react';
 export { customRender as render };
+
