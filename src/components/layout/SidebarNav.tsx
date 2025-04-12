@@ -64,7 +64,8 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const canManageColumns = isSuperAdmin || isRegionAdmin; // RegionAdmin üçün sütun idarəetmə icazəsi
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
-  const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin; // Region admin məlumat daxil etmir
+  // Region admin məlumat daxil etmir, yalnız SuperAdmin, SectorAdmin və SchoolAdmin
+  const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin;
   
   const navItems = [
     {

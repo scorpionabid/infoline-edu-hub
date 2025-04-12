@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render as rtlRender } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/context/auth';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -24,10 +24,10 @@ export const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ child
 
 // Custom render metodu
 export const customRender = (ui: React.ReactElement, options = {}) => {
-  return render(ui, { wrapper: AllTheProviders, ...options });
+  return rtlRender(ui, { wrapper: AllTheProviders, ...options });
 };
 
-// matchMedia mock-unu yaradırıq
+// matchMedia mock-u
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(() => ({
@@ -39,16 +39,16 @@ Object.defineProperty(window, 'matchMedia', {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn()
-  })),
+  }))
 });
 
-// localStorage mock-unu yaradırıq
+// localStorage mock-u
 Object.defineProperty(window, 'localStorage', {
   value: {
     getItem: vi.fn().mockImplementation(() => null),
     setItem: vi.fn(),
     removeItem: vi.fn(),
-    clear: vi.fn(),
+    clear: vi.fn()
   },
   writable: true
 });

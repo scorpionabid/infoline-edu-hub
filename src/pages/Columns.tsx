@@ -2,9 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, Database } from 'lucide-react';
+import { Plus, Database, Search } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import AddColumnDialog from '@/components/columns/AddColumnDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
@@ -32,6 +40,12 @@ const Columns: React.FC = () => {
   const { userRole } = usePermissions();
   const { handleDeleteColumn } = useColumnActions();
   
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  
   // SuperAdmin və region admini sütun əlavə və redaktə edə bilər
   const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
   
@@ -40,6 +54,29 @@ const Columns: React.FC = () => {
     column: '',
     columnName: ''
   });
+
+  // Filter columns
+  const filteredColumns = React.useMemo(() => {
+    return columns?.filter(column => {
+      // Filter by search query
+      const matchesSearch = searchQuery === '' || 
+        column.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Filter by category
+      const matchesCategory = categoryFilter === 'all' || 
+        column.category_id === categoryFilter;
+      
+      // Filter by type
+      const matchesType = typeFilter === 'all' || 
+        column.type === typeFilter;
+      
+      // Filter by status
+      const matchesStatus = statusFilter === 'all' || 
+        column.status === statusFilter;
+      
+      return matchesSearch && matchesCategory && matchesType && matchesStatus;
+    }) || [];
+  }, [columns, searchQuery, categoryFilter, typeFilter, statusFilter]);
 
   const handleOpenAddColumnDialog = () => {
     if (!canManageColumns) {
@@ -188,8 +225,8 @@ const Columns: React.FC = () => {
     refetch();
   }, [refetch]);
 
-  const content = (
-    <>
+  return (
+    <SidebarLayout>
       <PageHeader
         title={t('columnsPageTitle')}
         description={t('columnsPageDescription')}
@@ -203,7 +240,76 @@ const Columns: React.FC = () => {
         )}
       </PageHeader>
 
-      {columns?.length === 0 && !isLoading ? (
+      {/* Filter bar */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={t("searchColumns")}
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-2">
+            <Select 
+              value={categoryFilter} 
+              onValueChange={setCategoryFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("categoryFilter")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allCategories")}</SelectItem>
+                {categories?.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              value={typeFilter} 
+              onValueChange={setTypeFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("typeFilter")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allTypes")}</SelectItem>
+                <SelectItem value="text">{t("text")}</SelectItem>
+                <SelectItem value="number">{t("number")}</SelectItem>
+                <SelectItem value="date">{t("date")}</SelectItem>
+                <SelectItem value="select">{t("select")}</SelectItem>
+                <SelectItem value="checkbox">{t("checkbox")}</SelectItem>
+                <SelectItem value="radio">{t("radio")}</SelectItem>
+                <SelectItem value="file">{t("file")}</SelectItem>
+                <SelectItem value="image">{t("image")}</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              value={statusFilter} 
+              onValueChange={setStatusFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("statusFilter")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allStatuses")}</SelectItem>
+                <SelectItem value="active">{t("activeOnly")}</SelectItem>
+                <SelectItem value="inactive">{t("inactiveOnly")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {filteredColumns.length === 0 && !isLoading ? (
         <EmptyState
           icon={<Database className="h-12 w-12" />}
           title={t('noColumnsFound')}
@@ -215,7 +321,7 @@ const Columns: React.FC = () => {
         />
       ) : (
         <ColumnList
-          columns={columns || []}
+          columns={filteredColumns}
           categories={categories || []}
           isLoading={isLoading || categoriesLoading}
           isError={!!error}
@@ -235,7 +341,7 @@ const Columns: React.FC = () => {
         />
       )}
 
-      {editColumnDialogOpen && (
+      {editColumnDialogOpen && selectedColumn && (
         <EditColumnDialog
           isOpen={editColumnDialogOpen}
           onClose={handleCloseEditColumnDialog}
@@ -256,12 +362,6 @@ const Columns: React.FC = () => {
           isSubmitting={isSubmitting}
         />
       )}
-    </>
-  );
-
-  return (
-    <SidebarLayout>
-      {content}
     </SidebarLayout>
   );
 };

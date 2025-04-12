@@ -241,7 +241,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         )}
       />
 
-      {/* Deadline */}
+      {/* Deadline - Tarix seçici düzəlişi */}
       <FormField
         control={form.control}
         name="deadline"
@@ -252,7 +252,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
-                    variant={"outline"}
+                    variant="outline"
                     className={cn(
                       "w-full pl-3 text-left font-normal",
                       !field.value && "text-muted-foreground"
@@ -273,6 +273,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                   selected={field.value}
                   onSelect={field.onChange}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
