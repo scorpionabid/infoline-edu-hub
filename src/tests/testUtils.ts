@@ -30,9 +30,9 @@ export const customRender = (ui: React.ReactElement, options = {}) => {
 // matchMedia mock-u
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(() => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
-    media: '',
+    media: query,
     onchange: null,
     addListener: vi.fn(),
     removeListener: vi.fn(),
