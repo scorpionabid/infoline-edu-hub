@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
@@ -8,6 +8,7 @@ import { useColumnForm } from "./columnDialog/useColumnForm";
 import BasicColumnFields from "./columnDialog/BasicColumnFields";
 import ValidationFields from "./columnDialog/ValidationFields";
 import OptionsField from "./columnDialog/OptionsField";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EditColumnDialogProps {
   isOpen: boolean;
@@ -27,19 +28,35 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
   categories
 }) => {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
+  
   const { 
     form, 
     selectedType, 
     handleTypeChange, 
+    options,
+    addOption,
+    removeOption,
+    newOption,
+    setNewOption,
     onSubmit: handleFormSubmit,
     isEditMode 
   } = useColumnForm(categories, column);
   
-  const { control } = form;
-
   const onSubmit = async (data: any) => {
     try {
-      if (!column) return;
+      if (!column) return false;
+      
+      // Client-side validation
+      if (!data.name.trim()) {
+        form.setError("name", { message: t("columnNameRequired") });
+        return false;
+      }
+      
+      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
+      if (["select", "radio", "checkbox"].includes(data.type)) {
+        data.options = options;
+      }
       
       const success = await onEditColumn({
         ...data,
@@ -47,10 +64,15 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
       });
       
       if (success) {
+        await queryClient.invalidateQueries({ queryKey: ['columns'] });
         onClose();
+        return true;
       }
+      
+      return false;
     } catch (error) {
       console.error('Error submitting column data:', error);
+      return false;
     }
   };
 
@@ -70,13 +92,20 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
           <BasicColumnFields 
             form={form}
             categories={categories}
+            columns={[]} // Boş array veririk, çünki parent column-ları üçün hazırda təyin etməyək
+            editColumn={column}
             selectedType={selectedType}
             handleTypeChange={handleTypeChange}
           />
           
           {(selectedType === "select" || selectedType === "radio" || selectedType === "checkbox") && (
             <OptionsField 
-              control={control}
+              control={form.control}
+              options={options}
+              newOption={newOption}
+              setNewOption={setNewOption}
+              addOption={addOption}
+              removeOption={removeOption}
             />
           )}
           
