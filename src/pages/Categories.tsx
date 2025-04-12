@@ -36,6 +36,7 @@ import { useCategoryFilters } from '@/hooks/categories/useCategoryFilters';
 import { useCategoryOperations, AddCategoryFormData } from '@/hooks/categories/useCategoryOperations';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { toast } from 'sonner';
 
 const Categories: React.FC = () => {
   const { t } = useLanguage();
@@ -46,8 +47,8 @@ const Categories: React.FC = () => {
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, categoryId: '', categoryName: '' });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Yalnız SuperAdmin kateqoriya əlavə və redaktə edə bilər
-  const canManageCategories = userRole === 'superadmin';
+  // Region admin və SuperAdmin kateqoriya əlavə və redaktə edə bilər
+  const canManageCategories = userRole === 'superadmin' || userRole === 'regionadmin';
 
   // Custom hooklarımızı istifadə edək
   const {
@@ -86,6 +87,9 @@ const Categories: React.FC = () => {
 
   const handleOpenAddDialog = () => {
     if (!canManageCategories) {
+      toast.error(t('noPermission'), {
+        description: t('adminPermissionRequired')
+      });
       return;
     }
     setAddDialog({ isOpen: true });
@@ -97,6 +101,7 @@ const Categories: React.FC = () => {
 
   const handleAddCategory = async (newCategory: AddCategoryFormData): Promise<boolean> => {
     if (!canManageCategories) {
+      toast.error(t('noPermission'));
       return false;
     }
     
@@ -109,6 +114,9 @@ const Categories: React.FC = () => {
 
   const handleOpenDeleteDialog = (categoryId: string, categoryName: string) => {
     if (!canManageCategories) {
+      toast.error(t('noPermission'), {
+        description: t('adminPermissionRequired')
+      });
       return;
     }
     setDeleteDialog({ isOpen: true, categoryId: categoryId, categoryName: categoryName });
@@ -120,6 +128,7 @@ const Categories: React.FC = () => {
 
   const handleDeleteCategory = async (categoryId: string): Promise<boolean> => {
     if (!canManageCategories) {
+      toast.error(t('noPermission'));
       return false;
     }
     
@@ -132,6 +141,9 @@ const Categories: React.FC = () => {
 
   const handleEditCategory = (categoryId: string) => {
     if (!canManageCategories) {
+      toast.error(t('noPermission'), {
+        description: t('adminPermissionRequired')
+      });
       return;
     }
     navigate(`/categories/${categoryId}`);
@@ -160,7 +172,7 @@ const Categories: React.FC = () => {
           onChange={handleSearchChange}
         />
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col md:flex-row gap-2">
           <Label htmlFor="status">{t('status')}:</Label>
           <Select 
             value={filter.status} 

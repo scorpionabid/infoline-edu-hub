@@ -28,8 +28,8 @@ const Columns: React.FC = () => {
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { userRole } = usePermissions();
   
-  // Yalnız SuperAdmin sütun əlavə və redaktə edə bilər
-  const canManageColumns = userRole === 'superadmin';
+  // SuperAdmin və region admini sütun əlavə və redaktə edə bilər
+  const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
   
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
@@ -40,7 +40,7 @@ const Columns: React.FC = () => {
   const handleOpenAddColumnDialog = () => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
-        description: t('superAdminPermissionRequired')
+        description: t('adminPermissionRequired')
       });
       return;
     }
@@ -55,7 +55,7 @@ const Columns: React.FC = () => {
   const handleOpenEditColumnDialog = (column: any) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
-        description: t('superAdminPermissionRequired')
+        description: t('adminPermissionRequired')
       });
       return;
     }
@@ -71,7 +71,7 @@ const Columns: React.FC = () => {
   const handleOpenDeleteDialog = (columnId: string, columnName: string) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
-        description: t('superAdminPermissionRequired')
+        description: t('adminPermissionRequired')
       });
       return;
     }

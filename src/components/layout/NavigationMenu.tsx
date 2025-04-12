@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguageSafe } from '@/context/LanguageContext';
@@ -16,7 +17,8 @@ import {
   ChevronDown,
   MapPin,
   Building,
-  FolderKanban
+  FolderKanban,
+  Columns
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -74,7 +76,13 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
       name: t('categories'),
       path: '/categories',
       icon: <FolderKanban className="h-5 w-5" />,
-      roles: ['superadmin', 'regionadmin']
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
+    },
+    {
+      name: t('columns'),
+      path: '/columns',
+      icon: <Columns className="h-5 w-5" />,
+      roles: ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']
     },
     {
       name: t('users'),
@@ -233,4 +241,3 @@ const NavigationMenu: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) 
 };
 
 export default NavigationMenu;
-

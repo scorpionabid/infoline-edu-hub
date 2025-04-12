@@ -57,8 +57,8 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   // İcazələri müəyyənləşdiririk
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin;
-  const canManageColumns = isSuperAdmin;
+  const canManageCategories = isSuperAdmin || isRegionAdmin; // RegionAdmin üçün kateqoriya idarəetmə icazəsi
+  const canManageColumns = isSuperAdmin || isRegionAdmin; // RegionAdmin üçün sütun idarəetmə icazəsi
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   
@@ -91,13 +91,13 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: canManageCategories || isRegionAdmin || isSectorAdmin || isSchoolAdmin
+      show: canManageCategories || isSectorAdmin || isSchoolAdmin
     },
     {
       href: "/columns",
       icon: <Columns size={20} />,
       label: t('columns'),
-      show: canManageColumns || isRegionAdmin || isSectorAdmin || isSchoolAdmin
+      show: canManageColumns || isSectorAdmin || isSchoolAdmin
     },
     {
       href: "/users",

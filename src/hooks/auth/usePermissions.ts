@@ -47,6 +47,12 @@ export const usePermissions = (): UsePermissionsResult => {
     return user?.role === 'sectoradmin';
   };
 
+  // Region admin icazələri üçün əlavə helper funksiya
+  const canRegionAdminManageCategoriesColumns = () => {
+    // RegionAdmin kateqoriya və sütunları idarə edə bilər
+    return user?.role === 'regionadmin';
+  };
+
   return {
     checkRegionAccess: checkRegionAccessHook,
     checkSectorAccess: checkSectorAccessHook,
@@ -54,6 +60,7 @@ export const usePermissions = (): UsePermissionsResult => {
     checkCategoryAccess: checkCategoryAccessHook,
     checkColumnAccess: checkColumnAccessHook,
     canSectorAdminAccessCategoriesColumns,
+    canRegionAdminManageCategoriesColumns,
     userRole: user?.role,
     userId: user?.id,
     regionId: user?.regionId,
