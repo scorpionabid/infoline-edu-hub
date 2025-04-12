@@ -1,46 +1,31 @@
 
-import { render, RenderResult } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
-import { NotificationProvider } from '@/context/NotificationContext';
-import { LanguageProvider } from '@/context/LanguageContext';
+import React from 'react';
+import { render } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/context/auth';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { QueryClientProvider } from '@/context/QueryClientProvider';
 
-interface RenderWithProvidersOptions {
-  initialEntries?: string[];
-  queryClient?: QueryClient;
-}
-
-export function renderWithProviders(
-  ui: React.ReactElement,
-  options: RenderWithProvidersOptions = {}
-): RenderResult {
-  const {
-    initialEntries = ['/'],
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-          gcTime: Infinity,
-        },
-      },
-    }),
-  } = options;
-
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
-        <AuthProvider>
-          <LanguageProvider>
-            <ThemeProvider>
-              <NotificationProvider>
-                {ui}
-              </NotificationProvider>
-            </ThemeProvider>
-          </LanguageProvider>
-        </AuthProvider>
-      </MemoryRouter>
-    </QueryClientProvider>
+// Test wraperləri
+export const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <LanguageProvider>
+      <AuthProvider>
+        <QueryClientProvider>
+          <BrowserRouter>
+            {children}
+          </BrowserRouter>
+        </QueryClientProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
-}
+};
+
+// Custom render metodu
+export const customRender = (ui: React.ReactElement, options = {}) => {
+  return render(ui, { wrapper: AllTheProviders, ...options });
+};
+
+// Re-export testing-library metodları
+export * from '@testing-library/react';
+export { customRender as render };

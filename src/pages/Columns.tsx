@@ -16,15 +16,17 @@ import { useCategories } from '@/hooks/useCategories';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [addColumnDialogOpen, setAddColumnDialogOpen] = useState(false);
   const [editColumnDialogOpen, setEditColumnDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { columns, isLoading, isError, error, deleteColumn } = useColumns();
+  const { columns, isLoading, isError, error, deleteColumn, refetch } = useColumns();
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { userRole } = usePermissions();
   
@@ -100,6 +102,9 @@ const Columns: React.FC = () => {
     try {
       toast.success(t('columnCreated'));
       handleCloseAddColumnDialog();
+      // Məlumatları yeniləyirik
+      await queryClient.invalidateQueries({ queryKey: ['columns'] });
+      await refetch();
       return true;
     } catch (error) {
       console.error("Sütun yaratma xətası:", error);
@@ -124,6 +129,9 @@ const Columns: React.FC = () => {
       }
       toast.success(t('columnUpdated'));
       handleCloseEditColumnDialog();
+      // Məlumatları yeniləyirik
+      await queryClient.invalidateQueries({ queryKey: ['columns'] });
+      await refetch();
       return true;
     } catch (error) {
       console.error("Sütun redaktə xətası:", error);
@@ -144,6 +152,9 @@ const Columns: React.FC = () => {
       await deleteColumn.mutate(columnId);
       toast.success(t('columnDeleted'));
       handleCloseDeleteDialog();
+      // Məlumatları yeniləyirik
+      await queryClient.invalidateQueries({ queryKey: ['columns'] });
+      await refetch();
       return true;
     } catch (error) {
       console.error("Sütun silmə xətası:", error);
@@ -160,6 +171,9 @@ const Columns: React.FC = () => {
     }
     
     toast.success(t('columnStatusUpdated'));
+    // Məlumatları yeniləyirik
+    await queryClient.invalidateQueries({ queryKey: ['columns'] });
+    await refetch();
   };
 
   // Əgər kateqoriyalar yüklənməyibsə, useEffectlə yükləyək

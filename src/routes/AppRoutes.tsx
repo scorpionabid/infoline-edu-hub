@@ -26,10 +26,15 @@ import Profile from "@/pages/Profile";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  redirectUrl?: string;
 }
 
 // Protected Route Component - rol əsasında icazə yoxlaması edir
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  allowedRoles,
+  redirectUrl = "/login" 
+}) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { userRole } = usePermissions();
   const location = useLocation();
@@ -45,7 +50,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   
   // İstifadəçi login olmayıbsa, login səhifəsinə yönləndiririk
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   
   // Əgər rol yoxlaması varsa və istifadəçinin bu səhifəyə icazəsi yoxdursa
@@ -163,9 +168,25 @@ const AppRoutes = [
     ),
   },
   {
+    path: "/categories/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
+        <Categories />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/columns",
     element: (
       <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
+        <Columns />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/columns/:id",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
         <Columns />
       </ProtectedRoute>
     ),
@@ -205,7 +226,15 @@ const AppRoutes = [
   {
     path: "/data-entry",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
+        <DataEntry />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/data-entry/:categoryId",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
         <DataEntry />
       </ProtectedRoute>
     ),

@@ -4,11 +4,18 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useColumns } from './useColumns';
 import { Column } from '@/types/column';
+import { useQueryClient } from '@tanstack/react-query';
 
-export const useColumnActions = (refetchColumns?: () => void) => {
+export const useColumnActions = () => {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const { t } = useLanguage();
   const { addColumn, updateColumn, deleteColumn } = useColumns();
+  const queryClient = useQueryClient();
+
+  // Məlumatları yeniləmək üçün helper funksiya
+  const invalidateColumnsQueries = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['columns'] });
+  };
 
   // Sütun əlavə etmə
   const handleAddColumn = async (columnData: Omit<Column, "id"> & { id?: string }) => {
@@ -27,9 +34,8 @@ export const useColumnActions = (refetchColumns?: () => void) => {
         toast.success(t('columnAdded'));
       }
       
-      if (refetchColumns) {
-        refetchColumns();
-      }
+      // Məlumatları dərhal yeniləyirik
+      await invalidateColumnsQueries();
       
       return true;
     } catch (error) {
@@ -48,9 +54,8 @@ export const useColumnActions = (refetchColumns?: () => void) => {
       await deleteColumn.mutate(id);
       toast.success(t('columnDeleted'));
       
-      if (refetchColumns) {
-        refetchColumns();
-      }
+      // Məlumatları dərhal yeniləyirik
+      await invalidateColumnsQueries();
       
       return true;
     } catch (error) {
@@ -69,9 +74,8 @@ export const useColumnActions = (refetchColumns?: () => void) => {
       await updateColumn.mutate({ id, status });
       toast.success(t('columnStatusUpdated'));
       
-      if (refetchColumns) {
-        refetchColumns();
-      }
+      // Məlumatları dərhal yeniləyirik
+      await invalidateColumnsQueries();
       
       return true;
     } catch (error) {

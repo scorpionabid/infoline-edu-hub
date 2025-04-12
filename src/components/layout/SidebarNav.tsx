@@ -46,7 +46,10 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { userRole } = usePermissions();
+  const { 
+    userRole, 
+    canRegionAdminManageCategoriesColumns 
+  } = usePermissions();
   
   // Rol əsasında məlumat idarəetmə icazələrini yoxlayırıq
   const isSuperAdmin = userRole === 'superadmin';
@@ -61,6 +64,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const canManageColumns = isSuperAdmin || isRegionAdmin; // RegionAdmin üçün sütun idarəetmə icazəsi
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
+  const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin; // Region admin məlumat daxil etmir
   
   const navItems = [
     {
@@ -91,13 +95,13 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: canManageCategories || isSectorAdmin || isSchoolAdmin
+      show: true // Bütün istifadəçilər kateqoriyalara baxa bilər
     },
     {
       href: "/columns",
       icon: <Columns size={20} />,
       label: t('columns'),
-      show: canManageColumns || isSectorAdmin || isSchoolAdmin
+      show: true // Bütün istifadəçilər sütunlara baxa bilər
     },
     {
       href: "/users",
@@ -109,7 +113,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/data-entry",
       icon: <FileInput size={20} />,
       label: t('dataEntry'),
-      show: true
+      show: canAccessDataEntry // Region admin məlumat daxil etmir
     },
     {
       href: "/reports",

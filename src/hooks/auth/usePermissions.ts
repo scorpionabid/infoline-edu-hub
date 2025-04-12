@@ -33,22 +33,26 @@ export const usePermissions = (): UsePermissionsResult => {
 
   const checkCategoryAccessHook = async (categoryId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
     if (!isAuthenticated || !user || !user.id) return false;
+    // Region admin həmişə kateqoriyalara yazma icazəsinə sahib olmalıdır
+    if (user.role === 'regionadmin' && level === 'write') return true;
     return checkCategoryAccess(user.id, categoryId, level);
   };
 
   const checkColumnAccessHook = async (columnId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
     if (!isAuthenticated || !user || !user.id) return false;
+    // Region admin həmişə sütunlara yazma icazəsinə sahib olmalıdır
+    if (user.role === 'regionadmin' && level === 'write') return true;
     return checkColumnAccess(user.id, columnId, level);
   };
 
   // SectorAdmin rolunun kateqoriya və sütunlara çıxışının olub-olmadığını yoxlamaq üçün əlavə funksiya
-  const canSectorAdminAccessCategoriesColumns = () => {
+  const canSectorAdminAccessCategoriesColumns = (): boolean => {
     // SectorAdmin həm kateqoriyalar həm də sütunlara çıxış əldə etməlidir
     return user?.role === 'sectoradmin';
   };
 
   // Region admin icazələri üçün əlavə helper funksiya
-  const canRegionAdminManageCategoriesColumns = () => {
+  const canRegionAdminManageCategoriesColumns = (): boolean => {
     // RegionAdmin kateqoriya və sütunları idarə edə bilər
     return user?.role === 'regionadmin';
   };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -16,7 +15,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Save, CheckCircle, AlertCircle, Upload, FileDown } from 'lucide-react';
 import DataEntryDialogs from '@/components/dataEntry/DataEntryDialogs';
 import { ColumnValidationError } from '@/types/dataEntry';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const DataEntry: React.FC = () => {
   const { t } = useLanguage();
@@ -24,6 +24,13 @@ const DataEntry: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('entry');
   const { user } = useAuth();
+  const { userRole } = usePermissions();
+  
+  useEffect(() => {
+    if (userRole === 'regionadmin') {
+      navigate('/categories');
+    }
+  }, [userRole, navigate]);
   
   const { categories, isLoading: categoriesLoading } = useCategories();
   const [dialogState, setDialogState] = useState({
@@ -108,12 +115,23 @@ const DataEntry: React.FC = () => {
     }
   }, [currentCategory, categories, categoriesLoading, navigate]);
   
-  // İstifadəçi roluna görə əməliyyatların əlçatanlığını müəyyən edirik
-  const isSchoolAdmin = user?.role === 'schooladmin';
-  const canEditData = isSchoolAdmin && user?.schoolId;
+  if (userRole === 'regionadmin') {
+    return (
+      <SidebarLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">{t('accessDenied')}</h2>
+            <p className="text-muted-foreground mb-6">{t('regionAdminNoDataEntry')}</p>
+            <Button onClick={() => navigate('/categories')}>
+              {t('goToCategories')}
+            </Button>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
   
   const getHeaderAction = () => {
-    // Məktəb Admin deyilsə yalnız göstər (view-only mode)
     if (!canEditData) {
       return (
         <div className="flex items-center gap-2">
