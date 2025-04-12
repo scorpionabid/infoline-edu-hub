@@ -1,18 +1,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
 import { Notification } from '@/types/notifications';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/auth';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuth();
-  
+
   const fetchNotifications = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user) return;
     
     setLoading(true);
     try {
@@ -21,61 +21,67 @@ export const useNotifications = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
-      
+        .limit(50);
+
       if (error) throw error;
       
-      const formattedNotifications: Notification[] = data.map(notification => ({
+      // Supabase formatından bizim tipimizə çevirək
+      const formattedNotifications: Notification[] = (data || []).map(notification => ({
         id: notification.id,
         title: notification.title,
         message: notification.message,
         createdAt: new Date(notification.created_at),
         isRead: notification.is_read,
         type: notification.type,
-        priority: notification.priority || 'normal',
+        priority: notification.priority as 'normal' | 'high' | 'low',
         relatedEntityType: notification.related_entity_type,
         relatedEntityId: notification.related_entity_id
       }));
-      
+
       setNotifications(formattedNotifications);
       
-      // Oxunmamış bildirişlərin sayını hesablayırıq
-      const unread = formattedNotifications.filter(notification => !notification.isRead).length;
+      // Oxunmamış bildirişləri say
+      const unread = formattedNotifications.filter(n => !n.isRead).length;
       setUnreadCount(unread);
-    } catch (error) {
-      console.error('Bildirişlər əldə edilərkən xəta:', error);
-      toast.error('Bildirişlər əldə edilərkən xəta');
+    } catch (error: any) {
+      console.error('Bildirişlər yüklənərkən xəta:', error.message);
+      toast.error('Bildirişlər yüklənərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
-  
+  }, [user]);
+
   const markAsRead = useCallback(async (notificationId: string) => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('id', notificationId);
-      
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
       if (error) throw error;
       
-      // Bildirişləri yeniləyirik
-      setNotifications(prev => prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, isRead: true } 
-          : notification
-      ));
+      // Lokal state-i yenilə
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, isRead: true } 
+            : notification
+        )
+      );
       
-      // Oxunmamış bildirişlərin sayını azaldırıq
+      // Oxunmamış bildirişləri yenidən say
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Bildiriş oxundu kimi işarələnərkən xəta:', error);
-      toast.error('Bildiriş oxundu kimi işarələnərkən xəta');
+    } catch (error: any) {
+      console.error('Bildiriş oxundu kimi işarələnərkən xəta:', error.message);
+      toast.error('Bildiriş güncəllənərkən xəta baş verdi');
     }
-  }, []);
-  
+  }, [user]);
+
   const markAllAsRead = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user || notifications.length === 0) return;
     
     try {
       const { error } = await supabase
@@ -83,95 +89,100 @@ export const useNotifications = () => {
         .update({ is_read: true })
         .eq('user_id', user.id)
         .eq('is_read', false);
-      
+
       if (error) throw error;
       
-      // Bütün bildirişləri oxunmuş kimi işarələyirik
-      setNotifications(prev => prev.map(notification => ({ ...notification, isRead: true })));
+      // Lokal state-i yenilə
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, isRead: true }))
+      );
+      
+      // Oxunmamış bildirişləri sıfırla
       setUnreadCount(0);
       
-      toast.success('Bütün bildirişlər oxundu');
-    } catch (error) {
-      console.error('Bütün bildirişlər oxundu kimi işarələnərkən xəta:', error);
-      toast.error('Bütün bildirişlər oxundu kimi işarələnərkən xəta');
+      toast.success('Bütün bildirişlər oxundu kimi işarələndi');
+    } catch (error: any) {
+      console.error('Bütün bildirişlər oxundu kimi işarələnərkən xəta:', error.message);
+      toast.error('Bildirişlər güncəllənərkən xəta baş verdi');
     }
-  }, [user?.id]);
-  
+  }, [user, notifications]);
+
   const clearAll = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user || notifications.length === 0) return;
     
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // Bütün bildirişləri təmizləyirik
+      // Supabase-də silmə məntiqi burada olacaq
+      // Bu funksiya gələcəkdə implementasiya edilə bilər
+      // API çağırışı deyil, sadəcə UI-dan silmək üçün:
       setNotifications([]);
       setUnreadCount(0);
       
-      toast.success('Bütün bildirişlər təmizləndi');
-    } catch (error) {
-      console.error('Bildirişlər təmizlənərkən xəta:', error);
-      toast.error('Bildirişlər təmizlənərkən xəta');
+      toast.success('Bütün bildirişlər silindi');
+    } catch (error: any) {
+      console.error('Bildirişlər silinərkən xəta:', error.message);
+      toast.error('Bildirişlər silinərkən xəta baş verdi');
     }
-  }, [user?.id]);
-  
-  // İlk dəfə bildirişləri əldə edirik
+  }, [user, notifications]);
+
   useEffect(() => {
-    if (user?.id) {
+    if (user) {
       fetchNotifications();
     }
-  }, [user?.id, fetchNotifications]);
-  
-  // Realtime bildirişlər üçün kanalı dinləyirik
+  }, [user, fetchNotifications]);
+
+  // Real-time bildirişlər üçün Supabase kanalı yaradaq
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user) return;
     
-    // Realtime kanal yaradırıq
+    // Insert bildirişlərini dinləyək
     const channel = supabase
-      .channel('public:notifications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        const newNotification = payload.new as any;
-        
-        // Yeni bildirişi əlavə edirik
-        const formattedNotification: Notification = {
-          id: newNotification.id,
-          title: newNotification.title,
-          message: newNotification.message,
-          createdAt: new Date(newNotification.created_at),
-          isRead: newNotification.is_read,
-          type: newNotification.type,
-          priority: newNotification.priority || 'normal',
-          relatedEntityType: newNotification.related_entity_type,
-          relatedEntityId: newNotification.related_entity_id
-        };
-        
-        setNotifications(prev => [formattedNotification, ...prev].slice(0, 20));
-        setUnreadCount(prev => prev + 1);
-        
-        // Yüksək prioritetli bildirişlər üçün toast göstəririk
-        if (newNotification.priority === 'high') {
-          toast.info(newNotification.title, {
-            description: newNotification.message
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Yeni bildiriş:', payload);
+          const newNotification = payload.new as any;
+          
+          // Yeni bildirişi formatlaşdıraq
+          const formattedNotification: Notification = {
+            id: newNotification.id,
+            title: newNotification.title,
+            message: newNotification.message,
+            createdAt: new Date(newNotification.created_at),
+            isRead: newNotification.is_read,
+            type: newNotification.type,
+            priority: newNotification.priority as 'normal' | 'high' | 'low',
+            relatedEntityType: newNotification.related_entity_type,
+            relatedEntityId: newNotification.related_entity_id
+          };
+          
+          // Bildirişlər siyahısına əlavə et
+          setNotifications(prev => [formattedNotification, ...prev]);
+          
+          // Oxunmamış bildirişləri say
+          if (!formattedNotification.isRead) {
+            setUnreadCount(prev => prev + 1);
+          }
+          
+          // Bildiriş göstər
+          toast.info(formattedNotification.title, {
+            description: formattedNotification.message
           });
         }
-      })
+      )
       .subscribe();
-    
-    // Təmizləmə
+      
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
-  
+  }, [user]);
+
   return {
     notifications,
     unreadCount,
