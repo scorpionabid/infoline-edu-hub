@@ -5,6 +5,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useColumns } from './useColumns';
 import { Column } from '@/types/column';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useColumnActions = () => {
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -51,6 +52,19 @@ export const useColumnActions = () => {
   const handleDeleteColumn = async (id: string) => {
     setIsActionLoading(true);
     try {
+      // Əvvəlcə data_entries cədvəlindən əlaqəli məlumatları silirik
+      const { error: dataEntriesError } = await supabase
+        .from('data_entries')
+        .delete()
+        .eq('column_id', id);
+
+      if (dataEntriesError) {
+        console.error('Error deleting related data entries:', dataEntriesError);
+        toast.error(`Əlaqəli məlumatları silməkdə xəta: ${dataEntriesError.message}`);
+        return false;
+      }
+
+      // Sonra column-u silirik
       await deleteColumn.mutate(id);
       toast.success(t('columnDeleted'));
       

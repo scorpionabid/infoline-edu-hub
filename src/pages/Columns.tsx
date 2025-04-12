@@ -16,6 +16,7 @@ import { useCategories } from '@/hooks/useCategories';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useColumnActions } from '@/hooks/useColumnActions';
 import { useQueryClient } from '@tanstack/react-query';
 
 const Columns: React.FC = () => {
@@ -26,9 +27,10 @@ const Columns: React.FC = () => {
   const [editColumnDialogOpen, setEditColumnDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { columns, isLoading, isError, error, deleteColumn, refetch } = useColumns();
+  const { columns, isLoading, isError, error, refetch } = useColumns();
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { userRole } = usePermissions();
+  const { handleDeleteColumn } = useColumnActions();
   
   // SuperAdmin və region admini sütun əlavə və redaktə edə bilər
   const canManageColumns = userRole === 'superadmin' || userRole === 'regionadmin';
@@ -142,20 +144,25 @@ const Columns: React.FC = () => {
     }
   };
 
-  const handleDeleteColumn = async (columnId: string): Promise<boolean> => {
+  const onDeleteColumn = async (columnId: string): Promise<boolean> => {
     if (!canManageColumns) {
       toast.error(t('noPermission'));
       return false;
     }
     
     try {
-      await deleteColumn.mutate(columnId);
-      toast.success(t('columnDeleted'));
-      handleCloseDeleteDialog();
-      // Məlumatları yeniləyirik
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      await refetch();
-      return true;
+      const result = await handleDeleteColumn(columnId);
+      if (result) {
+        toast.success(t('columnDeleted'));
+        handleCloseDeleteDialog();
+        // Məlumatları yeniləyirik
+        await queryClient.invalidateQueries({ queryKey: ['columns'] });
+        await refetch();
+        return true;
+      } else {
+        toast.error(t('columnDeletionFailed'));
+        return false;
+      }
     } catch (error) {
       console.error("Sütun silmə xətası:", error);
       toast.error(t('columnDeletionFailed'));
@@ -178,10 +185,8 @@ const Columns: React.FC = () => {
 
   // Əgər kateqoriyalar yüklənməyibsə, useEffectlə yükləyək
   useEffect(() => {
-    if (categoriesLoading) {
-      // Kateqoriyalar yükləniyor
-    }
-  }, [categoriesLoading]);
+    refetch();
+  }, [refetch]);
 
   const content = (
     <>
@@ -245,9 +250,10 @@ const Columns: React.FC = () => {
         <DeleteColumnDialog
           isOpen={deleteDialog.isOpen}
           onClose={handleCloseDeleteDialog}
-          onConfirm={() => handleDeleteColumn(deleteDialog.column)}
+          onConfirm={() => onDeleteColumn(deleteDialog.column)}
           column={deleteDialog.column}
           columnName={deleteDialog.columnName}
+          isSubmitting={isSubmitting}
         />
       )}
     </>
