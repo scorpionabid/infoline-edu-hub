@@ -30,7 +30,9 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
   
   const handleAddOption = (e: React.FormEvent) => {
     e.preventDefault();
-    addOption();
+    if (newOption.trim() !== "") {
+      addOption();
+    }
   };
 
   return (
@@ -42,7 +44,7 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
           <FormLabel>{t("options")}</FormLabel>
           
           <div className="flex flex-wrap gap-2">
-            {options.map((option) => (
+            {options && options.map((option) => (
               <Badge key={option.value} variant="secondary" className="py-2 px-3">
                 {option.label}
                 <button
@@ -65,7 +67,9 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  addOption();
+                  if (newOption.trim() !== "") {
+                    addOption();
+                  }
                 }
               }}
             />
@@ -75,6 +79,7 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
               onClick={handleAddOption}
               variant="outline"
               className="shrink-0"
+              disabled={newOption.trim() === ""}
             >
               <Plus className="h-4 w-4 mr-2" />
               {t("add")}

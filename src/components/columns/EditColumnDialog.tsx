@@ -1,9 +1,9 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
-import { Column } from "@/types/column";
+import { Column, ColumnOption } from "@/types/column";
 import { useColumnForm } from "./columnDialog/useColumnForm";
 import BasicColumnFields from "./columnDialog/BasicColumnFields";
 import ValidationFields from "./columnDialog/ValidationFields";
@@ -42,6 +42,13 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
     onSubmit: handleFormSubmit,
     isEditMode 
   } = useColumnForm(categories, column);
+  
+  // Form değerlerini çütun tipi değiştiğinde güncellemek için useEffect
+  useEffect(() => {
+    if (column && selectedType) {
+      form.setValue("type", selectedType);
+    }
+  }, [selectedType, column, form]);
   
   const onSubmit = async (data: any) => {
     try {
