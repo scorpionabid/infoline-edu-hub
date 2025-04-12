@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import NotificationItem from '@/components/notifications/NotificationItem';
+import { NotificationItem } from '@/components/notifications/NotificationItem';
 import { cn } from '@/lib/utils';
 
 const NotificationSystem = () => {

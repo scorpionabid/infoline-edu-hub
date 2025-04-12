@@ -1,33 +1,24 @@
 
-/**
- * İcazə səviyyəsi tipləri
- */
-export type PermissionLevel = 'read' | 'write' | 'full';
+import { UserRole } from '@/types/supabase';
 
-/**
- * İcazə yoxlayıcı funksiyaların qaytardığı nəticə tipi
- */
-export type PermissionCheckResult = Promise<boolean>;
+export type PermissionLevel = 'read' | 'write' | 'admin';
 
-/**
- * İcazələrin yoxlanması üçün interfeys
- */
-export interface PermissionCheckers {
-  checkRegionAccess: (regionId: string, level?: PermissionLevel) => PermissionCheckResult;
-  checkSectorAccess: (sectorId: string, level?: PermissionLevel) => PermissionCheckResult;
-  checkSchoolAccess: (schoolId: string, level?: PermissionLevel) => PermissionCheckResult;
-  checkCategoryAccess: (categoryId: string, level?: PermissionLevel) => PermissionCheckResult;
-  checkColumnAccess: (columnId: string, level?: PermissionLevel) => PermissionCheckResult;
+export interface UsePermissionsResult {
+  // Əsas hüquq yoxlama funksiyaları
+  checkRegionAccess: (regionId: string, level?: PermissionLevel) => Promise<boolean>;
+  checkSectorAccess: (sectorId: string, level?: PermissionLevel) => Promise<boolean>;
+  checkSchoolAccess: (schoolId: string, level?: PermissionLevel) => Promise<boolean>;
+  checkCategoryAccess: (categoryId: string, level?: PermissionLevel) => Promise<boolean>;
+  checkColumnAccess: (columnId: string, level?: PermissionLevel) => Promise<boolean>;
+  
+  // Rola əsaslanan hüquq helper funksiyaları
   canSectorAdminAccessCategoriesColumns: () => boolean;
-}
-
-/**
- * İcazə yoxlama hook-unun qaytardığı nəticə tipi
- */
-export interface UsePermissionsResult extends PermissionCheckers {
-  userRole?: string;
-  userId?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
+  canRegionAdminManageCategoriesColumns: () => boolean;
+  
+  // İstifadəçi məlumatları
+  userRole: UserRole | undefined;
+  userId: string | undefined;
+  regionId: string | undefined;
+  sectorId: string | undefined;
+  schoolId: string | undefined;
 }

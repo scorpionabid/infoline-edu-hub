@@ -1,104 +1,119 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Notification } from '@/types/notifications';
+import { Notification, NotificationType, NotificationPriority } from '@/types/notification';
 import { toast } from 'sonner';
 
 // Bildirişləri əldə etmək üçün
-export const fetchNotifications = async (): Promise<Notification[]> => {
+export const fetchNotifications = async (userId: string) => {
   try {
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+      
     if (error) throw error;
     
-    // Supabase formatından bizim tipimizə çevirək
-    return (data || []).map(notification => ({
-      id: notification.id,
-      title: notification.title,
-      message: notification.message,
-      createdAt: new Date(notification.created_at),
-      isRead: notification.is_read,
-      type: notification.type,
-      priority: notification.priority as 'normal' | 'high' | 'low',
-      relatedEntityType: notification.related_entity_type,
-      relatedEntityId: notification.related_entity_id
-    }));
-  } catch (error: any) {
-    console.error('Bildirişlər yüklənərkən xəta:', error.message);
-    throw new Error('Bildirişlər yüklənərkən xəta baş verdi');
+    return data.map(item => ({
+      id: item.id,
+      title: item.title,
+      message: item.message,
+      type: item.type as NotificationType,
+      priority: item.priority as NotificationPriority,
+      isRead: item.is_read,
+      createdAt: item.created_at,
+      userId: item.user_id,
+      relatedEntityType: item.related_entity_type,
+      relatedEntityId: item.related_entity_id
+    })) as Notification[];
+  } catch (error) {
+    console.error('Bildirişlər yüklənərkən xəta:', error);
+    return [];
   }
 };
 
 // Bildirişi oxunmuş kimi işarələmək üçün
-export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+export const markNotificationAsRead = async (id: string) => {
   try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('id', notificationId);
-
+      .eq('id', id);
+      
     if (error) throw error;
-  } catch (error: any) {
-    console.error('Bildiriş oxundu kimi işarələnərkən xəta:', error.message);
-    throw new Error('Bildiriş güncəllənərkən xəta baş verdi');
+    
+    return true;
+  } catch (error) {
+    console.error('Bildiriş oxunmuş kimi işarələnərkən xəta:', error);
+    return false;
   }
 };
 
-// Bütün bildirişləri oxunmuş kimi işarələmək üçün
-export const markAllNotificationsAsRead = async (): Promise<void> => {
+// Bildirişi silmək üçün
+export const deleteNotification = async (id: string) => {
   try {
     const { error } = await supabase
       .from('notifications')
-      .update({ is_read: true })
-      .eq('is_read', false);
-
+      .delete()
+      .eq('id', id);
+      
     if (error) throw error;
-  } catch (error: any) {
-    console.error('Bütün bildirişlər oxundu kimi işarələnərkən xəta:', error.message);
-    throw new Error('Bildirişlər güncəllənərkən xəta baş verdi');
+    
+    return true;
+  } catch (error) {
+    console.error('Bildiriş silinərkən xəta:', error);
+    return false;
   }
 };
 
-// Bildiriş yaratmaq üçün (geri planda istifadə üçün)
-export const createNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<string> => {
+// Bütün bildirişləri silmək üçün
+export const clearAllNotifications = async (userId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Bütün bildirişlər silinərkən xəta:', error);
+    return false;
+  }
+};
+
+// Yeni bildiriş göndərmək üçün
+export const createNotification = async (
+  userId: string,
+  title: string,
+  message: string,
+  type: NotificationType,
+  priority: NotificationPriority = 'normal',
+  relatedEntityType?: string,
+  relatedEntityId?: string
+) => {
   try {
     const { data, error } = await supabase
       .from('notifications')
       .insert({
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        priority: notification.priority,
-        related_entity_type: notification.relatedEntityType,
-        related_entity_id: notification.relatedEntityId,
-        is_read: false
-      })
-      .select('id')
-      .single();
-
+        title,
+        message,
+        type,
+        priority,
+        related_entity_type: relatedEntityType,
+        related_entity_id: relatedEntityId,
+        is_read: false,
+        user_id: userId // userId əlavə edildi
+      });
+      
     if (error) throw error;
     
-    return data.id;
-  } catch (error: any) {
-    console.error('Bildiriş yaradılarkən xəta:', error.message);
-    throw new Error('Bildiriş yaradılarkən xəta baş verdi');
+    toast.success('Bildiriş göndərildi');
+    return true;
+  } catch (error) {
+    console.error('Bildiriş yaradılarkən xəta:', error);
+    toast.error('Bildiriş göndərilə bilmədi');
+    return false;
   }
-};
-
-// Notification-ın uyğun adını əldə etmək üçün
-export const getNotificationTypeLabel = (type: string): string => {
-  const types: Record<string, string> = {
-    'newCategory': 'Yeni kateqoriya',
-    'deadline': 'Son tarix',
-    'approvalRequest': 'Təsdiq tələbi',
-    'approved': 'Təsdiqləndi',
-    'rejected': 'Rədd edildi',
-    'systemUpdate': 'Sistem yeniləməsi',
-    'reminder': 'Xatırlatma'
-  };
-  
-  return types[type] || type;
 };

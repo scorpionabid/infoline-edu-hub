@@ -10,15 +10,21 @@ import { NotificationItem } from '../notifications/NotificationItem';
 import { useNotifications } from '@/context/NotificationContext';
 import { Bell } from 'lucide-react';
 
-const NotificationsCard: React.FC<{ dashboardNotifications?: Notification[] }> = ({ 
-  dashboardNotifications 
+interface NotificationsCardProps {
+  dashboardNotifications?: Notification[];
+  notifications?: Notification[]; // Əlavə prop əlavə edirik, köhnə kodla uyğunluq üçün
+}
+
+const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+  dashboardNotifications,
+  notifications
 }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { notifications, loading } = useNotifications();
+  const { notifications: contextNotifications, loading } = useNotifications();
   
-  // İlk 5 bildirişi göstərək
-  const displayNotifications = dashboardNotifications || notifications.slice(0, 5);
+  // Notifications prop üstünlük təşkil edir, sonra dashboardNotifications, sonra isə context-dən
+  const displayNotifications = notifications || dashboardNotifications || contextNotifications.slice(0, 5);
   
   const handleViewAll = () => {
     navigate('/notifications');

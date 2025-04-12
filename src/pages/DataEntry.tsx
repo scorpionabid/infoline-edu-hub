@@ -26,6 +26,11 @@ const DataEntry: React.FC = () => {
   const { user } = useAuth();
   const { userRole } = usePermissions();
   
+  const isSchoolAdmin = userRole === 'schooladmin';
+  const canEditData = useMemo(() => {
+    return isSchoolAdmin && ['pending', 'rejected'].includes(status);
+  }, [isSchoolAdmin, status]);
+  
   useEffect(() => {
     if (userRole === 'regionadmin') {
       navigate('/categories');
