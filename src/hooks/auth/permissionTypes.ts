@@ -2,6 +2,7 @@
 import { UserRole } from '@/types/supabase';
 
 export type PermissionLevel = 'read' | 'write' | 'admin';
+export type PermissionCheckResult = boolean | Promise<boolean>;
 
 export interface UsePermissionsResult {
   // Əsas hüquq yoxlama funksiyaları

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,7 +7,7 @@ import RegionAdminDashboard from './RegionAdminDashboard';
 import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
-import { useSchoolAdminDashboard } from '@/hooks/useSchoolAdminDashboard';
+import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 
 interface DashboardContentProps {
   userRole: string | undefined;
@@ -30,7 +29,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
   
-  // Məktəb admin üçün əsl məlumatları yükləyirik
   const { 
     data: schoolAdminData, 
     isLoading: schoolAdminLoading,
@@ -38,7 +36,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     refetch: refreshSchoolAdminData 
   } = useSchoolAdminDashboard();
 
-  // Data entry səhifəsinə keçid
   const navigateToDataEntry = () => {
     navigate('/data-entry');
     toast.success(t('navigatingToDataEntry'), {
@@ -46,7 +43,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     });
   };
 
-  // Form-a keçid funksiyası - Data entry səhifəsinə yönləndirir və form ID-sini ötürür
   const handleFormClick = (formId: string) => {
     navigate(`/data-entry?formId=${formId}`);
     toast.info(t('openingForm'), {
@@ -54,7 +50,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     });
   };
 
-  // Yüklənmə zamanı göstəriləcək
   const isLoading = userRole === 'schooladmin' ? schoolAdminLoading : mockDataLoading;
   
   if (isLoading) {
@@ -65,7 +60,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
-  // Render appropriate dashboard based on user role
   const renderDashboard = () => {
     const normalizedRole = typeof userRole === 'string' ? userRole.toLowerCase() : '';
     
@@ -112,7 +106,6 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     }
   };
 
-  // Chart data null yoxlaması əlavə edək
   const safeChartData = {
     activityData: Array.isArray(chartData?.activityData) ? chartData.activityData : [],
     regionSchoolsData: Array.isArray(chartData?.regionSchoolsData) ? chartData.regionSchoolsData : [],

@@ -24,7 +24,8 @@ export const fetchNotifications = async (userId: string) => {
       createdAt: item.created_at,
       userId: item.user_id,
       relatedEntityType: item.related_entity_type,
-      relatedEntityId: item.related_entity_id
+      relatedEntityId: item.related_entity_id,
+      date: item.created_at // Dashboard üçün date sahəsi əlavə edirik
     })) as Notification[];
   } catch (error) {
     console.error('Bildirişlər yüklənərkən xəta:', error);
@@ -45,6 +46,23 @@ export const markNotificationAsRead = async (id: string) => {
     return true;
   } catch (error) {
     console.error('Bildiriş oxunmuş kimi işarələnərkən xəta:', error);
+    return false;
+  }
+};
+
+// Bütün bildirişləri oxunmuş kimi işarələmək üçün
+export const markAllNotificationsAsRead = async (userId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Bütün bildirişlər oxunmuş kimi işarələnərkən xəta:', error);
     return false;
   }
 };
@@ -104,7 +122,7 @@ export const createNotification = async (
         related_entity_type: relatedEntityType,
         related_entity_id: relatedEntityId,
         is_read: false,
-        user_id: userId // userId əlavə edildi
+        user_id: userId
       });
       
     if (error) throw error;

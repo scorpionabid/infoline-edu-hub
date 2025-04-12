@@ -2,8 +2,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
-import { Notification } from '@/types/notifications';
-import { useNotifications } from '@/context/NotificationContext';
+import { Notification } from '@/types/notification';
 import { cn } from '@/lib/utils';
 import {
   Bell,
@@ -17,33 +16,34 @@ import {
 
 interface NotificationItemProps {
   notification: Notification;
+  onMarkAsRead?: (id: string) => void;
 }
 
-export const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
-  const { markAsRead } = useNotifications();
-  
+export const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead }) => {
   const handleClick = () => {
-    if (!notification.isRead) {
-      markAsRead(notification.id);
+    if (!notification.isRead && onMarkAsRead) {
+      onMarkAsRead(notification.id);
     }
   };
   
   const getIcon = () => {
     switch (notification.type) {
-      case 'newCategory':
+      case 'category':
         return <Bell className="h-4 w-4" />;
       case 'deadline':
         return <CalendarClock className="h-4 w-4" />;
-      case 'approvalRequest':
+      case 'approval':
         return <Clock className="h-4 w-4" />;
-      case 'approved':
+      case 'success':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'rejected':
+      case 'error':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'systemUpdate':
+      case 'info':
         return <Info className="h-4 w-4 text-blue-500" />;
-      case 'reminder':
+      case 'warning':
         return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'system':
+        return <Bell className="h-4 w-4" />;
       default:
         return <Bell className="h-4 w-4" />;
     }
@@ -61,7 +61,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
   };
   
   const getTimeAgo = () => {
-    return formatDistanceToNow(notification.createdAt, {
+    return formatDistanceToNow(new Date(notification.createdAt), {
       addSuffix: true,
       locale: az
     });

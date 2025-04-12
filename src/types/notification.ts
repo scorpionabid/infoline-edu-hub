@@ -11,5 +11,6 @@ export interface Notification {
   createdAt: string;
   userId: string;
   priority: NotificationPriority;
-  time?: string; // Əlavə vaxt sahəsi
+  time?: string;
+  date?: string; // Əlavə edildi dashboard tipləri ilə uyğunluq üçün
 }

@@ -6,7 +6,16 @@ export interface FormItem {
   date: string;
   status: string;
   completionPercentage: number;
-  category?: string; // Bu xassəni əlavə edirik çünki `dashboardUtils.ts` onu istifadə edir
+  category?: string;
+}
+
+export interface FormStatus {
+  pending: number;
+  approved: number;
+  rejected: number;
+  dueSoon: number;
+  overdue: number;
+  total: number;
 }
 
 export interface Notification {
@@ -52,7 +61,7 @@ export interface SectorAdminDashboardData {
   stats?: StatsItem[];
   schoolStats?: { id: string; name: string; completionRate: number; pending: number }[];
   pendingItems?: { id: string; school: string; category: string; date: string; }[];
-  categoryCompletion?: { name: string; completionRate: number; color: string; }[];
+  categoryCompletion?: { name: string; completionRate: number; color: string; id?: string }[];
   activityLog?: { id: string; action: string; target: string; time: string; }[];
 }
 
@@ -71,10 +80,12 @@ export interface RegionAdminDashboardData {
     name: string;
     completionRate: number;
     color: string;
+    id?: string;
   }[];
   sectorCompletions?: {
     name: string;
     completionRate: number;
+    id?: string;
   }[];
 }
 

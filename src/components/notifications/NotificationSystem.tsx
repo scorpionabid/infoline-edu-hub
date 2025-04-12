@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { NotificationItem } from '@/components/notifications/NotificationItem';
+import { NotificationItem } from './NotificationItem';
 import { cn } from '@/lib/utils';
 
 const NotificationSystem = () => {
@@ -52,7 +52,7 @@ const NotificationSystem = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={markAllAsRead}
+                  onClick={() => markAllAsRead()}
                   disabled={unreadCount === 0}
                 >
                   <Check className="h-4 w-4 mr-1" />
@@ -61,7 +61,7 @@ const NotificationSystem = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={clearAll}
+                  onClick={() => clearAll()}
                 >
                   <BellOff className="h-4 w-4 mr-1" />
                   <span className="text-xs">{t('clearAll')}</span>

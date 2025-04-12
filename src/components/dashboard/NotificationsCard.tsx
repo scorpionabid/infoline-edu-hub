@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Notification } from '@/types/dashboard';
+import { Notification } from '@/types/notification';
 import { Button } from '@/components/ui/button';
 import { NotificationItem } from '../notifications/NotificationItem';
 import { useNotifications } from '@/context/NotificationContext';
@@ -60,10 +60,12 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
                       id: notification.id,
                       title: notification.title,
                       message: notification.message,
-                      createdAt: new Date(notification.date),
+                      createdAt: notification.createdAt || notification.date,
                       isRead: notification.isRead,
                       type: notification.type,
-                      priority: notification.priority as any
+                      priority: notification.priority as any,
+                      userId: notification.userId || '',
+                      date: notification.date || notification.createdAt
                     }} 
                   />
                 ))}
