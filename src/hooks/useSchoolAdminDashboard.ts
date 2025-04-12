@@ -1,208 +1,148 @@
 
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { TableNames } from '@/types/db';
-import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
-import { Notification } from '@/types/notification';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { SchoolAdminDashboardData } from '@/types/dashboard';
 
-interface UseSchoolAdminDashboardResult {
-  data: SchoolAdminDashboardData;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
-}
-
-export const useSchoolAdminDashboard = (): UseSchoolAdminDashboardResult => {
+export const useSchoolAdminDashboard = () => {
   const { user } = useAuth();
-  const [data, setData] = useState<SchoolAdminDashboardData>({
-    forms: {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      total: 0,
-      dueSoon: 0,
-      overdue: 0
-    },
-    notifications: [],
-    completionRate: 0,
-    pendingForms: []
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!user?.schoolId) {
-      setIsLoading(false);
-      return;
+  const schoolId = user?.schoolId;
+  
+  const fetchDashboardData = async (): Promise<SchoolAdminDashboardData> => {
+    if (!schoolId) {
+      throw new Error('Məktəb ID-si tapılmadı');
     }
-
+    
     try {
-      setIsLoading(true);
-      setError(null);
+      // Kateqoriyaları əldə edirik
+      const { data: categories, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name, description, deadline')
+        .eq('status', 'active')
+        .order('priority', { ascending: true });
       
-      console.log(`Fetching dashboard data for school admin, school ID: ${user.schoolId}`);
+      if (categoriesError) throw categoriesError;
       
-      // Pending məlumatların sayını əldə et
-      const { count: pendingCount, error: pendingError } = await supabase
-        .from(TableNames.DATA_ENTRIES)
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', user.schoolId)
-        .eq('status', 'pending');
+      // Məlumatları əldə edirik
+      const { data: entries, error: entriesError } = await supabase
+        .from('data_entries')
+        .select('id, category_id, status, column_id')
+        .eq('school_id', schoolId);
       
-      if (pendingError) throw pendingError;
+      if (entriesError) throw entriesError;
       
-      // Approved məlumatların sayını əldə et
-      const { count: approvedCount, error: approvedError } = await supabase
-        .from(TableNames.DATA_ENTRIES)
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', user.schoolId)
-        .eq('status', 'approved');
-      
-      if (approvedError) throw approvedError;
-      
-      // Rejected məlumatların sayını əldə et
-      const { count: rejectedCount, error: rejectedError } = await supabase
-        .from(TableNames.DATA_ENTRIES)
-        .select('*', { count: 'exact', head: true })
-        .eq('school_id', user.schoolId)
-        .eq('status', 'rejected');
-      
-      if (rejectedError) throw rejectedError;
-      
-      // Son tarixə görə deadline-i yaxınlaşan məlumatlar
-      const { count: dueSoonCount, error: dueSoonError } = await supabase
-        .from(TableNames.CATEGORIES)
-        .select('*', { count: 'exact', head: true })
-        .gte('deadline', new Date().toISOString())
-        .lte('deadline', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()); // 7 gün
-      
-      if (dueSoonError) throw dueSoonError;
-      
-      // Vaxtı keçmiş məlumatlar
-      const { count: overdueCount, error: overdueError } = await supabase
-        .from(TableNames.CATEGORIES)
-        .select('*', { count: 'exact', head: true })
-        .lt('deadline', new Date().toISOString());
-      
-      if (overdueError) throw overdueError;
-      
-      // Məktəb üçün bildirişləri əldə et
+      // Bildirisləri əldə edirik
       const { data: notifications, error: notificationsError } = await supabase
-        .from(TableNames.NOTIFICATIONS)
+        .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(5);
       
       if (notificationsError) throw notificationsError;
       
-      // Pending formları əldə et
-      const { data: pendingForms, error: pendingFormsError } = await supabase
-        .from(TableNames.DATA_ENTRIES)
-        .select(`
-          id,
-          status,
-          created_at,
-          updated_at,
-          category:${TableNames.CATEGORIES}(name)
-        `)
-        .eq('school_id', user.schoolId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Statuslara görə məlumatları qruplaşdırırıq
+      const pendingCount = entries.filter(e => e.status === 'pending').length;
+      const approvedCount = entries.filter(e => e.status === 'approved').length;
+      const rejectedCount = entries.filter(e => e.status === 'rejected').length;
       
-      if (pendingFormsError) throw pendingFormsError;
+      // Kateqoriya və sütunları hesablayırıq
+      const { data: columns, error: columnsError } = await supabase
+        .from('columns')
+        .select('id, category_id')
+        .eq('status', 'active');
       
-      // Formları formatlayırıq
-      const formattedPendingForms: FormItem[] = pendingForms.map(form => ({
-        id: form.id,
-        title: form.category?.name || 'Unknown Category',
-        date: new Date(form.created_at).toLocaleDateString(),
-        status: form.status,
-        completionPercentage: 100, // Tam doldurulmuş sayırıq çünki təqdim edilib
-        category: form.category?.name
-      }));
+      if (columnsError) throw columnsError;
       
-      // Tamamlanma faizini hesablayırıq - hələlik sadə bir formula
-      const totalEntries = pendingCount + approvedCount + rejectedCount;
-      const approvalRate = totalEntries > 0 
-        ? Math.round((approvedCount / totalEntries) * 100) 
-        : 0;
+      // Hər kateqoriya üçün sütunların sayını hesablayırıq
+      const columnCountByCategory = columns.reduce((acc, column) => {
+        acc[column.category_id] = (acc[column.category_id] || 0) + 1;
+        return acc;
+      }, {});
       
-      // Data state-ni yeniləyirik
-      setData({
-        forms: {
-          pending: pendingCount || 0,
-          approved: approvedCount || 0,
-          rejected: rejectedCount || 0,
-          total: (pendingCount || 0) + (approvedCount || 0) + (rejectedCount || 0),
-          dueSoon: dueSoonCount || 0,
-          overdue: overdueCount || 0
-        },
-        notifications: formatNotifications(notifications || []),
-        completionRate: approvalRate,
-        pendingForms: formattedPendingForms,
-        formsByStatus: {
-          pending: pendingCount || 0,
-          approved: approvedCount || 0, 
-          rejected: rejectedCount || 0
+      // Gözləmədə olan formları hazırlayırıq
+      const pendingForms = categories.map(category => {
+        const categoryEntries = entries.filter(e => e.category_id === category.id);
+        const pendingEntries = categoryEntries.filter(e => e.status === 'pending');
+        const totalColumns = columnCountByCategory[category.id] || 0;
+        
+        let status: string = 'pending';
+        if (category.deadline) {
+          const deadline = new Date(category.deadline);
+          const now = new Date();
+          const threeDaysFromNow = new Date();
+          threeDaysFromNow.setDate(now.getDate() + 3);
+          
+          if (deadline < now) {
+            status = 'overdue';
+          } else if (deadline <= threeDaysFromNow) {
+            status = 'dueSoon';
+          }
         }
-      });
+        
+        return {
+          id: category.id,
+          title: category.name,
+          description: category.description,
+          date: category.deadline ? new Date(category.deadline).toLocaleDateString() : 'Son tarix təyin edilməyib',
+          status,
+          completionPercentage: totalColumns ? Math.round((pendingEntries.length / totalColumns) * 100) : 0
+        };
+      }).filter(form => form.status === 'pending' || form.status === 'dueSoon' || form.status === 'overdue');
       
-      console.log('School admin dashboard data loaded successfully');
-    } catch (err: any) {
-      console.error('Error fetching school admin dashboard data:', err);
-      setError(err instanceof Error ? err : new Error(err.message || 'Bilinməyən xəta'));
-      toast.error('Məlumatları yükləyərkən xəta baş verdi', {
-        description: err.message
-      });
-    } finally {
-      setIsLoading(false);
+      // Son tarixə görə gözləmədə olan formları və son tarixə az qalmış olanları hesablayırıq
+      const dueSoonCount = pendingForms.filter(form => form.status === 'dueSoon').length;
+      const overdueCount = pendingForms.filter(form => form.status === 'overdue').length;
+      
+      // Tamamlanma dərəcəsini hesablayırıq
+      const { data: school, error: schoolError } = await supabase
+        .from('schools')
+        .select('completion_rate')
+        .eq('id', schoolId)
+        .single();
+      
+      if (schoolError) throw schoolError;
+      
+      // Dashboard məlumatlarını qaytarırıq
+      return {
+        forms: {
+          pending: pendingCount,
+          approved: approvedCount,
+          rejected: rejectedCount,
+          dueSoon: dueSoonCount,
+          overdue: overdueCount,
+          total: pendingCount + approvedCount + rejectedCount
+        },
+        completionRate: school.completion_rate || 0,
+        notifications: notifications.map(notification => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          date: new Date(notification.created_at).toLocaleDateString(),
+          isRead: notification.is_read,
+          priority: notification.priority,
+          type: notification.type
+        })),
+        pendingForms
+      };
+    } catch (error) {
+      console.error('Dashboard məlumatları əldə edilərkən xəta:', error);
+      throw error;
     }
-  }, [user?.schoolId, user?.id]);
-  
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  
-  return {
-    data,
-    isLoading,
-    error,
-    refetch: fetchData
   };
-};
-
-// Bildirişləri formatlamaq üçün köməkçi funksiya
-const formatNotifications = (notifications: any[]): Notification[] => {
-  return notifications.map(notification => ({
-    id: notification.id,
-    title: notification.title,
-    message: notification.message || '',
-    type: notification.type,
-    isRead: notification.is_read,
-    createdAt: notification.created_at,
-    userId: notification.user_id,
-    priority: notification.priority || 'normal',
-    time: formatTime(notification.created_at)
-  }));
-};
-
-// Zaman formatlaması üçün köməkçi funksiya
-const formatTime = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
   
-  if (diffMins < 1) return 'İndicə';
-  if (diffMins < 60) return `${diffMins} dəqiqə əvvəl`;
-  if (diffHours < 24) return `${diffHours} saat əvvəl`;
-  if (diffDays < 7) return `${diffDays} gün əvvəl`;
-  
-  return date.toLocaleDateString();
+  return useQuery({
+    queryKey: ['schoolAdminDashboard', schoolId],
+    queryFn: fetchDashboardData,
+    enabled: !!schoolId && !!user,
+    refetchInterval: 60000, // Hər dəqiqə yeniləyirik
+    retry: 2,
+    onError: (error: any) => {
+      toast.error('Dashboard məlumatları əldə edilərkən xəta', { 
+        description: error.message 
+      });
+    }
+  });
 };
