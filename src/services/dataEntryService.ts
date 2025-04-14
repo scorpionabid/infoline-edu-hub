@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntryForm, EntryValue } from '@/types/dataEntry';
 import { toast } from 'sonner';
+import { mapDbColumnToAppColumn } from '@/utils/typeMappings';
 
 /**
  * Bütün kateqoriya və sütunları əldə edir
@@ -25,7 +26,7 @@ export const fetchCategoriesWithColumns = async (): Promise<CategoryWithColumns[
     // Hər bir kateqoriya üçün sütunları əldə et
     const categoriesWithColumns = await Promise.all(
       categories.map(async (category) => {
-        const { data: columns, error: columnsError } = await supabase
+        const { data: columnsData, error: columnsError } = await supabase
           .from('columns')
           .select('*')
           .eq('category_id', category.id)
@@ -34,9 +35,22 @@ export const fetchCategoriesWithColumns = async (): Promise<CategoryWithColumns[
         
         if (columnsError) throw columnsError;
         
+        // Sütunları uyğun tipə çeviririk
+        const columns = (columnsData || []).map(mapDbColumnToAppColumn);
+        
         return {
-          ...category,
-          columns: columns || []
+          id: category.id,
+          name: category.name,
+          description: category.description || '',
+          assignment: category.assignment as 'all' | 'sectors',
+          deadline: category.deadline,
+          status: category.status,
+          priority: category.priority || 0,
+          created_at: category.created_at,
+          updated_at: category.updated_at,
+          archived: category.archived || false,
+          column_count: columns.length,
+          columns
         };
       })
     );

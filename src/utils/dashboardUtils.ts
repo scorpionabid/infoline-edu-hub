@@ -6,9 +6,11 @@ import {
   SchoolAdminDashboardData, 
   DashboardNotification,
   ChartData,
-  FormItem
+  FormItem,
+  DashboardData
 } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
+import { UserRole } from '@/types/user';
 
 /**
  * Bildirim tipini DashboardNotification tipinə çevirir
@@ -18,6 +20,23 @@ export function convertToDashboardNotification(notification: Notification): Dash
     ...notification,
     date: notification.time || notification.createdAt || new Date().toISOString()
   };
+}
+
+/**
+ * İstifadəçi roluna əsasən dashboard məlumatları yaradır
+ */
+export function generateDashboardDataByRole(role: UserRole): DashboardData {
+  switch (role) {
+    case 'superadmin':
+      return createMockSuperAdminData();
+    case 'regionadmin':
+      return createMockRegionAdminData();
+    case 'sectoradmin':
+      return createMockSectorAdminData();
+    case 'schooladmin':
+    default:
+      return createMockSchoolAdminData();
+  }
 }
 
 /**

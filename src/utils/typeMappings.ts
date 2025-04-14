@@ -53,6 +53,17 @@ export function mapDbColumnTypeToAppType(dbType: string): Column['type'] {
   }
 }
 
+interface ValidationRules {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  patternError?: string;
+  minDate?: string;
+  maxDate?: string;
+}
+
 /**
  * Verilənlər bazasından gələn sütunu tətbiq Sütun tipinə çevirir
  * @param dbColumn Verilənlər bazasından gələn sütun
@@ -148,6 +159,9 @@ export function validateColumnValue(value: any, column: Column): { isValid: bool
     return { isValid: true };
   }
   
+  // Validation obyektini alaq
+  const validation = column.validation as ValidationRules;
+  
   // Tip yoxlamaları
   switch (column.type) {
     case 'number':
@@ -160,17 +174,17 @@ export function validateColumnValue(value: any, column: Column): { isValid: bool
       
       // Min/max yoxlamaları
       const numValue = Number(value);
-      if (column.validation?.minValue !== undefined && numValue < column.validation.minValue) {
+      if (validation?.minValue !== undefined && numValue < validation.minValue) {
         return { 
           isValid: false,
-          errorMessage: `Minimum dəyər ${column.validation.minValue} olmalıdır`
+          errorMessage: `Minimum dəyər ${validation.minValue} olmalıdır`
         };
       }
       
-      if (column.validation?.maxValue !== undefined && numValue > column.validation.maxValue) {
+      if (validation?.maxValue !== undefined && numValue > validation.maxValue) {
         return { 
           isValid: false,
-          errorMessage: `Maksimum dəyər ${column.validation.maxValue} olmalıdır`
+          errorMessage: `Maksimum dəyər ${validation.maxValue} olmalıdır`
         };
       }
       break;
@@ -180,27 +194,27 @@ export function validateColumnValue(value: any, column: Column): { isValid: bool
       const strValue = String(value);
       
       // Min/max uzunluq yoxlamaları
-      if (column.validation?.minLength !== undefined && strValue.length < column.validation.minLength) {
+      if (validation?.minLength !== undefined && strValue.length < validation.minLength) {
         return { 
           isValid: false,
-          errorMessage: `Minimum ${column.validation.minLength} simvol daxil edin`
+          errorMessage: `Minimum ${validation.minLength} simvol daxil edin`
         };
       }
       
-      if (column.validation?.maxLength !== undefined && strValue.length > column.validation.maxLength) {
+      if (validation?.maxLength !== undefined && strValue.length > validation.maxLength) {
         return { 
           isValid: false,
-          errorMessage: `Maksimum ${column.validation.maxLength} simvol daxil edilə bilər`
+          errorMessage: `Maksimum ${validation.maxLength} simvol daxil edilə bilər`
         };
       }
       
       // Regex yoxlaması
-      if (column.validation?.pattern) {
-        const regex = new RegExp(column.validation.pattern);
+      if (validation?.pattern) {
+        const regex = new RegExp(validation.pattern);
         if (!regex.test(strValue)) {
           return { 
             isValid: false,
-            errorMessage: column.validation.patternError || 'Düzgün format daxil edin'
+            errorMessage: validation.patternError || 'Düzgün format daxil edin'
           };
         }
       }
@@ -215,8 +229,8 @@ export function validateColumnValue(value: any, column: Column): { isValid: bool
         }
         
         // Min/max tarix yoxlamaları
-        if (column.validation?.minDate) {
-          const minDate = new Date(column.validation.minDate);
+        if (validation?.minDate) {
+          const minDate = new Date(validation.minDate);
           if (dateValue < minDate) {
             return { 
               isValid: false,
@@ -225,8 +239,8 @@ export function validateColumnValue(value: any, column: Column): { isValid: bool
           }
         }
         
-        if (column.validation?.maxDate) {
-          const maxDate = new Date(column.validation.maxDate);
+        if (validation?.maxDate) {
+          const maxDate = new Date(validation.maxDate);
           if (dateValue > maxDate) {
             return { 
               isValid: false,

@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   generateDashboardDataByRole, 
-  generateMockChartData 
+  createMockChartData 
 } from '@/utils/dashboardUtils';
 import { Notification } from '@/types/notification';
 import { 
@@ -44,7 +44,7 @@ export const useDashboardData = () => {
         setDashboardData(mockData);
         
         // Qrafik datanı generasiya etmək
-        const mockChartData = generateMockChartData();
+        const mockChartData = createMockChartData();
         setChartData(mockChartData);
         
         console.log('Dashboard məlumatları uğurla alındı');

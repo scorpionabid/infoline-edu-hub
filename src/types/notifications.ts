@@ -1,12 +1,16 @@
 
+export type NotificationType = 'info' | 'warning' | 'success' | 'error';
+export type NotificationPriority = 'normal' | 'high';
+
 export interface Notification {
   id: string;
+  type: NotificationType;
   title: string;
   message: string;
-  createdAt: Date;
   isRead: boolean;
-  type: string;
-  priority: 'normal' | 'high' | 'low';
-  relatedEntityType?: string;
-  relatedEntityId?: string;
+  createdAt: string;
+  userId: string;
+  priority: NotificationPriority;
+  time: string;
+  date: string;
 }

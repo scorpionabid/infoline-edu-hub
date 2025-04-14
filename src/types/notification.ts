@@ -1,16 +1,16 @@
 
-export type NotificationType = 'info' | 'warning' | 'success' | 'error' | 'system' | 'category' | 'deadline' | 'approval';
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical' | 'urgent';
+export type NotificationType = 'info' | 'warning' | 'success' | 'error';
+export type NotificationPriority = 'normal' | 'high';
 
 export interface Notification {
   id: string;
+  type: NotificationType;
   title: string;
   message: string;
-  type: NotificationType;
   isRead: boolean;
   createdAt: string;
   userId: string;
   priority: NotificationPriority;
-  time?: string;
-  date?: string; // Dashboard tipləri ilə uyğunluq üçün
+  time: string;
+  date: string;
 }
