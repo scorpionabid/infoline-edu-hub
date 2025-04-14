@@ -5,7 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchSchoolAdminDashboard } from '@/services/schoolAdminService';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { useToast } from '@/hooks/use-toast';
-import { Notification } from '@/types/notification';
+import { useNavigate } from 'react-router-dom';
+import { createMockSchoolAdminData } from '@/utils/dashboardUtils';
 
 /**
  * Məktəb admin dashboard hook-u
@@ -14,8 +15,9 @@ import { Notification } from '@/types/notification';
 export default function useSchoolAdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
-  // Default mock data - bu dayanıqlı mockup data sağlayır
+  // Default data - bu dayanıqlı mockup data sağlayır
   const defaultData: SchoolAdminDashboardData = {
     forms: {
       pending: 0,
@@ -31,67 +33,7 @@ export default function useSchoolAdminDashboard() {
   };
   
   // Mock data - əgər API istəyi uğursuz olsa backup kimi istifadə ediləcək
-  const [mockData, setMockData] = useState<SchoolAdminDashboardData>({
-    forms: {
-      pending: 5,
-      approved: 12,
-      rejected: 2,
-      total: 19,
-      dueSoon: 3,
-      overdue: 1
-    },
-    completionRate: 68,
-    notifications: [
-      {
-        id: '1',
-        title: 'Yeni kateqoriya əlavə edildi',
-        message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
-        type: 'category',
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        userId: 'user-1',
-        priority: 'normal',
-        date: new Date().toISOString()
-      },
-      {
-        id: '2',
-        title: 'Son tarix bildirişi',
-        message: 'Müəllim heyəti məlumatlarının doldurulma vaxtı sabah bitir',
-        type: 'deadline',
-        isRead: true,
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        userId: 'user-1',
-        priority: 'high',
-        date: new Date(Date.now() - 86400000).toISOString()
-      }
-    ],
-    pendingForms: [
-      {
-        id: 'form-1',
-        title: 'Şagird statistikası',
-        date: '2025-04-15',
-        status: 'pending',
-        completionPercentage: 75,
-        category: 'Təhsil statistikası'
-      },
-      {
-        id: 'form-2',
-        title: 'Müəllim heyəti',
-        date: '2025-04-20',
-        status: 'pending',
-        completionPercentage: 50,
-        category: 'Kadr məlumatları'
-      },
-      {
-        id: 'form-3',
-        title: 'İnfrastruktur hesabatı',
-        date: '2025-04-18',
-        status: 'dueSoon',
-        completionPercentage: 30,
-        category: 'İnfrastruktur'
-      }
-    ]
-  });
+  const mockData = createMockSchoolAdminData();
 
   // Məktəb admin məlumatları
   const schoolId = user?.schoolId;
@@ -148,27 +90,17 @@ export default function useSchoolAdminDashboard() {
     },
     enabled: !!user, // İstifadəçi mövcuddursa sorğu işə salınır
     initialData: defaultData, // Dayanıqlı bir ilkin dəyər təyin edirik
-    meta: {
-      onError: (error: Error) => {
-        toast({
-          title: 'Xəta',
-          description: `Dashboard məlumatları alınarkən xəta: ${error.message}`,
-          variant: 'destructive'
-        });
-      }
-    }
   });
 
   // Formları redaktə etmək üçün funksiyaların əlavə edilməsi
   const handleFormClick = (formId: string) => {
     console.log(`Form ID ilə data entry səhifəsinə keçid: ${formId}`);
     // İstifadəçini data entry səhifəsinə yönləndir
-    // navigate(`/data-entry/${formId}`);
+    navigate(`/data-entry?categoryId=${formId}`);
   };
 
   const navigateToDataEntry = () => {
-    console.log('Data entry səhifəsinə yönləndirilir');
-    // navigate('/data-entry');
+    navigate('/data-entry');
   };
 
   // Əmin olaq ki, data undefined olmayacaq

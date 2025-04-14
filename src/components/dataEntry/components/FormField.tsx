@@ -1,19 +1,12 @@
 
 import React from 'react';
-import {
-  FormControl,
-  FormDescription,
-  FormField as UIFormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { 
+  Input 
+} from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface FormFieldProps {
   id: string;
@@ -53,7 +47,9 @@ const FormField: React.FC<FormFieldProps> = ({
   
   // Seçim variantlarını hazırlayırıq
   const normalizedOptions = options 
-    ? options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt)
+    ? (Array.isArray(options) 
+        ? options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt) 
+        : [])
     : [];
 
   // Sahəyə görə müxtəlif input tiplərini render edirik
@@ -106,28 +102,10 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
         
-      case 'radio':
-        return (
-          <RadioGroup 
-            value={value || ''}
-            onValueChange={onChange}
-            disabled={disabled}
-          >
-            {normalizedOptions.map((option) => (
-              <div className="flex items-center space-x-2" key={option.value}>
-                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
-                <label htmlFor={`${id}-${option.value}`} className="text-sm font-medium">
-                  {option.label}
-                </label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-        
       case 'select':
         return (
           <Select 
-            value={value || ''} 
+            value={String(value) || ''} 
             onValueChange={onChange}
             disabled={disabled}
           >
@@ -135,7 +113,7 @@ const FormField: React.FC<FormFieldProps> = ({
               <SelectValue placeholder={placeholder || t('select')} />
             </SelectTrigger>
             <SelectContent>
-              {normalizedOptions.map((option) => (
+              {normalizedOptions.map((option: any) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -146,31 +124,13 @@ const FormField: React.FC<FormFieldProps> = ({
         
       case 'date':
         return (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !value && "text-muted-foreground",
-                  error && "border-red-500"
-                )}
-                disabled={disabled}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {value ? format(new Date(value), 'PPP') : <span>{placeholder || t('selectDate')}</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={value ? new Date(value) : undefined}
-                onSelect={(date) => onChange(date)}
-                disabled={disabled}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePicker
+            id={id}
+            date={value ? new Date(value) : undefined}
+            onSelect={(date) => onChange(date?.toISOString())}
+            disabled={disabled}
+            className={error ? 'border-red-500' : ''}
+          />
         );
         
       default:

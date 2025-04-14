@@ -1,10 +1,11 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Notification } from '@/types/notification';
+import { dbNotificationToAppNotification } from '@/types/adapters';
 
 /**
- * İstifadəçinin bildirişlərini əldə edir
+ * İstifadəçi bildirişlərini əldə etmək
  * @param userId İstifadəçi ID
- * @returns Notification[]
  */
 export const fetchNotifications = async (userId: string): Promise<Notification[]> => {
   try {
@@ -14,70 +15,64 @@ export const fetchNotifications = async (userId: string): Promise<Notification[]
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Bildirişləri əldə edərkən xəta:', error);
-      return [];
-    }
+    if (error) throw error;
 
-    return data as Notification[];
+    // Verilənlər bazası bildirişlərini tətbiq bildirişlərinə çeviririk
+    const notifications: Notification[] = data.map(dbNotificationToAppNotification);
+
+    return notifications;
   } catch (error) {
-    console.error('Bildirişləri əldə edərkən xəta:', error);
+    console.error('Bildirişlər əldə edilərkən xəta:', error);
     return [];
   }
 };
 
 /**
- * Bildirişi oxunmuş kimi işarələyir
+ * Bildirişi oxunmuş kimi işarələmək
  * @param notificationId Bildiriş ID
- * @returns Success boolean
+ * @param userId İstifadəçi ID
  */
-export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
+export const markNotificationAsRead = async (notificationId: string, userId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('id', notificationId);
+      .eq('id', notificationId)
+      .eq('user_id', userId);
 
-    if (error) {
-      console.error('Bildirişi oxunmuş kimi işarələyərkən xəta:', error);
-      return false;
-    }
+    if (error) throw error;
 
     return true;
   } catch (error) {
-    console.error('Bildirişi oxunmuş kimi işarələyərkən xəta:', error);
+    console.error('Bildiriş oxunmuş kimi işarələnərkən xəta:', error);
     return false;
   }
 };
 
 /**
- * İstifadəçinin bütün bildirişlərini oxunmuş kimi işarələyir
+ * Bütün bildirişləri oxunmuş kimi işarələmək
  * @param userId İstifadəçi ID
- * @returns Success boolean
  */
 export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('is_read', false);
 
-    if (error) {
-      console.error('Bildirişləri oxunmuş kimi işarələyərkən xəta:', error);
-      return false;
-    }
+    if (error) throw error;
 
     return true;
   } catch (error) {
-    console.error('Bildirişləri oxunmuş kimi işarələyərkən xəta:', error);
+    console.error('Bütün bildirişlər oxunmuş kimi işarələnərkən xəta:', error);
     return false;
   }
 };
 
 /**
- * İstifadəçinin bütün bildirişlərini silir
+ * Bütün bildirişləri silmək (təmizləmək)
  * @param userId İstifadəçi ID
- * @returns Success boolean
  */
 export const clearAllNotifications = async (userId: string): Promise<boolean> => {
   try {
@@ -86,54 +81,41 @@ export const clearAllNotifications = async (userId: string): Promise<boolean> =>
       .delete()
       .eq('user_id', userId);
 
-    if (error) {
-      console.error('Bildirişləri silərkən xəta:', error);
-      return false;
-    }
+    if (error) throw error;
 
     return true;
   } catch (error) {
-    console.error('Bildirişləri silərkən xəta:', error);
+    console.error('Bildirişlər təmizlənərkən xəta:', error);
     return false;
   }
 };
 
 /**
- * Yeni bildiriş yaradır
+ * Yeni bildiriş yaratmaq
  * @param notification Bildiriş məlumatları
- * @returns Success boolean
  */
-export const createNotification = async (data: {
-  title: string;
-  message: string;
-  type: string;
-  userId: string;
-  priority: 'normal' | 'high' | 'low';
-  related_entity_type?: string;
-  related_entity_id?: string;
-}): Promise<boolean> => {
+export const createNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<Notification | null> => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('notifications')
-      .insert({
-        title: data.title,
-        message: data.message,
-        type: data.type,
-        user_id: data.userId,
-        priority: data.priority,
-        related_entity_type: data.related_entity_type,
-        related_entity_id: data.related_entity_id,
-        is_read: false
-      });
+      .insert([{
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        user_id: notification.userId,
+        priority: notification.priority || 'normal',
+        is_read: false,
+        related_entity_type: notification.type,
+        related_entity_id: null,
+      }])
+      .select()
+      .single();
 
-    if (error) {
-      console.error('Bildiriş yaradarkən xəta:', error);
-      return false;
-    }
+    if (error) throw error;
 
-    return true;
+    return dbNotificationToAppNotification(data);
   } catch (error) {
-    console.error('Bildiriş yaradarkən xəta:', error);
-    return false;
+    console.error('Bildiriş yaradılarkən xəta:', error);
+    return null;
   }
 };

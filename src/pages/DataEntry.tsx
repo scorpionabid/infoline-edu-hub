@@ -4,83 +4,54 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
-import { AlertCircle, Save, ArrowLeft, PlusCircle, FileText, Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Save } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Column, CategoryWithColumns } from '@/types/column';
+import { fetchCategoriesWithColumns, fetchSchoolDataEntries, saveDataEntryValue } from '@/services/dataEntryService';
+import FormField from '@/components/dataEntry/components/FormField';
+import { mapDbColumnTypeToAppType } from '@/utils/typeMappings';
 
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface Column {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'textarea' | 'checkbox';
-  options?: string[];
-  is_required: boolean;
-  placeholder?: string;
-  category_id: string;
-  order_index: number;
-}
-
-interface DataEntryForm {
-  categoryId: string;
-  values: Record<string, any>;
+interface FormValues {
+  [columnId: string]: any;
 }
 
 const DataEntry: React.FC = () => {
   const [searchParams] = useSearchParams();
   const formId = searchParams.get('formId');
+  const categoryIdParam = searchParams.get('categoryId');
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [columns, setColumns] = useState<Column[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(formId || '');
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(categoryIdParam || formId || '');
+  const [formValues, setFormValues] = useState<FormValues>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Əgər URL-də formId varsa, onu avtomatik seçmək
-  useEffect(() => {
-    if (formId) {
-      setSelectedCategoryId(formId);
-    }
-  }, [formId]);
+  const [formDataLoaded, setFormDataLoaded] = useState(false);
 
   // Kateqoriyaları yükləmək
   useEffect(() => {
     const loadCategories = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*')
-          .order('name', { ascending: true });
+        const fetchedCategories = await fetchCategoriesWithColumns();
 
-        if (error) throw error;
-
-        setCategories(data || []);
-        
-        if (data && data.length > 0 && !selectedCategoryId) {
-          setSelectedCategoryId(data[0].id);
+        if (fetchedCategories.length === 0) {
+          setError(t('categoriesLoadError') || 'Kateqoriyaları yükləyərkən xəta baş verdi');
+          return;
         }
+
+        setCategories(fetchedCategories);
+        
+        const initialCategoryId = categoryIdParam || formId || fetchedCategories[0].id;
+        setSelectedCategoryId(initialCategoryId);
       } catch (err: any) {
         console.error('Kateqoriyaları yükləyərkən xəta:', err);
         setError(t('categoriesLoadError') || 'Kateqoriyaları yükləyərkən xəta baş verdi');
@@ -90,69 +61,74 @@ const DataEntry: React.FC = () => {
     };
 
     loadCategories();
-  }, [t]);
+  }, [t, categoryIdParam, formId]);
 
   // Seçilmiş kateqoriya dəyişdikdə sütunları yükləmək
   useEffect(() => {
-    const loadColumns = async () => {
-      if (!selectedCategoryId) return;
-
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('columns')
-          .select('*')
-          .eq('category_id', selectedCategoryId)
-          .order('order_index', { ascending: true });
-
-        if (error) throw error;
-
-        setColumns(data || []);
+    const updateColumns = () => {
+      if (!selectedCategoryId || !categories.length) return;
+      
+      const category = categories.find(c => c.id === selectedCategoryId);
+      if (category && category.columns) {
+        // Tip konversiyasından əmin oluruq
+        const typedColumns = category.columns.map(col => ({
+          ...col,
+          type: mapDbColumnTypeToAppType(col.type)
+        }));
         
-        // Mövcud dəyərləri yükləmək
-        loadExistingValues(selectedCategoryId);
-      } catch (err: any) {
-        console.error('Sütunları yükləyərkən xəta:', err);
-        setError(t('columnsLoadError') || 'Sütunları yükləyərkən xəta baş verdi');
-      } finally {
-        setLoading(false);
+        setColumns(typedColumns);
+        
+        // Seçilmiş kateqoriya URL-dən fərqlidirsə, URL-i yeniləyirik
+        if (categoryIdParam !== selectedCategoryId) {
+          navigate(`/data-entry?categoryId=${selectedCategoryId}`, { replace: true });
+        }
+        
+        // Əgər məlumatlar hələ yüklənməyibsə, yükləyirik
+        if (!formDataLoaded && user?.schoolId) {
+          loadExistingValues(selectedCategoryId);
+        }
       }
     };
 
-    loadColumns();
-  }, [selectedCategoryId, t]);
+    updateColumns();
+  }, [selectedCategoryId, categories, categoryIdParam, navigate, formDataLoaded, user]);
 
   // Mövcud dəyərləri yükləmək
   const loadExistingValues = async (categoryId: string) => {
     if (!user?.schoolId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('school_id', user.schoolId);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const values: Record<string, any> = {};
-        data.forEach(entry => {
-          values[entry.column_id] = entry.value;
+      // Bütün kateqoriyalar üçün məlumatları bir dəfə əldə edirik
+      const entriesByCategoryAndColumn = await fetchSchoolDataEntries(user.schoolId);
+      
+      if (entriesByCategoryAndColumn && entriesByCategoryAndColumn[categoryId]) {
+        // Dəyərləri formValues-a çeviririk
+        const values: FormValues = {};
+        
+        Object.entries(entriesByCategoryAndColumn[categoryId]).forEach(([columnId, entryData]: [string, any]) => {
+          values[columnId] = entryData.value;
         });
-        setFormData(values);
+        
+        setFormValues(values);
       } else {
-        // Yeni başlanğıc üçün boş formData
-        setFormData({});
+        // Yeni başlanğıc üçün boş formValues
+        setFormValues({});
       }
+      
+      setFormDataLoaded(true);
     } catch (err: any) {
       console.error('Mövcud dəyərləri yükləyərkən xəta:', err);
+      toast({
+        title: t('error') || 'Xəta',
+        description: t('dataLoadError') || 'Mövcud dəyərləri yükləyərkən xəta baş verdi',
+        variant: 'destructive',
+      });
     }
   };
 
   // Form dəyərinin dəyişdirilməsi
   const handleValueChange = (columnId: string, value: any) => {
-    setFormData(prev => ({
+    setFormValues(prev => ({
       ...prev,
       [columnId]: value
     }));
@@ -170,32 +146,28 @@ const DataEntry: React.FC = () => {
     }
 
     setSaving(true);
+    
     try {
-      // Əvvəlki məlumatları silmək
-      const { error: deleteError } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('category_id', selectedCategoryId)
-        .eq('school_id', user.schoolId);
-
-      if (deleteError) throw deleteError;
-
-      // Yeni məlumatları əlavə etmək
-      const entries = Object.entries(formData).map(([columnId, value]) => ({
-        school_id: user.schoolId,
-        category_id: selectedCategoryId,
-        column_id: columnId,
-        value,
-        status: 'pending',
-        created_by: user.id
-      }));
-
-      if (entries.length > 0) {
-        const { error: insertError } = await supabase
-          .from('data_entries')
-          .insert(entries);
-
-        if (insertError) throw insertError;
+      // Bütün dəyişmiş dəyərləri saxlayırıq
+      const savePromises = Object.entries(formValues).map(async ([columnId, value]) => {
+        return saveDataEntryValue(
+          user.schoolId!,
+          selectedCategoryId,
+          columnId,
+          value,
+          user.id
+        );
+      });
+      
+      const results = await Promise.all(savePromises);
+      
+      // Xətaları yoxlayırıq
+      const errors = results.filter(result => !result.success);
+      
+      if (errors.length > 0) {
+        // Xəta mesajlarını birləşdiririk
+        const errorMessage = errors.map(err => err.message).join('\n');
+        throw new Error(errorMessage);
       }
 
       toast({
@@ -206,7 +178,7 @@ const DataEntry: React.FC = () => {
       console.error('Məlumatları saxlayarkən xəta:', err);
       toast({
         title: t('error') || 'Xəta',
-        description: t('dataSaveError') || 'Məlumatları saxlayarkən xəta baş verdi',
+        description: err.message || t('dataSaveError') || 'Məlumatları saxlayarkən xəta baş verdi',
         variant: 'destructive'
       });
     } finally {
@@ -230,7 +202,6 @@ const DataEntry: React.FC = () => {
     return (
       <div className="container mx-auto py-8">
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t('error') || 'Xəta'}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -323,70 +294,18 @@ const DataEntry: React.FC = () => {
                       </div>
                     ) : (
                       columns.map(column => (
-                        <div key={column.id} className="space-y-2">
-                          <Label htmlFor={column.id}>
-                            {column.name}
-                            {column.is_required && <span className="text-destructive ml-1">*</span>}
-                          </Label>
-                          
-                          {column.type === 'text' && (
-                            <Input
-                              id={column.id}
-                              placeholder={column.placeholder}
-                              value={formData[column.id] || ''}
-                              onChange={(e) => handleValueChange(column.id, e.target.value)}
-                            />
-                          )}
-                          
-                          {column.type === 'number' && (
-                            <Input
-                              id={column.id}
-                              type="number"
-                              placeholder={column.placeholder}
-                              value={formData[column.id] || ''}
-                              onChange={(e) => handleValueChange(column.id, e.target.value)}
-                            />
-                          )}
-                          
-                          {column.type === 'textarea' && (
-                            <Textarea
-                              id={column.id}
-                              placeholder={column.placeholder}
-                              value={formData[column.id] || ''}
-                              onChange={(e) => handleValueChange(column.id, e.target.value)}
-                            />
-                          )}
-                          
-                          {column.type === 'select' && column.options && (
-                            <Select
-                              value={formData[column.id] || ''}
-                              onValueChange={(value) => handleValueChange(column.id, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={column.placeholder || t('select') || 'Seçin'} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {column.options.map(option => (
-                                  <SelectItem key={option} value={option}>
-                                    {option}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                          
-                          {column.type === 'date' && (
-                            <DatePicker
-                              id={column.id}
-                              date={formData[column.id] ? new Date(formData[column.id]) : undefined}
-                              onSelect={(date) => handleValueChange(column.id, date ? date.toISOString() : null)}
-                            />
-                          )}
-                          
-                          {column.description && (
-                            <p className="text-sm text-muted-foreground">{column.description}</p>
-                          )}
-                        </div>
+                        <FormField
+                          key={column.id}
+                          id={column.id}
+                          label={column.name}
+                          type={column.type}
+                          required={column.is_required}
+                          options={column.options || []}
+                          placeholder={column.placeholder}
+                          helpText={column.help_text}
+                          value={formValues[column.id] || ''}
+                          onChange={(value) => handleValueChange(column.id, value)}
+                        />
                       ))
                     )}
                   </div>

@@ -3,10 +3,12 @@ import {
   RegionAdminDashboardData, 
   SectorAdminDashboardData, 
   SchoolAdminDashboardData,
-  ChartData,
-  StatsItem
+  FormItem,
+  StatsItem,
+  DashboardNotification
 } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
+import { appNotificationToDashboardNotification, dbNotificationToDashboardNotification } from '@/types/adapters';
 
 // Mock bildiriş data generasiyası
 const generateMockNotifications = (): Notification[] => {
@@ -19,7 +21,8 @@ const generateMockNotifications = (): Notification[] => {
       isRead: false,
       createdAt: new Date().toISOString(),
       userId: 'user-1',
-      priority: 'normal'
+      priority: 'normal',
+      date: new Date().toISOString()
     },
     {
       id: '2',
@@ -29,7 +32,8 @@ const generateMockNotifications = (): Notification[] => {
       isRead: true,
       createdAt: new Date(Date.now() - 86400000).toISOString(),
       userId: 'user-1',
-      priority: 'high'
+      priority: 'high',
+      date: new Date(Date.now() - 86400000).toISOString()
     },
     {
       id: '3',
@@ -39,7 +43,8 @@ const generateMockNotifications = (): Notification[] => {
       isRead: false,
       createdAt: new Date(Date.now() - 172800000).toISOString(),
       userId: 'user-1',
-      priority: 'normal'
+      priority: 'normal',
+      date: new Date(Date.now() - 172800000).toISOString()
     }
   ];
 };
@@ -79,7 +84,7 @@ const generateMockStats = (): StatsItem[] => {
 };
 
 // SuperAdmin üçün mock data generasiyası
-export const generateSuperAdminData = (): SuperAdminDashboardData => {
+export const createMockSuperAdminData = (): SuperAdminDashboardData => {
   return {
     regions: 12,
     sectors: 48,
@@ -121,7 +126,7 @@ export const generateSuperAdminData = (): SuperAdminDashboardData => {
 };
 
 // RegionAdmin üçün mock data generasiyası
-export const generateRegionAdminData = (): RegionAdminDashboardData => {
+export const createMockRegionAdminData = (): RegionAdminDashboardData => {
   return {
     sectors: 8,
     schools: 120,
@@ -157,7 +162,7 @@ export const generateRegionAdminData = (): RegionAdminDashboardData => {
 };
 
 // SectorAdmin üçün mock data generasiyası
-export const generateSectorAdminData = (): SectorAdminDashboardData => {
+export const createMockSectorAdminData = (): SectorAdminDashboardData => {
   return {
     schools: 24,
     completionRate: 68,
@@ -191,7 +196,7 @@ export const generateSectorAdminData = (): SectorAdminDashboardData => {
 };
 
 // SchoolAdmin üçün mock data generasiyası
-export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
+export const createMockSchoolAdminData = (): SchoolAdminDashboardData => {
   return {
     forms: {
       pending: 5,
@@ -236,14 +241,14 @@ export const generateSchoolAdminData = (): SchoolAdminDashboardData => {
 export const generateDashboardDataByRole = (role: string): any => {
   switch (role) {
     case 'superadmin':
-      return generateSuperAdminData();
+      return createMockSuperAdminData();
     case 'regionadmin':
-      return generateRegionAdminData();
+      return createMockRegionAdminData();
     case 'sectoradmin':
-      return generateSectorAdminData();
+      return createMockSectorAdminData();
     case 'schooladmin':
     default:
-      return generateSchoolAdminData();
+      return createMockSchoolAdminData();
   }
 };
 
