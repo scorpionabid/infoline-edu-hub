@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
@@ -6,7 +5,6 @@ import { fetchSchoolAdminDashboard } from '@/services/schoolAdminService';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { createMockSchoolAdminData } from '@/utils/dashboardUtils';
 
 /**
  * Məktəb admin dashboard hook-u
@@ -32,9 +30,6 @@ export default function useSchoolAdminDashboard() {
     pendingForms: []
   };
   
-  // Mock data - əgər API istəyi uğursuz olsa backup kimi istifadə ediləcək
-  const mockData = createMockSchoolAdminData();
-
   // Məktəb admin məlumatları
   const schoolId = user?.schoolId;
 
@@ -47,8 +42,8 @@ export default function useSchoolAdminDashboard() {
     queryKey: ['schoolAdminDashboard', schoolId],
     queryFn: async () => {
       if (!schoolId) {
-        console.warn('Məktəb ID tapılmadı, mock data istifadə olunur');
-        return mockData;
+        console.warn('Məktəb ID tapılmadı, default data istifadə olunur');
+        return defaultData;
       }
       
       try {
@@ -57,35 +52,35 @@ export default function useSchoolAdminDashboard() {
         // API-dən gələn məlumatların doğruluğunu yoxlayırıq
         // forms sahəsi undefined olsa default dəyərdən istifadə edəcəyik
         if (!result) {
-          console.warn('Serverdən məlumat alına bilmədi, mockData istifadə olunur');
-          return mockData;
+          console.warn('Serverdən məlumat alına bilmədi, default data istifadə olunur');
+          return defaultData;
         }
         
         // forms sahəsinin mövcudluğunu və doğru formatda olduğunu yoxlayırıq
-        // əgər məlumat yoxdursa və ya yanlışdırsa, mockData-dan istifadə edirik
+        // əgər məlumat yoxdursa və ya yanlışdırsa, default data-dan istifadə edirik
         if (!result.forms) {
-          console.warn('Serverdən alınan dashboard məlumatlarında forms sahəsi yoxdur, mock data istifadə olunur');
-          result.forms = mockData.forms;
+          console.warn('Serverdən alınan dashboard məlumatlarında forms sahəsi yoxdur, default data istifadə olunur');
+          result.forms = defaultData.forms;
         }
         
         // Digər məcburi sahələrin yoxlanması
         if (result.completionRate === undefined) {
-          result.completionRate = mockData.completionRate;
+          result.completionRate = defaultData.completionRate;
         }
         
         if (!result.notifications || !Array.isArray(result.notifications)) {
-          result.notifications = mockData.notifications;
+          result.notifications = defaultData.notifications;
         }
         
         if (!result.pendingForms || !Array.isArray(result.pendingForms)) {
-          result.pendingForms = mockData.pendingForms;
+          result.pendingForms = defaultData.pendingForms;
         }
         
         return result;
       } catch (error) {
         console.error('Dashboard məlumatları alınarkən xəta:', error);
-        console.warn('Xəta səbəbindən mockData istifadə olunur');
-        return mockData; 
+        console.warn('Xəta səbəbindən default data istifadə olunur');
+        return defaultData; 
       }
     },
     enabled: !!user, // İstifadəçi mövcuddursa sorğu işə salınır
