@@ -1,63 +1,101 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  fetchNotifications, 
+  markNotificationAsRead, 
+  markAllNotificationsAsRead, 
+  clearAllNotifications 
+} from '@/services/notificationService';
 import { useAuth } from '@/context/AuthContext';
-import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from '@/services/notificationService';
-import { Notification } from '@/types/notification';
+import { useToast } from '@/hooks/use-toast';
 
 export const useNotificationsQuery = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const userId = user?.id;
-
-  // Bildirişləri əldə etmək üçün sorğu
-  const { data: notifications = [], isLoading, error } = useQuery({
-    queryKey: ['notifications', userId],
-    queryFn: async ({ queryKey }) => {
-      // Sorğu kontekstindən userId-ni alırıq
-      const [_, userId] = queryKey;
-      if (!userId) return [];
-      return fetchNotifications(userId as string);
-    },
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000 // 5 dəqiqə
+  
+  // Bildirişləri əldə et
+  const {
+    data: notifications = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: () => fetchNotifications(user?.id || ''),
+    enabled: !!user?.id,
   });
-
-  // Bildirişi oxunmuş kimi işarələmək üçün mutasiya
+  
+  // Bildirişi oxunmuş kimi işarələ
   const markAsReadMutation = useMutation({
-    mutationFn: markNotificationAsRead,
+    mutationFn: (notificationId: string) => markNotificationAsRead(notificationId, user?.id || ''),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Xəta',
+        description: 'Bildiriş oxunmuş kimi işarələnə bilmədi',
+        variant: 'destructive'
+      });
+      console.error('Bildiriş oxunmuş kimi işarələnərkən xəta:', error);
     }
   });
-
-  // Bütün bildirişləri oxunmuş kimi işarələmək üçün mutasiya
+  
+  // Bütün bildirişləri oxunmuş kimi işarələ
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => {
-      if (!userId) return Promise.resolve(false);
-      return markAllNotificationsAsRead(userId);
-    },
+    mutationFn: () => markAllNotificationsAsRead(user?.id || ''),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      toast({
+        title: 'Uğurlu əməliyyat',
+        description: 'Bütün bildirişlər oxunmuş kimi işarələndi',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Xəta',
+        description: 'Bildirişlər oxunmuş kimi işarələnə bilmədi',
+        variant: 'destructive'
+      });
+      console.error('Bildirişlər oxunmuş kimi işarələnərkən xəta:', error);
     }
   });
-
-  // Bütün bildirişləri silmək üçün mutasiya
+  
+  // Bütün bildirişləri təmizlə
   const clearAllMutation = useMutation({
-    mutationFn: () => {
-      if (!userId) return Promise.resolve(false);
-      return clearAllNotifications(userId);
-    },
+    mutationFn: () => clearAllNotifications(user?.id || ''),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      toast({
+        title: 'Uğurlu əməliyyat',
+        description: 'Bütün bildirişlər təmizləndi',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Xəta',
+        description: 'Bildirişlər təmizlənə bilmədi',
+        variant: 'destructive'
+      });
+      console.error('Bildirişlər təmizlənərkən xəta:', error);
     }
   });
-
+  
+  // Oxunmamış bildirişlərin sayını hesabla
+  const unreadCount = notifications.filter(notification => !notification.isRead).length;
+  
   return {
     notifications,
     isLoading,
     error,
-    markAsRead: markAsReadMutation.mutate,
-    markAllAsRead: markAllAsReadMutation.mutate,
-    clearAll: clearAllMutation.mutate
+    refetch,
+    unreadCount,
+    markAsRead: (id: string) => markAsReadMutation.mutate(id),
+    markAllAsRead: () => markAllAsReadMutation.mutate(),
+    clearAll: () => clearAllMutation.mutate(),
+    isMarkAsReadLoading: markAsReadMutation.isPending,
+    isMarkAllAsReadLoading: markAllAsReadMutation.isPending,
+    isClearAllLoading: clearAllMutation.isPending
   };
 };

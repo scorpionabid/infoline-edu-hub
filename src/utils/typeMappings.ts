@@ -50,10 +50,14 @@ export function mapDbColumnTypeToAppType(dbType: string): Column['type'] {
  * @param dbColumn Verilənlər bazasından gələn sütun
  */
 export function mapDbColumnToAppColumn(dbColumn: any): Column {
+  if (!dbColumn) {
+    throw new Error('Sütun məlumatı təqdim edilməyib');
+  }
+  
   return {
     id: dbColumn.id,
     name: dbColumn.name,
-    type: mapDbColumnTypeToAppType(dbColumn.type),
+    type: mapDbColumnTypeToAppType(dbColumn.type || 'text'),
     category_id: dbColumn.category_id,
     is_required: dbColumn.is_required || false,
     order_index: dbColumn.order_index || 0,
@@ -62,6 +66,8 @@ export function mapDbColumnToAppColumn(dbColumn: any): Column {
     options: dbColumn.options ? JSON.parse(typeof dbColumn.options === 'string' ? dbColumn.options : JSON.stringify(dbColumn.options)) : [],
     validation: dbColumn.validation ? JSON.parse(typeof dbColumn.validation === 'string' ? dbColumn.validation : JSON.stringify(dbColumn.validation)) : {},
     default_value: dbColumn.default_value,
-    status: dbColumn.status || 'active'
+    status: dbColumn.status || 'active',
+    created_at: dbColumn.created_at || new Date().toISOString(),
+    updated_at: dbColumn.updated_at || new Date().toISOString()
   };
 }

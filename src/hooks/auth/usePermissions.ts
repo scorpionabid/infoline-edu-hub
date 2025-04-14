@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,6 +8,22 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const usePermissions = () => {
   const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string | undefined>(user?.role);
+  const [sectorId, setSectorId] = useState<string | undefined>(user?.sectorId);
+  const [regionId, setRegionId] = useState<string | undefined>(user?.regionId);
+  const [canRegionAdminManageCategoriesColumns, setCanRegionAdminManageCategoriesColumns] = useState<boolean>(false);
+
+  // İstifadəçi dəyişdikdə rolunu yenilə
+  useEffect(() => {
+    setUserRole(user?.role);
+    setSectorId(user?.sectorId);
+    setRegionId(user?.regionId);
+    
+    // SuperAdmin və RegionAdmin-lər kategoriya/sütunları idarə edə bilər
+    setCanRegionAdminManageCategoriesColumns(
+      user?.role === 'superadmin' || user?.role === 'regionadmin'
+    );
+  }, [user]);
 
   /**
    * İstifadəçinin müəyyən rol olub olmadığını yoxlayır
@@ -78,6 +94,10 @@ export const usePermissions = () => {
   }, [user]);
 
   return {
+    userRole,
+    sectorId,
+    regionId,
+    canRegionAdminManageCategoriesColumns,
     hasRole,
     hasRegionAccess,
     hasSectorAccess,

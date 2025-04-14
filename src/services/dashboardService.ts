@@ -6,7 +6,8 @@ import {
   SchoolAdminDashboardData,
   DashboardNotification,
   ChartData,
-  FormItem
+  FormItem,
+  StatsItem
 } from '@/types/dashboard';
 import { 
   createMockSuperAdminData, 
@@ -15,6 +16,48 @@ import {
   createMockSchoolAdminData
 } from '@/utils/dashboardUtils';
 import { dbNotificationToDashboardNotification } from '@/types/adapters';
+
+/**
+ * Dashboard qrafiklər məlumatlarını əldə edir
+ */
+export const fetchDashboardChartData = async (): Promise<ChartData> => {
+  try {
+    // API-dən real məlumatlar əldə edilə bilər
+    // Hələlik mock data qaytarırıq
+    return {
+      activityData: [
+        { name: 'Yanvar', value: 145 },
+        { name: 'Fevral', value: 230 },
+        { name: 'Mart', value: 275 },
+        { name: 'Aprel', value: 310 },
+        { name: 'May', value: 350 },
+        { name: 'İyun', value: 420 },
+        { name: 'İyul', value: 380 }
+      ],
+      regionSchoolsData: [
+        { name: 'Bakı', value: 185 },
+        { name: 'Sumqayıt', value: 76 },
+        { name: 'Gəncə', value: 54 },
+        { name: 'Mingəçevir', value: 28 },
+        { name: 'Şirvan', value: 23 }
+      ],
+      categoryCompletionData: [
+        { name: 'Şagird statistikası', completed: 85 },
+        { name: 'Müəllim heyəti', completed: 72 },
+        { name: 'İnfrastruktur', completed: 63 },
+        { name: 'Tədris proqramı', completed: 91 },
+        { name: 'İnzibati işlər', completed: 56 }
+      ]
+    };
+  } catch (error) {
+    console.error('Dashboard qrafik məlumatlarını əldə edərkən xəta:', error);
+    return {
+      activityData: [],
+      regionSchoolsData: [],
+      categoryCompletionData: []
+    };
+  }
+};
 
 /**
  * RegionAdmin dashboard məlumatlarını əldə edir
@@ -27,7 +70,7 @@ export const fetchRegionAdminDashboard = async (regionId: string): Promise<Regio
     // Sektorlar
     const { data: sectorData, error: sectorError } = await supabase
       .from('sectors')
-      .select('id, name, completionPercentage:completion_rate, schoolCount:school_count')
+      .select('id, name, completion_rate, school_count')
       .eq('region_id', regionId);
 
     if (sectorError) throw sectorError;
@@ -43,7 +86,7 @@ export const fetchRegionAdminDashboard = async (regionId: string): Promise<Regio
     if (notificationsError) throw notificationsError;
 
     // Statistika (burada mock data istifadə olunur, çünki real məlumat yoxdur)
-    const stats = [
+    const stats: StatsItem[] = [
       {
         id: '1',
         title: 'Ümumi məlumat doldurulma faizi',
@@ -81,9 +124,9 @@ export const fetchRegionAdminDashboard = async (regionId: string): Promise<Regio
 
     const sectorCompletions = sectorData ? sectorData.map(sector => ({
       name: sector.name,
-      completionRate: sector.completionPercentage,
+      completionRate: sector.completion_rate ?? 0,
       id: sector.id,
-      schoolCount: sector.schoolCount
+      schoolCount: sector.school_count ?? 0
     })) : [];
 
     return {
@@ -130,7 +173,7 @@ export const fetchSectorAdminDashboard = async (sectorId: string): Promise<Secto
     // Məktəblər
     const { data: schoolData, error: schoolError } = await supabase
       .from('schools')
-      .select('id, name, completionRate:completion_rate, pending')
+      .select('id, name, completion_rate')
       .eq('sector_id', sectorId);
 
     if (schoolError) throw schoolError;
@@ -146,7 +189,7 @@ export const fetchSectorAdminDashboard = async (sectorId: string): Promise<Secto
     if (notificationsError) throw notificationsError;
 
     // Statistika (burada mock data istifadə olunur, çünki real məlumat yoxdur)
-    const stats = [
+    const stats: StatsItem[] = [
       {
         id: '1',
         title: 'Ümumi məlumat doldurulma faizi',
@@ -194,8 +237,8 @@ export const fetchSectorAdminDashboard = async (sectorId: string): Promise<Secto
       schoolStats: schoolData ? schoolData.map(school => ({
         id: school.id,
         name: school.name,
-        completionRate: school.completionRate,
-        pending: school.pending
+        completionRate: school.completion_rate ?? 0,
+        pending: 0
       })) : [],
       pendingItems: [
         {
@@ -264,7 +307,7 @@ export const fetchSuperAdminDashboard = async (): Promise<SuperAdminDashboardDat
     if (notificationsError) throw notificationsError;
 
     // Statistika (burada mock data istifadə olunur, çünki real məlumat yoxdur)
-    const stats = [
+    const stats: StatsItem[] = [
       {
         id: '1',
         title: 'Ümumi məlumat doldurulma faizi',
@@ -281,7 +324,7 @@ export const fetchSuperAdminDashboard = async (): Promise<SuperAdminDashboardDat
       },
       {
         id: '3',
-        title: 'Keçən aya nəzərən dəyişiklik',
+6 title: 'Keçən aya nəzərən dəyişiklik',
         value: 23,
         change: 5,
         changeType: 'decrease'
@@ -341,5 +384,69 @@ export const fetchSuperAdminDashboard = async (): Promise<SuperAdminDashboardDat
   } catch (error) {
     console.error('SuperAdmin dashboard məlumatları əldə edilərkən xəta:', error);
     return createMockSuperAdminData();
+  }
+};
+
+/**
+ * SchoolAdmin dashboard məlumatlarını əldə edir
+ * @param schoolId Məktəb ID
+ */
+export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<SchoolAdminDashboardData | null> => {
+  try {
+    const { data: schoolData, error: schoolError } = await supabase
+      .from('schools')
+      .select('*, sectors(name), regions(name)')
+      .eq('id', schoolId)
+      .single();
+
+    if (schoolError) throw schoolError;
+
+    // Form statistikasını əldə et
+    // Burada real data əldə etmək üçün sorğular əlavə edilə bilər
+    
+    // Bildirişləri əldə et
+    const userId = (await supabase.auth.getUser()).data.user?.id || '';
+    
+    const { data: notificationsData, error: notificationsError } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (notificationsError) throw notificationsError;
+
+    // Kateqoriyaları əldə et
+    const { data: categoriesData, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('status', 'active');
+
+    if (categoriesError) throw categoriesError;
+
+    // Tip konversiyaları
+    const dashboardNotifications: DashboardNotification[] = notificationsData
+      ? notificationsData.map(dbNotificationToDashboardNotification)
+      : [];
+
+    // Mock data ilə birləşdir
+    const mockData = createMockSchoolAdminData();
+    
+    return {
+      forms: mockData.forms,
+      completionRate: schoolData.completion_rate || 0,
+      notifications: dashboardNotifications,
+      pendingForms: categoriesData ? categoriesData.map(category => ({
+        id: category.id,
+        title: category.name,
+        category: category.description || '',
+        status: 'pending',
+        completionPercentage: 0,
+        date: category.deadline ? new Date(category.deadline).toISOString().split('T')[0] : '',
+      })) : mockData.pendingForms
+    };
+  } catch (error) {
+    console.error('SchoolAdmin dashboard məlumatları əldə edilərkən xəta:', error);
+    return createMockSchoolAdminData();
   }
 };

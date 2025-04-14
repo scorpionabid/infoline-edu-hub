@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { 
-  fetchSuperAdminDashboardData, 
-  fetchRegionAdminDashboardData,
-  fetchSectorAdminDashboardData,
+  fetchSuperAdminDashboard, 
+  fetchRegionAdminDashboard,
+  fetchSectorAdminDashboard,
   fetchDashboardChartData 
 } from '@/services/dashboardService';
 import { DashboardData, ChartData } from '@/types/dashboard';
@@ -48,18 +48,18 @@ export const useRealDashboardData = ({
       
       switch (user.role) {
         case 'superadmin':
-          data = await fetchSuperAdminDashboardData();
+          data = await fetchSuperAdminDashboard();
           break;
         case 'regionadmin':
           if (user.regionId) {
-            data = await fetchRegionAdminDashboardData(user.regionId);
+            data = await fetchRegionAdminDashboard(user.regionId);
           } else {
             throw new Error('Region ID tapılmadı');
           }
           break;
         case 'sectoradmin':
           if (user.sectorId) {
-            data = await fetchSectorAdminDashboardData(user.sectorId);
+            data = await fetchSectorAdminDashboard(user.sectorId);
           } else {
             throw new Error('Sektor ID tapılmadı');
           }
