@@ -1,18 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, ArrowLeft, FileText, Save } from 'lucide-react';
+import { Loader2, ArrowLeft, FileText, Save, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Column, CategoryWithColumns } from '@/types/column';
-import { fetchCategoriesWithColumns, fetchSchoolDataEntries, saveDataEntryValue } from '@/services/dataEntryService';
+import { fetchCategoriesWithColumns, fetchSchoolDataEntries, saveDataEntryValue, saveAllCategoryData, submitCategoryForApproval, prepareExcelTemplateData } from '@/services/dataEntryService';
 import FormField from '@/components/dataEntry/components/FormField';
+import DataEntrySaveBar from '@/components/dataEntry/DataEntrySaveBar';
 import { mapDbColumnTypeToAppType } from '@/utils/typeMappings';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface FormValues {
   [columnId: string]: any;
@@ -28,13 +32,18 @@ const DataEntry: React.FC = () => {
   const { toast } = useToast();
 
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [columns, setColumns] = useState<Column[]>([]);
+  const [formValues, setFormValues] = useState<Record<string, FormValues>>({});
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(categoryIdParam || formId || '');
-  const [formValues, setFormValues] = useState<FormValues>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formDataLoaded, setFormDataLoaded] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [completionPercentage, setCompletionPercentage] = useState<number>(0);
+
+  // Auto-save parametrləri
+  const autoSaveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const AUTO_SAVE_DELAY = 5000; // 5 saniyə
 
   // Kateqoriyaları yükləmək
   useEffect(() => {
@@ -63,80 +72,124 @@ const DataEntry: React.FC = () => {
     loadCategories();
   }, [t, categoryIdParam, formId]);
 
-  // Seçilmiş kateqoriya dəyişdikdə sütunları yükləmək
+  // Məlumatları yükləmək
   useEffect(() => {
-    const updateColumns = () => {
-      if (!selectedCategoryId || !categories.length) return;
-      
-      const category = categories.find(c => c.id === selectedCategoryId);
-      if (category && category.columns) {
-        // Tip konversiyasından əmin oluruq
-        const typedColumns = category.columns.map(col => ({
-          ...col,
-          type: mapDbColumnTypeToAppType(col.type)
-        }));
-        
-        setColumns(typedColumns);
-        
-        // Seçilmiş kateqoriya URL-dən fərqlidirsə, URL-i yeniləyirik
-        if (categoryIdParam !== selectedCategoryId) {
-          navigate(`/data-entry?categoryId=${selectedCategoryId}`, { replace: true });
-        }
-        
-        // Əgər məlumatlar hələ yüklənməyibsə, yükləyirik
-        if (!formDataLoaded && user?.schoolId) {
-          loadExistingValues(selectedCategoryId);
-        }
-      }
-    };
+    const loadDataEntries = async () => {
+      if (!user?.schoolId) return;
 
-    updateColumns();
-  }, [selectedCategoryId, categories, categoryIdParam, navigate, formDataLoaded, user]);
-
-  // Mövcud dəyərləri yükləmək
-  const loadExistingValues = async (categoryId: string) => {
-    if (!user?.schoolId) return;
-
-    try {
-      // Bütün kateqoriyalar üçün məlumatları bir dəfə əldə edirik
-      const entriesByCategoryAndColumn = await fetchSchoolDataEntries(user.schoolId);
-      
-      if (entriesByCategoryAndColumn && entriesByCategoryAndColumn[categoryId]) {
-        // Dəyərləri formValues-a çeviririk
-        const values: FormValues = {};
+      try {
+        const entriesByCategoryAndColumn = await fetchSchoolDataEntries(user.schoolId);
         
-        Object.entries(entriesByCategoryAndColumn[categoryId]).forEach(([columnId, entryData]: [string, any]) => {
-          values[columnId] = entryData.value;
+        const values: Record<string, FormValues> = {};
+        
+        Object.entries(entriesByCategoryAndColumn).forEach(([categoryId, columnEntries]) => {
+          values[categoryId] = {};
+          
+          Object.entries(columnEntries).forEach(([columnId, entry]: [string, any]) => {
+            values[categoryId][columnId] = entry.value;
+          });
         });
         
         setFormValues(values);
-      } else {
-        // Yeni başlanğıc üçün boş formValues
-        setFormValues({});
+        
+        // Tamamlanma faizini hesablayaq
+        calculateCompletionPercentage(selectedCategoryId, values);
+      } catch (err: any) {
+        console.error('Mövcud dəyərləri yükləyərkən xəta:', err);
+        toast({
+          title: t('error') || 'Xəta',
+          description: t('dataLoadError') || 'Mövcud dəyərləri yükləyərkən xəta baş verdi',
+          variant: 'destructive',
+        });
       }
-      
-      setFormDataLoaded(true);
-    } catch (err: any) {
-      console.error('Mövcud dəyərləri yükləyərkən xəta:', err);
-      toast({
-        title: t('error') || 'Xəta',
-        description: t('dataLoadError') || 'Mövcud dəyərləri yükləyərkən xəta baş verdi',
-        variant: 'destructive',
-      });
+    };
+
+    loadDataEntries();
+  }, [user?.schoolId, categories]);
+
+  // Tamamlanma faizini hesablamaq
+  const calculateCompletionPercentage = (categoryId: string, values: Record<string, FormValues>) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    const requiredColumns = category.columns.filter(c => c.is_required);
+    if (requiredColumns.length === 0) {
+      setCompletionPercentage(100);
+      return;
     }
+
+    const categoryValues = values[categoryId] || {};
+    let filledRequiredCount = 0;
+
+    requiredColumns.forEach(column => {
+      const value = categoryValues[column.id];
+      if (value !== undefined && value !== null && value !== '') {
+        filledRequiredCount++;
+      }
+    });
+
+    const percentage = (filledRequiredCount / requiredColumns.length) * 100;
+    setCompletionPercentage(percentage);
   };
+
+  // Seçilmiş kateqoriya dəyişdikdə URL-i və tamamlanma faizini yenilə
+  useEffect(() => {
+    if (selectedCategoryId) {
+      calculateCompletionPercentage(selectedCategoryId, formValues);
+      navigate(`/data-entry?categoryId=${selectedCategoryId}`, { replace: true });
+    }
+  }, [selectedCategoryId, formValues, navigate]);
 
   // Form dəyərinin dəyişdirilməsi
   const handleValueChange = (columnId: string, value: any) => {
-    setFormValues(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
+    setFormValues(prev => {
+      const updatedValues = {
+        ...prev,
+        [selectedCategoryId]: {
+          ...(prev[selectedCategoryId] || {}),
+          [columnId]: value
+        }
+      };
+      
+      // Auto-save funksiyasını başlat
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        handleAutoSave(columnId, value);
+      }, AUTO_SAVE_DELAY);
+      
+      calculateCompletionPercentage(selectedCategoryId, updatedValues);
+      
+      return updatedValues;
+    });
   };
 
-  // Formu saxlamaq
+  // Auto-save funksiyası
+  const handleAutoSave = async (columnId: string, value: any) => {
+    if (!user?.schoolId || !user?.id) return;
+    
+    try {
+      setSaving(true);
+      await saveDataEntryValue(
+        user.schoolId,
+        selectedCategoryId,
+        columnId,
+        value,
+        user.id
+      );
+      setLastSaved(new Date().toISOString());
+    } catch (err) {
+      console.error('Auto-save xətası:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Manuel saxlama
   const handleSave = async () => {
-    if (!user?.schoolId || !selectedCategoryId) {
+    if (!user?.schoolId || !user?.id || !selectedCategoryId) {
       toast({
         title: t('error') || 'Xəta',
         description: t('missingRequiredData') || 'Tələb olunan məlumatlar çatışmır',
@@ -148,32 +201,29 @@ const DataEntry: React.FC = () => {
     setSaving(true);
     
     try {
-      // Bütün dəyişmiş dəyərləri saxlayırıq
-      const savePromises = Object.entries(formValues).map(async ([columnId, value]) => {
-        return saveDataEntryValue(
-          user.schoolId!,
-          selectedCategoryId,
-          columnId,
-          value,
-          user.id
-        );
-      });
+      const categoryValues = formValues[selectedCategoryId] || {};
       
-      const results = await Promise.all(savePromises);
+      const result = await saveAllCategoryData(
+        user.schoolId,
+        selectedCategoryId,
+        categoryValues,
+        user.id
+      );
       
-      // Xətaları yoxlayırıq
-      const errors = results.filter(result => !result.success);
-      
-      if (errors.length > 0) {
-        // Xəta mesajlarını birləşdiririk
-        const errorMessage = errors.map(err => err.message).join('\n');
-        throw new Error(errorMessage);
+      if (result.success) {
+        toast({
+          title: t('success') || 'Uğurlu',
+          description: result.message || t('dataSaved') || 'Məlumatlar uğurla saxlanıldı',
+        });
+        
+        setLastSaved(new Date().toISOString());
+      } else {
+        toast({
+          title: t('error') || 'Xəta',
+          description: result.message || t('dataSaveError') || 'Məlumatları saxlayarkən xəta baş verdi',
+          variant: 'destructive'
+        });
       }
-
-      toast({
-        title: t('success') || 'Uğurlu',
-        description: t('dataSaved') || 'Məlumatlar uğurla saxlanıldı',
-      });
     } catch (err: any) {
       console.error('Məlumatları saxlayarkən xəta:', err);
       toast({
@@ -186,7 +236,224 @@ const DataEntry: React.FC = () => {
     }
   };
 
-  // Əsas komponenti render etmək
+  // Təsdiq üçün göndərmək
+  const handleSubmit = async () => {
+    if (!user?.schoolId || !user?.id || !selectedCategoryId) {
+      toast({
+        title: t('error') || 'Xəta',
+        description: t('missingRequiredData') || 'Tələb olunan məlumatlar çatışmır',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (completionPercentage < 100) {
+      toast({
+        title: t('warning') || 'Xəbərdarlıq',
+        description: t('completeAllFieldsBeforeSubmit') || 'Təqdim etmədən əvvəl bütün məcburi sahələri doldurun',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    
+    try {
+      // Əvvəlcə bütün dəyişiklikləri saxla
+      await handleSave();
+      
+      // Sonra təsdiq üçün göndər
+      const result = await submitCategoryForApproval(
+        selectedCategoryId,
+        user.schoolId,
+        user.id
+      );
+      
+      if (result.success) {
+        toast({
+          title: t('success') || 'Uğurlu',
+          description: result.message || t('dataSubmitted') || 'Məlumatlar təsdiq üçün uğurla göndərildi',
+        });
+      } else {
+        toast({
+          title: t('error') || 'Xəta',
+          description: result.message || t('dataSubmitError') || 'Məlumatları təsdiq üçün göndərərkən xəta baş verdi',
+          variant: 'destructive'
+        });
+      }
+    } catch (err: any) {
+      console.error('Məlumatları təsdiq üçün göndərərkən xəta:', err);
+      toast({
+        title: t('error') || 'Xəta',
+        description: err.message || t('dataSubmitError') || 'Məlumatları təsdiq üçün göndərərkən xəta baş verdi',
+        variant: 'destructive'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Excel şablonu yükləmək
+  const handleDownloadTemplate = () => {
+    const category = categories.find(c => c.id === selectedCategoryId);
+    if (!category) return;
+    
+    const templateData = prepareExcelTemplateData(category);
+    
+    // Excel kitabçası yarat
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet([templateData.headers, ...templateData.rows]);
+    
+    // Sütun enini tənzimlə
+    const columnWidths = [
+      { wch: 36 }, // ID
+      { wch: 30 }, // Column Name
+      { wch: 15 }, // Type
+      { wch: 10 }, // Required
+      { wch: 30 }  // Value
+    ];
+    
+    worksheet['!cols'] = columnWidths;
+    
+    // Excel faylına əlavə et
+    XLSX.utils.book_append_sheet(workbook, worksheet, templateData.categoryName);
+    
+    // Faylı yarat və yüklə
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    
+    saveAs(blob, `${templateData.categoryName}_Template.xlsx`);
+    
+    toast({
+      title: t('success') || 'Uğurlu',
+      description: t('templateDownloaded') || 'Excel şablonu yükləndi',
+    });
+  };
+
+  // Excel datasını yükləmək
+  const handleUploadData = async (file: File) => {
+    try {
+      if (!user?.schoolId || !user?.id) {
+        toast({
+          title: t('error') || 'Xəta',
+          description: t('notAuthenticated') || 'İstifadəçi məlumatları tapılmadı',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      const category = categories.find(c => c.id === selectedCategoryId);
+      if (!category) {
+        toast({
+          title: t('error') || 'Xəta',
+          description: t('categoryNotFound') || 'Kateqoriya tapılmadı',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      // Faylı oxu
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      // İlk worksheeti al
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      // Excel cədvəlini JavaScript obyektinə çevir
+      const jsonData = XLSX.utils.sheet_to_json<any>(worksheet);
+      
+      if (jsonData.length === 0) {
+        toast({
+          title: t('error') || 'Xəta',
+          description: t('noDataInExcel') || 'Excel faylında məlumat tapılmadı',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      // Məlumatları formatla
+      const values: FormValues = {};
+      
+      jsonData.forEach(row => {
+        const columnId = row['ID'];
+        const value = row['Value'];
+        
+        if (columnId && value !== undefined) {
+          const column = category.columns.find(col => col.id === columnId);
+          if (column) {
+            // Sütun tipinə görə dəyəri çevir
+            switch (column.type) {
+              case 'number':
+                values[columnId] = Number(value);
+                break;
+              case 'checkbox':
+                values[columnId] = value === 'true' || value === true || value === 1 || value === '1';
+                break;
+              case 'date':
+                values[columnId] = new Date(value).toISOString();
+                break;
+              default:
+                values[columnId] = value;
+            }
+          }
+        }
+      });
+      
+      if (Object.keys(values).length === 0) {
+        toast({
+          title: t('warning') || 'Xəbərdarlıq',
+          description: t('noValidDataInExcel') || 'Excel faylında keçərli məlumat tapılmadı',
+          variant: 'warning'
+        });
+        return;
+      }
+      
+      // Məlumatları formda göstər
+      setFormValues(prev => ({
+        ...prev,
+        [selectedCategoryId]: {
+          ...(prev[selectedCategoryId] || {}),
+          ...values
+        }
+      }));
+      
+      // Məlumatları serverdə saxla
+      const result = await saveAllCategoryData(
+        user.schoolId,
+        selectedCategoryId,
+        values,
+        user.id
+      );
+      
+      if (result.success) {
+        toast({
+          title: t('success') || 'Uğurlu',
+          description: t('excelDataImported', { count: result.savedCount }) || `${result.savedCount} məlumat uğurla idxal edildi`,
+        });
+        
+        setLastSaved(new Date().toISOString());
+        calculateCompletionPercentage(selectedCategoryId, {
+          ...formValues,
+          [selectedCategoryId]: { ...(formValues[selectedCategoryId] || {}), ...values }
+        });
+      } else {
+        toast({
+          title: t('error') || 'Xəta',
+          description: result.message || t('excelImportError') || 'Excel məlumatlarını idxal edərkən xəta baş verdi',
+          variant: 'destructive'
+        });
+      }
+    } catch (err: any) {
+      console.error('Excel məlumatlarını yükləyərkən xəta:', err);
+      toast({
+        title: t('error') || 'Xəta',
+        description: err.message || t('excelImportError') || 'Excel məlumatlarını yükləyərkən xəta baş verdi',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // UI-ni render et
   if (loading && categories.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -202,6 +469,7 @@ const DataEntry: React.FC = () => {
     return (
       <div className="container mx-auto py-8">
         <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t('error') || 'Xəta'}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -216,6 +484,10 @@ const DataEntry: React.FC = () => {
       </div>
     );
   }
+
+  // Seçilmiş kateqoriyanın sütunlarını əldə et
+  const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+  const selectedCategoryValues = formValues[selectedCategoryId] || {};
 
   return (
     <div className="container mx-auto py-8">
@@ -272,28 +544,38 @@ const DataEntry: React.FC = () => {
                 {t('selectCategoryToStartDesc') || 'Məlumat daxil etmək üçün sol paneldən bir kateqoriya seçin'}
               </p>
             </CardContent>
+          ) : !selectedCategory ? (
+            <CardContent className="flex flex-col items-center justify-center h-[500px]">
+              <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-center">
+                {t('categoryNotFound') || 'Kateqoriya tapılmadı'}
+              </p>
+              <p className="text-muted-foreground text-center mt-2">
+                {t('selectAnotherCategory') || 'Zəhmət olmasa başqa bir kateqoriya seçin'}
+              </p>
+            </CardContent>
           ) : (
             <>
               <CardHeader>
                 <CardTitle>
-                  {categories.find(c => c.id === selectedCategoryId)?.name || t('dataForm') || 'Məlumat formu'}
+                  {selectedCategory.name || t('dataForm') || 'Məlumat formu'}
                 </CardTitle>
                 <CardDescription>
-                  {categories.find(c => c.id === selectedCategoryId)?.description || 
+                  {selectedCategory.description || 
                     t('fillRequiredFields') || 'Tələb olunan sahələri doldurun'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[500px] pr-4">
                   <div className="space-y-6">
-                    {columns.length === 0 ? (
+                    {selectedCategory.columns.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-[300px]">
                         <p className="text-muted-foreground">
                           {t('noCategoriesFound') || 'Bu kateqoriya üçün sütunlar tapılmadı'}
                         </p>
                       </div>
                     ) : (
-                      columns.map(column => (
+                      selectedCategory.columns.map(column => (
                         <FormField
                           key={column.id}
                           id={column.id}
@@ -303,7 +585,7 @@ const DataEntry: React.FC = () => {
                           options={column.options || []}
                           placeholder={column.placeholder}
                           helpText={column.help_text}
-                          value={formValues[column.id] || ''}
+                          value={selectedCategoryValues[column.id] || ''}
                           onChange={(value) => handleValueChange(column.id, value)}
                         />
                       ))
@@ -311,24 +593,16 @@ const DataEntry: React.FC = () => {
                   </div>
                 </ScrollArea>
                 
-                <div className="pt-6 mt-6 border-t flex justify-end">
-                  <Button 
-                    onClick={handleSave} 
-                    disabled={saving || loading}
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('saving') || 'Saxlanılır...'}
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        {t('saveData') || 'Məlumatları saxla'}
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <DataEntrySaveBar
+                  lastSaved={lastSaved || undefined}
+                  isSaving={saving}
+                  isSubmitting={submitting}
+                  completionPercentage={completionPercentage}
+                  onSave={handleSave}
+                  onSubmit={handleSubmit}
+                  onDownloadTemplate={handleDownloadTemplate}
+                  onUploadData={handleUploadData}
+                />
               </CardContent>
             </>
           )}
