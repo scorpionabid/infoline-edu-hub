@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -30,7 +31,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const navigate = useNavigate();
   
   const { 
-    data: schoolAdminData, 
+    dashboard: schoolAdminData, // Adı schoolAdminData ilə dəyişdik ki, null halında defaultData istifadə olunsun
     isLoading: schoolAdminLoading,
     error: schoolAdminError,
     refetch: refreshSchoolAdminData 
@@ -66,15 +67,23 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     try {
       switch (normalizedRole) {
         case 'superadmin':
-          return <SuperAdminDashboard data={dashboardData} />;
+          return <SuperAdminDashboard data={dashboardData || {}} />;
         case 'regionadmin':
-          return <RegionAdminDashboard data={dashboardData} />;
+          return <RegionAdminDashboard data={dashboardData || {}} />;
         case 'sectoradmin':
-          return <SectorAdminDashboard data={dashboardData} />;
+          return <SectorAdminDashboard data={dashboardData || {}} />;
         case 'schooladmin':
+          // Əmin olaq ki, schoolAdminData undefined deyil
+          const validSchoolAdminData = schoolAdminData || {
+            forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
+            completionRate: 0,
+            notifications: [],
+            pendingForms: []
+          };
+          
           return (
             <SchoolAdminDashboard 
-              data={schoolAdminData}
+              data={validSchoolAdminData}
               isLoading={schoolAdminLoading}
               error={schoolAdminError}
               onRefresh={refreshSchoolAdminData}
@@ -84,9 +93,17 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           );
         default:
           console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
+          // Default halda da etibarlı məlumatlar göndərək
+          const defaultData = {
+            forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
+            completionRate: 0,
+            notifications: [],
+            pendingForms: []
+          };
+          
           return (
             <SchoolAdminDashboard 
-              data={schoolAdminData}
+              data={defaultData}
               isLoading={schoolAdminLoading}
               error={schoolAdminError}
               onRefresh={refreshSchoolAdminData}

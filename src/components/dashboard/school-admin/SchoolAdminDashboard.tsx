@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from '../NotificationsCard';
@@ -94,6 +95,12 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     );
   }
 
+  // Əmin olaq ki, data və data.forms undefined deyil
+  const forms = data?.forms || { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 };
+  const pendingForms = data?.pendingForms || [];
+  const completionRate = data?.completionRate || 0;
+  const notifications = data?.notifications || [];
+
   return (
     <div className="space-y-6">
       {/* Əsas statistika kartları */}
@@ -104,7 +111,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('pendingFormsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.forms?.pending || 0}</div>
+            <div className="text-2xl font-bold">{forms.pending || 0}</div>
           </CardContent>
         </Card>
 
@@ -114,7 +121,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('approvedFormsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.forms?.approved || 0}</div>
+            <div className="text-2xl font-bold">{forms.approved || 0}</div>
           </CardContent>
         </Card>
 
@@ -124,7 +131,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('rejectedFormsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.forms?.rejected || 0}</div>
+            <div className="text-2xl font-bold">{forms.rejected || 0}</div>
           </CardContent>
         </Card>
 
@@ -134,20 +141,20 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             <CardDescription>{t('completionRateDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.completionRate}%</div>
+            <div className="text-2xl font-bold">{completionRate}%</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Vaxt və status statistikası */}
       <FormStatusSection 
-        dueSoonCount={data.forms?.dueSoon || 0}
-        overdueCount={data.forms?.overdue || 0}
-        totalCount={data.forms?.total || 0}
+        dueSoonCount={forms.dueSoon || 0}
+        overdueCount={forms.overdue || 0}
+        totalCount={forms.total || 0}
       />
 
       {/* Bildirişlər kartı */}
-      <NotificationsCard notifications={data.notifications} />
+      <NotificationsCard notifications={notifications} />
 
       {/* Pending formlar */}
       <Card>
@@ -157,9 +164,9 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         </CardHeader>
         <CardContent className="h-[400px]">
           <ScrollArea className="h-full w-full rounded-md border">
-            {data.pendingForms && data.pendingForms.length > 0 ? (
+            {pendingForms && pendingForms.length > 0 ? (
               <div className="divide-y divide-border">
-                {data.pendingForms.map((form) => (
+                {pendingForms.map((form) => (
                   <div key={form.id} className="p-4 flex items-center justify-between">
                     <div>
                       <div className="font-semibold">{form.title}</div>
