@@ -1,5 +1,5 @@
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'textarea' | 'checkbox' | 'radio';
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'textarea' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'phone' | 'boolean';
 
 export interface ColumnOption {
   label: string;
@@ -15,6 +15,8 @@ export interface ValidationRules {
   patternError?: string;
   minDate?: string;
   maxDate?: string;
+  format?: string;
+  regex?: string;
 }
 
 export interface Column {
@@ -32,6 +34,7 @@ export interface Column {
   status: string;
   created_at: string;
   updated_at: string;
+  parentColumnId?: string; // Added for compatibility
 }
 
 export interface Category {
@@ -50,4 +53,22 @@ export interface Category {
 
 export interface CategoryWithColumns extends Category {
   columns: Column[];
+}
+
+// Function to adapt Column type for Supabase
+export function adaptColumnToSupabase(column: Column): any {
+  return {
+    id: column.id,
+    name: column.name,
+    type: column.type,
+    category_id: column.category_id,
+    is_required: column.is_required,
+    order_index: column.order_index,
+    help_text: column.help_text || null,
+    placeholder: column.placeholder || null,
+    options: column.options,
+    validation: column.validation,
+    default_value: column.default_value || null,
+    status: column.status,
+  };
 }
