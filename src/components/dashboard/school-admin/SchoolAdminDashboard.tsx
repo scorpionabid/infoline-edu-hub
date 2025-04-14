@@ -4,7 +4,8 @@ import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from '../NotificationsCard';
 import { 
   SchoolAdminDashboardData,
-  FormItem 
+  FormItem,
+  DashboardNotification
 } from '@/types/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,11 +96,21 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     );
   }
 
-  // Əmin olaq ki, data və data.forms undefined deyil
+  // Əmin olaq ki, data və onun alt sahələri undefined deyil
   const forms = data?.forms || { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 };
   const pendingForms = data?.pendingForms || [];
   const completionRate = data?.completionRate || 0;
-  const notifications = data?.notifications || [];
+  
+  // Notification tipini uyğunlaşdırırıq
+  const notifications = (data?.notifications || []).map(notification => {
+    if (!notification.date && notification.createdAt) {
+      return {
+        ...notification,
+        date: notification.createdAt
+      } as DashboardNotification;
+    }
+    return notification as DashboardNotification;
+  });
 
   return (
     <div className="space-y-6">

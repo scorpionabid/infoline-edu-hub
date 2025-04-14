@@ -1,7 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
+import { SchoolAdminDashboardData, FormItem, DashboardNotification } from '@/types/dashboard';
 import { Notification } from '@/types/notification';
+
+// RPC-lərin adlarını düzgün qeyd edək
+const RPC_GET_SCHOOL_FORM_STATUS = 'get_school_form_stats';
+const RPC_GET_SCHOOL_PENDING_FORMS = 'get_school_pending_forms';
 
 /**
  * Məktəb admin dashboard məlumatlarını əldə edir
@@ -22,26 +26,95 @@ export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<Schoo
       throw new Error('Məktəb məlumatları əldə edilə bilmədi');
     }
 
-    // Doldurma statuslarını əldə et
+    // Form statusları üçün birbaşa SQL sorğusu edək
     const { data: formStatusData, error: formStatusError } = await supabase
-      .rpc('get_school_form_status', { p_school_id: schoolId });
+      .from('data_entries')
+      .select('status, count')
+      .eq('school_id', schoolId)
+      .then(result => {
+        // Nəticələri emal edib status statuslarını hesablayaq
+        if (result.error) return { data: null, error: result.error };
+        
+        const statusStats = {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          dueSoon: 0,
+          overdue: 0,
+          total: 0
+        };
+        
+        if (result.data && result.data.length > 0) {
+          // Datanı emal edirik
+          result.data.forEach((item: any) => {
+            const status = item.status;
+            const count = parseInt(item.count) || 1;
+            
+            if (status === 'pending') statusStats.pending += count;
+            else if (status === 'approved') statusStats.approved += count;
+            else if (status === 'rejected') statusStats.rejected += count;
+            else if (status === 'dueSoon') statusStats.dueSoon += count;
+            else if (status === 'overdue') statusStats.overdue += count;
+            
+            statusStats.total += count;
+          });
+        }
+        
+        return { data: statusStats, error: null };
+      });
 
     if (formStatusError) {
       console.error('Form statuslarını əldə edərkən xəta:', formStatusError);
       throw new Error('Form statusları əldə edilə bilmədi');
     }
 
-    // Pending formları əldə et
-    const { data: pendingForms, error: pendingFormsError } = await supabase
-      .rpc('get_school_pending_forms', { p_school_id: schoolId });
+    // Pending formların əldə edilməsi (birbaşa SQL)
+    const { data: pendingFormsData, error: pendingFormsError } = await supabase
+      .from('data_entries')
+      .select(`
+        category_id, 
+        c:categories(id, name, description),
+        value, 
+        status, 
+        created_at
+      `)
+      .eq('school_id', schoolId)
+      .in('status', ['pending', 'dueSoon', 'overdue'])
+      .order('created_at', { ascending: false });
 
     if (pendingFormsError) {
       console.error('Gözləyən formaları əldə edərkən xəta:', pendingFormsError);
       throw new Error('Gözləyən formalar əldə edilə bilmədi');
     }
 
+    // Formları kateqoriyalara görə qruplaşdırırıq və əsas məlumatları formalaşdırırıq
+    const pendingForms: FormItem[] = [];
+    const processedCategories = new Set<string>();
+    
+    if (pendingFormsData) {
+      pendingFormsData.forEach((item: any) => {
+        // Hər kateqoriya üçün bir dəfə emal edirik
+        if (!processedCategories.has(item.category_id)) {
+          processedCategories.add(item.category_id);
+          
+          // Kateqoriya məlumatlarını əldə edirik
+          const category = item.c || {};
+          const categoryName = category.name || 'Naməlum kateqoriya';
+          
+          pendingForms.push({
+            id: item.category_id,
+            title: categoryName,
+            date: new Date(item.created_at).toISOString().split('T')[0],
+            status: item.status || 'pending',
+            completionPercentage: 50, // Default dəyər, real hesablanmalıdır
+            category: categoryName
+          });
+        }
+      });
+    }
+
     // Bildirişləri əldə et
-    const { data: notifications, error: notificationsError } = await supabase
+    const { data: notificationsData, error: notificationsError } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
@@ -63,30 +136,20 @@ export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<Schoo
       total: 0
     };
 
-    const formattedPendingForms: FormItem[] = (pendingForms || []).map((form: any) => ({
-      id: form.id,
-      title: form.title,
-      description: form.description,
-      date: form.deadline,
-      status: form.status,
-      completionPercentage: form.completion_percentage,
-      category: form.category
-    }));
-
     // Tamamlanma faizini hesabla
     const completionRate = school.completion_rate || 0;
 
     // Formatlı bildirişlər
-    const formattedNotifications: Notification[] = (notifications || []).map((notification: any) => ({
-      id: notification.id,
-      title: notification.title,
-      message: notification.message,
-      type: notification.type,
-      isRead: notification.is_read,
-      createdAt: notification.created_at,
-      userId: notification.user_id,
-      priority: notification.priority,
-      date: notification.created_at
+    const notifications: DashboardNotification[] = (notificationsData || []).map((n: any) => ({
+      id: n.id,
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      isRead: n.is_read,
+      createdAt: n.created_at,
+      userId: n.user_id,
+      priority: n.priority,
+      date: n.created_at
     }));
 
     return {
@@ -99,8 +162,8 @@ export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<Schoo
         total: formStatus.total || 0
       },
       completionRate,
-      notifications: formattedNotifications,
-      pendingForms: formattedPendingForms
+      notifications,
+      pendingForms
     };
   } catch (error) {
     console.error('Məktəb admin dashboard məlumatlarını əldə edərkən xəta:', error);
@@ -114,7 +177,7 @@ export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<Schoo
  * Mock məktəb admin dashboard məlumatları
  */
 const getMockSchoolAdminDashboard = (): SchoolAdminDashboardData => {
-  const notifications: Notification[] = [
+  const notifications: DashboardNotification[] = [
     {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',

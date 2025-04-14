@@ -1,4 +1,3 @@
-
 export interface FormItem {
   id: string;
   title: string;
@@ -18,17 +17,9 @@ export interface FormStatus {
   total: number;
 }
 
-// Notification tipini notification.ts ilə uyğunlaşdırmaq üçün eyni strukturdan istifadə edirik
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-  userId: string;
-  priority: string;
-  time?: string;
+import { Notification as BaseNotification } from './notification';
+
+export interface DashboardNotification extends BaseNotification {
   date: string;
 }
 
@@ -50,7 +41,7 @@ export interface SchoolAdminDashboardData {
     total: number;
   };
   completionRate: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   pendingForms: FormItem[];
 }
 
@@ -61,7 +52,7 @@ export interface SectorAdminDashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   stats?: StatsItem[];
   schoolStats?: { id: string; name: string; completionRate: number; pending: number }[];
   pendingItems?: { id: string; school: string; category: string; date: string; }[];
@@ -78,7 +69,7 @@ export interface RegionAdminDashboardData {
   pendingSchools: number;
   approvedSchools: number;
   rejectedSchools: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   stats?: StatsItem[];
   categories?: {
     name: string;
@@ -102,7 +93,7 @@ export interface SuperAdminDashboardData {
   users: number;
   completionRate: number;
   pendingApprovals: number;
-  notifications: Notification[];
+  notifications: DashboardNotification[];
   stats?: StatsItem[];
   formsByStatus?: {
     pending: number;

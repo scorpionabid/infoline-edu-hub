@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchSchoolAdminDashboard } from '@/services/schoolAdminService';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { useToast } from '@/hooks/use-toast';
+import { Notification } from '@/types/notification';
 
 /**
  * Məktəb admin dashboard hook-u
@@ -13,6 +14,23 @@ import { useToast } from '@/hooks/use-toast';
 export default function useSchoolAdminDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Default mock data - bu dayanıqlı mockup data sağlayır
+  const defaultData: SchoolAdminDashboardData = {
+    forms: {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      total: 0,
+      dueSoon: 0,
+      overdue: 0
+    },
+    completionRate: 0,
+    notifications: [],
+    pendingForms: []
+  };
+  
+  // Mock data - əgər API istəyi uğursuz olsa backup kimi istifadə ediləcək
   const [mockData, setMockData] = useState<SchoolAdminDashboardData>({
     forms: {
       pending: 5,
@@ -94,21 +112,42 @@ export default function useSchoolAdminDashboard() {
       try {
         const result = await fetchSchoolAdminDashboard(schoolId);
         
-        // Nəticələrin doğru formada olduğunu yoxlamaq üçün bir az əlavə validasiya
-        if (!result || !result.forms) {
-          console.warn('Serverdən alınan dashboard məlumatlarında forms sahəsi yoxdur, default data istifadə olunur');
+        // API-dən gələn məlumatların doğruluğunu yoxlayırıq
+        // forms sahəsi undefined olsa default dəyərdən istifadə edəcəyik
+        if (!result) {
+          console.warn('Serverdən məlumat alına bilmədi, mockData istifadə olunur');
           return mockData;
+        }
+        
+        // forms sahəsinin mövcudluğunu və doğru formatda olduğunu yoxlayırıq
+        // əgər məlumat yoxdursa və ya yanlışdırsa, mockData-dan istifadə edirik
+        if (!result.forms) {
+          console.warn('Serverdən alınan dashboard məlumatlarında forms sahəsi yoxdur, mock data istifadə olunur');
+          result.forms = mockData.forms;
+        }
+        
+        // Digər məcburi sahələrin yoxlanması
+        if (result.completionRate === undefined) {
+          result.completionRate = mockData.completionRate;
+        }
+        
+        if (!result.notifications || !Array.isArray(result.notifications)) {
+          result.notifications = mockData.notifications;
+        }
+        
+        if (!result.pendingForms || !Array.isArray(result.pendingForms)) {
+          result.pendingForms = mockData.pendingForms;
         }
         
         return result;
       } catch (error) {
         console.error('Dashboard məlumatları alınarkən xəta:', error);
         console.warn('Xəta səbəbindən mockData istifadə olunur');
-        return mockData; // Xəta olduqda da etibarlı mock data qaytarırıq
+        return mockData; 
       }
     },
     enabled: !!user, // İstifadəçi mövcuddursa sorğu işə salınır
-    initialData: mockData,
+    initialData: defaultData, // Dayanıqlı bir ilkin dəyər təyin edirik
     meta: {
       onError: (error: Error) => {
         toast({
@@ -133,7 +172,7 @@ export default function useSchoolAdminDashboard() {
   };
 
   // Əmin olaq ki, data undefined olmayacaq
-  const safeData = data || mockData;
+  const safeData = data || defaultData;
 
   return {
     dashboard: safeData,

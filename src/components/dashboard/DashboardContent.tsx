@@ -31,7 +31,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const navigate = useNavigate();
   
   const { 
-    dashboard: schoolAdminData, // Adı schoolAdminData ilə dəyişdik ki, null halında defaultData istifadə olunsun
+    dashboard: schoolAdminData,
     isLoading: schoolAdminLoading,
     error: schoolAdminError,
     refetch: refreshSchoolAdminData 
@@ -73,13 +73,16 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         case 'sectoradmin':
           return <SectorAdminDashboard data={dashboardData || {}} />;
         case 'schooladmin':
-          // Əmin olaq ki, schoolAdminData undefined deyil
-          const validSchoolAdminData = schoolAdminData || {
+          // Default data hazırlayırıq ki, dayanıqlı olsun
+          const defaultData = {
             forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
             completionRate: 0,
             notifications: [],
             pendingForms: []
           };
+          
+          // schoolAdminData undefined olduqda default data-dan istifadə edirik
+          const validSchoolAdminData = schoolAdminData || defaultData;
           
           return (
             <SchoolAdminDashboard 
@@ -94,7 +97,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         default:
           console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
           // Default halda da etibarlı məlumatlar göndərək
-          const defaultData = {
+          const defaultData2 = {
             forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
             completionRate: 0,
             notifications: [],
@@ -103,7 +106,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           
           return (
             <SchoolAdminDashboard 
-              data={defaultData}
+              data={defaultData2}
               isLoading={schoolAdminLoading}
               error={schoolAdminError}
               onRefresh={refreshSchoolAdminData}

@@ -1,26 +1,30 @@
 
-import React from 'react';
-import { format } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { CalendarIcon } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+"use client"
+
+import * as React from "react"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface DatePickerProps {
   id?: string;
   date?: Date;
   onSelect?: (date?: Date) => void;
   disabled?: boolean;
+  className?: string;
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({
+export function DatePicker({
   id,
   date,
   onSelect,
-  disabled = false
-}) => {
+  disabled = false,
+  className,
+}: DatePickerProps) {
   const { t } = useLanguage();
 
   return (
@@ -32,12 +36,13 @@ const DatePicker: React.FC<DatePickerProps> = ({
           className={cn(
             "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground",
-            disabled && "opacity-50 cursor-not-allowed"
+            disabled && "opacity-50 cursor-not-allowed",
+            className
           )}
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, 'PPP') : <span>{t('selectDate')}</span>}
+          {date ? format(date, "PPP") : <span>{t("selectDate") || "Tarix seçin"}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -47,11 +52,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
           onSelect={onSelect}
           disabled={disabled}
           initialFocus
-          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
-  );
-};
+  )
+}
 
 export default DatePicker;
