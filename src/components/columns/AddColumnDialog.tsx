@@ -43,7 +43,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
     removeOption,
     newOption,
     setNewOption,
-    onSubmit: handleFormSubmit,
+    onSubmit,
     isEditMode,
     t
   } = useColumnForm(categories, editColumn, onAddColumn);

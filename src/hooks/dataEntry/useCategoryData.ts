@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, ColumnType, Column } from '@/types/column';
@@ -19,31 +20,34 @@ const mockCategoriesData = [
     deadline: '2024-12-31',
     status: 'active' as 'active' | 'inactive' | 'draft',
     priority: 1,
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    archived: false,
+    column_count: 2,
     columns: [
       {
         id: '101',
-        categoryId: '1',
+        category_id: '1',
         name: 'Ad',
         type: 'text' as ColumnType,
-        isRequired: true,
-        order: 1,
-        status: 'active' as 'active' | 'inactive' | 'draft',
-        validationRules: { maxLength: 50 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        is_required: true,
+        order_index: 1,
+        status: 'active',
+        validation: { maxLength: 50 },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
         id: '102',
-        categoryId: '1',
+        category_id: '1',
         name: 'Soyad',
         type: 'text' as ColumnType,
-        isRequired: true,
-        order: 2,
-        status: 'active' as 'active' | 'inactive' | 'draft',
-        validationRules: { maxLength: 50 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        is_required: true,
+        order_index: 2,
+        status: 'active',
+        validation: { maxLength: 50 },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ]
   },
@@ -55,31 +59,34 @@ const mockCategoriesData = [
     deadline: '2024-12-31',
     status: 'active' as 'active' | 'inactive' | 'draft',
     priority: 2,
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    archived: false,
+    column_count: 2,
     columns: [
       {
         id: '201',
-        categoryId: '2',
+        category_id: '2',
         name: 'Ad',
         type: 'text' as ColumnType,
-        isRequired: true,
-        order: 1,
-        status: 'active' as 'active' | 'inactive' | 'draft',
-        validationRules: { maxLength: 50 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        is_required: true,
+        order_index: 1,
+        status: 'active',
+        validation: { maxLength: 50 },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
         id: '202',
-        categoryId: '2',
+        category_id: '2',
         name: 'Soyad',
         type: 'text' as ColumnType,
-        isRequired: true,
-        order: 2,
-        status: 'active' as 'active' | 'inactive' | 'draft',
-        validationRules: { maxLength: 50 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        is_required: true,
+        order_index: 2,
+        status: 'active',
+        validation: { maxLength: 50 },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ]
   }
@@ -111,38 +118,7 @@ export const useCategoryData = (): UseCategoryDataReturn => {
       
       if (!categoriesData || categoriesData.length === 0) {
         console.log("Supabase-dən kateqoriya tapılmadı, mock datadan istifadə edilir");
-        
-        const adaptCategories = (data: any[]): CategoryWithColumns[] => {
-          return data.map(category => ({
-            id: category.id,
-            name: category.name,
-            description: category.description,
-            assignment: category.assignment as 'all' | 'sectors',
-            deadline: category.deadline,
-            status: category.status as 'active' | 'inactive' | 'draft',
-            priority: category.priority,
-            created_at: category.createdAt || category.created_at,
-            updated_at: category.updatedAt || category.updated_at,
-            columns: category.columns.map((col: any) => ({
-              id: col.id,
-              category_id: col.categoryId || col.category_id,
-              name: col.name,
-              type: col.type as ColumnType,
-              is_required: col.isRequired || col.is_required,
-              order_index: col.order || col.order_index,
-              status: col.status as 'active' | 'inactive' | 'draft',
-              validation: col.validationRules || col.validation,
-              default_value: col.defaultValue || col.default_value,
-              placeholder: col.placeholder,
-              help_text: col.helpText || col.help_text,
-              options: col.options,
-              created_at: col.createdAt || col.created_at,
-              updated_at: col.updatedAt || col.updated_at
-            }))
-          }));
-        };
-
-        setCategories(adaptCategories(mockCategoriesData));
+        setCategories(mockCategoriesData);
         setIsLoading(false);
         return;
       }
@@ -175,6 +151,8 @@ export const useCategoryData = (): UseCategoryDataReturn => {
           priority: category.priority || 0,
           created_at: category.created_at,
           updated_at: category.updated_at,
+          archived: category.archived || false,
+          column_count: category.column_count || 0,
           columns: categoryColumns.map(col => ({
             id: col.id,
             category_id: col.category_id,
@@ -188,8 +166,8 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             placeholder: col.placeholder,
             help_text: col.help_text,
             options: col.options,
-            created_at: col.createdAt || col.created_at,
-            updated_at: col.updatedAt || col.updated_at
+            created_at: col.created_at,
+            updated_at: col.updated_at
           }))
         };
       });
@@ -203,37 +181,8 @@ export const useCategoryData = (): UseCategoryDataReturn => {
         description: "Xahiş edirik bir az sonra yenidən cəhd edin"
       });
       
-      const adaptCategories = (data: any[]): CategoryWithColumns[] => {
-        return data.map(category => ({
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          assignment: category.assignment as 'all' | 'sectors',
-          deadline: category.deadline,
-          status: category.status as 'active' | 'inactive' | 'draft',
-          priority: category.priority,
-          created_at: category.createdAt || category.created_at,
-          updated_at: category.updatedAt || category.updated_at,
-          columns: category.columns.map((col: any) => ({
-            id: col.id,
-            category_id: col.categoryId || col.category_id,
-            name: col.name,
-            type: col.type as ColumnType,
-            is_required: col.isRequired || col.is_required,
-            order_index: col.order || col.order_index,
-            status: col.status as 'active' | 'inactive' | 'draft',
-            validation: col.validationRules || col.validation,
-            default_value: col.defaultValue || col.default_value,
-            placeholder: col.placeholder,
-            help_text: col.helpText || col.help_text,
-            options: col.options,
-            created_at: col.createdAt || col.created_at,
-            updated_at: col.updatedAt || col.updated_at
-          }))
-        }));
-      };
-
-      setCategories(adaptCategories(mockCategoriesData));
+      // Fallback olaraq mock data təyin et
+      setCategories(mockCategoriesData);
     } finally {
       setIsLoading(false);
     }

@@ -10,6 +10,8 @@ export type NotificationType =
   | 'success'
   | 'info';
 
+export type NotificationPriority = 'low' | 'normal' | 'high';
+
 export interface Notification {
   id: string;
   type: NotificationType;
@@ -17,9 +19,10 @@ export interface Notification {
   message: string;
   isRead: boolean;
   createdAt: string;
-  priority?: 'low' | 'normal' | 'high';
+  userId: string;
+  priority: NotificationPriority;
   relatedId?: string;
   relatedType?: string;
-  time?: string; // Əlavə edildi
-  date?: string; // Əlavə edildi
+  time: string;
+  date: string;
 }

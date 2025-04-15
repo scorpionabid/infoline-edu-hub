@@ -148,8 +148,15 @@ const UserList: React.FC<UserListProps> = ({
               handleUpdateUserConfirm({
                 ...updatedUser,
                 name: updatedUser.full_name, // name alanını full_name ile senkronize et
-                full_name: updatedUser.full_name // full_name alanını da güncelle
-              } as any);
+                full_name: updatedUser.full_name, // full_name alanını da güncelle
+                // Ensure notificationSettings is complete
+                notificationSettings: {
+                  email: updatedUser.notificationSettings?.email || true,
+                  push: updatedUser.notificationSettings?.push || false, 
+                  sms: updatedUser.notificationSettings?.sms || false,
+                  system: updatedUser.notificationSettings?.system || false
+                }
+              });
               handleUserUpdated();
             }}
           />
@@ -167,7 +174,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser as any}
+            user={fullUserDataToUser(selectedUser as FullUserData)}
           />
         </>
       )}

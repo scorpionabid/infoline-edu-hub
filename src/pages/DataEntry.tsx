@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -41,17 +40,15 @@ const DataEntry: React.FC = () => {
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [completionPercentage, setCompletionPercentage] = useState<number>(0);
 
-  // Auto-save parametrləri
   const autoSaveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const AUTO_SAVE_DELAY = 5000; // 5 saniyə
+  const AUTO_SAVE_DELAY = 5000;
 
-  // Kateqoriyaları yükləmək
   useEffect(() => {
     const loadCategories = async () => {
       setLoading(true);
       try {
         const fetchedCategories = await fetchCategoriesWithColumns();
-
+        
         if (fetchedCategories.length === 0) {
           setError(t('categoriesLoadError') || 'Kateqoriyaları yükləyərkən xəta baş verdi');
           return;
@@ -72,7 +69,6 @@ const DataEntry: React.FC = () => {
     loadCategories();
   }, [t, categoryIdParam, formId]);
 
-  // Məlumatları yükləmək
   useEffect(() => {
     const loadDataEntries = async () => {
       if (!user?.schoolId) return;
@@ -92,7 +88,6 @@ const DataEntry: React.FC = () => {
         
         setFormValues(values);
         
-        // Tamamlanma faizini hesablayaq
         calculateCompletionPercentage(selectedCategoryId, values);
       } catch (err: any) {
         console.error('Mövcud dəyərləri yükləyərkən xəta:', err);
@@ -107,7 +102,6 @@ const DataEntry: React.FC = () => {
     loadDataEntries();
   }, [user?.schoolId, categories]);
 
-  // Tamamlanma faizini hesablamaq
   const calculateCompletionPercentage = (categoryId: string, values: Record<string, FormValues>) => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return;
@@ -132,7 +126,6 @@ const DataEntry: React.FC = () => {
     setCompletionPercentage(percentage);
   };
 
-  // Seçilmiş kateqoriya dəyişdikdə URL-i və tamamlanma faizini yenilə
   useEffect(() => {
     if (selectedCategoryId) {
       calculateCompletionPercentage(selectedCategoryId, formValues);
@@ -140,7 +133,6 @@ const DataEntry: React.FC = () => {
     }
   }, [selectedCategoryId, formValues, navigate]);
 
-  // Form dəyərinin dəyişdirilməsi
   const handleValueChange = (columnId: string, value: any) => {
     setFormValues(prev => {
       const updatedValues = {
@@ -151,7 +143,6 @@ const DataEntry: React.FC = () => {
         }
       };
       
-      // Auto-save funksiyasını başlat
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
@@ -166,7 +157,6 @@ const DataEntry: React.FC = () => {
     });
   };
 
-  // Auto-save funksiyası
   const handleAutoSave = async (columnId: string, value: any) => {
     if (!user?.schoolId || !user?.id) return;
     
@@ -187,7 +177,6 @@ const DataEntry: React.FC = () => {
     }
   };
 
-  // Manuel saxlama
   const handleSave = async () => {
     if (!user?.schoolId || !user?.id || !selectedCategoryId) {
       toast({
@@ -221,7 +210,7 @@ const DataEntry: React.FC = () => {
         toast({
           title: t('error') || 'Xəta',
           description: result.message || t('dataSaveError') || 'Məlumatları saxlayarkən xəta baş verdi',
-          variant: 'destructive'
+          variant: "destructive"
         });
       }
     } catch (err: any) {
@@ -229,14 +218,13 @@ const DataEntry: React.FC = () => {
       toast({
         title: t('error') || 'Xəta',
         description: err.message || t('dataSaveError') || 'Məlumatları saxlayarkən xəta baş verdi',
-        variant: 'destructive'
+        variant: "destructive"
       });
     } finally {
       setSaving(false);
     }
   };
 
-  // Təsdiq üçün göndərmək
   const handleSubmit = async () => {
     if (!user?.schoolId || !user?.id || !selectedCategoryId) {
       toast({
@@ -259,14 +247,11 @@ const DataEntry: React.FC = () => {
     setSubmitting(true);
     
     try {
-      // Əvvəlcə bütün dəyişiklikləri saxla
       await handleSave();
       
-      // Sonra təsdiq üçün göndər
       const result = await submitCategoryForApproval(
         selectedCategoryId,
-        user.schoolId,
-        user.id
+        user.schoolId
       );
       
       if (result.success) {
@@ -278,7 +263,7 @@ const DataEntry: React.FC = () => {
         toast({
           title: t('error') || 'Xəta',
           description: result.message || t('dataSubmitError') || 'Məlumatları təsdiq üçün göndərərkən xəta baş verdi',
-          variant: 'destructive'
+          variant: "destructive"
         });
       }
     } catch (err: any) {
@@ -286,39 +271,34 @@ const DataEntry: React.FC = () => {
       toast({
         title: t('error') || 'Xəta',
         description: err.message || t('dataSubmitError') || 'Məlumatları təsdiq üçün göndərərkən xəta baş verdi',
-        variant: 'destructive'
+        variant: "destructive"
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Excel şablonu yükləmək
   const handleDownloadTemplate = () => {
     const category = categories.find(c => c.id === selectedCategoryId);
     if (!category) return;
     
     const templateData = prepareExcelTemplateData(category);
     
-    // Excel kitabçası yarat
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet([templateData.headers, ...templateData.rows]);
     
-    // Sütun enini tənzimlə
     const columnWidths = [
-      { wch: 36 }, // ID
-      { wch: 30 }, // Column Name
-      { wch: 15 }, // Type
-      { wch: 10 }, // Required
-      { wch: 30 }  // Value
+      { wch: 36 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 30 }
     ];
     
     worksheet['!cols'] = columnWidths;
     
-    // Excel faylına əlavə et
     XLSX.utils.book_append_sheet(workbook, worksheet, templateData.categoryName);
     
-    // Faylı yarat və yüklə
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
     
@@ -330,7 +310,6 @@ const DataEntry: React.FC = () => {
     });
   };
 
-  // Excel datasını yükləmək
   const handleUploadData = async (file: File) => {
     try {
       if (!user?.schoolId || !user?.id) {
@@ -352,14 +331,11 @@ const DataEntry: React.FC = () => {
         return;
       }
       
-      // Faylı oxu
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
       
-      // İlk worksheeti al
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       
-      // Excel cədvəlini JavaScript obyektinə çevir
       const jsonData = XLSX.utils.sheet_to_json<any>(worksheet);
       
       if (jsonData.length === 0) {
@@ -371,7 +347,6 @@ const DataEntry: React.FC = () => {
         return;
       }
       
-      // Məlumatları formatla
       const values: FormValues = {};
       
       jsonData.forEach(row => {
@@ -381,7 +356,6 @@ const DataEntry: React.FC = () => {
         if (columnId && value !== undefined) {
           const column = category.columns.find(col => col.id === columnId);
           if (column) {
-            // Sütun tipinə görə dəyəri çevir
             switch (column.type) {
               case 'number':
                 values[columnId] = Number(value);
@@ -408,7 +382,6 @@ const DataEntry: React.FC = () => {
         return;
       }
       
-      // Məlumatları formda göstər
       setFormValues(prev => ({
         ...prev,
         [selectedCategoryId]: {
@@ -417,7 +390,6 @@ const DataEntry: React.FC = () => {
         }
       }));
       
-      // Məlumatları serverdə saxla
       const result = await saveAllCategoryData(
         user.schoolId,
         selectedCategoryId,
@@ -440,7 +412,7 @@ const DataEntry: React.FC = () => {
         toast({
           title: t('error') || 'Xəta',
           description: result.message || t('excelImportError') || 'Excel məlumatlarını idxal edərkən xəta baş verdi',
-          variant: 'destructive'
+          variant: "destructive"
         });
       }
     } catch (err: any) {
@@ -448,12 +420,11 @@ const DataEntry: React.FC = () => {
       toast({
         title: t('error') || 'Xəta',
         description: err.message || t('excelImportError') || 'Excel məlumatlarını yükləyərkən xəta baş verdi',
-        variant: 'destructive'
+        variant: "destructive"
       });
     }
   };
 
-  // UI-ni render et
   if (loading && categories.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -485,7 +456,6 @@ const DataEntry: React.FC = () => {
     );
   }
 
-  // Seçilmiş kateqoriyanın sütunlarını əldə et
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
   const selectedCategoryValues = formValues[selectedCategoryId] || {};
 
@@ -505,7 +475,6 @@ const DataEntry: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Kateqoriya siyahısı */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>{t('categories') || 'Kateqoriyalar'}</CardTitle>
@@ -532,7 +501,6 @@ const DataEntry: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Məlumat daxiletmə formu */}
         <Card className="md:col-span-3">
           {!selectedCategoryId ? (
             <CardContent className="flex flex-col items-center justify-center h-[500px]">

@@ -1,74 +1,69 @@
 
-import { useState, useCallback } from 'react';
-import { CategoryWithColumns } from '@/types/column';
+import { useCallback } from 'react';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { DataEntryForm, ColumnValidationError } from '@/types/dataEntry';
+import { CategoryEntryData } from '@/types/dataEntry';
 
 interface UseDataUpdatesProps {
-  categories: CategoryWithColumns[];
-  formData: DataEntryForm;
-  errors: ColumnValidationError[];
-  initializeForm: (data: any, status: string) => void;
-  validateForm: () => boolean;
+  categories: any[];
+  formData: any;
+  validationErrors: any[];
+  initializeForm: (entries: any[], status: string) => void;
+  validateAllEntries: (entries: any[], columns: Record<string, any>) => boolean;
   submitForm: () => void;
   setCurrentCategoryIndex: (index: number) => void;
   updateValue: (categoryId: string, columnId: string, value: any) => void;
   saveForm: () => void;
 }
 
+/**
+ * @description Məlumat yeniləmələrini idarə etmək üçün hook
+ */
 export const useDataUpdates = ({
   categories,
   formData,
-  errors,
+  validationErrors,
   initializeForm,
-  validateForm,
+  validateAllEntries,
   submitForm,
   setCurrentCategoryIndex,
   updateValue,
   saveForm
 }: UseDataUpdatesProps) => {
   const { t } = useLanguage();
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  // Kateqoriya dəyişmə metodu
-  const changeCategory = useCallback((index: number) => {
-    if (categories.length > 0 && index >= 0 && index < categories.length) {
-      setCurrentCategoryIndex(index);
-      saveForm();
-    }
-  }, [categories, setCurrentCategoryIndex, saveForm]);
-
-  // Excel dataları ilə form datasını yeniləmə metodu
+  
+  // Excel-dən məlumatları yeniləmək üçün funksiya
   const updateFormDataFromExcel = useCallback((data: Record<string, any>, categoryId: string) => {
-    if (!categoryId || !data || Object.keys(data).length === 0) return;
-
-    setIsUpdating(true);
-    
     try {
-      // Mövcud dəyərləri saxlayaq
-      const categoryIndex = categories.findIndex(c => c.id === categoryId);
-      if (categoryIndex === -1) return;
-      
-      // Hər bir columnId üçün dəyəri yeniləyək
+      // Yalnız bir kateqoriya üçün dəyişiklikləri tətbiq et
       Object.entries(data).forEach(([columnId, value]) => {
         updateValue(categoryId, columnId, value);
       });
       
-      // Formu validasiya edək
-      validateForm();
-      
-      // Formu saxlayaq
       saveForm();
-    } catch (err) {
-      console.error('Excel ilə dataları yeniləmə xətası:', err);
-    } finally {
-      setIsUpdating(false);
+      
+      toast.success(t('excelDataImported'), {
+        description: t('excelImportSuccess')
+      });
+    } catch (error) {
+      console.error('Excel data update error:', error);
+      toast.error(t('excelImportError'), {
+        description: t('excelImportFailed')
+      });
     }
-  }, [categories, updateValue, validateForm, saveForm]);
-
+  }, [updateValue, saveForm, t]);
+  
+  // Kateqoriyanı dəyişmək üçün funksiya
+  const changeCategory = useCallback((index: number) => {
+    // Mövcud dəyişiklikləri saxla
+    saveForm();
+    
+    // Yeni kateqoriyaya keç
+    setCurrentCategoryIndex(index);
+  }, [saveForm, setCurrentCategoryIndex]);
+  
   return {
-    isUpdating,
-    changeCategory,
-    updateFormDataFromExcel
+    updateFormDataFromExcel,
+    changeCategory
   };
 };

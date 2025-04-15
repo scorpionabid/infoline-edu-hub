@@ -1,177 +1,243 @@
 
-import { useCallback, useRef } from 'react';
-import { CategoryWithColumns } from '@/types/column';
-import { DataEntryForm } from '@/types/dataEntry';
-import { toast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { DataEntryForm, CategoryEntryData } from '@/types/dataEntry';
 
-interface UseFormActionsProps {
+export interface UseFormActionsProps {
   formData: DataEntryForm;
-  setFormData: React.Dispatch<React.SetStateAction<DataEntryForm>>;
-  setIsAutoSaving: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
-  categories: CategoryWithColumns[];
+  setFormData: (data: DataEntryForm) => void;
+  updateFormData: (data: Partial<DataEntryForm>) => void;
+  categories: any[];
 }
 
 /**
- * Forma əməliyyatlarını idarə edən hook
+ * @description Form əməliyyatlarını idarə etmək üçün hook
  */
 export const useFormActions = ({
   formData,
   setFormData,
-  setIsAutoSaving,
-  setIsSubmitting,
+  updateFormData,
   categories
 }: UseFormActionsProps) => {
-  const { t } = useLanguage();
-  const lastOperationTimeRef = useRef<number>(Date.now());
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Dəyəri yeniləmək
+  // Form dəyərlərini yeniləmək üçün funksiya
   const updateValue = useCallback((categoryId: string, columnId: string, value: any) => {
-    lastOperationTimeRef.current = Date.now();
-    
-    setFormData(prev => {
-      // Köhnə formdan yeni kopyasını yaradırıq
-      const newEntries = [...prev.entries];
-      const categoryIndex = newEntries.findIndex(entry => entry.categoryId === categoryId);
+    updateFormData(prevData => {
+      const updatedEntries = [...(prevData.entries || [])];
       
-      if (categoryIndex !== -1) {
-        // Mövcud sütunlar üçün dəyişiklikləri tətbiq edirik
-        const values = [...newEntries[categoryIndex].values];
-        const valueIndex = values.findIndex(v => v.columnId === columnId);
+      // Kateqoriya girdisi var mı?
+      const categoryEntryIndex = updatedEntries.findIndex(entry => entry.categoryId === categoryId);
+      
+      if (categoryEntryIndex !== -1) {
+        // Kateqoriya girdisini tap və yenilə
+        const categoryEntry = updatedEntries[categoryEntryIndex];
+        const valueIndex = categoryEntry.values.findIndex(v => v.columnId === columnId);
         
+        // Sütun dəyəri var mı?
         if (valueIndex !== -1) {
-          // Mövcud sütun varsa, onun dəyərini yeniləyirik
-          values[valueIndex] = {
-            ...values[valueIndex],
-            value,
-            status: 'pending'
-          };
-          
-          // Əgər əvvəlcədən xəta var idisə, silək
-          if (values[valueIndex].errorMessage) {
-            delete values[valueIndex].errorMessage;
-          }
+          // Mövcud dəyəri yenilə
+          categoryEntry.values[valueIndex].value = value;
         } else {
-          // Yeni sütun qiymətini əlavə edirik
-          values.push({
+          // Yeni dəyər əlavə et
+          categoryEntry.values.push({
             columnId,
-            value,
-            status: 'pending'
+            value
           });
         }
         
-        // Dəyişiklikləri tətbiq
-        newEntries[categoryIndex] = {
-          ...newEntries[categoryIndex],
-          values
-        };
-        
-        // Kateqoriya tamamlanma faizini yeniləmək
-        const category = categories.find(c => c.id === categoryId);
-        if (category) {
-          const requiredColumns = category.columns.filter(col => col.is_required);
-          const filledRequiredValues = values.filter(val => {
-            const column = category.columns.find(col => col.id === val.columnId);
-            return column?.is_required && val.value !== '' && val.value !== null && val.value !== undefined;
-          });
-          
-          const completionPercentage = requiredColumns.length > 0 
-            ? (filledRequiredValues.length / requiredColumns.length) * 100 
-            : 100;
-            
-          newEntries[categoryIndex].completionPercentage = completionPercentage;
-          newEntries[categoryIndex].isCompleted = completionPercentage === 100;
-        }
+        // Yenilənmiş girişi əlavə et
+        updatedEntries[categoryEntryIndex] = categoryEntry;
+      } else {
+        // Yeni kateqoriya girdisi yarat
+        updatedEntries.push({
+          categoryId,
+          values: [{
+            columnId,
+            value
+          }],
+          completionPercentage: 0
+        });
       }
       
-      // Ümumi tamamlanma faizini yeniləmək
-      const overallProgress = newEntries.reduce((sum, entry) => sum + entry.completionPercentage, 0) / newEntries.length;
+      // Tamamlanma faizini hesabla
+      calculateCompletionPercentage(updatedEntries);
       
-      setIsAutoSaving(true);
-      
-      const updatedFormData = {
-        ...prev,
-        entries: newEntries,
-        overallProgress,
-        lastSaved: new Date().toISOString()
+      return {
+        ...prevData,
+        entries: updatedEntries
       };
-      
-      // LocalStorage-də saxlayaq
-      localStorage.setItem('infolineFormData', JSON.stringify(updatedFormData));
-      
-      return updatedFormData;
     });
-  }, [categories, setFormData, setIsAutoSaving]);
+  }, [updateFormData]);
   
-  // Manuel saxlama
-  const saveForm = useCallback(() => {
-    lastOperationTimeRef.current = Date.now();
+  // Tamamlanma faizini hesablamaq üçün funksiya
+  const calculateCompletionPercentage = (entries: CategoryEntryData[]) => {
+    if (!categories || categories.length === 0) return;
     
-    // Burada real API çağırışı olmalıdır
-    console.log("Məlumatlar manual saxlanıldı:", formData);
+    let totalRequired = 0;
+    let totalFilled = 0;
     
-    // LocalStorage-də saxlayaq
-    localStorage.setItem('infolineFormData', JSON.stringify(formData));
-    
-    toast({
-      title: t('changesAutoSaved'),
-      variant: "default",
+    // Bütün məcburi sahələri say
+    categories.forEach(category => {
+      const requiredColumns = category.columns.filter(col => col.is_required);
+      totalRequired += requiredColumns.length;
+      
+      // Bu kateqoriya üçün doldurulan məcburi sahələri say
+      const categoryEntry = entries.find(entry => entry.categoryId === category.id);
+      if (categoryEntry) {
+        requiredColumns.forEach(column => {
+          const value = categoryEntry.values.find(v => v.columnId === column.id)?.value;
+          if (value !== undefined && value !== null && value !== '') {
+            totalFilled++;
+          }
+        });
+      }
     });
     
-    setFormData(prev => ({
-      ...prev,
+    // Ümumi tamamlanma faizini hesabla
+    const overallPercentage = totalRequired > 0 ? (totalFilled / totalRequired) * 100 : 0;
+    updateFormData({ overallCompletionPercentage: overallPercentage });
+    
+    // Hər bir kateqoriya üçün tamamlanma faizini hesabla
+    entries.forEach(entry => {
+      const category = categories.find(c => c.id === entry.categoryId);
+      if (category) {
+        const requiredColumns = category.columns.filter(col => col.is_required);
+        if (requiredColumns.length > 0) {
+          let filledCount = 0;
+          requiredColumns.forEach(column => {
+            const value = entry.values.find(v => v.columnId === column.id)?.value;
+            if (value !== undefined && value !== null && value !== '') {
+              filledCount++;
+            }
+          });
+          entry.completionPercentage = (filledCount / requiredColumns.length) * 100;
+        } else {
+          entry.completionPercentage = 100;
+        }
+      }
+    });
+  };
+  
+  // Form məlumatlarını ilkin dəyərləndirmək üçün funksiya
+  const initializeForm = useCallback((entries: CategoryEntryData[], status: string = 'draft') => {
+    const initialForm: DataEntryForm = {
+      categories: categories.map(category => ({
+        category,
+        fields: category.columns.map(column => {
+          const entry = entries.find(e => e.categoryId === category.id);
+          const value = entry?.values.find(v => v.columnId === column.id)?.value || '';
+          const valueStatus = entry?.values.find(v => v.columnId === column.id)?.status;
+          const errorMessage = entry?.values.find(v => v.columnId === column.id)?.errorMessage;
+          
+          return {
+            column,
+            value: {
+              columnId: column.id,
+              value,
+              status: valueStatus,
+              errorMessage
+            }
+          };
+        }),
+        completionPercentage: entries.find(e => e.categoryId === category.id)?.completionPercentage || 0
+      })),
+      overallCompletionPercentage: calculateOverallCompletionPercentage(entries, categories),
+      entries,
+      status,
       lastSaved: new Date().toISOString()
-    }));
-  }, [formData, t, setFormData]);
-  
-  // Təsdiq üçün göndərmək
-  const submitForm = useCallback((validateFn: () => boolean) => {
-    lastOperationTimeRef.current = Date.now();
-    const isValid = validateFn();
+    };
     
-    if (isValid) {
-      setIsSubmitting(true);
+    setFormData(initialForm);
+  }, [categories, setFormData]);
+  
+  // Ümumi tamamlanma faizini hesablamaq üçün yardımçı funksiya
+  const calculateOverallCompletionPercentage = (entries: CategoryEntryData[], categories: any[]) => {
+    if (!categories || categories.length === 0) return 0;
+    
+    let totalRequired = 0;
+    let totalFilled = 0;
+    
+    categories.forEach(category => {
+      const requiredColumns = category.columns.filter((col: any) => col.is_required);
+      totalRequired += requiredColumns.length;
       
+      const categoryEntry = entries.find(entry => entry.categoryId === category.id);
+      if (categoryEntry) {
+        requiredColumns.forEach((column: any) => {
+          const value = categoryEntry.values.find(v => v.columnId === column.id)?.value;
+          if (value !== undefined && value !== null && value !== '') {
+            totalFilled++;
+          }
+        });
+      }
+    });
+    
+    return totalRequired > 0 ? (totalFilled / totalRequired) * 100 : 0;
+  };
+  
+  // Form dəyərlərini saxlamaq üçün funksiya
+  const saveForm = useCallback(() => {
+    setIsAutoSaving(true);
+    
+    try {
       // API çağırışı simulyasiyası
       setTimeout(() => {
-        const updatedFormData: DataEntryForm = {
-          ...formData,
-          status: 'submitted',
-          entries: formData.entries.map(entry => ({
-            ...entry,
-            isSubmitted: true,
-            approvalStatus: 'pending'
-          }))
-        };
-        
-        // LocalStorage-də saxlayaq
-        localStorage.setItem('infolineFormData', JSON.stringify(updatedFormData));
-        
-        setFormData(updatedFormData);
-        setIsSubmitting(false);
-        
-        toast({
-          title: t('submissionSuccess'),
-          description: t('submissionDescription'),
-          variant: "default",
+        updateFormData({
+          lastSaved: new Date().toISOString()
         });
-      }, 2000);
-      return true;
-    } else {
-      toast({
-        title: "Xəta",
-        description: "Zəhmət olmasa bütün məcburi sahələri doldurun",
-        variant: "destructive",
-      });
-      return false;
+        setIsAutoSaving(false);
+      }, 500);
+    } catch (err) {
+      console.error('Form saved error:', err);
+      setIsAutoSaving(false);
     }
-  }, [formData, t, setFormData, setIsSubmitting]);
+  }, [updateFormData]);
+  
+  // Formu təqdim etmək üçün funksiya
+  const submitForm = useCallback(() => {
+    setIsSubmitting(true);
+    
+    try {
+      // API çağırışı simulyasiyası
+      setTimeout(() => {
+        updateFormData({
+          status: 'submitted',
+          lastSaved: new Date().toISOString()
+        });
+        setIsSubmitting(false);
+      }, 1000);
+    } catch (err) {
+      console.error('Form submission error:', err);
+      setIsSubmitting(false);
+    }
+  }, [updateFormData]);
+  
+  // Auto-save funksionallığı üçün setup
+  const setupAutoSave = useCallback(() => {
+    // Auto-save intervalını təmizlə
+    if (autoSaveTimeoutRef.current) {
+      clearInterval(autoSaveTimeoutRef.current);
+    }
+    
+    // Qayıt funksiyası üçün temizlik
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearInterval(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
   
   return {
+    isAutoSaving,
+    isSubmitting,
     updateValue,
     saveForm,
     submitForm,
-    lastOperationTimeRef
+    setupAutoSave,
+    initializeForm,
+    setIsAutoSaving,
+    setIsSubmitting
   };
 };

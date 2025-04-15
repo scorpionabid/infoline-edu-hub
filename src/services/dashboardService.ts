@@ -44,7 +44,7 @@ export const fetchSuperAdminDashboard = async (): Promise<DashboardData> => {
     // Əgər RPC xəta verirsə, mock data istifadə edək
     try {
       // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_dashboard_data_for_superadmin');
+      const { data, error } = await supabase.rpc('get_dashboard_data_superadmin');
 
       if (error) throw error;
       
@@ -100,9 +100,10 @@ export const fetchRegionAdminDashboard = async (regionId: string): Promise<Dashb
     }
     
     // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
+    // Əgər RPC xəta verirsə, mock data istifadə edək
     try {
       // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_dashboard_data_for_region', { region_id: regionId });
+      const { data, error } = await supabase.rpc('get_dashboard_data_region', { region_id: regionId });
 
       if (error) throw error;
       
@@ -152,9 +153,10 @@ export const fetchSectorAdminDashboard = async (sectorId: string): Promise<Dashb
     }
     
     // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
+    // Əgər RPC xəta verirsə, mock data istifadə edək
     try {
       // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_dashboard_data_for_sector', { sector_id: sectorId });
+      const { data, error } = await supabase.rpc('get_dashboard_data_sector', { sector_id: sectorId });
 
       if (error) throw error;
       
@@ -241,9 +243,9 @@ export const fetchDashboardChartData = async (): Promise<ChartData> => {
     // Qrafik məlumatlarını əldə etmək üçün Supabase-i istifadə et
     try {
       // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data: activityData } = await supabase.rpc('get_activity_data_for_charts');
+      const { data, error } = await supabase.rpc('get_activity_data_charts');
       
-      if (activityData) {
+      if (data) {
         // Əldə edilən məlumatları ChartData formatına çevir
         // İndiki halda mock data qaytarırıq
       }

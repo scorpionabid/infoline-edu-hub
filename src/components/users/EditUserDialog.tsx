@@ -7,6 +7,7 @@ import { User, UserFormData } from '@/types/user';
 import { useAuth, useRole } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
+import { UserRole } from '@/types/supabase';
 
 interface EditUserDialogProps {
   open: boolean;
@@ -67,6 +68,15 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         name: formData.full_name, // name field should match full_name
         full_name: formData.full_name,
         updated_at: new Date().toISOString(), // use consistent field name
+        // Cast role to UserRole type
+        role: formData.role as UserRole,
+        // Make sure notificationSettings is complete
+        notificationSettings: {
+          email: formData.notificationSettings?.email || true,
+          push: formData.notificationSettings?.push || false,
+          sms: formData.notificationSettings?.sms || false,
+          system: formData.notificationSettings?.system || false
+        },
         // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
         ...(showPasswordReset && { passwordResetDate: new Date().toISOString() }) // Date -> string
       };

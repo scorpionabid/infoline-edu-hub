@@ -1,45 +1,41 @@
 
-/**
- * Tip konverterlər və adapterlər
- * Bu fayl müxtəlif API və fayl tipləri arasında konversiyaları təmin edir
- */
+import { Notification, NotificationType, NotificationPriority } from './notification';
+import { DashboardNotification } from './dashboard';
+import { format } from 'date-fns';
 
-import { Notification as DbNotification } from '@/types/supabase';
-import { Notification as AppNotification, NotificationType, NotificationPriority } from '@/types/notification';
-import { DashboardNotification } from '@/types/dashboard';
-
-/**
- * Verilənlər bazası bildirişini tətbiq bildirişinə çevirir
- */
-export function dbNotificationToAppNotification(dbNotification: DbNotification): AppNotification {
+// Bildiriş adapterlərini təyin edirik
+export function adaptNotificationToDashboard(notification: Notification): DashboardNotification {
   return {
-    id: dbNotification.id,
-    title: dbNotification.title,
-    message: dbNotification.message,
-    type: dbNotification.type as NotificationType,
-    isRead: dbNotification.is_read,
-    createdAt: dbNotification.created_at,
-    userId: dbNotification.user_id,
-    priority: dbNotification.priority as NotificationPriority,
-    time: new Date(dbNotification.created_at).toISOString(),
-    date: new Date(dbNotification.created_at).toISOString()
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    type: notification.type,
+    userId: notification.userId,
+    isRead: notification.isRead,
+    priority: notification.priority,
+    date: notification.date || format(new Date(notification.createdAt), 'yyyy-MM-dd'),
+    time: notification.time || format(new Date(notification.createdAt), 'HH:mm'),
+    createdAt: notification.createdAt,
+    relatedEntityId: notification.relatedId,
+    relatedEntityType: notification.relatedType
   };
 }
 
-/**
- * Tətbiq bildirişini dashboard bildirişinə çevirir
- */
-export function appNotificationToDashboardNotification(appNotification: AppNotification): DashboardNotification {
+export function adaptDashboardToNotification(dashboardNotification: DashboardNotification): Notification {
   return {
-    ...appNotification,
-    date: appNotification.date || new Date(appNotification.createdAt).toISOString()
+    id: dashboardNotification.id,
+    type: dashboardNotification.type as NotificationType,
+    title: dashboardNotification.title,
+    message: dashboardNotification.message,
+    isRead: dashboardNotification.isRead,
+    createdAt: dashboardNotification.createdAt || new Date().toISOString(),
+    userId: dashboardNotification.userId,
+    priority: dashboardNotification.priority as NotificationPriority,
+    relatedId: dashboardNotification.relatedEntityId,
+    relatedType: dashboardNotification.relatedEntityType,
+    date: dashboardNotification.date,
+    time: dashboardNotification.time
   };
 }
 
-/**
- * Verilənlər bazası bildirişini dashboard bildirişinə çevirir
- */
-export function dbNotificationToDashboardNotification(dbNotification: DbNotification): DashboardNotification {
-  const appNotification = dbNotificationToAppNotification(dbNotification);
-  return appNotificationToDashboardNotification(appNotification);
-}
+// Burada digər adapterlər də əlavə edilə bilər...

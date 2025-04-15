@@ -1,79 +1,102 @@
 
 import { useState, useCallback } from 'react';
+import { ColumnValidationError, CategoryEntryData } from '@/types/dataEntry';
 import { Column } from '@/types/column';
-import { CategoryEntryData, ColumnValidationError } from '@/types/dataEntry';
-import { validateColumnValue, isEmptyValue, formatValueByType } from '@/utils/validation';
 
 /**
- * Form validasiyası üçün custom hook
+ * @description Formun validasiyası üçün hook
  */
-export const useValidation = () => {
+export const useValidation = (categories: any[], entries: CategoryEntryData[]) => {
   const [validationErrors, setValidationErrors] = useState<ColumnValidationError[]>([]);
-
-  /**
-   * Bütün məlumatların validasiyası üçün
-   */
-  const validateAllEntries = useCallback((entries: CategoryEntryData[], columns: Record<string, Column>): boolean => {
+  
+  // Bir girişin validasiyası
+  const validateEntry = useCallback((entry: CategoryEntryData, columns: Record<string, Column>): boolean => {
     const errors: ColumnValidationError[] = [];
-
-    entries.forEach(category => {
-      category.values.forEach(entry => {
-        const column = columns[entry.columnId];
-        if (column) {
-          const validationResult = validateColumnValue(column, entry.value);
-          if (validationResult) {
-            errors.push(validationResult);
+    
+    // Get all columns for this category
+    const categoryColumns = categories.find(c => c.id === entry.categoryId)?.columns || [];
+    
+    // Check each required column
+    categoryColumns.forEach(column => {
+      if (column.is_required) {
+        const valueObj = entry.values.find(v => v.columnId === column.id);
+        const value = valueObj?.value;
+        
+        if (isEmptyValue(value)) {
+          errors.push({
+            columnId: column.id,
+            message: `${column.name} is required`,
+            severity: 'error'
+          });
+        }
+      }
+    });
+    
+    // Add to global errors
+    setValidationErrors(prev => [
+      ...prev.filter(e => !categoryColumns.some(col => col.id === e.columnId)),
+      ...errors
+    ]);
+    
+    return errors.length === 0;
+  }, [categories]);
+  
+  // Bütün giriş qeydlərinin validasiyası
+  const validateAllEntries = useCallback((entries: CategoryEntryData[], columns: Record<string, Column>): boolean => {
+    let isValid = true;
+    const allErrors: ColumnValidationError[] = [];
+    
+    entries.forEach(entry => {
+      const categoryColumns = categories.find(c => c.id === entry.categoryId)?.columns || [];
+      
+      categoryColumns.forEach(column => {
+        if (column.is_required) {
+          const valueObj = entry.values.find(v => v.columnId === column.id);
+          const value = valueObj?.value;
+          
+          if (isEmptyValue(value)) {
+            allErrors.push({
+              columnId: column.id,
+              message: `${column.name} is required`,
+              severity: 'error'
+            });
+            isValid = false;
           }
         }
       });
     });
-
-    setValidationErrors(errors);
-    return errors.length === 0;
-  }, []);
-
-  /**
-   * Bir sütun üçün validasiya
-   */
-  const validateEntry = useCallback((column: Column, value: any): ColumnValidationError | null => {
-    const error = validateColumnValue(column, value);
     
-    if (error) {
-      setValidationErrors(prev => {
-        // Əvvəlcə eyni sütun ID-si ilə olan xətanı təmizlə
-        const filtered = prev.filter(e => e.columnId !== column.id);
-        // Sonra yenisini əlavə et
-        return [...filtered, error];
-      });
-      return error;
-    } else {
-      // Xəta yoxdursa, bu sütunla əlaqəli xətaları təmizlə
-      setValidationErrors(prev => prev.filter(e => e.columnId !== column.id));
-      return null;
-    }
-  }, []);
-
-  /**
-   * Validasiya xətalarını sıfırla
-   */
-  const clearValidationErrors = useCallback(() => {
-    setValidationErrors([]);
-  }, []);
-
-  /**
-   * Konkret bir sütunun validasiya xətasını götür
-   */
-  const getErrorForColumn = useCallback((columnId: string): ColumnValidationError | undefined => {
-    return validationErrors.find(error => error.columnId === columnId);
+    setValidationErrors(allErrors);
+    return isValid;
+  }, [categories]);
+  
+  // Sütun üçün xəta mesajını əldə et
+  const getColumnErrorMessage = useCallback((columnId: string): string | undefined => {
+    const error = validationErrors.find(err => err.columnId === columnId);
+    return error?.message;
   }, [validationErrors]);
-
+  
+  // Dəyərin boş olub olmadığını yoxla
+  const isEmptyValue = (value: any): boolean => {
+    if (value === undefined || value === null) return true;
+    if (typeof value === 'string' && value.trim() === '') return true;
+    if (Array.isArray(value) && value.length === 0) return true;
+    return false;
+  };
+  
   return {
     validationErrors,
     validateAllEntries,
     validateEntry,
-    clearValidationErrors,
-    getErrorForColumn,
-    formatValueByType,
+    getColumnErrorMessage,
+    getValidationErrorsForCategory: useCallback((categoryId: string) => {
+      return validationErrors.filter(err => {
+        const column = categories.find(c => 
+          c.columns.some(col => col.id === err.columnId)
+        );
+        return column?.id === categoryId;
+      });
+    }, [validationErrors, categories]),
     isEmptyValue
   };
 };

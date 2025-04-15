@@ -1,26 +1,31 @@
 
-export * from './useFormState';
-export * from './useFormActions';
-export * from './useFormInitialization';
-export * from './useAutoSave';
-
-// Əlavə funksiyaları ixrac et
-import { useFormState } from './useFormState';
+import { useForm as useReactHookForm } from 'react-hook-form';
 import { useFormActions } from './useFormActions';
-import { useFormInitialization } from './useFormInitialization';
-import { useAutoSave } from './useAutoSave';
+import { useFormState } from './useFormState';
 
-// Birləşdirilmiş Form hook'u
-export const useForm = (initialData: any = {}) => {
-  const formState = useFormState(initialData?.categories || []);
-  const formActions = useFormActions(formState);
-  const formInit = useFormInitialization(formState, formActions);
-  const autoSave = useAutoSave(formState, formActions);
-
+/**
+ * @description Bu hook, form idarəetməsi üçün lazımi metodları və vəziyyətləri təmin edir
+ */
+export const useForm = (categories = []) => {
+  const { formData, setFormData, updateFormData } = useFormState();
+  
+  // UseFormActions hook-a əsas məlumatları ötürürük
+  const formActions = useFormActions({
+    formData,
+    setFormData,
+    updateFormData,
+    categories
+  });
+  
+  // React Hook Form 
+  const reactHookForm = useReactHookForm();
+  
+  // Hook-un əsas funksionallığını qaytarırıq
   return {
-    ...formState,
     ...formActions,
-    ...formInit,
-    ...autoSave
+    reactHookForm,
+    formData
   };
 };
+
+export { useReactHookForm };

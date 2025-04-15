@@ -12,7 +12,7 @@ import { useDataUpdates } from '@/hooks/dataEntry/useDataUpdates';
 import { useDataEntries } from '@/hooks/useDataEntries';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ColumnValidationError } from '@/types/dataEntry';
+import { ColumnValidationError, DataEntryForm } from '@/types/dataEntry';
 
 interface UseDataEntryStateReturn {
   categories: CategoryWithColumns[];
@@ -54,6 +54,13 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     submitCategoryForApproval
   } = useDataEntries(user?.schoolId);
 
+  // İlk veriləri hazırlayaq
+  const emptyFormData: DataEntryForm = {
+    categories: [],
+    overallCompletionPercentage: 0,
+    entries: []
+  };
+
   const { 
     formData, 
     isAutoSaving, 
@@ -63,9 +70,23 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     submitForm, 
     setupAutoSave,
     initializeForm 
-  } = useForm(categories);
+  } = useForm();
   
-  const { errors, validateForm, getErrorForColumn } = useValidation(categories, formData.entries);
+  const validationHelper = useValidation(categories, formData.entries);
+  const { validationErrors, validateAllEntries, validateEntry, getColumnErrorMessage } = validationHelper;
+
+  const validateForm = useCallback(() => {
+    return validateAllEntries(formData.entries, categories.reduce((acc, cat) => {
+      cat.columns.forEach(col => {
+        acc[col.id] = col;
+      });
+      return acc;
+    }, {} as Record<string, any>));
+  }, [validateAllEntries, formData.entries, categories]);
+
+  const getErrorForColumn = useCallback((columnId: string) => {
+    return getColumnErrorMessage(columnId);
+  }, [getColumnErrorMessage]);
 
   const loadCategoryData = useCallback(async () => {
     if (!user) {
@@ -267,9 +288,9 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   const { updateFormDataFromExcel, changeCategory } = useDataUpdates({
     categories,
     formData,
-    errors,
+    validationErrors,
     initializeForm,
-    validateForm,
+    validateAllEntries,
     submitForm,
     setCurrentCategoryIndex,
     updateValue,
@@ -308,8 +329,8 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   }, [loadCategoryData, user]);
 
   useEffect(() => {
-    return setupAutoSave(validateForm);
-  }, [setupAutoSave, validateForm]);
+    return setupAutoSave();
+  }, [setupAutoSave]);
 
   useEffect(() => {
     if (!statusFilter || !categories.length) return;
@@ -327,12 +348,12 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
     isAutoSaving,
     isSubmitting,
     isLoading,
-    errors,
+    errors: validationErrors,
     changeCategory,
     updateValue: handleUpdateValue,
     submitForApproval: handleSubmitForApproval,
     saveForm,
-    getErrorForColumn: (columnId: string) => getErrorForColumn(columnId),
+    getErrorForColumn,
     downloadExcelTemplate,
     uploadExcelData
   };
