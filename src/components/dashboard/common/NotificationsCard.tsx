@@ -11,7 +11,7 @@ interface NotificationsCardProps {
 }
 
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
 
   // Notification-ın yaranma tarixini formatla
   const formatDate = (notification: DashboardNotification) => {
@@ -20,7 +20,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
       try {
         return formatDistanceToNow(new Date(notification.createdAt), { 
           addSuffix: true,
-          locale: locale === 'az' ? az : undefined 
+          locale: 'az' === 'az' ? az : undefined 
         });
       } catch (error) {
         console.error('Tarix formatlaşdırma xətası:', error);
@@ -36,7 +36,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
           const dateTime = `${notification.date}T${notification.time}`;
           return formatDistanceToNow(new Date(dateTime), { 
             addSuffix: true,
-            locale: locale === 'az' ? az : undefined 
+            locale: 'az' === 'az' ? az : undefined 
           });
         } catch (error) {
           console.error('Tarix formatlaşdırma xətası:', error);

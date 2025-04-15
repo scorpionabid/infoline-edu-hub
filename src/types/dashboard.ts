@@ -1,4 +1,3 @@
-
 export interface DashboardNotification {
   id: string;
   title: string;

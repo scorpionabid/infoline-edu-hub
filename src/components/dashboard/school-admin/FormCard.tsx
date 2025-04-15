@@ -47,7 +47,7 @@ const FormCard: React.FC<FormCardProps> = ({
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-slate-50 text-slate-700 border-slate-200' 
     },
-    due: { 
+    dueSoon: { 
       label: 'Vaxtı yaxınlaşır', 
       icon: <AlertCircle className="h-4 w-4" />, 
       variant: 'bg-blue-50 text-blue-700 border-blue-200' 

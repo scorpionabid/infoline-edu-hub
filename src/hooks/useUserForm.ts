@@ -1,9 +1,10 @@
 
-import { useForm } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState } from 'react';
 import { UserFormData } from '@/types/user';
+import { Form } from '@/components/ui/form';
 
 // Validation schema for the user form
 const formSchema = (passwordRequired: boolean) => z.object({
