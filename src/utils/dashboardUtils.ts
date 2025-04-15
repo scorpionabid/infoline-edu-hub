@@ -1,4 +1,3 @@
-
 import { 
   DashboardNotification, 
   SchoolAdminDashboardData, 
@@ -454,13 +453,3 @@ export function generateDashboardDataByRole(userRole?: string): DashboardData {
       return createMockSuperAdminData();
   }
 }
-
-// Bütün export edilmiş funksiyaları birləşdiririk
-export {
-  createMockSchoolAdminData,
-  createMockSectorAdminData,
-  createMockRegionAdminData,
-  createMockSuperAdminData,
-  createMockChartData,
-  generateDashboardDataByRole
-};

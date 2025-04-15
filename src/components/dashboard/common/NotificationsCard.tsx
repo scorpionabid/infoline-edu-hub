@@ -1,83 +1,102 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { DashboardNotification } from '@/types/dashboard'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import { DashboardNotification } from '@/types/dashboard';
+import { formatDistanceToNow } from 'date-fns';
+import { az } from 'date-fns/locale';
 
 interface NotificationsCardProps {
   notifications: DashboardNotification[];
-  viewAllLink?: string;
 }
 
-const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
-  notifications,
-  viewAllLink = '/notifications'
-}) => {
-  const { t } = useLanguage();
+const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
+  const { t, locale } = useLanguage();
 
-  // Bildiriş tipinə uyğun rəng təyin edir
-  const getNotificationTypeColor = (type: string) => {
-    switch (type) {
-      case 'system':
+  // Notification-ın yaranma tarixini formatla
+  const formatDate = (notification: DashboardNotification) => {
+    // createdAt varsa, əvvəlcə onu istifadə et, əks halda date və time birləşdir
+    if (notification.createdAt) {
+      try {
+        return formatDistanceToNow(new Date(notification.createdAt), { 
+          addSuffix: true,
+          locale: locale === 'az' ? az : undefined 
+        });
+      } catch (error) {
+        console.error('Tarix formatlaşdırma xətası:', error);
+        return notification.date || '';
+      }
+    }
+
+    // createdAt yoxdursa və date varsa, onu istifadə et
+    if (notification.date) {
+      if (notification.time) {
+        // Əgər həm date, həm də time varsa, birləşdir
+        try {
+          const dateTime = `${notification.date}T${notification.time}`;
+          return formatDistanceToNow(new Date(dateTime), { 
+            addSuffix: true,
+            locale: locale === 'az' ? az : undefined 
+          });
+        } catch (error) {
+          console.error('Tarix formatlaşdırma xətası:', error);
+          return notification.date;
+        }
+      }
+      return notification.date;
+    }
+
+    return '';
+  };
+
+  // Priorityə əsasən rəng təyin et
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'normal':
         return 'bg-blue-100 text-blue-800';
-      case 'category':
-        return 'bg-green-100 text-green-800';
-      case 'deadline':
-        return 'bg-amber-100 text-amber-800';
-      case 'approval':
-        return 'bg-purple-100 text-purple-800';
-      case 'form':
-        return 'bg-indigo-100 text-indigo-800';
+      case 'low':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  if (!notifications || notifications.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('notifications')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{t('noNotifications')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="flex items-center">
-          <Bell className="mr-2 h-5 w-5" />
-          {t('notifications')}
-        </CardTitle>
-        <Button variant="ghost" size="sm" asChild>
-          <a href={viewAllLink} className="flex items-center">
-            {t('viewAll')} <ChevronRight className="ml-1 h-4 w-4" />
-          </a>
-        </Button>
+      <CardHeader>
+        <CardTitle>{t('notifications')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {notifications && notifications.length > 0 ? (
-          <div className="space-y-4">
-            {notifications.map((notification) => (
-              <div key={notification.id} className="flex items-start gap-3 border-b pb-2">
-                <Badge 
-                  variant="outline" 
-                  className={`${getNotificationTypeColor(notification.type)} mt-0.5`}
-                >
-                  {t(notification.type)}
-                </Badge>
-                <div className="flex-1">
-                  <p className="font-medium">{notification.title}</p>
-                  <p className="text-sm text-muted-foreground">{notification.message}</p>
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-muted-foreground">{notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : ''}</p>
-                    {!notification.isRead && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t('new')}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+        <div className="space-y-4">
+          {notifications.map((notification) => (
+            <div key={notification.id} className="flex flex-col space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{notification.title}</p>
+                <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(notification.priority)}`}>
+                  {t(notification.priority)}
+                </span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">{t('noNotifications')}</p>
-        )}
+              <p className="text-xs text-muted-foreground">{notification.message}</p>
+              <p className="text-xs text-muted-foreground">{formatDate(notification)}</p>
+              <div className="h-px bg-muted my-1"></div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

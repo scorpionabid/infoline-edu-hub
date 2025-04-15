@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from '../common/NotificationsCard';
@@ -102,10 +103,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   
   // Notification tipini uyğunlaşdırırıq
   const notifications = (data?.notifications || []).map(notification => {
+    // Əgər date və time yoxdursa, amma createdAt varsa
     if (!notification.date && notification.createdAt) {
+      const createdDate = new Date(notification.createdAt);
       return {
         ...notification,
-        date: notification.createdAt
+        date: createdDate.toISOString().split('T')[0],
+        time: createdDate.toISOString().split('T')[1].substring(0, 5)
       } as DashboardNotification;
     }
     return notification as DashboardNotification;

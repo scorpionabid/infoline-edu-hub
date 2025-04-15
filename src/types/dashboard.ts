@@ -9,6 +9,7 @@ export interface DashboardNotification {
   priority: 'high' | 'normal' | 'low';
   date: string;
   time: string;
+  createdAt?: string; // createdAt əlavə edildi
   relatedEntityId?: string;
   relatedEntityType?: string;
 }

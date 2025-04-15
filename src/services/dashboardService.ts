@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardData, ChartData, SchoolAdminDashboardData } from '@/types/dashboard';
 import { 
@@ -44,8 +43,8 @@ export const fetchSuperAdminDashboard = async (): Promise<DashboardData> => {
     // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
     // Əgər RPC xəta verirsə, mock data istifadə edək
     try {
-      // NOT: Əgər stored procedure mövcud deyilsə, bu çağırışı təhlükəsiz şəkildə wrap edin
-      const { data, error } = await supabase.rpc('get_superadmin_dashboard_data');
+      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
+      const { data, error } = await supabase.rpc('get_dashboard_data_for_superadmin');
 
       if (error) throw error;
       
@@ -102,8 +101,8 @@ export const fetchRegionAdminDashboard = async (regionId: string): Promise<Dashb
     
     // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
     try {
-      // NOT: Əgər stored procedure mövcud deyilsə, bu çağırışı təhlükəsiz şəkildə wrap edin
-      const { data, error } = await supabase.rpc('get_region_dashboard_data', { region_id: regionId });
+      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
+      const { data, error } = await supabase.rpc('get_dashboard_data_for_region', { region_id: regionId });
 
       if (error) throw error;
       
@@ -154,8 +153,8 @@ export const fetchSectorAdminDashboard = async (sectorId: string): Promise<Dashb
     
     // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
     try {
-      // NOT: Əgər stored procedure mövcud deyilsə, bu çağırışı təhlükəsiz şəkildə wrap edin
-      const { data, error } = await supabase.rpc('get_sector_dashboard_data', { sector_id: sectorId });
+      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
+      const { data, error } = await supabase.rpc('get_dashboard_data_for_sector', { sector_id: sectorId });
 
       if (error) throw error;
       
@@ -241,8 +240,8 @@ export const fetchDashboardChartData = async (): Promise<ChartData> => {
   try {
     // Qrafik məlumatlarını əldə etmək üçün Supabase-i istifadə et
     try {
-      // Data entries və ya statistics cədvəllərindən məlumatları çək
-      const { data: activityData } = await supabase.rpc('get_monthly_activity_data');
+      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
+      const { data: activityData } = await supabase.rpc('get_activity_data_for_charts');
       
       if (activityData) {
         // Əldə edilən məlumatları ChartData formatına çevir
