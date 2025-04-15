@@ -34,19 +34,3 @@ export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
     time: dbNotification.time || new Date(dbNotification.created_at).toTimeString().slice(0, 5)
   };
 };
-
-// Dashboard üçün notification tipi
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-  userId: string;
-  priority: string;
-  date: string;
-  time: string;
-  relatedId?: string;
-  relatedType?: string;
-}

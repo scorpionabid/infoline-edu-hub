@@ -11,13 +11,13 @@ interface UseDataEntryStateProps {
  * @description Məlumat giriş vəziyyətini idarə etmək üçün hook
  */
 export const useDataEntryState = ({ initialCategoryId }: UseDataEntryStateProps) => {
-  const { categories, isLoading, error } = useCategoryData();
+  const { categories, loading, error, refetch } = useCategoryData();
   const [currentIndex, setCurrentIndex] = useState(0);
   const categoryIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Kateqoriyalar yükləndikdən sonra, başlanğıc kateqoriyasını təyin et
-    if (!isLoading && categories.length > 0) {
+    if (!loading && categories.length > 0) {
       if (initialCategoryId) {
         const index = categories.findIndex(c => c.id === initialCategoryId);
         if (index !== -1) {
@@ -32,7 +32,7 @@ export const useDataEntryState = ({ initialCategoryId }: UseDataEntryStateProps)
         categoryIdRef.current = categories[0].id;
       }
     }
-  }, [categories, isLoading, initialCategoryId]);
+  }, [categories, loading, initialCategoryId]);
 
   // Kateqoriya indeksini təyin etmək üçün funksiya
   const setCategoryIndex = useCallback((index: number) => {
@@ -51,7 +51,7 @@ export const useDataEntryState = ({ initialCategoryId }: UseDataEntryStateProps)
 
   return {
     categories,
-    isLoading,
+    isLoading: loading,
     error,
     currentIndex,
     setCategoryIndex,

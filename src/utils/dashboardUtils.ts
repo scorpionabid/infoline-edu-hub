@@ -1,608 +1,243 @@
-import { 
-  DashboardNotification, 
-  SchoolAdminDashboardData, 
-  FormItem, 
-  StatsItem,
-  RegionStat,
-  CategoryStat,
-  SectorCompletion,
-  SchoolStat,
-  PendingItem,
-  ActivityLogItem,
-  ChartData,
-  SuperAdminDashboardData,
-  RegionAdminDashboardData,
-  SectorAdminDashboardData,
-  DashboardData
-} from '@/types/dashboard';
+import { DashboardNotification } from '@/types/dashboard';
 
-/**
- * Mock məktəb admin dashboard məlumatları yaradır
- * @returns SchoolAdminDashboardData
- */
-export const createMockSchoolAdminData = (): SchoolAdminDashboardData => {
-  const now = new Date();
-  const notifications: DashboardNotification[] = [
+export const generateMockNotifications = (): DashboardNotification[] => {
+  return [
     {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',
-      message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
-      type: 'category',
+      message: 'Tədris resursları ilə bağlı yeni kateqoriya əlavə edildi',
+      type: 'info',
       isRead: false,
-      userId: 'user-1',
+      userId: '1',
       priority: 'normal',
-      date: now.toISOString(),
-      time: `${now.getHours()}:${now.getMinutes()}`
+      date: '2023-08-15',
+      time: '10:30',
+      createdAt: '2023-08-15T10:30:00Z',
     },
     {
       id: '2',
-      title: 'Son tarix bildirişi',
-      message: 'Müəllim heyəti məlumatlarının doldurulma vaxtı sabah bitir',
-      type: 'deadline',
+      title: 'Son tarix yaxınlaşır',
+      message: 'Büdcə məlumatları kateqoriyası üçün son tarix 2 gün sonradır',
+      type: 'warning',
       isRead: true,
-      userId: 'user-1',
+      userId: '1',
       priority: 'high',
-      date: new Date(Date.now() - 86400000).toISOString(),
-      time: '14:30'
-    }
-  ];
-
-  const pendingForms: FormItem[] = [
-    {
-      id: 'form-1',
-      title: 'Şagird statistikası',
-      date: '2025-04-15',
-      status: 'pending',
-      completionPercentage: 75,
-      category: 'Təhsil statistikası',
-      description: 'Şagird sayı və akademik göstəricilər'
+      date: '2023-08-16',
+      time: '09:15',
+      createdAt: '2023-08-16T09:15:00Z',
     },
     {
-      id: 'form-2',
-      title: 'Müəllim heyəti',
-      date: '2025-04-20',
-      status: 'pending',
-      completionPercentage: 50,
-      category: 'Kadr məlumatları',
-      description: 'Müəllim heyəti haqqında detallı məlumatlar'
-    },
-    {
-      id: 'form-3',
-      title: 'İnfrastruktur hesabatı',
-      date: '2025-04-18',
-      status: 'dueSoon',
-      completionPercentage: 30,
-      category: 'İnfrastruktur',
-      description: 'Məktəbin infrastrukturu haqqında hesabat'
-    }
-  ];
-
-  return {
-    forms: {
-      pending: 5,
-      approved: 12,
-      rejected: 2,
-      total: 19,
-      dueSoon: 3,
-      overdue: 1
-    },
-    completionRate: 68,
-    notifications,
-    pendingForms
-  };
-};
-
-/**
- * Sektor admin mock dashboard məlumatları yaradır
- */
-export const createMockSectorAdminData = (): SectorAdminDashboardData => {
-  const now = new Date();
-  const notifications: DashboardNotification[] = [
-    {
-      id: '1',
-      title: 'Məktəb məlumatlarını təsdiqlədi',
-      message: 'Bakı 45 saylı orta məktəb yeni məlumatları təsdiq üçün göndərdi',
-      type: 'approval',
+      id: '3',
+      title: 'Məlumatlar təsdiqləndi',
+      message: 'Şagird sayı kateqoriyası üçün məlumatlar təsdiqləndi',
+      type: 'success',
       isRead: false,
-      userId: 'user-1',
+      userId: '1',
       priority: 'normal',
-      date: now.toISOString(),
-      time: `${now.getHours()}:${now.getMinutes()}`
+      date: '2023-08-17',
+      time: '14:45',
+      createdAt: '2023-08-17T14:45:00Z',
+    },
+    {
+      id: '4',
+      title: 'Məlumatlar rədd edildi',
+      message: 'Müəllim sayı kateqoriyası üçün məlumatlar rədd edildi',
+      type: 'error',
+      isRead: false,
+      userId: '1',
+      priority: 'high',
+      date: '2023-08-18',
+      time: '11:20',
+      createdAt: '2023-08-18T11:20:00Z',
+    },
+    {
+      id: '5',
+      title: 'Yeni istifadəçi',
+      message: 'Yeni istifadəçi sistemə əlavə edildi',
+      type: 'info',
+      isRead: true,
+      userId: '1',
+      priority: 'low',
+      date: '2023-08-19',
+      time: '16:30',
+      createdAt: '2023-08-19T16:30:00Z',
     }
   ];
-
-  const schoolStats: SchoolStat[] = [
-    {
-      id: 'school-1',
-      name: 'Bakı 45 saylı orta məktəb',
-      completionRate: 78,
-      pending: 3
-    },
-    {
-      id: 'school-2',
-      name: 'Bakı 28 saylı orta məktəb',
-      completionRate: 92,
-      pending: 1
-    },
-    {
-      id: 'school-3',
-      name: 'Bakı 189 saylı orta məktəb',
-      completionRate: 65,
-      pending: 5
-    }
-  ];
-
-  const pendingItems: PendingItem[] = [
-    {
-      id: 'pending-1',
-      school: 'Bakı 45 saylı orta məktəb',
-      category: 'Şagird statistikası',
-      date: '2025-04-10',
-      status: 'pending'
-    },
-    {
-      id: 'pending-2',
-      school: 'Bakı 28 saylı orta məktəb',
-      category: 'Müəllim heyəti',
-      date: '2025-04-12',
-      status: 'pending'
-    }
-  ];
-
-  const activityLog: ActivityLogItem[] = [
-    {
-      id: 'activity-1',
-      action: 'Məlumat təsdiqləndi',
-      target: 'Bakı 189 saylı orta məktəb - Şagird statistikası',
-      time: '2 saat əvvəl'
-    },
-    {
-      id: 'activity-2',
-      action: 'Məlumat rədd edildi',
-      target: 'Bakı 28 saylı orta məktəb - İnfrastruktur hesabatı',
-      time: '5 saat əvvəl'
-    }
-  ];
-
-  const categoryCompletion: CategoryStat[] = [
-    {
-      id: 'category-1',
-      name: 'Şagird statistikası',
-      completionRate: 85,
-      color: '#4CAF50'
-    },
-    {
-      id: 'category-2',
-      name: 'Müəllim heyəti',
-      completionRate: 72,
-      color: '#2196F3'
-    },
-    {
-      id: 'category-3',
-      name: 'İnfrastruktur hesabatı',
-      completionRate: 60,
-      color: '#FFC107'
-    }
-  ];
-
-  return {
-    schools: 15,
-    completionRate: 75,
-    pendingApprovals: 8,
-    pendingSchools: 5,
-    approvedSchools: 10,
-    rejectedSchools: 0,
-    notifications,
-    stats: [
-      {
-        id: 'stat-1',
-        title: 'Təsdiqlənmiş məlumatlar',
-        value: 45,
-        change: 12,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      },
-      {
-        id: 'stat-2',
-        title: 'Rədd edilmiş məlumatlar',
-        value: 7,
-        change: 2,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      },
-      {
-        id: 'stat-3',
-        title: 'Tamamlanma faizi',
-        value: 75,
-        change: 5,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      }
-    ],
-    schoolStats,
-    pendingItems,
-    categoryCompletion,
-    activityLog
-  };
 };
 
-/**
- * Region admin mock dashboard məlumatları yaradır
- */
-export const createMockRegionAdminData = (): RegionAdminDashboardData => {
-  const now = new Date();
-  const notifications: DashboardNotification[] = [
+export const generateSuperAdminNotifications = (): DashboardNotification[] => {
+  return [
     {
       id: '1',
+      title: 'Yeni region əlavə edildi',
+      message: 'Lənkəran bölgəsi sistemə əlavə edildi',
+      type: 'info',
+      isRead: false,
+      userId: '1',
+      priority: 'normal',
+      date: '2023-08-15',
+      time: '10:30',
+      createdAt: '2023-08-15T10:30:00Z',
+    },
+    {
+      id: '2',
       title: 'Yeni sektor əlavə edildi',
-      message: 'Yasamal rayonu üçün yeni sektor əlavə edildi',
-      type: 'system',
-      isRead: false,
-      userId: 'user-1',
+      message: 'Bakı şəhəri Sabunçu rayonu sistemə əlavə edildi',
+      type: 'info',
+      isRead: true,
+      userId: '1',
       priority: 'normal',
-      date: now.toISOString(),
-      time: `${now.getHours()}:${now.getMinutes()}`
-    }
-  ];
-
-  const categories: CategoryStat[] = [
-    {
-      id: 'category-1',
-      name: 'Şagird statistikası',
-      completionRate: 82,
-      color: '#4CAF50'
+      date: '2023-08-16',
+      time: '09:15',
+      createdAt: '2023-08-16T09:15:00Z',
     },
     {
-      id: 'category-2',
-      name: 'Müəllim heyəti',
-      completionRate: 68,
-      color: '#2196F3'
-    },
-    {
-      id: 'category-3',
-      name: 'İnfrastruktur hesabatı',
-      completionRate: 55,
-      color: '#FFC107'
-    }
-  ];
-
-  const sectorCompletions: SectorCompletion[] = [
-    {
-      id: 'sector-1',
-      name: 'Bakı şəhəri Yasamal rayonu',
-      completionRate: 85,
-      schoolCount: 12
-    },
-    {
-      id: 'sector-2',
-      name: 'Bakı şəhəri Nəsimi rayonu',
-      completionRate: 78,
-      schoolCount: 15
-    },
-    {
-      id: 'sector-3',
-      name: 'Bakı şəhəri Nizami rayonu',
-      completionRate: 62,
-      schoolCount: 10
-    }
-  ];
-
-  return {
-    sectors: 6,
-    schools: 80,
-    users: 120,
-    completionRate: 75,
-    pendingApprovals: 23,
-    pendingSchools: 15,
-    approvedSchools: 65,
-    rejectedSchools: 0,
-    notifications,
-    stats: [
-      {
-        id: 'stat-1',
-        title: 'Aktiv məktəblər',
-        value: 80,
-        change: 5,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      },
-      {
-        id: 'stat-2',
-        title: 'Tamamlanma faizi',
-        value: 75,
-        change: 12,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      },
-      {
-        id: 'stat-3',
-        title: 'İstifadəçilər',
-        value: 120,
-        change: 10,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      }
-    ],
-    categories,
-    sectorCompletions
-  };
-};
-
-/**
- * Superadmin mock dashboard məlumatları yaradır
- */
-export const createMockSuperAdminData = (): SuperAdminDashboardData => {
-  const now = new Date();
-  const notifications: DashboardNotification[] = [
-    {
-      id: '1',
+      id: '3',
       title: 'Sistem yeniləməsi',
-      message: 'Sistem versiyası v1.2.0-a yüksəldi',
-      type: 'system',
+      message: 'Sistem yeniləməsi 2023-08-20 tarixində baş tutacaq',
+      type: 'warning',
       isRead: false,
-      userId: 'user-1',
-      priority: 'normal',
-      date: now.toISOString(),
-      time: `${now.getHours()}:${now.getMinutes()}`
-    }
-  ];
-
-  const regionStats: RegionStat[] = [
-    {
-      id: 'region-1',
-      name: 'Bakı şəhəri',
-      sectorCount: 12,
-      schoolCount: 120,
-      completionRate: 82
-    },
-    {
-      id: 'region-2',
-      name: 'Sumqayıt şəhəri',
-      sectorCount: 5,
-      schoolCount: 40,
-      completionRate: 75
-    },
-    {
-      id: 'region-3',
-      name: 'Gəncə şəhəri',
-      sectorCount: 4,
-      schoolCount: 35,
-      completionRate: 68
-    }
-  ];
-
-  return {
-    regions: 15,
-    sectors: 45,
-    schools: 400,
-    users: 550,
-    completionRate: 78,
-    pendingApprovals: 56,
-    notifications,
-    stats: [
-      {
-        id: 'stat-1',
-        title: 'Aktiv məktəblər',
-        value: 400,
-        change: 12,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      },
-      {
-        id: 'stat-2',
-        title: 'Tamamlanma faizi',
-        value: 78,
-        change: 5,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      },
-      {
-        id: 'stat-3',
-        title: 'İstifadəçilər',
-        value: 550,
-        change: 25,
-        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
-      }
-    ],
-    formsByStatus: {
-      pending: 145,
-      approved: 822,
-      rejected: 56
-    },
-    regionStats
-  };
-};
-
-/**
- * Mock qrafik məlumatları yaradır
- */
-export const createMockChartData = (): ChartData => {
-  return {
-    activityData: [
-      { name: 'Yanvar', value: 400 },
-      { name: 'Fevral', value: 300 },
-      { name: 'Mart', value: 200 },
-      { name: 'Aprel', value: 278 },
-      { name: 'May', value: 189 },
-    ],
-    regionSchoolsData: [
-      { name: 'Bakı', value: 120 },
-      { name: 'Sumqayıt', value: 50 },
-      { name: 'Gəncə', value: 40 },
-      { name: 'Şəki', value: 30 },
-      { name: 'Lənkəran', value: 20 },
-    ],
-    categoryCompletionData: [
-      { name: 'Şagird Statistikası', completed: 85 },
-      { name: 'Müəllim Statistikası', completed: 72 },
-      { name: 'İnfrastruktur', completed: 60 },
-      { name: 'Texniki Avadanlıq', completed: 45 },
-      { name: 'Tədris Materialları', completed: 55 },
-    ]
-  };
-};
-
-/**
- * İstifadəçi roluna əsasən mock dashboard məlumatları təqdim edən funksiya
- * @param userRole İstifadəçi rolu
- * @returns DashboardData
- */
-export function generateDashboardDataByRole(userRole?: string): DashboardData {
-  switch (userRole) {
-    case 'superadmin':
-      return createMockSuperAdminData();
-    case 'regionadmin':
-      return createMockRegionAdminData();
-    case 'sectoradmin':
-      return createMockSectorAdminData();
-    case 'schooladmin':
-      return createMockSchoolAdminData();
-    default:
-      return createMockSuperAdminData();
-  }
-}
-
-export const generateNotification = (id: string, title: string, message: string, type: string) => {
-  return {
-    id,
-    title,
-    message,
-    type,
-    isRead: false,
-    userId: 'user1',
-    priority: 'normal',
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    createdAt: new Date().toISOString()
-  };
-};
-
-export const generateReadNotification = (id: string, title: string, message: string, type: string) => {
-  return {
-    id,
-    title,
-    message,
-    type,
-    isRead: true,
-    userId: 'user1',
-    priority: 'normal',
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    createdAt: new Date().toISOString()
-  };
-};
-
-export const generateSectorNotifications = () => {
-  return [
-    {
-      id: '1',
-      title: 'Yeni məktəb məlumatları',
-      message: 'Bakı şəhəri, 132 saylı məktəb statistikasını göndərdi',
-      type: 'form',
-      isRead: false,
-      userId: 'user1',
-      priority: 'normal',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      title: '6 məktəb məlumatlarını tamamlamayıb',
-      message: 'Son tarixə 2 gün qalmış',
-      type: 'deadline',
-      isRead: false,
-      userId: 'user1',
+      userId: '1',
       priority: 'high',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
+      date: '2023-08-17',
+      time: '14:45',
+      createdAt: '2023-08-17T14:45:00Z',
     },
     {
-      id: '3',
-      title: 'Yeni kateqoriya əlavə edildi',
-      message: '2023-2024 tədris ili statistikası',
-      type: 'category',
+      id: '4',
+      title: 'Yeni kateqoriya',
+      message: 'Yeni kateqoriya bütün məktəblərə təyin edildi',
+      type: 'info',
       isRead: false,
-      userId: 'user1',
+      userId: '1',
       priority: 'normal',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
-    }
-  ];
-};
-
-export const generateRegionNotifications = () => {
-  return [
-    {
-      id: '1',
-      title: 'Yeni sektorlar üçün məlumat tələbi',
-      message: 'Bütün sektorlar üçün yeni statistik məlumatlar tələb olunur',
-      type: 'system',
-      isRead: false,
-      userId: 'user1',
-      priority: 'normal',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
+      date: '2023-08-18',
+      time: '11:20',
+      createdAt: '2023-08-18T11:20:00Z',
     },
     {
-      id: '2',
-      title: 'Məlumat yoxlama tələbi',
-      message: 'Sumqayıt sektorunun göndərdiyi məlumatlar yoxlanılmalıdır',
-      type: 'approval',
-      isRead: false,
-      userId: 'user1',
-      priority: 'high',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '3',
+      id: '5',
       title: 'Hesabat hazırdır',
-      message: 'Regionun aylıq hesabatı hazırdır. Baxış üçün klikləyin.',
-      type: 'form',
-      isRead: false,
-      userId: 'user1',
+      message: 'Aylıq hesabat hazırdır, yükləyə bilərsiniz',
+      type: 'success',
+      isRead: true,
+      userId: '1',
       priority: 'normal',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
+      date: '2023-08-19',
+      time: '16:30',
+      createdAt: '2023-08-19T16:30:00Z',
     }
   ];
 };
 
-export const generateSuperAdminNotifications = () => {
-  return [
-    {
-      id: '1',
-      title: 'Sistem yenilənməsi',
-      message: 'InfoLine sistemi uğurla v2.5 versiyasına yeniləndi',
-      type: 'system',
-      isRead: false,
-      userId: 'user1',
-      priority: 'normal',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      title: 'Region aktivliyi',
-      message: 'Bakı regionu bütün məlumatlarını tamamladı',
-      type: 'form',
-      isRead: false,
-      userId: 'user1',
-      priority: 'normal',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '3',
-      title: 'Təsdiq gözləyən regionlar',
-      message: '3 region təsdiq gözləyir',
-      type: 'approval',
-      isRead: false,
-      userId: 'user1',
-      priority: 'high',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      createdAt: new Date().toISOString()
-    }
-  ];
+// Other utility functions
+export const formatCompletionRate = (rate: number): string => {
+  return `${Math.round(rate)}%`;
+};
+
+export const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'pending':
+      return 'text-yellow-500';
+    case 'approved':
+      return 'text-green-500';
+    case 'rejected':
+      return 'text-red-500';
+    case 'dueSoon':
+      return 'text-orange-500';
+    case 'overdue':
+      return 'text-red-600';
+    default:
+      return 'text-gray-500';
+  }
+};
+
+export const getStatusBgColor = (status: string): string => {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100';
+    case 'approved':
+      return 'bg-green-100';
+    case 'rejected':
+      return 'bg-red-100';
+    case 'dueSoon':
+      return 'bg-orange-100';
+    case 'overdue':
+      return 'bg-red-100';
+    default:
+      return 'bg-gray-100';
+  }
+};
+
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('az-AZ', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+export const getDaysUntil = (dateString: string): number => {
+  const today = new Date();
+  const targetDate = new Date(dateString);
+  const diffTime = targetDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+export const getNotificationIcon = (type: string): string => {
+  switch (type) {
+    case 'info':
+      return 'info-circle';
+    case 'warning':
+      return 'alert-triangle';
+    case 'error':
+      return 'alert-octagon';
+    case 'success':
+      return 'check-circle';
+    default:
+      return 'bell';
+  }
+};
+
+export const getNotificationColor = (type: string): string => {
+  switch (type) {
+    case 'info':
+      return 'text-blue-500';
+    case 'warning':
+      return 'text-yellow-500';
+    case 'error':
+      return 'text-red-500';
+    case 'success':
+      return 'text-green-500';
+    default:
+      return 'text-gray-500';
+  }
+};
+
+export const getPriorityLabel = (priority: string): string => {
+  switch (priority) {
+    case 'high':
+      return 'Yüksək';
+    case 'normal':
+      return 'Normal';
+    case 'low':
+      return 'Aşağı';
+    default:
+      return 'Normal';
+  }
+};
+
+export const getPriorityColor = (priority: string): string => {
+  switch (priority) {
+    case 'high':
+      return 'text-red-500';
+    case 'normal':
+      return 'text-blue-500';
+    case 'low':
+      return 'text-green-500';
+    default:
+      return 'text-blue-500';
+  }
 };

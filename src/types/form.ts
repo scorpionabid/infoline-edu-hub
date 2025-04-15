@@ -11,3 +11,17 @@ export interface Form {
   category?: string;
   deadline?: string;
 }
+
+export interface CategoryEntryData {
+  categoryId: string;
+  values: {
+    columnId: string;
+    value: any;
+    status?: string;
+    errorMessage?: string;
+  }[];
+  isCompleted?: boolean;
+  isSubmitted?: boolean;
+  completionPercentage: number;
+  approvalStatus?: string;
+}

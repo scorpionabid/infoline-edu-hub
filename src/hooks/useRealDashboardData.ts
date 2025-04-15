@@ -68,7 +68,7 @@ export const useRealDashboardData = () => {
       toast({
         title: t('error'),
         description: t('errorFetchingDashboardData'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);

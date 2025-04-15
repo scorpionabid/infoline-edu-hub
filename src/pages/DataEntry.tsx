@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect } from 'react';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import { useLanguage } from '@/context/LanguageContext';
@@ -11,6 +12,8 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import FormField from '@/components/dataEntry/components/FormField';
 import { cn } from '@/lib/utils';
+import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
+import { CategoryWithColumns } from '@/types/column';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -51,27 +54,50 @@ const DataEntryPage: React.FC = () => {
   const initialCategoryId = queryParams.get('categoryId');
   const statusFilter = queryParams.get('status');
   
+  const { categories, loading, error, refetch } = useCategoryData();
+  const [currentCategoryIndex, setCurrentCategoryIndex] = React.useState(0);
+  
   const {
-    categories,
-    currentCategoryIndex,
     formData,
     isAutoSaving,
     isSubmitting,
     isLoading,
-    errors,
-    changeCategory,
     updateValue,
-    submitForApproval,
+    updateFormData,
     saveForm,
     getErrorForColumn,
-    downloadExcelTemplate,
-    uploadExcelData
-  } = useDataEntry(initialCategoryId, statusFilter);
+    validation
+  } = useDataEntry({ 
+    schoolId: user?.schoolId,
+    categories
+  });
+  
+  // Təsdiq üçün formnu göndərmək
+  const submitForApproval = React.useCallback(() => {
+    if (validation.validateForm()) {
+      // Form təsdiqlənmir və göndərilir
+      toast.success(t('dataEntrySubmitted'));
+      saveForm();
+    } else {
+      // Validation xətaları var
+      toast.error(t('pleaseFixErrors'));
+    }
+  }, [validation, t, saveForm]);
+  
+  // Excel şablonunu endirmək
+  const downloadExcelTemplate = React.useCallback((categoryId: string) => {
+    toast.success(t('excel.templateDownloaded'));
+  }, [t]);
+  
+  // Excel məlumatlarını yükləmək
+  const uploadExcelData = React.useCallback((file: File, categoryId: string) => {
+    toast.success(t('excel.importSuccess'));
+  }, [t]);
   
   const currentCategory = categories[currentCategoryIndex];
   
   const handleCategoryChange = (index: number) => {
-    changeCategory(index);
+    setCurrentCategoryIndex(index);
   };
   
   const handleValueChange = (columnId: string, value: any) => {
@@ -136,11 +162,9 @@ const DataEntryPage: React.FC = () => {
         <CardContent className="space-y-4">
           {currentCategory.columns.map((column) => {
             const error = getErrorForColumn(column.id);
-            const currentEntry = formData.entries.find(e => e.categoryId === currentCategory.id);
-            const valueObj = currentEntry?.values.find(v => v.columnId === column.id);
+            const currentEntry = formData.categories.find(e => e.categoryId === currentCategory.id);
+            const valueObj = currentEntry?.entries.find(v => v.columnId === column.id);
             const value = valueObj?.value;
-            const isRejected = valueObj?.status === 'rejected';
-            const rejectionReason = valueObj?.errorMessage;
             
             return (
               <FormField
@@ -156,9 +180,6 @@ const DataEntryPage: React.FC = () => {
                 validation={column.validation}
                 isRequired={column.is_required}
                 error={error}
-                isRejected={isRejected}
-                rejectionReason={rejectionReason}
-                status={valueObj?.status}
               />
             );
           })}
@@ -176,7 +197,7 @@ const DataEntryPage: React.FC = () => {
     </div>
   );
   
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

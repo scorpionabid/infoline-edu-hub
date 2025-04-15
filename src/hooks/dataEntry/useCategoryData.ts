@@ -41,9 +41,47 @@ export const useCategoryData = () => {
       const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         const categoryColumns = columnsData
           .filter(column => column.category_id === category.id)
-          .map(column => adaptDbColumnToAppColumn(column));
+          .map(column => {
+            // Ensure column.options is properly formatted
+            let formattedOptions: string[] | { value: string; label: string }[] = [];
+            if (column.options) {
+              try {
+                if (typeof column.options === 'string') {
+                  formattedOptions = JSON.parse(column.options);
+                } else if (Array.isArray(column.options)) {
+                  formattedOptions = column.options;
+                } else if (typeof column.options === 'object') {
+                  formattedOptions = [column.options];
+                }
+              } catch (e) {
+                console.error('Error parsing column options:', e);
+                formattedOptions = [];
+              }
+            }
+            
+            // Create column with properly formatted options
+            const formattedColumn: Column = {
+              id: column.id,
+              category_id: column.category_id,
+              name: column.name,
+              type: column.type as any,
+              is_required: column.is_required,
+              order_index: column.order_index,
+              status: column.status as 'active' | 'inactive' | 'draft',
+              validation: column.validation,
+              default_value: column.default_value,
+              placeholder: column.placeholder,
+              help_text: column.help_text,
+              options: formattedOptions,
+              created_at: column.created_at,
+              updated_at: column.updated_at,
+              parent_column_id: column.parent_column_id
+            };
+            
+            return formattedColumn;
+          });
 
-        return {
+        const formattedCategory: CategoryWithColumns = {
           id: category.id,
           name: category.name,
           description: category.description,
@@ -53,10 +91,12 @@ export const useCategoryData = () => {
           priority: category.priority,
           created_at: category.created_at,
           updated_at: category.updated_at,
-          archived: category.archived,
+          archived: category.archived || false,
           column_count: categoryColumns.length,
           columns: categoryColumns
         };
+
+        return formattedCategory;
       });
 
       setCategories(categoriesWithColumns);

@@ -6,6 +6,29 @@ export interface ColumnOption {
   label: string;
 }
 
+export interface ValidationRules {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  patternError?: string;
+  minDate?: string;
+  maxDate?: string;
+  warningThreshold?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+export interface DependsOnCondition {
+  columnId: string;
+  condition: {
+    type: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan';
+    value: any;
+  };
+}
+
 export interface Column {
   id: string;
   category_id: string;
@@ -14,49 +37,31 @@ export interface Column {
   is_required: boolean;
   order_index: number;
   status: 'active' | 'inactive' | 'draft';
-  validation: any;
+  validation: ValidationRules | any;
   default_value?: string;
   placeholder?: string;
   help_text?: string;
   options: string[] | ColumnOption[];
   created_at: string;
   updated_at: string;
-  parentColumnId?: string;
-  parent_column_id?: string; // Database-dən gələn halda
+  parent_column_id?: string;
+  dependsOn?: DependsOnCondition;
 }
 
 export interface CategoryWithColumns {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   assignment: 'all' | 'sectors';
-  deadline: string;
+  deadline?: string;
   status: 'active' | 'inactive' | 'draft';
   priority: number;
   created_at: string;
   updated_at: string;
-  archived: boolean;
-  column_count: number;
+  archived?: boolean;
+  column_count?: number;
   columns: Column[];
 }
-
-// Sütun adapteri funksiyaları
-export const adaptColumnToSupabase = (column: Partial<Column>) => {
-  return {
-    name: column.name,
-    category_id: column.category_id,
-    type: column.type,
-    is_required: column.is_required,
-    order_index: column.order_index,
-    status: column.status,
-    validation: column.validation,
-    default_value: column.default_value,
-    placeholder: column.placeholder,
-    help_text: column.help_text,
-    options: column.options,
-    parent_column_id: column.parentColumnId || column.parent_column_id
-  };
-};
 
 export interface Category {
   id: string;
@@ -89,7 +94,24 @@ export const adaptDbColumnToAppColumn = (dbColumn: any): Column => {
     options: Array.isArray(dbColumn.options) ? dbColumn.options : [],
     created_at: dbColumn.created_at,
     updated_at: dbColumn.updated_at,
-    parentColumnId: dbColumn.parent_column_id,
     parent_column_id: dbColumn.parent_column_id
+  };
+};
+
+// Sütun adapteri funksiyaları
+export const adaptColumnToSupabase = (column: Partial<Column>) => {
+  return {
+    name: column.name,
+    category_id: column.category_id,
+    type: column.type,
+    is_required: column.is_required,
+    order_index: column.order_index,
+    status: column.status,
+    validation: column.validation,
+    default_value: column.default_value,
+    placeholder: column.placeholder,
+    help_text: column.help_text,
+    options: column.options,
+    parent_column_id: column.parent_column_id
   };
 };

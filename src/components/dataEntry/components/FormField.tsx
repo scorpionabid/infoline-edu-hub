@@ -1,15 +1,14 @@
 
 import React from 'react';
-import { ColumnType } from '@/types/column';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import DatePicker from '@/components/ui/date-picker';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Info } from 'lucide-react';
+import { ColumnType } from '@/types/column';
+import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface FormFieldProps {
   id: string;
@@ -26,7 +25,6 @@ interface FormFieldProps {
   isRejected?: boolean;
   rejectionReason?: string;
   status?: string;
-  disabled?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -41,15 +39,22 @@ const FormField: React.FC<FormFieldProps> = ({
   validation,
   isRequired = false,
   error,
-  isRejected = false,
+  isRejected,
   rejectionReason,
   status,
-  disabled = false
 }) => {
+  const { t } = useLanguage();
   const isApproved = status === 'approved';
-  const inputClassName = `w-full ${isRejected ? 'border-destructive' : ''} ${isApproved ? 'bg-muted' : ''}`;
-
+  const isDisabled = isApproved;
+  
   const renderField = () => {
+    const inputClassName = cn(
+      'w-full',
+      error ? 'border-destructive' : '',
+      isRejected ? 'border-destructive' : '',
+      isApproved ? 'bg-muted' : ''
+    );
+    
     switch (type) {
       case 'text':
         return (
@@ -60,7 +65,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || ''}
             className={inputClassName}
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           />
         );
         
@@ -73,17 +78,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || ''}
             className={inputClassName}
-            disabled={disabled || isApproved}
-          />
-        );
-        
-      case 'date':
-        return (
-          <DatePicker
-            id={id}
-            date={value ? new Date(value) : undefined}
-            onSelect={(date) => onChange(date?.toISOString())}
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           />
         );
         
@@ -95,7 +90,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || ''}
             className={inputClassName}
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           />
         );
         
@@ -105,7 +100,7 @@ const FormField: React.FC<FormFieldProps> = ({
             id={id}
             checked={value === true}
             onCheckedChange={(checked) => onChange(checked)}
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           />
         );
         
@@ -115,9 +110,9 @@ const FormField: React.FC<FormFieldProps> = ({
             value={value || ''}
             onValueChange={(val) => onChange(val)}
             className="flex flex-col space-y-1"
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           >
-            {options?.map((option) => (
+            {options.map((option) => (
               <div key={option.value} className="flex items-center space-x-2">
                 <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
                 <Label htmlFor={`${id}-${option.value}`}>{option.label}</Label>
@@ -131,32 +126,19 @@ const FormField: React.FC<FormFieldProps> = ({
           <Select
             value={value || ''}
             onValueChange={(val) => onChange(val)}
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           >
             <SelectTrigger className={inputClassName}>
-              <SelectValue placeholder={placeholder || 'Seçin'} />
+              <SelectValue placeholder={placeholder || t('select')} />
             </SelectTrigger>
             <SelectContent>
-              {options?.map((option) => (
+              {options.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        );
-        
-      case 'file':
-      case 'image':
-        return (
-          <Input
-            id={id}
-            type="file"
-            accept={type === 'image' ? 'image/*' : undefined}
-            onChange={(e) => onChange(e.target.files?.[0])}
-            className={inputClassName}
-            disabled={disabled || isApproved}
-          />
         );
         
       default:
@@ -168,7 +150,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || ''}
             className={inputClassName}
-            disabled={disabled || isApproved}
+            disabled={isDisabled}
           />
         );
     }
@@ -177,10 +159,16 @@ const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-start justify-between">
-        <Label htmlFor={id} className={isRequired ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""}>
+        <Label 
+          htmlFor={id} 
+          className={isRequired ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""}
+        >
           {name}
         </Label>
-        {isRequired && <span className="text-xs text-muted-foreground">Məcburi</span>}
+        
+        {isRequired && (
+          <span className="text-xs text-muted-foreground">{t('required')}</span>
+        )}
       </div>
       
       {helpText && (
@@ -194,10 +182,9 @@ const FormField: React.FC<FormFieldProps> = ({
       )}
       
       {isRejected && rejectionReason && (
-        <Alert variant="destructive" className="mt-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{rejectionReason}</AlertDescription>
-        </Alert>
+        <div className="mt-2 p-2 bg-destructive/10 text-destructive text-sm rounded-md">
+          {rejectionReason}
+        </div>
       )}
     </div>
   );
