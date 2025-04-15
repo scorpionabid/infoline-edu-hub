@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { SectorAdminDashboardData } from '@/types/dashboard';
@@ -6,7 +5,7 @@ import NotificationsCard from './NotificationsCard';
 import PendingApprovalsCard from './PendingApprovalsCard';
 import StatusCards from './StatusCards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Schools, Activity } from 'lucide-react';
+import { School, Activity } from 'lucide-react';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
@@ -15,7 +14,6 @@ interface SectorAdminDashboardProps {
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
 
-  // Bu obyektləri güvənli şəkildə işləyək: data və onun alt xüsusiyyətləri mövcud olduğuna əmin olmalıyıq
   const pendingItems = data?.pendingItems || [];
   const schoolStats = data?.schoolStats || [];
   const notifications = data?.notifications || [];
@@ -31,13 +29,11 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
         pendingApprovals={data?.pendingApprovals || 0}
       />
       
-      {/* Əsas məlumatların görüntülənməsi */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Məktəblərin siyahısı */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Schools className="mr-2 h-5 w-5" />
+              <School className="mr-2 h-5 w-5" />
               {t('schools')}
             </CardTitle>
           </CardHeader>
@@ -64,13 +60,10 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
           </CardContent>
         </Card>
         
-        {/* Təsdiq gözləyən elementlər */}
         <PendingApprovalsCard pendingItems={pendingItems} />
       </div>
       
-      {/* Alt bölmə */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Aktivlik jurnalı */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -93,7 +86,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
           </CardContent>
         </Card>
         
-        {/* Bildirişlər */}
         <NotificationsCard notifications={notifications} />
       </div>
     </div>
