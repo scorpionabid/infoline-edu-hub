@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { SuperAdminDashboardData } from '@/types/dashboard';
-import NotificationsCard from './NotificationsCard';
-import StatusCards from './StatusCards';
+import StatusCards from './common/StatusCards';
+import NotificationsCard from './common/NotificationsCard';
+import RegionsList from './super-admin/RegionsList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, PieChart } from 'lucide-react';
 

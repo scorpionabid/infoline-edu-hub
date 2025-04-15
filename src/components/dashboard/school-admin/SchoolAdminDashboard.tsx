@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import NotificationsCard from '../NotificationsCard';
+import NotificationsCard from '../common/NotificationsCard';
 import { 
   SchoolAdminDashboardData,
   FormItem,

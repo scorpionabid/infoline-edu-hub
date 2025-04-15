@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { SectorAdminDashboardData } from '@/types/dashboard';
-import NotificationsCard from './NotificationsCard';
-import PendingApprovalsCard from './PendingApprovalsCard';
-import StatusCards from './StatusCards';
+import NotificationsCard from './common/NotificationsCard';
+import PendingApprovalsCard from './common/PendingApprovalsCard';
+import StatusCards from './common/StatusCards';
 import SchoolsList from './sector-admin/SchoolsList';
 import ActivityLogCard from './sector-admin/ActivityLogCard';
 
