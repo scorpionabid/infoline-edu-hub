@@ -20,4 +20,6 @@ export interface Notification {
   priority?: 'low' | 'normal' | 'high';
   relatedId?: string;
   relatedType?: string;
+  time?: string; // Əlavə edildi
+  date?: string; // Əlavə edildi
 }

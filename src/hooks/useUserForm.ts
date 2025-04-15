@@ -1,77 +1,69 @@
 
+import { useForm } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
-import { toast } from 'sonner';
 
-export const useUserForm = (onSubmit: (data: UserFormData) => Promise<boolean>, initialData?: Partial<UserFormData>) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// Validation schema for the user form
+const formSchema = (passwordRequired: boolean) => z.object({
+  full_name: z.string().min(2, 'Ad soyad minimum 2 simvol olmalıdır'),
+  email: z.string().email('Düzgün e-poçt ünvanı daxil edin'),
+  phone: z.string().optional(),
+  position: z.string().optional(),
+  role: z.string().min(1, 'Rol seçilməlidir'),
+  regionId: z.string().optional(),
+  sectorId: z.string().optional(),
+  schoolId: z.string().optional(),
+  status: z.string().optional(),
+  language: z.string().default('az'),
+  password: passwordRequired
+    ? z.string().min(6, 'Şifrə minimum 6 simvol olmalıdır')
+    : z.string().optional(),
+  notificationSettings: z.object({
+    email: z.boolean().default(true),
+    push: z.boolean().default(true),
+    sms: z.boolean().default(false),
+    system: z.boolean().default(true)
+  }).optional()
+});
+
+interface UseUserFormProps {
+  initialData: UserFormData;
+  onFormChange: (data: UserFormData) => void;
+  passwordRequired?: boolean;
+}
+
+export function useUserForm({ initialData, onFormChange, passwordRequired = false }: UseUserFormProps) {
+  const [formState, setFormState] = useState<UserFormData>(initialData);
   
-  const defaultValues: Partial<UserFormData> = {
-    full_name: '',
-    email: '',
-    phone: '',
-    position: '',
-    role: 'user',
-    regionId: undefined,
-    sectorId: undefined,
-    schoolId: undefined,
-    status: 'active',
-    language: 'az',
-    password: '',
-    notificationSettings: {
-      email: true,
-      push: false,
-      sms: false
-    },
-    ...initialData
-  };
-  
+  // Create form with react-hook-form and zod validation
   const form = useForm<UserFormData>({
-    defaultValues
+    resolver: zodResolver(formSchema(passwordRequired)),
+    defaultValues: initialData,
+    mode: 'onChange'
   });
   
-  const handleSubmit = async (data: UserFormData) => {
-    setIsSubmitting(true);
-    try {
-      // Şifrə tipini yoxla
-      if (data.password === '') {
-        delete data.password;
+  // Handle individual field changes
+  const handleFieldChange = (field: keyof UserFormData, value: any) => {
+    setFormState(prev => {
+      const newState = { ...prev, [field]: value };
+      
+      // Sync full_name and name
+      if (field === 'full_name') {
+        newState.name = value;
+      } else if (field === 'name') {
+        newState.full_name = value;
       }
       
-      // Rol dəyərləri
-      if (data.role === 'schooladmin' && !data.schoolId) {
-        toast.error('Məktəb admin üçün məktəb seçilməlidir');
-        return;
-      }
-      
-      if (data.role === 'sectoradmin' && !data.sectorId) {
-        toast.error('Sektor admin üçün sektor seçilməlidir');
-        return;
-      }
-      
-      if (data.role === 'regionadmin' && !data.regionId) {
-        toast.error('Region admin üçün region seçilməlidir');
-        return;
-      }
-      
-      const success = await onSubmit(data);
-      
-      if (success) {
-        form.reset(defaultValues);
-      }
-    } catch (error: any) {
-      console.error('Form submit xətası:', error);
-      toast.error(`Xəta: ${error.message || 'Bilinməyən xəta'}`);
-    } finally {
-      setIsSubmitting(false);
-    }
+      // Propagate changes to parent component
+      onFormChange(newState);
+      return newState;
+    });
   };
   
   return {
     form,
-    isSubmitting,
-    handleSubmit: form.handleSubmit(handleSubmit),
-    reset: () => form.reset(defaultValues)
+    handleFieldChange
   };
-};
+}

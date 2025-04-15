@@ -38,8 +38,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
   // Format date
   const formattedDate = notification.createdAt 
     ? format(new Date(notification.createdAt), 'MMM d, HH:mm')
+    : notification.date ? format(new Date(notification.date), 'MMM d, HH:mm') 
     : notification.time 
-      ? format(new Date(notification.time), 'MMM d, HH:mm')
+      ? notification.time
       : '';
 
   return (

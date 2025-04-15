@@ -2,34 +2,30 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
-import { PendingItem } from '@/types/dashboard';
 
 interface PendingApprovalsCardProps {
-  pendingItems: PendingItem[];
+  pendingApprovals: number;
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems }) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingApprovals }) => {
   const { t } = useLanguage();
-
+  
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t('pendingApprovals')}</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">{t('pendingApprovals')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {pendingItems && pendingItems.length > 0 ? (
-          <div className="space-y-4">
-            {pendingItems.map((item) => (
-              <div key={item.id} className="border-b pb-2">
-                <p className="font-medium">{item.school}</p>
-                <p className="text-sm text-muted-foreground">{item.category}</p>
-                <p className="text-xs text-muted-foreground">{item.date}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">{t('noPendingApprovals')}</p>
-        )}
+        <div className="text-3xl font-bold">{pendingApprovals}</div>
+        <p className="text-sm text-muted-foreground mt-1">
+          {t('pendingApprovalsDesc')}
+        </p>
+        <div className="h-2 w-full bg-muted mt-4 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-yellow-500 transition-all duration-500 ease-in-out" 
+            style={{ width: `${Math.min(pendingApprovals * 5, 100)}%` }}
+          />
+        </div>
       </CardContent>
     </Card>
   );

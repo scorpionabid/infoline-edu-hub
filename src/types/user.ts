@@ -23,7 +23,12 @@ export interface User {
     email: boolean;
     push: boolean;
     sms: boolean;
+    system?: boolean; // System bildirimlerini əlavə edirik
   };
+  // shorthand getter for full_name
+  get name(): string {
+    return this.full_name || '';
+  }
 }
 
 // UserFormData interfeysi əlavə edildi
@@ -43,7 +48,10 @@ export interface UserFormData {
     email: boolean;
     push: boolean;
     sms: boolean;
+    system?: boolean; // System bildirimlerini əlavə edirik
   };
+  // Tip uyğunluğu üçün alias
+  name?: string; // Əlavə edildi
 }
 
 export interface FullUserData extends User {
@@ -54,6 +62,10 @@ export interface FullUserData extends User {
   language: string; // Ana modeldə optional, burada mütləq
   created_at: string;
   updated_at: string;
+  // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+  name?: string; // Əlavə edildi - ilkin modeldə full_name-in alias-ı
+  createdAt?: string; // Əlavə edildi - created_at-ın alias-ı
+  updatedAt?: string; // Əlavə edildi - updated_at-ın alias-ı
 }
 
 // Helper functions
@@ -63,7 +75,10 @@ export function userToFullUserData(user: User): FullUserData {
     userRoleId: user.id,
     language: user.language || 'az',
     created_at: user.created_at || new Date().toISOString(),
-    updated_at: user.updated_at || new Date().toISOString()
+    updated_at: user.updated_at || new Date().toISOString(),
+    name: user.full_name, // name alias-ını əlavə edirik
+    createdAt: user.created_at, // createdAt alias-ını əlavə edirik
+    updatedAt: user.updated_at // updatedAt alias-ını əlavə edirik
   };
 }
 

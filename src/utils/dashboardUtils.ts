@@ -195,21 +195,21 @@ export const createMockSectorAdminData = () => {
         title: 'Təsdiqlənmiş məlumatlar',
         value: 45,
         change: 12,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       },
       {
         id: 'stat-2',
         title: 'Rədd edilmiş məlumatlar',
         value: 7,
         change: 2,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       },
       {
         id: 'stat-3',
         title: 'Tamamlanma faizi',
         value: 75,
         change: 5,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       }
     ],
     schoolStats,
@@ -296,21 +296,21 @@ export const createMockRegionAdminData = () => {
         title: 'Aktiv məktəblər',
         value: 80,
         change: 5,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       },
       {
         id: 'stat-2',
         title: 'Tamamlanma faizi',
         value: 75,
         change: 12,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       },
       {
         id: 'stat-3',
         title: 'İstifadəçilər',
         value: 120,
         change: 10,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       }
     ],
     categories,
@@ -375,21 +375,21 @@ export const createMockSuperAdminData = () => {
         title: 'Aktiv məktəblər',
         value: 400,
         change: 12,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       },
       {
         id: 'stat-2',
         title: 'Tamamlanma faizi',
         value: 78,
         change: 5,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       },
       {
         id: 'stat-3',
         title: 'İstifadəçilər',
         value: 550,
         change: 25,
-        changeType: 'increase'
+        changeType: 'increase' as 'increase' | 'decrease' | 'neutral'
       }
     ],
     formsByStatus: {
