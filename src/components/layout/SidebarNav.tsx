@@ -65,7 +65,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   // Region admin məlumat daxil etmir, yalnız SuperAdmin, SectorAdmin və SchoolAdmin
-  const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin;
+  const canAccessDataEntry = isSectorAdmin || isSchoolAdmin;
   
   const navItems = [
     {
@@ -114,7 +114,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/data-entry",
       icon: <FileInput size={20} />,
       label: t('dataEntry'),
-      show: canAccessDataEntry // Region admin məlumat daxil etmir
+      show: canAccessDataEntry // Yalnız məktəb və sector adminlər məlumat daxil edə bilər
     },
     {
       href: "/reports",

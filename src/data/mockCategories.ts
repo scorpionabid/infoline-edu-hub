@@ -1,213 +1,336 @@
 
-import { CategoryWithColumns } from '@/types/column';
+import { Category, CategoryWithColumns, Column } from '@/types/column';
 
-// Mock kateqoriyalar və sütunlar
-export const mockCategoriesWithColumns: CategoryWithColumns[] = [
+// Kateqoriyalar və sütunların mock datası
+
+export const mockColumns: Column[] = [
   {
-    id: '1',
-    name: 'Şagird məlumatları',
-    description: 'Şagirdlərin ümumi statistik məlumatları',
-    assignment: 'all',
-    deadline: '2023-05-30',
+    id: 'col1',
+    category_id: 'cat1',
+    name: 'Tələbə sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Tələbə sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari tələbə sayını daxil edin',
+    order_index: 0,
     status: 'active',
-    priority: 1,
-    created_at: '2023-01-15',
-    updated_at: '2023-01-15',
-    columns: [
-      {
-        id: '101',
-        category_id: '1',
-        name: 'Şagird sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Məktəbdəki ümumi şagird sayını daxil edin',
-        help_text: 'Cari təhsil ilində qeydiyyatdan keçən şagirdlərin ümumi sayı',
-        order_index: 1,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '102',
-        category_id: '1',
-        name: 'Qız şagirdlərin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Qız şagirdlərin sayını daxil edin',
-        help_text: 'Cari təhsil ilində qeydiyyatdan keçən qız şagirdlərin sayı',
-        order_index: 2,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '103',
-        category_id: '1',
-        name: 'Oğlan şagirdlərin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Oğlan şagirdlərin sayını daxil edin',
-        help_text: 'Cari təhsil ilində qeydiyyatdan keçən oğlan şagirdlərin sayı',
-        order_index: 3,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '104',
-        category_id: '1',
-        name: 'Təhsil alan əlilliyi olan şagirdlərin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Əlilliyi olan şagirdlərin sayını daxil edin',
-        help_text: 'Əlilliyi olan və xüsusi qayğıya ehtiyacı olan şagirdlərin sayı',
-        order_index: 4,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      }
-    ]
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 10000
+    }
   },
   {
-    id: '2',
-    name: 'Müəllim məlumatları',
-    description: 'Məktəbdə çalışan müəllimlərin statistik məlumatları',
-    assignment: 'all',
-    deadline: '2023-05-30',
+    id: 'col2',
+    category_id: 'cat1',
+    name: 'Qız tələbə sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Qız tələbə sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari qız tələbə sayını daxil edin',
+    order_index: 1,
     status: 'active',
-    priority: 2,
-    created_at: '2023-01-15',
-    updated_at: '2023-01-15',
-    columns: [
-      {
-        id: '201',
-        category_id: '2',
-        name: 'Müəllimlərin ümumi sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Müəllimlərin ümumi sayını daxil edin',
-        help_text: 'Cari təhsil ilində işləyən müəllimlərin ümumi sayı',
-        order_index: 1,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '202',
-        category_id: '2',
-        name: 'Qadın müəllimlərin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Qadın müəllimlərin sayını daxil edin',
-        help_text: 'Cari təhsil ilində işləyən qadın müəllimlərin sayı',
-        order_index: 2,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '203',
-        category_id: '2',
-        name: 'Kişi müəllimlərin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Kişi müəllimlərin sayını daxil edin',
-        help_text: 'Cari təhsil ilində işləyən kişi müəllimlərin sayı',
-        order_index: 3,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '204',
-        category_id: '2',
-        name: 'Ali təhsilli müəllimlərin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Ali təhsilli müəllimlərin sayını daxil edin',
-        help_text: 'Ali təhsil diplomuna sahib olan müəllimlərin sayı',
-        order_index: 4,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      },
-      {
-        id: '205',
-        category_id: '2',
-        name: '5 ildən az təcrübəsi olan müəllimlərin sayı',
-        type: 'number',
-        is_required: false,
-        placeholder: '5 ildən az təcrübəsi olan müəllimlərin sayını daxil edin',
-        help_text: 'Pedaqoji təcrübəsi 5 ildən az olan müəllimlərin sayı',
-        order_index: 5,
-        status: 'active',
-        created_at: '2023-01-15',
-        updated_at: '2023-01-15'
-      }
-    ]
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 10000
+    }
   },
   {
-    id: '3',
-    name: 'İnfrastruktur məlumatları',
-    description: 'Məktəb binası və infrastruktur haqqında məlumatlar',
-    assignment: 'all',
-    deadline: '2023-06-15',
+    id: 'col3',
+    category_id: 'cat1',
+    name: 'Oğlan tələbə sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Oğlan tələbə sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari oğlan tələbə sayını daxil edin',
+    order_index: 2,
     status: 'active',
-    priority: 3,
-    created_at: '2023-01-20',
-    updated_at: '2023-01-20',
-    columns: [
-      {
-        id: '301',
-        category_id: '3',
-        name: 'Sinif otaqlarının sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Sinif otaqlarının sayını daxil edin',
-        help_text: 'Məktəbdəki ümumi sinif otaqlarının sayı',
-        order_index: 1,
-        status: 'active',
-        created_at: '2023-01-20',
-        updated_at: '2023-01-20'
-      },
-      {
-        id: '302',
-        category_id: '3',
-        name: 'Laboratoriyaların sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Laboratoriyaların sayını daxil edin',
-        help_text: 'Məktəbdəki ümumi laboratoriyaların sayı',
-        order_index: 2,
-        status: 'active',
-        created_at: '2023-01-20',
-        updated_at: '2023-01-20'
-      },
-      {
-        id: '303',
-        category_id: '3',
-        name: 'İdman zalı mövcuddurmu?',
-        type: 'checkbox',
-        is_required: true,
-        help_text: 'Məktəbdə idman zalının olub-olmadığını qeyd edin',
-        order_index: 3,
-        status: 'active',
-        created_at: '2023-01-20',
-        updated_at: '2023-01-20'
-      },
-      {
-        id: '304',
-        category_id: '3',
-        name: 'Elektron lövhələrin sayı',
-        type: 'number',
-        is_required: true,
-        placeholder: 'Elektron lövhələrin sayını daxil edin',
-        help_text: 'Məktəbdəki ümumi elektron lövhələrin sayı',
-        order_index: 4,
-        status: 'active',
-        created_at: '2023-01-20',
-        updated_at: '2023-01-20'
-      }
-    ]
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 10000
+    }
+  },
+  {
+    id: 'col4',
+    category_id: 'cat1',
+    name: 'Əlilliyi olan tələbə sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Əlilliyi olan tələbə sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari əlilliyi olan tələbə sayını daxil edin',
+    order_index: 3,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 10000
+    }
+  },
+  // ... bütün digər sütunlar üçün
+  {
+    id: 'col5',
+    category_id: 'cat2',
+    name: 'Müəllim sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Müəllim sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari müəllim sayını daxil edin',
+    order_index: 0,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 1000
+    }
+  },
+  {
+    id: 'col6',
+    category_id: 'cat2',
+    name: 'Qadın müəllim sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Qadın müəllim sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari qadın müəllim sayını daxil edin',
+    order_index: 1,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 1000
+    }
+  },
+  {
+    id: 'col7',
+    category_id: 'cat2',
+    name: 'Kişi müəllim sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Kişi müəllim sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari kişi müəllim sayını daxil edin',
+    order_index: 2,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 1000
+    }
+  },
+  {
+    id: 'col8',
+    category_id: 'cat2',
+    name: 'Ali təhsilli müəllim sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Ali təhsilli müəllim sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari ali təhsilli müəllim sayını daxil edin',
+    order_index: 3,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 1000
+    }
+  },
+  {
+    id: 'col9',
+    category_id: 'cat2',
+    name: 'Orta-ixtisas təhsilli müəllim sayı',
+    type: 'number',
+    is_required: false,
+    placeholder: 'Orta-ixtisas təhsilli müəllim sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari orta-ixtisas təhsilli müəllim sayını daxil edin',
+    order_index: 4,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 1000
+    }
+  },
+  // Təhsil səviyyəsi kateqoriyası üçün sütunlar
+  {
+    id: 'col10',
+    category_id: 'cat3',
+    name: 'Siniflərin ümumi sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Siniflərin ümumi sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari siniflərin ümumi sayını daxil edin',
+    order_index: 0,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 100
+    }
+  },
+  {
+    id: 'col11',
+    category_id: 'cat3',
+    name: 'İbtidai siniflərin sayı (1-4)',
+    type: 'number',
+    is_required: true,
+    placeholder: 'İbtidai siniflərin sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari ibtidai siniflərin sayını daxil edin',
+    order_index: 1,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 50
+    }
+  },
+  {
+    id: 'col12',
+    category_id: 'cat3',
+    name: 'Orta siniflərin sayı (5-9)',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Orta siniflərin sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari orta siniflərin sayını daxil edin',
+    order_index: 2,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 50
+    }
+  },
+  {
+    id: 'col13',
+    category_id: 'cat3',
+    name: 'Yuxarı siniflərin sayı (10-11)',
+    type: 'checkbox',
+    is_required: true,
+    help_text: 'Məktəbinizdəki cari yuxarı siniflərin sayını daxil edin',
+    order_index: 3,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [
+      { label: 'Var', value: 'true' },
+      { label: 'Yoxdur', value: 'false' }
+    ],
+    validation: {}
+  },
+  // Digər kateqoriya sütunları...
+  {
+    id: 'col14',
+    category_id: 'cat4',
+    name: 'Kabinet sayı',
+    type: 'number',
+    is_required: true,
+    placeholder: 'Kabinet sayını daxil edin',
+    help_text: 'Məktəbinizdəki cari kabinet sayını daxil edin',
+    order_index: 0,
+    status: 'active',
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    options: [],
+    validation: {
+      minValue: 0,
+      maxValue: 100
+    }
   }
 ];
+
+export const mockCategories: CategoryWithColumns[] = [
+  {
+    id: 'cat1',
+    name: 'Şagird Statistikası',
+    description: 'Məktəbinizdəki şagirdlər haqqında ümumi məlumatlar',
+    assignment: 'all',
+    deadline: '2024-06-30T23:59:59Z',
+    status: 'active',
+    priority: 1,
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    archived: false,
+    column_count: 4,
+    columns: mockColumns.filter(col => col.category_id === 'cat1')
+  },
+  {
+    id: 'cat2',
+    name: 'Müəllim heyəti',
+    description: 'Məktəbinizdəki müəllim heyəti haqqında məlumatlar',
+    assignment: 'all',
+    deadline: '2024-06-30T23:59:59Z',
+    status: 'active',
+    priority: 2,
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    archived: false,
+    column_count: 5,
+    columns: mockColumns.filter(col => col.category_id === 'cat2')
+  },
+  {
+    id: 'cat3',
+    name: 'Təhsil Keyfiiyyət Göstəriciləri',
+    description: 'Məktəbinizdəki təhsil keyfiyyəti haqqında məlumatlar',
+    assignment: 'sectors',
+    deadline: '2024-07-15T23:59:59Z',
+    status: 'active',
+    priority: 3,
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    archived: false,
+    column_count: 4,
+    columns: mockColumns.filter(col => col.category_id === 'cat3')
+  },
+  {
+    id: 'cat4',
+    name: 'Maddi-Texniki Baza',
+    description: 'Məktəbinizdəki maddi-texniki baza haqqında məlumatlar',
+    assignment: 'all',
+    deadline: '2024-07-30T23:59:59Z',
+    status: 'active',
+    priority: 4,
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    archived: false,
+    column_count: 1,
+    columns: mockColumns.filter(col => col.category_id === 'cat4')
+  },
+  {
+    id: 'cat5',
+    name: 'Sektorlara aid kateqoriya',
+    description: 'Bu kateqoriya yalnız sektorlar üçün əlçatandır',
+    assignment: 'sectors',
+    deadline: '2024-08-15T23:59:59Z',
+    status: 'active',
+    priority: 5,
+    created_at: '2024-03-01T00:00:00Z',
+    updated_at: '2024-03-01T00:00:00Z',
+    archived: false,
+    column_count: 0,
+    columns: mockColumns.filter(col => col.category_id === 'cat5')
+  }
+];
+
+export default mockCategories;

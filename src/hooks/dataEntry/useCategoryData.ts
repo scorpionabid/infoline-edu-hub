@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, ColumnType, Column } from '@/types/column';
 import { useAuth } from '@/context/AuthContext';
@@ -97,10 +96,8 @@ export const useCategoryData = (): UseCategoryDataReturn => {
     setError(null);
 
     try {
-      // Debug məlumatı
       console.log("Kateqoriyalar yüklənir, istifadəçi:", user);
 
-      // Supabase-dən aktiv kateqoriyaları yükləyək
       let { data: categoriesData, error: catError } = await supabase
         .from('categories')
         .select('*')
@@ -112,11 +109,9 @@ export const useCategoryData = (): UseCategoryDataReturn => {
         throw catError;
       }
       
-      // Əgər heç bir kateqoriya yoxdursa, mock datadan istifadə edək
       if (!categoriesData || categoriesData.length === 0) {
         console.log("Supabase-dən kateqoriya tapılmadı, mock datadan istifadə edilir");
         
-        // Categories adaptasiya etmə funksiyası
         const adaptCategories = (data: any[]): CategoryWithColumns[] => {
           return data.map(category => ({
             id: category.id,
@@ -154,7 +149,6 @@ export const useCategoryData = (): UseCategoryDataReturn => {
       
       console.log("Supabase-dən alınan kateqoriyalar:", categoriesData);
       
-      // Aktiv sütunları əldə edək
       let { data: columnsData, error: colError } = await supabase
         .from('columns')
         .select('*')
@@ -168,7 +162,6 @@ export const useCategoryData = (): UseCategoryDataReturn => {
       
       console.log("Supabase-dən alınan sütunlar:", columnsData);
       
-      // Kateqoriya və sütunları birləşdirək
       const dataWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         const categoryColumns = columnsData?.filter(column => column.category_id === category.id) || [];
         
@@ -195,8 +188,8 @@ export const useCategoryData = (): UseCategoryDataReturn => {
             placeholder: col.placeholder,
             help_text: col.help_text,
             options: col.options,
-            created_at: col.created_at,
-            updated_at: col.updated_at
+            created_at: col.createdAt || col.created_at,
+            updated_at: col.updatedAt || col.updated_at
           }))
         };
       });
@@ -210,7 +203,6 @@ export const useCategoryData = (): UseCategoryDataReturn => {
         description: "Xahiş edirik bir az sonra yenidən cəhd edin"
       });
       
-      // Xəta halında mock datanı göstərək
       const adaptCategories = (data: any[]): CategoryWithColumns[] => {
         return data.map(category => ({
           id: category.id,

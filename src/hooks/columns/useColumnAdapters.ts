@@ -2,49 +2,44 @@
 import { Column } from '@/types/column';
 
 /**
- * Supabase-dən gələn sütun məlumatlarını bizim tələb etdiyimiz Column tipinə çevirir
- * @param data Supabase-dən gələn sütun məlumatları
- * @returns Column obyekti
+ * Column tipinin verilənlər bazası formatına çevrilməsi
  */
-export const adaptSupabaseColumn = (data: any): Column => {
-  return {
-    id: data.id,
-    category_id: data.category_id,
-    name: data.name,
-    type: data.type,
-    is_required: data.is_required || false,
-    order_index: data.order_index || 0,
-    status: data.status || 'active',
-    validation: data.validation,
-    default_value: data.default_value,
-    placeholder: data.placeholder,
-    help_text: data.help_text,
-    options: data.options,
-    created_at: data.created_at,
-    updated_at: data.updated_at
-  };
-};
-
-/**
- * Column obyektini Supabase formatına çevirir
- * @param column Column obyekti
- * @returns Supabase formatında sütun məlumatları
- */
-export const adaptColumnToSupabase = (column: Partial<Column>): any => {
+export function adaptColumnToSupabase(column: Partial<Column>): any {
   return {
     id: column.id,
-    category_id: column.category_id,
     name: column.name,
     type: column.type,
+    category_id: column.category_id,
     is_required: column.is_required,
     order_index: column.order_index,
-    status: column.status,
-    validation: column.validation,
-    default_value: column.default_value,
-    placeholder: column.placeholder,
-    help_text: column.help_text,
-    options: column.options,
-    created_at: column.created_at,
-    updated_at: column.updated_at
+    help_text: column.help_text || null,
+    placeholder: column.placeholder || null,
+    options: column.options || [],
+    validation: column.validation || {},
+    default_value: column.default_value || null,
+    status: column.status || 'active',
   };
-};
+}
+
+/**
+ * Verilənlər bazası formatından Column tipinə çevrilməsi
+ */
+export function adaptSupabaseToColumn(data: any): Column {
+  return {
+    id: data.id,
+    name: data.name,
+    type: data.type,
+    category_id: data.category_id,
+    is_required: data.is_required,
+    order_index: data.order_index || 0,
+    help_text: data.help_text || '',
+    placeholder: data.placeholder || '',
+    options: data.options || [],
+    validation: data.validation || {},
+    default_value: data.default_value || '',
+    status: data.status || 'active',
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    parentColumnId: data.parent_column_id
+  };
+}

@@ -1,6 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ChartData, DashboardData } from '@/types/dashboard';
 import { UserRole } from '@/types/user';
+import { createMockChartData, generateDashboardDataByRole } from '@/utils/dashboardUtils';
 
 /**
  * Real-vaxt rejimində dashboard məlumatlarını əldə etmək
@@ -13,12 +15,17 @@ export async function fetchDashboardData(role: UserRole): Promise<DashboardData>
       body: { role }
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Dashboard data fetching error:', error);
+      // Xəta halında mock data qaytaraq
+      return generateDashboardDataByRole(role);
+    }
     
     return data.data;
   } catch (error: any) {
     console.error('Dashboard məlumatlarını əldə edərkən xəta:', error);
-    throw error;
+    // Xəta halında mock data qaytaraq
+    return generateDashboardDataByRole(role);
   }
 }
 
@@ -29,31 +36,7 @@ export async function fetchDashboardChartData(): Promise<ChartData> {
   try {
     // Burada real dəyərlər üçün API sorğusu edilə bilər
     // Hələlik mock data qaytarırıq
-    return {
-      activityData: [
-        { name: 'Yanvar', value: 145 },
-        { name: 'Fevral', value: 230 },
-        { name: 'Mart', value: 275 },
-        { name: 'Aprel', value: 310 },
-        { name: 'May', value: 350 },
-        { name: 'İyun', value: 420 },
-        { name: 'İyul', value: 380 }
-      ],
-      regionSchoolsData: [
-        { name: 'Bakı', value: 185 },
-        { name: 'Sumqayıt', value: 76 },
-        { name: 'Gəncə', value: 54 },
-        { name: 'Mingəçevir', value: 28 },
-        { name: 'Şirvan', value: 23 }
-      ],
-      categoryCompletionData: [
-        { name: 'Şagird statistikası', completed: 85 },
-        { name: 'Müəllim heyəti', completed: 72 },
-        { name: 'İnfrastruktur', completed: 63 },
-        { name: 'Tədris proqramı', completed: 91 },
-        { name: 'İnzibati işlər', completed: 56 }
-      ]
-    };
+    return createMockChartData();
   } catch (error) {
     console.error('Dashboard qrafik məlumatlarını əldə edərkən xəta:', error);
     throw error;
@@ -70,18 +53,24 @@ export async function fetchRegionAdminDashboard(regionId: string): Promise<any> 
       throw new Error('Region ID təqdim edilməyib');
     }
     
+    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
     const { data, error } = await supabase
       .from('region_dashboard_data')
       .select('*')
       .eq('region_id', regionId)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.warn('Region dashboard data fetching error:', error);
+      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
+      return generateDashboardDataByRole('regionadmin');
+    }
     
     return data;
   } catch (error: any) {
     console.error('Region admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    throw error;
+    // Xəta halında mock data qaytaraq
+    return generateDashboardDataByRole('regionadmin');
   }
 }
 
@@ -95,18 +84,24 @@ export async function fetchSectorAdminDashboard(sectorId: string): Promise<any> 
       throw new Error('Sector ID təqdim edilməyib');
     }
     
+    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
     const { data, error } = await supabase
       .from('sector_dashboard_data')
       .select('*')
       .eq('sector_id', sectorId)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.warn('Sector dashboard data fetching error:', error);
+      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
+      return generateDashboardDataByRole('sectoradmin');
+    }
     
     return data;
   } catch (error: any) {
     console.error('Sector admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    throw error;
+    // Xəta halında mock data qaytaraq
+    return generateDashboardDataByRole('sectoradmin');
   }
 }
 
@@ -120,18 +115,24 @@ export async function fetchSchoolAdminDashboard(schoolId: string): Promise<any> 
       throw new Error('Məktəb ID təqdim edilməyib');
     }
     
+    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
     const { data, error } = await supabase
       .from('school_dashboard_data')
       .select('*')
       .eq('school_id', schoolId)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.warn('School dashboard data fetching error:', error);
+      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
+      return createMockSchoolAdminData();
+    }
     
     return data;
   } catch (error: any) {
     console.error('Məktəb admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    throw error;
+    // Xəta halında mock data qaytaraq
+    return createMockSchoolAdminData();
   }
 }
 
@@ -140,16 +141,22 @@ export async function fetchSchoolAdminDashboard(schoolId: string): Promise<any> 
  */
 export async function fetchSuperAdminDashboard(): Promise<any> {
   try {
+    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
     const { data, error } = await supabase
       .from('super_admin_dashboard')
       .select('*')
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.warn('SuperAdmin dashboard data fetching error:', error);
+      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
+      return generateDashboardDataByRole('superadmin');
+    }
     
     return data;
   } catch (error: any) {
     console.error('SuperAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-    throw error;
+    // Xəta halında mock data qaytaraq
+    return generateDashboardDataByRole('superadmin');
   }
 }

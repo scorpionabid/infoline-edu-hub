@@ -11,8 +11,7 @@ import UserListTable from './UserListTable';
 import UserFilters from './UserFilters';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { User, userToFullUserData, fullUserDataToUser } from '@/types/user';
-import { FullUserData } from '@/types/supabase';
+import { User, FullUserData, userToFullUserData, fullUserDataToUser } from '@/types/user';
 
 interface UserListProps {
   currentUserRole?: Role;
@@ -143,10 +142,16 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={fullUserDataToUser(selectedUser)}
+            user={selectedUser && fullUserDataToUser(selectedUser as any)}
             onSave={(updatedUser) => {
               // User tipini FullUserData tipinə çevir
-              const fullUserData = userToFullUserData(updatedUser);
+              const fullUserData: FullUserData = {
+                ...userToFullUserData(updatedUser),
+                // Supabase tipləri ilə uyğunluq üçün əlavə
+                name: updatedUser.name || updatedUser.full_name || '',
+                createdAt: updatedUser.created_at || '',
+                updatedAt: updatedUser.updatedAt || undefined
+              };
               handleUpdateUserConfirm(fullUserData);
               handleUserUpdated();
             }}
@@ -155,7 +160,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={fullUserDataToUser(selectedUser)}
+            user={selectedUser && fullUserDataToUser(selectedUser as any)}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -165,7 +170,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={fullUserDataToUser(selectedUser)}
+            user={selectedUser && fullUserDataToUser(selectedUser as any)}
           />
         </>
       )}

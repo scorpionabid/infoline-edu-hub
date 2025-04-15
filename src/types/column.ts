@@ -56,7 +56,7 @@ export interface CategoryWithColumns extends Category {
 }
 
 // Function to adapt Column type for Supabase
-export function adaptColumnToSupabase(column: Column): any {
+export function adaptColumnToSupabase(column: Partial<Column>): any {
   return {
     id: column.id,
     name: column.name,
@@ -66,8 +66,8 @@ export function adaptColumnToSupabase(column: Column): any {
     order_index: column.order_index,
     help_text: column.help_text || null,
     placeholder: column.placeholder || null,
-    options: column.options,
-    validation: column.validation,
+    options: column.options || [],
+    validation: column.validation || {},
     default_value: column.default_value || null,
     status: column.status,
   };

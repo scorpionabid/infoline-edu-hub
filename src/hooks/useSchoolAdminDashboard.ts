@@ -1,10 +1,12 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
-import { fetchSchoolAdminDashboard } from '@/services/schoolAdminService';
+import { fetchSchoolAdminDashboard } from '@/services/dashboardService';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { createMockSchoolAdminData } from '@/utils/dashboardUtils';
 
 /**
  * Məktəb admin dashboard hook-u
@@ -16,19 +18,7 @@ export default function useSchoolAdminDashboard() {
   const navigate = useNavigate();
   
   // Default data - bu dayanıqlı mockup data sağlayır
-  const defaultData: SchoolAdminDashboardData = {
-    forms: {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      total: 0,
-      dueSoon: 0,
-      overdue: 0
-    },
-    completionRate: 0,
-    notifications: [],
-    pendingForms: []
-  };
+  const defaultData: SchoolAdminDashboardData = createMockSchoolAdminData();
   
   // Məktəb admin məlumatları
   const schoolId = user?.schoolId;
@@ -50,14 +40,12 @@ export default function useSchoolAdminDashboard() {
         const result = await fetchSchoolAdminDashboard(schoolId);
         
         // API-dən gələn məlumatların doğruluğunu yoxlayırıq
-        // forms sahəsi undefined olsa default dəyərdən istifadə edəcəyik
         if (!result) {
           console.warn('Serverdən məlumat alına bilmədi, default data istifadə olunur');
           return defaultData;
         }
         
         // forms sahəsinin mövcudluğunu və doğru formatda olduğunu yoxlayırıq
-        // əgər məlumat yoxdursa və ya yanlışdırsa, default data-dan istifadə edirik
         if (!result.forms) {
           console.warn('Serverdən alınan dashboard məlumatlarında forms sahəsi yoxdur, default data istifadə olunur');
           result.forms = defaultData.forms;

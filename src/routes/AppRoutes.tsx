@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/auth";
@@ -29,7 +28,6 @@ interface ProtectedRouteProps {
   redirectUrl?: string;
 }
 
-// Protected Route Component - rol əsasında icazə yoxlaması edir
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   allowedRoles,
@@ -39,7 +37,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { userRole } = usePermissions();
   const location = useLocation();
   
-  // Yüklənmə zamanı spinner göstəririk
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -48,12 +45,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
   
-  // İstifadəçi login olmayıbsa, login səhifəsinə yönləndiririk
   if (!isAuthenticated) {
     return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   
-  // Əgər rol yoxlaması varsa və istifadəçinin bu səhifəyə icazəsi yoxdursa
   if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
     return <AccessDenied />;
   }
@@ -66,7 +61,6 @@ interface PublicRouteProps {
   restricted?: boolean;
 }
 
-// Public Route Component - login olmuş istifadəçini müəyyən səhifələrə daxil olmağına icazə vermir
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -85,7 +79,6 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false 
   return <>{children}</>;
 };
 
-// Route konfigurasyonları
 const AppRoutes = [
   {
     path: "/login",

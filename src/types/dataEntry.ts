@@ -32,6 +32,7 @@ export interface DataEntryForm {
   formId?: string; // Added for compatibility
   status?: 'draft' | 'submitted' | 'approved' | 'rejected'; // Added for compatibility
   entries?: CategoryEntryData[]; // Added for compatibility
+  schoolId?: string; // Added for compatibility
 }
 
 // Category data with values for entry form

@@ -1,28 +1,92 @@
 
-import { useState } from 'react';
-import { DataEntryForm } from '@/types/dataEntry';
+import { useState, useCallback } from 'react';
+import { CategoryEntryData, DataEntryForm } from '@/types/dataEntry';
 
-/**
- * Forma state'ini idarə edən hook
- */
-export const useFormState = (initialFormId: string = "form1", initialSchoolId: string = "school1") => {
+export const useFormState = (initialCategories: any[] = []) => {
   const [formData, setFormData] = useState<DataEntryForm>({
-    formId: initialFormId,
-    schoolId: initialSchoolId,
+    categories: [],
+    overallCompletionPercentage: 0,
+    formId: crypto.randomUUID(),
+    schoolId: undefined,
     entries: [],
-    overallProgress: 0,
     status: 'draft'
   });
   
-  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+
+  // Form değerlerini güncelleme
+  const updateFormData = useCallback((newData: Partial<DataEntryForm>) => {
+    setFormData(prev => ({
+      ...prev,
+      ...newData
+    }));
+  }, []);
+
+  // Değer güncelleme
+  const updateValue = useCallback((categoryId: string, columnId: string, value: any) => {
+    setFormData(prev => {
+      // Kategoriya ağacını dərin bir şəkildə clone edək
+      const newData = { ...prev };
+      
+      // entries içində məlumatları yeniləyək (CategoryEntryData tipində)
+      let updatedEntries = Array.isArray(newData.entries) ? [...newData.entries] : [];
+      
+      // Əgər uyğun kategoriya tapılmırsa
+      let categoryEntry = updatedEntries.find(entry => entry.categoryId === categoryId);
+      
+      if (!categoryEntry) {
+        // Yeni kategoriya əlavə edək
+        categoryEntry = {
+          categoryId,
+          values: [],
+          completionPercentage: 0
+        };
+        updatedEntries.push(categoryEntry);
+      } else {
+        // Mövcud kategoriyanı klonlayaq
+        const categoryEntryIndex = updatedEntries.findIndex(entry => entry.categoryId === categoryId);
+        updatedEntries[categoryEntryIndex] = { ...categoryEntry };
+        categoryEntry = updatedEntries[categoryEntryIndex];
+      }
+      
+      // Kategoriyanın values array'ini klonlayaq
+      categoryEntry.values = [...categoryEntry.values];
+      
+      // Uyğun sütunu tapaq
+      const valueIndex = categoryEntry.values.findIndex(val => val.columnId === columnId);
+      
+      if (valueIndex === -1) {
+        // Əgər mövcud deyilsə əlavə edək
+        categoryEntry.values.push({
+          columnId,
+          value
+        });
+      } else {
+        // Mövcuddursa yeniləyək
+        categoryEntry.values[valueIndex] = {
+          ...categoryEntry.values[valueIndex],
+          value
+        };
+      }
+      
+      // Yeni entries array'ini təyin edək
+      newData.entries = updatedEntries;
+      
+      return newData;
+    });
+  }, []);
+
   return {
     formData,
-    setFormData,
+    updateFormData,
     isAutoSaving,
     setIsAutoSaving,
     isSubmitting,
-    setIsSubmitting
+    setIsSubmitting,
+    lastSaved,
+    setLastSaved,
+    updateValue
   };
 };

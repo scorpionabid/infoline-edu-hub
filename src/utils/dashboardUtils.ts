@@ -1,281 +1,156 @@
 
-import { ChartData, DashboardData, StatsItem, RegionStat, CategoryStat, SectorCompletion, SchoolStat, PendingItem, ActivityLogItem, FormItem, DashboardNotification } from '@/types/dashboard';
+import { 
+  SuperAdminDashboardData, 
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData, 
+  SchoolAdminDashboardData,
+  ChartData
+} from '@/types/dashboard';
 import { UserRole } from '@/types/user';
 
-const getRandomChange = () => {
-  const value = Math.floor(Math.random() * 30);
-  return {
-    value,
-    type: Math.random() > 0.5 ? 'increase' : 'decrease'
-  };
-};
-
-export function generateDashboardDataByRole(role: UserRole): DashboardData {
-  const notifications: DashboardNotification[] = [
-    {
-      id: '1',
-      type: 'info',
-      title: 'Yeni bildiriş',
-      message: 'Sistem yeniləndi',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      userId: '1',
-      priority: 'normal',
-      time: '10:45',
-      date: '2023-10-15',
-    },
-    {
-      id: '2',
-      type: 'warning',
-      title: 'Son tarix yaxınlaşır',
-      message: 'Şagird məlumatlarını doldurmaq üçün 2 gün qalıb',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      userId: '1',
-      priority: 'high',
-      time: '14:30',
-      date: '2023-10-14',
-    }
-  ];
-
-  const stats: StatsItem[] = [
-    {
-      id: '1',
-      title: 'Ümumi İstifadəçilər',
-      value: 1250,
-      change: 12,
-      changeType: 'increase'
-    },
-    {
-      id: '2',
-      title: 'Ümumi Məktəblər',
-      value: 657,
-      change: 5,
-      changeType: 'increase'
-    },
-    {
-      id: '3',
-      title: 'Tamamlanma Dərəcəsi',
-      value: 76,
-      change: 3,
-      changeType: 'increase'
-    },
-    {
-      id: '4',
-      title: 'Təsdiq Gözləyən',
-      value: 24,
-      change: 8,
-      changeType: 'decrease'
-    }
-  ];
-
-  // SuperAdmin data
-  if (role === 'superadmin') {
-    return {
-      regions: 12,
-      sectors: 45,
-      schools: 657,
-      users: 1250,
-      completionRate: 76,
-      pendingApprovals: 24,
-      notifications,
-      stats,
-      formsByStatus: {
-        pending: 24,
-        approved: 542,
-        rejected: 15
-      },
-      regionStats: [
-        {
-          id: '1',
-          name: 'Bakı',
-          sectorCount: 12,
-          schoolCount: 185,
-          completionRate: 85
-        },
-        {
-          id: '2',
-          name: 'Sumqayıt',
-          sectorCount: 5,
-          schoolCount: 76,
-          completionRate: 72
-        },
-        {
-          id: '3',
-          name: 'Gəncə',
-          sectorCount: 4,
-          schoolCount: 54,
-          completionRate: 68
-        }
-      ]
-    };
+/**
+ * Rola görə dashboard məlumatlarını generasiya edən funksiya
+ */
+export function generateDashboardDataByRole(role: UserRole): any {
+  switch (role) {
+    case 'superadmin':
+      return {
+        regions: 15,
+        sectors: 45,
+        schools: 640,
+        users: 780,
+        completionRate: 72,
+        pendingApprovals: 24,
+        notifications: [
+          {
+            id: '1',
+            type: 'info',
+            title: 'Sistem yeniləndi',
+            message: 'Sistem v1.2 versiyasına yeniləndi',
+            isRead: false,
+            createdAt: '2025-04-14T10:00:00Z',
+            userId: '1',
+            priority: 'normal',
+            date: '2025-04-14',
+            time: '10:00'
+          },
+          {
+            id: '2',
+            type: 'warning',
+            title: 'Məlumat daxiletmə müddətinə az qalır',
+            message: 'Şagird statistikası kateqoriyası üçün məlumat daxiletmə müddətinə 3 gün qalır',
+            isRead: false,
+            createdAt: '2025-04-14T10:30:00Z',
+            userId: '1',
+            priority: 'high',
+            date: '2025-04-14',
+            time: '10:30'
+          }
+        ]
+      } as SuperAdminDashboardData;
+      
+    case 'regionadmin':
+      return {
+        sectors: 5,
+        schools: 120,
+        users: 150,
+        completionRate: 68,
+        pendingApprovals: 12,
+        notifications: [
+          {
+            id: '1',
+            type: 'info',
+            title: 'Yeni məktəb əlavə edildi',
+            message: 'Regionunuza yeni məktəb əlavə edildi',
+            isRead: false,
+            createdAt: '2025-04-14T09:00:00Z',
+            userId: '2',
+            priority: 'normal',
+            date: '2025-04-14',
+            time: '09:00'
+          }
+        ]
+      } as RegionAdminDashboardData;
+      
+    case 'sectoradmin':
+      return {
+        schools: 12,
+        completionRate: 75,
+        pendingApprovals: 8,
+        notifications: [
+          {
+            id: '1',
+            type: 'warning',
+            title: 'Məlumat daxil edilməyib',
+            message: '3 məktəb hələ məlumat daxil etməyib',
+            isRead: false,
+            createdAt: '2025-04-14T11:00:00Z',
+            userId: '3',
+            priority: 'high',
+            date: '2025-04-14',
+            time: '11:00'
+          }
+        ]
+      } as SectorAdminDashboardData;
+      
+    case 'schooladmin':
+      return createMockSchoolAdminData();
+      
+    default:
+      return {};
   }
+}
 
-  // RegionAdmin data
-  if (role === 'regionadmin') {
-    return {
-      sectors: 5,
-      schools: 76,
-      users: 120,
-      completionRate: 72,
-      pendingApprovals: 15,
-      pendingSchools: 8,
-      approvedSchools: 65,
-      rejectedSchools: 3,
-      notifications,
-      stats,
-      categories: [
-        {
-          id: '1',
-          name: 'Şagird statistikası',
-          completionRate: 85,
-          color: '#4CAF50'
-        },
-        {
-          id: '2',
-          name: 'Müəllim heyəti',
-          completionRate: 72,
-          color: '#2196F3'
-        },
-        {
-          id: '3',
-          name: 'İnfrastruktur',
-          completionRate: 63,
-          color: '#FF9800'
-        }
-      ],
-      sectorCompletions: [
-        {
-          id: '1',
-          name: 'Sabunçu',
-          completionRate: 85,
-          schoolCount: 25
-        },
-        {
-          id: '2',
-          name: 'Xətai',
-          completionRate: 72,
-          schoolCount: 18
-        },
-        {
-          id: '3',
-          name: 'Binəqədi',
-          completionRate: 68,
-          schoolCount: 22
-        }
-      ]
-    };
-  }
-
-  // SectorAdmin data
-  if (role === 'sectoradmin') {
-    return {
-      schools: 25,
-      completionRate: 85,
-      pendingApprovals: 7,
-      pendingSchools: 4,
-      approvedSchools: 20,
-      rejectedSchools: 1,
-      notifications,
-      stats,
-      schoolStats: [
-        {
-          id: '1',
-          name: '20 saylı məktəb',
-          completionRate: 100,
-          pending: 0
-        },
-        {
-          id: '2',
-          name: '153 saylı məktəb',
-          completionRate: 85,
-          pending: 2
-        },
-        {
-          id: '3',
-          name: '84 saylı məktəb',
-          completionRate: 70,
-          pending: 5
-        }
-      ],
-      pendingItems: [
-        {
-          id: '1',
-          school: '153 saylı məktəb',
-          category: 'Şagird statistikası',
-          date: '2023-10-16'
-        },
-        {
-          id: '2',
-          school: '84 saylı məktəb',
-          category: 'Müəllim heyəti',
-          date: '2023-10-15'
-        }
-      ],
-      categoryCompletion: [
-        {
-          id: '1',
-          name: 'Şagird statistikası',
-          completionRate: 85,
-          color: '#4CAF50'
-        },
-        {
-          id: '2',
-          name: 'Müəllim heyəti',
-          completionRate: 72,
-          color: '#2196F3'
-        }
-      ],
-      activityLog: [
-        {
-          id: '1',
-          action: 'Məlumat təsdiqləndi',
-          target: '20 saylı məktəb - Şagird statistikası',
-          time: '2 saat öncə'
-        },
-        {
-          id: '2',
-          action: 'Məlumat rədd edildi',
-          target: '84 saylı məktəb - Müəllim heyəti',
-          time: '5 saat öncə'
-        }
-      ]
-    };
-  }
-
-  // SchoolAdmin data
+/**
+ * School admin üçün mock data generasiya edən funksiya
+ */
+export function createMockSchoolAdminData(): SchoolAdminDashboardData {
   return {
     forms: {
-      pending: 1,
-      approved: 4,
+      pending: 3,
+      approved: 5,
       rejected: 1,
-      total: 6,
+      total: 9,
       dueSoon: 2,
       overdue: 0
     },
-    completionRate: 85,
-    notifications,
-    pendingForms: [
+    completionRate: 65,
+    notifications: [
       {
         id: '1',
-        title: 'Şagird statistikası',
+        type: 'info',
+        title: 'Məlumatlar təsdiqləndi',
+        message: 'Şagird statistikası kateqoriyasında daxil etdiyiniz məlumatlar təsdiqləndi',
+        isRead: false,
+        createdAt: '2025-04-14T14:00:00Z',
+        userId: '4',
+        priority: 'normal',
+        date: '2025-04-14',
+        time: '14:00'
+      }
+    ],
+    pendingForms: [
+      {
+        id: 'form1',
+        title: 'Şagird Statistikası',
+        dueDate: '2025-04-30',
         status: 'pending',
-        completionPercentage: 100,
-        date: '2023-10-18',
-        description: 'Təsdiq gözləyir'
+        completionPercentage: 75
       },
       {
-        id: '2',
+        id: 'form2',
         title: 'Müəllim heyəti',
-        status: 'rejected',
-        completionPercentage: 80,
-        date: '2023-10-15',
-        description: 'Düzəliş tələb olunur'
+        dueDate: '2025-05-15',
+        status: 'pending',
+        completionPercentage: 50
       }
     ]
   };
 }
 
+/**
+ * Chart data generasiya edən funksiya
+ */
 export function createMockChartData(): ChartData {
   return {
     activityData: [
