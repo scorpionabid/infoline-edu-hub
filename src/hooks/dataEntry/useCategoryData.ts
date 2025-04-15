@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, ColumnType, Column } from '@/types/column';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 interface UseCategoryDataReturn {
   categories: CategoryWithColumns[];
@@ -147,22 +148,41 @@ export const useCategoryData = (): UseCategoryDataReturn => {
         const categoryColumns = columnsData?.filter(column => column.category_id === category.id) || [];
         
         // Sütunları formalaşdırırıq
-        const formattedColumns: Column[] = categoryColumns.map(col => ({
-          id: col.id,
-          category_id: col.category_id,
-          name: col.name,
-          type: col.type as ColumnType,
-          is_required: col.is_required || false,
-          order_index: col.order_index || 0,
-          status: col.status as 'active' | 'inactive' | 'draft',
-          validation: col.validation || {},
-          default_value: col.default_value || '',
-          placeholder: col.placeholder || '',
-          help_text: col.help_text || '',
-          options: col.options || [] as string[] | ColumnOption[],
-          created_at: col.created_at,
-          updated_at: col.updated_at
-        }));
+        const formattedColumns: Column[] = categoryColumns.map(col => {
+          let options: string[] | { label: string; value: string }[] = [];
+          
+          // Sütun tiplərinə görə options dəyərlərini düzgün formalaşdırırıq
+          if (col.options && ['select', 'checkbox', 'radio'].includes(col.type)) {
+            if (Array.isArray(col.options)) {
+              options = col.options.map((opt: any) => {
+                if (typeof opt === 'string') {
+                  return { label: opt, value: opt };
+                } else if (typeof opt === 'object') {
+                  return { label: opt.label || opt.value, value: opt.value };
+                }
+                return { label: String(opt), value: String(opt) };
+              });
+            }
+          }
+          
+          return {
+            id: col.id,
+            category_id: col.category_id,
+            name: col.name,
+            type: col.type as ColumnType,
+            is_required: col.is_required || false,
+            order_index: col.order_index || 0,
+            status: col.status as 'active' | 'inactive' | 'draft',
+            validation: col.validation || {},
+            default_value: col.default_value || '',
+            placeholder: col.placeholder || '',
+            help_text: col.help_text || '',
+            options: options,
+            created_at: col.created_at,
+            updated_at: col.updated_at,
+            parentColumnId: col.parent_column_id
+          };
+        });
         
         return {
           id: category.id,

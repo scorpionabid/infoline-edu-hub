@@ -1,15 +1,5 @@
 
-export type NotificationType = 
-  | 'system'
-  | 'category'
-  | 'deadline'
-  | 'approval'
-  | 'form'
-  | 'warning'
-  | 'error'
-  | 'success'
-  | 'info';
-
+export type NotificationType = 'system' | 'category' | 'deadline' | 'approval' | 'form' | 'warning' | 'error' | 'success' | 'info';
 export type NotificationPriority = 'low' | 'normal' | 'high';
 
 export interface Notification {
@@ -23,6 +13,6 @@ export interface Notification {
   priority: NotificationPriority;
   relatedId?: string;
   relatedType?: string;
-  time: string;
-  date: string;
+  date?: string;
+  time?: string;
 }

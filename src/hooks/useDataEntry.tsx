@@ -76,12 +76,13 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
   const { validationErrors, validateAllEntries, validateEntry, getColumnErrorMessage } = validationHelper;
 
   const validateForm = useCallback(() => {
-    return validateAllEntries(formData.entries, categories.reduce((acc, cat) => {
+    const columnsMap = categories.reduce((acc, cat) => {
       cat.columns.forEach(col => {
         acc[col.id] = col;
       });
       return acc;
-    }, {} as Record<string, any>));
+    }, {} as Record<string, any>);
+    return validateAllEntries(formData.entries, columnsMap);
   }, [validateAllEntries, formData.entries, categories]);
 
   const getErrorForColumn = useCallback((columnId: string) => {
@@ -177,7 +178,7 @@ export const useDataEntry = (initialCategoryId?: string | null, statusFilter?: s
 
         console.log("Formalaşdırılmış kateqoriya məlumatları:", entriesByCategory);
         
-        initializeForm(Object.values(entriesByCategory), 'draft');
+        initializeForm(Object.values(entriesByCategory));
       } else {
         console.log("Bu məktəb üçün heç bir məlumat girişi tapılmadı");
       }

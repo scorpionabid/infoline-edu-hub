@@ -453,3 +453,156 @@ export function generateDashboardDataByRole(userRole?: string): DashboardData {
       return createMockSuperAdminData();
   }
 }
+
+export const generateNotification = (id: string, title: string, message: string, type: string) => {
+  return {
+    id,
+    title,
+    message,
+    type,
+    isRead: false,
+    userId: 'user1',
+    priority: 'normal',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().slice(0, 5),
+    createdAt: new Date().toISOString()
+  };
+};
+
+export const generateReadNotification = (id: string, title: string, message: string, type: string) => {
+  return {
+    id,
+    title,
+    message,
+    type,
+    isRead: true,
+    userId: 'user1',
+    priority: 'normal',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().slice(0, 5),
+    createdAt: new Date().toISOString()
+  };
+};
+
+export const generateSectorNotifications = () => {
+  return [
+    {
+      id: '1',
+      title: 'Yeni məktəb məlumatları',
+      message: 'Bakı şəhəri, 132 saylı məktəb statistikasını göndərdi',
+      type: 'form',
+      isRead: false,
+      userId: 'user1',
+      priority: 'normal',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      title: '6 məktəb məlumatlarını tamamlamayıb',
+      message: 'Son tarixə 2 gün qalmış',
+      type: 'deadline',
+      isRead: false,
+      userId: 'user1',
+      priority: 'high',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '3',
+      title: 'Yeni kateqoriya əlavə edildi',
+      message: '2023-2024 tədris ili statistikası',
+      type: 'category',
+      isRead: false,
+      userId: 'user1',
+      priority: 'normal',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    }
+  ];
+};
+
+export const generateRegionNotifications = () => {
+  return [
+    {
+      id: '1',
+      title: 'Yeni sektorlar üçün məlumat tələbi',
+      message: 'Bütün sektorlar üçün yeni statistik məlumatlar tələb olunur',
+      type: 'system',
+      isRead: false,
+      userId: 'user1',
+      priority: 'normal',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      title: 'Məlumat yoxlama tələbi',
+      message: 'Sumqayıt sektorunun göndərdiyi məlumatlar yoxlanılmalıdır',
+      type: 'approval',
+      isRead: false,
+      userId: 'user1',
+      priority: 'high',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '3',
+      title: 'Hesabat hazırdır',
+      message: 'Regionun aylıq hesabatı hazırdır. Baxış üçün klikləyin.',
+      type: 'form',
+      isRead: false,
+      userId: 'user1',
+      priority: 'normal',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    }
+  ];
+};
+
+export const generateSuperAdminNotifications = () => {
+  return [
+    {
+      id: '1',
+      title: 'Sistem yenilənməsi',
+      message: 'InfoLine sistemi uğurla v2.5 versiyasına yeniləndi',
+      type: 'system',
+      isRead: false,
+      userId: 'user1',
+      priority: 'normal',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      title: 'Region aktivliyi',
+      message: 'Bakı regionu bütün məlumatlarını tamamladı',
+      type: 'form',
+      isRead: false,
+      userId: 'user1',
+      priority: 'normal',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '3',
+      title: 'Təsdiq gözləyən regionlar',
+      message: '3 region təsdiq gözləyir',
+      type: 'approval',
+      isRead: false,
+      userId: 'user1',
+      priority: 'high',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      createdAt: new Date().toISOString()
+    }
+  ];
+};

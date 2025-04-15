@@ -1,12 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Notification } from "@/types/notification";
+import { Notification, NotificationType, NotificationPriority } from "@/types/notification";
 
 /**
  * Bildirişləri əldə etmək
  * @param userId İstifadəçi ID-si
  */
-export const getNotifications = async (userId: string): Promise<any[]> => {
+export const getNotifications = async (userId: string): Promise<Notification[]> => {
   try {
     const { data: notifications, error } = await supabase
       .from('notifications')
@@ -19,7 +19,20 @@ export const getNotifications = async (userId: string): Promise<any[]> => {
       throw error;
     }
 
-    return notifications || [];
+    return (notifications || []).map(notification => ({
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type as NotificationType,
+      priority: notification.priority as NotificationPriority,
+      userId: notification.user_id,
+      isRead: notification.is_read,
+      createdAt: notification.created_at,
+      relatedId: notification.related_entity_id,
+      relatedType: notification.related_entity_type,
+      date: notification.date || new Date(notification.created_at).toISOString().split('T')[0],
+      time: notification.time || new Date(notification.created_at).toTimeString().slice(0, 5)
+    }));
   } catch (error: any) {
     console.error("Bildirişləri əldə etmə xətası:", error);
     return [];
@@ -91,8 +104,8 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
       related_entity_type: notification.relatedType,
       user_id: userId,
       is_read: false,
-      time: notification.time,
-      date: notification.date
+      date: notification.date || new Date().toISOString().split('T')[0],
+      time: notification.time || new Date().toTimeString().slice(0, 5)
     };
 
     const { data, error } = await supabase
@@ -112,15 +125,15 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
         id: data.id,
         title: data.title,
         message: data.message,
-        type: data.type,
-        priority: data.priority,
+        type: data.type as NotificationType,
+        priority: data.priority as NotificationPriority,
         userId: data.user_id,
         isRead: data.is_read,
         createdAt: data.created_at,
         relatedId: data.related_entity_id,
         relatedType: data.related_entity_type,
-        time: data.time || new Date().toTimeString().slice(0, 5),
-        date: data.date || new Date().toISOString().slice(0, 10)
+        date: data.date || new Date(data.created_at).toISOString().split('T')[0],
+        time: data.time || new Date(data.created_at).toTimeString().slice(0, 5)
       };
     }
 

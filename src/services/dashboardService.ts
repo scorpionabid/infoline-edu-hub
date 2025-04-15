@@ -1,262 +1,349 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { DashboardData, ChartData, SchoolAdminDashboardData } from '@/types/dashboard';
 import { 
-  createMockChartData, 
-  createMockSchoolAdminData,
-  createMockSuperAdminData,
-  createMockRegionAdminData,
-  createMockSectorAdminData,
-  generateDashboardDataByRole 
-} from '@/utils/dashboardUtils';
+  SuperAdminDashboardData, 
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData, 
+  SchoolAdminDashboardData, 
+  ChartData 
+} from '@/types/dashboard';
+import { adaptNotificationToDashboard } from '@/types/adapters';
 
-/**
- * Dashboard məlumatlarını əldə etmək üçün ana funksiya
- */
-export const fetchDashboardData = async (userRole?: string): Promise<DashboardData> => {
+// SuperAdmin dashboard məlumatlarını əldə etmək üçün
+export const getSuperAdminDashboardData = async (): Promise<SuperAdminDashboardData | null> => {
   try {
-    // Əvvəlcə Supabase-dən real məlumatları əldə etməyə çalışırıq
-    switch (userRole) {
-      case 'superadmin':
-        return await fetchSuperAdminDashboard();
-      case 'regionadmin':
-        return await fetchRegionAdminDashboard('');
-      case 'sectoradmin':
-        return await fetchSectorAdminDashboard('');
-      case 'schooladmin':
-        return await fetchSchoolAdminDashboard('');
-      default:
-        // Real data yoxdursa mock data istifadə et
-        return generateDashboardDataByRole(userRole);
-    }
-  } catch (error) {
-    console.error('Dashboard məlumatlarını əldə edərkən xəta:', error);
-    // Xəta olduqda mock data istifadə et
-    return generateDashboardDataByRole(userRole);
-  }
-};
+    // İlk mərhələdə RPC funksiyasından istifadə edirik
+    // Bu funksiya bütün lazımi dashboard məlumatlarını bir sorğuda əldə edir
+    const { data, error } = await supabase.rpc(
+      'get_dashboard_data_superadmin',
+      {}
+    );
 
-/**
- * SuperAdmin dashboard məlumatlarını əldə et
- */
-export const fetchSuperAdminDashboard = async (): Promise<DashboardData> => {
-  try {
-    // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
-    // Əgər RPC xəta verirsə, mock data istifadə edək
-    try {
-      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_dashboard_data_superadmin');
+    if (error) {
+      console.error('SuperAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
+      throw error;
+    }
 
-      if (error) throw error;
-      
-      if (data && typeof data === 'object') {
-        return data as unknown as DashboardData;
-      }
-    } catch (rpcError) {
-      console.warn('RPC xətası:', rpcError);
-      // RPC xətası halında mock data istifadə edirik
-    }
-    
-    // Alternativ: table-lərdən birbaşa məlumat əldə etmə (RPC uğursuz olduqda)
-    try {
-      // Supabase view və ya função olmadıqda, əsas məlumatları bir neçə sorğu ilə əldə edə bilərik
-      const { data: regions } = await supabase
-        .from('regions')
-        .select('*');
-        
-      const { data: schools } = await supabase
-        .from('schools')
-        .select('*');
-        
-      const { data: categories } = await supabase
-        .from('categories')
-        .select('*');
-      
-      // Əldə edilən məlumatları formalaşdır
-      // Real data qayıtması halında burada transformation və analiz aparılmalıdır
-      if (regions && schools && categories) {
-        // Burada real datanı DashboardData formatına transformasiya et
-        // Əgər tam transformasiya mümkün deyilsə, hələlik mock data istifadə et
-      }
-    } catch (dbError) {
-      console.warn('Verilənlər bazası xətası:', dbError);
-    }
-    
-    // Son variant olaraq mock data istifadə et
-    return createMockSuperAdminData();
-  } catch (error) {
-    console.error('SuperAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-    return createMockSuperAdminData();
-  }
-};
+    // Əgər data null deyilsə, onu SuperAdminDashboardData tipinə çeviririk
+    if (data) {
+      const { regions, sectors, schools, users, regionStats, notifications, stats, pendingApprovals, completionRate } = data;
 
-/**
- * RegionAdmin dashboard məlumatlarını əldə et
- */
-export const fetchRegionAdminDashboard = async (regionId: string): Promise<DashboardData> => {
-  try {
-    if (!regionId) {
-      console.warn('Region ID təqdim edilmədi, mock data istifadə edilir');
-      return createMockRegionAdminData();
-    }
-    
-    // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
-    // Əgər RPC xəta verirsə, mock data istifadə edək
-    try {
-      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_dashboard_data_region', { region_id: regionId });
+      // Bildirişləri dashboard formatına çeviririk
+      const dashboardNotifications = notifications && Array.isArray(notifications)
+        ? notifications.map(adaptNotificationToDashboard)
+        : [];
 
-      if (error) throw error;
-      
-      if (data && typeof data === 'object') {
-        return data as unknown as DashboardData;
-      }
-    } catch (rpcError) {
-      console.warn('RPC xətası:', rpcError);
-    }
-    
-    // Funksional RPC olmadıqda birbaşa sorğular
-    try {
-      const { data: sectors } = await supabase
-        .from('sectors')
-        .select('*')
-        .eq('region_id', regionId);
-        
-      const { data: schools } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('region_id', regionId);
-      
-      // Region admin üçün lazımi məlumatları formalaşdır
-      if (sectors && schools) {
-        // Burada real datanı DashboardData formatına transformasiya et
-      }
-    } catch (dbError) {
-      console.warn('Verilənlər bazası xətası:', dbError);
-    }
-    
-    // Mock data istifadə et
-    return createMockRegionAdminData();
-  } catch (error) {
-    console.error('Region dashboard məlumatlarını əldə edərkən xəta:', error);
-    return createMockRegionAdminData();
-  }
-};
-
-/**
- * SectorAdmin dashboard məlumatlarını əldə et
- */
-export const fetchSectorAdminDashboard = async (sectorId: string): Promise<DashboardData> => {
-  try {
-    if (!sectorId) {
-      console.warn('Sektor ID təqdim edilmədi, mock data istifadə edilir');
-      return createMockSectorAdminData();
-    }
-    
-    // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
-    // Əgər RPC xəta verirsə, mock data istifadə edək
-    try {
-      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_dashboard_data_sector', { sector_id: sectorId });
-
-      if (error) throw error;
-      
-      if (data && typeof data === 'object') {
-        return data as unknown as DashboardData;
-      }
-    } catch (rpcError) {
-      console.warn('RPC xətası:', rpcError);
-    }
-    
-    // Birbaşa sorğular
-    try {
-      const { data: schools } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('sector_id', sectorId);
-      
-      // Sector admin üçün lazımi məlumatları formalaşdır
-      if (schools) {
-        // Burada real datanı DashboardData formatına transformasiya et
-      }
-    } catch (dbError) {
-      console.warn('Verilənlər bazası xətası:', dbError);
-    }
-    
-    // Mock data istifadə et
-    return createMockSectorAdminData();
-  } catch (error) {
-    console.error('Sector dashboard məlumatlarını əldə edərkən xəta:', error);
-    return createMockSectorAdminData();
-  }
-};
-
-/**
- * SchoolAdmin dashboard məlumatlarını əldə et
- * @param schoolId
- * @returns
- */
-export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<SchoolAdminDashboardData> => {
-  try {
-    if (!schoolId) {
-      console.warn('Məktəb ID təqdim edilmədi');
-      return createMockSchoolAdminData();
-    }
-    
-    // Məktəb üçün məlumatları əldə et
-    try {
-      const { data: school } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('id', schoolId)
-        .single();
-        
-      if (school) {
-        // Məktəb məlumatlarını əldə et və formlaşdır
-        const { data: categoryData } = await supabase
-          .from('data_entries')
-          .select('category_id, status')
-          .eq('school_id', schoolId);
-          
-        // Əldə edilən məlumatlardan məktəb-spesifik dashboard datası formalaşdır
-        if (categoryData) {
-          // Real məlumatları transformasiya et
-          // Hələlik mock data qaytarırıq, amma gələcəkdə burada real data olacaq
+      return {
+        regions,
+        sectors,
+        schools,
+        users,
+        regionStats,
+        completionRate,
+        pendingApprovals,
+        notifications: dashboardNotifications,
+        stats: stats || [],
+        formsByStatus: data.formsByStatus || {
+          pending: 0,
+          approved: 0,
+          rejected: 0
         }
-      }
-    } catch (dbError) {
-      console.warn('Məktəb məlumatlarını əldə edərkən xəta:', dbError);
+      };
     }
-    
-    // API müraciəti yoxdursa, mock data istifadə et
-    return createMockSchoolAdminData();
+
+    return null;
   } catch (error) {
-    console.error('Məktəb admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    return createMockSchoolAdminData();
+    console.error('SuperAdmin dashboard məlumatları əldə etmə xətası:', error);
+    return null;
   }
 };
 
-/**
- * Dashboard qrafik məlumatlarını əldə et
- */
-export const fetchDashboardChartData = async (): Promise<ChartData> => {
+// Region admin dashboard məlumatlarını əldə etmək üçün
+export const getRegionAdminDashboardData = async (regionId: string): Promise<RegionAdminDashboardData | null> => {
   try {
-    // Qrafik məlumatlarını əldə etmək üçün Supabase-i istifadə et
-    try {
-      // RPC adını düzəltdik - gerçək funksiya adı olmalıdır
-      const { data, error } = await supabase.rpc('get_activity_data_charts');
-      
-      if (data) {
-        // Əldə edilən məlumatları ChartData formatına çevir
-        // İndiki halda mock data qaytarırıq
-      }
-    } catch (error) {
-      console.warn('Qrafik məlumatlarını əldə edərkən xəta:', error);
+    // Region id ilə RPC funksiyasını çağırırıq
+    const { data, error } = await supabase.rpc(
+      'get_dashboard_data_region',
+      { p_region_id: regionId }
+    );
+
+    if (error) {
+      console.error('Region admin dashboard məlumatlarını əldə edərkən xəta:', error);
+      throw error;
     }
-    
-    // Mock data istifadə et
-    return createMockChartData();
+
+    // Əgər data null deyilsə, onu RegionAdminDashboardData tipinə çeviririk
+    if (data) {
+      const {
+        sectors,
+        schools,
+        users,
+        pendingSchools,
+        approvedSchools,
+        rejectedSchools,
+        sectorCompletions,
+        categories,
+        notifications,
+        stats,
+        pendingApprovals,
+        completionRate
+      } = data;
+
+      // Bildirişləri dashboard formatına çeviririk
+      const dashboardNotifications = notifications && Array.isArray(notifications)
+        ? notifications.map(adaptNotificationToDashboard)
+        : [];
+
+      return {
+        sectors,
+        schools,
+        users,
+        pendingSchools,
+        approvedSchools,
+        rejectedSchools,
+        sectorCompletions,
+        categories,
+        completionRate,
+        pendingApprovals,
+        notifications: dashboardNotifications,
+        stats: stats || [],
+        formsByStatus: data.formsByStatus || {
+          pending: 0,
+          approved: 0,
+          rejected: 0
+        }
+      };
+    }
+
+    return null;
   } catch (error) {
-    console.error('Qrafik məlumatlarını əldə edərkən xəta:', error);
-    return createMockChartData();
+    console.error('Region admin dashboard məlumatları əldə etmə xətası:', error);
+    return null;
+  }
+};
+
+// Sektor admin dashboard məlumatlarını əldə etmək üçün
+export const getSectorAdminDashboardData = async (sectorId: string): Promise<SectorAdminDashboardData | null> => {
+  try {
+    // Sektor id ilə RPC funksiyasını çağırırıq
+    const { data, error } = await supabase.rpc(
+      'get_dashboard_data_sector',
+      { p_sector_id: sectorId }
+    );
+
+    if (error) {
+      console.error('Sektor admin dashboard məlumatlarını əldə edərkən xəta:', error);
+      throw error;
+    }
+
+    // Əgər data null deyilsə, onu SectorAdminDashboardData tipinə çeviririk
+    if (data) {
+      const {
+        schools,
+        pendingSchools,
+        approvedSchools,
+        rejectedSchools,
+        schoolStats,
+        pendingItems,
+        activityLog,
+        categoryCompletion,
+        notifications,
+        stats,
+        pendingApprovals,
+        completionRate
+      } = data;
+
+      // Bildirişləri dashboard formatına çeviririk
+      const dashboardNotifications = notifications && Array.isArray(notifications)
+        ? notifications.map(adaptNotificationToDashboard)
+        : [];
+
+      return {
+        schools,
+        pendingSchools,
+        approvedSchools,
+        rejectedSchools,
+        schoolStats,
+        pendingItems,
+        activityLog,
+        categoryCompletion,
+        completionRate,
+        pendingApprovals,
+        notifications: dashboardNotifications,
+        stats: stats || [],
+        formsByStatus: data.formsByStatus || {
+          pending: 0,
+          approved: 0,
+          rejected: 0
+        }
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Sektor admin dashboard məlumatları əldə etmə xətası:', error);
+    return null;
+  }
+};
+
+// Məktəb admin dashboard məlumatlarını əldə etmək üçün
+export const getSchoolAdminDashboardData = async (schoolId: string): Promise<SchoolAdminDashboardData | null> => {
+  try {
+    // İlk mərhələdə mock data istifadə edirik
+    // Gələcəkdə bu real data ilə əvəz ediləcək
+    
+    // Məktəb id ilə database sorğusu
+    // RPC funksiyası gələcəkdə əlavə ediləcək
+    
+    const formsByStatus = {
+      pending: 5,
+      approved: 10,
+      rejected: 2,
+      total: 17,
+      dueSoon: 3,
+      overdue: 1
+    };
+
+    // Mock notifications
+    const notifications = [
+      {
+        id: '1',
+        title: 'Yeni kateqoriya əlavə edildi',
+        message: 'Təhsil Statistikası kateqoriyası əlavə edildi',
+        type: 'category',
+        isRead: false,
+        priority: 'normal',
+        date: '2023-09-15',
+        time: '09:30',
+        userId: 'user1',
+        createdAt: '2023-09-15T09:30:00'
+      },
+      {
+        id: '2',
+        title: 'Tezliklə son tarix',
+        message: 'Şagird məlumatları kateqoriyasının son tarixi 3 gün sonradır',
+        type: 'deadline',
+        isRead: false,
+        priority: 'high',
+        date: '2023-09-16',
+        time: '10:15',
+        userId: 'user1',
+        createdAt: '2023-09-16T10:15:00'
+      }
+    ];
+
+    // Mock pending forms
+    const pendingForms = [
+      {
+        id: '1',
+        title: 'Şagird Məlumatları',
+        category: 'Tədris',
+        date: '2023-09-30',
+        status: 'pending',
+        completionPercentage: 75
+      },
+      {
+        id: '2',
+        title: 'Müəllim Məlumatları',
+        category: 'Kadrlar',
+        date: '2023-10-05',
+        status: 'dueSoon',
+        completionPercentage: 30
+      },
+      {
+        id: '3',
+        title: 'İnfrastruktur',
+        category: 'Maddi-texniki baza',
+        date: '2023-09-25',
+        status: 'overdue',
+        completionPercentage: 10
+      }
+    ];
+
+    return {
+      forms: formsByStatus,
+      pendingForms,
+      completionRate: 60,
+      pendingApprovals: 5,
+      notifications,
+      stats: [
+        {
+          id: '1',
+          title: 'Tamamlanma faizi',
+          value: 60,
+          change: 5,
+          changeType: 'increase'
+        },
+        {
+          id: '2',
+          title: 'Gözləyən formlar',
+          value: 5,
+          change: -2,
+          changeType: 'decrease'
+        }
+      ],
+      formsByStatus: {
+        pending: formsByStatus.pending,
+        approved: formsByStatus.approved,
+        rejected: formsByStatus.rejected
+      }
+    };
+  } catch (error) {
+    console.error('Məktəb admin dashboard məlumatları əldə etmə xətası:', error);
+    return null;
+  }
+};
+
+// Chart məlumatları üçün
+export const getChartData = async (): Promise<ChartData | null> => {
+  try {
+    // RPC çağırışı
+    const { data, error } = await supabase.rpc(
+      'get_activity_data_charts',
+      {}
+    );
+
+    if (error) {
+      console.error('Qrafik məlumatlarını əldə edərkən xəta:', error);
+      throw error;
+    }
+
+    if (data) {
+      return {
+        activityData: data.activityData || [],
+        regionSchoolsData: data.regionSchoolsData || [],
+        categoryCompletionData: data.categoryCompletionData || []
+      };
+    }
+
+    // Mock data
+    return {
+      activityData: [
+        { name: 'Bazar ertəsi', value: 15 },
+        { name: 'Çərşənbə axşamı', value: 25 },
+        { name: 'Çərşənbə', value: 20 },
+        { name: 'Cümə axşamı', value: 30 },
+        { name: 'Cümə', value: 22 },
+        { name: 'Şənbə', value: 10 },
+        { name: 'Bazar', value: 5 }
+      ],
+      regionSchoolsData: [
+        { name: 'Bakı', value: 120 },
+        { name: 'Sumqayıt', value: 45 },
+        { name: 'Gəncə', value: 60 },
+        { name: 'Şəki', value: 25 },
+        { name: 'Quba', value: 30 }
+      ],
+      categoryCompletionData: [
+        { name: 'Şagird məlumatları', completed: 75 },
+        { name: 'Müəllim məlumatları', completed: 60 },
+        { name: 'Maddi-texniki baza', completed: 90 },
+        { name: 'Tədris nəticələri', completed: 40 },
+        { name: 'Maliyyə', completed: 50 }
+      ]
+    };
+  } catch (error) {
+    console.error('Qrafik məlumatları əldə etmə xətası:', error);
+    return null;
   }
 };

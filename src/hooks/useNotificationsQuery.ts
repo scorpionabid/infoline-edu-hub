@@ -1,10 +1,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  fetchNotifications, 
+  getNotifications, 
   markNotificationAsRead, 
-  markAllNotificationsAsRead, 
-  clearAllNotifications 
+  markAllNotificationsAsRead 
 } from '@/services/notificationService';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +21,7 @@ export const useNotificationsQuery = () => {
     refetch
   } = useQuery({
     queryKey: ['notifications', user?.id],
-    queryFn: () => fetchNotifications(user?.id || ''),
+    queryFn: () => getNotifications(user?.id || ''),
     enabled: !!user?.id,
   });
   
@@ -62,25 +61,20 @@ export const useNotificationsQuery = () => {
     }
   });
   
-  // Bütün bildirişləri təmizlə
-  const clearAllMutation = useMutation({
-    mutationFn: () => clearAllNotifications(user?.id || ''),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+  // Bütün bildirişləri təmizlə - bu funksiya hələ backendə əlavə edilməyib
+  const clearAll = async (): Promise<boolean> => {
+    try {
+      // Gələcəkdə bu əməliyyat üçün API əlavə edilə bilər
       toast({
-        title: 'Uğurlu əməliyyat',
-        description: 'Bütün bildirişlər təmizləndi',
+        title: 'Funksiya mövcud deyil',
+        description: 'Bütün bildirişləri təmizləmə funksiyası hələ əlavə edilməyib',
       });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Xəta',
-        description: 'Bildirişlər təmizlənə bilmədi',
-        variant: 'destructive'
-      });
-      console.error('Bildirişlər təmizlənərkən xəta:', error);
+      return false;
+    } catch (error) {
+      console.error('Bildirişləri təmizləmə xətası:', error);
+      return false;
     }
-  });
+  };
   
   // Oxunmamış bildirişlərin sayını hesabla
   const unreadCount = notifications.filter(notification => !notification.isRead).length;
@@ -93,9 +87,8 @@ export const useNotificationsQuery = () => {
     unreadCount,
     markAsRead: (id: string) => markAsReadMutation.mutate(id),
     markAllAsRead: () => markAllAsReadMutation.mutate(),
-    clearAll: () => clearAllMutation.mutate(),
+    clearAll,
     isMarkAsReadLoading: markAsReadMutation.isPending,
-    isMarkAllAsReadLoading: markAllAsReadMutation.isPending,
-    isClearAllLoading: clearAllMutation.isPending
+    isMarkAllAsReadLoading: markAllAsReadMutation.isPending
   };
 };
