@@ -430,7 +430,8 @@ export const createMockChartData = (): ChartData => {
   };
 };
 
-export { 
+// Remove the duplicate exports and keep only named exports
+export {
   createMockSchoolAdminData,
   createMockSectorAdminData,
   createMockRegionAdminData,
