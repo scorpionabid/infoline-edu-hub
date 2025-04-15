@@ -109,9 +109,18 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       return {
         ...notification,
         date: createdDate.toISOString().split('T')[0],
-        time: createdDate.toISOString().split('T')[1].substring(0, 5)
+        time: createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00'
       } as DashboardNotification;
     }
+    
+    // Əgər time yoxdursa əlavə edək
+    if (!notification.time) {
+      return {
+        ...notification,
+        time: '00:00'
+      } as DashboardNotification;
+    }
+    
     return notification as DashboardNotification;
   });
 

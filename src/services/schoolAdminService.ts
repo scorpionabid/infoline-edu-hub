@@ -140,17 +140,23 @@ export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<Schoo
     const completionRate = school.completion_rate || 0;
 
     // Formatlı bildirişlər
-    const notifications: DashboardNotification[] = (notificationsData || []).map((n: any) => ({
-      id: n.id,
-      title: n.title,
-      message: n.message,
-      type: n.type,
-      isRead: n.is_read,
-      createdAt: n.created_at,
-      userId: n.user_id,
-      priority: n.priority,
-      date: n.created_at
-    }));
+    const notifications: DashboardNotification[] = (notificationsData || []).map((n: any) => {
+      const createdAt = n.created_at;
+      const createdDate = createdAt ? new Date(createdAt) : new Date();
+      
+      return {
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        isRead: n.is_read,
+        createdAt: n.created_at,
+        userId: n.user_id,
+        priority: n.priority,
+        date: createdDate.toISOString().split('T')[0],
+        time: createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00'
+      };
+    });
 
     return {
       forms: {
@@ -177,6 +183,7 @@ export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<Schoo
  * Mock məktəb admin dashboard məlumatları
  */
 const getMockSchoolAdminDashboard = (): SchoolAdminDashboardData => {
+  const currentDate = new Date();
   const notifications: DashboardNotification[] = [
     {
       id: '1',
@@ -184,10 +191,11 @@ const getMockSchoolAdminDashboard = (): SchoolAdminDashboardData => {
       message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
       type: 'category',
       isRead: false,
-      createdAt: new Date().toISOString(),
+      createdAt: currentDate.toISOString(),
       userId: 'user-1',
       priority: 'normal',
-      date: new Date().toISOString()
+      date: currentDate.toISOString().split('T')[0],
+      time: currentDate.toISOString().split('T')[1].substring(0, 5)
     },
     {
       id: '2',
@@ -198,7 +206,8 @@ const getMockSchoolAdminDashboard = (): SchoolAdminDashboardData => {
       createdAt: new Date(Date.now() - 86400000).toISOString(),
       userId: 'user-1',
       priority: 'high',
-      date: new Date(Date.now() - 86400000).toISOString()
+      date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+      time: new Date(Date.now() - 86400000).toISOString().split('T')[1].substring(0, 5)
     }
   ];
 

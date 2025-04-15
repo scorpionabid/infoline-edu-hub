@@ -89,7 +89,7 @@ const UserForm: React.FC<UserFormProps> = ({
 
   return (
     <Form {...form}>
-      <div className="py-4 space-y-6">
+      <form className="py-4 space-y-6">
         {showEntitySection ? (
           <Accordion type="single" collapsible defaultValue="entity" className="w-full">
             <AccordionItem value="entity">
@@ -219,7 +219,7 @@ const UserForm: React.FC<UserFormProps> = ({
             />
           </>
         )}
-      </div>
+      </form>
     </Form>
   );
 };
