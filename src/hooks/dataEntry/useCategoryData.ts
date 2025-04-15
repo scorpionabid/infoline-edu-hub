@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, Column, adaptDbColumnToAppColumn } from '@/types/column';
@@ -14,12 +13,33 @@ export const useCategoryData = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
+  const formatColumnOptions = (options: any): string[] | { value: string; label: string }[] => {
+    if (!options) return [];
+    
+    try {
+      if (typeof options === 'string') {
+        return JSON.parse(options);
+      }
+      if (Array.isArray(options)) {
+        return options.map(opt => {
+          if (typeof opt === 'string') return opt;
+          if (typeof opt === 'object' && 'value' in opt && 'label' in opt) {
+            return { value: String(opt.value), label: String(opt.label) };
+          }
+          return '';
+        }).filter(Boolean);
+      }
+    } catch (e) {
+      console.error('Error parsing column options:', e);
+    }
+    return [];
+  };
+
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Kateqoriyaları əldə et
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
@@ -28,7 +48,6 @@ export const useCategoryData = () => {
 
       if (categoriesError) throw categoriesError;
 
-      // Sütunları əldə et
       const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
         .select('*')
@@ -37,29 +56,11 @@ export const useCategoryData = () => {
 
       if (columnsError) throw columnsError;
 
-      // Sütunları kateqoriyalara görə qruplaşdır
       const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         const categoryColumns = columnsData
           .filter(column => column.category_id === category.id)
           .map(column => {
-            // Ensure column.options is properly formatted
-            let formattedOptions: string[] | { value: string; label: string }[] = [];
-            if (column.options) {
-              try {
-                if (typeof column.options === 'string') {
-                  formattedOptions = JSON.parse(column.options);
-                } else if (Array.isArray(column.options)) {
-                  formattedOptions = column.options;
-                } else if (typeof column.options === 'object') {
-                  formattedOptions = [column.options];
-                }
-              } catch (e) {
-                console.error('Error parsing column options:', e);
-                formattedOptions = [];
-              }
-            }
-            
-            // Create column with properly formatted options
+            const formattedOptions = formatColumnOptions(column.options);
             const formattedColumn: Column = {
               id: column.id,
               category_id: column.category_id,
@@ -77,7 +78,6 @@ export const useCategoryData = () => {
               updated_at: column.updated_at,
               parent_column_id: column.parent_column_id
             };
-            
             return formattedColumn;
           });
 
