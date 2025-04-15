@@ -41,8 +41,13 @@ export enum DataEntrySaveStatus {
 
 export interface UseDataEntryProps {
   schoolId?: string;
-  categoryId?: string;
+  categories?: CategoryWithColumns[];
   onComplete?: () => void;
+}
+
+export interface CategoryEntryData {
+  categoryId: string;
+  entries: EntryValue[];
 }
 
 export interface ColumnValidationError {

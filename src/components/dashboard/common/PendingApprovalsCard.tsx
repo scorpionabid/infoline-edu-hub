@@ -53,7 +53,7 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({
                     <div className="text-sm text-muted-foreground">{item.categoryName || item.category}</div>
                     <div className="text-xs text-muted-foreground flex items-center mt-1">
                       <Clock className="h-3 w-3 mr-1" />
-                      {formatDate(item.submittedAt || item.date)}
+                      {formatDate(item.submittedAt || item.date || item.dueDate)}
                     </div>
                   </div>
                   <Button size="sm" variant="outline">

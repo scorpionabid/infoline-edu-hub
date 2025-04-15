@@ -1,4 +1,3 @@
-
 export interface SuperAdminDashboardData {
   stats?: {
     regions: number;
@@ -32,6 +31,7 @@ export interface RegionAdminDashboardData {
 export interface SectorAdminDashboardData {
   stats?: StatsItem[];
   pendingItems: PendingItem[];
+  pendingApprovals?: PendingItem[];
   schoolsStats: SchoolStat[];
   completionRate: number;
   notifications: DashboardNotification[];
@@ -67,7 +67,7 @@ export enum FormStatus {
   REJECTED = 'rejected',
   DRAFT = 'draft',
   EXPIRED = 'expired',
-  DUE_SOON = 'due_soon',
+  DUE_SOON = 'dueSoon',
   COMPLETED = 'completed'
 }
 
@@ -78,6 +78,8 @@ export interface DashboardNotification {
   date: string;
   type: 'info' | 'warning' | 'success' | 'error';
   isRead: boolean;
+  time?: string;
+  createdAt?: string;
 }
 
 export interface PendingItem {
@@ -85,12 +87,18 @@ export interface PendingItem {
   schoolName: string;
   categoryName: string;
   submittedAt: string;
+  dueDate?: string;
   itemTitle?: string;
+  school?: string;
+  category?: string;
+  date?: string;
 }
 
 export interface StatsItem {
   label: string;
   value: number;
+  description?: string;
+  icon?: React.ReactNode;
 }
 
 export interface RegionStats {
@@ -114,7 +122,7 @@ export interface CategoryStat {
   id: string;
   name: string;
   completionRate: number;
-  status: string; // 'upcoming' | 'active' | 'overdue'
+  status: string;
   columnCount: number;
   deadline: string;
 }

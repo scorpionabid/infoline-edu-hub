@@ -16,13 +16,14 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
   const schoolsStats = data?.schoolsStats || [];
   const notifications = data?.notifications || [];
   const activityLog = data?.activityLog || [];
+  const pendingApprovals = data?.pendingApprovals || []; // Yeni əlavə olunan field
 
   return (
     <div className="space-y-6">
       <StatusCards 
         stats={data?.stats || []}
         completionRate={data?.completionRate || 0}
-        pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
+        pendingItems={pendingItems} // pendingApprovals əvəzinə pendingItems istifadə edirik
       />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

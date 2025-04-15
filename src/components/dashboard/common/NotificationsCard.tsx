@@ -106,7 +106,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
                         <div className="font-medium mb-1">{notification.title}</div>
                         <div className="text-sm text-muted-foreground">{notification.message}</div>
                         <div className="text-xs text-muted-foreground mt-2">
-                          {formatDate(notification.date, notification.time)}
+                          {formatDate(notification.date, notification.time || undefined)}
                         </div>
                       </div>
                     </div>

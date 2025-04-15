@@ -12,12 +12,11 @@ import { toast } from 'sonner';
 import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
-import { School } from '@/types/school';
-import { adaptSchoolFromSupabase } from '@/types/school';
+import { School, adaptSchoolFromSupabase, adaptSchoolToSupabase } from '@/types/school';
 
 const SchoolsContainer: React.FC = () => {
   const {
-    currentItems,
+    currentItems: supabaseCurrentItems,
     searchTerm,
     selectedRegion,
     selectedSector,
@@ -37,9 +36,13 @@ const SchoolsContainer: React.FC = () => {
     fetchSchools,
     isOperationComplete,
     setIsOperationComplete,
-    schools,
+    schools: supabaseSchools,
     userRole
   } = useSchoolsStore();
+
+  // Supabase School tipini App School tipinə çeviririk
+  const schools = useMemo(() => supabaseSchools.map(adaptSchoolFromSupabase), [supabaseSchools]);
+  const currentItems = useMemo(() => supabaseCurrentItems.map(adaptSchoolFromSupabase), [supabaseCurrentItems]);
 
   // Change event handler adaptörleri
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => originalHandleSearch(e);
@@ -59,9 +62,9 @@ const SchoolsContainer: React.FC = () => {
     closeAddDialog,
     closeAdminDialog,
     handleAddDialogOpen,
-    handleEditDialogOpen,
-    handleDeleteDialogOpen,
-    handleAdminDialogOpen,
+    handleEditDialogOpen: handleEditDialogOpenOriginal,
+    handleDeleteDialogOpen: handleDeleteDialogOpenOriginal,
+    handleAdminDialogOpen: handleAdminDialogOpenOriginal,
     handleAddSubmit,
     handleEditSubmit,
     handleDeleteConfirm,
@@ -72,6 +75,19 @@ const SchoolsContainer: React.FC = () => {
     setCurrentTab,
     handleFormChange
   } = useSchoolDialogHandlers();
+
+  // Supabase və app School tipləri arasında adapter funksiyaları
+  const handleEditDialogOpen = (school: School) => {
+    handleEditDialogOpenOriginal(adaptSchoolToSupabase(school) as any);
+  };
+
+  const handleDeleteDialogOpen = (school: School) => {
+    handleDeleteDialogOpenOriginal(adaptSchoolToSupabase(school) as any);
+  };
+
+  const handleAdminDialogOpen = (school: School) => {
+    handleAdminDialogOpenOriginal(adaptSchoolToSupabase(school) as any);
+  };
 
   const {
     isImportDialogOpen,
@@ -115,19 +131,24 @@ const SchoolsContainer: React.FC = () => {
 
   // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
-    // Supabase tipindən app tipinə çevirmə
-    const adaptedSchools: School[] = schools.map(school => adaptSchoolFromSupabase(school));
-    handleExportToExcel(adaptedSchools);
+    handleExportToExcel(schools);
   };
 
   const handleImportClick = () => {
     setIsImportDialogOpen(true);
   };
 
+  // UserRole tipini təhlükəsizləşdirmək üçün əlavə düzəliş
+  const safeUserRole = useMemo(() => {
+    return (userRole === 'superadmin' || userRole === 'regionadmin' || 
+           userRole === 'sectoradmin' || userRole === 'schooladmin') ? 
+           userRole as 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' : 'schooladmin';
+  }, [userRole]);
+
   return (
     <div className="space-y-6">
       <SchoolHeader 
-        userRole={userRole as UserRole} 
+        userRole={safeUserRole} 
         onAddClick={handleAddDialogOpen}
         onExportClick={handleExportClick}
         onImportClick={handleImportClick}

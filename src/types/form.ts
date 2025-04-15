@@ -6,7 +6,7 @@ export enum FormStatus {
   REJECTED = 'rejected',
   DRAFT = 'draft',
   EXPIRED = 'expired',
-  DUE_SOON = 'dueSoon',
+  DUE_SOON = 'dueSoon', // dashboard.ts ilə eyniləşdirildi (əvvəl "due_soon" idi)
   OVERDUE = 'overdue',
   COMPLETED = 'completed'
 }

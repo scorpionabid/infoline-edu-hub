@@ -37,7 +37,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     if (columnName !== sortConfig.key) {
       return <span className="ml-1 text-gray-300">↕</span>;
     }
-    return sortConfig.direction === 'ascending' ? (
+    return sortConfig.direction === 'asc' ? (
       <span className="ml-1">↑</span>
     ) : (
       <span className="ml-1">↓</span>

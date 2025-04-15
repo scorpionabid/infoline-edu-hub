@@ -1,56 +1,59 @@
 
 import React from 'react';
-import { SectorCompletion } from '@/types/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SectorCompletionItem } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface CompletionChartProps {
-  data: SectorCompletion[];
+  sectors: SectorCompletionItem[];
 }
 
-const CompletionChart: React.FC<CompletionChartProps> = ({ data }) => {
+const CompletionChart: React.FC<CompletionChartProps> = ({ sectors }) => {
   const { t } = useLanguage();
+  const colors = ['#4f46e5', '#14b8a6', '#f97316', '#8b5cf6', '#ec4899', '#059669', '#ca8a04'];
   
-  // Qrafikin məlumatlarını hazırlayaq
-  const chartData = data.map(item => ({
-    name: item.name,
-    completion: item.completionRate,
+  // Hazır məlumatlar sətri
+  const data = sectors.map((sector, index) => ({
+    name: sector.name,
+    value: sector.completionRate,
+    fill: colors[index % colors.length]
   }));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('completionRateBySector')}</CardTitle>
+        <CardTitle>{t('sectorCompletion')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {chartData.length > 0 ? (
-          <div className="h-[300px] mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                width={500}
-                height={300}
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, t('completionRate')]}
-                  labelFormatter={(name) => name}
-                />
-                <Bar dataKey="completion" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
+        {sectors.length === 0 ? (
+          <div className="text-center text-muted-foreground p-4">
+            {t('noSectorsData')}
           </div>
         ) : (
-          <p className="text-center text-muted-foreground py-10">{t('noDataToDisplay')}</p>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={1}
+                  dataKey="value"
+                  label={({name, value}) => `${name}: ${value}%`}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => `${value}%`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

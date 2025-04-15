@@ -1,4 +1,3 @@
-
 import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
 export interface User {
@@ -42,6 +41,29 @@ export interface User {
   twoFactorEnabled?: boolean;
 }
 
+export interface UserFormData {
+  id?: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  password?: string;
+  confirmPassword?: string;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+    push?: boolean;
+    sms?: boolean;
+  }
+}
+
 export interface FullUserData {
   id: string;
   email: string;
@@ -83,7 +105,6 @@ export interface FullUserData {
   twoFactorEnabled?: boolean;
 }
 
-// User tipi adapteri
 export const userToFullUserData = (user: User): FullUserData => {
   return {
     id: user.id,
@@ -120,7 +141,6 @@ export const userToFullUserData = (user: User): FullUserData => {
   };
 };
 
-// SupabaseFullUserData'nı UserData tipinə çevirmək adapter funksiyası
 export const fullUserDataToUser = (fullUserData: SupabaseFullUserData): User => {
   return {
     id: fullUserData.id,

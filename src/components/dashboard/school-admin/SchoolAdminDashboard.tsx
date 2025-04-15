@@ -4,12 +4,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from '../common/NotificationsCard';
 import { 
   SchoolAdminDashboardData,
-  DashboardNotification
+  DashboardNotification,
+  FormStatus
 } from '@/types/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { FormStatus } from '@/types/form';
 import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import FormStatusSection from './FormStatusSection';
@@ -34,17 +34,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   const { t } = useLanguage();
 
   // Status rəngləri üçün funksiya
-  const getStatusColor = (status: FormStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case FormStatus.PENDING:
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case FormStatus.APPROVED:
+      case 'approved':
         return 'bg-green-100 text-green-800';
-      case FormStatus.REJECTED:
+      case 'rejected':
         return 'bg-red-100 text-red-800';
-      case FormStatus.DUE_SOON:
+      case 'dueSoon':
         return 'bg-blue-100 text-blue-800';
-      case FormStatus.OVERDUE:
+      case 'overdue':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -102,25 +102,21 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   
   // Notification tipini uyğunlaşdırırıq
   const notifications = (data?.notifications || []).map(notification => {
+    const processedNotification = { ...notification };
+    
     // Əgər date və time yoxdursa, amma createdAt varsa
     if (!notification.date && notification.createdAt) {
       const createdDate = new Date(notification.createdAt);
-      return {
-        ...notification,
-        date: createdDate.toISOString().split('T')[0],
-        time: createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00'
-      } as DashboardNotification;
+      processedNotification.date = createdDate.toISOString().split('T')[0];
+      processedNotification.time = createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00';
     }
     
     // Əgər time yoxdursa əlavə edək
-    if (!notification.time) {
-      return {
-        ...notification,
-        time: '00:00'
-      } as DashboardNotification;
+    if (!processedNotification.time) {
+      processedNotification.time = '00:00';
     }
     
-    return notification as DashboardNotification;
+    return processedNotification;
   });
 
   return (
