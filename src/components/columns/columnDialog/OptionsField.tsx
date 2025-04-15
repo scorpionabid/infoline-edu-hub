@@ -20,7 +20,7 @@ interface OptionsFieldProps {
   newOption?: string;
   setNewOption?: (value: string) => void;
   addOption?: () => void;
-  removeOption?: (value: string) => void;
+  removeOption?: (option: ColumnOption) => void;
 }
 
 const OptionsField: React.FC<OptionsFieldProps> = ({
@@ -67,7 +67,7 @@ const OptionsField: React.FC<OptionsFieldProps> = ({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => removeOption(option.value)}
+              onClick={() => removeOption(option)}
             >
               <X className="h-4 w-4" />
             </Button>

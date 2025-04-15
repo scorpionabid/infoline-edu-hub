@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Column, ColumnOption } from "@/types/column";
+import { Column, ColumnOption, ColumnType } from "@/types/column";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Form validation schema
 const columnFormSchema = z.object({
@@ -21,10 +23,11 @@ const columnFormSchema = z.object({
 interface UseColumnFormProps {
   categories: any[];
   column: Column | null;
+  onAddColumn?: (columnData: Omit<Column, "id"> & { id?: string }) => Promise<boolean>;
 }
 
-export const useColumnForm = (categories: any[], column: Column | null) => {
-  const [selectedType, setSelectedType] = useState(column?.type || "text");
+export const useColumnForm = (categories: any[], column: Column | null, onAddColumn?: (columnData: any) => Promise<boolean>) => {
+  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     column?.options && Array.isArray(column.options)
       ? column.options.map((option: any) => ({
@@ -35,6 +38,7 @@ export const useColumnForm = (categories: any[], column: Column | null) => {
   );
   const [newOption, setNewOption] = useState("");
   const isEditMode = !!column;
+  const { t } = useLanguage();
 
   const form = useForm<z.infer<typeof columnFormSchema>>({
     resolver: zodResolver(columnFormSchema),
@@ -53,7 +57,7 @@ export const useColumnForm = (categories: any[], column: Column | null) => {
   });
 
   const handleTypeChange = (type: string) => {
-    setSelectedType(type);
+    setSelectedType(type as ColumnType);
     form.setValue("type", type);
   };
 
@@ -69,8 +73,21 @@ export const useColumnForm = (categories: any[], column: Column | null) => {
     setOptions(options.filter((option) => option.value !== optionToRemove.value));
   };
 
-  const onSubmit = (data: z.infer<typeof columnFormSchema>) => {
+  const onSubmit = async (data: z.infer<typeof columnFormSchema>) => {
+    // Əgər istifadəçi tərəfindən təqdim edilmiş əlavə funksiya varsa
+    if (onAddColumn) {
+      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
+      if (["select", "radio", "checkbox"].includes(data.type)) {
+        data.options = options;
+      }
+      
+      // Əgər istifadəçi tərəfindən təqdim edilmiş onAddColumn funksiyasını çağırırıq
+      const result = await onAddColumn(data);
+      return result;
+    }
+    
     console.log("Form submitted with data:", data);
+    return true;
   };
 
   return {
@@ -84,6 +101,7 @@ export const useColumnForm = (categories: any[], column: Column | null) => {
     addOption,
     removeOption,
     onSubmit,
-    isEditMode
+    isEditMode,
+    t
   };
 };

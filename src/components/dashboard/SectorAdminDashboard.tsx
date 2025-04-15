@@ -13,7 +13,7 @@ interface SectorAdminDashboardProps {
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const pendingItems = data?.pendingItems || [];
-  const schoolStats = data?.schoolStats || [];
+  const schoolsStats = data?.schoolsStats || [];
   const notifications = data?.notifications || [];
   const activityLog = data?.activityLog || [];
 
@@ -22,11 +22,11 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
       <StatusCards 
         stats={data?.stats || []}
         completionRate={data?.completionRate || 0}
-        pendingApprovals={data?.pendingApprovals || 0}
+        pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
       />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <SchoolsList schools={schoolStats} />
+        <SchoolsList schools={schoolsStats} />
         <PendingApprovalsCard pendingItems={pendingItems} />
       </div>
       

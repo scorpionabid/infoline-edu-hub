@@ -4,7 +4,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import NotificationsCard from '../common/NotificationsCard';
 import { 
   SchoolAdminDashboardData,
-  FormItem,
   DashboardNotification
 } from '@/types/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,15 +36,15 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   // Status rəngləri üçün funksiya
   const getStatusColor = (status: FormStatus) => {
     switch (status) {
-      case 'pending':
+      case FormStatus.PENDING:
         return 'bg-yellow-100 text-yellow-800';
-      case 'approved':
+      case FormStatus.APPROVED:
         return 'bg-green-100 text-green-800';
-      case 'rejected':
+      case FormStatus.REJECTED:
         return 'bg-red-100 text-red-800';
-      case 'dueSoon':
+      case FormStatus.DUE_SOON:
         return 'bg-blue-100 text-blue-800';
-      case 'overdue':
+      case FormStatus.OVERDUE:
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -169,53 +168,58 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         </Card>
       </div>
 
-      {/* Vaxt və status statistikası */}
-      <FormStatusSection 
-        dueSoonCount={forms.dueSoon || 0}
-        overdueCount={forms.overdue || 0}
-        totalCount={forms.total || 0}
-      />
-
-      {/* Bildirişlər kartı */}
-      <NotificationsCard notifications={notifications} />
-
       {/* Pending formlar */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t('pendingForms')}</CardTitle>
-          <CardDescription>{t('pendingFormsDesc')}</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>{t('pendingForms')}</CardTitle>
+            <CardDescription>{t('pendingFormsDesc')}</CardDescription>
+          </div>
+          <Button onClick={navigateToDataEntry}>
+            {t('addData')}
+          </Button>
         </CardHeader>
-        <CardContent className="h-[400px]">
-          <ScrollArea className="h-full w-full rounded-md border">
-            {pendingForms && pendingForms.length > 0 ? (
-              <div className="divide-y divide-border">
+        <CardContent>
+          {pendingForms.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              {t('noFormsToFill')}
+            </div>
+          ) : (
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-2">
                 {pendingForms.map((form) => (
-                  <div key={form.id} className="p-4 flex items-center justify-between">
+                  <div key={form.id} className="p-4 border rounded-md flex items-center justify-between">
                     <div>
                       <div className="font-semibold">{form.title}</div>
-                      <div className="text-sm text-muted-foreground">{form.date}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {form.category && <span className="mr-2">{form.category}</span>}
+                        <span>{form.date}</span>
+                      </div>
                     </div>
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status as FormStatus)}`}>
-                      {t(form.status)}
+                    <div className="flex items-center space-x-4">
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status)}`}>
+                        {t(form.status.toString())}
+                      </div>
+                      <div className="w-24 bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-primary h-2.5 rounded-full" 
+                          style={{ width: `${form.completionPercentage}%` }}
+                        ></div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => handleFormClick(form.id)}>
+                        {t('view')}
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => handleFormClick(form.id)}>
-                      {t('view')}
-                    </Button>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full">
-                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-                <p className="text-center text-muted-foreground">{t('noDataToProcess')}</p>
-              </div>
-            )}
-          </ScrollArea>
+            </ScrollArea>
+          )}
         </CardContent>
       </Card>
 
-      {/* Yeni məlumat əlavə etmək üçün düymə */}
-      <Button onClick={navigateToDataEntry}>{t('addData')}</Button>
+      {/* Bildirişlər kartı */}
+      <NotificationsCard notifications={notifications} />
     </div>
   );
 };

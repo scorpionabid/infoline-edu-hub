@@ -6,7 +6,7 @@ import StatusCards from './common/StatusCards';
 import CompletionRateCard from './common/CompletionRateCard';
 import PendingApprovalsCard from './common/PendingApprovalsCard';
 import NotificationsCard from './common/NotificationsCard';
-import { RegionsList } from './super-admin/RegionsList';
+import RegionsList from './super-admin/RegionsList';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
@@ -23,10 +23,10 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      <StatsCard items={statsItems} className="col-span-full lg:col-span-2" />
+      <StatsCard stats={statsItems} className="col-span-full lg:col-span-2" />
       
       <StatusCards 
-        formsByStatus={{ 
+        stats={{ 
           pending: data.formsByStatus?.pending || 0, 
           approved: data.formsByStatus?.approved || 0, 
           rejected: data.formsByStatus?.rejected || 0, 
@@ -35,10 +35,10 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
         className="col-span-full lg:col-span-1" 
       />
       
-      <CompletionRateCard rate={data.completionRate || 0} className="col-span-full md:col-span-1" />
+      <CompletionRateCard value={data.completionRate || 0} className="col-span-full md:col-span-1" />
       
       <PendingApprovalsCard 
-        items={data.pendingApprovals || []} 
+        approvals={data.pendingApprovals || []} 
         className="col-span-full xl:col-span-2" 
       />
       
@@ -54,7 +54,6 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       
       <NotificationsCard 
         notifications={data.notifications || []} 
-        className="col-span-full md:col-span-1" 
       />
     </div>
   );

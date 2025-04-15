@@ -1,4 +1,5 @@
-import { Form } from './form';
+
+import { FormStatus } from './form';
 import { NotificationType, NotificationPriority } from './notification';
 
 // Dashboard notification interface
@@ -41,6 +42,7 @@ export interface CategoryStat {
   name: string;
   completionRate: number;
   totalSchools: number;
+  color?: string;
 }
 
 export interface SectorCompletion {
@@ -72,19 +74,8 @@ export interface ActivityLogItem {
   timestamp: string;
   user: string;
   details: string;
-}
-
-// Update Form interface
-export interface Form {
-  id: string;
-  title: string;
-  status: FormStatus;
-  completionPercentage: number;
-  dueDate: string;
-  description?: string;
-  category?: string;
-  deadline?: string;
-  date?: string;
+  target?: string;
+  time?: string;
 }
 
 // Update dashboard data interfaces
@@ -167,7 +158,16 @@ export interface SchoolAdminDashboardData {
     overdue: number;
     total: number;
   };
-  pendingForms: Form[];
+  pendingForms: {
+    id: string;
+    title: string;
+    status: FormStatus;
+    completionPercentage: number;
+    dueDate: string;
+    description?: string;
+    category?: string;
+    date?: string;
+  }[];
   completionRate: number;
   notifications: DashboardNotification[];
 }

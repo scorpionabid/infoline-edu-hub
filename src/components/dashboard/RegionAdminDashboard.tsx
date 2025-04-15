@@ -21,7 +21,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
       <StatusCards 
         stats={data?.stats || []}
         completionRate={data?.completionRate || 0}
-        pendingApprovals={data?.pendingApprovals || 0}
+        pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
         additionalStats={{
           activeUsers: data?.users,
           upcomingDeadlines: categories.length,

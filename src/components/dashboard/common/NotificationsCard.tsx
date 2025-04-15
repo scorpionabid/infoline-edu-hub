@@ -1,83 +1,124 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { DashboardNotification } from '@/types/dashboard'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { DashboardNotification } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import { 
+  Bell, 
+  CheckCircle, 
+  AlertCircle, 
+  Info, 
+  Mail, 
+  MessageSquare, 
+  Calendar, 
+  User,
+  X 
+} from 'lucide-react';
 
 interface NotificationsCardProps {
   notifications: DashboardNotification[];
-  viewAllLink?: string;
 }
 
-const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
-  notifications,
-  viewAllLink = '/notifications'
-}) => {
+const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
   const { t } = useLanguage();
 
-  // Bildiriş tipinə uyğun rəng təyin edir
-  const getNotificationTypeColor = (type: string) => {
-    switch (type) {
-      case 'system':
-        return 'bg-blue-100 text-blue-800';
-      case 'category':
-        return 'bg-green-100 text-green-800';
-      case 'deadline':
-        return 'bg-amber-100 text-amber-800';
-      case 'approval':
-        return 'bg-purple-100 text-purple-800';
-      case 'form':
-        return 'bg-indigo-100 text-indigo-800';
+  // Get icon based on notification type
+  const getIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'error':
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'info':
+        return <Info className="h-4 w-4 text-blue-500" />;
+      case 'email':
+        return <Mail className="h-4 w-4 text-indigo-500" />;
+      case 'message':
+        return <MessageSquare className="h-4 w-4 text-purple-500" />;
+      case 'event':
+        return <Calendar className="h-4 w-4 text-yellow-500" />;
+      case 'user':
+        return <User className="h-4 w-4 text-teal-500" />;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Bell className="h-4 w-4 text-gray-500" />;
     }
+  };
+
+  // Format date function (assumes format YYYY-MM-DD)
+  const formatDate = (date: string, time?: string) => {
+    if (!date) return '';
+    
+    const today = new Date();
+    const notificationDate = new Date(date);
+    
+    // Check if it's today
+    if (
+      today.getDate() === notificationDate.getDate() &&
+      today.getMonth() === notificationDate.getMonth() &&
+      today.getFullYear() === notificationDate.getFullYear()
+    ) {
+      return time ? `${t('today')}, ${time}` : t('today');
+    }
+    
+    // Check if it's yesterday
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (
+      yesterday.getDate() === notificationDate.getDate() &&
+      yesterday.getMonth() === notificationDate.getMonth() &&
+      yesterday.getFullYear() === notificationDate.getFullYear()
+    ) {
+      return time ? `${t('yesterday')}, ${time}` : t('yesterday');
+    }
+    
+    // Format as DD/MM/YYYY
+    const day = notificationDate.getDate().toString().padStart(2, '0');
+    const month = (notificationDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = notificationDate.getFullYear();
+    
+    return time ? `${day}/${month}/${year}, ${time}` : `${day}/${month}/${year}`;
   };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="flex items-center">
-          <Bell className="mr-2 h-5 w-5" />
-          {t('notifications')}
-        </CardTitle>
-        <Button variant="ghost" size="sm" asChild>
-          <a href={viewAllLink} className="flex items-center">
-            {t('viewAll')} <ChevronRight className="ml-1 h-4 w-4" />
-          </a>
-        </Button>
+      <CardHeader>
+        <CardTitle>{t('notifications')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {notifications && notifications.length > 0 ? (
-          <div className="space-y-4">
-            {notifications.map((notification) => (
-              <div key={notification.id} className="flex items-start gap-3 border-b pb-2">
-                <Badge 
-                  variant="outline" 
-                  className={`${getNotificationTypeColor(notification.type)} mt-0.5`}
-                >
-                  {t(notification.type)}
-                </Badge>
-                <div className="flex-1">
-                  <p className="font-medium">{notification.title}</p>
-                  <p className="text-sm text-muted-foreground">{notification.message}</p>
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-muted-foreground">{notification.date ? new Date(notification.date).toLocaleDateString() : ''}</p>
-                    {!notification.isRead && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t('new')}
-                      </Badge>
-                    )}
+        <ScrollArea className="h-[300px]">
+          {notifications.length === 0 ? (
+            <div className="text-center text-muted-foreground p-4">
+              {t('noNotifications')}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {notifications.map((notification) => (
+                <div key={notification.id} className={`p-3 rounded-md border ${notification.isRead ? 'bg-background' : 'bg-secondary/30'}`}>
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">
+                        {getIcon(notification.type)}
+                      </div>
+                      <div>
+                        <div className="font-medium mb-1">{notification.title}</div>
+                        <div className="text-sm text-muted-foreground">{notification.message}</div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                          {formatDate(notification.date, notification.time)}
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">{t('noNotifications')}</p>
-        )}
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );

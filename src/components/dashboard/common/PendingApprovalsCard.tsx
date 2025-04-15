@@ -1,47 +1,70 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { PendingItem } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import { format, isValid } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Clock, Eye } from 'lucide-react';
 
 interface PendingApprovalsCardProps {
-  pendingItems: PendingItem[];
+  approvals?: PendingItem[];
+  pendingItems?: PendingItem[];
+  className?: string;
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems }) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ 
+  approvals = [], 
+  pendingItems = [],
+  className 
+}) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
+  
+  // Combine both arrays and remove duplicates
+  const items = [...(approvals || []), ...(pendingItems || [])].filter(
+    (item, index, self) => index === self.findIndex(t => t.id === item.id)
+  );
+
+  // Format date function
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, 'dd MMM yyyy') : dateString;
+  };
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle>{t('pendingApprovals')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {pendingItems && pendingItems.length > 0 ? (
-          <div className="space-y-4">
-            {pendingItems.map((item) => (
-              <div key={item.id} className="border-b pb-2">
-                <p className="font-medium">{item.school}</p>
-                <p className="text-sm text-muted-foreground">{item.category}</p>
-                <p className="text-xs text-muted-foreground">{item.date}</p>
-              </div>
-            ))}
-            <Button 
-              variant="ghost" 
-              className="p-0 h-auto text-xs text-blue-500 dark:text-blue-400"
-              onClick={() => navigate('/data-entry?filter=pending')}
-            >
-              {t('viewAllPendingItems')}
-              <ArrowUpRight className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">{t('noPendingApprovals')}</p>
-        )}
+        <ScrollArea className="h-[300px]">
+          {items.length === 0 ? (
+            <div className="text-center text-muted-foreground p-4">
+              {t('noItemsPendingApproval')}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+                  <div>
+                    <div className="font-medium">{item.schoolName || item.school}</div>
+                    <div className="text-sm text-muted-foreground">{item.categoryName || item.category}</div>
+                    <div className="text-xs text-muted-foreground flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {formatDate(item.submittedAt || item.date)}
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline">
+                    <Eye className="h-3 w-3 mr-1" />
+                    {t('view')}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );

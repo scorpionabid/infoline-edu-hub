@@ -1,229 +1,194 @@
-import React, { useEffect } from 'react';
-import { useDataEntry } from '@/hooks/useDataEntry';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Info } from 'lucide-react';
-import DatePicker from '@/components/ui/date-picker';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/context/LanguageContext';
+import { useDataEntry } from '@/hooks/useDataEntry';
+import CategoryForm from './CategoryForm';
+import CategoryConfirmationDialog from './CategoryConfirmationDialog';
+import { DataEntrySaveStatus } from '@/types/dataEntry';
+import { ArrowLeft, CheckCircle, Loader2, Save } from 'lucide-react';
 
-interface DataEntryFormProps {
-  initialCategoryId?: string;
-  statusFilter?: string;
-  onDataChanged?: () => void;
-  readOnly?: boolean;
-}
-
-const DataEntryForm: React.FC<DataEntryFormProps> = ({ 
-  initialCategoryId, 
-  statusFilter, 
-  onDataChanged,
-  readOnly = false
-}) => {
+const DataEntryForm: React.FC = () => {
+  const { schoolId } = useParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
-  const { 
-    categories, 
-    currentCategoryIndex, 
-    formData, 
-    errors, 
-    updateValue, 
-    getErrorForColumn
-  } = useDataEntry({ initialCategoryId });
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
-  const currentCategory = categories[currentCategoryIndex];
+  // Get initialCategoryId from URL query params if available
+  const urlParams = new URLSearchParams(window.location.search);
+  const categoryIdFromUrl = urlParams.get('categoryId');
   
-  const handleValueChange = (columnId: string, value: any) => {
-    updateValue(currentCategory.id, columnId, value);
-    if (onDataChanged) {
-      onDataChanged();
+  const {
+    categories,
+    entries,
+    isLoading,
+    isSubmitting,
+    saveStatus,
+    handleSave,
+    handleSubmitForApproval,
+    handleEntriesChange,
+    isDataModified,
+    loadDataForSchool,
+  } = useDataEntry({
+    schoolId: schoolId || '',
+  });
+
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      // Use categoryId from URL if available and valid
+      if (categoryIdFromUrl) {
+        const exists = categories.some(cat => cat.id === categoryIdFromUrl);
+        if (exists) {
+          setActiveCategory(categoryIdFromUrl);
+          return;
+        }
+      }
+      
+      // Otherwise use the first category
+      setActiveCategory(categories[0].id);
     }
+  }, [categories, activeCategory, categoryIdFromUrl]);
+
+  const handleTabChange = (value: string) => {
+    if (isDataModified) {
+      // If data is modified, show confirmation dialog
+      setShowConfirmation(true);
+      return;
+    }
+    
+    setActiveCategory(value);
   };
-  
-  // Sütun tipinə görə müvafiq input komponenti render edir
-  const renderInputByType = (column: any) => {
-    const currentEntry = formData.entries.find(e => e.categoryId === currentCategory.id);
-    const valueObj = currentEntry?.values.find(v => v.columnId === column.id);
-    const value = valueObj?.value || '';
-    const error = getErrorForColumn(column.id);
-    const isApproved = valueObj?.status === 'approved';
-    const isRejected = valueObj?.status === 'rejected';
-    
-    // Əgər readOnly rejimindədirsə və ya sütun təsdiqlənibsə, disabled olmalıdır
-    const isDisabled = readOnly || isApproved;
-    
-    const inputClassName = `w-full ${isRejected ? 'border-destructive' : ''} ${isApproved ? 'bg-muted' : ''}`;
-    
-    switch (column.type) {
-      case 'text':
-        return (
-          <Input
-            id={column.id}
-            type="text"
-            value={value as string}
-            onChange={(e) => handleValueChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
-          />
-        );
-        
-      case 'number':
-        return (
-          <Input
-            id={column.id}
-            type="number"
-            value={value as number}
-            onChange={(e) => handleValueChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
-          />
-        );
-        
-      case 'date':
-        return (
-          <DatePicker
-            id={column.id}
-            date={value ? new Date(value as string) : undefined}
-            onSelect={(date) => handleValueChange(column.id, date?.toISOString())}
-            disabled={isDisabled}
-          />
-        );
-        
-      case 'textarea':
-        return (
-          <Textarea
-            id={column.id}
-            value={value as string}
-            onChange={(e) => handleValueChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
-          />
-        );
-        
-      case 'checkbox':
-        return (
-          <Checkbox
-            id={column.id}
-            checked={value as boolean}
-            onCheckedChange={(checked) => handleValueChange(column.id, checked)}
-            disabled={isDisabled}
-          />
-        );
-        
-      case 'radio':
-        return (
-          <RadioGroup
-            value={value as string}
-            onValueChange={(val) => handleValueChange(column.id, val)}
-            className="flex flex-col space-y-1"
-            disabled={isDisabled}
-          >
-            {column.options?.map((option: any) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
-                <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-        
-      case 'select':
-        return (
-          <Select
-            value={value as string}
-            onValueChange={(val) => handleValueChange(column.id, val)}
-            disabled={isDisabled}
-          >
-            <SelectTrigger className={inputClassName}>
-              <SelectValue placeholder={column.placeholder || t('select')} />
-            </SelectTrigger>
-            <SelectContent>
-              {column.options?.map((option: any) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-        
+
+  const confirmTabChange = (value: string) => {
+    setActiveCategory(value);
+    setShowConfirmation(false);
+  };
+
+  // Display the status message
+  const getSaveStatusMessage = () => {
+    switch (saveStatus) {
+      case DataEntrySaveStatus.SAVED:
+        return t('dataSaved');
+      case DataEntrySaveStatus.SUBMITTED:
+        return t('dataSubmittedForApproval');
+      case DataEntrySaveStatus.ERROR:
+        return t('errorSavingData');
       default:
-        return (
-          <Input
-            id={column.id}
-            type="text"
-            value={value as string}
-            onChange={(e) => handleValueChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
-          />
-        );
+        return '';
     }
   };
-  
-  if (!currentCategory || !currentCategory.columns || currentCategory.columns.length === 0) {
+
+  if (isLoading) {
     return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">{t('noCategoryData')}</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-[200px]" />
+          <Skeleton className="h-10 w-[120px]" />
+        </div>
+        <Skeleton className="h-[500px] w-full" />
       </div>
     );
   }
-  
+
   return (
-    <div className="space-y-6">
-      {readOnly && (
-        <Alert variant="default" className="bg-muted">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            {t('viewOnlyModeDescription')}
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">{t('dataEntry')}</h1>
+          <p className="text-muted-foreground">{t('dataEntryDescription')}</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('back')}
+          </Button>
+          
+          {isSubmitting ? (
+            <Button disabled>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {t('saving')}
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleSave}
+              disabled={!isDataModified}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {t('save')}
+            </Button>
+          )}
+          
+          <Button 
+            variant="default" 
+            onClick={handleSubmitForApproval}
+            disabled={isSubmitting}
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            {t('submitForApproval')}
+          </Button>
+        </div>
+      </div>
       
-      {currentCategory.columns.map((column) => {
-        const error = getErrorForColumn(column.id);
-        const currentEntry = formData.entries.find(e => e.categoryId === currentCategory.id);
-        const valueObj = currentEntry?.values.find(v => v.columnId === column.id);
-        const isRejected = valueObj?.status === 'rejected';
-        const rejectionReason = valueObj?.errorMessage;
-        
-        return (
-          <div key={column.id} className="space-y-2">
-            <div className="flex items-start justify-between">
-              <Label htmlFor={column.id} className={column.is_required ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""}>
-                {column.name}
-              </Label>
-              {column.is_required && <span className="text-xs text-muted-foreground">{t('required')}</span>}
+      {saveStatus !== DataEntrySaveStatus.NONE && (
+        <div className={`p-4 rounded-md ${saveStatus === DataEntrySaveStatus.ERROR ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+          {getSaveStatusMessage()}
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('categories')}</CardTitle>
+          <CardDescription>{t('categoriesDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {categories.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              {t('noCategoriesAvailable')}
             </div>
-            
-            {column.help_text && (
-              <p className="text-sm text-muted-foreground">{column.help_text}</p>
-            )}
-            
-            {renderInputByType(column)}
-            
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
-            
-            {isRejected && rejectionReason && (
-              <Alert variant="destructive" className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{rejectionReason}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        );
-      })}
+          ) : (
+            <Tabs 
+              value={activeCategory || categories[0].id} 
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
+              <TabsList className="w-full mb-4 overflow-x-auto flex flex-nowrap">
+                {categories.map(category => (
+                  <TabsTrigger 
+                    key={category.id} 
+                    value={category.id}
+                    className="whitespace-nowrap"
+                  >
+                    {category.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {categories.map(category => (
+                <TabsContent key={category.id} value={category.id}>
+                  <CategoryForm 
+                    category={category}
+                    entries={entries}
+                    onEntriesChange={handleEntriesChange}
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
+      
+      <CategoryConfirmationDialog 
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={() => activeCategory && confirmTabChange(activeCategory)}
+      />
     </div>
   );
 };

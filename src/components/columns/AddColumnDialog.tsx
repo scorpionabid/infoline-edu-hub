@@ -8,8 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Refaktorlanmış komponentlər
 import { useColumnForm } from './columnDialog/useColumnForm';
@@ -34,6 +36,8 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   editColumn,
   columns = [],
 }) => {
+  const { t } = useLanguage();
+  
   const {
     form, 
     selectedType,
@@ -44,13 +48,13 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
     newOption,
     setNewOption,
     onSubmit,
-    isEditMode,
-    t
+    isEditMode
   } = useColumnForm(categories, editColumn, onAddColumn);
   
   // Handle form submission
   const handleSubmit = async (values: any) => {
-    if (await onSubmit(values)) {
+    const result = await onSubmit(values);
+    if (result) {
       onClose();
     }
   };
@@ -62,6 +66,9 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
           <DialogTitle>
             {isEditMode ? t("editColumn") : t("addColumn")}
           </DialogTitle>
+          <DialogDescription>
+            {isEditMode ? t("updateColumnDescription") : t("createColumnDescription")}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

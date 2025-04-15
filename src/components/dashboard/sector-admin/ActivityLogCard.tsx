@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { ActivityLogItem } from '@/types/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ActivityLogItem } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
+import { formatDistance } from 'date-fns';
 
 interface ActivityLogCardProps {
   activities: ActivityLogItem[];
@@ -12,26 +13,40 @@ interface ActivityLogCardProps {
 const ActivityLogCard: React.FC<ActivityLogCardProps> = ({ activities }) => {
   const { t } = useLanguage();
 
+  // Get relative time from now
+  const getTimeAgo = (timestamp: string) => {
+    try {
+      return formatDistance(new Date(timestamp), new Date(), { addSuffix: true });
+    } catch (e) {
+      return timestamp;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Activity className="mr-2 h-5 w-5" />
-          {t('activityLog')}
-        </CardTitle>
+        <CardTitle>{t('activityLog')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex justify-between items-center border-b pb-2">
-              <div>
-                <p className="font-medium">{activity.action}</p>
-                <p className="text-sm text-muted-foreground">{activity.target}</p>
-              </div>
-              <p className="text-xs text-muted-foreground">{activity.time}</p>
+        <ScrollArea className="h-[300px]">
+          {activities.length === 0 ? (
+            <div className="text-center text-muted-foreground p-4">
+              {t('noActivityRecorded')}
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="space-y-4">
+              {activities.map((activity) => (
+                <div key={activity.id} className="border-b pb-3 last:border-0 last:pb-0">
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium">{activity.user} {activity.action}</span>
+                    <span className="text-xs text-muted-foreground">{activity.time || getTimeAgo(activity.timestamp)}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{activity.details}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );
