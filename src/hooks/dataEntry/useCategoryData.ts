@@ -18,7 +18,8 @@ export const useCategoryData = () => {
     
     try {
       if (typeof options === 'string') {
-        return JSON.parse(options);
+        const parsed = JSON.parse(options);
+        return Array.isArray(parsed) ? parsed : [];
       }
       if (Array.isArray(options)) {
         return options.map(opt => {
@@ -27,7 +28,9 @@ export const useCategoryData = () => {
             return { value: String(opt.value), label: String(opt.label) };
           }
           return '';
-        }).filter(Boolean);
+        }).filter((opt): opt is string | { value: string; label: string } => 
+          typeof opt === 'string' || (typeof opt === 'object' && opt !== null)
+        );
       }
     } catch (e) {
       console.error('Error parsing column options:', e);

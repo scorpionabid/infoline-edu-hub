@@ -38,6 +38,13 @@ export const useValidation = (categories: any[] = [], entries: CategoryEntryData
     if (Array.isArray(value) && value.length === 0) return true;
     return false;
   };
+
+export interface ColumnValidationError {
+  columnId: string;
+  categoryId: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+}
   
   // Return the validation methods and state
   return {

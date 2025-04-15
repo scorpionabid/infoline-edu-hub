@@ -44,7 +44,7 @@ export interface Column {
   options: string[] | ColumnOption[];
   created_at: string;
   updated_at: string;
-  parent_column_id?: string;
+  parent_column_id?: string | null;
   dependsOn?: DependsOnCondition;
 }
 

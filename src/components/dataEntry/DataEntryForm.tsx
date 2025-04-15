@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useDataEntry } from '@/hooks/useDataEntry';
 import { useLanguage } from '@/context/LanguageContext';
@@ -35,7 +34,7 @@ const DataEntryForm: React.FC<DataEntryFormProps> = ({
     errors, 
     updateValue, 
     getErrorForColumn
-  } = useDataEntry(initialCategoryId, statusFilter);
+  } = useDataEntry({ initialCategoryId });
   
   const currentCategory = categories[currentCategoryIndex];
   

@@ -31,6 +31,9 @@ export interface PendingItem {
   categoryName: string;
   submittedAt?: string;
   dueDate?: string;
+  school?: string;
+  category?: string;
+  date?: string;
 }
 
 export interface CategoryStat {
