@@ -1,7 +1,16 @@
+
 import { useState, useCallback } from 'react';
-import { ColumnValidationError, CategoryEntryData } from '@/types/dataEntry';
+import { CategoryEntryData } from '@/types/dataEntry';
 import { Column } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
+
+// ColumnValidationError interfeysi funksiyadan xaricdə elan edilməlidir
+export interface ColumnValidationError {
+  columnId: string;
+  categoryId: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+}
 
 /**
  * @description Formun validasiyası üçün hook
@@ -38,13 +47,6 @@ export const useValidation = (categories: any[] = [], entries: CategoryEntryData
     if (Array.isArray(value) && value.length === 0) return true;
     return false;
   };
-
-export interface ColumnValidationError {
-  columnId: string;
-  categoryId: string;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
-}
   
   // Return the validation methods and state
   return {

@@ -50,9 +50,5 @@ export interface CategoryEntryData {
   approvalStatus?: string;
 }
 
-// Validation error interface
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
-}
+// Artıq ColumnValidationError interfeysi burada yox, validation.ts faylından idxal ediləcək
+// Onun yerini idxal bəyannamələri ilə əvəz edirik

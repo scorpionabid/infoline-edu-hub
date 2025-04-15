@@ -1,6 +1,5 @@
-
 import { useState, useCallback, useEffect } from 'react';
-import { ColumnValidationError } from '@/types/dataEntry';
+import { ColumnValidationError } from './validation';
 import { CategoryWithColumns, Column, ValidationRules, DependsOnCondition } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 import { Json } from '@/integrations/supabase/types';
@@ -228,7 +227,6 @@ export const useValidation = (categories: CategoryWithColumns[], entries: any[])
         
         category.columns.forEach(column => {
           if (column.dependsOn) {
-            // column.dependsOn tipini DependsOnCondition tipinə çeviririk
             const dependsOn = column.dependsOn as unknown as DependsOnCondition;
             const parentValueObj = categoryEntry.values.find((v: any) => v.columnId === dependsOn.columnId);
             const currentValueObj = categoryEntry.values.find((v: any) => v.columnId === column.id);
