@@ -1,7 +1,11 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/context/LanguageContext';
 import { PendingItem } from '@/types/dashboard';
+import { Button } from '@/components/ui/button';
+import { ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PendingApprovalsCardProps {
   pendingItems: PendingItem[];
@@ -9,6 +13,7 @@ interface PendingApprovalsCardProps {
 
 const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <Card>
@@ -25,6 +30,14 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItem
                 <p className="text-xs text-muted-foreground">{item.date}</p>
               </div>
             ))}
+            <Button 
+              variant="ghost" 
+              className="p-0 h-auto text-xs text-blue-500 dark:text-blue-400"
+              onClick={() => navigate('/data-entry?filter=pending')}
+            >
+              {t('viewAllPendingItems')}
+              <ArrowUpRight className="ml-1 h-3 w-3" />
+            </Button>
           </div>
         ) : (
           <p className="text-center text-muted-foreground">{t('noPendingApprovals')}</p>

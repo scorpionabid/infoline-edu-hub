@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { DashboardNotification } from '@/types/dashboard'; 
@@ -63,7 +64,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
                   <p className="font-medium">{notification.title}</p>
                   <p className="text-sm text-muted-foreground">{notification.message}</p>
                   <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-muted-foreground">{notification.date ? new Date(notification.date).toLocaleDateString() : ''}</p>
+                    <p className="text-xs text-muted-foreground">{notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : ''}</p>
                     {!notification.isRead && (
                       <Badge variant="secondary" className="text-xs">
                         {t('new')}

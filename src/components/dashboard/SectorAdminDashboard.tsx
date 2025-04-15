@@ -22,8 +22,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
       <StatusCards 
         stats={data?.stats || []}
         completionRate={data?.completionRate || 0}
-        schools={data?.schools || 0}
-        sectorRate={data?.completionRate || 0}
         pendingApprovals={data?.pendingApprovals || 0}
       />
       

@@ -19,10 +19,16 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { StatsItem } from '@/types/dashboard';
 
 interface StatusCardsProps {
+  stats?: StatsItem[];
   completionRate: number;
   pendingApprovals: number;
+  schools?: number;
+  regions?: number;
+  sectors?: number;
+  sectorRate?: number;
   additionalStats?: {
     activeUsers?: number;
     upcomingDeadlines?: number;
@@ -32,6 +38,7 @@ interface StatusCardsProps {
 }
 
 const StatusCards: React.FC<StatusCardsProps> = ({ 
+  stats = [],
   completionRate, 
   pendingApprovals,
   additionalStats = {} 
@@ -56,7 +63,35 @@ const StatusCards: React.FC<StatusCardsProps> = ({
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <CompletionRateCard completionRate={completionRate} />
-        <PendingApprovalsCard pendingApprovals={pendingApprovals} />
+        
+        {/* PendingApprovalsCard komponentini düzəldirik */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">{t('pendingApprovals')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{pendingApprovals}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('pendingApprovalsDesc')}
+            </p>
+            <div className="h-2 w-full bg-muted mt-4 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-yellow-500 transition-all duration-500 ease-in-out" 
+                style={{ width: `${Math.min(pendingApprovals * 5, 100)}%` }}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              variant="ghost" 
+              className="p-0 h-auto text-xs text-blue-500 dark:text-blue-400"
+              onClick={() => navigate('/data-entry?filter=pending')}
+            >
+              {t('viewPendingApprovals')}
+              <ArrowUpRight className="ml-1 h-3 w-3" />
+            </Button>
+          </CardFooter>
+        </Card>
         
         {/* Aktiv istifadəçilər kartı */}
         <Card>
