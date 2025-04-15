@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  generateDashboardDataByRole, 
+  createMockSuperAdminData,
+  createMockRegionAdminData,
+  createMockSectorAdminData,
   createMockChartData 
 } from '@/utils/dashboardUtils';
 import { Notification } from '@/types/notification';
@@ -40,7 +41,21 @@ export const useDashboardData = () => {
         console.log(`Dashboard yüklənir: ${role} rolu üçün`);
         
         // Mock data generasiya etmək
-        const mockData = generateDashboardDataByRole(role);
+        let mockData: DashboardData | null = null;
+        switch (role) {
+          case 'superadmin':
+            mockData = createMockSuperAdminData();
+            break;
+          case 'regionadmin':
+            mockData = createMockRegionAdminData();
+            break;
+          case 'sectoradmin':
+            mockData = createMockSectorAdminData();
+            break;
+          default:
+            mockData = createMockSuperAdminData();
+            break;
+        }
         setDashboardData(mockData);
         
         // Qrafik datanı generasiya etmək
@@ -64,3 +79,5 @@ export const useDashboardData = () => {
   
   return { dashboardData, isLoading, error, chartData, userRole: user?.role };
 };
+
+export default useDashboardData;

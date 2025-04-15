@@ -1,4 +1,3 @@
-
 import { 
   DashboardNotification, 
   SchoolAdminDashboardData, 
@@ -9,7 +8,8 @@ import {
   SectorCompletion,
   SchoolStat,
   PendingItem,
-  ActivityLogItem
+  ActivityLogItem,
+  ChartData
 } from '@/types/dashboard';
 
 /**
@@ -399,4 +399,40 @@ export const createMockSuperAdminData = () => {
     },
     regionStats
   };
+};
+
+/**
+ * Mock qrafik məlumatları yaradır
+ */
+export const createMockChartData = (): ChartData => {
+  return {
+    activityData: [
+      { name: 'Yanvar', value: 400 },
+      { name: 'Fevral', value: 300 },
+      { name: 'Mart', value: 200 },
+      { name: 'Aprel', value: 278 },
+      { name: 'May', value: 189 },
+    ],
+    regionSchoolsData: [
+      { name: 'Bakı', value: 120 },
+      { name: 'Sumqayıt', value: 50 },
+      { name: 'Gəncə', value: 40 },
+      { name: 'Şəki', value: 30 },
+      { name: 'Lənkəran', value: 20 },
+    ],
+    categoryCompletionData: [
+      { name: 'Şagird Statistikası', completed: 85 },
+      { name: 'Müəllim Statistikası', completed: 72 },
+      { name: 'İnfrastruktur', completed: 60 },
+      { name: 'Texniki Avadanlıq', completed: 45 },
+      { name: 'Tədris Materialları', completed: 55 },
+    ]
+  };
+};
+
+export { 
+  createMockSchoolAdminData,
+  createMockSectorAdminData,
+  createMockRegionAdminData,
+  createMockSuperAdminData
 };
