@@ -1,88 +1,82 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Notification } from '@/types/notification';
+import { DashboardNotification } from '@/types/dashboard'; 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell, ChevronRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { NotificationItem } from '../notifications/NotificationItem';
-import { useNotifications } from '@/context/NotificationContext';
-import { Bell } from 'lucide-react';
 
 interface NotificationsCardProps {
-  dashboardNotifications?: Notification[];
-  notifications?: Notification[]; // Əlavə prop əlavə edirik, köhnə kodla uyğunluq üçün
+  notifications: DashboardNotification[];
+  viewAllLink?: string;
 }
 
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
-  dashboardNotifications,
-  notifications
+  notifications,
+  viewAllLink = '/notifications'
 }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const { notifications: contextNotifications, loading } = useNotifications();
-  
-  // Notifications prop üstünlük təşkil edir, sonra dashboardNotifications, sonra isə context-dən
-  const displayNotifications = notifications || dashboardNotifications || contextNotifications.slice(0, 5);
-  
-  const handleViewAll = () => {
-    navigate('/notifications');
+
+  // Bildiriş tipinə uyğun rəng təyin edir
+  const getNotificationTypeColor = (type: string) => {
+    switch (type) {
+      case 'system':
+        return 'bg-blue-100 text-blue-800';
+      case 'category':
+        return 'bg-green-100 text-green-800';
+      case 'deadline':
+        return 'bg-amber-100 text-amber-800';
+      case 'approval':
+        return 'bg-purple-100 text-purple-800';
+      case 'form':
+        return 'bg-indigo-100 text-indigo-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
-  
-  // Dashboard notification tipini bizim tətbiqetmə notification tipinə çevirmək
-  const normalizeNotifications = (notificationArray: any[]): Notification[] => {
-    return notificationArray.map(n => ({
-      id: n.id,
-      title: n.title,
-      message: n.message,
-      type: n.type,
-      isRead: n.isRead,
-      createdAt: n.createdAt || n.date || new Date().toISOString(),
-      userId: n.userId || 'unknown',
-      priority: n.priority || 'normal',
-      date: n.date,
-      time: n.time
-    }));
-  };
-  
-  const normalizedNotifications = normalizeNotifications(displayNotifications || []);
-  
+
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex justify-between items-center">
-          <span>{t('recentNotifications')}</span>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="flex items-center">
+          <Bell className="mr-2 h-5 w-5" />
+          {t('notifications')}
         </CardTitle>
-        <CardDescription>{t('systemNotificationsDesc')}</CardDescription>
+        <Button variant="ghost" size="sm" asChild>
+          <a href={viewAllLink} className="flex items-center">
+            {t('viewAll')} <ChevronRight className="ml-1 h-4 w-4" />
+          </a>
+        </Button>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center h-[200px]">
-            <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
-          </div>
-        ) : normalizedNotifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center p-4 h-[200px]">
-            <Bell className="h-12 w-12 text-muted-foreground mb-2" />
-            <p className="text-lg font-medium">{t('noNotifications')}</p>
-            <p className="text-sm text-muted-foreground">{t('noNotificationsDesc')}</p>
+        {notifications && notifications.length > 0 ? (
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <div key={notification.id} className="flex items-start gap-3 border-b pb-2">
+                <Badge 
+                  variant="outline" 
+                  className={`${getNotificationTypeColor(notification.type)} mt-0.5`}
+                >
+                  {t(notification.type)}
+                </Badge>
+                <div className="flex-1">
+                  <p className="font-medium">{notification.title}</p>
+                  <p className="text-sm text-muted-foreground">{notification.message}</p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-muted-foreground">{notification.date ? new Date(notification.date).toLocaleDateString() : ''}</p>
+                    {!notification.isRead && (
+                      <Badge variant="secondary" className="text-xs">
+                        {t('new')}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          <>
-            <ScrollArea className="h-[250px]">
-              <div className="space-y-3">
-                {normalizedNotifications.map(notification => (
-                  <NotificationItem 
-                    key={notification.id} 
-                    notification={notification}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-            <div className="mt-4 flex justify-center">
-              <Button variant="outline" onClick={handleViewAll}>{t('viewAllNotifications')}</Button>
-            </div>
-          </>
+          <p className="text-center text-muted-foreground">{t('noNotifications')}</p>
         )}
       </CardContent>
     </Card>

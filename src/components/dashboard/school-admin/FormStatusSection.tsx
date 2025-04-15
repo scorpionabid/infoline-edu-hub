@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/context/LanguageContext';
-import { Clock, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 
-export interface FormStatusSectionProps {
+interface FormStatusSectionProps {
   dueSoonCount: number;
   overdueCount: number;
   totalCount: number;
@@ -18,43 +17,58 @@ const FormStatusSection: React.FC<FormStatusSectionProps> = ({
 }) => {
   const { t } = useLanguage();
   
-  // Əgər heç bir form yoxdursa, 0-a bölməni qarşısını alaq
-  const dueSoonPercentage = totalCount > 0 ? Math.round((dueSoonCount / totalCount) * 100) : 0;
+  // Tamamlanma faizini hesablayaq
+  const duePercentage = totalCount > 0 ? Math.round((dueSoonCount / totalCount) * 100) : 0;
   const overduePercentage = totalCount > 0 ? Math.round((overdueCount / totalCount) * 100) : 0;
-  
+  const completedPercentage = 100 - duePercentage - overduePercentage;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-md font-medium">{t('dueSoonForms')}</CardTitle>
-          <Clock className="h-5 w-5 text-blue-500" />
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center">
+            <Clock className="mr-2 h-5 w-5 text-blue-500" />
+            {t('dueSoon')}
+          </CardTitle>
+          <CardDescription>{t('dueSoonDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-2xl font-bold">{dueSoonCount}</span>
-            <span className="text-sm text-muted-foreground">{dueSoonPercentage}% of total</span>
+          <div className="text-xl font-bold">{dueSoonCount}</div>
+          <div className="text-sm text-muted-foreground">
+            {duePercentage}% {t('ofTotalForms')}
           </div>
-          <Progress value={dueSoonPercentage} className="h-2 bg-muted" indicatorClassName="bg-blue-500" />
-          <p className="text-sm text-muted-foreground mt-2">
-            {t('dueSoonFormsDescription')}
-          </p>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-md font-medium">{t('overdueForms')}</CardTitle>
-          <AlertCircle className="h-5 w-5 text-red-500" />
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="mr-2 h-5 w-5 text-red-500" />
+            {t('overdue')}
+          </CardTitle>
+          <CardDescription>{t('overdueDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-2xl font-bold">{overdueCount}</span>
-            <span className="text-sm text-muted-foreground">{overduePercentage}% of total</span>
+          <div className="text-xl font-bold">{overdueCount}</div>
+          <div className="text-sm text-muted-foreground">
+            {overduePercentage}% {t('ofTotalForms')}
           </div>
-          <Progress value={overduePercentage} className="h-2 bg-muted" indicatorClassName="bg-red-500" />
-          <p className="text-sm text-muted-foreground mt-2">
-            {t('overdueFormsDescription')}
-          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center">
+            <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+            {t('onTime')}
+          </CardTitle>
+          <CardDescription>{t('onTimeDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xl font-bold">{totalCount - dueSoonCount - overdueCount}</div>
+          <div className="text-sm text-muted-foreground">
+            {completedPercentage}% {t('ofTotalForms')}
+          </div>
         </CardContent>
       </Card>
     </div>
