@@ -18,6 +18,7 @@ export function adaptColumnToSupabase(column: Partial<Column>): any {
     validation: column.validation || {},
     default_value: column.default_value || null,
     status: column.status || 'active',
+    parent_column_id: column.parentColumnId,
   };
 }
 
@@ -43,3 +44,6 @@ export function adaptSupabaseToColumn(data: any): Column {
     parentColumnId: data.parent_column_id
   };
 }
+
+// Əsas adaptSupabaseToColumn funksiyasını dəstəkləmək üçün alias
+export const adaptSupabaseColumn = adaptSupabaseToColumn;

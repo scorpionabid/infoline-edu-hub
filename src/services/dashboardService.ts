@@ -1,162 +1,184 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ChartData, DashboardData } from '@/types/dashboard';
-import { UserRole } from '@/types/user';
-import { createMockChartData, generateDashboardDataByRole } from '@/utils/dashboardUtils';
+import { DashboardData, ChartData, SchoolAdminDashboardData } from '@/types/dashboard';
+import { generateDashboardDataByRole, createMockChartData, createMockSchoolAdminData } from '@/utils/dashboardUtils';
 
 /**
- * Real-vaxt rejimində dashboard məlumatlarını əldə etmək
+ * Dashboard məlumatlarını əldə etmək üçün ana funksiya
  */
-export async function fetchDashboardData(role: UserRole): Promise<DashboardData> {
+export const fetchDashboardData = async (userRole?: string): Promise<DashboardData> => {
   try {
-    // Supabase edge funksiyasına sorğu
-    const { data, error } = await supabase.functions.invoke('get-dashboard-data', {
-      method: 'POST',
-      body: { role }
-    });
-    
-    if (error) {
-      console.error('Dashboard data fetching error:', error);
-      // Xəta halında mock data qaytaraq
-      return generateDashboardDataByRole(role);
-    }
-    
-    return data.data;
-  } catch (error: any) {
-    console.error('Dashboard məlumatlarını əldə edərkən xəta:', error);
-    // Xəta halında mock data qaytaraq
-    return generateDashboardDataByRole(role);
-  }
-}
-
-/**
- * Dashboard üçün qrafik məlumatlarını əldə etmək
- */
-export async function fetchDashboardChartData(): Promise<ChartData> {
-  try {
-    // Burada real dəyərlər üçün API sorğusu edilə bilər
-    // Hələlik mock data qaytarırıq
-    return createMockChartData();
+    // Mock məlumatları əldə et
+    const dashboardData = generateDashboardDataByRole(userRole);
+    return dashboardData;
   } catch (error) {
-    console.error('Dashboard qrafik məlumatlarını əldə edərkən xəta:', error);
+    console.error('Dashboard məlumatlarını əldə edərkən xəta:', error);
     throw error;
   }
-}
+};
 
 /**
- * Region admin üçün dashboard məlumatlarını əldə etmək
- * @param regionId - Region ID
+ * SuperAdmin dashboard məlumatlarını əldə et
  */
-export async function fetchRegionAdminDashboard(regionId: string): Promise<any> {
+export const fetchSuperAdminDashboard = async (): Promise<DashboardData> => {
   try {
-    if (!regionId) {
-      throw new Error('Region ID təqdim edilməyib');
+    // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
+    // Əgər RPC xəta verirsə, mock data istifadə edək
+    try {
+      const { data, error } = await supabase
+        .rpc('get_superadmin_dashboard_data');
+
+      if (error) throw error;
+      
+      if (data && typeof data === 'object') {
+        return data as DashboardData;
+      }
+    } catch (rpcError) {
+      console.warn('RPC xətası:', rpcError);
+      // RPC xətası halında mock data istifadə edirik
     }
     
-    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
-    const { data, error } = await supabase
-      .from('region_dashboard_data')
-      .select('*')
-      .eq('region_id', regionId)
-      .single();
-    
-    if (error) {
-      console.warn('Region dashboard data fetching error:', error);
-      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
-      return generateDashboardDataByRole('regionadmin');
+    // Alternativ: table-lərdən birbaşa məlumat əldə etmə (RPC uğursuz olduqda)
+    try {
+      // Supabase view və ya função olmadıqda, əsas məlumatları bir neçə sorğu ilə əldə edə bilərik
+      const { data: regions } = await supabase
+        .from('regions')
+        .select('*');
+        
+      const { data: schools } = await supabase
+        .from('schools')
+        .select('*');
+        
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('*');
+      
+      // Əldə edilən məlumatları formalaşdır
+      // Burada daha dəqiq analiz aparmaq üçün əlavə sorğular lazım ola bilər
+    } catch (dbError) {
+      console.warn('Verilənlər bazası xətası:', dbError);
     }
     
-    return data;
-  } catch (error: any) {
-    console.error('Region admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    // Xəta halında mock data qaytaraq
+    // Son variant olaraq mock data istifadə et
+    return generateDashboardDataByRole('superadmin');
+  } catch (error) {
+    console.error('SuperAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
+    return generateDashboardDataByRole('superadmin');
+  }
+};
+
+/**
+ * RegionAdmin dashboard məlumatlarını əldə et
+ */
+export const fetchRegionAdminDashboard = async (regionId: string): Promise<DashboardData> => {
+  try {
+    // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
+    try {
+      const { data, error } = await supabase
+        .rpc('get_region_dashboard_data', { region_id: regionId });
+
+      if (error) throw error;
+      
+      if (data && typeof data === 'object') {
+        return data as DashboardData;
+      }
+    } catch (rpcError) {
+      console.warn('RPC xətası:', rpcError);
+    }
+    
+    // Funksional RPC olmadıqda birbaşa sorğular
+    try {
+      const { data: sectors } = await supabase
+        .from('sectors')
+        .select('*')
+        .eq('region_id', regionId);
+        
+      const { data: schools } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('region_id', regionId);
+      
+      // Region admin üçün lazımi məlumatları formalaşdır
+    } catch (dbError) {
+      console.warn('Verilənlər bazası xətası:', dbError);
+    }
+    
+    // Mock data istifadə et
+    return generateDashboardDataByRole('regionadmin');
+  } catch (error) {
+    console.error('Region dashboard məlumatlarını əldə edərkən xəta:', error);
     return generateDashboardDataByRole('regionadmin');
   }
-}
+};
 
 /**
- * Sector admin üçün dashboard məlumatlarını əldə etmək
- * @param sectorId - Sector ID
+ * SectorAdmin dashboard məlumatlarını əldə et
  */
-export async function fetchSectorAdminDashboard(sectorId: string): Promise<any> {
+export const fetchSectorAdminDashboard = async (sectorId: string): Promise<DashboardData> => {
   try {
-    if (!sectorId) {
-      throw new Error('Sector ID təqdim edilməyib');
+    // RPC funksiyası ilə dashboard məlumatlarını əldə etməyə çalışaq
+    try {
+      const { data, error } = await supabase
+        .rpc('get_sector_dashboard_data', { sector_id: sectorId });
+
+      if (error) throw error;
+      
+      if (data && typeof data === 'object') {
+        return data as DashboardData;
+      }
+    } catch (rpcError) {
+      console.warn('RPC xətası:', rpcError);
     }
     
-    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
-    const { data, error } = await supabase
-      .from('sector_dashboard_data')
-      .select('*')
-      .eq('sector_id', sectorId)
-      .single();
-    
-    if (error) {
-      console.warn('Sector dashboard data fetching error:', error);
-      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
-      return generateDashboardDataByRole('sectoradmin');
+    // Birbaşa sorğular
+    try {
+      const { data: schools } = await supabase
+        .from('schools')
+        .select('*')
+        .eq('sector_id', sectorId);
+      
+      // Sector admin üçün lazımi məlumatları formalaşdır
+    } catch (dbError) {
+      console.warn('Verilənlər bazası xətası:', dbError);
     }
     
-    return data;
-  } catch (error: any) {
-    console.error('Sector admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    // Xəta halında mock data qaytaraq
+    // Mock data istifadə et
+    return generateDashboardDataByRole('sectoradmin');
+  } catch (error) {
+    console.error('Sector dashboard məlumatlarını əldə edərkən xəta:', error);
     return generateDashboardDataByRole('sectoradmin');
   }
-}
+};
 
 /**
- * Məktəb admin üçün dashboard məlumatlarını əldə etmək
- * @param schoolId - Məktəb ID
+ * SchoolAdmin dashboard məlumatlarını əldə et
+ * @param schoolId
+ * @returns
  */
-export async function fetchSchoolAdminDashboard(schoolId: string): Promise<any> {
+export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<SchoolAdminDashboardData> => {
   try {
     if (!schoolId) {
-      throw new Error('Məktəb ID təqdim edilməyib');
-    }
-    
-    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
-    const { data, error } = await supabase
-      .from('school_dashboard_data')
-      .select('*')
-      .eq('school_id', schoolId)
-      .single();
-    
-    if (error) {
-      console.warn('School dashboard data fetching error:', error);
-      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
+      console.warn('Məktəb ID təqdim edilmədi');
       return createMockSchoolAdminData();
     }
     
-    return data;
-  } catch (error: any) {
+    // API müraciəti yoxdursa, mock data istifadə et
+    return createMockSchoolAdminData();
+  } catch (error) {
     console.error('Məktəb admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    // Xəta halında mock data qaytaraq
     return createMockSchoolAdminData();
   }
-}
+};
 
 /**
- * SuperAdmin üçün dashboard məlumatlarını əldə etmək
+ * Dashboard qrafik məlumatlarını əldə et
  */
-export async function fetchSuperAdminDashboard(): Promise<any> {
+export const fetchDashboardChartData = async (): Promise<ChartData> => {
   try {
-    // Əvvəlcə Supabase-dən verilənləri əldə etməyə çalışaq
-    const { data, error } = await supabase
-      .from('super_admin_dashboard')
-      .select('*')
-      .single();
-    
-    if (error) {
-      console.warn('SuperAdmin dashboard data fetching error:', error);
-      // Verilənlər bazasından məlumat alınmadı, mock data qaytaraq
-      return generateDashboardDataByRole('superadmin');
-    }
-    
-    return data;
-  } catch (error: any) {
-    console.error('SuperAdmin dashboard məlumatlarını əldə edərkən xəta:', error);
-    // Xəta halında mock data qaytaraq
-    return generateDashboardDataByRole('superadmin');
+    // Mock data istifadə et
+    return createMockChartData();
+  } catch (error) {
+    console.error('Qrafik məlumatlarını əldə edərkən xəta:', error);
+    return createMockChartData();
   }
-}
+};

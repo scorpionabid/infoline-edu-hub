@@ -1,87 +1,77 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { UserFormData } from '@/types/user';
-import { useForm as useHookForm } from "react-hook-form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from 'sonner';
 
-interface UseUserFormProps {
-  initialData: UserFormData;
-  onFormChange: (data: UserFormData) => void;
-  passwordRequired?: boolean;
-}
-
-export const useUserForm = ({ initialData, onFormChange, passwordRequired }: UseUserFormProps) => {
-  // Validation Schema
-  const formSchema = z.object({
-    name: z.string().min(2, { message: "Ad ən azı 2 simvol olmalıdır" }),
-    email: z.string().email({ message: "Düzgün e-poçt daxil edin" }),
-    password: passwordRequired 
-      ? z.string().min(6, { message: "Şifrə ən azı 6 simvol olmalıdır" }) 
-      : z.string().optional(),
-    confirmPassword: passwordRequired 
-      ? z.string().min(6, { message: "Şifrə təkrarı ən azı 6 simvol olmalıdır" }) 
-      : z.string().optional(),
-    role: z.string(),
-    regionId: z.string().optional(),
-    sectorId: z.string().optional(),
-    schoolId: z.string().optional(),
-    phone: z.string().optional(),
-    position: z.string().optional(),
-    language: z.string().optional(),
-    status: z.string().optional(),
-  }).refine(data => {
-    if (passwordRequired) {
-      return data.password === data.confirmPassword;
-    }
-    return true;
-  }, {
-    message: "Şifrələr eyni deyil",
-    path: ["confirmPassword"],
-  });
-
-  // Form hook istifadə et
-  const form = useHookForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData.name || '',
-      email: initialData.email || '',
-      password: initialData.password || '',
-      confirmPassword: initialData.confirmPassword || '',
-      role: initialData.role || 'schooladmin',
-      regionId: initialData.regionId || '',
-      sectorId: initialData.sectorId || '',
-      schoolId: initialData.schoolId || '',
-      phone: initialData.phone || '',
-      position: initialData.position || '',
-      language: initialData.language || 'az',
-      status: initialData.status || 'active',
+export const useUserForm = (onSubmit: (data: UserFormData) => Promise<boolean>, initialData?: Partial<UserFormData>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const defaultValues: Partial<UserFormData> = {
+    full_name: '',
+    email: '',
+    phone: '',
+    position: '',
+    role: 'user',
+    regionId: undefined,
+    sectorId: undefined,
+    schoolId: undefined,
+    status: 'active',
+    language: 'az',
+    password: '',
+    notificationSettings: {
+      email: true,
+      push: false,
+      sms: false
     },
+    ...initialData
+  };
+  
+  const form = useForm<UserFormData>({
+    defaultValues
   });
   
-  // Sahələrin dəyişməsini idarə et
-  const handleFieldChange = useCallback((field: keyof UserFormData, value: any) => {
-    form.setValue(field as any, value);
-    
-    const updatedData = { ...initialData, [field]: value };
-    
-    // Region dəyişdirildikdə sektoru sıfırla
-    if (field === 'regionId') {
-      form.setValue('sectorId', '');
-      updatedData.sectorId = '';
+  const handleSubmit = async (data: UserFormData) => {
+    setIsSubmitting(true);
+    try {
+      // Şifrə tipini yoxla
+      if (data.password === '') {
+        delete data.password;
+      }
+      
+      // Rol dəyərləri
+      if (data.role === 'schooladmin' && !data.schoolId) {
+        toast.error('Məktəb admin üçün məktəb seçilməlidir');
+        return;
+      }
+      
+      if (data.role === 'sectoradmin' && !data.sectorId) {
+        toast.error('Sektor admin üçün sektor seçilməlidir');
+        return;
+      }
+      
+      if (data.role === 'regionadmin' && !data.regionId) {
+        toast.error('Region admin üçün region seçilməlidir');
+        return;
+      }
+      
+      const success = await onSubmit(data);
+      
+      if (success) {
+        form.reset(defaultValues);
+      }
+    } catch (error: any) {
+      console.error('Form submit xətası:', error);
+      toast.error(`Xəta: ${error.message || 'Bilinməyən xəta'}`);
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Sektor dəyişdirildikdə məktəbi sıfırla
-    if (field === 'sectorId') {
-      form.setValue('schoolId', '');
-      updatedData.schoolId = '';
-    }
-    
-    onFormChange(updatedData);
-  }, [form, initialData, onFormChange]);
+  };
   
   return {
     form,
-    handleFieldChange,
+    isSubmitting,
+    handleSubmit: form.handleSubmit(handleSubmit),
+    reset: () => form.reset(defaultValues)
   };
 };

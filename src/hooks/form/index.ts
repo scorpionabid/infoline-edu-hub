@@ -1,69 +1,26 @@
 
-import { CategoryWithColumns } from '@/types/column';
+export * from './useFormState';
+export * from './useFormActions';
+export * from './useFormInitialization';
+export * from './useAutoSave';
+
+// Əlavə funksiyaları ixrac et
 import { useFormState } from './useFormState';
 import { useFormActions } from './useFormActions';
 import { useFormInitialization } from './useFormInitialization';
 import { useAutoSave } from './useAutoSave';
 
-/**
- * Forma əməliyyatlarını idarə edən əsas hook
- */
-export const useForm = (categories: CategoryWithColumns[]) => {
-  // Form state'i
-  const {
-    formData,
-    setFormData,
-    isAutoSaving,
-    setIsAutoSaving,
-    isSubmitting,
-    setIsSubmitting
-  } = useFormState();
-  
-  // Form əməliyyatları
-  const {
-    updateValue,
-    saveForm,
-    submitForm,
-    lastOperationTimeRef
-  } = useFormActions({
-    formData,
-    setFormData,
-    setIsAutoSaving,
-    setIsSubmitting,
-    categories
-  });
-  
-  // Form ilkin məlumatları
-  const {
-    initializeForm
-  } = useFormInitialization({
-    setFormData
-  });
-  
-  // Avtomatik saxlama
-  const {
-    setupAutoSave
-  } = useAutoSave({
-    formData,
-    isAutoSaving,
-    setIsAutoSaving,
-    lastOperationTimeRef
-  });
-  
+// Birləşdirilmiş Form hook'u
+export const useForm = (initialData: any = {}) => {
+  const formState = useFormState(initialData?.categories || []);
+  const formActions = useFormActions(formState);
+  const formInit = useFormInitialization(formState, formActions);
+  const autoSave = useAutoSave(formState, formActions);
+
   return {
-    formData,
-    isAutoSaving,
-    isSubmitting,
-    setIsSubmitting,
-    updateValue,
-    saveForm,
-    submitForm,
-    setupAutoSave,
-    initializeForm
+    ...formState,
+    ...formActions,
+    ...formInit,
+    ...autoSave
   };
 };
-
-export * from './useFormState';
-export * from './useFormActions';
-export * from './useFormInitialization';
-export * from './useAutoSave';

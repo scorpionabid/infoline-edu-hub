@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from '@/types/column';
-import { adaptSupabaseColumn } from './useColumnAdapters';
+import { adaptSupabaseToColumn } from './useColumnAdapters';
 
 /**
  * Supabase-dən sütunları çəkmək üçün istifadə edilən funksiya
@@ -21,7 +21,7 @@ export const fetchColumnsFromSupabase = async (categoryId?: string) => {
 
   if (error) throw error;
   
-  return (data || []).map(column => adaptSupabaseColumn(column));
+  return (data || []).map(column => adaptSupabaseToColumn(column));
 };
 
 /**

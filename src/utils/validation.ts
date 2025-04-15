@@ -1,107 +1,200 @@
 
-import { ColumnType, ValidationRules } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
+import { ColumnValidationError } from '@/types/dataEntry';
 
-// Validation utility functions
-export function validateColumnValue(value: any, type: string, isRequired: boolean, validation: ValidationRules | undefined): string | null {
-  // Basic validation
-  if (isRequired && isEmptyValue(value)) {
-    return 'Bu sahə məcburidir';
+/**
+ * Tip əsasında məlumatı təsdiqləyir və çevirir
+ * @param column Sütun
+ * @param value Dəyər
+ */
+export function formatValueByType(column: Column, value: any): any {
+  if (value === null || value === undefined || value === '') {
+    return '';
   }
-  
-  // Value is not required and is empty, so it's valid
-  if (!isRequired && isEmptyValue(value)) {
+
+  switch (column.type) {
+    case 'number':
+      return parseFloat(value);
+    case 'checkbox':
+      return value === true || value === 'true' || value === 1;
+    case 'date':
+      // Tarixin düzgün formatda olduğunu əmin olmaq
+      try {
+        return new Date(value).toISOString().split('T')[0];
+      } catch {
+        return '';
+      }
+    default:
+      return value;
+  }
+}
+
+/**
+ * Dəyərin boş olub-olmadığını yoxlayır
+ * @param value Yoxlanacaq dəyər
+ */
+export function isEmptyValue(value: any): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  if (typeof value === 'number') return isNaN(value);
+  if (Array.isArray(value)) return value.length === 0;
+  return false;
+}
+
+/**
+ * Sütun dəyərini validasiya edir
+ * @param column Sütun
+ * @param value Dəyər
+ * @returns Xəta mesajı və ya boş string
+ */
+export function validateColumnValue(column: Column, value: any): ColumnValidationError | null {
+  // Əgər sütun məcburidirsə və dəyər boşdursa
+  if (column.is_required && isEmptyValue(value)) {
+    return {
+      columnId: column.id,
+      message: 'Bu sahə tələb olunur',
+      severity: 'error'
+    };
+  }
+
+  // Əgər dəyər boşdursa və məcburi deyilsə, validasiya etmə
+  if (isEmptyValue(value)) {
     return null;
   }
 
-  // Type-specific validation
-  switch (type) {
+  // Validation qaydalarına uyğun olaraq yoxlama
+  const validation = column.validation || {};
+
+  switch (column.type) {
     case 'number':
-      if (isNaN(Number(value))) {
-        return 'Rəqəm daxil edin';
+      const numValue = parseFloat(value);
+      
+      if (isNaN(numValue)) {
+        return {
+          columnId: column.id,
+          message: 'Düzgün bir rəqəm daxil edin',
+          severity: 'error'
+        };
       }
       
-      if (validation?.minValue !== undefined && Number(value) < validation.minValue) {
-        return `Minimum dəyər ${validation.minValue} olmalıdır`;
+      if (validation.minValue !== undefined && numValue < validation.minValue) {
+        return {
+          columnId: column.id,
+          message: `Minimum dəyər ${validation.minValue} olmalıdır`,
+          severity: 'error'
+        };
       }
       
-      if (validation?.maxValue !== undefined && Number(value) > validation.maxValue) {
-        return `Maksimum dəyər ${validation.maxValue} olmalıdır`;
+      if (validation.maxValue !== undefined && numValue > validation.maxValue) {
+        return {
+          columnId: column.id,
+          message: `Maksimum dəyər ${validation.maxValue} olmalıdır`,
+          severity: 'error'
+        };
       }
       break;
       
     case 'text':
     case 'textarea':
-      if (validation?.minLength !== undefined && String(value).length < validation.minLength) {
-        return `Minimum uzunluq ${validation.minLength} olmalıdır`;
+      const strValue = String(value);
+      
+      if (validation.minLength !== undefined && strValue.length < validation.minLength) {
+        return {
+          columnId: column.id,
+          message: `Minimum ${validation.minLength} simvol olmalıdır`,
+          severity: 'error'
+        };
       }
       
-      if (validation?.maxLength !== undefined && String(value).length > validation.maxLength) {
-        return `Maksimum uzunluq ${validation.maxLength} olmalıdır`;
+      if (validation.maxLength !== undefined && strValue.length > validation.maxLength) {
+        return {
+          columnId: column.id,
+          message: `Maksimum ${validation.maxLength} simvol olmalıdır`,
+          severity: 'error'
+        };
       }
       
-      if (validation?.pattern) {
-        const regex = new RegExp(validation.pattern);
-        if (!regex.test(String(value))) {
-          return validation.patternError || 'Format düzgün deyil';
+      if (validation.pattern && validation.regex) {
+        try {
+          const regex = new RegExp(validation.regex);
+          if (!regex.test(strValue)) {
+            return {
+              columnId: column.id,
+              message: validation.patternError || 'Format düzgün deyil',
+              severity: 'error'
+            };
+          }
+        } catch (e) {
+          console.error('Regex xətası:', e);
         }
       }
       break;
       
     case 'date':
-      // Date validation
-      const date = new Date(value);
-      if (isNaN(date.getTime())) {
-        return 'Düzgün tarix formatı deyil';
-      }
-      
-      if (validation?.minDate && new Date(value) < new Date(validation.minDate)) {
-        return `Tarix ${validation.minDate} tarixindən sonra olmalıdır`;
-      }
-      
-      if (validation?.maxDate && new Date(value) > new Date(validation.maxDate)) {
-        return `Tarix ${validation.maxDate} tarixindən əvvəl olmalıdır`;
+      try {
+        const dateValue = new Date(value);
+        
+        if (isNaN(dateValue.getTime())) {
+          return {
+            columnId: column.id,
+            message: 'Düzgün tarix formatı deyil',
+            severity: 'error'
+          };
+        }
+        
+        if (validation.minDate) {
+          const minDate = new Date(validation.minDate);
+          if (dateValue < minDate) {
+            return {
+              columnId: column.id,
+              message: `Tarix ${validation.minDate}-dən sonra olmalıdır`,
+              severity: 'error'
+            };
+          }
+        }
+        
+        if (validation.maxDate) {
+          const maxDate = new Date(validation.maxDate);
+          if (dateValue > maxDate) {
+            return {
+              columnId: column.id,
+              message: `Tarix ${validation.maxDate}-dən əvvəl olmalıdır`,
+              severity: 'error'
+            };
+          }
+        }
+      } catch (e) {
+        return {
+          columnId: column.id,
+          message: 'Düzgün tarix formatı deyil',
+          severity: 'error'
+        };
       }
       break;
       
     case 'email':
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(String(value))) {
-        return 'Düzgün e-poçt ünvanı daxil edin';
+        return {
+          columnId: column.id,
+          message: 'Düzgün email formatı deyil',
+          severity: 'error'
+        };
       }
       break;
       
     case 'phone':
-      const phoneRegex = /^\+?[0-9]{10,15}$/;
-      if (!phoneRegex.test(String(value).replace(/\s/g, ''))) {
-        return 'Düzgün telefon nömrəsi daxil edin';
+      // Telefon nömrəsi validasiyası
+      const phoneRegex = /^[+]?[\d\s()-]{7,15}$/;
+      if (!phoneRegex.test(String(value))) {
+        return {
+          columnId: column.id,
+          message: 'Düzgün telefon nömrəsi formatı deyil',
+          severity: 'error'
+        };
       }
       break;
   }
-  
+
   return null;
-}
-
-// Helper function to check if a value is empty
-export function isEmptyValue(value: any): boolean {
-  return value === undefined || value === null || value === '';
-}
-
-// Helper function for formatting values by their type
-export function formatValueByType(value: any, type: ColumnType | string): any {
-  if (value === null || value === undefined) return '';
-  
-  switch (type) {
-    case 'number':
-      return isNaN(Number(value)) ? '' : Number(value);
-    case 'date':
-      try {
-        return value ? new Date(value).toISOString().split('T')[0] : '';
-      } catch (e) {
-        return '';
-      }
-    case 'boolean':
-      return Boolean(value);
-    default:
-      return String(value);
-  }
 }
