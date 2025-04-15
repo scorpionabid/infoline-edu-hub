@@ -44,3 +44,8 @@ export interface UseDataEntryProps {
   categoryId?: string;
   onComplete?: () => void;
 }
+
+export interface ColumnValidationError {
+  columnId: string;
+  message: string;
+}
