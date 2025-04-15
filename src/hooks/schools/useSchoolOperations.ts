@@ -105,24 +105,57 @@ export const useSchoolOperations = (
     }
   }, [updateSchool, onCloseDialog, onSuccess]);
 
+  // Məktəbi və onunla əlaqəli bütün məlumatları silmək üçün funksiya
   const handleDeleteConfirm = useCallback(async (selectedSchool: School | null) => {
     if (!selectedSchool) return;
     
     try {
       console.log("Məktəb silinir:", selectedSchool.id);
       
+      // Əvvəlcə məktəblə əlaqəli data_entries məlumatlarını silək
+      const { error: entriesError } = await supabase
+        .from('data_entries')
+        .delete()
+        .eq('school_id', selectedSchool.id);
+      
+      if (entriesError) {
+        console.warn('Data entries silinərkən xəbərdarlıq:', entriesError);
+      }
+      
+      // Əgər məktəbin admini varsa, user_roles cədvəlindən uyğun rolu silək
+      if (selectedSchool.admin_email) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('school_id', selectedSchool.id)
+          .eq('role', 'schooladmin');
+        
+        if (roleError) {
+          console.warn('Admin rolu silinərkən xəbərdarlıq:', roleError);
+        }
+      }
+      
+      // Indi məktəbi silək
       await deleteSchool(selectedSchool.id);
       
       toast.success("Məktəb uğurla silindi", {
-        description: `${selectedSchool.name} məktəbi sistemdən silindi`
+        description: `${selectedSchool.name} məktəbi və əlaqəli məlumatlar sistemdən silindi`
       });
       
       onCloseDialog('delete');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Məktəb silinərkən xəta baş verdi:', error);
+      
+      let errorMessage = "Məktəb silinərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.";
+      
+      // Xüsusi xəta mesajları əlavə et
+      if (error?.message?.includes("foreign key constraint")) {
+        errorMessage = "Bu məktəbə aid olan məlumatlar olduğu üçün silmək mümkün deyil. Əvvəlcə bağlı məlumatları silin.";
+      }
+      
       toast.error("Məktəb silinərkən xəta", {
-        description: "Məktəb silinərkən bir xəta baş verdi. Zəhmət olmasa yenidən cəhd edin."
+        description: errorMessage
       });
     }
   }, [deleteSchool, onCloseDialog, onSuccess]);
@@ -161,7 +194,7 @@ export const useSchoolOperations = (
       toast.success('Məktəb admini uğurla təyin edildi');
       onSuccess();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Məktəb admini təyin edilərkən xəta:', error);
       toast.error('Məktəb admini təyin edilərkən xəta', {
         description: error.message

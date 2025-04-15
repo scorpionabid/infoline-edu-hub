@@ -11,7 +11,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { useLanguage } from '@/context/LanguageContext';
-import { FileUp, DownloadCloud, Upload, X, HelpCircle, Info } from 'lucide-react';
+import { FileUp, DownloadCloud, Upload, X, HelpCircle, Info, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateExcelTemplate, importSchoolsFromExcel } from '@/utils/excelUtils';
 import { School } from '@/types/supabase';
@@ -31,14 +31,20 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
+      setIsError(false);
+      setErrorMessage('');
+      
       // Excel faylı olduğunu yoxlayırıq
       if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
-        toast.error('Yalnız Excel faylları (.xlsx, .xls) qəbul edilir');
+        setIsError(true);
+        setErrorMessage('Yalnız Excel faylları (.xlsx, .xls) qəbul edilir');
         return;
       }
       setFile(selectedFile);
@@ -51,19 +57,43 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   const handleImport = async () => {
     if (!file) {
-      toast.error('Zəhmət olmasa, Excel faylı seçin');
+      setIsError(true);
+      setErrorMessage('Zəhmət olmasa, Excel faylı seçin');
       return;
     }
     
     setIsLoading(true);
+    setIsError(false);
+    
     try {
       await importSchoolsFromExcel(file, async (schools) => {
-        await onImport(schools);
+        // Yalnız məcburi sahələri olan məktəbləri idxal et
+        const validSchools = schools.filter(school => 
+          school.name && 
+          school.sector_id && 
+          school.region_id
+        );
+        
+        if (validSchools.length === 0) {
+          setIsError(true);
+          setErrorMessage('İdxal ediləcək məlumatlar tapılmadı. Məktəblərin ad, region və sektor məlumatlarını yoxlayın.');
+          return;
+        }
+        
+        if (validSchools.length < schools.length) {
+          toast.warning('Bəzi məktəblər idxal edilməyəcək', {
+            description: `${schools.length - validSchools.length} məktəb məlumatı tam deyil və idxal edilməyəcək.`
+          });
+        }
+        
+        await onImport(validSchools);
         setFile(null);
         onClose();
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('İdxal zamanı xəta:', error);
+      setIsError(true);
+      setErrorMessage(error.message || 'Məlumatları idxal edərkən xəta baş verdi.');
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +101,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   const handleClearFile = () => {
     setFile(null);
+    setIsError(false);
+    setErrorMessage('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -111,7 +143,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               <li>1. Əvvəlcə şablonu yükləyin və doldurun</li>
               <li>2. Regionlar və sektorlar sistemdə olmalıdır</li>
               <li>3. Məktəb adminləri avtomatik yaradılacaq</li>
-              <li>4. Bütün məcburi xanalar doldurulmalıdır</li>
+              <li>4. Məktəb adı, region və sektor məcburi xanalardır</li>
             </ul>
           </div>
           
@@ -150,10 +182,17 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               {t('supportedFormats')}: .xlsx, .xls
             </p>
           </div>
+          
+          {isError && (
+            <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3 flex items-start">
+              <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
         </div>
         
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             {t('cancel')}
           </Button>
           <Button 
@@ -162,11 +201,16 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             className="gap-1"
           >
             {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                İdxal edilir...
+              </>
             ) : (
-              <Upload className="h-4 w-4" />
+              <>
+                <Upload className="h-4 w-4" />
+                {t('import')}
+              </>
             )}
-            {t('import')}
           </Button>
         </DialogFooter>
       </DialogContent>
