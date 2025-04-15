@@ -1,6 +1,17 @@
 
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'draft' | 'empty';
+// Form status enumeration
+export enum FormStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DRAFT = 'draft',
+  EXPIRED = 'expired',
+  DUE_SOON = 'due_soon',
+  OVERDUE = 'overdue',
+  COMPLETED = 'completed'
+}
 
+// Form interface
 export interface Form {
   id: string;
   title: string;
@@ -10,18 +21,16 @@ export interface Form {
   description?: string;
   category?: string;
   deadline?: string;
+  date?: string;
 }
 
-export interface CategoryEntryData {
-  categoryId: string;
-  values: {
-    columnId: string;
-    value: any;
-    status?: string;
-    errorMessage?: string;
-  }[];
-  isCompleted?: boolean;
-  isSubmitted?: boolean;
+// FormItem interface (for use in lists)
+export interface FormItem {
+  id: string;
+  title: string;
+  status: string;
   completionPercentage: number;
-  approvalStatus?: string;
+  dueDate: string;
+  description?: string;
+  date?: string;
 }

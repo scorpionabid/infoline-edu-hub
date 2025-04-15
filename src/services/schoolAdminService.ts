@@ -1,256 +1,208 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SchoolAdminDashboardData, FormItem, DashboardNotification } from '@/types/dashboard';
-import { Notification } from '@/types/notification';
-
-// RPC-lərin adlarını düzgün qeyd edək
-const RPC_GET_SCHOOL_FORM_STATUS = 'get_school_form_stats';
-const RPC_GET_SCHOOL_PENDING_FORMS = 'get_school_pending_forms';
+import { Form, FormStatus } from '@/types/form';
+import { DashboardNotification } from '@/types/dashboard';
+import { adaptForm, adaptNotification } from '@/types/adapters';
 
 /**
- * Məktəb admin dashboard məlumatlarını əldə edir
- * @param schoolId Məktəb ID
- * @returns SchoolAdminDashboardData
+ * Məktəb admini dashboard-u üçün lazımi məlumatları əldə edən servis
  */
-export const fetchSchoolAdminDashboard = async (schoolId: string): Promise<SchoolAdminDashboardData> => {
-  try {
-    // Məktəb məlumatlarını əldə et
-    const { data: school, error: schoolError } = await supabase
-      .from('schools')
-      .select('*')
-      .eq('id', schoolId)
-      .single();
-
-    if (schoolError) {
-      console.error('Məktəb məlumatlarını əldə edərkən xəta:', schoolError);
-      throw new Error('Məktəb məlumatları əldə edilə bilmədi');
+export const schoolAdminService = {
+  /**
+   * Məktəb admini üçün notification-ları əldə et
+   */
+  getNotifications: async (userId: string): Promise<DashboardNotification[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (error) throw error;
+      
+      // Notification-ları uyğun formata çevir
+      return (data || []).map(adaptNotification);
+    } catch (error) {
+      console.error('Bildirişləri əldə edərkən xəta:', error);
+      return [];
     }
-
-    // Form statusları üçün birbaşa SQL sorğusu edək
-    const { data: formStatusData, error: formStatusError } = await supabase
-      .from('data_entries')
-      .select('status, count')
-      .eq('school_id', schoolId)
-      .then(result => {
-        // Nəticələri emal edib status statuslarını hesablayaq
-        if (result.error) return { data: null, error: result.error };
-        
-        const statusStats = {
-          pending: 0,
-          approved: 0,
-          rejected: 0,
-          dueSoon: 0,
-          overdue: 0,
-          total: 0
-        };
-        
-        if (result.data && result.data.length > 0) {
-          // Datanı emal edirik
-          result.data.forEach((item: any) => {
-            const status = item.status;
-            const count = parseInt(item.count) || 1;
-            
-            if (status === 'pending') statusStats.pending += count;
-            else if (status === 'approved') statusStats.approved += count;
-            else if (status === 'rejected') statusStats.rejected += count;
-            else if (status === 'dueSoon') statusStats.dueSoon += count;
-            else if (status === 'overdue') statusStats.overdue += count;
-            
-            statusStats.total += count;
-          });
+  },
+  
+  /**
+   * Məktəb admininin formlarını əldə et
+   */
+  getForms: async (schoolId: string): Promise<{
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    total: number;
+  }> => {
+    try {
+      // Gerçək verilənlər bazası sorğusu burada olacaq
+      // Hələlik sadə mock məlumat döndürürük
+      
+      const mockStats = {
+        pending: 5,
+        approved: 12,
+        rejected: 2,
+        dueSoon: 3,
+        overdue: 1,
+        total: 23
+      };
+      
+      return mockStats;
+    } catch (error) {
+      console.error('Formları əldə edərkən xəta:', error);
+      return {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        dueSoon: 0,
+        overdue: 0,
+        total: 0
+      };
+    }
+  },
+  
+  /**
+   * Məktəb üçün kateqoriyaları və formları əldə et
+   */
+  getFormsByStatus: async (schoolId: string, status: string): Promise<Form[]> => {
+    try {
+      // Gələcəkdə gerçək verilənlər bazası sorğusu burada olacaq
+      // Hələlik sadə mock məlumat döndürürük
+      
+      const mockForms: Form[] = [
+        {
+          id: '1',
+          title: 'Fizika Test Nəticələri',
+          status: FormStatus.PENDING,
+          completionPercentage: 75,
+          dueDate: '2025-05-15T00:00:00Z',
+          description: 'Şagirdlərin son fizika test nəticələri',
+          date: '2025-04-10T00:00:00Z'
+        },
+        {
+          id: '2',
+          title: 'Məktəb İnfrastruktur Hesabatı',
+          status: FormStatus.APPROVED,
+          completionPercentage: 100,
+          dueDate: '2025-04-05T00:00:00Z',
+          description: 'Məktəb infrastrukturunun vəziyyəti haqqında hesabat',
+          date: '2025-04-01T00:00:00Z'
+        },
+        {
+          id: '3',
+          title: 'Müəllim Davamiyyət Hesabatı',
+          status: FormStatus.REJECTED,
+          completionPercentage: 60,
+          dueDate: '2025-04-20T00:00:00Z',
+          description: 'Müəllimlərin davamiyyət məlumatları',
+          date: '2025-04-12T00:00:00Z'
+        },
+        {
+          id: '4',
+          title: 'Şagird Nailiyyətləri',
+          status: FormStatus.DUE_SOON,
+          completionPercentage: 40,
+          dueDate: '2025-04-18T00:00:00Z',
+          description: 'Şagirdlərin xüsusi nailiyyətləri',
+          date: '2025-04-14T00:00:00Z'
+        },
+        {
+          id: '5',
+          title: 'Məktəb Maliyyə Hesabatı',
+          status: FormStatus.OVERDUE,
+          completionPercentage: 30,
+          dueDate: '2025-04-01T00:00:00Z',
+          description: 'Məktəbin maliyyə vəziyyəti haqqında hesabat',
+          date: '2025-03-25T00:00:00Z'
         }
-        
-        return { data: statusStats, error: null };
-      });
-
-    if (formStatusError) {
-      console.error('Form statuslarını əldə edərkən xəta:', formStatusError);
-      throw new Error('Form statusları əldə edilə bilmədi');
+      ];
+      
+      // Status parametrinə görə filter et
+      if (status !== 'all') {
+        return mockForms.filter(form => {
+          if (status === 'dueSoon') {
+            return form.status === FormStatus.DUE_SOON;
+          } else if (status === 'overdue') {
+            return form.status === FormStatus.OVERDUE;
+          } else {
+            return form.status.toLowerCase() === status.toLowerCase();
+          }
+        });
+      }
+      
+      return mockForms;
+    } catch (error) {
+      console.error('Formları əldə edərkən xəta:', error);
+      return [];
     }
-
-    // Pending formların əldə edilməsi (birbaşa SQL)
-    const { data: pendingFormsData, error: pendingFormsError } = await supabase
-      .from('data_entries')
-      .select(`
-        category_id, 
-        c:categories(id, name, description),
-        value, 
-        status, 
-        created_at
-      `)
-      .eq('school_id', schoolId)
-      .in('status', ['pending', 'dueSoon', 'overdue'])
-      .order('created_at', { ascending: false });
-
-    if (pendingFormsError) {
-      console.error('Gözləyən formaları əldə edərkən xəta:', pendingFormsError);
-      throw new Error('Gözləyən formalar əldə edilə bilmədi');
+  },
+  
+  /**
+   * Gözləmədə olan formları əldə et
+   */
+  getPendingForms: async (schoolId: string): Promise<Form[]> => {
+    try {
+      return await schoolAdminService.getFormsByStatus(schoolId, 'pending');
+    } catch (error) {
+      console.error('Gözləmədə olan formları əldə edərkən xəta:', error);
+      return [];
     }
-
-    // Formları kateqoriyalara görə qruplaşdırırıq və əsas məlumatları formalaşdırırıq
-    const pendingForms: FormItem[] = [];
-    const processedCategories = new Set<string>();
-    
-    if (pendingFormsData) {
-      pendingFormsData.forEach((item: any) => {
-        // Hər kateqoriya üçün bir dəfə emal edirik
-        if (!processedCategories.has(item.category_id)) {
-          processedCategories.add(item.category_id);
-          
-          // Kateqoriya məlumatlarını əldə edirik
-          const category = item.c || {};
-          const categoryName = category.name || 'Naməlum kateqoriya';
-          
-          pendingForms.push({
-            id: item.category_id,
-            title: categoryName,
-            date: new Date(item.created_at).toISOString().split('T')[0],
-            status: item.status || 'pending',
-            completionPercentage: 50, // Default dəyər, real hesablanmalıdır
-            category: categoryName
-          });
-        }
-      });
+  },
+  
+  /**
+   * Formun detallarını əldə et
+   */
+  getFormDetails: async (formId: string): Promise<Form | null> => {
+    try {
+      // Gələcəkdə gerçək verilənlər bazası sorğusu burada olacaq
+      // Hələlik sadə mock məlumat döndürürük
+      
+      const mockForm: Form = {
+        id: formId,
+        title: 'Fizika Test Nəticələri',
+        status: FormStatus.PENDING,
+        completionPercentage: 75,
+        dueDate: '2025-05-15T00:00:00Z',
+        description: 'Şagirdlərin son fizika test nəticələri',
+        date: '2025-04-10T00:00:00Z'
+      };
+      
+      return mockForm;
+    } catch (error) {
+      console.error('Form detallarını əldə edərkən xəta:', error);
+      return null;
     }
-
-    // Bildirişləri əldə et
-    const { data: notificationsData, error: notificationsError } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (notificationsError) {
-      console.error('Bildirişləri əldə edərkən xəta:', notificationsError);
-      throw new Error('Bildirişlər əldə edilə bilmədi');
-    }
-
-    // Məlumatları formatla
-    const formStatus = formStatusData || {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      dueSoon: 0,
-      overdue: 0,
-      total: 0
-    };
-
-    // Tamamlanma faizini hesabla
-    const completionRate = school.completion_rate || 0;
-
-    // Formatlı bildirişlər
-    const notifications: DashboardNotification[] = (notificationsData || []).map((n: any) => {
-      const createdAt = n.created_at;
-      const createdDate = createdAt ? new Date(createdAt) : new Date();
+  },
+  
+  /**
+   * Məktəbin bütün formlarının məlumatlarını əldə et
+   */
+  getSchoolAdminDashboardData: async (schoolId: string) => {
+    try {
+      const notifications = await schoolAdminService.getNotifications('current-user-id');
+      const forms = await schoolAdminService.getForms(schoolId);
+      const pendingForms = await schoolAdminService.getPendingForms(schoolId);
+      
+      const completionRate = forms.total > 0 
+        ? Math.round((forms.approved / forms.total) * 100) 
+        : 0;
       
       return {
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        type: n.type,
-        isRead: n.is_read,
-        createdAt: n.created_at,
-        userId: n.user_id,
-        priority: n.priority,
-        date: createdDate.toISOString().split('T')[0],
-        time: createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00'
+        forms,
+        pendingForms,
+        completionRate,
+        notifications
       };
-    });
-
-    return {
-      forms: {
-        pending: formStatus.pending || 0,
-        approved: formStatus.approved || 0,
-        rejected: formStatus.rejected || 0,
-        dueSoon: formStatus.dueSoon || 0,
-        overdue: formStatus.overdue || 0,
-        total: formStatus.total || 0
-      },
-      completionRate,
-      notifications,
-      pendingForms
-    };
-  } catch (error) {
-    console.error('Məktəb admin dashboard məlumatlarını əldə edərkən xəta:', error);
-    
-    // Mock data əldə et
-    return getMockSchoolAdminDashboard();
+    } catch (error) {
+      console.error('Məktəb admin məlumatlarını əldə edərkən xəta:', error);
+      throw error;
+    }
   }
 };
-
-/**
- * Mock məktəb admin dashboard məlumatları
- */
-const getMockSchoolAdminDashboard = (): SchoolAdminDashboardData => {
-  const currentDate = new Date();
-  const notifications: DashboardNotification[] = [
-    {
-      id: '1',
-      title: 'Yeni kateqoriya əlavə edildi',
-      message: 'Tədris statistikası kateqoriyası sistemə əlavə edildi',
-      type: 'category',
-      isRead: false,
-      createdAt: currentDate.toISOString(),
-      userId: 'user-1',
-      priority: 'normal',
-      date: currentDate.toISOString().split('T')[0],
-      time: currentDate.toISOString().split('T')[1].substring(0, 5)
-    },
-    {
-      id: '2',
-      title: 'Son tarix bildirişi',
-      message: 'Müəllim heyəti məlumatlarının doldurulma vaxtı sabah bitir',
-      type: 'deadline',
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      userId: 'user-1',
-      priority: 'high',
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-      time: new Date(Date.now() - 86400000).toISOString().split('T')[1].substring(0, 5)
-    }
-  ];
-
-  const pendingForms: FormItem[] = [
-    {
-      id: 'form-1',
-      title: 'Şagird statistikası',
-      date: '2025-04-15',
-      status: 'pending',
-      completionPercentage: 75,
-      category: 'Təhsil statistikası'
-    },
-    {
-      id: 'form-2',
-      title: 'Müəllim heyəti',
-      date: '2025-04-20',
-      status: 'pending',
-      completionPercentage: 50,
-      category: 'Kadr məlumatları'
-    },
-    {
-      id: 'form-3',
-      title: 'İnfrastruktur hesabatı',
-      date: '2025-04-18',
-      status: 'dueSoon',
-      completionPercentage: 30,
-      category: 'İnfrastruktur'
-    }
-  ];
-
-  return {
-    forms: {
-      pending: 5,
-      approved: 12,
-      rejected: 2,
-      total: 19,
-      dueSoon: 3,
-      overdue: 1
-    },
-    completionRate: 68,
-    notifications,
-    pendingForms
-  };
-};
-
-export default { fetchSchoolAdminDashboard };

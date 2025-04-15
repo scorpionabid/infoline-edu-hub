@@ -1,249 +1,89 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Column, ColumnType, ColumnOption, adaptColumnToSupabase } from "@/types/column";
-import { useLanguage } from "@/context/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
+import { Column, ColumnOption } from "@/types/column";
 
-export const createFormSchema = (t: (key: string) => string) => {
-  return z.object({
-    name: z.string().min(1, { message: t("columnNameRequired") }),
-    categoryId: z.string().min(1, { message: t("categoryRequired") }),
-    type: z.enum(["text", "number", "date", "select", "checkbox", "radio", "file", "image", "email", "phone", "boolean", "textarea"]),
-    isRequired: z.boolean().default(false),
-    validationRules: z.object({
-      minValue: z.number().optional(),
-      maxValue: z.number().optional(),
-      format: z.string().optional(),
-      regex: z.string().optional(),
-      minLength: z.number().optional(),
-      maxLength: z.number().optional(),
-      pattern: z.string().optional(),
-      patternError: z.string().optional(),
-      minDate: z.string().optional(),
-      maxDate: z.string().optional(),
-    }).optional(),
-    defaultValue: z.string().optional(),
-    placeholder: z.string().optional(),
-    helpText: z.string().optional(),
-    deadline: z.date().optional(),
-    order: z.number().positive().int(),
-    parentColumnId: z.string().optional(),
-    status: z.enum(["active", "inactive"]).default("active"),
-    options: z.array(z.object({
-      label: z.string(),
-      value: z.string()
-    })).optional(),
-  });
-};
+// Form validation schema
+const columnFormSchema = z.object({
+  name: z.string().min(2, { message: "Column name must be at least 2 characters." }),
+  category_id: z.string().uuid({ message: "Please select a valid category." }),
+  type: z.string(),
+  is_required: z.boolean().default(false),
+  placeholder: z.string().optional(),
+  help_text: z.string().optional(),
+  order_index: z.number().optional().default(0),
+  status: z.string().optional().default("active"),
+  parent_column_id: z.string().uuid({ message: "Please select a valid parent column." }).nullable().optional(),
+  validation: z.object({}).optional()
+});
 
-export type ColumnFormValues = z.infer<ReturnType<typeof createFormSchema>>;
-export type ColumnFormData = ColumnFormValues;
+interface UseColumnFormProps {
+  categories: any[];
+  column: Column | null;
+}
 
-export const useColumnForm = (
-  categories: { id: string; name: string }[],
-  editColumn?: Column,
-  onAddColumn?: (newColumn: Omit<Column, "id">) => Promise<boolean>
-) => {
-  const { t } = useLanguage();
-  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type as ColumnType || "text");
+export const useColumnForm = (categories: any[], column: Column | null) => {
+  const [selectedType, setSelectedType] = useState(column?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
-    editColumn?.options 
-      ? Array.isArray(editColumn.options) 
-        ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
-        : []
+    column?.options && Array.isArray(column.options)
+      ? column.options.map((option: any) => ({
+          label: option.label || option,
+          value: option.value || option,
+        }))
       : []
   );
   const [newOption, setNewOption] = useState("");
-  const isEditMode = !!editColumn;
+  const isEditMode = !!column;
 
-  const formSchema = createFormSchema(t);
-
-  const form = useForm<ColumnFormData>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof columnFormSchema>>({
+    resolver: zodResolver(columnFormSchema),
     defaultValues: {
-      name: "",
-      categoryId: categories.length > 0 ? categories[0].id : "",
-      type: "text",
-      isRequired: false,
-      validationRules: {
-        minValue: undefined,
-        maxValue: undefined,
-        format: "",
-        regex: "",
-        minLength: undefined,
-        maxLength: undefined,
-        pattern: "",
-        patternError: "",
-        minDate: "",
-        maxDate: "",
-      },
-      defaultValue: "",
-      placeholder: "",
-      helpText: "",
-      deadline: undefined,
-      order: 1,
-      parentColumnId: undefined,
-      status: "active",
-      options: [],
-    },
+      name: column?.name || "",
+      category_id: column?.category_id || (categories[0]?.id || ""),
+      type: column?.type || "text",
+      is_required: column?.is_required !== false,
+      placeholder: column?.placeholder || "",
+      help_text: column?.help_text || "",
+      order_index: column?.order_index || 0,
+      status: column?.status || "active",
+      parent_column_id: column?.parent_column_id || undefined,
+      validation: column?.validation || {}
+    }
   });
 
-  useEffect(() => {
-    if (isEditMode && editColumn) {
-      setSelectedType(editColumn.type as ColumnType);
-      
-      if (editColumn.options) {
-        setOptions(
-          Array.isArray(editColumn.options) 
-            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
-            : []
-        );
-      }
-      
-      form.reset({
-        name: editColumn.name,
-        categoryId: editColumn.category_id,
-        type: editColumn.type as ColumnType,
-        isRequired: editColumn.is_required,
-        validationRules: editColumn.validation as any || {},
-        defaultValue: editColumn.default_value || "",
-        placeholder: editColumn.placeholder || "",
-        helpText: editColumn.help_text || "",
-        order: editColumn.order_index || 1,
-        parentColumnId: editColumn.parentColumnId,
-        status: editColumn.status as "active" | "inactive" || "active",
-        options: editColumn.options 
-          ? Array.isArray(editColumn.options) 
-            ? editColumn.options.map(opt => typeof opt === 'string' ? { label: opt, value: opt } : opt as ColumnOption)
-            : []
-          : [],
-      });
-    } else {
-      setSelectedType("text");
-      setOptions([]);
-      form.reset({
-        name: "",
-        categoryId: categories.length > 0 ? categories[0].id : "",
-        type: "text",
-        isRequired: false,
-        validationRules: {
-          minValue: undefined,
-          maxValue: undefined,
-          format: "",
-          regex: "",
-          minLength: undefined,
-          maxLength: undefined,
-          pattern: "",
-          patternError: "",
-          minDate: "",
-          maxDate: "",
-        },
-        defaultValue: "",
-        placeholder: "",
-        helpText: "",
-        deadline: undefined,
-        order: 1,
-        parentColumnId: undefined,
-        status: "active",
-        options: [],
-      });
-    }
-  }, [isEditMode, editColumn, form, categories]);
-
-  const onSubmit = async (values: ColumnFormData) => {
-    try {
-      if (!onAddColumn) return false;
-      
-      const supabaseColumnData = {
-        name: values.name,
-        category_id: values.categoryId,
-        type: values.type,
-        is_required: values.isRequired,
-        validation: values.validationRules || null,
-        default_value: values.defaultValue || null,
-        placeholder: values.placeholder || null,
-        help_text: values.helpText || null,
-        order_index: values.order,
-        status: values.status,
-        options: ["select", "checkbox", "radio"].includes(values.type) ? options as unknown as Json : null
-      };
-      
-      if (isEditMode && editColumn?.id) {
-        const { error } = await supabase
-          .from('columns')
-          .update(supabaseColumnData)
-          .eq('id', editColumn.id);
-          
-        if (error) throw error;
-        
-        return true;
-      } else {
-        const { error } = await supabase
-          .from('columns')
-          .insert([supabaseColumnData]);
-          
-        if (error) throw error;
-        
-        const { error: updateError } = await supabase
-          .from('categories')
-          .select('column_count')
-          .eq('id', values.categoryId)
-          .single();
-        
-        if (!updateError) {
-          const { count, error: countError } = await supabase
-            .from('columns')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', values.categoryId);
-          
-          if (!countError) {
-            await supabase
-              .from('categories')
-              .update({ column_count: count || 0 })
-              .eq('id', values.categoryId);
-          }
-        }
-        
-        return true;
-      }
-    } catch (error) {
-      console.error("Form təqdim edilərkən xəta:", error);
-      return false;
-    }
-  };
-
-  const handleTypeChange = (value: string) => {
-    const typeValue = value as ColumnType;
-    setSelectedType(typeValue);
-    form.setValue("type", typeValue);
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    form.setValue("type", type);
   };
 
   const addOption = () => {
-    if (newOption.trim() !== "" && !options.some(opt => opt.value === newOption.trim())) {
-      setOptions([...options, { label: newOption.trim(), value: newOption.trim() }]);
+    if (newOption.trim() !== "") {
+      const newOptionObj: ColumnOption = { label: newOption, value: newOption };
+      setOptions([...options, newOptionObj]);
       setNewOption("");
     }
   };
 
-  const removeOption = (optionValue: string) => {
-    setOptions(options.filter((o) => o.value !== optionValue));
+  const removeOption = (optionToRemove: ColumnOption) => {
+    setOptions(options.filter((option) => option.value !== optionToRemove.value));
+  };
+
+  const onSubmit = (data: z.infer<typeof columnFormSchema>) => {
+    console.log("Form submitted with data:", data);
   };
 
   return {
     form,
     selectedType,
+    handleTypeChange,
     options,
+    setOptions,
     newOption,
     setNewOption,
-    handleTypeChange,
     addOption,
     removeOption,
     onSubmit,
-    isEditMode,
-    t,
+    isEditMode
   };
 };
