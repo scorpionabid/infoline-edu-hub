@@ -1,19 +1,30 @@
 
 import React from 'react';
+import { 
+  FormControl, 
+  FormDescription, 
+  FormField as UIFormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { ColumnType } from '@/types/column';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface FormFieldProps {
   id: string;
-  type: ColumnType;
   name: string;
+  type: string;
   value: any;
   onChange: (value: any) => void;
   placeholder?: string;
@@ -22,15 +33,12 @@ interface FormFieldProps {
   validation?: any;
   isRequired?: boolean;
   error?: string;
-  isRejected?: boolean;
-  rejectionReason?: string;
-  status?: string;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
   id,
-  type,
   name,
+  type,
   value,
   onChange,
   placeholder,
@@ -39,100 +47,63 @@ const FormField: React.FC<FormFieldProps> = ({
   validation,
   isRequired = false,
   error,
-  isRejected,
-  rejectionReason,
-  status,
 }) => {
   const { t } = useLanguage();
-  const isApproved = status === 'approved';
-  const isDisabled = isApproved;
   
-  const renderField = () => {
-    const inputClassName = cn(
-      'w-full',
-      error ? 'border-destructive' : '',
-      isRejected ? 'border-destructive' : '',
-      isApproved ? 'bg-muted' : ''
-    );
-    
+  // Seçim növləri üçün seçim variantlarını standardlaşdırmaq
+  const normalizedOptions = options?.map(option => 
+    typeof option === 'string' 
+      ? { label: option, value: option } 
+      : option
+  ) || [];
+
+  // Müxtəlif sütun tipləri üçün inputları render etmək
+  const renderInput = () => {
     switch (type) {
       case 'text':
         return (
           <Input
             id={id}
-            type="text"
+            placeholder={placeholder}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
           />
         );
-        
+      
       case 'number':
         return (
           <Input
             id={id}
             type="number"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
+            placeholder={placeholder}
+            value={value ?? ''}
+            onChange={(e) => onChange(parseFloat(e.target.value))}
+            min={validation?.minValue}
+            max={validation?.maxValue}
           />
         );
-        
+      
       case 'textarea':
         return (
           <Textarea
             id={id}
+            placeholder={placeholder}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
           />
         );
-        
-      case 'checkbox':
-        return (
-          <Checkbox
-            id={id}
-            checked={value === true}
-            onCheckedChange={(checked) => onChange(checked)}
-            disabled={isDisabled}
-          />
-        );
-        
-      case 'radio':
-        return (
-          <RadioGroup
-            value={value || ''}
-            onValueChange={(val) => onChange(val)}
-            className="flex flex-col space-y-1"
-            disabled={isDisabled}
-          >
-            {options.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
-                <Label htmlFor={`${id}-${option.value}`}>{option.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-        
+      
       case 'select':
         return (
           <Select
             value={value || ''}
-            onValueChange={(val) => onChange(val)}
-            disabled={isDisabled}
+            onValueChange={onChange}
           >
-            <SelectTrigger className={inputClassName}>
-              <SelectValue placeholder={placeholder || t('select')} />
+            <SelectTrigger>
+              <SelectValue placeholder={placeholder || t('selectOption')} />
             </SelectTrigger>
             <SelectContent>
-              {options.map((option) => (
+              {normalizedOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -140,52 +111,108 @@ const FormField: React.FC<FormFieldProps> = ({
             </SelectContent>
           </Select>
         );
-        
+      
+      case 'checkbox':
+        return (
+          <div className="space-y-2">
+            {normalizedOptions.map((option) => {
+              const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
+              
+              return (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${id}-${option.value}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
+                        onChange(newValue);
+                      } else {
+                        const newValue = Array.isArray(value) 
+                          ? value.filter(v => v !== option.value) 
+                          : [];
+                        onChange(newValue);
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`${id}-${option.value}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {option.label}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        );
+      
+      case 'radio':
+        return (
+          <RadioGroup
+            value={value || ''}
+            onValueChange={onChange}
+          >
+            {normalizedOptions.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
+                <label
+                  htmlFor={`${id}-${option.value}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
+        );
+      
+      case 'date':
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !value && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {value ? format(new Date(value), "PPP") : <span>{placeholder || t('selectDate')}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={value ? new Date(value) : undefined}
+                onSelect={(date) => onChange(date ? date.toISOString() : null)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        );
+      
       default:
         return (
-          <Input
-            id={id}
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || ''}
-            className={inputClassName}
-            disabled={isDisabled}
-          />
+          <div className="text-sm text-muted-foreground">
+            {t('unsupportedFieldType')}: {type}
+          </div>
         );
     }
   };
-  
+
   return (
     <div className="space-y-2">
-      <div className="flex items-start justify-between">
-        <Label 
-          htmlFor={id} 
-          className={isRequired ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""}
-        >
+      <div className="flex items-center justify-between">
+        <label htmlFor={id} className="text-sm font-medium">
           {name}
-        </Label>
-        
-        {isRequired && (
-          <span className="text-xs text-muted-foreground">{t('required')}</span>
-        )}
+          {isRequired && <span className="text-destructive ml-1">*</span>}
+        </label>
+        {error && <div className="text-xs text-destructive">{error}</div>}
       </div>
-      
-      {helpText && (
-        <p className="text-sm text-muted-foreground">{helpText}</p>
-      )}
-      
-      {renderField()}
-      
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
-      
-      {isRejected && rejectionReason && (
-        <div className="mt-2 p-2 bg-destructive/10 text-destructive text-sm rounded-md">
-          {rejectionReason}
-        </div>
-      )}
+      {renderInput()}
+      {helpText && <div className="text-xs text-muted-foreground">{helpText}</div>}
     </div>
   );
 };

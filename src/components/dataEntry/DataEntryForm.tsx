@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import CategoryForm from './CategoryForm';
 import CategoryConfirmationDialog from './CategoryConfirmationDialog';
 import { DataEntrySaveStatus } from '@/types/dataEntry';
 import { ArrowLeft, CheckCircle, Loader2, Save } from 'lucide-react';
+import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 
 const DataEntryForm: React.FC = () => {
   const { schoolId } = useParams();
@@ -17,25 +19,33 @@ const DataEntryForm: React.FC = () => {
   const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.NONE);
+  const [isDataModified, setIsDataModified] = useState(false);
   
   // Get initialCategoryId from URL query params if available
   const urlParams = new URLSearchParams(window.location.search);
   const categoryIdFromUrl = urlParams.get('categoryId');
   
+  // Kateqoriyaları əldə et
+  const { categories, loading: categoriesLoading } = useCategoryData();
+  
   const {
-    categories,
-    entries,
-    isLoading,
+    formData,
+    updateValue,
+    isAutoSaving,
     isSubmitting,
-    saveStatus,
-    handleSave,
-    handleSubmitForApproval,
-    handleEntriesChange,
-    isDataModified,
-    loadDataForSchool,
-  } = useDataEntry({
+    saveForm,
+    submitForApproval
+  } = useDataEntry({ 
     schoolId: schoolId || '',
+    categories
   });
+
+  // Verilənləri məktəb üçün yükləmək
+  const loadDataForSchool = async () => {
+    // Bu funksiyada məktəb üçün məlumatları yükləmək məntiqi əlavə ediləcək
+    console.log("Loading data for school:", schoolId);
+  };
 
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
@@ -53,6 +63,7 @@ const DataEntryForm: React.FC = () => {
     }
   }, [categories, activeCategory, categoryIdFromUrl]);
 
+  // Kateqoriya sekmesini değiştirmek istediğimizde
   const handleTabChange = (value: string) => {
     if (isDataModified) {
       // If data is modified, show confirmation dialog
@@ -63,9 +74,46 @@ const DataEntryForm: React.FC = () => {
     setActiveCategory(value);
   };
 
+  // Kateqoriya değişimini onaylamak için
   const confirmTabChange = (value: string) => {
     setActiveCategory(value);
     setShowConfirmation(false);
+  };
+
+  // Save işlemi için
+  const handleSave = async () => {
+    try {
+      await saveForm();
+      setSaveStatus(DataEntrySaveStatus.SAVED);
+      setIsDataModified(false);
+      setTimeout(() => {
+        setSaveStatus(DataEntrySaveStatus.NONE);
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving data:", error);
+      setSaveStatus(DataEntrySaveStatus.ERROR);
+    }
+  };
+
+  // Submit for approval işlemi için
+  const handleSubmitForApproval = async () => {
+    try {
+      await submitForApproval();
+      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
+      setIsDataModified(false);
+      setTimeout(() => {
+        setSaveStatus(DataEntrySaveStatus.NONE);
+      }, 3000);
+    } catch (error) {
+      console.error("Error submitting data:", error);
+      setSaveStatus(DataEntrySaveStatus.ERROR);
+    }
+  };
+
+  // Form değerlerini güncellemek için
+  const handleEntriesChange = (categoryId: string, columnId: string, value: any) => {
+    updateValue(categoryId, columnId, value);
+    setIsDataModified(true);
   };
 
   // Display the status message
@@ -82,7 +130,7 @@ const DataEntryForm: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (categoriesLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -93,6 +141,15 @@ const DataEntryForm: React.FC = () => {
       </div>
     );
   }
+
+  // Create a fake entries array for now if we don't have entries in the hook
+  const entries = formData.categories.map(cat => ({
+    categoryId: cat.categoryId,
+    entries: cat.entries.map(entry => ({
+      columnId: entry.columnId,
+      value: entry.value
+    }))
+  }));
 
   return (
     <div className="space-y-4">

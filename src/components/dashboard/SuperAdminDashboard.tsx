@@ -26,34 +26,39 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       <StatsCard stats={statsItems} className="col-span-full lg:col-span-2" />
       
       <StatusCards 
-        stats={{ 
-          pending: data.formsByStatus?.pending || 0, 
-          approved: data.formsByStatus?.approved || 0, 
-          rejected: data.formsByStatus?.rejected || 0, 
-          total: data.formsByStatus?.total || 0 
-        }} 
+        stats={[
+          { label: 'Pending', value: data.formsByStatus?.pending || 0 },
+          { label: 'Approved', value: data.formsByStatus?.approved || 0 },
+          { label: 'Rejected', value: data.formsByStatus?.rejected || 0 },
+          { label: 'Total', value: data.formsByStatus?.total || 0 }
+        ]}
+        completionRate={data.completionRate || 0}
+        pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
         className="col-span-full lg:col-span-1" 
       />
       
       <CompletionRateCard value={data.completionRate || 0} className="col-span-full md:col-span-1" />
       
       <PendingApprovalsCard 
-        approvals={data.pendingApprovals || []} 
+        pendingItems={data.pendingApprovals || []}
         className="col-span-full xl:col-span-2" 
       />
       
       {Array.isArray(data.regions) && data.regions.length > 0 && (
-        <RegionsList regions={data.regions.map(region => ({
-          id: region.id,
-          name: region.name,
-          schoolCount: region.schoolCount,
-          sectorCount: region.sectorCount || 0,
-          completionRate: region.completionRate
-        }))} className="col-span-full" />
+        <RegionsList 
+          regions={data.regions.map(region => ({
+            id: region.id,
+            name: region.name,
+            schoolCount: region.schoolCount,
+            sectorCount: region.sectorCount || 0,
+            completionRate: region.completionRate
+          }))} 
+          className="col-span-full" 
+        />
       )}
       
       <NotificationsCard 
-        notifications={data.notifications || []} 
+        notifications={data.notifications || []}
       />
     </div>
   );

@@ -11,9 +11,12 @@ export const useColumnMutations = () => {
   // Sütun əlavə etmək üçün mutasiya
   const addColumn = useMutation({
     mutationFn: async (column: Omit<Column, 'id' | 'created_at' | 'updated_at'>) => {
+      // Supabase-ə göndərmək üçün adaptasiya et
+      const supabaseColumn = adaptColumnToSupabase(column);
+      
       const { data, error } = await supabase
         .from('columns')
-        .insert([adaptColumnToSupabase(column)])
+        .insert(supabaseColumn)
         .select('*')
         .single();
 
@@ -33,9 +36,12 @@ export const useColumnMutations = () => {
   // Sütunu yeniləmək üçün mutasiya
   const updateColumn = useMutation({
     mutationFn: async (column: Partial<Column> & { id: string }) => {
+      // Supabase-ə göndərmək üçün adaptasiya et
+      const supabaseColumn = adaptColumnToSupabase(column);
+      
       const { data, error } = await supabase
         .from('columns')
-        .update(adaptColumnToSupabase(column))
+        .update(supabaseColumn)
         .eq('id', column.id)
         .select('*')
         .single();

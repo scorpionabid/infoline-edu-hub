@@ -6,7 +6,7 @@ export enum FormStatus {
   REJECTED = 'rejected',
   DRAFT = 'draft',
   EXPIRED = 'expired',
-  DUE_SOON = 'due_soon',
+  DUE_SOON = 'dueSoon',
   OVERDUE = 'overdue',
   COMPLETED = 'completed'
 }

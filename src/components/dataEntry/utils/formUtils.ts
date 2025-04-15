@@ -1,82 +1,128 @@
 
-import { EntryValue } from '@/types/dataEntry';
-import { ColumnType } from '@/types/column';
+import { CategoryEntryData, EntryValue, DataFormValue } from "@/types/dataEntry";
+import { CategoryWithColumns } from "@/types/column";
 
-/**
- * Verilmiş sütun ID-si üçün dəyəri kateqoriya məlumatları içərisindən əldə edir
- */
-export const getValueForColumn = (values: EntryValue[], columnId: string): any => {
-  const value = values.find(v => v.columnId === columnId)?.value;
-  return value !== undefined ? value : '';
-};
-
-/**
- * Verilmiş sütun ID-si üçün statusu kateqoriya məlumatları içərisindən əldə edir
- */
-export const getStatusForColumn = (values: EntryValue[], columnId: string): 'pending' | 'approved' | 'rejected' => {
-  return values.find(v => v.columnId === columnId)?.status || 'pending';
-};
-
-/**
- * Sütun tipinə görə dəyərin düzgün formatını təyin edir
- */
-export const formatValueByType = (value: any, type: ColumnType): any => {
-  if (value === null || value === undefined) return '';
+// Məlumatları formdan Supabase formatına çevirmək
+export const adaptFormDataToSupabase = (
+  schoolId: string, 
+  categoryEntries: CategoryEntryData[]
+) => {
+  const result: any[] = [];
   
-  switch (type) {
-    case 'number':
-      return value === '' ? '' : Number(value);
-    case 'checkbox':
-      return Boolean(value);
-    case 'date':
-      return value instanceof Date ? value : value ? new Date(value) : '';
-    default:
-      return value;
-  }
-};
-
-/**
- * Verilmiş dəyərin boş olub-olmadığını yoxlayır
- */
-export const isEmptyValue = (value: any): boolean => {
-  if (value === null || value === undefined || value === '') return true;
-  if (Array.isArray(value) && value.length === 0) return true;
-  return false;
-};
-
-/**
- * Sütun validasiyasını yoxlayır və xəta mesajı qaytarır
- */
-export const validateColumnValue = (value: any, type: ColumnType, isRequired: boolean, validationRules?: any): string | undefined => {
-  // Əgər sahə məcburidirsə və boşdursa
-  if (isRequired && isEmptyValue(value)) {
-    return 'Bu sahə məcburidir';
-  }
+  categoryEntries.forEach(category => {
+    category.entries.forEach(entry => {
+      result.push({
+        school_id: schoolId,
+        category_id: category.categoryId,
+        column_id: entry.columnId,
+        value: entry.value ? String(entry.value) : null,
+        status: 'pending'
+      });
+    });
+  });
   
-  // Əgər dəyər boş deyilsə və validasiya qaydaları varsa
-  if (!isEmptyValue(value) && validationRules) {
-    switch (type) {
-      case 'number':
-        const numValue = Number(value);
-        if (isNaN(numValue)) return 'Rəqəm daxil edin';
-        if (validationRules.minValue !== undefined && numValue < validationRules.minValue) {
-          return `Minimum dəyər ${validationRules.minValue} olmalıdır`;
-        }
-        if (validationRules.maxValue !== undefined && numValue > validationRules.maxValue) {
-          return `Maksimum dəyər ${validationRules.maxValue} olmalıdır`;
-        }
-        break;
-      case 'text':
-        if (validationRules.regex) {
-          const regex = new RegExp(validationRules.regex);
-          if (!regex.test(String(value))) {
-            return validationRules.regexMessage || 'Daxil edilmiş mətn formatı düzgün deyil';
-          }
-        }
-        break;
-      // Digər tip validasiyaları burada əlavə edilə bilər
+  return result;
+};
+
+// Verilənlər bazasından gələn məlumatları forma formatına çevirmək
+export const adaptSupabaseToFormData = (
+  dataEntries: any[], 
+  categories: CategoryWithColumns[]
+): CategoryEntryData[] => {
+  const categoryMap = new Map<string, CategoryEntryData>();
+  
+  // Hər bir kategori üçün boş entries array yaradaq
+  categories.forEach(category => {
+    categoryMap.set(category.id, {
+      categoryId: category.id,
+      entries: []
+    });
+  });
+  
+  // Data entries'ləri müvafiq kategoriyalara əlavə edək
+  dataEntries.forEach(entry => {
+    const categoryId = entry.category_id;
+    const categoryData = categoryMap.get(categoryId);
+    
+    if (categoryData) {
+      categoryData.entries.push({
+        columnId: entry.column_id,
+        value: entry.value
+      });
+    }
+  });
+  
+  return Array.from(categoryMap.values());
+};
+
+// Dəyişiklikləri izləmək üçün helper funksiya
+export const hasChanges = (
+  original: CategoryEntryData[], 
+  current: CategoryEntryData[]
+): boolean => {
+  if (original.length !== current.length) return true;
+  
+  for (let i = 0; i < original.length; i++) {
+    const origCategory = original[i];
+    const currCategory = current.find(c => c.categoryId === origCategory.categoryId);
+    
+    if (!currCategory) return true;
+    if (origCategory.entries.length !== currCategory.entries.length) return true;
+    
+    for (const origEntry of origCategory.entries) {
+      const currEntry = currCategory.entries.find(e => e.columnId === origEntry.columnId);
+      if (!currEntry) return true;
+      if (origEntry.value !== currEntry.value) return true;
     }
   }
   
-  return undefined;
+  return false;
+};
+
+// Tamamlanma faizini hesablamaq üçün helper funksiya
+export const calculateCompletionPercentage = (
+  categoryEntries: CategoryEntryData[], 
+  categories: CategoryWithColumns[]
+): { overall: number; byCategory: Record<string, number> } => {
+  const result: Record<string, number> = {};
+  let totalComplete = 0;
+  let totalFields = 0;
+  
+  categories.forEach(category => {
+    const requiredColumns = category.columns.filter(col => col.is_required);
+    if (requiredColumns.length === 0) {
+      result[category.id] = 100;
+      totalComplete += 1;
+      totalFields += 1;
+      return;
+    }
+    
+    const categoryData = categoryEntries.find(ce => ce.categoryId === category.id);
+    if (!categoryData) {
+      result[category.id] = 0;
+      totalFields += 1;
+      return;
+    }
+    
+    let filledCount = 0;
+    
+    requiredColumns.forEach(column => {
+      const entry = categoryData.entries.find(e => e.columnId === column.id);
+      if (entry && entry.value !== null && entry.value !== undefined && entry.value !== '') {
+        filledCount++;
+      }
+    });
+    
+    const completionPercentage = Math.round((filledCount / requiredColumns.length) * 100);
+    result[category.id] = completionPercentage;
+    
+    totalComplete += filledCount;
+    totalFields += requiredColumns.length;
+  });
+  
+  const overall = totalFields > 0 
+    ? Math.round((totalComplete / totalFields) * 100) 
+    : 0;
+  
+  return { overall, byCategory: result };
 };

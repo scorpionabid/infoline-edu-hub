@@ -35,3 +35,18 @@ export interface CategoryEntryData {
     value: EntryValue;
   }[];
 }
+
+// Data Form Value interface for form entries
+export interface DataFormValue {
+  columnId: string;
+  value: EntryValue;
+  status?: 'pending' | 'approved' | 'rejected';
+}
+
+// Data Entry Save Status enum
+export enum DataEntrySaveStatus {
+  NONE = 'none',
+  SAVED = 'saved',
+  SUBMITTED = 'submitted',
+  ERROR = 'error'
+}

@@ -17,8 +17,14 @@ const columnFormSchema = z.object({
   order_index: z.number().optional().default(0),
   status: z.string().optional().default("active"),
   parent_column_id: z.string().uuid({ message: "Please select a valid parent column." }).nullable().optional(),
-  validation: z.object({}).optional()
+  validation: z.object({}).optional(),
+  options: z.array(z.object({
+    label: z.string(),
+    value: z.string()
+  })).optional()
 });
+
+export type ColumnFormValues = z.infer<typeof columnFormSchema>;
 
 interface UseColumnFormProps {
   categories: any[];
@@ -40,7 +46,7 @@ export const useColumnForm = (categories: any[], column: Column | null, onAddCol
   const isEditMode = !!column;
   const { t } = useLanguage();
 
-  const form = useForm<z.infer<typeof columnFormSchema>>({
+  const form = useForm<ColumnFormValues>({
     resolver: zodResolver(columnFormSchema),
     defaultValues: {
       name: column?.name || "",
@@ -52,7 +58,13 @@ export const useColumnForm = (categories: any[], column: Column | null, onAddCol
       order_index: column?.order_index || 0,
       status: column?.status || "active",
       parent_column_id: column?.parent_column_id || undefined,
-      validation: column?.validation || {}
+      validation: column?.validation || {},
+      options: column?.options && Array.isArray(column.options) 
+        ? column.options.map((option: any) => ({
+            label: option.label || option,
+            value: option.value || option,
+          }))
+        : []
     }
   });
 
@@ -66,22 +78,29 @@ export const useColumnForm = (categories: any[], column: Column | null, onAddCol
       const newOptionObj: ColumnOption = { label: newOption, value: newOption };
       setOptions([...options, newOptionObj]);
       setNewOption("");
+      
+      // Form's options field değerini güncelleme
+      const formOptions = form.getValues("options") || [];
+      form.setValue("options", [...formOptions, newOptionObj]);
     }
   };
 
   const removeOption = (optionToRemove: ColumnOption) => {
-    setOptions(options.filter((option) => option.value !== optionToRemove.value));
+    const updatedOptions = options.filter((option) => option.value !== optionToRemove.value);
+    setOptions(updatedOptions);
+    
+    // Form's options field değerini güncelleme
+    form.setValue("options", updatedOptions);
   };
 
-  const onSubmit = async (data: z.infer<typeof columnFormSchema>) => {
-    // Əgər istifadəçi tərəfindən təqdim edilmiş əlavə funksiya varsa
+  const onSubmit = async (data: ColumnFormValues) => {
+    // Hazırda seçilmiş optionları data-ya əlavə et
+    if (["select", "radio", "checkbox"].includes(data.type)) {
+      data.options = options;
+    }
+    
+    // Əgər xarici onAddColumn funksiyası varsa onu çağır
     if (onAddColumn) {
-      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
-      if (["select", "radio", "checkbox"].includes(data.type)) {
-        data.options = options;
-      }
-      
-      // Əgər istifadəçi tərəfindən təqdim edilmiş onAddColumn funksiyasını çağırırıq
       const result = await onAddColumn(data);
       return result;
     }

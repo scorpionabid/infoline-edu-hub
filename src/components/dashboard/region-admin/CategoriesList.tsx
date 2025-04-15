@@ -1,20 +1,43 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CategoryStat } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
+import { Button } from '@/components/ui/button';
+import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface CategoriesListProps {
   categories: CategoryStat[];
+  onViewCategory?: (categoryId: string) => void;
 }
 
-const CategoriesList: React.FC<CategoriesListProps> = ({ categories }) => {
+const CategoriesList: React.FC<CategoriesListProps> = ({ categories, onViewCategory }) => {
   const { t } = useLanguage();
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'upcoming':
+        return <Clock className="h-4 w-4" />;
+      case 'active':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'overdue':
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
   
-  // Default colors for categories if not provided
-  const defaultColors = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-purple-100', 'bg-pink-100'];
-  const defaultTextColors = ['text-blue-800', 'text-green-800', 'text-yellow-800', 'text-purple-800', 'text-pink-800'];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'upcoming': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'active': return 'bg-green-100 text-green-800 border-green-300';
+      case 'overdue': return 'bg-red-100 text-red-800 border-red-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
 
   return (
     <Card>
@@ -22,37 +45,54 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ categories }) => {
         <CardTitle>{t('categories')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <ScrollArea className="h-[300px]">
           {categories.length === 0 ? (
             <div className="text-center text-muted-foreground p-4">
               {t('noCategories')}
             </div>
           ) : (
-            categories.map((category, index) => {
-              const colorIndex = index % defaultColors.length;
-              const bgColor = defaultColors[colorIndex];
-              const textColor = defaultTextColors[colorIndex];
-              
-              return (
-                <div key={category.id} className="space-y-2">
+            <div className="space-y-4">
+              {categories.map((category) => (
+                <div key={category.id} className="border rounded-md p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full mr-2 ${bgColor}`}></div>
-                      <span className="font-medium">{category.name}</span>
+                    <h3 className="font-medium">{category.name}</h3>
+                    <Badge 
+                      variant="outline" 
+                      className={getStatusColor(category.status)}
+                    >
+                      {getStatusIcon(category.status)}
+                      <span className="ml-1">{t(category.status)}</span>
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{t('completion')}</span>
+                      <span>{category.completionRate}%</span>
                     </div>
-                    <span className={`text-sm ${textColor}`}>
-                      {category.completionRate}%
-                    </span>
+                    <Progress value={category.completionRate} className="h-2" />
                   </div>
-                  <Progress value={category.completionRate} className="h-2" />
-                  <div className="text-xs text-muted-foreground">
-                    {t('schoolsParticipating', { count: category.totalSchools })}
+                  
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t('deadline')}: {category.deadline}</span>
+                    <span>{t('columns')}: {category.columnCount}</span>
                   </div>
+                  
+                  {onViewCategory && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => onViewCategory(category.id)}
+                      className="w-full"
+                    >
+                      {t('viewCategory')}
+                    </Button>
+                  )}
                 </div>
-              );
-            })
+              ))}
+            </div>
           )}
-        </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
