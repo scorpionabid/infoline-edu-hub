@@ -1,114 +1,90 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
-  fetchSuperAdminDashboard, 
-  fetchRegionAdminDashboard,
-  fetchSectorAdminDashboard,
-  fetchSchoolAdminDashboard,
-  fetchDashboardChartData 
+  getSuperAdminDashboardData,
+  getRegionAdminDashboardData,
+  getSectorAdminDashboardData,
+  getSchoolAdminDashboardData,
+  getDashboardChartData
 } from '@/services/dashboardService';
-import { DashboardData, ChartData } from '@/types/dashboard';
 
-interface UseRealDashboardDataProps {
-  enableCharts?: boolean;
-}
-
-interface UseRealDashboardDataResult {
-  dashboardData: DashboardData | null;
-  chartData: ChartData | null;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
-  userRole: string | undefined;
-}
-
-export const useRealDashboardData = ({ 
-  enableCharts = true 
-}: UseRealDashboardDataProps = {}): UseRealDashboardDataResult => {
-  const { user, isLoading: authLoading } = useAuth();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [chartData, setChartData] = useState<ChartData | null>(null);
+export const useRealDashboardData = () => {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  
+  const [data, setData] = useState<any>(null);
+  const [chartData, setChartData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  const fetchData = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+  const fetchDashboardData = useCallback(async () => {
+    if (!user) return;
     
     try {
       setIsLoading(true);
       setError(null);
-      console.log(`Real dashboard datası yüklənir: ${user.role} rolu üçün`);
       
-      // İstifadəçi roluna əsasən uyğun servis funksiyasını çağır
-      let data = null;
+      let dashboardData = null;
       
+      // İstifadəçi roluna əsasən müvafiq dashboard məlumatlarını əldə et
       switch (user.role) {
         case 'superadmin':
-          data = await fetchSuperAdminDashboard();
+          dashboardData = await getSuperAdminDashboardData();
           break;
         case 'regionadmin':
-          if (user.regionId) {
-            data = await fetchRegionAdminDashboard(user.regionId);
-          } else {
-            throw new Error('Region ID tapılmadı');
-          }
+          dashboardData = await getRegionAdminDashboardData(user.regionId || '');
           break;
         case 'sectoradmin':
-          if (user.sectorId) {
-            data = await fetchSectorAdminDashboard(user.sectorId);
-          } else {
-            throw new Error('Sektor ID tapılmadı');
-          }
+          dashboardData = await getSectorAdminDashboardData(user.sectorId || '');
           break;
         case 'schooladmin':
-          if (user.schoolId) {
-            data = await fetchSchoolAdminDashboard(user.schoolId);
-          } else {
-            console.warn('Məktəb ID tapılmadı, mock data istifadə edilir');
-            data = await fetchSchoolAdminDashboard('');
-          }
+          dashboardData = await getSchoolAdminDashboardData(user.schoolId || '');
           break;
         default:
-          console.warn(`Naməlum rol: ${user.role}`);
+          throw new Error(t('unknownRole'));
       }
       
-      setDashboardData(data);
+      setData(dashboardData);
       
-      // Qrafik məlumatlarını əldə et (yalnız SuperAdmin üçün)
-      if (enableCharts && user.role === 'superadmin') {
-        const charts = await fetchDashboardChartData();
-        setChartData(charts);
-      }
+      // Chart məlumatlarını əldə et
+      const charts = await getDashboardChartData({
+        entityType: user.role === 'regionadmin' ? 'region' : 
+                   user.role === 'sectoradmin' ? 'sector' : 
+                   user.role === 'schooladmin' ? 'school' : undefined,
+        entityId: user.role === 'regionadmin' ? user.regionId : 
+                 user.role === 'sectoradmin' ? user.sectorId : 
+                 user.role === 'schooladmin' ? user.schoolId : undefined
+      });
       
-    } catch (error: any) {
-      console.error('Dashboard məlumatlarını əldə edərkən xəta:', error);
-      setError(error instanceof Error ? error : new Error(error.message || 'Bilinməyən xəta'));
-      toast.error('Məlumatları yükləyərkən xəta baş verdi', {
-        description: error.message
+      setChartData(charts);
+      
+    } catch (err: any) {
+      console.error("Dashboard məlumatlarını əldə edərkən xəta:", err);
+      setError(err);
+      toast({
+        title: t('error'),
+        description: t('errorFetchingDashboardData'),
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
-  }, [user, enableCharts]);
+  }, [user, t, toast]);
   
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchData();
-    }
-  }, [fetchData, authLoading, user]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
   
   return {
-    dashboardData,
+    data,
     chartData,
     isLoading,
     error,
-    refetch: fetchData,
-    userRole: user?.role
+    refetch: fetchDashboardData
   };
 };
 

@@ -10,7 +10,7 @@ export interface User {
   name?: string; // full_name üçün alias əlavə edirik
   avatar?: string;
   avatar_url?: string; // Supabase-dən gələn avatar_url dəstəyi
-  status?: string;
+  status?: 'active' | 'inactive' | 'blocked';
   phone?: string;
   language?: string;
   position?: string;
@@ -44,7 +44,7 @@ export interface UserFormData {
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  status?: string;
+  status?: 'active' | 'inactive' | 'blocked';
   language?: string;
   password?: string;
   avatar?: string; // Avatar xüsusiyyəti
@@ -68,11 +68,13 @@ export interface FullUserData extends User {
   name?: string; // name alias-ını əlavə edirik
   createdAt?: string; // created_at-ın alias-ı
   updatedAt?: string; // updated_at-ın alias-ı
+  full_name: string; // Ana modeldə optional, burada mütləq
+  status: 'active' | 'inactive' | 'blocked'; // Ana modeldə optional, burada mütləq
   notificationSettings: {
     email: boolean;
     push: boolean;
     sms: boolean;
-    system?: boolean;
+    system: boolean;
   };
 }
 
@@ -87,11 +89,13 @@ export function userToFullUserData(user: User): FullUserData {
     name: user.full_name, // name alias-ını əlavə edirik
     createdAt: user.created_at, // createdAt alias-ını əlavə edirik
     updatedAt: user.updated_at, // updatedAt alias-ını əlavə edirik
+    full_name: user.full_name || '',
+    status: user.status || 'active',
     notificationSettings: {
       email: user.notificationSettings?.email || true,
       push: user.notificationSettings?.push || false,
       sms: user.notificationSettings?.sms || false,
-      system: user.notificationSettings?.system || false
+      system: user.notificationSettings?.system || true
     }
   };
 }
@@ -119,7 +123,7 @@ export function fullUserDataToUser(fullUserData: FullUserData): User {
       email: fullUserData.notificationSettings?.email || true,
       push: fullUserData.notificationSettings?.push || false,
       sms: fullUserData.notificationSettings?.sms || false,
-      system: fullUserData.notificationSettings?.system || false
+      system: fullUserData.notificationSettings?.system || true
     }
   };
 }

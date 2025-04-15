@@ -1,224 +1,90 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, ColumnType, Column } from '@/types/column';
+import { CategoryWithColumns, Column, adaptDbColumnToAppColumn } from '@/types/column';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
-import { Json } from '@/integrations/supabase/types';
+import { useLanguage } from '@/context/LanguageContext';
 
-interface UseCategoryDataReturn {
-  categories: CategoryWithColumns[];
-  isLoading: boolean;
-  error: Error | null;
-}
-
-const mockCategoriesData: CategoryWithColumns[] = [
-  {
-    id: '1',
-    name: 'Şagird Məlumatları',
-    description: 'Şagirdlərlə bağlı əsas məlumatlar',
-    assignment: 'all',
-    deadline: '2024-12-31',
-    status: 'active',
-    priority: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    archived: false,
-    column_count: 2,
-    columns: [
-      {
-        id: '101',
-        category_id: '1',
-        name: 'Ad',
-        type: 'text',
-        is_required: true,
-        order_index: 1,
-        status: 'active',
-        validation: { maxLength: 50 },
-        options: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '102',
-        category_id: '1',
-        name: 'Soyad',
-        type: 'text',
-        is_required: true,
-        order_index: 2,
-        status: 'active',
-        validation: { maxLength: 50 },
-        options: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Müəllim Məlumatları',
-    description: 'Müəllimlərlə bağlı əsas məlumatlar',
-    assignment: 'all',
-    deadline: '2024-12-31',
-    status: 'active',
-    priority: 2,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    archived: false,
-    column_count: 2,
-    columns: [
-      {
-        id: '201',
-        category_id: '2',
-        name: 'Ad',
-        type: 'text',
-        is_required: true,
-        order_index: 1,
-        status: 'active',
-        validation: { maxLength: 50 },
-        options: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '202',
-        category_id: '2',
-        name: 'Soyad',
-        type: 'text',
-        is_required: true,
-        order_index: 2,
-        status: 'active',
-        validation: { maxLength: 50 },
-        options: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
-  }
-];
-
-export const useCategoryData = (): UseCategoryDataReturn => {
+export const useCategoryData = () => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
+  const { t } = useLanguage();
   const { user } = useAuth();
 
   const fetchCategories = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      console.log("Kateqoriyalar yüklənir, istifadəçi:", user);
+      setLoading(true);
+      setError(null);
 
-      let { data: categoriesData, error: catError } = await supabase
+      // Kateqoriyaları əldə et
+      const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .eq('status', 'active')
-        .order('priority', { ascending: false });
-        
-      if (catError) {
-        console.error("Supabase kateqoriya sorğusu xətası:", catError);
-        throw catError;
-      }
-      
-      if (!categoriesData || categoriesData.length === 0) {
-        console.log("Supabase-dən kateqoriya tapılmadı, mock datadan istifadə edilir");
-        setCategories(mockCategoriesData);
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Supabase-dən alınan kateqoriyalar:", categoriesData);
-      
-      let { data: columnsData, error: colError } = await supabase
+        .eq('archived', false)
+        .order('priority', { ascending: true });
+
+      if (categoriesError) throw categoriesError;
+
+      // Sütunları əldə et
+      const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
         .select('*')
         .eq('status', 'active')
         .order('order_index', { ascending: true });
-        
-      if (colError) {
-        console.error("Supabase sütun sorğusu xətası:", colError);
-        throw colError;
-      }
-      
-      console.log("Supabase-dən alınan sütunlar:", columnsData);
-      
-      // Tip uyğunluğunu təmin etmək üçün data struktur formalaşdırma
-      const dataWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
-        const categoryColumns = columnsData?.filter(column => column.category_id === category.id) || [];
-        
-        // Sütunları formalaşdırırıq
-        const formattedColumns: Column[] = categoryColumns.map(col => {
-          let options: string[] | { label: string; value: string }[] = [];
-          
-          // Sütun tiplərinə görə options dəyərlərini düzgün formalaşdırırıq
-          if (col.options && ['select', 'checkbox', 'radio'].includes(col.type)) {
-            if (Array.isArray(col.options)) {
-              options = col.options.map((opt: any) => {
-                if (typeof opt === 'string') {
-                  return { label: opt, value: opt };
-                } else if (typeof opt === 'object') {
-                  return { label: opt.label || opt.value, value: opt.value };
-                }
-                return { label: String(opt), value: String(opt) };
-              });
-            }
-          }
-          
-          return {
-            id: col.id,
-            category_id: col.category_id,
-            name: col.name,
-            type: col.type as ColumnType,
-            is_required: col.is_required || false,
-            order_index: col.order_index || 0,
-            status: col.status as 'active' | 'inactive' | 'draft',
-            validation: col.validation || {},
-            default_value: col.default_value || '',
-            placeholder: col.placeholder || '',
-            help_text: col.help_text || '',
-            options: options,
-            created_at: col.created_at,
-            updated_at: col.updated_at,
-            parentColumnId: col.parent_column_id
-          };
-        });
-        
+
+      if (columnsError) throw columnsError;
+
+      // Sütunları kateqoriyalara görə qruplaşdır
+      const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
+        const categoryColumns = columnsData
+          .filter(column => column.category_id === category.id)
+          .map(column => adaptDbColumnToAppColumn(column));
+
         return {
           id: category.id,
           name: category.name,
-          description: category.description || '',
+          description: category.description,
           assignment: category.assignment as 'all' | 'sectors',
-          deadline: category.deadline || '',
+          deadline: category.deadline,
           status: category.status as 'active' | 'inactive' | 'draft',
-          priority: category.priority || 0,
+          priority: category.priority,
           created_at: category.created_at,
           updated_at: category.updated_at,
-          archived: category.archived || false,
-          column_count: category.column_count || 0,
-          columns: formattedColumns
+          archived: category.archived,
+          column_count: categoryColumns.length,
+          columns: categoryColumns
         };
       });
-      
-      console.log("Hazırlanmış data:", dataWithColumns);
-      setCategories(dataWithColumns);
+
+      setCategories(categoriesWithColumns);
     } catch (err: any) {
-      setError(err);
-      console.error("Kateqoriyaları əldə etmə xətası:", err);
-      toast.error("Kateqoriyaları yükləmək mümkün olmadı", {
-        description: "Xahiş edirik bir az sonra yenidən cəhd edin"
+      console.error('Kateqoriyaları əldə edərkən xəta:', err);
+      setError(new Error(t('errorFetchingCategories')));
+      toast({
+        title: t('error'),
+        description: t('errorFetchingCategories'),
+        variant: 'destructive'
       });
-      
-      // Fallback olaraq mock data təyin et
-      setCategories(mockCategoriesData);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [user]);
+  }, [t, toast]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (user) {
+      fetchCategories();
+    }
+  }, [user, fetchCategories]);
 
-  return { categories, isLoading, error };
+  return {
+    categories,
+    loading,
+    error,
+    refetch: fetchCategories
+  };
 };
+
+export default useCategoryData;

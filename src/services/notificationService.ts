@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Notification, NotificationType, NotificationPriority } from "@/types/notification";
+import { Notification, NotificationType, NotificationPriority, adaptDbNotificationToApp } from "@/types/notification";
 
 /**
  * Bildirişləri əldə etmək
@@ -8,6 +8,11 @@ import { Notification, NotificationType, NotificationPriority } from "@/types/no
  */
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
   try {
+    if (!userId) {
+      console.warn("Bildirişləri əldə etmək üçün userId təqdim edilməyib");
+      return [];
+    }
+    
     const { data: notifications, error } = await supabase
       .from('notifications')
       .select('*')
@@ -19,20 +24,7 @@ export const getNotifications = async (userId: string): Promise<Notification[]> 
       throw error;
     }
 
-    return (notifications || []).map(notification => ({
-      id: notification.id,
-      title: notification.title,
-      message: notification.message,
-      type: notification.type as NotificationType,
-      priority: notification.priority as NotificationPriority,
-      userId: notification.user_id,
-      isRead: notification.is_read,
-      createdAt: notification.created_at,
-      relatedId: notification.related_entity_id,
-      relatedType: notification.related_entity_type,
-      date: notification.date || new Date(notification.created_at).toISOString().split('T')[0],
-      time: notification.time || new Date(notification.created_at).toTimeString().slice(0, 5)
-    }));
+    return (notifications || []).map(notification => adaptDbNotificationToApp(notification));
   } catch (error: any) {
     console.error("Bildirişləri əldə etmə xətası:", error);
     return [];
@@ -46,6 +38,11 @@ export const getNotifications = async (userId: string): Promise<Notification[]> 
  */
 export const markNotificationAsRead = async (notificationId: string, userId: string): Promise<boolean> => {
   try {
+    if (!notificationId || !userId) {
+      console.warn("Bildirişi oxunmuş kimi işarələmək üçün məlumatlar tam deyil");
+      return false;
+    }
+    
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -70,6 +67,11 @@ export const markNotificationAsRead = async (notificationId: string, userId: str
  */
 export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
   try {
+    if (!userId) {
+      console.warn("Bildirişləri oxunmuş kimi işarələmək üçün userId təqdim edilməyib");
+      return false;
+    }
+    
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -88,24 +90,53 @@ export const markAllNotificationsAsRead = async (userId: string): Promise<boolea
 };
 
 /**
+ * Bütün bildirişləri təmizləmək - bu funksiya simulyasiya edilir
+ * @param userId İstifadəçi ID-si
+ */
+export const clearAllNotifications = async (userId: string): Promise<boolean> => {
+  try {
+    return await markAllNotificationsAsRead(userId);
+    
+    // Alternativ olaraq, bildirişləri silmək istəsəydik:
+    /*
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error("Bildirişləri təmizləyərkən xəta:", error);
+      throw error;
+    }
+    */
+  } catch (error: any) {
+    console.error("Bildirişləri təmizləmə xətası:", error);
+    return false;
+  }
+};
+
+/**
  * Yeni bildiriş yaratmaq
  * @param notification Bildiriş məlumatları
  * @param userId İstifadəçi ID-si
  */
 export const createNotification = async (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>, userId: string): Promise<Notification | null> => {
   try {
-    // Mark notification as created by specified user
+    if (!userId) {
+      console.warn("Bildiriş yaratmaq üçün userId təqdim edilməyib");
+      return null;
+    }
+    
+    // Verilənlər bazası formatında notification
     const notificationData = {
       title: notification.title,
       message: notification.message,
-      type: notification.type,
-      priority: notification.priority || 'normal',
+      type: notification.type as string,
+      priority: notification.priority as string,
       related_entity_id: notification.relatedId,
       related_entity_type: notification.relatedType,
       user_id: userId,
-      is_read: false,
-      date: notification.date || new Date().toISOString().split('T')[0],
-      time: notification.time || new Date().toTimeString().slice(0, 5)
+      is_read: false
     };
 
     const { data, error } = await supabase
@@ -119,22 +150,8 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
       throw error;
     }
 
-    // Format the response as a Notification type
     if (data) {
-      return {
-        id: data.id,
-        title: data.title,
-        message: data.message,
-        type: data.type as NotificationType,
-        priority: data.priority as NotificationPriority,
-        userId: data.user_id,
-        isRead: data.is_read,
-        createdAt: data.created_at,
-        relatedId: data.related_entity_id,
-        relatedType: data.related_entity_type,
-        date: data.date || new Date(data.created_at).toISOString().split('T')[0],
-        time: data.time || new Date(data.created_at).toTimeString().slice(0, 5)
-      };
+      return adaptDbNotificationToApp(data);
     }
 
     return null;
@@ -143,3 +160,5 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
     return null;
   }
 };
+
+export const fetchNotifications = getNotifications;

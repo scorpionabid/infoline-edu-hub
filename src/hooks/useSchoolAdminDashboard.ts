@@ -1,100 +1,74 @@
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/context/AuthContext';
-import { fetchSchoolAdminDashboard } from '@/services/dashboardService';
-import { SchoolAdminDashboardData } from '@/types/dashboard';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createMockSchoolAdminData } from '@/utils/dashboardUtils';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
+import { getSchoolAdminDashboardData } from '@/services/dashboardService';
+import { SchoolAdminDashboardData, FormItem } from '@/types/dashboard';
 
-/**
- * Məktəb admin dashboard hook-u
- * @returns SchoolAdminDashboardData və yüklənmə vəziyyəti
- */
-export default function useSchoolAdminDashboard() {
+export const useSchoolAdminDashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Default data - bu dayanıqlı mockup data sağlayır
-  const defaultData: SchoolAdminDashboardData = createMockSchoolAdminData();
+  const [data, setData] = useState<SchoolAdminDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
-  // Məktəb admin məlumatları
-  const schoolId = user?.schoolId;
-
-  const {
-    data,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['schoolAdminDashboard', schoolId],
-    queryFn: async () => {
-      if (!schoolId) {
-        console.warn('Məktəb ID tapılmadı, default data istifadə olunur');
-        return defaultData;
-      }
+  const fetchDashboardData = useCallback(async () => {
+    if (!user || !user.schoolId) {
+      setError(new Error(t('noSchoolAssociated')));
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
       
-      try {
-        const result = await fetchSchoolAdminDashboard(schoolId);
-        
-        // API-dən gələn məlumatların doğruluğunu yoxlayırıq
-        if (!result) {
-          console.warn('Serverdən məlumat alına bilmədi, default data istifadə olunur');
-          return defaultData;
-        }
-        
-        // forms sahəsinin mövcudluğunu və doğru formatda olduğunu yoxlayırıq
-        if (!result.forms) {
-          console.warn('Serverdən alınan dashboard məlumatlarında forms sahəsi yoxdur, default data istifadə olunur');
-          result.forms = defaultData.forms;
-        }
-        
-        // Digər məcburi sahələrin yoxlanması
-        if (result.completionRate === undefined) {
-          result.completionRate = defaultData.completionRate;
-        }
-        
-        if (!result.notifications || !Array.isArray(result.notifications)) {
-          result.notifications = defaultData.notifications;
-        }
-        
-        if (!result.pendingForms || !Array.isArray(result.pendingForms)) {
-          result.pendingForms = defaultData.pendingForms;
-        }
-        
-        return result;
-      } catch (error) {
-        console.error('Dashboard məlumatları alınarkən xəta:', error);
-        console.warn('Xəta səbəbindən default data istifadə olunur');
-        return defaultData; 
-      }
-    },
-    enabled: !!user, // İstifadəçi mövcuddursa sorğu işə salınır
-    initialData: defaultData, // Dayanıqlı bir ilkin dəyər təyin edirik
-  });
-
-  // Formları redaktə etmək üçün funksiyaların əlavə edilməsi
-  const handleFormClick = (formId: string) => {
-    console.log(`Form ID ilə data entry səhifəsinə keçid: ${formId}`);
-    // İstifadəçini data entry səhifəsinə yönləndir
-    navigate(`/data-entry?categoryId=${formId}`);
-  };
-
-  const navigateToDataEntry = () => {
+      const dashboardData = await getSchoolAdminDashboardData(user.schoolId);
+      setData(dashboardData);
+      
+    } catch (err: any) {
+      console.error("Məktəb admin dashboard məlumatlarını əldə edərkən xəta:", err);
+      setError(err);
+      toast({
+        title: t('error'),
+        description: t('errorFetchingDashboardData'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, t, toast]);
+  
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+  
+  const navigateToDataEntry = useCallback(() => {
     navigate('/data-entry');
-  };
-
-  // Əmin olaq ki, data undefined olmayacaq
-  const safeData = data || defaultData;
-
+  }, [navigate]);
+  
+  const handleFormClick = useCallback((formId: string) => {
+    navigate(`/data-entry/${formId}`);
+  }, [navigate]);
+  
   return {
-    dashboard: safeData,
+    data: data || {
+      forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
+      pendingForms: [],
+      completionRate: 0,
+      notifications: []
+    },
     isLoading,
     error,
-    refetch,
-    handleFormClick,
-    navigateToDataEntry
+    refetch: fetchDashboardData,
+    navigateToDataEntry,
+    handleFormClick
   };
-}
+};
+
+export default useSchoolAdminDashboard;

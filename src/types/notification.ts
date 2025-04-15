@@ -16,3 +16,37 @@ export interface Notification {
   date?: string;
   time?: string;
 }
+
+// Supabase-dən gələn notification tipini tətbiq notification tipinə çevirən funksiya
+export const adaptDbNotificationToApp = (dbNotification: any): Notification => {
+  return {
+    id: dbNotification.id,
+    title: dbNotification.title,
+    message: dbNotification.message,
+    type: dbNotification.type as NotificationType, 
+    priority: dbNotification.priority as NotificationPriority,
+    userId: dbNotification.user_id,
+    isRead: dbNotification.is_read,
+    createdAt: dbNotification.created_at,
+    relatedId: dbNotification.related_entity_id,
+    relatedType: dbNotification.related_entity_type,
+    date: dbNotification.date || new Date(dbNotification.created_at).toISOString().split('T')[0],
+    time: dbNotification.time || new Date(dbNotification.created_at).toTimeString().slice(0, 5)
+  };
+};
+
+// Dashboard üçün notification tipi
+export interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+  userId: string;
+  priority: string;
+  date: string;
+  time: string;
+  relatedId?: string;
+  relatedType?: string;
+}

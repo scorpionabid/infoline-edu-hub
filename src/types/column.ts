@@ -22,6 +22,7 @@ export interface Column {
   created_at: string;
   updated_at: string;
   parentColumnId?: string;
+  parent_column_id?: string; // Database-dən gələn halda
 }
 
 export interface CategoryWithColumns {
@@ -53,7 +54,7 @@ export const adaptColumnToSupabase = (column: Partial<Column>) => {
     placeholder: column.placeholder,
     help_text: column.help_text,
     options: column.options,
-    parent_column_id: column.parentColumnId
+    parent_column_id: column.parentColumnId || column.parent_column_id
   };
 };
 
@@ -70,3 +71,25 @@ export interface Category {
   archived?: boolean;
   column_count?: number;
 }
+
+// Database-dən gələn sütunu tətbiq sütununa çevirmək üçün funksiya
+export const adaptDbColumnToAppColumn = (dbColumn: any): Column => {
+  return {
+    id: dbColumn.id,
+    category_id: dbColumn.category_id,
+    name: dbColumn.name,
+    type: dbColumn.type as ColumnType,
+    is_required: dbColumn.is_required,
+    order_index: dbColumn.order_index,
+    status: dbColumn.status as 'active' | 'inactive' | 'draft',
+    validation: dbColumn.validation,
+    default_value: dbColumn.default_value,
+    placeholder: dbColumn.placeholder,
+    help_text: dbColumn.help_text,
+    options: Array.isArray(dbColumn.options) ? dbColumn.options : [],
+    created_at: dbColumn.created_at,
+    updated_at: dbColumn.updated_at,
+    parentColumnId: dbColumn.parent_column_id,
+    parent_column_id: dbColumn.parent_column_id
+  };
+};

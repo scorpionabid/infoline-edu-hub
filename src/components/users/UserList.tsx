@@ -142,7 +142,7 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser}
+            user={fullUserDataToUser(selectedUser)}
             onSave={(updatedUser) => {
               // Kullanıcı güncelleme işlemi
               const updatedUserWithDefaults = {
@@ -150,15 +150,16 @@ const UserList: React.FC<UserListProps> = ({
                 name: updatedUser.full_name || updatedUser.name, // name alanını full_name ile senkronize et
                 full_name: updatedUser.full_name || updatedUser.name, // full_name alanını da güncelle
                 language: updatedUser.language || 'az',
+                status: (updatedUser.status as 'active' | 'inactive' | 'blocked') || 'active',
                 // Ensure notificationSettings is complete
                 notificationSettings: {
-                  email: updatedUser.notificationSettings?.email || true,
-                  push: updatedUser.notificationSettings?.push || false, 
-                  sms: updatedUser.notificationSettings?.sms || false,
-                  system: updatedUser.notificationSettings?.system || true
+                  email: updatedUser.notificationSettings?.email ?? true,
+                  push: updatedUser.notificationSettings?.push ?? false, 
+                  sms: updatedUser.notificationSettings?.sms ?? false,
+                  system: updatedUser.notificationSettings?.system ?? true
                 }
               };
-              handleUpdateUserConfirm(updatedUserWithDefaults);
+              handleUpdateUserConfirm(userToFullUserData(updatedUserWithDefaults));
               handleUserUpdated();
             }}
           />
@@ -166,7 +167,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser}
+            user={fullUserDataToUser(selectedUser)}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -176,7 +177,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser}
+            user={fullUserDataToUser(selectedUser)}
           />
         </>
       )}
