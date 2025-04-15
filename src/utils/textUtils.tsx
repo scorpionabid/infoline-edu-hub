@@ -16,7 +16,7 @@ export const highlightText = (text: string, searchTerm: string): React.ReactNode
   const parts = text.split(regex);
 
   return (
-    <>
+    <React.Fragment>
       {parts.map((part, i) => 
         regex.test(part) ? (
           <span key={i} className="bg-yellow-100 text-yellow-900 px-1 rounded">
@@ -26,6 +26,6 @@ export const highlightText = (text: string, searchTerm: string): React.ReactNode
           part
         )
       )}
-    </>
+    </React.Fragment>
   );
 };
