@@ -35,14 +35,19 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   columns = [],
 }) => {
   const {
-    form,
+    form, 
     selectedType,
     handleTypeChange,
-    onSubmit,
+    options,
+    addOption,
+    removeOption,
+    newOption,
+    setNewOption,
+    onSubmit: handleFormSubmit,
     isEditMode,
     t
   } = useColumnForm(categories, editColumn, onAddColumn);
-
+  
   // Handle form submission
   const handleSubmit = async (values: any) => {
     if (await onSubmit(values)) {
@@ -83,6 +88,11 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
               {(selectedType === "select" || selectedType === "checkbox" || selectedType === "radio") && (
                 <OptionsField
                   control={form.control}
+                  options={options}
+                  newOption={newOption}
+                  setNewOption={setNewOption}
+                  addOption={addOption}
+                  removeOption={removeOption}
                 />
               )}
             </div>

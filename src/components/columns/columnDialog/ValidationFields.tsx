@@ -1,43 +1,32 @@
 
 import React from 'react';
-import { UseFormReturn } from "react-hook-form";
-import { ColumnFormValues } from './useColumnForm';
-import { 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
+import { UseFormReturn } from 'react-hook-form';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
   FormMessage,
-  FormDescription 
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ColumnType } from '@/types/column';
 
 interface ValidationFieldsProps {
-  form: UseFormReturn<ColumnFormValues>;
-  selectedType: string;
+  form: UseFormReturn<any>;
+  selectedType: ColumnType;
   t: (key: string) => string;
 }
 
-const ValidationFields: React.FC<ValidationFieldsProps> = ({
-  form,
-  selectedType,
-  t
-}) => {
-  if (selectedType !== "text" && selectedType !== "number") {
-    return null;
-  }
-
+const ValidationFields: React.FC<ValidationFieldsProps> = ({ form, selectedType, t }) => {
   return (
-    <>
-      {/* Validation Rules for number */}
-      {selectedType === "number" && (
+    <div className="space-y-4">
+      <div className="flex flex-col space-y-1.5">
+        <h3 className="text-sm font-medium">{t("validationRules")}</h3>
+        <p className="text-xs text-muted-foreground">{t("validationRulesDescription")}</p>
+      </div>
+
+      {(selectedType === "number") && (
         <>
           <FormField
             control={form.control}
@@ -48,12 +37,12 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder={t("enterMinValue")}
+                    placeholder={t("minValuePlaceholder")}
                     {...field}
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
+                <FormDescription>{t("minValueDescription")}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -68,12 +57,12 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder={t("enterMaxValue")}
+                    placeholder={t("maxValuePlaceholder")}
                     {...field}
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
+                <FormDescription>{t("maxValueDescription")}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -81,58 +70,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
         </>
       )}
 
-      {/* Format for text */}
-      {selectedType === "text" && (
-        <FormField
-          control={form.control}
-          name="validationRules.format"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("format")}</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value || "none"}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("selectFormat")} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">{t("noFormat")}</SelectItem>
-                  <SelectItem value="email">{t("email")}</SelectItem>
-                  <SelectItem value="phone">{t("phone")}</SelectItem>
-                  <SelectItem value="url">{t("url")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-
-      {/* Regex for text */}
-      {selectedType === "text" && (
-        <FormField
-          control={form.control}
-          name="validationRules.regex"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("regex")}</FormLabel>
-              <FormControl>
-                <Input placeholder={t("enterRegex")} {...field} />
-              </FormControl>
-              <FormDescription>
-                {t("regexDescription")}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-
-      {/* Text Length Validation */}
-      {selectedType === "text" && (
+      {(selectedType === "text" || selectedType === "textarea") && (
         <>
           <FormField
             control={form.control}
@@ -143,12 +81,12 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder={t("enterMinLength")}
+                    placeholder={t("minLengthPlaceholder")}
                     {...field}
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
+                <FormDescription>{t("minLengthDescription")}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -163,19 +101,98 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder={t("enterMaxLength")}
+                    placeholder={t("maxLengthPlaceholder")}
                     {...field}
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
+                <FormDescription>{t("maxLengthDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="validationRules.pattern"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("pattern")}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t("patternPlaceholder")} {...field} />
+                </FormControl>
+                <FormDescription>{t("patternDescription")}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </>
       )}
-    </>
+
+      {selectedType === "date" && (
+        <>
+          <FormField
+            control={form.control}
+            name="validationRules.minDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("minDate")}</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormDescription>{t("minDateDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="validationRules.maxDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("maxDate")}</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormDescription>{t("maxDateDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
+
+      <FormField
+        control={form.control}
+        name="placeholder"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("placeholder")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("placeholderPlaceholder")} {...field} />
+            </FormControl>
+            <FormDescription>{t("placeholderDescription")}</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="helpText"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("helpText")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("helpTextPlaceholder")} {...field} />
+            </FormControl>
+            <FormDescription>{t("helpTextDescription")}</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };
 

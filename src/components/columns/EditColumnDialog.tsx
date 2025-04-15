@@ -9,6 +9,7 @@ import BasicColumnFields from "./columnDialog/BasicColumnFields";
 import ValidationFields from "./columnDialog/ValidationFields";
 import OptionsField from "./columnDialog/OptionsField";
 import { useQueryClient } from "@tanstack/react-query";
+import { Form } from "@/components/ui/form";
 
 interface EditColumnDialogProps {
   isOpen: boolean;
@@ -95,50 +96,52 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <BasicColumnFields 
-            form={form}
-            categories={categories}
-            columns={[]} // Boş array veririk, çünki parent column-ları üçün hazırda təyin etməyək
-            editColumn={column}
-            selectedType={selectedType}
-            handleTypeChange={handleTypeChange}
-          />
-          
-          {(selectedType === "select" || selectedType === "radio" || selectedType === "checkbox") && (
-            <OptionsField 
-              control={form.control}
-              options={options}
-              newOption={newOption}
-              setNewOption={setNewOption}
-              addOption={addOption}
-              removeOption={removeOption}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <BasicColumnFields 
+              form={form}
+              categories={categories}
+              columns={[]} // Boş array veririk, çünki parent column-ları üçün hazırda təyin etməyək
+              editColumn={column}
+              selectedType={selectedType}
+              handleTypeChange={handleTypeChange}
             />
-          )}
-          
-          <ValidationFields 
-            form={form}
-            selectedType={selectedType}
-            t={t}
-          />
-          
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              {t("cancel")}
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? t("saving") : t("save")}
-            </Button>
-          </DialogFooter>
-        </form>
+            
+            {(selectedType === "select" || selectedType === "radio" || selectedType === "checkbox") && (
+              <OptionsField 
+                control={form.control}
+                options={options}
+                newOption={newOption}
+                setNewOption={setNewOption}
+                addOption={addOption}
+                removeOption={removeOption}
+              />
+            )}
+            
+            <ValidationFields 
+              form={form}
+              selectedType={selectedType}
+              t={t}
+            />
+            
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                {t("cancel")}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? t("saving") : t("save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -1,13 +1,18 @@
 
 import React from 'react';
-import { X, Plus } from 'lucide-react';
 import { Control } from 'react-hook-form';
-import { useLanguage } from "@/context/LanguageContext";
-import { Button } from "@/components/ui/button";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Badge } from "@/components/ui/badge";
-import { ColumnOption } from "@/types/column";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/context/LanguageContext";
+import { X, Plus } from "lucide-react";
+import { ColumnOption } from '@/types/column';
 
 interface OptionsFieldProps {
   control: Control<any>;
@@ -21,73 +26,61 @@ interface OptionsFieldProps {
 const OptionsField: React.FC<OptionsFieldProps> = ({
   control,
   options = [],
-  newOption = "",
+  newOption = '',
   setNewOption = () => {},
   addOption = () => {},
   removeOption = () => {}
 }) => {
   const { t } = useLanguage();
   
-  const handleAddOption = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newOption.trim() !== "") {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
       addOption();
     }
   };
 
   return (
-    <FormField
-      control={control}
-      name="options"
-      render={() => (
-        <FormItem className="space-y-3">
-          <FormLabel>{t("options")}</FormLabel>
-          
-          <div className="flex flex-wrap gap-2">
-            {options && options.map((option) => (
-              <Badge key={option.value} variant="secondary" className="py-2 px-3">
-                {option.label}
-                <button
-                  type="button"
-                  onClick={() => removeOption(option.value)}
-                  className="ml-2 h-4 w-4 rounded-full text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                  <span className="sr-only">{t("remove")}</span>
-                </button>
-              </Badge>
-            ))}
-          </div>
-          
-          <div className="flex gap-2 items-center">
-            <Input
-              value={newOption}
-              onChange={(e) => setNewOption(e.target.value)}
-              placeholder={t("addOption")}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  if (newOption.trim() !== "") {
-                    addOption();
-                  }
-                }
-              }}
-            />
+    <div className="space-y-4">
+      <div className="flex flex-col space-y-1.5">
+        <h3 className="text-sm font-medium">{t("optionsField")}</h3>
+        <p className="text-xs text-muted-foreground">{t("optionsFieldDescription")}</p>
+      </div>
+      
+      <div className="flex space-x-2">
+        <Input
+          placeholder={t("addOptionPlaceholder")}
+          value={newOption}
+          onChange={(e) => setNewOption(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <Button type="button" onClick={addOption}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="space-y-2">
+        {options.map((option, index) => (
+          <div key={index} className="flex items-center space-x-2 bg-secondary/50 p-2 rounded-md">
+            <div className="flex-1 font-medium text-sm">{option.label}</div>
             <Button
               type="button"
+              variant="ghost"
               size="sm"
-              onClick={handleAddOption}
-              variant="outline"
-              className="shrink-0"
-              disabled={newOption.trim() === ""}
+              onClick={() => removeOption(option.value)}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              {t("add")}
+              <X className="h-4 w-4" />
             </Button>
           </div>
-        </FormItem>
-      )}
-    />
+        ))}
+        
+        {options.length === 0 && (
+          <div className="text-sm text-muted-foreground italic">
+            {t("noOptionsAdded")}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

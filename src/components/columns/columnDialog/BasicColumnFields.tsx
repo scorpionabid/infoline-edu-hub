@@ -1,20 +1,15 @@
 
 import React from 'react';
-import { useLanguage } from "@/context/LanguageContext";
-import { Column } from "@/types/column";
-import { UseFormReturn } from "react-hook-form";
-import { ColumnFormValues } from './useColumnForm';
-import { 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
+import { UseFormReturn } from 'react-hook-form';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
   FormMessage,
-  FormDescription 
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -22,35 +17,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useLanguage } from "@/context/LanguageContext";
+import { Column, ColumnType } from "@/types/column";
 
 interface BasicColumnFieldsProps {
-  form: UseFormReturn<ColumnFormValues>;
+  form: UseFormReturn<any>;
   categories: { id: string; name: string }[];
-  columns?: Column[];
+  columns: Column[];
   editColumn?: Column;
-  selectedType: string;
+  selectedType: ColumnType;
   handleTypeChange: (value: string) => void;
 }
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   form,
   categories,
-  columns = [],
+  columns,
   editColumn,
   selectedType,
-  handleTypeChange
+  handleTypeChange,
 }) => {
   const { t } = useLanguage();
 
   return (
-    <>
-      {/* Column Name */}
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="name"
@@ -58,14 +49,14 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
           <FormItem>
             <FormLabel>{t("columnName")}</FormLabel>
             <FormControl>
-              <Input placeholder={t("enterColumnName")} {...field} />
+              <Input placeholder={t("columnNamePlaceholder")} {...field} />
             </FormControl>
+            <FormDescription>{t("columnNameDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Category */}
       <FormField
         control={form.control}
         name="categoryId"
@@ -90,12 +81,12 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            <FormDescription>{t("categoryDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Column Type */}
       <FormField
         control={form.control}
         name="type"
@@ -103,57 +94,56 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
           <FormItem>
             <FormLabel>{t("columnType")}</FormLabel>
             <Select
-              onValueChange={(value) => handleTypeChange(value)}
+              onValueChange={(value) => {
+                handleTypeChange(value);
+                field.onChange(value);
+              }}
               defaultValue={field.value}
               value={field.value}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("selectType")} />
+                  <SelectValue placeholder={t("selectColumnType")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="text">{t("text")}</SelectItem>
+                <SelectItem value="textarea">{t("textarea")}</SelectItem>
                 <SelectItem value="number">{t("number")}</SelectItem>
                 <SelectItem value="date">{t("date")}</SelectItem>
                 <SelectItem value="select">{t("select")}</SelectItem>
                 <SelectItem value="checkbox">{t("checkbox")}</SelectItem>
                 <SelectItem value="radio">{t("radio")}</SelectItem>
-                <SelectItem value="file">{t("file")}</SelectItem>
-                <SelectItem value="image">{t("image")}</SelectItem>
                 <SelectItem value="email">{t("email")}</SelectItem>
                 <SelectItem value="phone">{t("phone")}</SelectItem>
-                <SelectItem value="boolean">{t("boolean")}</SelectItem>
               </SelectContent>
             </Select>
+            <FormDescription>{t("columnTypeDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Required Field */}
       <FormField
         control={form.control}
         name="isRequired"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-            <div className="space-y-0.5">
-              <FormLabel>{t("required")}</FormLabel>
-              <FormDescription>
-                {t("requiredFieldDescription")}
-              </FormDescription>
-            </div>
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
             <FormControl>
-              <Switch
+              <Checkbox
                 checked={field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>{t("isRequired")}</FormLabel>
+              <FormDescription>{t("isRequiredDescription")}</FormDescription>
+            </div>
+            <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Order */}
       <FormField
         control={form.control}
         name="order"
@@ -161,183 +151,14 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
           <FormItem>
             <FormLabel>{t("order")}</FormLabel>
             <FormControl>
-              <Input
-                type="number"
-                placeholder={t("enterOrder")}
-                {...field}
-                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-              />
+              <Input type="number" min="1" {...field} />
             </FormControl>
+            <FormDescription>{t("orderDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
-
-      {/* Parent Column (if any) */}
-      <FormField
-        control={form.control}
-        name="parentColumnId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("parentColumn")}</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value || "none"}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectParentColumn")} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="none">{t("noParent")}</SelectItem>
-                {columns
-                  .filter(col => col.id !== editColumn?.id) // Filter out the current column in edit mode
-                  .map((column) => (
-                    <SelectItem key={column.id} value={column.id}>
-                      {column.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            <FormDescription>
-              {t("parentColumnDescription")}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Placeholder */}
-      <FormField
-        control={form.control}
-        name="placeholder"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("placeholder")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("enterPlaceholder")} {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Help Text */}
-      <FormField
-        control={form.control}
-        name="helpText"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("helpText")}</FormLabel>
-            <FormControl>
-              <Textarea placeholder={t("enterHelpText")} {...field} />
-            </FormControl>
-            <FormDescription>
-              {t("helpTextDescription")}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Deadline - Tarix seçici düzəlişi */}
-      <FormField
-        control={form.control}
-        name="deadline"
-        render={({ field }) => (
-          <FormItem className="flex flex-col">
-            <FormLabel>{t("deadline")}</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !field.value && "text-muted-foreground"
-                    )}
-                  >
-                    {field.value ? (
-                      format(new Date(field.value), "PPP")
-                    ) : (
-                      <span>{t("selectDeadline")}</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={field.value ? new Date(field.value) : undefined}
-                  onSelect={(date) => field.onChange(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <FormDescription>
-              {t("deadlineDescription")}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {/* Default Value */}
-      {(selectedType === "text" || selectedType === "number") && (
-        <FormField
-          control={form.control}
-          name="defaultValue"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("defaultValue")}</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder={t("enterDefaultValue")}
-                  type={selectedType === "number" ? "number" : "text"}
-                  {...field}
-                  onChange={(e) => 
-                    field.onChange(selectedType === "number" ? 
-                      (e.target.value === "" ? "" : String(parseFloat(e.target.value) || 0)) : 
-                      e.target.value
-                    )
-                  }
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-
-      {/* Status */}
-      <FormField
-        control={form.control}
-        name="status"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("status")}</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-              value={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectStatus")} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="active">{t("active")}</SelectItem>
-                <SelectItem value="inactive">{t("inactive")}</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
+    </div>
   );
 };
 
