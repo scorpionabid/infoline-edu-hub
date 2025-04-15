@@ -1,5 +1,5 @@
 
-import { Notification, NotificationType, NotificationPriority } from './notification';
+import { Notification, NotificationType } from './notification';
 import { DashboardNotification } from './dashboard';
 import { format } from 'date-fns';
 
@@ -30,7 +30,7 @@ export function adaptDashboardToNotification(dashboardNotification: DashboardNot
     isRead: dashboardNotification.isRead,
     createdAt: dashboardNotification.createdAt || new Date().toISOString(),
     userId: dashboardNotification.userId,
-    priority: dashboardNotification.priority as NotificationPriority,
+    priority: dashboardNotification.priority as 'low' | 'normal' | 'high',
     relatedId: dashboardNotification.relatedEntityId,
     relatedType: dashboardNotification.relatedEntityType,
     date: dashboardNotification.date,

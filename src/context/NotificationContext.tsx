@@ -1,16 +1,18 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useNotifications as useNotificationsHook } from '@/hooks/useNotifications';
-import { Notification } from '@/types/notifications';
+import { Notification } from '@/types/notification';
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   loading: boolean;
+  error: Error | null;
   fetchNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   clearAll: () => Promise<void>;
+  addNotification?: (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => Promise<Notification | null>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);

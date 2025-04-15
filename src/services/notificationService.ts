@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Notification } from "@/types/notification";
 
@@ -5,7 +6,7 @@ import { Notification } from "@/types/notification";
  * Bildirişləri əldə etmək
  * @param userId İstifadəçi ID-si
  */
-export const getNotifications = async (userId: string): Promise<Notification[]> => {
+export const getNotifications = async (userId: string): Promise<any[]> => {
   try {
     const { data: notifications, error } = await supabase
       .from('notifications')
@@ -82,8 +83,16 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
   try {
     // Mark notification as created by specified user
     const notificationData = {
-      ...notification,
-      user_id: userId
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      priority: notification.priority || 'normal',
+      related_entity_id: notification.relatedId,
+      related_entity_type: notification.relatedType,
+      user_id: userId,
+      is_read: false,
+      time: notification.time,
+      date: notification.date
     };
 
     const { data, error } = await supabase
@@ -97,7 +106,25 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
       throw error;
     }
 
-    return data || null;
+    // Format the response as a Notification type
+    if (data) {
+      return {
+        id: data.id,
+        title: data.title,
+        message: data.message,
+        type: data.type,
+        priority: data.priority,
+        userId: data.user_id,
+        isRead: data.is_read,
+        createdAt: data.created_at,
+        relatedId: data.related_entity_id,
+        relatedType: data.related_entity_type,
+        time: data.time || new Date().toTimeString().slice(0, 5),
+        date: data.date || new Date().toISOString().slice(0, 10)
+      };
+    }
+
+    return null;
   } catch (error: any) {
     console.error("Bildiriş yaratma xətası:", error);
     return null;

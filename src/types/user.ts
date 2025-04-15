@@ -68,6 +68,12 @@ export interface FullUserData extends User {
   name?: string; // name alias-ını əlavə edirik
   createdAt?: string; // created_at-ın alias-ı
   updatedAt?: string; // updated_at-ın alias-ı
+  notificationSettings: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    system?: boolean;
+  };
 }
 
 // Helper functions
@@ -80,7 +86,13 @@ export function userToFullUserData(user: User): FullUserData {
     updated_at: user.updated_at || new Date().toISOString(),
     name: user.full_name, // name alias-ını əlavə edirik
     createdAt: user.created_at, // createdAt alias-ını əlavə edirik
-    updatedAt: user.updated_at // updatedAt alias-ını əlavə edirik
+    updatedAt: user.updated_at, // updatedAt alias-ını əlavə edirik
+    notificationSettings: {
+      email: user.notificationSettings?.email || true,
+      push: user.notificationSettings?.push || false,
+      sms: user.notificationSettings?.sms || false,
+      system: user.notificationSettings?.system || false
+    }
   };
 }
 
@@ -103,6 +115,11 @@ export function fullUserDataToUser(fullUserData: FullUserData): User {
     lastLogin: fullUserData.lastLogin,
     passwordResetDate: fullUserData.passwordResetDate,
     twoFactorEnabled: fullUserData.twoFactorEnabled,
-    notificationSettings: fullUserData.notificationSettings
+    notificationSettings: {
+      email: fullUserData.notificationSettings?.email || true,
+      push: fullUserData.notificationSettings?.push || false,
+      sms: fullUserData.notificationSettings?.sms || false,
+      system: fullUserData.notificationSettings?.system || false
+    }
   };
 }

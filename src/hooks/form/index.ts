@@ -6,7 +6,7 @@ import { useFormState } from './useFormState';
 /**
  * @description Bu hook, form idarəetməsi üçün lazımi metodları və vəziyyətləri təmin edir
  */
-export const useForm = (categories = []) => {
+export const useForm = (initialCategories = []) => {
   const { formData, setFormData, updateFormData } = useFormState();
   
   // UseFormActions hook-a əsas məlumatları ötürürük
@@ -14,7 +14,7 @@ export const useForm = (categories = []) => {
     formData,
     setFormData,
     updateFormData,
-    categories
+    categories: initialCategories
   });
   
   // React Hook Form 

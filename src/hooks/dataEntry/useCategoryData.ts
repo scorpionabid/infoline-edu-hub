@@ -11,14 +11,14 @@ interface UseCategoryDataReturn {
   error: Error | null;
 }
 
-const mockCategoriesData = [
+const mockCategoriesData: CategoryWithColumns[] = [
   {
     id: '1',
     name: 'Şagird Məlumatları',
     description: 'Şagirdlərlə bağlı əsas məlumatlar',
-    assignment: 'all' as 'all' | 'sectors',
+    assignment: 'all',
     deadline: '2024-12-31',
-    status: 'active' as 'active' | 'inactive' | 'draft',
+    status: 'active',
     priority: 1,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -29,11 +29,12 @@ const mockCategoriesData = [
         id: '101',
         category_id: '1',
         name: 'Ad',
-        type: 'text' as ColumnType,
+        type: 'text',
         is_required: true,
         order_index: 1,
         status: 'active',
         validation: { maxLength: 50 },
+        options: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       },
@@ -41,11 +42,12 @@ const mockCategoriesData = [
         id: '102',
         category_id: '1',
         name: 'Soyad',
-        type: 'text' as ColumnType,
+        type: 'text',
         is_required: true,
         order_index: 2,
         status: 'active',
         validation: { maxLength: 50 },
+        options: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -55,9 +57,9 @@ const mockCategoriesData = [
     id: '2',
     name: 'Müəllim Məlumatları',
     description: 'Müəllimlərlə bağlı əsas məlumatlar',
-    assignment: 'all' as 'all' | 'sectors',
+    assignment: 'all',
     deadline: '2024-12-31',
-    status: 'active' as 'active' | 'inactive' | 'draft',
+    status: 'active',
     priority: 2,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -68,11 +70,12 @@ const mockCategoriesData = [
         id: '201',
         category_id: '2',
         name: 'Ad',
-        type: 'text' as ColumnType,
+        type: 'text',
         is_required: true,
         order_index: 1,
         status: 'active',
         validation: { maxLength: 50 },
+        options: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       },
@@ -80,11 +83,12 @@ const mockCategoriesData = [
         id: '202',
         category_id: '2',
         name: 'Soyad',
-        type: 'text' as ColumnType,
+        type: 'text',
         is_required: true,
         order_index: 2,
         status: 'active',
         validation: { maxLength: 50 },
+        options: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -138,37 +142,41 @@ export const useCategoryData = (): UseCategoryDataReturn => {
       
       console.log("Supabase-dən alınan sütunlar:", columnsData);
       
+      // Tip uyğunluğunu təmin etmək üçün data struktur formalaşdırma
       const dataWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         const categoryColumns = columnsData?.filter(column => column.category_id === category.id) || [];
+        
+        // Sütunları formalaşdırırıq
+        const formattedColumns: Column[] = categoryColumns.map(col => ({
+          id: col.id,
+          category_id: col.category_id,
+          name: col.name,
+          type: col.type as ColumnType,
+          is_required: col.is_required || false,
+          order_index: col.order_index || 0,
+          status: col.status as 'active' | 'inactive' | 'draft',
+          validation: col.validation || {},
+          default_value: col.default_value || '',
+          placeholder: col.placeholder || '',
+          help_text: col.help_text || '',
+          options: col.options || [] as string[] | ColumnOption[],
+          created_at: col.created_at,
+          updated_at: col.updated_at
+        }));
         
         return {
           id: category.id,
           name: category.name,
           description: category.description || '',
           assignment: category.assignment as 'all' | 'sectors',
-          deadline: category.deadline,
+          deadline: category.deadline || '',
           status: category.status as 'active' | 'inactive' | 'draft',
           priority: category.priority || 0,
           created_at: category.created_at,
           updated_at: category.updated_at,
           archived: category.archived || false,
           column_count: category.column_count || 0,
-          columns: categoryColumns.map(col => ({
-            id: col.id,
-            category_id: col.category_id,
-            name: col.name,
-            type: col.type as ColumnType,
-            is_required: col.is_required || false,
-            order_index: col.order_index || 0,
-            status: col.status as 'active' | 'inactive' | 'draft',
-            validation: col.validation,
-            default_value: col.default_value,
-            placeholder: col.placeholder,
-            help_text: col.help_text,
-            options: col.options,
-            created_at: col.created_at,
-            updated_at: col.updated_at
-          }))
+          columns: formattedColumns
         };
       });
       

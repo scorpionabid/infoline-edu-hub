@@ -145,7 +145,7 @@ const UserList: React.FC<UserListProps> = ({
             user={selectedUser}
             onSave={(updatedUser) => {
               // Kullanıcı güncelleme işlemi
-              handleUpdateUserConfirm({
+              const userWithFullNotificationSettings = {
                 ...updatedUser,
                 name: updatedUser.full_name, // name alanını full_name ile senkronize et
                 full_name: updatedUser.full_name, // full_name alanını da güncelle
@@ -156,7 +156,8 @@ const UserList: React.FC<UserListProps> = ({
                   sms: updatedUser.notificationSettings?.sms || false,
                   system: updatedUser.notificationSettings?.system || false
                 }
-              });
+              };
+              handleUpdateUserConfirm(userWithFullNotificationSettings);
               handleUserUpdated();
             }}
           />
@@ -174,7 +175,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={fullUserDataToUser(selectedUser as FullUserData)}
+            user={selectedUser as User}
           />
         </>
       )}

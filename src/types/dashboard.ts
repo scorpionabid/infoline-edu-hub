@@ -2,13 +2,13 @@ export interface DashboardNotification {
   id: string;
   title: string;
   message: string;
-  type: 'system' | 'deadline' | 'category' | 'approval' | 'rejection';
-  userId: string;
+  type: string;
   isRead: boolean;
-  priority: 'high' | 'normal' | 'low';
+  priority: string;
   date: string;
   time: string;
-  createdAt?: string; // createdAt əlavə edildi
+  userId: string;
+  createdAt: string;
   relatedEntityId?: string;
   relatedEntityType?: string;
 }
