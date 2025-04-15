@@ -31,7 +31,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   const navigate = useNavigate();
   
   const { 
-    dashboard: schoolAdminData,
+    data: schoolAdminData,
     isLoading: schoolAdminLoading,
     error: schoolAdminError,
     refetch: refreshSchoolAdminData,

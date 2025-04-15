@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,16 +6,15 @@ import {
   createMockSuperAdminData,
   createMockRegionAdminData,
   createMockSectorAdminData,
+  createMockSchoolAdminData,
   createMockChartData 
 } from '@/utils/dashboardUtils';
-import { Notification } from '@/types/notification';
 import { 
   SuperAdminDashboardData, 
   RegionAdminDashboardData, 
   SectorAdminDashboardData, 
   SchoolAdminDashboardData, 
   DashboardData,
-  StatsItem,
   ChartData
 } from '@/types/dashboard';
 
@@ -51,6 +51,9 @@ export const useDashboardData = () => {
             break;
           case 'sectoradmin':
             mockData = createMockSectorAdminData();
+            break;
+          case 'schooladmin':
+            mockData = createMockSchoolAdminData();
             break;
           default:
             mockData = createMockSuperAdminData();

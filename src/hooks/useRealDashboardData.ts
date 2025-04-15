@@ -4,20 +4,27 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
-  getSuperAdminDashboardData,
-  getRegionAdminDashboardData,
-  getSectorAdminDashboardData,
-  getSchoolAdminDashboardData,
-  getDashboardChartData
-} from '@/services/dashboardService';
+  SuperAdminDashboardData, 
+  RegionAdminDashboardData, 
+  SectorAdminDashboardData, 
+  SchoolAdminDashboardData,
+  ChartData
+} from '@/types/dashboard';
+import { 
+  createMockSuperAdminData,
+  createMockRegionAdminData,
+  createMockSectorAdminData,
+  createMockSchoolAdminData,
+  createMockChartData
+} from '@/utils/dashboardUtils';
 
 export const useRealDashboardData = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   
-  const [data, setData] = useState<any>(null);
-  const [chartData, setChartData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
@@ -28,38 +35,34 @@ export const useRealDashboardData = () => {
       setIsLoading(true);
       setError(null);
       
-      let dashboardData = null;
+      // API-dən məlumatları əldə etməyi simulyasiya edirik
+      // Real layihədə bu hissəni API sorğuları ilə əvəz edəcəksiniz
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      let data = null;
       
       // İstifadəçi roluna əsasən müvafiq dashboard məlumatlarını əldə et
       switch (user.role) {
         case 'superadmin':
-          dashboardData = await getSuperAdminDashboardData();
+          data = createMockSuperAdminData();
           break;
         case 'regionadmin':
-          dashboardData = await getRegionAdminDashboardData(user.regionId || '');
+          data = createMockRegionAdminData();
           break;
         case 'sectoradmin':
-          dashboardData = await getSectorAdminDashboardData(user.sectorId || '');
+          data = createMockSectorAdminData();
           break;
         case 'schooladmin':
-          dashboardData = await getSchoolAdminDashboardData(user.schoolId || '');
+          data = createMockSchoolAdminData();
           break;
         default:
           throw new Error(t('unknownRole'));
       }
       
-      setData(dashboardData);
+      setDashboardData(data);
       
       // Chart məlumatlarını əldə et
-      const charts = await getDashboardChartData({
-        entityType: user.role === 'regionadmin' ? 'region' : 
-                   user.role === 'sectoradmin' ? 'sector' : 
-                   user.role === 'schooladmin' ? 'school' : undefined,
-        entityId: user.role === 'regionadmin' ? user.regionId : 
-                 user.role === 'sectoradmin' ? user.sectorId : 
-                 user.role === 'schooladmin' ? user.schoolId : undefined
-      });
-      
+      const charts = createMockChartData();
       setChartData(charts);
       
     } catch (err: any) {
@@ -80,7 +83,7 @@ export const useRealDashboardData = () => {
   }, [fetchDashboardData]);
   
   return {
-    data,
+    dashboardData,
     chartData,
     isLoading,
     error,

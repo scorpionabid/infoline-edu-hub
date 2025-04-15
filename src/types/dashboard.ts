@@ -200,3 +200,9 @@ export type DashboardData =
   RegionAdminDashboardData | 
   SectorAdminDashboardData | 
   SchoolAdminDashboardData;
+
+export interface ChartData {
+  activityData: Array<{ name: string; value: number }>;
+  regionSchoolsData: Array<{ name: string; value: number }>;
+  categoryCompletionData: Array<{ name: string; completed: number }>;
+}
