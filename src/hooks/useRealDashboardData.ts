@@ -6,6 +6,7 @@ import {
   fetchSuperAdminDashboard, 
   fetchRegionAdminDashboard,
   fetchSectorAdminDashboard,
+  fetchSchoolAdminDashboard,
   fetchDashboardChartData 
 } from '@/services/dashboardService';
 import { DashboardData, ChartData } from '@/types/dashboard';
@@ -41,7 +42,7 @@ export const useRealDashboardData = ({
     try {
       setIsLoading(true);
       setError(null);
-      console.log(`Fetching real dashboard data for role: ${user.role}`);
+      console.log(`Real dashboard datası yüklənir: ${user.role} rolu üçün`);
       
       // İstifadəçi roluna əsasən uyğun servis funksiyasını çağır
       let data = null;
@@ -65,8 +66,12 @@ export const useRealDashboardData = ({
           }
           break;
         case 'schooladmin':
-          // SchoolAdmin dashboard-ı üçün ayrı hook istifadə edirik
-          console.log('SchoolAdmin üçün ayrı hook istifadə edilir');
+          if (user.schoolId) {
+            data = await fetchSchoolAdminDashboard(user.schoolId);
+          } else {
+            console.warn('Məktəb ID tapılmadı, mock data istifadə edilir');
+            data = await fetchSchoolAdminDashboard('');
+          }
           break;
         default:
           console.warn(`Naməlum rol: ${user.role}`);
@@ -106,3 +111,5 @@ export const useRealDashboardData = ({
     userRole: user?.role
   };
 };
+
+export default useRealDashboardData;

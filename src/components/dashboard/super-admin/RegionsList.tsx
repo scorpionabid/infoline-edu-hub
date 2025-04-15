@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { RegionStat } from '@/types/dashboard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { MapPin } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface RegionsListProps {
   regions: RegionStat[];
@@ -12,31 +12,40 @@ interface RegionsListProps {
 const RegionsList: React.FC<RegionsListProps> = ({ regions }) => {
   const { t } = useLanguage();
   
+  if (!regions || regions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('regions')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{t('noRegionsFound')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <MapPin className="mr-2 h-5 w-5" />
-          {t('regions')}
-        </CardTitle>
+        <CardTitle>{t('regions')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {regions.map((region) => (
-            <div key={region.id} className="flex justify-between items-center border-b pb-2">
-              <div>
-                <p className="font-medium">{region.name}</p>
+            <div key={region.id} className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">{region.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {t('sectors')}: {region.sectorCount}, {t('schools')}: {region.schoolCount}
+                  {t('sectorsCount')}: {region.sectorCount}, {t('schoolsCount')}: {region.schoolCount}
                 </p>
               </div>
-              <div>
-                <span className="text-sm font-semibold">{region.completionRate}%</span>
-                <div className="w-20 bg-gray-200 rounded-full h-2.5 mt-1">
-                  <div 
-                    className="bg-primary h-2.5 rounded-full" 
-                    style={{ width: `${region.completionRate}%` }}
-                  ></div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-medium">
+                    {region.completionRate}%
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
             </div>

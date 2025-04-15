@@ -1,3 +1,4 @@
+
 import { User } from '@/types/user';
 
 export const mockUsers: User[] = [
@@ -8,7 +9,6 @@ export const mockUsers: User[] = [
     name: 'SuperAdmin User',
     full_name: 'SuperAdmin User',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
     status: 'active',
     created_at: '2023-01-01T00:00:00Z',
     last_sign_in_at: '2024-04-14T08:45:12Z',
@@ -30,7 +30,6 @@ export const mockUsers: User[] = [
     name: 'Region Admin',
     full_name: 'Region Admin',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
     status: 'active',
     regionId: 'region1',
     created_at: '2023-01-02T00:00:00Z',
@@ -53,7 +52,6 @@ export const mockUsers: User[] = [
     name: 'Sector Admin',
     full_name: 'Sector Admin',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
     status: 'active',
     regionId: 'region1',
     sectorId: 'sector1',
@@ -77,7 +75,6 @@ export const mockUsers: User[] = [
     name: 'School Admin',
     full_name: 'School Admin',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
     status: 'active',
     regionId: 'region1',
     sectorId: 'sector1',
@@ -102,7 +99,6 @@ export const mockUsers: User[] = [
     name: 'Another School Admin',
     full_name: 'Another School Admin',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=5',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=5',
     status: 'active',
     regionId: 'region2',
     sectorId: 'sector2',
@@ -126,7 +122,6 @@ export const mockUsers: User[] = [
     name: 'Inactive User',
     full_name: 'Inactive User',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=6',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=6',
     status: 'inactive',
     regionId: 'region2',
     sectorId: 'sector2',
@@ -151,7 +146,6 @@ export const mockUsers: User[] = [
     name: 'New Region Admin',
     full_name: 'New Region Admin',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=7',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=7',
     status: 'active',
     regionId: 'region3',
     created_at: '2023-11-10T00:00:00Z',
@@ -174,7 +168,6 @@ export const mockUsers: User[] = [
     name: 'New Sector Admin',
     full_name: 'New Sector Admin',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=8',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=8',
     status: 'active',
     regionId: 'region3',
     sectorId: 'sector3',

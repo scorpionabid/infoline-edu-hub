@@ -1,3 +1,4 @@
+
 import { 
   DashboardNotification, 
   SchoolAdminDashboardData, 
@@ -9,7 +10,11 @@ import {
   SchoolStat,
   PendingItem,
   ActivityLogItem,
-  ChartData
+  ChartData,
+  SuperAdminDashboardData,
+  RegionAdminDashboardData,
+  SectorAdminDashboardData,
+  DashboardData
 } from '@/types/dashboard';
 
 /**
@@ -91,7 +96,7 @@ export const createMockSchoolAdminData = (): SchoolAdminDashboardData => {
 /**
  * Sektor admin mock dashboard məlumatları yaradır
  */
-export const createMockSectorAdminData = () => {
+export const createMockSectorAdminData = (): SectorAdminDashboardData => {
   const now = new Date();
   const notifications: DashboardNotification[] = [
     {
@@ -222,7 +227,7 @@ export const createMockSectorAdminData = () => {
 /**
  * Region admin mock dashboard məlumatları yaradır
  */
-export const createMockRegionAdminData = () => {
+export const createMockRegionAdminData = (): RegionAdminDashboardData => {
   const now = new Date();
   const notifications: DashboardNotification[] = [
     {
@@ -321,7 +326,7 @@ export const createMockRegionAdminData = () => {
 /**
  * Superadmin mock dashboard məlumatları yaradır
  */
-export const createMockSuperAdminData = () => {
+export const createMockSuperAdminData = (): SuperAdminDashboardData => {
   const now = new Date();
   const notifications: DashboardNotification[] = [
     {
@@ -430,11 +435,32 @@ export const createMockChartData = (): ChartData => {
   };
 };
 
-// Remove duplicate and redundant exports, keep a clean single export
+/**
+ * İstifadəçi roluna əsasən mock dashboard məlumatları təqdim edən funksiya
+ * @param userRole İstifadəçi rolu
+ * @returns DashboardData
+ */
+export function generateDashboardDataByRole(userRole?: string): DashboardData {
+  switch (userRole) {
+    case 'superadmin':
+      return createMockSuperAdminData();
+    case 'regionadmin':
+      return createMockRegionAdminData();
+    case 'sectoradmin':
+      return createMockSectorAdminData();
+    case 'schooladmin':
+      return createMockSchoolAdminData();
+    default:
+      return createMockSuperAdminData();
+  }
+}
+
+// Bütün export edilmiş funksiyaları birləşdiririk
 export {
   createMockSchoolAdminData,
   createMockSectorAdminData,
   createMockRegionAdminData,
   createMockSuperAdminData,
-  createMockChartData
+  createMockChartData,
+  generateDashboardDataByRole
 };

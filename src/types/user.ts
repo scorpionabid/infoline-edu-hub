@@ -1,7 +1,7 @@
 
 import { UserRole } from './supabase';
 
-// User interfeysini yenidən təyin edirik, getter metodunu çıxararaq
+// User interfeysini yenidən təyin edirik
 export interface User {
   id: string;
   email: string;
@@ -9,6 +9,7 @@ export interface User {
   full_name?: string;
   name?: string; // full_name üçün alias əlavə edirik
   avatar?: string;
+  avatar_url?: string; // Supabase-dən gələn avatar_url dəstəyi
   status?: string;
   phone?: string;
   language?: string;
@@ -17,8 +18,11 @@ export interface User {
   sectorId?: string;
   schoolId?: string;
   lastLogin?: string;
+  last_sign_in_at?: string; // Supabase-dən gələn last_sign_in_at dəstəyi
   created_at?: string;
   updated_at?: string;
+  createdAt?: string; // created_at üçün alias
+  updatedAt?: string; // updated_at üçün alias
   passwordResetDate?: string;
   twoFactorEnabled?: boolean;
   notificationSettings?: {
@@ -43,7 +47,7 @@ export interface UserFormData {
   status?: string;
   language?: string;
   password?: string;
-  avatar?: string; // EditUserDialog-da istifadə edilən avatar xüsusiyyəti
+  avatar?: string; // Avatar xüsusiyyəti
   notificationSettings?: {
     email: boolean;
     push: boolean;
@@ -61,6 +65,7 @@ export interface FullUserData extends User {
   created_at: string;
   updated_at: string;
   // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
+  name?: string; // name alias-ını əlavə edirik
   createdAt?: string; // created_at-ın alias-ı
   updatedAt?: string; // updated_at-ın alias-ı
 }
@@ -87,7 +92,6 @@ export function fullUserDataToUser(fullUserData: FullUserData): User {
     full_name: fullUserData.full_name,
     name: fullUserData.full_name, // name alias-ını birbaşa təyin edirik
     avatar: fullUserData.avatar,
-    phone: fullUserData.phone,
     status: fullUserData.status,
     language: fullUserData.language,
     position: fullUserData.position,
