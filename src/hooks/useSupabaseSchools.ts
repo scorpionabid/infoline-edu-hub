@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
-import { useRegions } from './useRegions';
-import { useSectors } from './useSectors';
+import { useRegions } from '@/hooks/useRegions';
+import { useSectors } from '@/hooks/useSectors';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
