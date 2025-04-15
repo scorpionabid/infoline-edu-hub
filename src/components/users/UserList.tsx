@@ -11,7 +11,7 @@ import UserListTable from './UserListTable';
 import UserFilters from './UserFilters';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { User, FullUserData, userToFullUserData, fullUserDataToUser } from '@/types/user';
+import { User, fullUserDataToUser, userToFullUserData } from '@/types/user';
 
 interface UserListProps {
   currentUserRole?: Role;
@@ -142,7 +142,7 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={fullUserDataToUser(selectedUser)}
+            user={selectedUser as User}
             onSave={(updatedUser) => {
               // Kullanıcı güncelleme işlemi
               const updatedUserWithDefaults = {
@@ -159,7 +159,7 @@ const UserList: React.FC<UserListProps> = ({
                   system: updatedUser.notificationSettings?.system ?? true
                 }
               };
-              handleUpdateUserConfirm(userToFullUserData(updatedUserWithDefaults));
+              handleUpdateUserConfirm(updatedUserWithDefaults as any);
               handleUserUpdated();
             }}
           />
@@ -167,7 +167,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={fullUserDataToUser(selectedUser)}
+            user={selectedUser as User}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -177,7 +177,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={fullUserDataToUser(selectedUser)}
+            user={selectedUser as User}
           />
         </>
       )}

@@ -1,44 +1,50 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
+import { AlertTriangle } from 'lucide-react';
 
 interface CategoryConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  title: string;
+  description: string;
+  confirmText: string;
+  isLoading?: boolean;
 }
 
 const CategoryConfirmationDialog: React.FC<CategoryConfirmationDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  title,
+  description,
+  confirmText,
+  isLoading = false
 }) => {
   const { t } = useLanguage();
-
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('unsavedChanges')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            {title}
+          </DialogTitle>
           <DialogDescription>
-            {t('unsavedChangesDescription')}
+            {description}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        
+        <DialogFooter className="mt-4 gap-2 sm:gap-0">
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             {t('cancel')}
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            {t('discardChanges')}
+          <Button onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? t('processing') : confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

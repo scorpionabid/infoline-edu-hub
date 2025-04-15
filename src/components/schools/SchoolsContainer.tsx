@@ -1,17 +1,19 @@
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
 import SchoolPagination from './SchoolPagination';
 import SchoolHeader from './SchoolHeader';
-import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
+import { useSchoolsStore, SortConfig } from '@/hooks/schools/useSchoolsStore';
 import { useSchoolDialogHandlers } from '@/hooks/schools/useSchoolDialogHandlers';
 import SchoolDialogs from './SchoolDialogs';
 import { toast } from 'sonner';
 import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
+import { School } from '@/types/school';
+import { adaptSchoolFromSupabase } from '@/types/school';
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -25,10 +27,10 @@ const SchoolsContainer: React.FC = () => {
     sortConfig,
     currentPage,
     totalPages,
-    handleSearch,
-    handleRegionFilter,
-    handleSectorFilter,
-    handleStatusFilter,
+    handleSearch: originalHandleSearch,
+    handleRegionFilter: originalHandleRegionFilter,
+    handleSectorFilter: originalHandleSectorFilter,
+    handleStatusFilter: originalHandleStatusFilter,
     handleSort,
     handlePageChange,
     resetFilters,
@@ -38,6 +40,12 @@ const SchoolsContainer: React.FC = () => {
     schools,
     userRole
   } = useSchoolsStore();
+
+  // Change event handler adaptörleri
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => originalHandleSearch(e);
+  const handleRegionFilter = (e: ChangeEvent<HTMLSelectElement>) => originalHandleRegionFilter(e);
+  const handleSectorFilter = (e: ChangeEvent<HTMLSelectElement>) => originalHandleSectorFilter(e);
+  const handleStatusFilter = (e: ChangeEvent<HTMLSelectElement>) => originalHandleStatusFilter(e);
 
   const {
     isDeleteDialogOpen,
@@ -107,7 +115,9 @@ const SchoolsContainer: React.FC = () => {
 
   // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
-    handleExportToExcel(schools);
+    // Supabase tipindən app tipinə çevirmə
+    const adaptedSchools: School[] = schools.map(school => adaptSchoolFromSupabase(school));
+    handleExportToExcel(adaptedSchools);
   };
 
   const handleImportClick = () => {
@@ -142,7 +152,7 @@ const SchoolsContainer: React.FC = () => {
           <SchoolTable 
             currentItems={currentItems}
             searchTerm={searchTerm}
-            sortConfig={sortConfig}
+            sortConfig={sortConfig as SortConfig}
             handleSort={handleSort}
             handleEditDialogOpen={handleEditDialogOpen}
             handleDeleteDialogOpen={handleDeleteDialogOpen}

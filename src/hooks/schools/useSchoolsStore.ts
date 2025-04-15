@@ -1,11 +1,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { School } from '@/data/schoolsData';
+import { School } from '@/types/school';
 import { supabase } from '@/integrations/supabase/client'; 
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { Region, Sector } from '@/types/supabase';
 
-type SortConfig = {
+export type SortConfig = {
   key: keyof School;
   direction: 'ascending' | 'descending';
 };
@@ -87,8 +88,8 @@ export const useSchoolsStore = () => {
     return schools.filter(school => {
       const matchesSearchTerm = !searchTerm ||
         school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (school.admin_email && school.admin_email.toLowerCase().includes(searchTerm.toLowerCase()));
+        (school.principalName && school.principalName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (school.adminEmail && school.adminEmail.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesRegion = !selectedRegion || school.regionId === selectedRegion;
       const matchesSector = !selectedSector || school.sectorId === selectedSector;
@@ -137,12 +138,13 @@ export const useSchoolsStore = () => {
     return sortedItems.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedItems, currentPage, itemsPerPage]);
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value);
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
     setCurrentPage(1);
   }, []);
 
-  const handleRegionFilter = useCallback((value: string) => {
+  const handleRegionFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
     setSelectedRegion(value);
     // Əgər yeni region seçilibsə, sektor seçimini sıfırla
     if (value !== selectedRegion) {
@@ -151,13 +153,13 @@ export const useSchoolsStore = () => {
     setCurrentPage(1);
   }, [selectedRegion]);
 
-  const handleSectorFilter = useCallback((value: string) => {
-    setSelectedSector(value);
+  const handleSectorFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSector(e.target.value);
     setCurrentPage(1);
   }, []);
 
-  const handleStatusFilter = useCallback((value: string) => {
-    setSelectedStatus(value);
+  const handleStatusFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(e.target.value);
     setCurrentPage(1);
   }, []);
 

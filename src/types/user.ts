@@ -1,129 +1,152 @@
 
-import { UserRole } from './supabase';
+import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
-// User interfeysini yenidən təyin edirik
 export interface User {
   id: string;
   email: string;
-  role: UserRole;
   full_name?: string;
-  name?: string; // full_name üçün alias əlavə edirik
-  avatar?: string;
-  avatar_url?: string; // Supabase-dən gələn avatar_url dəstəyi
-  status?: 'active' | 'inactive' | 'blocked';
-  phone?: string;
-  language?: string;
-  position?: string;
+  name?: string;
+  role?: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  last_login?: string;
   lastLogin?: string;
-  last_sign_in_at?: string; // Supabase-dən gələn last_sign_in_at dəstəyi
+  createdAt?: string;
+  updatedAt?: string;
   created_at?: string;
   updated_at?: string;
-  createdAt?: string; // created_at üçün alias
-  updatedAt?: string; // updated_at üçün alias
-  passwordResetDate?: string;
-  twoFactorEnabled?: boolean;
+  userRoleId?: string;
+  adminEntity?: {
+    type: string;
+    name: string;
+    status?: string;
+    regionName?: string;
+    sectorName?: string;
+    schoolType?: string;
+  };
   notificationSettings?: {
     email: boolean;
-    push: boolean;
-    sms: boolean;
-    system?: boolean; // System bildirimlerini əlavə edirik
+    system: boolean;
+    push?: boolean;
+    sms?: boolean;
   };
+  twoFactorEnabled?: boolean;
 }
 
-// UserFormData interfeysi
-export interface UserFormData {
-  full_name: string;
-  name?: string; // name xüsusiyyətini əlavə edirik
+export interface FullUserData {
+  id: string;
   email: string;
-  phone?: string;
-  position?: string;
-  role: string;
+  full_name: string;
+  name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
-  status?: 'active' | 'inactive' | 'blocked';
-  language?: string;
-  password?: string;
-  avatar?: string; // Avatar xüsusiyyəti
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-    system?: boolean;
-  };
-}
-
-export interface FullUserData extends User {
-  userRoleId: string;
-  region_name?: string;
-  sector_name?: string;
-  school_name?: string;
-  language: string; // Ana modeldə optional, burada mütləq
+  phone?: string;
+  position?: string;
+  language: string;
+  avatar?: string;
+  status: 'active' | 'inactive' | 'blocked';
+  last_login?: string;
+  lastLogin?: string;
   created_at: string;
   updated_at: string;
-  // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-  name?: string; // name alias-ını əlavə edirik
-  createdAt?: string; // created_at-ın alias-ı
-  updatedAt?: string; // updated_at-ın alias-ı
-  full_name: string; // Ana modeldə optional, burada mütləq
-  status: 'active' | 'inactive' | 'blocked'; // Ana modeldə optional, burada mütləq
+  createdAt: string;
+  updatedAt: string;
+  userRoleId?: string;
+  adminEntity?: {
+    type: string;
+    name: string;
+    status?: string;
+    regionName?: string;
+    sectorName?: string;
+    schoolType?: string;
+  };
   notificationSettings: {
     email: boolean;
-    push: boolean;
-    sms: boolean;
     system: boolean;
+    push?: boolean;
+    sms?: boolean;
   };
+  twoFactorEnabled?: boolean;
 }
 
-// Helper functions
-export function userToFullUserData(user: User): FullUserData {
+// User tipi adapteri
+export const userToFullUserData = (user: User): FullUserData => {
   return {
-    ...user,
-    userRoleId: user.id,
+    id: user.id,
+    email: user.email,
+    full_name: user.full_name || user.name || '',
+    name: user.name || user.full_name || '',
+    role: user.role || 'user',
+    region_id: user.region_id || user.regionId,
+    sector_id: user.sector_id || user.sectorId,
+    school_id: user.school_id || user.schoolId,
+    regionId: user.regionId || user.region_id,
+    sectorId: user.sectorId || user.sector_id,
+    schoolId: user.schoolId || user.school_id,
+    phone: user.phone,
+    position: user.position,
     language: user.language || 'az',
-    created_at: user.created_at || new Date().toISOString(),
-    updated_at: user.updated_at || new Date().toISOString(),
-    name: user.full_name, // name alias-ını əlavə edirik
-    createdAt: user.created_at, // createdAt alias-ını əlavə edirik
-    updatedAt: user.updated_at, // updatedAt alias-ını əlavə edirik
-    full_name: user.full_name || '',
+    avatar: user.avatar,
     status: user.status || 'active',
-    notificationSettings: {
-      email: user.notificationSettings?.email || true,
-      push: user.notificationSettings?.push || false,
-      sms: user.notificationSettings?.sms || false,
-      system: user.notificationSettings?.system || true
-    }
+    last_login: user.last_login || user.lastLogin,
+    lastLogin: user.lastLogin || user.last_login,
+    created_at: user.created_at || user.createdAt || new Date().toISOString(),
+    updated_at: user.updated_at || user.updatedAt || new Date().toISOString(),
+    createdAt: user.createdAt || user.created_at || new Date().toISOString(),
+    updatedAt: user.updatedAt || user.updated_at || new Date().toISOString(),
+    userRoleId: user.userRoleId,
+    adminEntity: user.adminEntity,
+    notificationSettings: user.notificationSettings || {
+      email: true,
+      system: true,
+      push: false,
+      sms: false
+    },
+    twoFactorEnabled: user.twoFactorEnabled || false
   };
-}
+};
 
-export function fullUserDataToUser(fullUserData: FullUserData): User {
+// SupabaseFullUserData'nı UserData tipinə çevirmək adapter funksiyası
+export const fullUserDataToUser = (fullUserData: SupabaseFullUserData): User => {
   return {
     id: fullUserData.id,
     email: fullUserData.email,
-    role: fullUserData.role,
     full_name: fullUserData.full_name,
-    name: fullUserData.full_name, // name alias-ını birbaşa təyin edirik
-    avatar: fullUserData.avatar,
-    status: fullUserData.status,
-    language: fullUserData.language,
-    position: fullUserData.position,
+    name: fullUserData.name,
+    role: fullUserData.role,
+    region_id: fullUserData.region_id,
+    sector_id: fullUserData.sector_id,
+    school_id: fullUserData.school_id,
     regionId: fullUserData.regionId,
     sectorId: fullUserData.sectorId,
     schoolId: fullUserData.schoolId,
+    phone: fullUserData.phone,
+    position: fullUserData.position,
+    language: fullUserData.language,
+    avatar: fullUserData.avatar,
+    status: fullUserData.status,
+    last_login: fullUserData.last_login,
+    lastLogin: fullUserData.lastLogin,
     created_at: fullUserData.created_at,
     updated_at: fullUserData.updated_at,
-    lastLogin: fullUserData.lastLogin,
-    passwordResetDate: fullUserData.passwordResetDate,
-    twoFactorEnabled: fullUserData.twoFactorEnabled,
-    notificationSettings: {
-      email: fullUserData.notificationSettings?.email || true,
-      push: fullUserData.notificationSettings?.push || false,
-      sms: fullUserData.notificationSettings?.sms || false,
-      system: fullUserData.notificationSettings?.system || true
-    }
+    createdAt: fullUserData.createdAt,
+    updatedAt: fullUserData.updatedAt,
+    adminEntity: fullUserData.adminEntity,
+    notificationSettings: fullUserData.notificationSettings,
+    twoFactorEnabled: fullUserData.twoFactorEnabled
   };
-}
+};

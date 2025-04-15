@@ -2,23 +2,23 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { SchoolStat } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface SchoolsListProps {
   schools: SchoolStat[];
-  onViewSchool?: (schoolId: string) => void;
+  className?: string;
 }
 
-const SchoolsList: React.FC<SchoolsListProps> = ({ schools, onViewSchool }) => {
+const SchoolsList: React.FC<SchoolsListProps> = ({ schools, className }) => {
   const { t } = useLanguage();
 
   return (
-    <Card className="col-span-1">
+    <Card className={className}>
       <CardHeader>
         <CardTitle>{t('schools')}</CardTitle>
       </CardHeader>
@@ -31,14 +31,12 @@ const SchoolsList: React.FC<SchoolsListProps> = ({ schools, onViewSchool }) => {
           ) : (
             <div className="space-y-4">
               {schools.map((school) => (
-                <div key={school.id} className="border rounded-md p-3 space-y-2">
+                <div key={school.id} className="border rounded-md p-4 space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">{school.name}</span>
-                    {school.pendingCount > 0 && (
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                        {t('pendingCount', { count: school.pendingCount })}
-                      </Badge>
-                    )}
+                    <h3 className="font-medium">{school.name}</h3>
+                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                      {t('pending')}: {school.pendingCount}
+                    </Badge>
                   </div>
                   
                   <div className="space-y-1">
@@ -49,17 +47,16 @@ const SchoolsList: React.FC<SchoolsListProps> = ({ schools, onViewSchool }) => {
                     <Progress value={school.completionRate} className="h-2" />
                   </div>
                   
-                  {onViewSchool && (
+                  <Link to={`/schools/${school.id}`}>
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm" 
-                      className="w-full flex justify-between items-center"
-                      onClick={() => onViewSchool(school.id)}
+                      className="w-full"
                     >
-                      <span>{t('viewDetails')}</span>
-                      <ChevronRight className="h-4 w-4" />
+                      {t('viewSchool')}
+                      <ExternalLink className="ml-2 h-3 w-3" />
                     </Button>
-                  )}
+                  </Link>
                 </div>
               ))}
             </div>

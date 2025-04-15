@@ -13,7 +13,7 @@ interface SuperAdminDashboardProps {
 }
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  // Tip dönüşümü yaparak hata mesajlarını gidermek
+  // Statslar üçün array formatına çevirmə
   const statsItems = data.stats ? [
     { label: 'Regions', value: data.stats.regions },
     { label: 'Sectors', value: data.stats.sectors },
@@ -21,17 +21,20 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { label: 'Users', value: data.stats.users }
   ] : [];
   
+  // formsByStatus'u stat array-inə çevirmək
+  const statusStats = data.formsByStatus ? [
+    { label: 'Pending', value: data.formsByStatus.pending },
+    { label: 'Approved', value: data.formsByStatus.approved },
+    { label: 'Rejected', value: data.formsByStatus.rejected },
+    { label: 'Total', value: data.formsByStatus.total }
+  ] : [];
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       <StatsCard stats={statsItems} className="col-span-full lg:col-span-2" />
       
       <StatusCards 
-        stats={[
-          { label: 'Pending', value: data.formsByStatus?.pending || 0 },
-          { label: 'Approved', value: data.formsByStatus?.approved || 0 },
-          { label: 'Rejected', value: data.formsByStatus?.rejected || 0 },
-          { label: 'Total', value: data.formsByStatus?.total || 0 }
-        ]}
+        stats={statusStats}
         completionRate={data.completionRate || 0}
         pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
         className="col-span-full lg:col-span-1" 

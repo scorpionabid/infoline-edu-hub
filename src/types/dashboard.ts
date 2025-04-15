@@ -1,56 +1,122 @@
 
-import { FormStatus } from './form';
-import { NotificationType, NotificationPriority } from './notification';
+export interface SuperAdminDashboardData {
+  stats?: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
+  };
+  formsByStatus?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+  };
+  completionRate?: number;
+  notifications?: DashboardNotification[];
+  pendingApprovals?: PendingItem[];
+  regions?: RegionStats[];
+}
 
-// Dashboard notification interface
+export interface RegionAdminDashboardData {
+  stats?: StatsItem[];
+  sectorCompletions: SectorCompletionItem[];
+  categories: CategoryStat[];
+  completionRate: number;
+  pendingApprovals: PendingItem[];
+  notifications: DashboardNotification[];
+  users?: number;
+  schools?: number;
+}
+
+export interface SectorAdminDashboardData {
+  stats?: StatsItem[];
+  pendingItems: PendingItem[];
+  schoolsStats: SchoolStat[];
+  completionRate: number;
+  notifications: DashboardNotification[];
+  activityLog: ActivityLogItem[];
+}
+
+export interface SchoolAdminDashboardData {
+  forms?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    total: number;
+  };
+  completionRate?: number;
+  notifications?: DashboardNotification[];
+  pendingForms?: FormItem[];
+}
+
+export interface FormItem {
+  id: string;
+  title: string;
+  category?: string;
+  date: string;
+  status: FormStatus;
+  completionPercentage: number;
+}
+
+export enum FormStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DRAFT = 'draft',
+  EXPIRED = 'expired',
+  DUE_SOON = 'due_soon',
+  COMPLETED = 'completed'
+}
+
 export interface DashboardNotification {
   id: string;
   title: string;
   message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-  userId: string;
-  priority: string;
   date: string;
-  time: string;
-  relatedId?: string;
-  relatedType?: string;
-}
-
-// Dashboard types for stats and pending items
-export interface StatsItem {
-  label: string;
-  value: number;
-  icon?: React.ReactNode;
-  description?: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  isRead: boolean;
 }
 
 export interface PendingItem {
   id: string;
   schoolName: string;
   categoryName: string;
-  submittedAt?: string;
-  dueDate?: string;
-  school?: string;
-  category?: string;
-  date?: string;
+  submittedAt: string;
+  itemTitle?: string;
+}
+
+export interface StatsItem {
+  label: string;
+  value: number;
+}
+
+export interface RegionStats {
+  id: string;
+  name: string;
+  schoolCount: number;
+  sectorCount: number;
+  completionRate: number;
+}
+
+export interface SectorCompletionItem {
+  id: string;
+  name: string;
+  regionId?: string;
+  regionName?: string;
+  schoolCount: number;
+  completionRate: number;
 }
 
 export interface CategoryStat {
   id: string;
   name: string;
   completionRate: number;
-  totalSchools: number;
-  color?: string;
-}
-
-export interface SectorCompletion {
-  id: string;
-  name: string;
-  completionRate: number;
-  schoolCount: number;
-  sectorCount?: number;
+  status: string; // 'upcoming' | 'active' | 'overdue'
+  columnCount: number;
+  deadline: string;
 }
 
 export interface SchoolStat {
@@ -60,146 +126,15 @@ export interface SchoolStat {
   pendingCount: number;
 }
 
-export interface RegionStat {
-  id: string;
-  name: string;
-  schoolCount: number;
-  sectorCount: number;
-  completionRate: number;
-}
-
 export interface ActivityLogItem {
   id: string;
   action: string;
-  timestamp: string;
   user: string;
+  timestamp: string;
   details: string;
   target?: string;
   time?: string;
 }
-
-// Update dashboard data interfaces
-export interface SuperAdminDashboardData {
-  stats: {
-    regions: number;
-    sectors: number;
-    schools: number;
-    users: number;
-    categories?: number;
-    columns?: number;
-  };
-  regionStats: {
-    id: string;
-    name: string;
-    schoolCount: number;
-    completionRate: number;
-  }[];
-  formsByStatus: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    total: number;
-  };
-  completionRate: number;
-  pendingApprovals: PendingItem[];
-  notifications: DashboardNotification[];
-  regions?: RegionStat[];
-  sectors?: SectorCompletion[];
-  schools?: SchoolStat[];
-}
-
-export interface RegionAdminDashboardData {
-  sectors: number;
-  schools: number;
-  users: number;
-  stats?: StatsItem[];
-  sectorCompletions: SectorCompletion[];
-  categories: CategoryStat[];
-  pendingApprovals: PendingItem[];
-  pendingSchools: {
-    id: string;
-    name: string;
-    sectorName: string;
-    completionRate: number;
-  }[];
-  sectorStats: {
-    id: string;
-    name: string;
-    schoolCount: number;
-    completionRate: number;
-  }[];
-  completionRate: number;
-  notifications: DashboardNotification[];
-}
-
-export interface SectorAdminDashboardData {
-  schools: number;
-  users: number;
-  stats?: StatsItem[];
-  pendingItems: PendingItem[];
-  schoolsStats: SchoolStat[];
-  activityLog: ActivityLogItem[];
-  pendingApprovals: {
-    id: string;
-    schoolName: string;
-    categoryName: string;
-    submittedAt: string;
-  }[];
-  completionRate: number;
-  notifications: DashboardNotification[];
-}
-
-export interface SchoolAdminDashboardData {
-  forms: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    dueSoon: number;
-    overdue: number;
-    total: number;
-  };
-  pendingForms: {
-    id: string;
-    title: string;
-    status: FormStatus;
-    completionPercentage: number;
-    dueDate: string;
-    description?: string;
-    category?: string;
-    date?: string;
-  }[];
-  completionRate: number;
-  notifications: DashboardNotification[];
-}
-
-// Dashboard Chart Data
-export interface DashboardChartData {
-  activityByDate: {
-    date: string;
-    count: number;
-  }[];
-  activityBySchool: {
-    name: string;
-    count: number;
-  }[];
-}
-
-// Form Item (for dashboards)
-export interface FormItem {
-  id: string;
-  title: string;
-  status: string;
-  completionPercentage: number;
-  dueDate: string;
-  description?: string;
-}
-
-// Dashboard Data - main type
-export type DashboardData = 
-  SuperAdminDashboardData | 
-  RegionAdminDashboardData | 
-  SectorAdminDashboardData | 
-  SchoolAdminDashboardData;
 
 export interface ChartData {
   activityData: Array<{ name: string; value: number }>;

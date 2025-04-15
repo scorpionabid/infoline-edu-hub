@@ -1,43 +1,24 @@
 
 import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Edit, 
-  Trash2, 
-  MoreHorizontal, 
-  UserCog,
-  ArrowDown,
-  ArrowUp
-} from 'lucide-react';
+import { Edit, Trash2, UserPlus, Eye } from 'lucide-react';
+import { School } from '@/types/school';
+import { useLanguage } from '@/context/LanguageContext';
+import { highlightText } from '@/utils/textUtils';
+import EmptyState from '@/components/ui/empty-state';
 import { SortConfig } from '@/hooks/schools/useSchoolsStore';
-import { cn } from '@/lib/utils';
-import { School } from '@/types/supabase';
 
 interface SchoolTableProps {
   currentItems: School[];
   searchTerm: string;
   sortConfig: SortConfig;
-  handleSort: (key: string) => void;
+  handleSort: (key: keyof School) => void;
   handleEditDialogOpen: (school: School) => void;
   handleDeleteDialogOpen: (school: School) => void;
   handleAdminDialogOpen: (school: School) => void;
-  userRole?: string;
+  userRole: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 }
 
 const SchoolTable: React.FC<SchoolTableProps> = ({
@@ -50,112 +31,129 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
   handleAdminDialogOpen,
   userRole
 }) => {
+  const { t } = useLanguage();
   
-  // Sortun vəziyyətini vizual olaraq göstərmək üçün komponent
-  const SortIcon = ({ column }: { column: string }) => {
-    if (sortConfig.key !== column) return null;
-    
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="ml-1 h-4 w-4" /> 
-      : <ArrowDown className="ml-1 h-4 w-4" />;
+  const getSortIcon = (columnName: keyof School) => {
+    if (columnName !== sortConfig.key) {
+      return <span className="ml-1 text-gray-300">↕</span>;
+    }
+    return sortConfig.direction === 'ascending' ? (
+      <span className="ml-1">↑</span>
+    ) : (
+      <span className="ml-1">↓</span>
+    );
   };
-  
-  // Cədvəl başlığı ilə sortlamanı idarə edən komponent
-  const SortableHeader = ({ column, label }: { column: string; label: string }) => (
-    <div 
-      className="flex cursor-pointer items-center"
-      onClick={() => handleSort(column)}
-    >
-      {label}
-      <SortIcon column={column} />
-    </div>
-  );
-  
+
+  if (currentItems.length === 0) {
+    return (
+      <EmptyState
+        title={t('noSchoolsFound')}
+        description={t('noSchoolsFoundDesc')}
+        icon="school"
+      />
+    );
+  }
+
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border mt-6 overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[250px]">
-              <SortableHeader column="name" label="Məktəb adı" />
+            <TableHead
+              className="cursor-pointer w-[30%]"
+              onClick={() => handleSort('name')}
+            >
+              <div className="flex items-center">
+                {t('schoolName')}
+                {getSortIcon('name')}
+              </div>
             </TableHead>
-            <TableHead>
-              <SortableHeader column="principal_name" label="Direktor" />
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => handleSort('principalName')}
+            >
+              <div className="flex items-center">
+                {t('principalName')}
+                {getSortIcon('principalName')}
+              </div>
             </TableHead>
-            <TableHead>
-              <SortableHeader column="student_count" label="Şagird sayı" />
+            <TableHead>{t('region')}</TableHead>
+            <TableHead>{t('sector')}</TableHead>
+            <TableHead
+              className="cursor-pointer"
+              onClick={() => handleSort('status')}
+            >
+              <div className="flex items-center">
+                {t('status')}
+                {getSortIcon('status')}
+              </div>
             </TableHead>
-            <TableHead>
-              <SortableHeader column="teacher_count" label="Müəllim sayı" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader column="admin_email" label="Admin" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader column="status" label="Status" />
-            </TableHead>
-            <TableHead className="text-right">Əməliyyatlar</TableHead>
+            <TableHead className="text-right">{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {currentItems.length > 0 ? (
-            currentItems.map((school) => (
-              <TableRow key={school.id}>
-                <TableCell className="font-medium">{school.name}</TableCell>
-                <TableCell>{school.principal_name || "-"}</TableCell>
-                <TableCell>{school.student_count || "-"}</TableCell>
-                <TableCell>{school.teacher_count || "-"}</TableCell>
-                <TableCell>{school.admin_email || "-"}</TableCell>
-                <TableCell>
-                  <span className={cn(
-                    "rounded-full px-2 py-1 text-xs font-medium",
-                    school.status === 'active' 
-                      ? "bg-green-100 text-green-800" 
-                      : "bg-gray-100 text-gray-800"
-                  )}>
-                    {school.status === 'active' ? 'Aktiv' : 'Deaktiv'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Menyu aç</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleEditDialogOpen(school)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Redaktə et
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAdminDialogOpen(school)}>
-                        <UserCog className="mr-2 h-4 w-4" />
-                        Admin təyin et
-                      </DropdownMenuItem>
-                      {(userRole === 'superadmin' || userRole === 'regionadmin') && (
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteDialogOpen(school)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Sil
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
-                {searchTerm ? "Axtarışa uyğun məktəb tapılmadı." : "Məktəb məlumatları yoxdur."}
+          {currentItems.map((school) => (
+            <TableRow key={school.id}>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {highlightText(school.name, searchTerm)}
+                  {school.adminEmail && (
+                    <Badge variant="outline" className="text-xs">
+                      {t('hasAdmin')}
+                    </Badge>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                {school.principalName ? 
+                  highlightText(school.principalName, searchTerm) : 
+                  <span className="text-muted-foreground italic">{t('notSpecified')}</span>
+                }
+              </TableCell>
+              <TableCell>{school.region || '-'}</TableCell>
+              <TableCell>{school.sector || '-'}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={school.status === 'active' ? 'default' : 'secondary'}
+                >
+                  {t(school.status)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEditDialogOpen(school)}
+                    title={t('edit')}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleAdminDialogOpen(school)}
+                    title={t('manageAdmin')}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                  
+                  {(userRole === 'superadmin' || userRole === 'regionadmin') && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteDialogOpen(school)}
+                      title={t('delete')}
+                      className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>

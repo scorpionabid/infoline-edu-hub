@@ -1,86 +1,149 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
-import { adaptColumnToSupabase } from './useColumnAdapters';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Column, ColumnType, ColumnOption } from '@/types/column';
+
+// Supabase'e göndermek için options alanını JSON'a dönüştürme
+const prepareColumnForDB = (column: Partial<Column>) => {
+  const preparedColumn = { ...column };
+  
+  // options array'sə JSON'a çevir
+  if (preparedColumn.options) {
+    preparedColumn.options = JSON.stringify(preparedColumn.options);
+  }
+  
+  // validation objesini JSON'a çevir
+  if (preparedColumn.validation) {
+    preparedColumn.validation = JSON.stringify(preparedColumn.validation);
+  }
+  
+  return preparedColumn;
+};
 
 export const useColumnMutations = () => {
-  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Sütun əlavə etmək üçün mutasiya
-  const addColumn = useMutation({
-    mutationFn: async (column: Omit<Column, 'id' | 'created_at' | 'updated_at'>) => {
-      // Supabase-ə göndərmək üçün adaptasiya et
-      const supabaseColumn = adaptColumnToSupabase(column);
+  // Birden çox sütun əlavə etmək
+  const addColumns = async (columns: Column[]): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      for (const column of columns) {
+        // Hər bir sütunu JSON formatına çevir və əlavə et
+        const preparedColumn = prepareColumnForDB(column);
+        
+        const { error } = await supabase
+          .from('columns')
+          .insert(preparedColumn);
+          
+        if (error) throw error;
+      }
       
-      const { data, error } = await supabase
-        .from('columns')
-        .insert(supabaseColumn)
-        .select('*')
-        .single();
+      toast.success('Sütunlar uğurla əlavə edildi');
+      return true;
+    } catch (err) {
+      console.error('Sütunlar əlavə edilərkən xəta:', err);
+      setError(err as Error);
+      toast.error('Sütunlar əlavə edilərkən xəta baş verdi', {
+        description: (err as Error).message
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Tək sütun əlavə etmək
+  const addColumn = async (column: Column): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const preparedColumn = prepareColumnForDB(column);
+      
+      const { error } = await supabase
+        .from('columns')
+        .insert(preparedColumn);
+        
       if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      
       toast.success('Sütun uğurla əlavə edildi');
-    },
-    onError: (error: any) => {
-      console.error('Sütun əlavə edilərkən xəta:', error);
-      toast.error(`Sütun əlavə edilərkən xəta: ${error.message}`);
+      return true;
+    } catch (err) {
+      console.error('Sütun əlavə edilərkən xəta:', err);
+      setError(err as Error);
+      toast.error('Sütun əlavə edilərkən xəta baş verdi', {
+        description: (err as Error).message
+      });
+      return false;
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  // Sütunu yeniləmək üçün mutasiya
-  const updateColumn = useMutation({
-    mutationFn: async (column: Partial<Column> & { id: string }) => {
-      // Supabase-ə göndərmək üçün adaptasiya et
-      const supabaseColumn = adaptColumnToSupabase(column);
+  // Sütun redaktə etmək
+  const updateColumn = async (id: string, column: Partial<Column>): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const preparedColumn = prepareColumnForDB(column);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('columns')
-        .update(supabaseColumn)
-        .eq('id', column.id)
-        .select('*')
-        .single();
-
+        .update(preparedColumn)
+        .eq('id', id);
+        
       if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      
       toast.success('Sütun uğurla yeniləndi');
-    },
-    onError: (error: any) => {
-      console.error('Sütun yenilənərkən xəta:', error);
-      toast.error(`Sütun yenilənərkən xəta: ${error.message}`);
+      return true;
+    } catch (err) {
+      console.error('Sütun yenilənərkən xəta:', err);
+      setError(err as Error);
+      toast.error('Sütun yenilənərkən xəta baş verdi', {
+        description: (err as Error).message
+      });
+      return false;
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  // Sütunu silmək üçün mutasiya
-  const deleteColumn = useMutation({
-    mutationFn: async (id: string) => {
+  // Sütun silmək
+  const deleteColumn = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    
+    try {
       const { error } = await supabase
         .from('columns')
         .delete()
         .eq('id', id);
-
+        
       if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      
       toast.success('Sütun uğurla silindi');
-    },
-    onError: (error: any) => {
-      console.error('Sütun silinərkən xəta:', error);
-      toast.error(`Sütun silinərkən xəta: ${error.message}`);
+      return true;
+    } catch (err) {
+      console.error('Sütun silinərkən xəta:', err);
+      setError(err as Error);
+      toast.error('Sütun silinərkən xəta baş verdi', {
+        description: (err as Error).message
+      });
+      return false;
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
   return {
+    loading,
+    error,
+    addColumns,
     addColumn,
     updateColumn,
     deleteColumn

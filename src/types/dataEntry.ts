@@ -1,52 +1,46 @@
 
-// Column validation error-ları
-export interface ColumnValidationError {
-  columnId: string;
+import { Column } from './column';
+
+export interface DataEntryForm {
+  id?: string;
+  schoolId: string;
   categoryId: string;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
+  title?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  entries: EntryValue[];
+  submittedAt?: string;
+  updatedAt?: string;
 }
 
-// EntryValue tipi - formların dəyərlərinin hansı tipi ola biləcəyini müəyyən edir
-export type EntryValue = string | number | boolean | string[] | null;
-
-// Data entry data interface
-export interface DataEntryData {
-  id: string;
-  school_id: string;
-  category_id: string;
-  column_id: string;
-  value: string | null;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  created_by?: string | null;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  rejected_by?: string | null;
-  rejection_reason?: string | null;
-}
-
-// Category Entry Data interface
-export interface CategoryEntryData {
+export interface EntryValue {
+  id?: string;
   categoryId: string;
-  entries: {
-    columnId: string;
-    value: EntryValue;
-  }[];
-}
-
-// Data Form Value interface for form entries
-export interface DataFormValue {
   columnId: string;
-  value: EntryValue;
+  value: string | number | boolean | null;
   status?: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string;
 }
 
-// Data Entry Save Status enum
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number;
+  status?: string;
+  assignment?: string;
+  deadline?: string;
+  columns: Column[];
+}
+
 export enum DataEntrySaveStatus {
-  NONE = 'none',
+  IDLE = 'idle',
+  SAVING = 'saving',
   SAVED = 'saved',
-  SUBMITTED = 'submitted',
   ERROR = 'error'
+}
+
+export interface UseDataEntryProps {
+  schoolId?: string;
+  categoryId?: string;
+  onComplete?: () => void;
 }

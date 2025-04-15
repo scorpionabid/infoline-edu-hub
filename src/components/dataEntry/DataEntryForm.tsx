@@ -1,250 +1,187 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/context/LanguageContext';
 import { useDataEntry } from '@/hooks/useDataEntry';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoryForm from './CategoryForm';
 import CategoryConfirmationDialog from './CategoryConfirmationDialog';
 import { DataEntrySaveStatus } from '@/types/dataEntry';
-import { ArrowLeft, CheckCircle, Loader2, Save } from 'lucide-react';
-import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
+import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import FormFields from './FormFields';
 
 const DataEntryForm: React.FC = () => {
-  const { schoolId } = useParams();
+  const { schoolId, categoryId } = useParams<{ schoolId: string; categoryId: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.NONE);
-  const [isDataModified, setIsDataModified] = useState(false);
-  
-  // Get initialCategoryId from URL query params if available
-  const urlParams = new URLSearchParams(window.location.search);
-  const categoryIdFromUrl = urlParams.get('categoryId');
-  
-  // Kateqoriyaları əldə et
-  const { categories, loading: categoriesLoading } = useCategoryData();
-  
-  const {
-    formData,
-    updateValue,
-    isAutoSaving,
-    isSubmitting,
-    saveForm,
-    submitForApproval
-  } = useDataEntry({ 
-    schoolId: schoolId || '',
-    categories
+  const [activeTab, setActiveTab] = useState<string>(categoryId || '');
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'save' | 'submit' }>({
+    open: false,
+    action: 'save'
   });
 
-  // Verilənləri məktəb üçün yükləmək
-  const loadDataForSchool = async () => {
-    // Bu funksiyada məktəb üçün məlumatları yükləmək məntiqi əlavə ediləcək
-    console.log("Loading data for school:", schoolId);
-  };
+  const { 
+    formData, 
+    updateFormData, 
+    categories, 
+    loading, 
+    error, 
+    selectedCategory,
+    saveStatus,
+    isDataModified,
+    handleSave,
+    handleSubmitForApproval,
+    handleEntriesChange,
+    loadDataForSchool,
+    entries
+  } = useDataEntry({
+    schoolId,
+    categoryId,
+    onComplete: () => navigate('/dashboard')
+  });
 
   useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      // Use categoryId from URL if available and valid
-      if (categoryIdFromUrl) {
-        const exists = categories.some(cat => cat.id === categoryIdFromUrl);
-        if (exists) {
-          setActiveCategory(categoryIdFromUrl);
-          return;
-        }
-      }
-      
-      // Otherwise use the first category
-      setActiveCategory(categories[0].id);
+    if (schoolId) {
+      loadDataForSchool(schoolId);
     }
-  }, [categories, activeCategory, categoryIdFromUrl]);
+  }, [schoolId, loadDataForSchool]);
 
-  // Kateqoriya sekmesini değiştirmek istediğimizde
+  useEffect(() => {
+    if (categoryId && categoryId !== activeTab) {
+      setActiveTab(categoryId);
+    }
+  }, [categoryId, activeTab]);
+
   const handleTabChange = (value: string) => {
     if (isDataModified) {
-      // If data is modified, show confirmation dialog
-      setShowConfirmation(true);
+      setConfirmDialog({ open: true, action: 'save' });
       return;
     }
     
-    setActiveCategory(value);
+    navigate(`/data-entry/${schoolId}/${value}`);
+    setActiveTab(value);
   };
 
-  // Kateqoriya değişimini onaylamak için
-  const confirmTabChange = (value: string) => {
-    setActiveCategory(value);
-    setShowConfirmation(false);
+  const handleConfirmSave = async () => {
+    await handleSave();
+    setConfirmDialog({ open: false, action: 'save' });
+    navigate(`/data-entry/${schoolId}/${activeTab}`);
   };
 
-  // Save işlemi için
-  const handleSave = async () => {
-    try {
-      await saveForm();
-      setSaveStatus(DataEntrySaveStatus.SAVED);
-      setIsDataModified(false);
-      setTimeout(() => {
-        setSaveStatus(DataEntrySaveStatus.NONE);
-      }, 3000);
-    } catch (error) {
-      console.error("Error saving data:", error);
-      setSaveStatus(DataEntrySaveStatus.ERROR);
-    }
+  const handleConfirmSubmit = async () => {
+    await handleSubmitForApproval();
+    setConfirmDialog({ open: false, action: 'submit' });
   };
 
-  // Submit for approval işlemi için
-  const handleSubmitForApproval = async () => {
-    try {
-      await submitForApproval();
-      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
-      setIsDataModified(false);
-      setTimeout(() => {
-        setSaveStatus(DataEntrySaveStatus.NONE);
-      }, 3000);
-    } catch (error) {
-      console.error("Error submitting data:", error);
-      setSaveStatus(DataEntrySaveStatus.ERROR);
-    }
+  const handleSaveClick = () => {
+    handleSave();
   };
 
-  // Form değerlerini güncellemek için
-  const handleEntriesChange = (categoryId: string, columnId: string, value: any) => {
-    updateValue(categoryId, columnId, value);
-    setIsDataModified(true);
+  const handleSubmitClick = () => {
+    setConfirmDialog({ open: true, action: 'submit' });
   };
 
-  // Display the status message
-  const getSaveStatusMessage = () => {
-    switch (saveStatus) {
-      case DataEntrySaveStatus.SAVED:
-        return t('dataSaved');
-      case DataEntrySaveStatus.SUBMITTED:
-        return t('dataSubmittedForApproval');
-      case DataEntrySaveStatus.ERROR:
-        return t('errorSavingData');
-      default:
-        return '';
-    }
-  };
-
-  if (categoriesLoading) {
+  if (loading && categories.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-[200px]" />
-          <Skeleton className="h-10 w-[120px]" />
-        </div>
-        <Skeleton className="h-[500px] w-full" />
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Create a fake entries array for now if we don't have entries in the hook
-  const entries = formData.categories.map(cat => ({
-    categoryId: cat.categoryId,
-    entries: cat.entries.map(entry => ({
-      columnId: entry.columnId,
-      value: entry.value
-    }))
-  }));
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertTriangle className="h-4 w-4 mr-2" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <Alert className="mb-6">
+        <AlertDescription>{t('noCategoriesAvailable')}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{t('dataEntry')}</h1>
-          <p className="text-muted-foreground">{t('dataEntryDescription')}</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('back')}
-          </Button>
-          
-          {isSubmitting ? (
-            <Button disabled>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {t('saving')}
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleSave}
-              disabled={!isDataModified}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {t('save')}
-            </Button>
-          )}
-          
-          <Button 
-            variant="default" 
-            onClick={handleSubmitForApproval}
-            disabled={isSubmitting}
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            {t('submitForApproval')}
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      {saveStatus === DataEntrySaveStatus.SAVED && (
+        <Alert className="mb-6 bg-green-50 border-green-200">
+          <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+          <AlertDescription className="text-green-600">
+            {t('dataSavedSuccessfully')}
+          </AlertDescription>
+        </Alert>
+      )}
       
-      {saveStatus !== DataEntrySaveStatus.NONE && (
-        <div className={`p-4 rounded-md ${saveStatus === DataEntrySaveStatus.ERROR ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-          {getSaveStatusMessage()}
-        </div>
+      {saveStatus === DataEntrySaveStatus.ERROR && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            {t('errorSavingData')}
+          </AlertDescription>
+        </Alert>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('categories')}</CardTitle>
-          <CardDescription>{t('categoriesDescription')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {categories.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              {t('noCategoriesAvailable')}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <div className="flex justify-between items-center">
+          <TabsList className="h-auto p-1 overflow-x-auto max-w-screen-lg">
+            {categories.map((category) => (
+              <TabsTrigger
+                key={category.id}
+                value={category.id}
+                className="relative py-3"
+              >
+                {category.name}
+                {category.deadline && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {new Date(category.deadline).toLocaleDateString()}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+
+        {categories.map((category) => (
+          <TabsContent key={category.id} value={category.id} className="space-y-4">
+            <CategoryForm
+              category={category}
+              isSaving={saveStatus === DataEntrySaveStatus.SAVING}
+              isSubmitting={saveStatus === DataEntrySaveStatus.SAVING}
+              isModified={isDataModified}
+              onSave={handleSaveClick}
+              onSubmit={handleSubmitClick}
+            />
+            
+            <div className="border rounded-lg p-6 space-y-8">
+              <FormFields
+                category={category}
+                entries={entries}
+                onChange={handleEntriesChange}
+                disabled={saveStatus === DataEntrySaveStatus.SAVING}
+              />
             </div>
-          ) : (
-            <Tabs 
-              value={activeCategory || categories[0].id} 
-              onValueChange={handleTabChange}
-              className="w-full"
-            >
-              <TabsList className="w-full mb-4 overflow-x-auto flex flex-nowrap">
-                {categories.map(category => (
-                  <TabsTrigger 
-                    key={category.id} 
-                    value={category.id}
-                    className="whitespace-nowrap"
-                  >
-                    {category.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              
-              {categories.map(category => (
-                <TabsContent key={category.id} value={category.id}>
-                  <CategoryForm 
-                    category={category}
-                    entries={entries}
-                    onEntriesChange={handleEntriesChange}
-                  />
-                </TabsContent>
-              ))}
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
-      
-      <CategoryConfirmationDialog 
-        isOpen={showConfirmation}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={() => activeCategory && confirmTabChange(activeCategory)}
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      <CategoryConfirmationDialog
+        isOpen={confirmDialog.open}
+        onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        onConfirm={confirmDialog.action === 'save' ? handleConfirmSave : handleConfirmSubmit}
+        title={confirmDialog.action === 'save' ? t('saveChanges') : t('submitForApproval')}
+        description={
+          confirmDialog.action === 'save'
+            ? t('saveChangesDescription')
+            : t('submitForApprovalDescription')
+        }
+        confirmText={confirmDialog.action === 'save' ? t('save') : t('submit')}
+        isLoading={saveStatus === DataEntrySaveStatus.SAVING}
       />
     </div>
   );
