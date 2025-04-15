@@ -35,7 +35,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   };
   
   const initialFormData: UserFormData = {
-    name: '',
+    full_name: '',
     email: '',
     password: '',
     role: getInitialRole(),
@@ -43,6 +43,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   };
@@ -114,7 +116,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || !formData.name || !formData.email || !formData.password}
+            disabled={loading || !formData.full_name || !formData.email || !formData.password}
           >
             {loading ? (
               <>

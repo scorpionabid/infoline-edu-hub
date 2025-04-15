@@ -31,16 +31,16 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   
   // Convert User to UserFormData
   const initialFormData: UserFormData = {
-    name: user.name,
+    full_name: user.full_name || '',
+    name: user.name || user.full_name || '',
     email: user.email,
     role: user.role,
     regionId: user.regionId,
     sectorId: user.sectorId,
     schoolId: user.schoolId,
     status: user.status,
-    avatar: user.avatar,
-    passwordResetDate: user.passwordResetDate,
-    twoFactorEnabled: user.twoFactorEnabled,
+    phone: user.phone,
+    position: user.position,
     language: user.language,
     notificationSettings: user.notificationSettings,
     password: ''  // Add empty password field for reset
@@ -64,7 +64,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
       const updatedUser: User = {
         ...user,
         ...formData,
-        updatedAt: new Date().toISOString(), // Date -> string
+        name: formData.full_name, // name field should match full_name
+        full_name: formData.full_name,
+        updated_at: new Date().toISOString(), // use consistent field name
         // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
         ...(showPasswordReset && { passwordResetDate: new Date().toISOString() }) // Date -> string
       };
@@ -141,7 +143,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || !formData.name || !formData.email || (showPasswordReset && (!formData.password || formData.password.length < 6))}
+            disabled={loading || !formData.full_name || !formData.email || (showPasswordReset && (!formData.password || formData.password.length < 6))}
           >
             {loading ? t('saving') : t('saveChanges')}
           </Button>

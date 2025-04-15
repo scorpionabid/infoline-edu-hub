@@ -142,17 +142,14 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser && fullUserDataToUser(selectedUser as any)}
+            user={selectedUser}
             onSave={(updatedUser) => {
-              // User tipini FullUserData tipinə çevir
-              const fullUserData: FullUserData = {
-                ...userToFullUserData(updatedUser),
-                // Supabase tipləri ilə uyğunluq üçün əlavə
-                name: updatedUser.name || updatedUser.full_name || '',
-                createdAt: updatedUser.created_at || '',
-                updatedAt: updatedUser.updatedAt || undefined
-              };
-              handleUpdateUserConfirm(fullUserData);
+              // Kullanıcı güncelleme işlemi
+              handleUpdateUserConfirm({
+                ...updatedUser,
+                name: updatedUser.full_name, // name alanını full_name ile senkronize et
+                full_name: updatedUser.full_name // full_name alanını da güncelle
+              } as any);
               handleUserUpdated();
             }}
           />
@@ -160,7 +157,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser && fullUserDataToUser(selectedUser as any)}
+            user={selectedUser}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -170,7 +167,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser && fullUserDataToUser(selectedUser as any)}
+            user={selectedUser as any}
           />
         </>
       )}

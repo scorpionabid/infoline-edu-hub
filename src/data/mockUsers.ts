@@ -1,4 +1,3 @@
-
 import { User } from '@/types/user';
 
 export const mockUsers: User[] = [
@@ -19,6 +18,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   },
@@ -40,6 +41,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   },
@@ -62,6 +65,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   },
@@ -85,6 +90,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   },
@@ -107,6 +114,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: false
     }
   },
@@ -130,6 +139,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   },
@@ -151,6 +162,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: true,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   },
@@ -173,6 +186,8 @@ export const mockUsers: User[] = [
     twoFactorEnabled: false,
     notificationSettings: {
       email: true,
+      push: true,
+      sms: false,
       system: true
     }
   }

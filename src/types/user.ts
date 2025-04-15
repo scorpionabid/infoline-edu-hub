@@ -1,11 +1,13 @@
 
 import { UserRole } from './supabase';
 
+// User interfeysini yenidən təyin edirik, getter metodunu çıxararaq
 export interface User {
   id: string;
   email: string;
   role: UserRole;
   full_name?: string;
+  name?: string; // full_name üçün alias əlavə edirik
   avatar?: string;
   status?: string;
   phone?: string;
@@ -25,15 +27,12 @@ export interface User {
     sms: boolean;
     system?: boolean; // System bildirimlerini əlavə edirik
   };
-  // shorthand getter for full_name
-  get name(): string {
-    return this.full_name || '';
-  }
 }
 
-// UserFormData interfeysi əlavə edildi
+// UserFormData interfeysi
 export interface UserFormData {
   full_name: string;
+  name?: string; // name xüsusiyyətini əlavə edirik
   email: string;
   phone?: string;
   position?: string;
@@ -44,14 +43,13 @@ export interface UserFormData {
   status?: string;
   language?: string;
   password?: string;
+  avatar?: string; // EditUserDialog-da istifadə edilən avatar xüsusiyyəti
   notificationSettings?: {
     email: boolean;
     push: boolean;
     sms: boolean;
-    system?: boolean; // System bildirimlerini əlavə edirik
+    system?: boolean;
   };
-  // Tip uyğunluğu üçün alias
-  name?: string; // Əlavə edildi
 }
 
 export interface FullUserData extends User {
@@ -63,9 +61,8 @@ export interface FullUserData extends User {
   created_at: string;
   updated_at: string;
   // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-  name?: string; // Əlavə edildi - ilkin modeldə full_name-in alias-ı
-  createdAt?: string; // Əlavə edildi - created_at-ın alias-ı
-  updatedAt?: string; // Əlavə edildi - updated_at-ın alias-ı
+  createdAt?: string; // created_at-ın alias-ı
+  updatedAt?: string; // updated_at-ın alias-ı
 }
 
 // Helper functions
@@ -88,6 +85,7 @@ export function fullUserDataToUser(fullUserData: FullUserData): User {
     email: fullUserData.email,
     role: fullUserData.role,
     full_name: fullUserData.full_name,
+    name: fullUserData.full_name, // name alias-ını birbaşa təyin edirik
     avatar: fullUserData.avatar,
     phone: fullUserData.phone,
     status: fullUserData.status,
