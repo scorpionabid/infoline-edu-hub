@@ -11,14 +11,14 @@ export interface SuperAdminDashboardData {
     rejected: number;
     total: number;
   };
-  completionRate?: number;
-  notifications?: DashboardNotification[];
-  pendingApprovals?: PendingItem[];
+  completionRate: number;
   regions?: RegionStats[];
+  notifications: DashboardNotification[];
+  pendingApprovals: PendingItem[];
 }
 
 export interface RegionAdminDashboardData {
-  stats?: StatsItem[];
+  stats: StatsItem[];
   sectorCompletions: SectorCompletionItem[];
   categories: CategoryStat[];
   completionRate: number;
@@ -29,17 +29,16 @@ export interface RegionAdminDashboardData {
 }
 
 export interface SectorAdminDashboardData {
-  stats?: StatsItem[];
-  pendingItems: PendingItem[];
-  pendingApprovals?: PendingItem[];
+  stats: StatsItem[];
   schoolsStats: SchoolStat[];
+  pendingItems: PendingItem[];
   completionRate: number;
   notifications: DashboardNotification[];
   activityLog: ActivityLogItem[];
 }
 
 export interface SchoolAdminDashboardData {
-  forms?: {
+  forms: {
     pending: number;
     approved: number;
     rejected: number;
@@ -47,9 +46,9 @@ export interface SchoolAdminDashboardData {
     overdue: number;
     total: number;
   };
-  completionRate?: number;
-  notifications?: DashboardNotification[];
-  pendingForms?: FormItem[];
+  completionRate: number;
+  notifications: DashboardNotification[];
+  pendingForms: FormItem[];
 }
 
 export interface FormItem {
