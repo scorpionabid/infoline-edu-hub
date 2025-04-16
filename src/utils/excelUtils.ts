@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { School } from '@/types/supabase';
@@ -548,5 +547,66 @@ export const mapSectorNameToId = async (sectorName: string, regionId?: string): 
   } catch (error) {
     console.error('Sektor adını ID-yə çevirərkən xəta:', error);
     return null;
+  }
+};
+
+// Məktəb adı və ya digər məlumatlarla DB-də axtarış aparan funksiya
+export const findSchoolByNameOrCode = async (schoolName: string, regionId?: string, sectorId?: string): Promise<{ exists: boolean, school?: any }> => {
+  if (!schoolName) return { exists: false };
+  
+  try {
+    console.log(`Məktəb adına görə axtarılır: "${schoolName}"`);
+    
+    // Əvvəlcə tam uyğunluq axtarırıq
+    let { data, error } = await supabase
+      .from('schools')
+      .select('id, name, region_id, sector_id')
+      .eq('name', schoolName)
+      .limit(1);
+    
+    if (error) {
+      console.error('Məktəb axtarışı zamanı Supabase xətası:', error);
+      throw error;
+    }
+    
+    // Əgər tam uyğunluq tapılmayıbsa, bənzər adlarla axtarırıq
+    if (!data || data.length === 0) {
+      const { data: similarData, error: similarError } = await supabase
+        .from('schools')
+        .select('id, name, region_id, sector_id')
+        .ilike('name', `%${schoolName}%`)
+        .limit(5);
+      
+      if (similarError) {
+        console.error('Bənzər məktəb axtarışı zamanı Supabase xətası:', similarError);
+        throw similarError;
+      }
+      
+      data = similarData;
+    }
+    
+    console.log(`Məktəb axtarışı nəticəsi:`, data);
+    
+    // Əgər eyni adlı məktəb tapılıbsa
+    const exactMatch = data?.find(s => s.name.toLowerCase() === schoolName.toLowerCase());
+    
+    if (exactMatch) {
+      // Əgər region və sektor ID-ləri də verilmişdirsə, onları da yoxlayırıq
+      if (regionId && sectorId) {
+        // Eyni adlı, eyni region və sektorda olan məktəb
+        if (exactMatch.region_id === regionId && exactMatch.sector_id === sectorId) {
+          return { exists: true, school: exactMatch };
+        }
+        // Eyni adlı, amma fərqli region və ya sektorda olan məktəb
+        return { exists: true, school: exactMatch };
+      }
+      // Sadəcə ad uyğunluğu
+      return { exists: true, school: exactMatch };
+    }
+    
+    return { exists: false };
+  } catch (error) {
+    console.error('Məktəb adını yoxlayarkən xəta:', error);
+    return { exists: false };
   }
 };
