@@ -7,6 +7,13 @@ export interface DashboardNotification {
   timestamp: string;
   type: 'info' | 'warning' | 'success' | 'error';
   read: boolean;
+  date?: string; // Əlavə edildi
+  time?: string; // Əlavə edildi
+  isRead?: boolean; // Əlavə edildi
+  priority?: string;
+  createdAt?: string;
+  entity?: string;
+  target?: string;
 }
 
 // Status items for dashboard
@@ -17,6 +24,8 @@ export interface StatsItem {
   icon?: React.ReactNode;
   label?: string;
   value?: number;
+  changeType?: 'increase' | 'decrease' | 'neutral';
+  change?: number;
 }
 
 // Pending items for dashboard
@@ -31,6 +40,19 @@ export interface PendingItem {
   submittedAt?: string;
   school?: string;
   category?: string;
+  completionPercentage?: number;
+  description?: string;
+}
+
+// Form item for school admin
+export interface FormItem {
+  id: string;
+  title: string;
+  category?: string;
+  date: string;
+  status: FormStatus | string;
+  completionPercentage: number;
+  description?: string;
 }
 
 // Region stats
@@ -43,12 +65,23 @@ export interface RegionStat {
   completionRate?: number;
 }
 
+// Region list item
+export interface RegionStats {
+  id: string;
+  name: string;
+  sectorCount: number;
+  schoolCount: number;
+  adminEmail?: string;
+  status?: string;
+  completionRate?: number;
+}
+
 // Sector completion item
 export interface SectorCompletionItem {
   id: string;
   name: string;
   schoolCount: number;
-  completionPercentage: number;
+  completionPercentage?: number;
   completionRate?: number;
 }
 
@@ -63,6 +96,7 @@ export interface CategoryStat {
   columnCount?: number;
   status?: string;
   completionRate?: number;
+  schools?: number;
 }
 
 // Completion statistics
@@ -84,6 +118,36 @@ export interface SchoolStat {
   pendingCount?: number;
   formCount?: number;
   completionRate?: number;
+  completionPercentage?: number;
+}
+
+// Chart data interface
+export interface ChartData {
+  activityData: { name: string; value: number }[];
+  regionSchoolsData: { name: string; value: number }[];
+  categoryCompletionData: { name: string; completed: number }[];
+}
+
+// SuperAdmin dashboard data
+export interface SuperAdminDashboardData {
+  stats: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
+  };
+  formsByStatus: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
+  };
+  completionRate: number;
+  pendingApprovals: PendingItem[];
+  regions: RegionStats[];
+  notifications: DashboardNotification[];
+  users?: number;
+  schools?: number;
 }
 
 // Region admin dashboard data
@@ -96,7 +160,13 @@ export interface RegionAdminDashboardData {
   pendingItems: PendingItem[];
   categories: CategoryStat[];
   sectors: SectorCompletionItem[];
-  recentActivities: ActivityLogItem[];
+  sectorCompletions?: SectorCompletionItem[];
+  pendingApprovals?: PendingItem[];
+  notifications?: DashboardNotification[];
+  recentActivities?: ActivityLogItem[];
+  completionRate?: number;
+  users?: number;
+  schools?: number;
 }
 
 // Sector admin dashboard data
@@ -107,8 +177,12 @@ export interface SectorAdminDashboardData {
   };
   pendingItems: PendingItem[];
   schools: SchoolStat[];
+  schoolsStats?: SchoolStat[];
   categories: CategoryStat[];
-  recentActivities: ActivityLogItem[];
+  completionRate?: number;
+  notifications?: DashboardNotification[];
+  activityLog?: ActivityLogItem[];
+  recentActivities?: ActivityLogItem[];
 }
 
 // School admin dashboard data
@@ -116,6 +190,17 @@ export interface SchoolAdminDashboardData {
   formStats: FormStats;
   categories: CategoryStat[];
   notifications: DashboardNotification[];
+  forms?: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    dueSoon: number;
+    overdue: number;
+    total: number;
+  };
+  pendingForms?: FormItem[];
+  completionRate?: number;
+  completion?: CompletionStats;
 }
 
 // Form statistics
@@ -137,16 +222,8 @@ export interface ActivityLogItem {
   timestamp: string;
   entity?: string;
   target?: string;
-}
-
-// RegionStats interface for region list
-export interface RegionStats {
-  id: string;
-  name: string;
-  sectorCount: number;
-  schoolCount: number;
-  adminEmail?: string;
-  status?: string;
+  details?: string;
+  time?: string;
 }
 
 // Form status enum
@@ -156,5 +233,8 @@ export enum FormStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   DRAFT = 'draft',
-  EXPIRED = 'expired'
+  EXPIRED = 'expired',
+  DUE_SOON = 'dueSoon',
+  OVERDUE = 'overdue',
+  COMPLETED = 'completed'
 }

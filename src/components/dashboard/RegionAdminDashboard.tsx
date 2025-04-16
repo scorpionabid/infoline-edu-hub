@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RegionAdminDashboardData, StatsItem } from '@/types/dashboard';
+import { RegionAdminDashboardData, StatsItem, CategoryStat, SectorCompletionItem } from '@/types/dashboard';
 import StatusCards from './common/StatusCards';
 import NotificationsCard from './common/NotificationsCard';
 import SectorsList from './region-admin/SectorsList';
@@ -13,10 +13,10 @@ interface RegionAdminDashboardProps {
 }
 
 const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
-  const sectorCompletions = data?.sectorCompletions || [];
+  const sectors = data?.sectorCompletions || data?.sectors || [];
   const categories = data?.categories || [];
   const notifications = data?.notifications || [];
-  const pendingApprovals = data?.pendingApprovals || [];
+  const pendingApprovals = data?.pendingApprovals || data?.pendingItems || [];
   
   // Stats items for region admin
   const statsItems: StatsItem[] = data?.stats ? [
@@ -24,6 +24,22 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
     { title: 'Schools', count: data.stats.schools, icon: <School className="h-4 w-4 text-gray-500" /> },
     { title: 'Users', count: data.stats.users || data.users || 0, icon: <Users className="h-4 w-4 text-gray-500" /> }
   ] : [];
+
+  // Kateqoriyaları CategoryStat formatına çeviririk
+  const formattedCategories: CategoryStat[] = categories.map(cat => {
+    // Əgər completion property artıq mövcuddursa, onu saxlayırıq
+    if (cat.completion) return cat;
+    
+    // Əks halda yeni completion obyekti yaradırıq
+    return {
+      ...cat,
+      completion: {
+        total: cat.columnCount || 0,
+        completed: Math.round((cat.completionPercentage || 0) * (cat.columnCount || 0) / 100),
+        percentage: cat.completionPercentage || cat.completionRate || 0
+      }
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -39,20 +55,12 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
       />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SectorsList sectors={sectorCompletions} />
-        <CategoriesList categories={categories.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          schoolCount: cat.schools, 
-          completionPercentage: cat.completion.percentage,
-          status: 'active',
-          deadline: new Date().toISOString().split('T')[0],
-          columnCount: 0
-        }))} />
+        <SectorsList sectors={sectors} />
+        <CategoriesList categories={formattedCategories} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <CompletionChart sectors={sectorCompletions} />
+        <CompletionChart sectors={sectors} />
         <NotificationsCard notifications={notifications} />
       </div>
     </div>

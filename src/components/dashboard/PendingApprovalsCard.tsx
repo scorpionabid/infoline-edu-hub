@@ -3,17 +3,22 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PendingItem } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
+import { cn } from '@/lib/utils';
 
 interface PendingApprovalsCardProps {
   pendingItems: PendingItem[];
+  className?: string; // Əlavə edildi
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems }) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ 
+  pendingItems,
+  className
+}) => {
   const { t } = useLanguage();
 
   if (!pendingItems || pendingItems.length === 0) {
     return (
-      <Card>
+      <Card className={className}>
         <CardHeader>
           <CardTitle>{t('pendingApprovals')}</CardTitle>
         </CardHeader>
@@ -25,7 +30,7 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItem
   }
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle>{t('pendingApprovals')}</CardTitle>
       </CardHeader>

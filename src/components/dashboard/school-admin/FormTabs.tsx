@@ -129,10 +129,10 @@ const FormTabs: React.FC<FormTabsProps> = ({ forms, onFormClick }) => {
                         </div>
                         <Badge 
                           variant="outline" 
-                          className={getStatusColor(form.status)}
+                          className={getStatusColor(typeof form.status === 'string' ? form.status : '')}
                         >
-                          {getStatusIcon(form.status)}
-                          {formatStatusText(form.status)}
+                          {getStatusIcon(typeof form.status === 'string' ? form.status : '')}
+                          {formatStatusText(typeof form.status === 'string' ? form.status : '')}
                         </Badge>
                       </div>
                       

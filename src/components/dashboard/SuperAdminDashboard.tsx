@@ -50,13 +50,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       
       {Array.isArray(data.regions) && data.regions.length > 0 && (
         <RegionsList 
-          regions={data.regions.map(region => ({
-            id: region.id,
-            name: region.name,
-            schoolCount: region.schoolCount || 0,
-            sectorCount: region.sectorCount || 0,
-            completionRate: region.completionRate || 0
-          }))} 
+          regions={data.regions}
           className="col-span-full" 
         />
       )}

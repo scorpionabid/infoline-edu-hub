@@ -14,9 +14,9 @@ interface SectorAdminDashboardProps {
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
   const pendingItems = data?.pendingItems || [];
-  const schoolsStats = data?.schoolsStats || [];
+  const schools = data?.schoolsStats || data?.schools || [];
   const notifications = data?.notifications || [];
-  const activityLog = data?.activityLog || [];
+  const activityLog = data?.activityLog || data?.recentActivities || [];
   
   // Stats items for sector admin
   const statsItems: StatsItem[] = data?.stats ? [
@@ -33,7 +33,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => 
       />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <SchoolsList schools={schoolsStats} />
+        <SchoolsList schools={schools} />
         <PendingApprovalsCard pendingItems={pendingItems} />
       </div>
       

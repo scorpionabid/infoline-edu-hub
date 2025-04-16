@@ -5,7 +5,8 @@ import NotificationsCard from '../common/NotificationsCard';
 import { 
   SchoolAdminDashboardData,
   DashboardNotification,
-  FormStatus
+  FormStatus,
+  FormItem
 } from '@/types/dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,14 +35,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
   // Əminliklə yoxlayırıq ki, data null deyil, əgər nulldursa default dəyərlər istifadə edirik
   const safeData = data || {
-    completion: { percentage: 0, total: 0, completed: 0 },
-    status: { pending: 0, approved: 0, rejected: 0, total: 0 },
+    formStats: { total: 0, pending: 0, approved: 0, rejected: 0, drafts: 0 },
     categories: [],
-    upcoming: [],
+    notifications: [],
     forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
     pendingForms: [],
     completionRate: 0,
-    notifications: []
+    completion: { percentage: 0, total: 0, completed: 0 }
   };
 
   // Status rəngləri üçün funksiya
@@ -216,8 +216,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status.toString())}`}>
-                        {t(form.status.toString())}
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(typeof form.status === 'string' ? form.status : '')}`}>
+                        {t(typeof form.status === 'string' ? form.status : '')}
                       </div>
                       <div className="w-24 bg-gray-200 rounded-full h-2.5">
                         <div 

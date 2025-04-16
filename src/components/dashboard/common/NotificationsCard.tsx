@@ -48,7 +48,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
   };
 
   // Format date function (assumes format YYYY-MM-DD)
-  const formatDate = (date: string, time?: string) => {
+  const formatDate = (date: string | undefined, time?: string) => {
     if (!date) return '';
     
     const today = new Date();
@@ -96,7 +96,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
           ) : (
             <div className="space-y-4">
               {notifications.map((notification) => (
-                <div key={notification.id} className={`p-3 rounded-md border ${notification.isRead ? 'bg-background' : 'bg-secondary/30'}`}>
+                <div key={notification.id} className={`p-3 rounded-md border ${notification.read || notification.isRead ? 'bg-background' : 'bg-secondary/30'}`}>
                   <div className="flex justify-between items-start">
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5">
@@ -106,7 +106,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) 
                         <div className="font-medium mb-1">{notification.title}</div>
                         <div className="text-sm text-muted-foreground">{notification.message}</div>
                         <div className="text-xs text-muted-foreground mt-2">
-                          {formatDate(notification.date, notification.time || undefined)}
+                          {formatDate(notification.date || notification.timestamp, notification.time)}
                         </div>
                       </div>
                     </div>

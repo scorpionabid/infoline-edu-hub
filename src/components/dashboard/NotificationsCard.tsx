@@ -64,8 +64,8 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
                   <p className="font-medium">{notification.title}</p>
                   <p className="text-sm text-muted-foreground">{notification.message}</p>
                   <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-muted-foreground">{notification.date ? new Date(notification.date).toLocaleDateString() : ''}</p>
-                    {!notification.isRead && (
+                    <p className="text-xs text-muted-foreground">{notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : (notification.date ? new Date(notification.date).toLocaleDateString() : '')}</p>
+                    {!(notification.read || notification.isRead) && (
                       <Badge variant="secondary" className="text-xs">
                         {t('new')}
                       </Badge>
