@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,8 @@ import { FileUp, DownloadCloud, Upload, X, HelpCircle, Info, AlertCircle, Loader
 import { toast } from 'sonner';
 import { generateExcelTemplate, importSchoolsFromExcel } from '@/utils/excelUtils';
 import { School } from '@/types/supabase';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -33,13 +33,44 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [logs, setLogs] = useState<string[]>([]);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Console loglarını yakalayaq
+  React.useEffect(() => {
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+
+    console.log = (...args) => {
+      setLogs(prev => [...prev, `LOG: ${args.join(' ')}`]);
+      originalConsoleLog.apply(console, args);
+    };
+
+    console.error = (...args) => {
+      setLogs(prev => [...prev, `ERROR: ${args.join(' ')}`]);
+      originalConsoleError.apply(console, args);
+    };
+
+    console.warn = (...args) => {
+      setLogs(prev => [...prev, `WARN: ${args.join(' ')}`]);
+      originalConsoleWarn.apply(console, args);
+    };
+
+    return () => {
+      console.log = originalConsoleLog;
+      console.error = originalConsoleError;
+      console.warn = originalConsoleWarn;
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       setIsError(false);
       setErrorMessage('');
+      setLogs([]);
       
       // Excel faylı olduğunu yoxlayırıq
       if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
@@ -51,10 +82,6 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     }
   };
 
-  const handleDownloadTemplate = () => {
-    generateExcelTemplate();
-  };
-
   const handleImport = async () => {
     if (!file) {
       setIsError(true);
@@ -64,14 +91,26 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     
     setIsLoading(true);
     setIsError(false);
+    setProgress(0);
     
     try {
+      // Progress simulyasiyası
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 500);
+
       await importSchoolsFromExcel(file, async (schools) => {
         // Yalnız məcburi sahələri olan məktəbləri idxal et
         const validSchools = schools.filter(school => 
           school.name && 
-          school.sector_id && 
-          school.region_id
+          school.region_id && 
+          school.sector_id
         );
         
         if (validSchools.length === 0) {
@@ -87,13 +126,20 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         }
         
         await onImport(validSchools);
-        setFile(null);
-        onClose();
+        setProgress(100);
+        
+        setTimeout(() => {
+          setFile(null);
+          onClose();
+        }, 2000);
       });
+
+      clearInterval(progressInterval);
     } catch (error: any) {
       console.error('İdxal zamanı xəta:', error);
       setIsError(true);
       setErrorMessage(error.message || 'Məlumatları idxal edərkən xəta baş verdi.');
+      setProgress(0);
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +149,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     setFile(null);
     setIsError(false);
     setErrorMessage('');
+    setLogs([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -110,90 +157,98 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {t('importSchools')}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-5 w-5">
-                    <HelpCircle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-sm">
-                  <p>Məktəbləri Excel ilə idxal etmək üçün şablonu yükləyin, doldurun və yükləyin.</p>
-                  <p className="mt-2">Admin məlumatlarını doldursanız, həmin məktəbə admin təyin ediləcək.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </DialogTitle>
+          <DialogTitle>Excel ilə məktəb idxalı</DialogTitle>
           <DialogDescription>
-            {t('importSchoolsDescription')}
+            Məktəbləri toplu şəkildə idxal etmək üçün Excel faylını istifadə edin.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          <div className="bg-muted/50 rounded-md p-3 text-sm border border-muted">
-            <h4 className="flex items-center font-medium text-sm">
-              <Info className="h-4 w-4 mr-2 text-muted-foreground" />
-              İdxal təlimatları:
-            </h4>
-            <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-              <li>1. Əvvəlcə şablonu yükləyin və doldurun</li>
-              <li>2. Regionlar və sektorlar sistemdə olmalıdır</li>
-              <li>3. Məktəb adminləri avtomatik yaradılacaq</li>
-              <li>4. Məktəb adı, region və sektor məcburi xanalardır</li>
-            </ul>
-          </div>
-          
-          <Button 
-            variant="outline" 
-            className="w-full justify-center" 
-            onClick={handleDownloadTemplate}
-          >
-            <DownloadCloud className="mr-2 h-4 w-4" />
-            {t('downloadExcelTemplate')}
-          </Button>
-          
-          <div className="grid w-full items-center gap-1.5">
-            <div className="relative">
-              <Input
-                id="file"
-                type="file"
-                accept=".xlsx,.xls"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className={file ? "file:hidden" : ""}
-              />
-              {file && (
-                <div className="absolute inset-0 flex items-center justify-between bg-background border rounded-md px-3 py-2">
-                  <div className="flex items-center">
-                    <FileUp className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+        <div className="space-y-4 py-4">
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => generateExcelTemplate()}
+                >
+                  <DownloadCloud className="mr-2 h-4 w-4" />
+                  Excel şablonunu yüklə
+                </Button>
+              </div>
+              
+              <div className="relative">
+                <Input
+                  id="file"
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className={file ? "file:hidden" : ""}
+                  accept=".xlsx,.xls"
+                />
+                {file && (
+                  <div className="absolute inset-0 flex items-center justify-between bg-background border rounded-md px-3 py-2">
+                    <div className="flex items-center">
+                      <FileUp className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={handleClearFile}>
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={handleClearFile}>
-                    <X className="h-4 w-4" />
-                  </Button>
+                )}
+              </div>
+            </div>
+
+            {isLoading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>İdxal edilir...</span>
+                  <span>{progress}%</span>
                 </div>
-              )}
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
+
+            {isError && (
+              <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3 flex items-start">
+                <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            <div className="bg-muted/50 rounded-md p-3">
+              <div className="flex items-center mb-2">
+                <Info className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm font-medium">İdxal prosesi jurnalı</span>
+              </div>
+              <ScrollArea className="h-[200px] w-full rounded-md border p-2">
+                <div className="space-y-1">
+                  {logs.map((log, index) => (
+                    <div 
+                      key={index} 
+                      className={`text-xs ${
+                        log.startsWith('ERROR:') 
+                          ? 'text-destructive' 
+                          : log.startsWith('WARN:') 
+                            ? 'text-yellow-600' 
+                            : 'text-muted-foreground'
+                      }`}
+                    >
+                      {log}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('supportedFormats')}: .xlsx, .xls
-            </p>
           </div>
-          
-          {isError && (
-            <div className="bg-destructive/10 text-destructive text-sm rounded-md p-3 flex items-start">
-              <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
         </div>
         
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            {t('cancel')}
+            Ləğv et
           </Button>
           <Button 
             onClick={handleImport}
@@ -208,7 +263,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                {t('import')}
+                İdxal et
               </>
             )}
           </Button>

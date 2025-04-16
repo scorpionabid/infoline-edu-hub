@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { School } from '@/types/supabase';
@@ -146,17 +145,21 @@ export const importSchoolsFromExcel = async (
 ): Promise<void> => {
   try {
     return new Promise((resolve, reject) => {
+      console.log('Excel idxalı başladı:', file.name);
       const reader = new FileReader();
       
       reader.onload = async (e) => {
         try {
           if (!e.target || !e.target.result) {
-            toast.error('Fayl oxunarkən xəta baş verdi');
-            reject(new Error('File read error'));
+            const error = 'Fayl oxunarkən xəta baş verdi';
+            console.error(error);
+            toast.error(error);
+            reject(new Error(error));
             return;
           }
           
           const data = new Uint8Array(e.target.result as ArrayBuffer);
+          console.log('Fayl oxundu, Excel-ə çevrilir...');
           const workbook = XLSX.read(data, { type: 'array' });
           
           // İlk worksheeti alırıq
@@ -167,18 +170,27 @@ export const importSchoolsFromExcel = async (
           const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
           
           if (!jsonData || jsonData.length === 0) {
-            toast.error('Excel faylında məlumat tapılmadı');
-            reject(new Error('Excel faylında məlumat tapılmadı'));
+            const error = 'Excel faylında məlumat tapılmadı';
+            console.error(error);
+            toast.error(error);
+            reject(new Error(error));
             return;
           }
           
-          console.log('Excel məlumatları:', jsonData);
+          console.log('Excel məlumatları JSON-a çevrildi:', jsonData);
           
           try {
             // Region və sektor adlarının ID-lərə çevrilməsi
             const processedSchools: Partial<School>[] = [];
             
-            for (const row of jsonData) {
+            for (const [index, row] of jsonData.entries()) {
+              console.log(`Sətir ${index + 1} işlənir:`, row);
+              
+              if (!row['Məktəb adı']) {
+                console.warn(`Sətir ${index + 1}: Məktəb adı boşdur, keçilir`);
+                continue;
+              }
+
               // Excel sütun adları sistemimizdəki adlara uyğunlaşdırılır
               const schoolData: Partial<School> = {
                 name: row['Məktəb adı'],
@@ -194,77 +206,110 @@ export const importSchoolsFromExcel = async (
               
               // Admin məlumatlarını əlavə edək
               if (row['Admin e-poçt']) {
+                console.log(`Sətir ${index + 1}: Admin məlumatları tapıldı:`, {
+                  email: row['Admin e-poçt'],
+                  name: row['Admin adı'],
+                  phone: row['Admin telefonu']
+                });
+
                 (schoolData as any).adminData = {
                   email: row['Admin e-poçt'],
                   name: row['Admin adı'] || '',
-                  password: row['Admin parolu'] || '',
+                  password: row['Admin parolu'] || 'InfoLine2024!',
                   phone: row['Admin telefonu'] || ''
                 };
               }
               
               // Region adını ID-yə çevir
               if (row['Region']) {
+                console.log(`Sətir ${index + 1}: Region axtarılır:`, row['Region']);
                 try {
                   const regionId = await mapRegionNameToId(row['Region']);
                   if (regionId) {
                     schoolData.region_id = regionId;
+                    console.log(`Sətir ${index + 1}: Region tapıldı, ID:`, regionId);
                   } else {
-                    console.warn(`Region tapılmadı: ${row['Region']}`);
+                    console.warn(`Sətir ${index + 1}: Region tapılmadı:`, row['Region']);
+                    toast.warning(`${row['Məktəb adı']}: "${row['Region']}" adlı region tapılmadı`);
                   }
                 } catch (error) {
-                  console.error('Region adını ID-yə çevirərkən xəta:', error);
+                  console.error(`Sətir ${index + 1}: Region axtarışı zamanı xəta:`, error);
                 }
               }
               
               // Sektor adını ID-yə çevir
               if (row['Sektor']) {
+                console.log(`Sətir ${index + 1}: Sektor axtarılır:`, row['Sektor']);
                 try {
                   const sectorId = await mapSectorNameToId(row['Sektor'], schoolData.region_id);
                   if (sectorId) {
                     schoolData.sector_id = sectorId;
+                    console.log(`Sətir ${index + 1}: Sektor tapıldı, ID:`, sectorId);
                   } else {
-                    console.warn(`Sektor tapılmadı: ${row['Sektor']}`);
+                    console.warn(`Sətir ${index + 1}: Sektor tapılmadı:`, row['Sektor']);
+                    toast.warning(`${row['Məktəb adı']}: "${row['Sektor']}" adlı sektor tapılmadı`);
                   }
                 } catch (error) {
-                  console.error('Sektor adını ID-yə çevirərkən xəta:', error);
+                  console.error(`Sətir ${index + 1}: Sektor axtarışı zamanı xəta:`, error);
                 }
               }
               
+              // Məcburi sahələri yoxla
+              if (!schoolData.name || !schoolData.region_id || !schoolData.sector_id) {
+                const missingFields = [];
+                if (!schoolData.name) missingFields.push('Məktəb adı');
+                if (!schoolData.region_id) missingFields.push('Region');
+                if (!schoolData.sector_id) missingFields.push('Sektor');
+                
+                console.error(`Sətir ${index + 1}: Məcburi sahələr çatışmır:`, missingFields);
+                toast.error(`${schoolData.name || 'Məktəb'}: ${missingFields.join(', ')} tələb olunur`);
+                continue;
+              }
+              
               processedSchools.push(schoolData);
+              console.log(`Sətir ${index + 1}: Məlumatlar hazırlandı:`, schoolData);
             }
             
-            toast.success(`${processedSchools.length} məktəb məlumatı uğurla oxundu`, {
-              description: 'Məlumatlar işlənir...'
-            });
+            if (processedSchools.length === 0) {
+              const error = 'Heç bir məktəb məlumatı idxal edilmədi';
+              console.error(error);
+              toast.error(error);
+              reject(new Error(error));
+              return;
+            }
             
+            console.log('Bütün məlumatlar hazırlandı:', processedSchools);
             onComplete(processedSchools);
             resolve();
-          } catch (error) {
+          } catch (error: any) {
             console.error('Məlumatlar işlənərkən xəta:', error);
             toast.error('Məlumatlar işlənərkən xəta baş verdi', {
-              description: 'Zəhmət olmasa, məlumatları yoxlayın və yenidən cəhd edin.'
+              description: error.message
             });
             reject(error);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Excel faylı işlənərkən xəta:', error);
           toast.error('Excel faylı işlənərkən xəta baş verdi', {
-            description: 'Faylın formatını yoxlayın və yenidən cəhd edin.'
+            description: error.message
           });
           reject(error);
         }
       };
       
       reader.onerror = (error) => {
+        console.error('Fayl oxunarkən xəta:', error);
         toast.error('Fayl oxunarkən xəta baş verdi');
         reject(error);
       };
       
       reader.readAsArrayBuffer(file);
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Excel idxalı zamanı xəta:', error);
-    toast.error('Excel idxalı zamanı xəta baş verdi');
+    toast.error('Excel idxalı zamanı xəta baş verdi', {
+      description: error.message
+    });
     throw error;
   }
 };
