@@ -19,4 +19,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts',
+    include: ['src/__tests__/**/*.test.ts?(x)'],
+    testTimeout: 10000,
+    threads: false,
+    environmentOptions: {
+      jest: true
+    }
+  }
 }));

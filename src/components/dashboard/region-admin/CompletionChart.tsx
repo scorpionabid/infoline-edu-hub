@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SectorCompletionItem } from '@/types/dashboard';
@@ -6,15 +5,18 @@ import { useLanguage } from '@/context/LanguageContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface CompletionChartProps {
-  sectors: SectorCompletionItem[];
+  data?: SectorCompletionItem[] | any[];
 }
 
-const CompletionChart: React.FC<CompletionChartProps> = ({ sectors }) => {
+const CompletionChart: React.FC<CompletionChartProps> = ({ data = [] }) => {
   const { t } = useLanguage();
   const colors = ['#4f46e5', '#14b8a6', '#f97316', '#8b5cf6', '#ec4899', '#059669', '#ca8a04'];
   
+  // Əgər data array deyilsə, boş array istifadə et
+  const sectors = Array.isArray(data) ? data : [];
+  
   // Hazır məlumatlar sətri
-  const data = sectors.map((sector, index) => ({
+  const chartData = sectors.map((sector, index) => ({
     name: sector.name,
     value: sector.completionRate,
     fill: colors[index % colors.length]
@@ -35,7 +37,7 @@ const CompletionChart: React.FC<CompletionChartProps> = ({ sectors }) => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={chartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -45,7 +47,7 @@ const CompletionChart: React.FC<CompletionChartProps> = ({ sectors }) => {
                   dataKey="value"
                   label={({name, value}) => `${name}: ${value}%`}
                 >
-                  {data.map((entry, index) => (
+                  {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>

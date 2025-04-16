@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { PendingItem, StatsItem } from '@/types/dashboard';
 
 interface StatusCardsProps {
-  stats: StatsItem[];
+  stats: StatsItem[] | any;
   completionRate?: number;
   pendingItems?: PendingItem[];
 }
@@ -15,6 +15,15 @@ const StatusCards: React.FC<StatusCardsProps> = ({
   pendingItems = []
 }) => {
   const { t } = useLanguage();
+
+  // Əgər stats array deyilsə, boş array istifadə et
+  const statsArray = Array.isArray(stats) ? stats : 
+    // Əgər stats obyektdirsə, onu array-ə çevir
+    (stats && typeof stats === 'object') ? 
+      Object.entries(stats).map(([key, value]) => ({
+        label: key,
+        value: value
+      })) : [];
 
   const getChangeIcon = (changeType: 'increase' | 'decrease' | 'neutral') => {
     switch (changeType) {
@@ -47,16 +56,27 @@ const StatusCards: React.FC<StatusCardsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat) => (
-        <Card key={stat.label}>
+      {statsArray.length > 0 ? (
+        statsArray.map((stat, index) => (
+          <Card key={stat.label || index}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">{stat.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{stat.label}</CardTitle>
+            <CardTitle className="text-sm">{t('noStats')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="text-muted-foreground">{t('noStatsAvailable')}</div>
           </CardContent>
         </Card>
-      ))}
+      )}
       
       {pendingItems && pendingItems.length > 0 && (
         <PendingApprovalsCard pendingItems={pendingItems} />

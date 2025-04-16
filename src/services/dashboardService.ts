@@ -1,7 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { DashboardData, SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData } from '@/types/dashboard';
-import { mockSuperAdminDashboard, mockRegionAdminDashboard, mockSectorAdminDashboard, mockSchoolAdminDashboard } from '@/data/dashboard';
+import { SuperAdminDashboardData, RegionAdminDashboardData, SectorAdminDashboardData, SchoolAdminDashboardData } from '@/types/dashboard';
 
 // İstifadə edilən Supabase Edge Function adları
 const edgeFunctions = {
@@ -12,209 +10,208 @@ const edgeFunctions = {
   charts: 'get-activity-data-charts'
 };
 
+// Default boş məlumat strukturları
+const defaultSuperAdminData: SuperAdminDashboardData = {
+  stats: { totalSchools: 0, totalUsers: 0, totalForms: 0, completedForms: 0 },
+  completionRate: { percentage: 0, total: 0, completed: 0 },
+  regionStats: [],
+  pendingApprovals: [],
+  notifications: [],
+  formsByStatus: { draft: 0, submitted: 0, approved: 0, rejected: 0 }
+};
+
+const defaultRegionAdminData: RegionAdminDashboardData = {
+  sectors: 0,
+  schools: 0,
+  users: 0,
+  pendingSchools: [],
+  completionRate: { percentage: 0, total: 0, completed: 0 },
+  notifications: [],
+  sectorStats: []
+};
+
+const defaultSectorAdminData: SectorAdminDashboardData = {
+  schools: 0,
+  users: 0,
+  pendingApprovals: [],
+  completionRate: { percentage: 0, total: 0, completed: 0 },
+  notifications: [],
+  schoolsStats: []
+};
+
+const defaultSchoolAdminData: SchoolAdminDashboardData = {
+  forms: { total: 0, completed: 0, pending: 0 },
+  pendingForms: [],
+  completionRate: { percentage: 0, total: 0, completed: 0 },
+  notifications: [],
+  recentActivity: []
+};
+
 // SuperAdmin Dashboard Data
 export const getSuperAdminDashboardData = async (): Promise<SuperAdminDashboardData> => {
   try {
-    // Real məlumatları serverə sorğu ilə əldə etmək üçün
-    const mockData = mockSuperAdminDashboard();
+    // Supabase edge functiondan məlumatları əldə etməyə cəhd et
+    const { data, error } = await supabase.functions.invoke(edgeFunctions.superAdmin);
     
-    try {
-      // Supabase edge functiondan məlumatları əldə etməyə cəhd et
-      const { data, error } = await supabase.functions.invoke(edgeFunctions.superAdmin);
-      
-      if (error) {
-        console.error("Dashboard məlumatlarını əldə edərkən server xətası:", error);
-        return mockData;
-      }
-      
-      if (!data) {
-        console.warn("Server boş məlumat qaytardı, mock data istifadə olunur");
-        return mockData;
-      }
-      
-      // Serverdən məlumatları tipə çevir və qaytar
-      if (typeof data === 'object' && data !== null) {
-        // İstifadə edilən data strukturuna uyğunlaşdır
-        const typedData = data as any;
-        
-        // Mock data əvəzinə server məlumatlarını qaytar
-        return {
-          ...mockData,
-          // Server tərəfindən təqdim edilən məlumatları əlavə et
-          stats: typedData.stats || mockData.stats,
-          completionRate: typedData.completionRate || mockData.completionRate,
-          regionStats: typedData.regionStats || mockData.regionStats,
-          pendingApprovals: typedData.pendingApprovals || mockData.pendingApprovals,
-          notifications: typedData.notifications || mockData.notifications,
-          // Formlar üçün ətraflı məlumatlar
-          formsByStatus: typedData.formsByStatus || mockData.formsByStatus
-        };
-      }
-      
-      return mockData;
-    } catch (error) {
-      console.error("Dashboard məlumatlarını əldə edərkən xəta:", error);
-      return mockData;
+    if (error) {
+      console.error("Dashboard məlumatlarını əldə edərkən server xətası:", error);
+      return defaultSuperAdminData;
     }
+    
+    if (!data) {
+      console.warn("Server boş məlumat qaytardı, default data istifadə olunur");
+      return defaultSuperAdminData;
+    }
+    
+    // Serverdən məlumatları tipə çevir və qaytar
+    if (typeof data === 'object' && data !== null) {
+      // İstifadə edilən data strukturuna uyğunlaşdır
+      const typedData = data as any;
+      
+      // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
+      return {
+        stats: typedData.stats || defaultSuperAdminData.stats,
+        completionRate: typedData.completionRate || defaultSuperAdminData.completionRate,
+        regionStats: typedData.regionStats || defaultSuperAdminData.regionStats,
+        pendingApprovals: typedData.pendingApprovals || defaultSuperAdminData.pendingApprovals,
+        notifications: typedData.notifications || defaultSuperAdminData.notifications,
+        formsByStatus: typedData.formsByStatus || defaultSuperAdminData.formsByStatus
+      };
+    }
+    
+    return defaultSuperAdminData;
   } catch (error) {
     console.error('Dashboard məlumatlarını əldə edərkən xəta:', error);
-    return mockSuperAdminDashboard();
+    return defaultSuperAdminData;
   }
 };
 
 // RegionAdmin Dashboard Data
 export const getRegionAdminDashboardData = async (regionId: string): Promise<RegionAdminDashboardData> => {
   try {
-    // Başlanğıc olaraq mock data istifadə edirik
-    const mockData = mockRegionAdminDashboard();
-    
-    try {
-      // Əgər regionId təqdim edilmişdirsə - server api-dən məlumatları əldə et
-      if (regionId) {
-        const { data, error } = await supabase.functions.invoke(edgeFunctions.regionAdmin, {
-          body: { regionId }
-        });
-        
-        if (error) {
-          console.error("Region dashboard məlumatlarını əldə edərkən server xətası:", error);
-          return mockData;
-        }
-        
-        if (!data) {
-          console.warn("Server boş məlumat qaytardı, mock data istifadə olunur");
-          return mockData;
-        }
-        
-        // Serverdən məlumatları tipə çevir və qaytar
-        if (typeof data === 'object' && data !== null) {
-          // Tip uyğunlaşdırması
-          const typedData = data as any;
-          
-          // Mock data əvəzinə server məlumatlarını qaytar
-          return {
-            ...mockData,
-            // TypeScript xətası üçün əlavə kontrol
-            sectors: typedData.sectors || mockData.sectors,
-            schools: typedData.schools || mockData.schools,
-            users: typedData.users || mockData.users,
-            pendingSchools: typedData.pendingSchools || mockData.pendingSchools,
-            completionRate: typedData.completionRate || mockData.completionRate,
-            notifications: typedData.notifications || mockData.notifications,
-            sectorStats: typedData.sectorStats || mockData.sectorStats
-          };
-        }
+    // Əgər regionId təqdim edilmişdirsə - server api-dən məlumatları əldə et
+    if (regionId) {
+      const { data, error } = await supabase.functions.invoke(edgeFunctions.regionAdmin, {
+        body: { regionId }
+      });
+      
+      if (error) {
+        console.error("Region dashboard məlumatlarını əldə edərkən server xətası:", error);
+        return defaultRegionAdminData;
       }
       
-      return mockData;
-    } catch (error) {
-      console.error("Region dashboard məlumatlarını əldə edərkən xəta:", error);
-      return mockData;
+      if (!data) {
+        console.warn("Server boş məlumat qaytardı, default data istifadə olunur");
+        return defaultRegionAdminData;
+      }
+      
+      // Serverdən məlumatları tipə çevir və qaytar
+      if (typeof data === 'object' && data !== null) {
+        // Tip uyğunlaşdırması
+        const typedData = data as any;
+        
+        // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
+        return {
+          sectors: typedData.sectors || defaultRegionAdminData.sectors,
+          schools: typedData.schools || defaultRegionAdminData.schools,
+          users: typedData.users || defaultRegionAdminData.users,
+          pendingSchools: typedData.pendingSchools || defaultRegionAdminData.pendingSchools,
+          completionRate: typedData.completionRate || defaultRegionAdminData.completionRate,
+          notifications: typedData.notifications || defaultRegionAdminData.notifications,
+          sectorStats: typedData.sectorStats || defaultRegionAdminData.sectorStats
+        };
+      }
     }
+    
+    return defaultRegionAdminData;
   } catch (error) {
     console.error('Region dashboard məlumatlarını əldə edərkən xəta:', error);
-    return mockRegionAdminDashboard();
+    return defaultRegionAdminData;
   }
 };
 
 // Sektor Admin Dashboard Data
 export const getSectorAdminDashboardData = async (sectorId: string): Promise<SectorAdminDashboardData> => {
   try {
-    // Başlanğıc olaraq mock data istifadə edirik
-    const mockData = mockSectorAdminDashboard();
-    
-    try {
-      // Əgər sectorId təqdim edilmişdirsə - server api-dən məlumatları əldə et
-      if (sectorId) {
-        const { data, error } = await supabase.functions.invoke(edgeFunctions.sectorAdmin, {
-          body: { sectorId }
-        });
-        
-        if (error) {
-          console.error("Sektor dashboard məlumatlarını əldə edərkən server xətası:", error);
-          return mockData;
-        }
-        
-        if (!data) {
-          console.warn("Server boş məlumat qaytardı, mock data istifadə olunur");
-          return mockData;
-        }
-        
-        // Serverdən məlumatları tipə çevir və qaytar
-        if (typeof data === 'object' && data !== null) {
-          // Tip uyğunlaşdırması
-          const typedData = data as any;
-          
-          // Mock data əvəzinə server məlumatlarını qaytar
-          return {
-            ...mockData,
-            schools: typedData.schools || mockData.schools,
-            users: typedData.users || mockData.users,
-            pendingApprovals: typedData.pendingApprovals || mockData.pendingApprovals,
-            completionRate: typedData.completionRate || mockData.completionRate,
-            notifications: typedData.notifications || mockData.notifications,
-            schoolsStats: typedData.schoolsStats || mockData.schoolsStats
-          };
-        }
+    // Əgər sectorId təqdim edilmişdirsə - server api-dən məlumatları əldə et
+    if (sectorId) {
+      const { data, error } = await supabase.functions.invoke(edgeFunctions.sectorAdmin, {
+        body: { sectorId }
+      });
+      
+      if (error) {
+        console.error("Sektor dashboard məlumatlarını əldə edərkən server xətası:", error);
+        return defaultSectorAdminData;
       }
       
-      return mockData;
-    } catch (error) {
-      console.error("Sektor dashboard məlumatlarını əldə edərkən xəta:", error);
-      return mockData;
+      if (!data) {
+        console.warn("Server boş məlumat qaytardı, default data istifadə olunur");
+        return defaultSectorAdminData;
+      }
+      
+      // Serverdən məlumatları tipə çevir və qaytar
+      if (typeof data === 'object' && data !== null) {
+        // Tip uyğunlaşdırması
+        const typedData = data as any;
+        
+        // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
+        return {
+          schools: typedData.schools || defaultSectorAdminData.schools,
+          users: typedData.users || defaultSectorAdminData.users,
+          pendingApprovals: typedData.pendingApprovals || defaultSectorAdminData.pendingApprovals,
+          completionRate: typedData.completionRate || defaultSectorAdminData.completionRate,
+          notifications: typedData.notifications || defaultSectorAdminData.notifications,
+          schoolsStats: typedData.schoolsStats || defaultSectorAdminData.schoolsStats
+        };
+      }
     }
+    
+    return defaultSectorAdminData;
   } catch (error) {
     console.error('Sektor dashboard məlumatlarını əldə edərkən xəta:', error);
-    return mockSectorAdminDashboard();
+    return defaultSectorAdminData;
   }
 };
 
 // Məktəb Admin Dashboard Data
 export const getSchoolAdminDashboardData = async (schoolId: string): Promise<SchoolAdminDashboardData> => {
   try {
-    // Başlanğıc olaraq mock data istifadə edirik
-    const mockData = mockSchoolAdminDashboard();
-    
-    try {
-      // Əgər schoolId təqdim edilmişdirsə - server api-dən məlumatları əldə et
-      if (schoolId) {
-        const { data, error } = await supabase.functions.invoke(edgeFunctions.schoolAdmin, {
-          body: { schoolId }
-        });
-        
-        if (error) {
-          console.error("Məktəb dashboard məlumatlarını əldə edərkən server xətası:", error);
-          return mockData;
-        }
-        
-        if (!data) {
-          console.warn("Server boş məlumat qaytardı, mock data istifadə olunur");
-          return mockData;
-        }
-        
-        // Serverdən məlumatları tipə çevir və qaytar
-        if (typeof data === 'object' && data !== null) {
-          // Tip uyğunlaşdırması
-          const typedData = data as any;
-          
-          // Mock data əvəzinə server məlumatlarını qaytar
-          return {
-            ...mockData,
-            forms: typedData.forms || mockData.forms,
-            pendingForms: typedData.pendingForms || mockData.pendingForms,
-            completionRate: typedData.completionRate || mockData.completionRate,
-            notifications: typedData.notifications || mockData.notifications
-          };
-        }
+    // Əgər schoolId təqdim edilmişdirsə - server api-dən məlumatları əldə et
+    if (schoolId) {
+      const { data, error } = await supabase.functions.invoke(edgeFunctions.schoolAdmin, {
+        body: { schoolId }
+      });
+      
+      if (error) {
+        console.error("Məktəb dashboard məlumatlarını əldə edərkən server xətası:", error);
+        return defaultSchoolAdminData;
       }
       
-      return mockData;
-    } catch (error) {
-      console.error("Məktəb dashboard məlumatlarını əldə edərkən xəta:", error);
-      return mockData;
+      if (!data) {
+        console.warn("Server boş məlumat qaytardı, default data istifadə olunur");
+        return defaultSchoolAdminData;
+      }
+      
+      // Serverdən məlumatları tipə çevir və qaytar
+      if (typeof data === 'object' && data !== null) {
+        // Tip uyğunlaşdırması
+        const typedData = data as any;
+        
+        // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
+        return {
+          forms: typedData.forms || defaultSchoolAdminData.forms,
+          pendingForms: typedData.pendingForms || defaultSchoolAdminData.pendingForms,
+          completionRate: typedData.completionRate || defaultSchoolAdminData.completionRate,
+          notifications: typedData.notifications || defaultSchoolAdminData.notifications,
+          recentActivity: typedData.recentActivity || defaultSchoolAdminData.recentActivity
+        };
+      }
     }
+    
+    return defaultSchoolAdminData;
   } catch (error) {
     console.error('Məktəb dashboard məlumatlarını əldə edərkən xəta:', error);
-    return mockSchoolAdminDashboard();
+    return defaultSchoolAdminData;
   }
 };
 
@@ -226,47 +223,30 @@ export const getDashboardChartData = async (params: {
   entityId?: string;
 }) => {
   try {
-    // Sadə mock data qaytarırıq
-    const mockChartData = {
-      activityByDate: [
-        { date: '2023-01-01', count: 5 },
-        { date: '2023-01-02', count: 7 },
-        { date: '2023-01-03', count: 2 },
-        { date: '2023-01-04', count: 9 },
-        { date: '2023-01-05', count: 12 },
-      ],
-      activityBySchool: [
-        { name: 'Məktəb 1', count: 15 },
-        { name: 'Məktəb 2', count: 8 },
-        { name: 'Məktəb 3', count: 12 },
-        { name: 'Məktəb 4', count: 5 },
-        { name: 'Məktəb 5', count: 20 },
-      ]
-    };
+    // Server api-dən məlumatları əldə et
+    const { data, error } = await supabase.functions.invoke(edgeFunctions.charts, {
+      body: params
+    });
     
-    try {
-      // Server api-dən məlumatları əldə et
-      const { data, error } = await supabase.functions.invoke(edgeFunctions.charts, {
-        body: params
-      });
-      
-      if (error) {
-        console.error("Diaqram məlumatlarını əldə edərkən server xətası:", error);
-        return mockChartData;
-      }
-      
-      if (!data) {
-        console.warn("Server boş məlumat qaytardı, mock data istifadə olunur");
-        return mockChartData;
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("Diaqram məlumatlarını əldə edərkən xəta:", error);
-      return mockChartData;
+    if (error) {
+      console.error("Diaqram məlumatlarını əldə edərkən server xətası:", error);
+      return {
+        activityByDate: [],
+        activityBySchool: []
+      };
     }
+    
+    if (!data) {
+      console.warn("Server boş məlumat qaytardı, default data istifadə olunur");
+      return {
+        activityByDate: [],
+        activityBySchool: []
+      };
+    }
+    
+    return data;
   } catch (error) {
-    console.error('Diaqram məlumatlarını əldə edərkən xəta:', error);
+    console.error("Diaqram məlumatlarını əldə edərkən xəta:", error);
     return {
       activityByDate: [],
       activityBySchool: []
