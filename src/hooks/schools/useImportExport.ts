@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
@@ -18,7 +17,6 @@ export const useImportExport = (onComplete: () => void) => {
   const { sectors } = useSectors();
   const { createUser } = useCreateUser();
 
-  // Map üçün region və sektorları hazırlayırıq
   const regionNames = regions.reduce((acc, region) => ({
     ...acc,
     [region.id]: region.name
@@ -51,7 +49,6 @@ export const useImportExport = (onComplete: () => void) => {
     try {
       console.log(`Məktəb ${school.id} üçün admin yaradılır: ${adminData.email}`);
       
-      // İstifadəçi adı (email) mövcuddurmu yoxlayaq
       const { data: existingUser, error: userError } = await supabase
         .from('profiles')
         .select('id, email')
@@ -63,13 +60,11 @@ export const useImportExport = (onComplete: () => void) => {
         throw userError;
       }
 
-      // İstifadəçi mövcuddursa, məktəbə admin olaraq təyin et
       if (existingUser && existingUser.length > 0) {
         const adminId = existingUser[0].id;
         console.log(`Mövcud admin ${adminId} məktəbə təyin edilir`);
         
         try {
-          // Məktəb adminini təyin et
           const { data, error } = await supabase.functions.invoke('assign-school-admin', {
             body: {
               userId: adminId,
@@ -93,13 +88,11 @@ export const useImportExport = (onComplete: () => void) => {
         return;
       }
 
-      // Yeni admin əlavə et
       const adminFullName = adminData.name || adminData.email.split('@')[0];
-      const adminPassword = adminData.password || 'InfoLine2024!'; // Default şifrə təyin et
+      const adminPassword = adminData.password || 'InfoLine2024!';
       
       console.log(`Yeni admin yaradılır: ${adminFullName} (${adminData.email})`);
       
-      // UserFormData tipinə uyğun obyekt yaradırıq
       const userData = {
         name: adminFullName, 
         full_name: adminFullName, 
@@ -114,7 +107,6 @@ export const useImportExport = (onComplete: () => void) => {
         status: 'active' as const
       };
       
-      // İstifadəçi yarat
       const result = await createUser(userData);
       console.log('Yeni admin yaradıldı:', result);
       
@@ -127,7 +119,6 @@ export const useImportExport = (onComplete: () => void) => {
   const handleImportSchools = useCallback(async (schools: Partial<School>[]) => {
     setIsImporting(true);
     try {
-      // Əgər schools boş və ya undefined isə, erkən çıxırıq
       if (!schools || schools.length === 0) {
         toast.error(t('noDataToImport'));
         return;
@@ -141,12 +132,10 @@ export const useImportExport = (onComplete: () => void) => {
       let adminErrorCount = 0;
       let existingUpdateCount = 0;
 
-      // Hər bir məktəbi əlavə edirik
       for (const [index, school] of schools.entries()) {
         try {
           console.log(`[${index + 1}/${schools.length}] Məktəb işlənir: ${school.name}`);
           
-          // Əgər region və sektor adları varsa, ID-lərə çeviririk
           if ((school as any).regionName) {
             school.region_id = await mapRegionNameToId((school as any).regionName);
           }
@@ -155,38 +144,47 @@ export const useImportExport = (onComplete: () => void) => {
             school.sector_id = await mapSectorNameToId((school as any).sectorName, school.region_id);
           }
           
-          // Zəruri sahələrin olduğunu yoxlayırıq
           if (!school.name || !school.region_id || !school.sector_id) {
             console.error('Məktəb üçün zəruri sahələr çatışmır:', school);
             errorCount++;
             continue;
           }
 
-          // Admin məlumatlarını saxlayaq
           const adminData = (school as any).adminData;
           delete (school as any).adminData;
           delete (school as any).regionName;
           delete (school as any).sectorName;
 
-          // Məktəb ID varsa (mövcud məktəb yenilənir)
-          let schoolResult;
+          let existingSchool;
           if (school.id) {
-            console.log(`Mövcud məktəb yenilənir: ${school.id}`);
-            
-            // Məktəbin mövcud olduğunu yoxlayaq
-            const { data: existingSchool, error: checkError } = await supabase
+            const { data: checkData } = await supabase
               .from('schools')
               .select('id')
               .eq('id', school.id)
               .single();
               
-            if (checkError || !existingSchool) {
-              console.error(`ID ilə məktəb tapılmadı: ${school.id}`);
-              errorCount++;
-              continue;
+            if (checkData) {
+              existingSchool = checkData;
             }
+          } else {
+            const { data: checkData } = await supabase
+              .from('schools')
+              .select('id')
+              .eq('name', school.name)
+              .eq('region_id', school.region_id)
+              .eq('sector_id', school.sector_id)
+              .single();
+              
+            if (checkData) {
+              existingSchool = checkData;
+              school.id = checkData.id;
+            }
+          }
+
+          let schoolResult;
+          if (existingSchool) {
+            console.log(`Mövcud məktəb yenilənir: ${school.id}`);
             
-            // Məktəbi yeniləyək
             const { data, error } = await supabase
               .from('schools')
               .update({
@@ -217,10 +215,8 @@ export const useImportExport = (onComplete: () => void) => {
             schoolResult = data;
             existingUpdateCount++;
           } else {
-            // Yeni məktəb əlavə edilir
             console.log(`Yeni məktəb əlavə edilir: ${school.name}`);
             
-            // Supabase tələb etdiyi formata uyğunlaşdırırıq
             const schoolData = {
               name: school.name,
               region_id: school.region_id,
@@ -237,7 +233,6 @@ export const useImportExport = (onComplete: () => void) => {
               admin_email: adminData?.email || school.admin_email || null
             };
 
-            // Məktəbi əlavə edirik
             const { data, error } = await supabase
               .from('schools')
               .insert([schoolData])
@@ -254,7 +249,6 @@ export const useImportExport = (onComplete: () => void) => {
             successCount++;
           }
           
-          // Admin təyin edirik
           if (adminData?.email && schoolResult) {
             try {
               await createSchoolAdmin(schoolResult, adminData);
@@ -270,7 +264,6 @@ export const useImportExport = (onComplete: () => void) => {
         }
       }
 
-      // Nəticəni bildiririk
       if (successCount > 0 || existingUpdateCount > 0) {
         let successMsg = '';
         if (successCount > 0) {
@@ -280,19 +273,16 @@ export const useImportExport = (onComplete: () => void) => {
           successMsg += `${existingUpdateCount} mövcud məktəb yeniləndi. `;
         }
         
-        toast.success(
-          t('importCompleted'), 
-          { description: successMsg }
-        );
+        toast.success(t('importCompleted'), { description: successMsg });
         
         if (adminSuccessCount > 0) {
           toast.success(
-            `${adminSuccessCount} ${t('adminsAssignedSuccessfully')}`, 
+            `${adminSuccessCount} ${t('adminsAssignedSuccessfully')}`,
             { description: t('schoolAdminsAssigned') }
           );
         }
         
-        onComplete(); // Məlumatları yeniləmək üçün callback-i çağırırıq
+        onComplete();
       }
 
       if (errorCount > 0) {

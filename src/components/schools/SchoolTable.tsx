@@ -3,12 +3,13 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, UserPlus, Eye } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Mail } from 'lucide-react';
 import { School } from '@/types/school';
 import { useLanguage } from '@/context/LanguageContext';
 import { highlightText } from '@/utils/textUtils';
 import EmptyState from '@/components/ui/empty-state';
 import { SortConfig } from '@/hooks/schools/useSchoolsStore';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SchoolTableProps {
   currentItems: School[];
@@ -79,6 +80,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
             </TableHead>
             <TableHead>{t('region')}</TableHead>
             <TableHead>{t('sector')}</TableHead>
+            <TableHead>{t('admin')}</TableHead>
             <TableHead
               className="cursor-pointer"
               onClick={() => handleSort('status')}
@@ -97,11 +99,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
                   {highlightText(school.name, searchTerm)}
-                  {school.adminEmail && (
-                    <Badge variant="outline" className="text-xs">
-                      {t('hasAdmin')}
-                    </Badge>
-                  )}
                 </div>
               </TableCell>
               <TableCell>
@@ -112,6 +109,23 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
               </TableCell>
               <TableCell>{school.region || '-'}</TableCell>
               <TableCell>{school.sector || '-'}</TableCell>
+              <TableCell>
+                {school.admin_email ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate max-w-[150px]">{school.admin_email}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{school.admin_email}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <span className="text-muted-foreground italic text-sm">{t('noAdmin')}</span>
+                )}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant={school.status === 'active' ? 'default' : 'secondary'}
