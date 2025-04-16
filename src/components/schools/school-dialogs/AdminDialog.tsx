@@ -3,44 +3,41 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-  DialogDescription 
-} from '@/components/ui/dialog';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { School } from '@/data/schoolsData';
-import { Loader2, User, Lock } from 'lucide-react';
-import { ExistingUserSchoolAdminDialog } from '../ExistingUserSchoolAdminDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
+import { School } from '@/types/school';
 
-const passwordSchema = z.object({
-  password: z.string().min(6, { message: 'Parol ən azı 6 simvol olmalıdır' }),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Parollar uyğun gəlmir',
-  path: ['confirmPassword'],
+// Schema for validation
+const adminFormSchema = z.object({
+  email: z.string().email({
+    message: 'Düzgün e-poçt ünvanı daxil edin.',
+  }),
+  password: z.string().min(8, {
+    message: 'Şifrə ən azı 8 simvoldan ibarət olmalıdır.',
+  }),
 });
 
-type PasswordForm = z.infer<typeof passwordSchema>;
+type AdminFormData = z.infer<typeof adminFormSchema>;
 
 interface AdminDialogProps {
   isOpen: boolean;
@@ -50,162 +47,112 @@ interface AdminDialogProps {
   selectedAdmin: School | null;
 }
 
-export const AdminDialog: React.FC<AdminDialogProps> = ({
+const AdminDialog: React.FC<AdminDialogProps> = ({
   isOpen,
   onClose,
   onUpdate,
   onResetPassword,
   selectedAdmin
 }) => {
-  const { t } = useLanguageSafe();
-  const [activeTab, setActiveTab] = useState('info');
-  const [resetInProgress, setResetInProgress] = useState(false);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<string>('update');
 
-  const form = useForm<PasswordForm>({
-    resolver: zodResolver(passwordSchema),
+  const form = useForm<AdminFormData>({
+    resolver: zodResolver(adminFormSchema),
     defaultValues: {
+      email: selectedAdmin?.adminEmail || '',
       password: '',
-      confirmPassword: ''
-    }
+    },
   });
 
-  const onPasswordSubmit = (data: PasswordForm) => {
-    setResetInProgress(true);
-    try {
+  const handleSubmit = (data: AdminFormData) => {
+    if (activeTab === 'update') {
+      onUpdate();
+    } else {
       onResetPassword(data.password);
-      form.reset();
-    } catch (error) {
-      console.error('Parol sıfırlama xətası:', error);
-    } finally {
-      setResetInProgress(false);
     }
   };
 
-  const hasAdmin = selectedAdmin?.adminEmail && selectedAdmin?.adminEmail.length > 0;
+  // selectedAdmin null olduğunda xəta verməmək üçün yoxlama əlavə edirik
+  if (!selectedAdmin) {
+    return null;
+  }
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{t('schoolAdminManagement')}</DialogTitle>
-            <DialogDescription>
-              {selectedAdmin?.name} məktəbi üçün admin idarəetməsi
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{t('manageAdmin')}</DialogTitle>
+          <DialogDescription>
+            {t('manageAdminDescription')}
+          </DialogDescription>
+        </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="info">
-                <User className="mr-2 h-4 w-4" />
-                Admin Məlumatları
-              </TabsTrigger>
-              <TabsTrigger value="password" disabled={!hasAdmin}>
-                <Lock className="mr-2 h-4 w-4" />
-                Şifrə Dəyişdirmə
-              </TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="update" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="update">{t('updateAdmin')}</TabsTrigger>
+            <TabsTrigger value="reset">{t('resetPassword')}</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="info" className="space-y-4">
-              {hasAdmin ? (
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <p className="text-sm font-medium">Admin E-poçt:</p>
-                    <p className="text-sm col-span-3">{selectedAdmin?.adminEmail}</p>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1.5">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setIsAssignDialogOpen(true)}
-                    >
-                      Adminı dəyişdir
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center space-y-4 py-6">
-                  <p className="text-center text-sm text-muted-foreground">
-                    Bu məktəbin hələ bir admini yoxdur
-                  </p>
-                  <Button onClick={() => setIsAssignDialogOpen(true)}>
-                    Admin təyin et
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
+              <TabsContent value="update">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('email')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder="admin@example.com" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        {t('adminEmailDesc')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
 
-            <TabsContent value="password">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Yeni Şifrə</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Yeni şifrəni daxil edin"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <TabsContent value="reset">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('password')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t('passwordResetDesc')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
 
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Şifrəni Təsdiqlə</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Şifrəni təkrar daxil edin"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={resetInProgress}
-                  >
-                    {resetInProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Şifrəni Yenilə
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
-              Bağla
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {isAssignDialogOpen && selectedAdmin && (
-        <ExistingUserSchoolAdminDialog
-          isOpen={isAssignDialogOpen}
-          onClose={() => setIsAssignDialogOpen(false)}
-          schoolId={selectedAdmin.id}
-          schoolName={selectedAdmin.name}
-          onSuccess={onUpdate}
-        />
-      )}
-    </>
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={onClose}>
+                  {t('cancel')}
+                </Button>
+                <Button type="submit">
+                  {activeTab === 'update' ? t('update') : t('resetPassword')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 };
+
+export default AdminDialog;

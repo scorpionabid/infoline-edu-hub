@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { School } from '@/data/schoolsData';
-import { School as SupabaseSchool } from '@/types/supabase';
+import { School } from '@/types/school';
 import { useSchoolDialogs } from './useSchoolDialogs';
 import { useSchoolFormHandler } from './useSchoolFormHandler';
 import { useSchoolOperations } from './useSchoolOperations';

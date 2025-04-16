@@ -1,6 +1,12 @@
 
-export { DeleteDialog } from './DeleteDialog';
-export { EditDialog } from './EditDialog';
-export { AddDialog } from './AddDialog';
-export { AdminDialog } from './AdminDialog';
-export { ExistingUserSchoolAdminDialog } from '../ExistingUserSchoolAdminDialog';
+import DeleteDialog from './DeleteDialog';
+import EditDialog from './EditDialog';
+import AddDialog from './AddDialog';
+import AdminDialog from './AdminDialog';
+
+export {
+  DeleteDialog,
+  EditDialog,
+  AddDialog,
+  AdminDialog
+};

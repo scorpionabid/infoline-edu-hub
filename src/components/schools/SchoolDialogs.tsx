@@ -6,7 +6,7 @@ import {
   AddDialog, 
   AdminDialog 
 } from './school-dialogs';
-import { School } from '@/data/schoolsData';
+import { School } from '@/types/school';
 import { SchoolFormData } from '@/types/school-form';
 
 interface SchoolDialogsProps {
