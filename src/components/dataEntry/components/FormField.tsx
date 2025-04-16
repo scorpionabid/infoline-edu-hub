@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   FormControl, 
@@ -112,6 +111,41 @@ const FormField: React.FC<FormFieldProps> = ({
           </Select>
         );
       
+      case 'multiselect':
+        return (
+          <div className="space-y-2">
+            {normalizedOptions.map((option) => {
+              const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
+              
+              return (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${id}-${option.value}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
+                        onChange(newValue);
+                      } else {
+                        const newValue = Array.isArray(value) 
+                          ? value.filter(v => v !== option.value) 
+                          : [];
+                        onChange(newValue);
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`${id}-${option.value}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {option.label}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        );
+      
       case 'checkbox':
         return (
           <div className="space-y-2">
@@ -164,6 +198,102 @@ const FormField: React.FC<FormFieldProps> = ({
                 </label>
               </div>
             ))}
+          </RadioGroup>
+        );
+      
+      case 'email':
+        return (
+          <Input
+            id={id}
+            type="email"
+            placeholder={placeholder || 'example@domain.com'}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        );
+      
+      case 'phone':
+        return (
+          <Input
+            id={id}
+            type="tel"
+            placeholder={placeholder || '+994 XX XXX XX XX'}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        );
+      
+      case 'file':
+        return (
+          <div className="space-y-2">
+            <Input
+              id={id}
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  onChange(file);
+                }
+              }}
+            />
+            {value && typeof value === 'object' && (
+              <div className="text-sm text-muted-foreground">
+                {value.name} ({Math.round(value.size / 1024)} KB)
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'image':
+        return (
+          <div className="space-y-2">
+            <Input
+              id={id}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  onChange(file);
+                }
+              }}
+            />
+            {value && typeof value === 'object' && (
+              <div className="mt-2">
+                <img 
+                  src={typeof value === 'string' ? value : URL.createObjectURL(value)} 
+                  alt={name}
+                  className="max-w-full h-auto max-h-32 rounded-md"
+                />
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'boolean':
+        return (
+          <RadioGroup
+            value={value?.toString() || ''}
+            onValueChange={(val) => onChange(val === 'true')}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="true" id={`${id}-true`} />
+              <label
+                htmlFor={`${id}-true`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {t('yes')}
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="false" id={`${id}-false`} />
+              <label
+                htmlFor={`${id}-false`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {t('no')}
+              </label>
+            </div>
           </RadioGroup>
         );
       
