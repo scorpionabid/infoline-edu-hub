@@ -661,6 +661,10 @@ export type Database = {
           | { user_id_param: string; sector_id_param: string }
         Returns: Json
       }
+      calculate_completion_rate: {
+        Args: { school_id_param: string }
+        Returns: number
+      }
       create_audit_log: {
         Args: {
           p_user_id: string
@@ -684,6 +688,27 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json
       }
+      get_recent_activities: {
+        Args: { limit_param?: number }
+        Returns: {
+          id: string
+          action: string
+          user_id: string
+          entity_type: string
+          entity_id: string
+          created_at: string
+        }[]
+      }
+      get_region_stats: {
+        Args: { region_id_param: string }
+        Returns: {
+          total_sectors: number
+          total_schools: number
+          total_pending: number
+          total_approved: number
+          completion_rate: number
+        }[]
+      }
       get_regions_with_admin_emails: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -699,6 +724,16 @@ export type Database = {
       get_sector_admin_email: {
         Args: { sector_id_param: string }
         Returns: string
+      }
+      get_sector_stats: {
+        Args: { sector_id_param: string }
+        Returns: {
+          total_schools: number
+          total_pending: number
+          total_approved: number
+          total_rejected: number
+          completion_rate: number
+        }[]
       }
       get_user_emails_by_ids: {
         Args: { user_ids: string[] }

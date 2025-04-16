@@ -17,36 +17,47 @@ export const useRealDashboardData = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<
+    SuperAdminDashboardData | 
+    RegionAdminDashboardData | 
+    SectorAdminDashboardData | 
+    SchoolAdminDashboardData | 
+    null
+  >(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user) return;
+    if (!user?.role) return;
     
     try {
       setIsLoading(true);
       setError(null);
 
       const { data: response, error: apiError } = await supabase.functions.invoke('get-dashboard-data', {
-        body: { role: user.role }
+        body: { 
+          role: user.role,
+          entity_id: user.regionId || user.sectorId || user.schoolId 
+        }
       });
 
       if (apiError) throw new Error(apiError.message);
 
       if (!response) {
-        throw new Error('Dashboard məlumatları əldə edilə bilmədi');
+        throw new Error(t('errorFetchingDashboardData'));
       }
 
       setDashboardData(response.data);
       
-      // Əgər SuperAdmin-dirsə əlavə qrafik məlumatlarını əldə edirik
+      // SuperAdmin üçün əlavə qrafik məlumatlarını əldə edirik
       if (user.role === 'superadmin') {
         const { data: chartsResponse, error: chartsError } = await supabase.functions.invoke('get-dashboard-charts');
         
         if (!chartsError && chartsResponse) {
           setChartData(chartsResponse);
+        } else if (chartsError) {
+          console.error('Qrafik məlumatları əldə edilərkən xəta:', chartsError);
         }
       }
 
@@ -72,21 +83,18 @@ export const useRealDashboardData = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Kanal yaradaq
     const channel = supabase
       .channel('dashboard-changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public' },
-        (payload) => {
-          // Dəyişiklik baş verdikdə məlumatları yenilə
+        { event: '*', schema: 'public', table: 'data_entries' },
+        () => {
           fetchDashboardData();
         }
       )
       .subscribe();
 
     return () => {
-      // Komponenti tərk etdikdə kanalı bağla
       supabase.removeChannel(channel);
     };
   }, [user, fetchDashboardData]);
