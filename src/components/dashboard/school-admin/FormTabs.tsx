@@ -19,65 +19,75 @@ const FormTabs: React.FC<FormTabsProps> = ({ forms, onFormClick }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>('all');
   
+  const formStatusValues = {
+    PENDING: 'pending',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+    DUE_SOON: 'dueSoon',
+    OVERDUE: 'overdue',
+    DRAFT: 'draft',
+    COMPLETED: 'completed'
+  };
+  
   const filteredForms = (tab: string) => {
     if (tab === 'all') return forms;
     
     if (tab === 'due_soon') {
-      return forms.filter(form => form.status === FormStatus.DUE_SOON);
+      return forms.filter(form => form.status === formStatusValues.DUE_SOON);
     }
     
     return forms.filter(form => form.status.toString().toLowerCase() === tab);
   };
   
-  const getStatusIcon = (status: FormStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case FormStatus.PENDING:
+      case formStatusValues.PENDING:
         return <Clock className="h-4 w-4 mr-1" />;
-      case FormStatus.APPROVED:
+      case formStatusValues.APPROVED:
         return <CheckCircle className="h-4 w-4 mr-1" />;
-      case FormStatus.REJECTED:
+      case formStatusValues.REJECTED:
         return <XCircle className="h-4 w-4 mr-1" />;
-      case FormStatus.DUE_SOON:
+      case formStatusValues.DUE_SOON:
         return <AlertTriangle className="h-4 w-4 mr-1" />;
-      case FormStatus.EXPIRED:
+      case formStatusValues.OVERDUE:
         return <Calendar className="h-4 w-4 mr-1" />;
       default:
         return null;
     }
   };
   
-  const getStatusColor = (status: FormStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case FormStatus.PENDING:
+      case formStatusValues.PENDING:
         return 'bg-blue-100 text-blue-800 border-blue-300';
-      case FormStatus.APPROVED:
+      case formStatusValues.APPROVED:
         return 'bg-green-100 text-green-800 border-green-300';
-      case FormStatus.REJECTED:
+      case formStatusValues.REJECTED:
         return 'bg-red-100 text-red-800 border-red-300';
-      case FormStatus.DUE_SOON:
+      case formStatusValues.DUE_SOON:
         return 'bg-orange-100 text-orange-800 border-orange-300';
-      case FormStatus.EXPIRED:
+      case formStatusValues.OVERDUE:
         return 'bg-gray-100 text-gray-800 border-gray-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
   
-  const formatStatusText = (status: FormStatus) => {
+  const formatStatusText = (status: string) => {
     switch (status) {
-      case FormStatus.PENDING:
+      case formStatusValues.PENDING:
         return t('pending');
-      case FormStatus.APPROVED:
+      case formStatusValues.APPROVED:
         return t('approved');
-      case FormStatus.REJECTED:
+      case formStatusValues.REJECTED:
         return t('rejected');
-      case FormStatus.DUE_SOON:
+      case formStatusValues.DUE_SOON:
         return t('dueSoon');
-      case FormStatus.EXPIRED:
+      case formStatusValues.OVERDUE:
         return t('expired');
-      case FormStatus.DRAFT:
+      case formStatusValues.DRAFT:
         return t('draft');
-      case FormStatus.COMPLETED:
+      case formStatusValues.COMPLETED:
         return t('completed');
       default:
         return status;

@@ -11,7 +11,7 @@ export interface StatusCardsProps {
   additionalStats?: {
     activeUsers?: number;
     upcomingDeadlines?: number;
-    recentSubmissions?: number;
+    recentSubmissions?: any;
   };
 }
 
@@ -28,12 +28,12 @@ const StatusCards: React.FC<StatusCardsProps> = ({
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {stat.label}
+              {stat.title}
             </CardTitle>
             {stat.icon}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="text-2xl font-bold">{stat.count}</div>
             {stat.description && (
               <p className="text-xs text-muted-foreground mt-1">
                 {stat.description}

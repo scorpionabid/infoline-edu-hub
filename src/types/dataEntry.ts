@@ -1,95 +1,109 @@
 
-import { Column } from './column';
-
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error'
+export interface DataValueType {
+  id: string;
+  value: string;
+  status?: string;
+  validationErrors?: ColumnValidationError[];
 }
 
-export interface EntryValue {
-  id?: string;
-  columnId: string;
-  value: any;
-  status?: 'pending' | 'approved' | 'rejected';
+export interface DataEntryFormData {
+  [columnId: string]: DataValueType;
 }
 
-export interface CategoryEntryData {
-  categoryId: string;
-  values: { columnId: string; value: any }[];
-  completionPercentage: number;
-}
-
-export interface DataEntryForm {
-  id?: string;
-  schoolId: string;
-  categoryId: string;
-  title?: string;
-  status?: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
-  submittedAt?: string;
-  updatedAt?: string;
-  entries: EntryValue[];
-  lastSaved?: string;
+export interface ColumnValidationError {
+  errorType: string;
+  message: string;
+  details?: any;
 }
 
 export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
-  assignment?: string;
-  deadline?: string;
+  columns: ColumnType[];
   status?: string;
-  priority?: number;
-  created_at?: string;
-  updated_at?: string;
-  columns: Column[];
-  completionPercentage?: number;
+  deadline?: string;
+  assignment?: string;
 }
 
-export interface DataEntryData {
+export interface ColumnType {
   id: string;
-  schoolId: string;
-  title: string;
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-  updatedAt: string;
-  submittedAt?: string;
-  entries: EntryValue[];
+  name: string;
+  type: string;
+  category_id: string;
+  is_required: boolean;
+  order_index?: number;
+  help_text?: string;
+  placeholder?: string;
+  options?: ColumnOptions;
+  validation?: ColumnValidation;
+  default_value?: string;
+  status?: string;
 }
 
-export interface UseDataEntryProps {
-  schoolId?: string;
-  categoryId?: string;
-  categories?: CategoryWithColumns[];
-  onComplete?: () => void;
+export interface ColumnOptions {
+  choices?: { label: string; value: string }[];
+  min?: number;
+  max?: number;
+  step?: number;
+  multiple?: boolean;
+  allowCustom?: boolean;
 }
 
-export interface UseDataEntryResult {
-  formData: DataEntryForm;
-  updateFormData: (data: Partial<DataEntryForm>) => void;
+export interface ColumnValidation {
+  pattern?: string;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  required?: boolean;
+  customMessage?: string;
+}
+
+export interface DataEntrySubmitResponse {
+  success: boolean;
+  message?: string;
+  errors?: Record<string, string[]>;
+  data?: any;
+}
+
+export interface SchoolData {
+  id: string;
+  name: string;
+  region_id: string;
+  region_name?: string;
+  sector_id: string;
+  sector_name?: string;
+  admin_id?: string;
+  admin_email?: string;
+}
+
+export interface DataEntryContextType {
   categories: CategoryWithColumns[];
+  selectedCategoryId: string | null;
+  setSelectedCategoryId: (id: string | null) => void;
+  formData: DataEntryFormData;
+  updateFormValue: (columnId: string, value: string) => void;
+  resetForm: () => void;
+  submitForm: () => Promise<DataEntrySubmitResponse>;
   loading: boolean;
   submitting: boolean;
-  handleEntriesChange: (columnId: string, value: any) => void;
-  handleSave: () => Promise<void>;
-  handleSubmitForApproval: () => Promise<void>;
-  loadDataForSchool: (schoolId: string) => Promise<void>;
-  entries: EntryValue[];
-  submitForApproval: () => Promise<void>;
-  saveStatus?: DataEntrySaveStatus;
-  isDataModified?: boolean;
-  error?: string | null;
-  selectedCategory?: CategoryWithColumns;
-  isAutoSaving?: boolean;
-  isSubmitting?: boolean;
-  isLoading?: boolean;
-  updateValue?: (categoryId: string, columnId: string, value: any) => void;
-  saveForm?: () => Promise<void>;
-  getErrorForColumn?: (columnId: string) => any[];
-  validation?: {
-    errors: any[];
-    isValid: boolean;
-    validateForm?: () => boolean;
-  };
+  error: Error | null;
+  saveAsDraft: () => Promise<DataEntrySubmitResponse>;
+  formStatus: 'draft' | 'submitted' | 'approved' | 'rejected' | null;
+  completionPercentage: number;
+  getColumnValidationErrors: (columnId: string) => ColumnValidationError[];
+  schoolData: SchoolData | null;
+}
+
+export interface DataEntryState {
+  categories: CategoryWithColumns[];
+  selectedCategoryId: string | null;
+  formData: DataEntryFormData;
+  loading: boolean;
+  submitting: boolean;
+  error: Error | null;
+  formStatus: 'draft' | 'submitted' | 'approved' | 'rejected' | null;
+  completionPercentage: number;
+  schoolData: SchoolData | null;
 }

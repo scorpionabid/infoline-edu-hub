@@ -13,8 +13,11 @@ import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
 import { School, adaptSchoolFromSupabase, adaptSchoolToSupabase } from '@/types/school';
-import { Button, Plus, Upload, Download, RefreshCw, AlertCircle, Badge } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { exportSchoolsToExcel } from '@/utils/exportSchoolsToExcel';
+import { Plus, Upload, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 const syncSchoolAdmins = async (): Promise<void> => {
   try {

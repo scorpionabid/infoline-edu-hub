@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { SectorCompletionItem } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SectorsListProps {
   sectors: SectorCompletionItem[];
@@ -12,38 +12,45 @@ interface SectorsListProps {
 
 const SectorsList: React.FC<SectorsListProps> = ({ sectors }) => {
   const { t } = useLanguage();
-
-  // Sektorları tamamlanma faizinə görə sıralayaq
-  const sortedSectors = [...sectors].sort((a, b) => b.completionRate - a.completionRate);
+  
+  // Sort sectors by completion rate
+  const sortedSectors = [...sectors].sort((a, b) => 
+    (b.completionRate || b.completionPercentage || 0) - (a.completionRate || a.completionPercentage || 0)
+  );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('sectorsList')}</CardTitle>
+        <CardTitle>{t('sectors')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {sortedSectors.length === 0 ? (
-          <div className="text-center text-muted-foreground p-4">
-            {t('noSectors')}
-          </div>
-        ) : (
-          <ScrollArea className="h-[350px]">
-            <div className="space-y-4">
+        <ScrollArea className="h-[300px]">
+          {sortedSectors.length === 0 ? (
+            <div className="text-center text-muted-foreground p-4">
+              {t('noSectors')}
+            </div>
+          ) : (
+            <div className="space-y-6">
               {sortedSectors.map((sector) => (
-                <div key={sector.id} className="space-y-1">
+                <div key={sector.id} className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="text-sm font-medium">{sector.name}</h4>
-                      <p className="text-xs text-muted-foreground">{sector.schoolCount} {t('schools')}</p>
-                    </div>
-                    <div className="text-sm font-medium">{sector.completionRate}%</div>
+                    <div className="font-medium">{sector.name}</div>
+                    <div className="text-sm">{sector.completionRate || sector.completionPercentage || 0}%</div>
                   </div>
-                  <Progress value={sector.completionRate} className="h-2" />
+                  <div className="space-y-1">
+                    <Progress 
+                      value={sector.completionRate || sector.completionPercentage || 0} 
+                      className="h-2" 
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{t('schools')}: {sector.schoolCount}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </ScrollArea>
-        )}
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );

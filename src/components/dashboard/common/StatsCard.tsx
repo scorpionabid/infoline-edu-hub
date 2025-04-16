@@ -9,8 +9,8 @@ interface StatsCardProps {
   className?: string;
 }
 
-const getIcon = (label: string) => {
-  switch (label.toLowerCase()) {
+const getIcon = (title: string) => {
+  switch (title.toLowerCase()) {
     case 'users':
       return <Users className="h-5 w-5 text-muted-foreground" />;
     case 'schools':
@@ -34,10 +34,10 @@ const StatsCard: React.FC<StatsCardProps> = ({ stats, className }) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((item, index) => (
             <div key={index} className="flex items-center space-x-2">
-              {item.icon || getIcon(item.label)}
+              {item.icon || getIcon(item.title)}
               <div>
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-2xl font-bold">{item.value}</p>
+                <p className="text-sm font-medium">{item.title}</p>
+                <p className="text-2xl font-bold">{item.count}</p>
                 {item.description && (
                   <p className="text-xs text-muted-foreground">{item.description}</p>
                 )}

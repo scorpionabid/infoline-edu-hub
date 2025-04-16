@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { SuperAdminDashboardData } from '@/types/dashboard';
+import { SuperAdminDashboardData, StatsItem } from '@/types/dashboard';
 import StatsCard from './common/StatsCard';
 import StatusCards from './common/StatusCards';
 import CompletionRateCard from './common/CompletionRateCard';
 import PendingApprovalsCard from './common/PendingApprovalsCard';
 import NotificationsCard from './common/NotificationsCard';
 import RegionsList from './super-admin/RegionsList';
+import { Users, School, Building2, MapPin } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
@@ -14,19 +15,19 @@ interface SuperAdminDashboardProps {
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   // Statslar üçün array formatına çevirmə
-  const statsItems = data.stats ? [
-    { label: 'Regions', value: data.stats.regions },
-    { label: 'Sectors', value: data.stats.sectors },
-    { label: 'Schools', value: data.stats.schools },
-    { label: 'Users', value: data.stats.users }
+  const statsItems: StatsItem[] = data.stats ? [
+    { title: 'Regions', count: data.stats.regions, icon: <MapPin className="h-4 w-4 text-gray-500" /> },
+    { title: 'Sectors', count: data.stats.sectors, icon: <Building2 className="h-4 w-4 text-gray-500" /> },
+    { title: 'Schools', count: data.stats.schools, icon: <School className="h-4 w-4 text-gray-500" /> },
+    { title: 'Users', count: data.stats.users, icon: <Users className="h-4 w-4 text-gray-500" /> }
   ] : [];
   
   // formsByStatus'u stat array-inə çevirmək
-  const statusStats = data.formsByStatus ? [
-    { label: 'Pending', value: data.formsByStatus.pending },
-    { label: 'Approved', value: data.formsByStatus.approved },
-    { label: 'Rejected', value: data.formsByStatus.rejected },
-    { label: 'Total', value: data.formsByStatus.total }
+  const statusStats: StatsItem[] = data.formsByStatus ? [
+    { title: 'Pending', count: data.formsByStatus.pending },
+    { title: 'Approved', count: data.formsByStatus.approved },
+    { title: 'Rejected', count: data.formsByStatus.rejected },
+    { title: 'Total', count: data.formsByStatus.total }
   ] : [];
 
   return (
@@ -52,9 +53,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
           regions={data.regions.map(region => ({
             id: region.id,
             name: region.name,
-            schoolCount: region.schoolCount,
+            schoolCount: region.schoolCount || 0,
             sectorCount: region.sectorCount || 0,
-            completionRate: region.completionRate
+            completionRate: region.completionRate || 0
           }))} 
           className="col-span-full" 
         />

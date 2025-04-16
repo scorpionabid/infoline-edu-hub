@@ -58,24 +58,24 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ categories, onViewCateg
                     <h3 className="font-medium">{category.name}</h3>
                     <Badge 
                       variant="outline" 
-                      className={getStatusColor(category.status)}
+                      className={getStatusColor(category.status || 'active')}
                     >
-                      {getStatusIcon(category.status)}
-                      <span className="ml-1">{t(category.status)}</span>
+                      {getStatusIcon(category.status || 'active')}
+                      <span className="ml-1">{t(category.status || 'active')}</span>
                     </Badge>
                   </div>
                   
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span>{t('completion')}</span>
-                      <span>{category.completionRate}%</span>
+                      <span>{category.completionPercentage || category.completionRate || 0}%</span>
                     </div>
-                    <Progress value={category.completionRate} className="h-2" />
+                    <Progress value={category.completionPercentage || category.completionRate || 0} className="h-2" />
                   </div>
                   
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{t('deadline')}: {category.deadline}</span>
-                    <span>{t('columns')}: {category.columnCount}</span>
+                    <span>{t('deadline')}: {category.deadline || '-'}</span>
+                    <span>{t('columns')}: {category.columnCount || 0}</span>
                   </div>
                   
                   {onViewCategory && (

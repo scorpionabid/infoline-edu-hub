@@ -5,6 +5,17 @@ export interface CompletionStats {
   completed: number;
 }
 
+export interface StatsItem {
+  title: string;
+  count: number;
+  icon?: React.ReactNode;
+  label?: string;
+  value?: number;
+  description?: string;
+  change?: number;
+  status?: 'up' | 'down' | 'neutral';
+}
+
 export interface SuperAdminDashboardData {
   counts: {
     regions: number;
@@ -76,6 +87,7 @@ export interface SuperAdminDashboardData {
   pendingApprovals?: PendingItem[];
   completionRate?: number;
   notifications?: DashboardNotification[];
+  users?: number;
 }
 
 export interface RegionAdminDashboardData {
@@ -139,6 +151,7 @@ export interface RegionAdminDashboardData {
   completionRate?: number;
   pendingApprovals?: PendingItem[];
   notifications?: DashboardNotification[];
+  users?: number;
 }
 
 export interface SectorAdminDashboardData {
@@ -184,9 +197,9 @@ export interface SectorAdminDashboardData {
   };
   completionRate?: number;
   pendingItems?: PendingItem[];
-  schoolsStats?: any[];
+  schoolsStats?: SchoolStat[];
   notifications?: DashboardNotification[];
-  activityLog?: any[];
+  activityLog?: ActivityLogItem[];
 }
 
 export interface SchoolAdminDashboardData {
@@ -255,11 +268,19 @@ export interface FormItem {
   title: string;
   category?: string;
   date?: string;
-  status: FormStatus;
+  status: string;
   completionPercentage: number;
 }
 
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'draft' | 'submitted';
+export enum FormStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DUE_SOON = 'dueSoon',
+  OVERDUE = 'overdue',
+  DRAFT = 'draft',
+  COMPLETED = 'completed'
+}
 
 export interface PendingItem {
   id: string;
@@ -269,20 +290,18 @@ export interface PendingItem {
   date: string;
   status: string;
   completionPercentage?: number;
-}
-
-export interface StatsItem {
-  title: string;
-  count: number;
-  change?: number;
-  status?: 'up' | 'down' | 'neutral';
+  schoolName?: string;
+  categoryName?: string;
+  dueDate?: string;
+  submittedAt?: string;
 }
 
 export interface SectorCompletionItem {
   id: string;
   name: string;
-  completionPercentage: number;
   schoolCount: number;
+  completionPercentage?: number;
+  completionRate?: number;
 }
 
 export interface CategoryStat {
@@ -290,10 +309,37 @@ export interface CategoryStat {
   name: string;
   schoolCount: number;
   completionPercentage: number;
+  status?: string;
+  deadline?: string;
+  columnCount?: number;
+  completionRate?: number;
 }
 
 export interface ChartData {
   activityData: { name: string; value: number }[];
   regionSchoolsData: { name: string; value: number }[];
   categoryCompletionData: { name: string; completed: number }[];
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionPercentage: number;
+  pendingCount: number;
+}
+
+export interface RegionStats {
+  id: string;
+  name: string;
+  schoolCount: number;
+  sectorCount: number;
+  completionRate: number;
+}
+
+export interface ActivityLogItem {
+  id: string;
+  action: string;
+  user: string;
+  timestamp: string;
+  details?: string;
 }

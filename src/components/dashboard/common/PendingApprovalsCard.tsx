@@ -9,14 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Clock, Eye } from 'lucide-react';
 
 interface PendingApprovalsCardProps {
-  approvals?: PendingItem[];
   pendingItems?: PendingItem[];
+  approvals?: PendingItem[];
   className?: string;
 }
 
 const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ 
-  approvals = [], 
-  pendingItems = [],
+  pendingItems = [], 
+  approvals = [],
   className 
 }) => {
   const { t } = useLanguage();
@@ -49,11 +49,11 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({
               {items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
                   <div>
-                    <div className="font-medium">{item.schoolName || item.school}</div>
-                    <div className="text-sm text-muted-foreground">{item.categoryName || item.category}</div>
+                    <div className="font-medium">{item.school || item.schoolName}</div>
+                    <div className="text-sm text-muted-foreground">{item.category || item.categoryName}</div>
                     <div className="text-xs text-muted-foreground flex items-center mt-1">
                       <Clock className="h-3 w-3 mr-1" />
-                      {formatDate(item.submittedAt || item.date || item.dueDate)}
+                      {formatDate(item.date || item.dueDate || item.submittedAt)}
                     </div>
                   </div>
                   <Button size="sm" variant="outline">

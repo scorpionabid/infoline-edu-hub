@@ -34,14 +34,14 @@ const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItem
           {pendingItems.map((item) => (
             <div key={item.id} className="flex flex-col space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{item.schoolName}</p>
+                <p className="text-sm font-medium">{item.school || item.schoolName}</p>
                 <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
                   {t('pending')}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">{item.categoryName}</p>
+              <p className="text-xs text-muted-foreground">{item.category || item.categoryName}</p>
               <p className="text-xs text-muted-foreground">
-                {t('dueDate')}: {item.dueDate || item.submittedAt}
+                {t('dueDate')}: {item.date || item.dueDate || item.submittedAt}
               </p>
               <div className="h-px bg-muted my-1"></div>
             </div>
