@@ -69,17 +69,6 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                 {getSortIcon('name')}
               </div>
             </TableHead>
-            <TableHead
-              className="cursor-pointer"
-              onClick={() => handleSort('principalName')}
-            >
-              <div className="flex items-center">
-                {t('principalName')}
-                {getSortIcon('principalName')}
-              </div>
-            </TableHead>
-            <TableHead>{t('region')}</TableHead>
-            <TableHead>{t('sector')}</TableHead>
             <TableHead>{t('admin')}</TableHead>
             <TableHead
               className="cursor-pointer"
@@ -102,20 +91,12 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                 </div>
               </TableCell>
               <TableCell>
-                {school.principalName ? 
-                  highlightText(school.principalName, searchTerm) : 
-                  <span className="text-muted-foreground italic">{t('notSpecified')}</span>
-                }
-              </TableCell>
-              <TableCell>{school.region || '-'}</TableCell>
-              <TableCell>{school.sector || '-'}</TableCell>
-              <TableCell>
                 {school.admin_email ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate max-w-[150px]">{school.admin_email}</span>
+                        <span className="truncate max-w-[200px]">{school.admin_email}</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
