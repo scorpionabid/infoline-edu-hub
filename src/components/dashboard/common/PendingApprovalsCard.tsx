@@ -1,70 +1,52 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { PendingItem } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { format, isValid } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Clock, Eye } from 'lucide-react';
 
 interface PendingApprovalsCardProps {
-  pendingItems?: PendingItem[];
-  approvals?: PendingItem[];
-  className?: string;
+  pendingItems: PendingItem[];
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ 
-  pendingItems = [], 
-  approvals = [],
-  className 
-}) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems }) => {
   const { t } = useLanguage();
-  
-  // Combine both arrays and remove duplicates
-  const items = [...(approvals || []), ...(pendingItems || [])].filter(
-    (item, index, self) => index === self.findIndex(t => t.id === item.id)
-  );
 
-  // Format date function
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return isValid(date) ? format(date, 'dd MMM yyyy') : dateString;
-  };
+  if (!pendingItems || pendingItems.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('pendingApprovals')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{t('noPendingApprovals')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className={className}>
+    <Card>
       <CardHeader>
         <CardTitle>{t('pendingApprovals')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px]">
-          {items.length === 0 ? (
-            <div className="text-center text-muted-foreground p-4">
-              {t('noItemsPendingApproval')}
+        <div className="space-y-4">
+          {pendingItems.map((item) => (
+            <div key={item.id} className="flex flex-col space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{item.school || item.schoolName}</p>
+                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                  {t('pending')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">{item.category || item.categoryName}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('dueDate')}: {item.date || item.dueDate || item.submittedAt}
+              </p>
+              <div className="h-px bg-muted my-1"></div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
-                  <div>
-                    <div className="font-medium">{item.school || item.schoolName}</div>
-                    <div className="text-sm text-muted-foreground">{item.category || item.categoryName}</div>
-                    <div className="text-xs text-muted-foreground flex items-center mt-1">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {formatDate(item.date || item.dueDate || item.submittedAt)}
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline">
-                    <Eye className="h-3 w-3 mr-1" />
-                    {t('view')}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

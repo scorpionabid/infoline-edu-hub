@@ -78,6 +78,29 @@ export interface SchoolData {
   admin_email?: string;
 }
 
+export interface EntryValue {
+  categoryId: string;
+  columnId: string;
+  value: any;
+  status?: 'pending' | 'approved' | 'rejected';
+}
+
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error'
+}
+
+export enum FormStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DRAFT = 'draft',
+  INCOMPLETE = 'incomplete',
+  COMPLETE = 'complete'
+}
+
 export interface DataEntryContextType {
   categories: CategoryWithColumns[];
   selectedCategoryId: string | null;
@@ -106,4 +129,58 @@ export interface DataEntryState {
   formStatus: 'draft' | 'submitted' | 'approved' | 'rejected' | null;
   completionPercentage: number;
   schoolData: SchoolData | null;
+}
+
+export interface PendingItem {
+  id: string;
+  title?: string;
+  school?: string;
+  schoolName?: string;
+  category?: string;
+  categoryName?: string;
+  date?: string;
+  dueDate?: string;
+  submittedAt?: string;
+  status?: string;
+}
+
+export interface ActivityLogItem {
+  id: string;
+  action: string;
+  timestamp: string;
+  user?: string;
+  entityType?: string;
+  entityId?: string;
+  details?: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionPercentage: number;
+  pendingItems?: number;
+  status?: string;
+}
+
+export interface CategoryStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionPercentage: number;
+  status?: string;
+  deadline?: string;
+  columnCount?: number;
+}
+
+export interface SectorCompletionItem {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionPercentage: number;
+  completion?: {
+    percentage: number;
+    total: number;
+    completed: number;
+  };
+  completionRate?: number;
 }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -18,6 +19,7 @@ import { exportSchoolsToExcel } from '@/utils/exportSchoolsToExcel';
 import { Plus, Upload, Download, RefreshCw, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/context/LanguageContext';
 
 const syncSchoolAdmins = async (): Promise<void> => {
   try {
@@ -51,6 +53,8 @@ const syncSchoolAdmins = async (): Promise<void> => {
 };
 
 const SchoolsContainer: React.FC = () => {
+  const { t } = useLanguage();
+  
   const {
     currentItems: supabaseCurrentItems,
     searchTerm,
@@ -96,9 +100,9 @@ const SchoolsContainer: React.FC = () => {
     closeAddDialog,
     closeAdminDialog,
     handleAddDialogOpen,
-    handleEditDialogOpenOriginal,
-    handleDeleteDialogOpenOriginal,
-    handleAdminDialogOpenOriginal,
+    handleEditDialogOpen: handleEditDialogOpenOriginal,
+    handleDeleteDialogOpen: handleDeleteDialogOpenOriginal,
+    handleAdminDialogOpen: handleAdminDialogOpenOriginal,
     handleAddSubmit,
     handleEditSubmit,
     handleDeleteConfirm,
@@ -177,6 +181,21 @@ const SchoolsContainer: React.FC = () => {
   const schoolsWithAdminIssues = useMemo(() => {
     return schools.filter(school => school.admin_email && !school.admin_id).length;
   }, [schools]);
+
+  // Region və sektor adlarını ID-lərə görə hazırlayırıq
+  const regionNames = useMemo(() => {
+    return regions.reduce((acc, region) => ({
+      ...acc,
+      [region.id]: region.name
+    }), {} as Record<string, string>);
+  }, [regions]);
+
+  const sectorNames = useMemo(() => {
+    return sectors.reduce((acc, sector) => ({
+      ...acc,
+      [sector.id]: sector.name
+    }), {} as Record<string, string>);
+  }, [sectors]);
 
   return (
     <TooltipProvider>

@@ -9,11 +9,11 @@ export interface StatsItem {
   title: string;
   count: number;
   icon?: React.ReactNode;
-  label?: string;
-  value?: number;
   description?: string;
   change?: number;
   status?: 'up' | 'down' | 'neutral';
+  label?: string;
+  value?: number;
 }
 
 export interface SuperAdminDashboardData {
@@ -272,36 +272,25 @@ export interface FormItem {
   completionPercentage: number;
 }
 
-export enum FormStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  DUE_SOON = 'dueSoon',
-  OVERDUE = 'overdue',
-  DRAFT = 'draft',
-  COMPLETED = 'completed'
-}
-
 export interface PendingItem {
   id: string;
-  title: string;
+  title?: string;
   school?: string;
-  category?: string;
-  date: string;
-  status: string;
-  completionPercentage?: number;
   schoolName?: string;
+  category?: string;
   categoryName?: string;
+  date?: string;
   dueDate?: string;
   submittedAt?: string;
+  status?: string;
 }
 
-export interface SectorCompletionItem {
+export interface SchoolStat {
   id: string;
   name: string;
-  schoolCount: number;
-  completionPercentage?: number;
-  completionRate?: number;
+  completionPercentage: number;
+  pendingItems?: number;
+  status?: string;
 }
 
 export interface CategoryStat {
@@ -312,20 +301,25 @@ export interface CategoryStat {
   status?: string;
   deadline?: string;
   columnCount?: number;
+}
+
+export interface SectorCompletionItem {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionPercentage: number;
+  completion?: CompletionStats;
   completionRate?: number;
 }
 
-export interface ChartData {
-  activityData: { name: string; value: number }[];
-  regionSchoolsData: { name: string; value: number }[];
-  categoryCompletionData: { name: string; completed: number }[];
-}
-
-export interface SchoolStat {
+export interface ActivityLogItem {
   id: string;
-  name: string;
-  completionPercentage: number;
-  pendingCount: number;
+  action: string;
+  timestamp: string;
+  user?: string;
+  entityType?: string;
+  entityId?: string;
+  details?: string;
 }
 
 export interface RegionStats {
@@ -334,12 +328,5 @@ export interface RegionStats {
   schoolCount: number;
   sectorCount: number;
   completionRate: number;
-}
-
-export interface ActivityLogItem {
-  id: string;
-  action: string;
-  user: string;
-  timestamp: string;
-  details?: string;
+  completion?: CompletionStats;
 }
