@@ -142,10 +142,11 @@ const SchoolsContainer: React.FC = () => {
 
   // UserRole tipini təhlükəsizləşdirmək üçün əlavə düzəliş
   const safeUserRole = useMemo(() => {
-    const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
-    return validRoles.includes(userRole as UserRole) ? 
-           (userRole as Extract<UserRole, 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin'>) : 
-           'schooladmin';
+    const validRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
+    const currentRole = userRole as string;
+    return validRoles.includes(currentRole as any) ? 
+           (currentRole as "superadmin" | "regionadmin" | "sectoradmin" | "schooladmin") : 
+           'schooladmin' as const;
   }, [userRole]);
 
   return (

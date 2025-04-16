@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
 import { Column, ColumnOption, ColumnType } from '@/types/column';
+import { Database } from '@/types/supabase';
 
 // Helper function to convert a simple string to column option format
 const convertToColumnOptions = (optionsStr: string): ColumnOption[] => {
@@ -70,11 +71,12 @@ export const useColumnMutations = () => {
             help_text: processedColumn.help_text,
             placeholder: processedColumn.placeholder,
             is_required: processedColumn.is_required,
-            options: processedColumn.options,
-            validation: processedColumn.validation,
+            options: processedColumn.options as any,
+            validation: processedColumn.validation as any,
             default_value: processedColumn.default_value,
             status: processedColumn.status,
-            order_index: processedColumn.order_index
+            order_index: processedColumn.order_index,
+            parent_column_id: processedColumn.parent_column_id
           })
           .eq('id', column.id);
       } else {
@@ -88,11 +90,12 @@ export const useColumnMutations = () => {
             help_text: processedColumn.help_text,
             placeholder: processedColumn.placeholder,
             is_required: processedColumn.is_required !== false,
-            options: processedColumn.options,
-            validation: processedColumn.validation,
+            options: processedColumn.options as any,
+            validation: processedColumn.validation as any,
             default_value: processedColumn.default_value,
             status: processedColumn.status || 'active',
-            order_index: processedColumn.order_index || 0
+            order_index: processedColumn.order_index || 0,
+            parent_column_id: processedColumn.parent_column_id
           });
       }
       

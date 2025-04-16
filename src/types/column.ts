@@ -40,6 +40,8 @@ export interface ValidationRules {
   email?: boolean | { message: string };
   url?: boolean | { message: string };
   customMessage?: string;
+  minValue?: number | { value: number; message: string }; // Əlavə edildi
+  maxValue?: number | { value: number; message: string }; // Əlavə edildi
 }
 
 export interface DependsOnCondition {
@@ -64,6 +66,7 @@ export interface Column {
   dependsOn?: DependsOnCondition;
   created_at?: string;
   updated_at?: string;
+  parent_column_id?: string | null; // Əlavə edildi
 }
 
 export interface ColumnFormData {
@@ -80,4 +83,46 @@ export interface ColumnFormData {
   order_index?: number;
   status?: 'active' | 'inactive' | 'draft';
   dependsOn?: DependsOnCondition;
+  parent_column_id?: string | null; // Əlavə edildi
 }
+
+// Category tipini əlavə edirik
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  assignment?: 'all' | 'sectors';
+  deadline?: string;
+  status?: 'active' | 'inactive' | 'draft';
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
+  archived?: boolean;
+  column_count?: number;
+}
+
+// CategoryWithColumns tipini əlavə edirik
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
+}
+
+// DB-dən gələn column formatını uyğunlaşdırmaq üçün funksiya
+export const adaptDbColumnToAppColumn = (dbColumn: any): Column => {
+  return {
+    id: dbColumn.id,
+    category_id: dbColumn.category_id,
+    name: dbColumn.name,
+    type: dbColumn.type,
+    is_required: dbColumn.is_required,
+    help_text: dbColumn.help_text,
+    placeholder: dbColumn.placeholder,
+    options: dbColumn.options,
+    validation: dbColumn.validation,
+    default_value: dbColumn.default_value,
+    order_index: dbColumn.order_index,
+    status: dbColumn.status || 'active',
+    created_at: dbColumn.created_at,
+    updated_at: dbColumn.updated_at,
+    parent_column_id: dbColumn.parent_column_id
+  };
+};

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -39,11 +38,12 @@ const RegionSection: React.FC<RegionSectionProps> = ({
         <FormItem>
           <FormLabel>{t('region')}</FormLabel>
           <Select
-            value={data.regionId || "none"}
+            value={data.region_id || "none"}
             onValueChange={(value) => {
               field.onChange(value === "none" ? null : value);
-              onFormChange('regionId', value === "none" ? null : value);
+              onFormChange('region_id', value === "none" ? null : value);
             }}
+            disabled={(!isSuperAdmin && currentUserRole !== 'regionadmin') || regions.length === 0}
           >
             <FormControl>
               <SelectTrigger>

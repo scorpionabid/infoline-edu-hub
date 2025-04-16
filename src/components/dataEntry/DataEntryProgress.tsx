@@ -2,13 +2,13 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { CategoryWithColumns } from '@/types/column';
+import { Column } from '@/types/column';
 
 export interface DataEntryProgressProps {
   total?: number;
   completed?: number;
   percentage: number;
-  columns?: CategoryWithColumns['columns'];
+  columns?: Column[];
   completionPercentage?: number;
 }
 

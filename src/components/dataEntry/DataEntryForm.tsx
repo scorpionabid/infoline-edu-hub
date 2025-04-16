@@ -27,15 +27,17 @@ const DataEntryForm: React.FC = () => {
     updateFormData, 
     categories, 
     loading, 
-    error,
-    selectedCategory,
-    saveStatus,
-    isDataModified,
+    submitting,
+    handleEntriesChange,
     handleSave,
     handleSubmitForApproval,
-    handleEntriesChange,
     loadDataForSchool,
-    entries
+    entries,
+    submitForApproval,
+    saveStatus = DataEntrySaveStatus.IDLE,
+    isDataModified = false,
+    error = null,
+    selectedCategory = undefined
   } = useDataEntry({
     schoolId,
     categoryId,

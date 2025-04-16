@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserFormData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
@@ -62,12 +61,12 @@ const UserForm: React.FC<UserFormProps> = ({
 
   // Filter sectors and schools based on selected region/sector
   const filteredSectors = React.useMemo(() => {
-    return getFilteredSectors(data.regionId);
-  }, [data.regionId]);
+    return getFilteredSectors(data.region_id);
+  }, [data.region_id]);
 
   const filteredSchools = React.useMemo(() => {
-    return getFilteredSchools(data.sectorId);
-  }, [data.sectorId]);
+    return getFilteredSchools(data.sector_id);
+  }, [data.sector_id]);
 
   // If we're creating a specific entity-admin pair, automatically set the role
   React.useEffect(() => {

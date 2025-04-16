@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserList } from '@/hooks/useUserList';
@@ -80,6 +79,17 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
+  const renderRow = (user: any) => {
+    return (
+      <tr key={user.id}>
+        <td>{user.name}</td>
+        <td>{user.email}</td>
+        <td>{user.role}</td>
+        <td>{user.regionId}</td>
+      </tr>
+    );
+  };
+
   if (error) {
     return (
       <div className="rounded-lg border p-8 text-center">
@@ -120,6 +130,7 @@ const UserList: React.FC<UserListProps> = ({
             onDelete={handleDeleteUser}
             onViewDetails={handleViewDetails}
             currentUserRole={currentUserRole}
+            renderRow={renderRow}
           />
           
           {totalPages > 1 && (
@@ -144,7 +155,6 @@ const UserList: React.FC<UserListProps> = ({
             onOpenChange={setIsEditDialogOpen}
             user={selectedUser as User}
             onSave={(updatedUser) => {
-              // Convert to FullUserData before sending to API
               const fullUserData = userToFullUserData(updatedUser);
               handleUpdateUserConfirm(fullUserData);
               handleUserUpdated();

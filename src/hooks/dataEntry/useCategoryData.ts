@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, Column, adaptDbColumnToAppColumn } from '@/types/column';
+import { CategoryWithColumns, Column } from '@/types/column';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -22,15 +23,20 @@ export const useCategoryData = () => {
         return Array.isArray(parsed) ? parsed : [];
       }
       if (Array.isArray(options)) {
+        // Tip uyğunsuzluğunu həll etmək üçün ya string[] ya da ColumnOption[] qaytaraq
+        if (options.length === 0) return [];
+        
+        if (typeof options[0] === 'string') {
+          return options as string[];
+        }
+        
         return options.map(opt => {
-          if (typeof opt === 'string') return opt;
+          if (typeof opt === 'string') return { value: opt, label: opt };
           if (typeof opt === 'object' && 'value' in opt && 'label' in opt) {
             return { value: String(opt.value), label: String(opt.label) };
           }
-          return '';
-        }).filter((opt): opt is string | { value: string; label: string } => 
-          typeof opt === 'string' || (typeof opt === 'object' && opt !== null)
-        );
+          return { value: String(opt), label: String(opt) };
+        });
       }
     } catch (e) {
       console.error('Error parsing column options:', e);
@@ -72,7 +78,7 @@ export const useCategoryData = () => {
               is_required: column.is_required,
               order_index: column.order_index,
               status: column.status as 'active' | 'inactive' | 'draft',
-              validation: column.validation,
+              validation: column.validation as any,
               default_value: column.default_value,
               placeholder: column.placeholder,
               help_text: column.help_text,

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -31,6 +30,8 @@ const SectorSection: React.FC<SectorSectionProps> = ({
     (((isSuperAdmin && data.regionId) || (currentUserRole === 'regionadmin')) &&
     (data.role === 'sectoradmin' || data.role === 'schooladmin'));
 
+  const isFiltering = !!data.region_id;
+
   if (!shouldShow) {
     return null;
   }
@@ -43,12 +44,12 @@ const SectorSection: React.FC<SectorSectionProps> = ({
         <FormItem>
           <FormLabel>{t('sector')}</FormLabel>
           <Select
-            value={data.sectorId || "none"}
+            value={data.sector_id || "none"}
             onValueChange={(value) => {
               field.onChange(value === "none" ? null : value);
-              onFormChange('sectorId', value === "none" ? null : value);
+              onFormChange('sector_id', value === "none" ? null : value);
             }}
-            disabled={filteredSectors.length === 0}
+            disabled={!isFiltering || filteredSectors.length === 0}
           >
             <FormControl>
               <SelectTrigger>

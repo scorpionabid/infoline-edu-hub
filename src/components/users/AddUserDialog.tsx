@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const { user: currentUser } = useAuth();
   const { createUser, loading } = useCreateUser();
   
-  // Set appropriate initial role based on entity type
   const getInitialRole = () => {
     if (entityType === 'region') return 'regionadmin';
     if (entityType === 'sector') return 'sectoradmin';
@@ -41,7 +39,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     role: getInitialRole(),
     status: 'active',
     region_id: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
-    regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
+    sector_id: undefined,
+    school_id: undefined,
     notificationSettings: {
       email: true,
       push: true,
@@ -53,7 +52,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [formData, setFormData] = React.useState<UserFormData>(initialFormData);
   
   React.useEffect(() => {
-    // Reset form data when dialog opens
     if (open) {
       setFormData(initialFormData);
     }
@@ -65,11 +63,9 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     const result = await createUser(formData);
     
     if (result.success) {
-      // Reset form and close dialog
       setFormData(initialFormData);
       onOpenChange(false);
       
-      // Callback-i çağır
       if (onSuccess) {
         onSuccess();
       }

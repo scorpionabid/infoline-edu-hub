@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { CategoryWithColumns } from '@/types/column';
-import { CategoryEntryData } from '@/types/dataEntry';
+import { Column } from '@/types/column';
+import { CategoryEntryData, EntryValue } from '@/types/dataEntry';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -15,7 +15,7 @@ interface FormData {
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
 }
 
-export const useForm = (categories: CategoryWithColumns[]) => {
+export const useForm = (categories: { id: string; columns: Column[] }[]) => {
   const { t } = useLanguage();
   const [formData, setFormData] = useState<FormData>({
     formId: uuidv4(),
@@ -43,7 +43,10 @@ export const useForm = (categories: CategoryWithColumns[]) => {
   const calculateOverallProgress = (entries: CategoryEntryData[]) => {
     if (entries.length === 0) return 0;
     
-    const totalCompletion = entries.reduce((acc, entry) => acc + entry.completionPercentage, 0);
+    let totalCompletion = 0;
+    for (const entry of entries) {
+      totalCompletion += entry.completionPercentage || 0;
+    }
     return Math.round(totalCompletion / entries.length);
   };
 
@@ -58,7 +61,7 @@ export const useForm = (categories: CategoryWithColumns[]) => {
         // Kateqoriya üçün yeni giriş yaradırıq
         newEntries.push({
           categoryId,
-          values: [],
+          entries: [],
           isCompleted: false,
           isSubmitted: false,
           completionPercentage: 0,
@@ -68,27 +71,32 @@ export const useForm = (categories: CategoryWithColumns[]) => {
       }
       
       // Dəyəri yeniləyək
-      const valueIndex = newEntries[entryIndex].values.findIndex(v => v.columnId === columnId);
+      const valueIndex = newEntries[entryIndex].entries.findIndex(v => v.columnId === columnId);
       if (valueIndex === -1) {
         // Yeni dəyər əlavə edirik
-        newEntries[entryIndex].values.push({
+        newEntries[entryIndex].entries.push({
           columnId,
           value,
+          categoryId,
           status: 'pending'
         });
       } else {
         // Mövcud dəyəri yeniləyirik
-        newEntries[entryIndex].values[valueIndex].value = value;
+        newEntries[entryIndex].entries[valueIndex].value = value;
       }
       
       // Tamamlanma faizini yeniləyək
       const currentCategory = categories.find(c => c.id === categoryId);
       if (currentCategory) {
         const requiredColumns = currentCategory.columns.filter(col => col.is_required);
-        const filledRequiredValues = newEntries[entryIndex].values.filter(val => {
+        const filledRequiredValues = newEntries[entryIndex].entries.filter(val => {
           const column = currentCategory.columns.find(col => col.id === val.columnId);
           return column?.is_required && val.value && val.value.toString().trim() !== '';
         });
+        
+        if (newEntries[entryIndex].completionPercentage === undefined) {
+          newEntries[entryIndex].completionPercentage = 0;
+        }
         
         newEntries[entryIndex].completionPercentage = requiredColumns.length > 0 
           ? Math.round((filledRequiredValues.length / requiredColumns.length) * 100)

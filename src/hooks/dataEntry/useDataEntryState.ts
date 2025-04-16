@@ -1,7 +1,14 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { CategoryWithColumns } from '@/types/column';
+import { Column } from '@/types/column';
 import { useCategoryData } from './useCategoryData';
+
+interface CategoryWithColumns {
+  id: string;
+  name: string;
+  columns: Column[];
+  [key: string]: any;
+}
 
 interface UseDataEntryStateProps {
   initialCategoryId?: string;

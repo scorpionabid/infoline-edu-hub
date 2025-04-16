@@ -24,13 +24,22 @@ export const useColumns = (categoryId?: string) => {
   } = useColumnFilters();
 
   const {
-    addColumn,
-    updateColumn,
-    deleteColumn
+    saveColumn,
+    deleteColumn,
+    isLoading: isMutationLoading
   } = useColumnMutations();
 
   // Filterlənmiş sütunları alırıq
   const filteredColumns = applyFilters(columns);
+
+  // addColumn və updateColumn metodlarını saveColumn funksiyasından istifadə edərək təmin edirik
+  const addColumn = (column: Partial<Column>) => {
+    return saveColumn(column);
+  };
+  
+  const updateColumn = (column: Partial<Column>) => {
+    return saveColumn(column);
+  };
 
   return {
     columns,

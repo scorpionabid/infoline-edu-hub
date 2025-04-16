@@ -1,5 +1,5 @@
 
-import { Column } from './column';
+import { Column, CategoryWithColumns } from './column';
 
 export interface DataEntryForm {
   id?: string;
@@ -21,17 +21,6 @@ export interface EntryValue {
   rejectionReason?: string;
 }
 
-export interface CategoryWithColumns {
-  id: string;
-  name: string;
-  description?: string;
-  priority?: number;
-  status?: string;
-  assignment?: string;
-  deadline?: string;
-  columns: Column[];
-}
-
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
   SAVING = 'saving',
@@ -41,7 +30,7 @@ export enum DataEntrySaveStatus {
 
 export interface UseDataEntryProps {
   schoolId?: string;
-  categoryId?: string; // Əlavə edildi
+  categoryId?: string;
   categories?: CategoryWithColumns[];
   onComplete?: () => void;
 }
@@ -67,6 +56,11 @@ export interface UseDataEntryResult {
 export interface CategoryEntryData {
   categoryId: string;
   entries: EntryValue[];
+  values?: any[]; // Eksik sahəni əlavə etdik
+  isCompleted?: boolean; // Eksik sahəni əlavə etdik
+  isSubmitted?: boolean; // Eksik sahəni əlavə etdik
+  completionPercentage?: number; // Eksik sahəni əlavə etdik
+  approvalStatus?: 'pending' | 'approved' | 'rejected'; // Eksik sahəni əlavə etdik
 }
 
 export interface ColumnValidationError {
