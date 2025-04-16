@@ -35,8 +35,10 @@ export const useColumnMutations = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Creating column with data:', column);
 
       const columnToCreate = adaptColumnToDb(column);
+      console.log('Adapted column data:', columnToCreate);
 
       // Əvvəlcə sütunu yaradırıq
       const { data, error: columnError } = await supabase
@@ -45,7 +47,12 @@ export const useColumnMutations = () => {
         .select()
         .single();
 
-      if (columnError) throw columnError;
+      console.log('Supabase response:', data, columnError);
+      
+      if (columnError) {
+        console.error('Column creation error:', columnError);
+        throw columnError;
+      }
 
       // Kateqoriyanı yeniləyirik (sütun sayını artırırıq)
       try {
@@ -55,7 +62,7 @@ export const useColumnMutations = () => {
           category_id: column.category_id
         });
       } catch (rpcError) {
-        console.error('RPC error:', rpcError);
+        console.error('RPC error, using fallback method:', rpcError);
         
         // Fallback metodu: Əgər RPC mövcud deyilsə, manual update edə bilərik
         const { data: category } = await supabase
@@ -72,6 +79,24 @@ export const useColumnMutations = () => {
         }
       }
 
+      // Audit log əlavə edək
+      try {
+        await supabase.from('audit_logs').insert({
+          action: 'create',
+          entity_type: 'column',
+          entity_id: data.id,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          new_value: {
+            name: data.name,
+            type: data.type,
+            category_id: data.category_id
+          }
+        });
+      } catch (auditError) {
+        console.error('Audit log error:', auditError);
+        // Audit log xətası əsas əməliyyatı dayandırmamalıdır
+      }
+
       toast.success(t('columnCreated'));
       
       // API-nin qaytardığı məlumatları adaptasiya edib qaytaraq
@@ -81,6 +106,7 @@ export const useColumnMutations = () => {
       };
     } catch (err: any) {
       setError(err.message);
+      console.error('Column creation error:', err);
       toast.error(t('errorCreatingColumn'));
       return {
         success: false,
@@ -97,6 +123,13 @@ export const useColumnMutations = () => {
       setLoading(true);
       setError(null);
 
+      // Silinəcək sütunu əvvəlcədən götürək (audit log üçün)
+      const { data: columnData } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('id', columnId)
+        .single();
+
       const { error: deleteError } = await supabase
         .from('columns')
         .delete()
@@ -112,7 +145,7 @@ export const useColumnMutations = () => {
           category_id: categoryId
         });
       } catch (rpcError) {
-        console.error('RPC error:', rpcError);
+        console.error('RPC error, using fallback method:', rpcError);
         
         // Fallback metodu: Əgər RPC mövcud deyilsə, manual update edə bilərik
         const { data: category } = await supabase
@@ -127,6 +160,20 @@ export const useColumnMutations = () => {
             .update({ column_count: Math.max((category.column_count || 0) - 1, 0) })
             .eq('id', categoryId);
         }
+      }
+
+      // Audit log əlavə edək
+      try {
+        await supabase.from('audit_logs').insert({
+          action: 'delete',
+          entity_type: 'column',
+          entity_id: columnId,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          old_value: columnData
+        });
+      } catch (auditError) {
+        console.error('Audit log error:', auditError);
+        // Audit log xətası əsas əməliyyatı dayandırmamalıdır
       }
 
       toast.success(t('columnDeleted'));
@@ -149,6 +196,13 @@ export const useColumnMutations = () => {
       setLoading(true);
       setError(null);
 
+      // Əvvəlki məlumatları əldə edək (audit log üçün)
+      const { data: oldColumn } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('id', column.id)
+        .single();
+
       const columnToUpdate = adaptColumnToDb(column);
 
       const { data, error: updateError } = await supabase
@@ -159,6 +213,21 @@ export const useColumnMutations = () => {
         .single();
 
       if (updateError) throw updateError;
+
+      // Audit log əlavə edək
+      try {
+        await supabase.from('audit_logs').insert({
+          action: 'update',
+          entity_type: 'column',
+          entity_id: column.id,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          old_value: oldColumn,
+          new_value: data
+        });
+      } catch (auditError) {
+        console.error('Audit log error:', auditError);
+        // Audit log xətası əsas əməliyyatı dayandırmamalıdır
+      }
 
       toast.success(t('columnUpdated'));
       
@@ -186,23 +255,4 @@ export const useColumnMutations = () => {
     loading,
     error
   };
-};
-const createColumn = async (column: Partial<Column>) => {
-  try {
-    console.log('Creating column with data:', column);
-    const columnToCreate = adaptColumnToDb(column);
-    console.log('Adapted column data:', columnToCreate);
-
-    const { data, error: columnError } = await supabase
-      .from('columns')
-      .insert(columnToCreate)
-      .select()
-      .single();
-
-    console.log('Supabase response:', data, columnError);
-    // ...
-  } catch (error) {
-    console.error('Column creation error:', error);
-    // ...
-  }
 };

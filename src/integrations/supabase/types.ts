@@ -157,6 +157,7 @@ export type Database = {
           column_id: string
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           id: string
           rejected_by: string | null
           rejection_reason: string | null
@@ -172,6 +173,7 @@ export type Database = {
           column_id: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           id?: string
           rejected_by?: string | null
           rejection_reason?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           column_id?: string
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           id?: string
           rejected_by?: string | null
           rejection_reason?: string | null
