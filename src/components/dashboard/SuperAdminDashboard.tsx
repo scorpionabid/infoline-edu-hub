@@ -28,7 +28,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
     { label: 'Rejected', value: data.formsByStatus.rejected },
     { label: 'Total', value: data.formsByStatus.total }
   ] : [];
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       <StatsCard stats={statsItems} className="col-span-full lg:col-span-2" />
@@ -36,7 +36,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
       <StatusCards 
         stats={statusStats}
         completionRate={data.completionRate || 0}
-        pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
+        pendingItems={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
         className="col-span-full lg:col-span-1" 
       />
       

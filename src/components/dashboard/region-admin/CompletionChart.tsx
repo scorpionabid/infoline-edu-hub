@@ -1,21 +1,18 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SectorCompletionItem } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 interface CompletionChartProps {
-  data?: SectorCompletionItem[] | any[];
+  sectors: SectorCompletionItem[];
 }
 
-const CompletionChart: React.FC<CompletionChartProps> = ({ data = [] }) => {
+const CompletionChart: React.FC<CompletionChartProps> = ({ sectors = [] }) => {
   const { t } = useLanguage();
   const colors = ['#4f46e5', '#14b8a6', '#f97316', '#8b5cf6', '#ec4899', '#059669', '#ca8a04'];
   
-  // Əgər data array deyilsə, boş array istifadə et
-  const sectors = Array.isArray(data) ? data : [];
-  
-  // Hazır məlumatlar sətri
   const chartData = sectors.map((sector, index) => ({
     name: sector.name,
     value: sector.completionRate,

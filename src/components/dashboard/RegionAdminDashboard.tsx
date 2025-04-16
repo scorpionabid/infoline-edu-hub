@@ -15,13 +15,14 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
   const sectorCompletions = data?.sectorCompletions || [];
   const categories = data?.categories || [];
   const notifications = data?.notifications || [];
+  const pendingApprovals = data?.pendingApprovals || [];
 
   return (
     <div className="space-y-6">
       <StatusCards 
         stats={data?.stats || []}
         completionRate={data?.completionRate || 0}
-        pendingApprovalsCount={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
+        pendingItems={pendingApprovals.length}
         additionalStats={{
           activeUsers: data?.users,
           upcomingDeadlines: categories.length,
@@ -35,7 +36,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => 
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <CompletionChart data={sectorCompletions} />
+        <CompletionChart sectors={sectorCompletions} />
         <NotificationsCard notifications={notifications} />
       </div>
     </div>
