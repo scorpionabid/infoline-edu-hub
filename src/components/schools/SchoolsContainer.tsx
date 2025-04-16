@@ -1,6 +1,7 @@
 
 import React, { useEffect, useMemo, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import SchoolFilters from './SchoolFilters';
 import SchoolTable from './SchoolTable';
 import SchoolPagination from './SchoolPagination';
@@ -150,81 +151,83 @@ const SchoolsContainer: React.FC = () => {
   }, [userRole]);
 
   return (
-    <div className="space-y-6">
-      <SchoolHeader 
-        userRole={safeUserRole} 
-        onAddClick={handleAddDialogOpen}
-        onExportClick={handleExportClick}
-        onImportClick={handleImportClick}
-      />
-      
-      <Card>
-        <CardContent className="p-6">
-          <SchoolFilters 
-            searchTerm={searchTerm}
-            selectedRegion={selectedRegion}
-            selectedSector={selectedSector}
-            selectedStatus={selectedStatus}
-            filteredSectors={filteredSectors}
-            regions={regions}
-            handleSearch={handleSearch}
-            handleRegionFilter={handleRegionFilter}
-            handleSectorFilter={handleSectorFilter}
-            handleStatusFilter={handleStatusFilter}
-            resetFilters={resetFilters}
-          />
-          
-          <SchoolTable 
-            currentItems={currentItems}
-            searchTerm={searchTerm}
-            sortConfig={sortConfig as SortConfig}
-            handleSort={handleSort}
-            handleEditDialogOpen={handleEditDialogOpen}
-            handleDeleteDialogOpen={handleDeleteDialogOpen}
-            handleAdminDialogOpen={handleAdminDialogOpen}
-            userRole={userRole as UserRole}
-          />
-          
-          {totalPages > 1 && (
-            <SchoolPagination 
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
+    <TooltipProvider>
+      <div className="space-y-6">
+        <SchoolHeader 
+          userRole={safeUserRole} 
+          onAddClick={handleAddDialogOpen}
+          onExportClick={handleExportClick}
+          onImportClick={handleImportClick}
+        />
+        
+        <Card>
+          <CardContent className="p-6">
+            <SchoolFilters 
+              searchTerm={searchTerm}
+              selectedRegion={selectedRegion}
+              selectedSector={selectedSector}
+              selectedStatus={selectedStatus}
+              filteredSectors={filteredSectors}
+              regions={regions}
+              handleSearch={handleSearch}
+              handleRegionFilter={handleRegionFilter}
+              handleSectorFilter={handleSectorFilter}
+              handleStatusFilter={handleStatusFilter}
+              resetFilters={resetFilters}
             />
-          )}
-        </CardContent>
-      </Card>
-      
-      <SchoolDialogs
-        isDeleteDialogOpen={isDeleteDialogOpen}
-        isEditDialogOpen={isEditDialogOpen}
-        isAddDialogOpen={isAddDialogOpen}
-        isAdminDialogOpen={isAdminDialogOpen}
-        selectedSchool={selectedSchool}
-        selectedAdmin={selectedAdmin}
-        closeDeleteDialog={closeDeleteDialog}
-        closeEditDialog={closeEditDialog}
-        closeAddDialog={closeAddDialog}
-        closeAdminDialog={closeAdminDialog}
-        handleDeleteConfirm={handleDeleteConfirm}
-        handleAddSubmit={handleAddSubmit}
-        handleEditSubmit={handleEditSubmit}
-        handleAdminUpdate={handleAdminUpdate}
-        handleResetPassword={handleResetPassword}
-        formData={formData}
-        handleFormChange={handleFormChange}
-        currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
-        filteredSectors={filteredSectors}
-      />
-      
-      {/* Import Dialog */}
-      <ImportDialog 
-        isOpen={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
-        onImport={handleImportSchools}
-      />
-    </div>
+            
+            <SchoolTable 
+              currentItems={currentItems}
+              searchTerm={searchTerm}
+              sortConfig={sortConfig as SortConfig}
+              handleSort={handleSort}
+              handleEditDialogOpen={handleEditDialogOpen}
+              handleDeleteDialogOpen={handleDeleteDialogOpen}
+              handleAdminDialogOpen={handleAdminDialogOpen}
+              userRole={safeUserRole}
+            />
+            
+            {totalPages > 1 && (
+              <SchoolPagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
+          </CardContent>
+        </Card>
+        
+        <SchoolDialogs
+          isDeleteDialogOpen={isDeleteDialogOpen}
+          isEditDialogOpen={isEditDialogOpen}
+          isAddDialogOpen={isAddDialogOpen}
+          isAdminDialogOpen={isAdminDialogOpen}
+          selectedSchool={selectedSchool}
+          selectedAdmin={selectedAdmin}
+          closeDeleteDialog={closeDeleteDialog}
+          closeEditDialog={closeEditDialog}
+          closeAddDialog={closeAddDialog}
+          closeAdminDialog={closeAdminDialog}
+          handleDeleteConfirm={handleDeleteConfirm}
+          handleAddSubmit={handleAddSubmit}
+          handleEditSubmit={handleEditSubmit}
+          handleAdminUpdate={handleAdminUpdate}
+          handleResetPassword={handleResetPassword}
+          formData={formData}
+          handleFormChange={handleFormChange}
+          currentTab={currentTab}
+          setCurrentTab={setCurrentTab}
+          filteredSectors={filteredSectors}
+        />
+        
+        {/* Import Dialog */}
+        <ImportDialog 
+          isOpen={isImportDialogOpen}
+          onClose={() => setIsImportDialogOpen(false)}
+          onImport={handleImportSchools}
+        />
+      </div>
+    </TooltipProvider>
   );
 };
 
