@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { CategoryEntryData, DataEntryForm } from '@/types/dataEntry';
+import { EntryValue, DataEntryForm } from '@/types/dataEntry';
 
 interface UseFormInitializationProps {
   setFormData: React.Dispatch<React.SetStateAction<DataEntryForm>>;
@@ -11,7 +11,7 @@ interface UseFormInitializationProps {
  */
 export const useFormInitialization = ({ setFormData }: UseFormInitializationProps) => {
   // Formanı ilkin məlumatlarla doldurmaq
-  const initializeForm = useCallback((initialEntries: CategoryEntryData[], formStatus: 'draft' | 'submitted' | 'approved' | 'rejected' = 'draft') => {
+  const initializeForm = useCallback((initialEntries: EntryValue[], formStatus: 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted' = 'draft') => {
     // Daha öncə saxlanılmış məlumatlar varsa onları localStorage-dən yükləyək
     const savedFormData = localStorage.getItem('infolineFormData');
     
@@ -21,22 +21,25 @@ export const useFormInitialization = ({ setFormData }: UseFormInitializationProp
         if (parsedData.entries && parsedData.entries.length > 0) {
           // LocalStorage-də olan məlumatlarla serverdən gələn məlumatları birləşdirmək
           const mergedEntries = initialEntries.map(initialEntry => {
-            const savedEntry = parsedData.entries.find((e: CategoryEntryData) => e.categoryId === initialEntry.categoryId);
+            const savedEntry = parsedData.entries.find((e: EntryValue) => 
+              e.categoryId === initialEntry.categoryId && e.columnId === initialEntry.columnId
+            );
+            
             if (savedEntry) {
-              // Savedentry-də olan dəyərləri initialEntry-yə köçürək
-              initialEntry.values = savedEntry.values;
-              initialEntry.completionPercentage = savedEntry.completionPercentage;
-              initialEntry.isCompleted = savedEntry.isCompleted;
+              return {
+                ...initialEntry,
+                value: savedEntry.value
+              };
             }
             return initialEntry;
           });
           
-          setFormData({
-            ...parsedData,
+          setFormData(prev => ({
+            ...prev,
             entries: mergedEntries,
-            status: formStatus,
-            lastSaved: new Date().toISOString()
-          });
+            status: formStatus === 'submitted' ? 'pending' : formStatus,
+            submittedAt: new Date().toISOString()
+          }));
           return;
         }
       } catch (error) {
@@ -48,8 +51,8 @@ export const useFormInitialization = ({ setFormData }: UseFormInitializationProp
     setFormData(prev => ({
       ...prev,
       entries: initialEntries,
-      lastSaved: new Date().toISOString(),
-      status: formStatus
+      submittedAt: new Date().toISOString(),
+      status: formStatus === 'submitted' ? 'pending' : formStatus
     }));
   }, [setFormData]);
   

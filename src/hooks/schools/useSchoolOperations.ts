@@ -1,5 +1,4 @@
-
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
@@ -202,6 +201,27 @@ export const useSchoolOperations = (
       return false;
     }
   }, [onSuccess]);
+
+  useEffect(() => {
+    if (selectedSchool) {
+      setFormData({
+        id: selectedSchool.id,
+        name: selectedSchool.name,
+        address: selectedSchool.address || '',
+        phone: selectedSchool.phone || '',
+        email: selectedSchool.email || '',
+        principalName: selectedSchool.principalName || '',
+        adminEmail: selectedSchool.adminEmail || '',  // admin_email əvəzinə adminEmail istifadə edirik
+        studentCount: selectedSchool.studentCount || 0,
+        teacherCount: selectedSchool.teacherCount || 0,
+        type: selectedSchool.type || '',
+        language: selectedSchool.language || '',
+        regionId: selectedSchool.regionId,
+        sectorId: selectedSchool.sectorId,
+        status: selectedSchool.status || 'active'
+      });
+    }
+  }, [selectedSchool]);
 
   return {
     handleAddSubmit,

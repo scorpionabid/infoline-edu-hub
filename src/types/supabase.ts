@@ -163,7 +163,56 @@ export interface FullUserData {
   };
 }
 
-// Digər interfeyslər üçün
+// Database tipi üçün dummy təyin eləyirik
+export interface Database {
+  public: {
+    Tables: {
+      columns: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      categories: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      schools: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      regions: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      sectors: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      data_entries: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      user_roles: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+      profiles: {
+        Row: any;
+        Insert: any;
+        Update: any;
+      };
+    };
+    Functions: {
+      [key: string]: any;
+    };
+  };
+};
 
 // Məktəb interfeysi
 export interface School {

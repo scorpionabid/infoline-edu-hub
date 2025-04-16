@@ -31,16 +31,7 @@ export const useColumns = (categoryId?: string) => {
 
   // Filterlənmiş sütunları alırıq
   const filteredColumns = applyFilters(columns);
-
-  // addColumn və updateColumn metodlarını saveColumn funksiyasından istifadə edərək təmin edirik
-  const addColumn = (column: Partial<Column>) => {
-    return saveColumn(column);
-  };
   
-  const updateColumn = (column: Partial<Column>) => {
-    return saveColumn(column);
-  };
-
   return {
     columns,
     filteredColumns,
@@ -56,8 +47,8 @@ export const useColumns = (categoryId?: string) => {
     setTypeFilter,
     statusFilter: filters.statusFilter,
     setStatusFilter,
-    addColumn,
-    updateColumn,
+    addColumn: saveColumn,
+    updateColumn: saveColumn,
     deleteColumn
   };
 };

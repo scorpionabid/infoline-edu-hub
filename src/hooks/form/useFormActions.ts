@@ -1,7 +1,7 @@
 
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { DataEntryForm, CategoryEntryData } from '@/types/dataEntry';
+import { DataEntryForm, EntryValue, CategoryEntryData } from '@/types/dataEntry';
 
 export interface UseFormActionsProps {
   formData: DataEntryForm;
@@ -20,71 +20,44 @@ export const useFormActions = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form verilərini yeniləmək üçün funksiya
-  const updateValue = useCallback((categoryId: string, columnId: string, value: any) => {
+  const updateValue = useCallback((categoryId: string, columnId: string, newValue: any) => {
     setFormData(prevData => {
       // Verilmiş kateqoriya girişini tap
-      const categoryEntryIndex = prevData.entries?.findIndex(entry => entry.categoryId === categoryId) ?? -1;
+      const entryIndex = prevData.entries.findIndex(
+        entry => entry.categoryId === categoryId && entry.columnId === columnId
+      );
       
-      if (categoryEntryIndex === -1) {
-        // Kateqoriya girişi yoxdursa, yeni bir giriş yarat
-        const newEntries = [...(prevData.entries || []), {
+      const updatedEntries = [...prevData.entries];
+      
+      if (entryIndex === -1) {
+        // Giriş yoxdursa, yeni bir giriş əlavə et
+        updatedEntries.push({
           categoryId,
-          values: [{ columnId, value }],
-          completionPercentage: 0
-        }];
-        
-        return {
-          ...prevData,
-          entries: newEntries
-        };
+          columnId,
+          value: newValue
+        });
       } else {
-        // Mövcud kateqoriya girişini güncəllə
-        const entries = [...(prevData.entries || [])];
-        const entry = entries[categoryEntryIndex];
-        
-        // Mövcud sütun dəyərini tap
-        const valueIndex = entry.values.findIndex(v => v.columnId === columnId);
-        
-        if (valueIndex === -1) {
-          // Sütun dəyəri yoxdursa, yeni bir dəyər əlavə et
-          entry.values.push({ columnId, value });
-        } else {
-          // Mövcud sütun dəyərini güncəllə
-          entry.values[valueIndex] = { ...entry.values[valueIndex], value };
-        }
-        
-        // Başa çatma faizini hesabla
-        const category = categories.find(c => c.id === categoryId);
-        if (category) {
-          const requiredColumns = category.columns.filter(col => col.is_required);
-          const filledRequiredValues = entry.values.filter(val => {
-            const column = category.columns.find(col => col.id === val.columnId);
-            return column?.is_required && val.value && val.value.toString().trim() !== '';
-          });
-          
-          entry.completionPercentage = requiredColumns.length > 0
-            ? (filledRequiredValues.length / requiredColumns.length) * 100
-            : 100;
-          
-          entry.isCompleted = entry.completionPercentage === 100;
-        }
-        
-        entries[categoryEntryIndex] = entry;
-        
-        return {
-          ...prevData,
-          entries,
-          lastSaved: new Date().toISOString()
+        // Mövcud girişi yenilə
+        updatedEntries[entryIndex] = {
+          ...updatedEntries[entryIndex],
+          value: newValue
         };
       }
+      
+      return {
+        ...prevData,
+        entries: updatedEntries
+      };
     });
-  }, [setFormData, categories]);
+  }, [setFormData]);
   
   // Formu saxlamaq üçün funksiya
   const saveForm = useCallback(() => {
     // Burada serverə məlumatları göndərməyi simulyasiya edirik
     // Real layihədə burada API çağırışı olacaq
-    updateFormData({ lastSaved: new Date().toISOString() });
+    updateFormData({ 
+      submittedAt: new Date().toISOString()
+    });
     
     return Promise.resolve();
   }, [updateFormData]);
@@ -96,8 +69,8 @@ export const useFormActions = ({
     // Serverə göndərmə simulyasiyası
     setTimeout(() => {
       updateFormData({ 
-        lastSaved: new Date().toISOString(),
-        status: 'submitted' as 'draft' | 'submitted' | 'approved' | 'rejected'
+        submittedAt: new Date().toISOString(),
+        status: 'pending'
       });
       
       setIsSubmitting(false);
@@ -122,15 +95,15 @@ export const useFormActions = ({
   }, [formData.entries, saveForm]);
   
   // Formu başlatmaq üçün funksiya
-  const initializeForm = useCallback((entries: CategoryEntryData[], status: string = 'draft') => {
+  const initializeForm = useCallback((entries: EntryValue[], status: string = 'draft') => {
     setFormData({
-      categories: [],
-      overallCompletionPercentage: 0,
+      schoolId: formData.schoolId,
+      categoryId: formData.categoryId,
       entries,
-      status: status as 'draft' | 'submitted' | 'approved' | 'rejected',
-      lastSaved: new Date().toISOString()
+      status: status as 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted',
+      submittedAt: new Date().toISOString()
     });
-  }, [setFormData]);
+  }, [setFormData, formData.schoolId, formData.categoryId]);
   
   return {
     isAutoSaving,

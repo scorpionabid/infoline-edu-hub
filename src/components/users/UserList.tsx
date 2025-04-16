@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserList } from '@/hooks/useUserList';
@@ -11,6 +12,7 @@ import UserFilters from './UserFilters';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { User, userToFullUserData } from '@/types/user';
+import { FullUserData } from '@/types/supabase';
 
 interface UserListProps {
   currentUserRole?: Role;
@@ -79,13 +81,13 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
-  const renderRow = (user: any) => {
+  const renderUserRow = (user: any) => {
     return (
       <tr key={user.id}>
-        <td>{user.name}</td>
+        <td>{user.name || user.full_name}</td>
         <td>{user.email}</td>
         <td>{user.role}</td>
-        <td>{user.regionId}</td>
+        <td>{user.regionId || user.region_id}</td>
       </tr>
     );
   };
@@ -130,7 +132,7 @@ const UserList: React.FC<UserListProps> = ({
             onDelete={handleDeleteUser}
             onViewDetails={handleViewDetails}
             currentUserRole={currentUserRole}
-            renderRow={renderRow}
+            renderRow={renderUserRow}
           />
           
           {totalPages > 1 && (
@@ -153,10 +155,11 @@ const UserList: React.FC<UserListProps> = ({
           <EditUserDialog 
             open={isEditDialogOpen} 
             onOpenChange={setIsEditDialogOpen}
-            user={selectedUser as User}
+            user={selectedUser as unknown as User}
             onSave={(updatedUser) => {
-              const fullUserData = userToFullUserData(updatedUser);
-              handleUpdateUserConfirm(fullUserData);
+              // User tipini FullUserData-ya çeviririk
+              const fullData = userToFullUserData(updatedUser);
+              handleUpdateUserConfirm(fullData);
               handleUserUpdated();
             }}
           />
@@ -164,7 +167,7 @@ const UserList: React.FC<UserListProps> = ({
           <DeleteUserDialog 
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
-            user={selectedUser as User}
+            user={selectedUser as unknown as User}
             onDelete={() => {
               handleDeleteUserConfirm();
               handleUserUpdated();
@@ -174,7 +177,7 @@ const UserList: React.FC<UserListProps> = ({
           <UserDetailsDialog 
             open={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
-            user={selectedUser as User}
+            user={selectedUser as unknown as User}
           />
         </>
       )}

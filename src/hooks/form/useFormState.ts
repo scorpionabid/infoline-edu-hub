@@ -7,9 +7,10 @@ import { DataEntryForm } from '@/types/dataEntry';
  */
 export const useFormState = () => {
   const emptyForm: DataEntryForm = {
-    categories: [],
-    overallCompletionPercentage: 0,
-    entries: []
+    schoolId: '',
+    categoryId: '',
+    entries: [],
+    status: 'draft'
   };
   
   const [formData, setFormData] = useState<DataEntryForm>(emptyForm);

@@ -40,8 +40,8 @@ export interface ValidationRules {
   email?: boolean | { message: string };
   url?: boolean | { message: string };
   customMessage?: string;
-  minValue?: number | { value: number; message: string }; // Əlavə edildi
-  maxValue?: number | { value: number; message: string }; // Əlavə edildi
+  minValue?: number | { value: number; message: string }; 
+  maxValue?: number | { value: number; message: string }; 
 }
 
 export interface DependsOnCondition {
@@ -66,7 +66,7 @@ export interface Column {
   dependsOn?: DependsOnCondition;
   created_at?: string;
   updated_at?: string;
-  parent_column_id?: string | null; // Əlavə edildi
+  parent_column_id?: string | null;
 }
 
 export interface ColumnFormData {
@@ -83,7 +83,7 @@ export interface ColumnFormData {
   order_index?: number;
   status?: 'active' | 'inactive' | 'draft';
   dependsOn?: DependsOnCondition;
-  parent_column_id?: string | null; // Əlavə edildi
+  parent_column_id?: string | null;
 }
 
 // Category tipini əlavə edirik
@@ -101,7 +101,7 @@ export interface Category {
   column_count?: number;
 }
 
-// CategoryWithColumns tipini əlavə edirik
+// CategoryWithColumns tipini əlavə edirik və ixrac edirik
 export interface CategoryWithColumns extends Category {
   columns: Column[];
 }

@@ -1,15 +1,16 @@
 
-import { Column, CategoryWithColumns } from './column';
+import { Column, Category } from './column';
 
 export interface DataEntryForm {
   id?: string;
   schoolId: string;
   categoryId: string;
   title?: string;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  status?: 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted';
   entries: EntryValue[];
   submittedAt?: string;
   updatedAt?: string;
+  lastSaved?: string;
 }
 
 export interface EntryValue {
@@ -19,6 +20,9 @@ export interface EntryValue {
   value: string | number | boolean | null;
   status?: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
+  values?: Array<{columnId: string; value: any}>;
+  completionPercentage?: number;
+  isCompleted?: boolean;
 }
 
 export enum DataEntrySaveStatus {
@@ -55,15 +59,18 @@ export interface UseDataEntryResult {
 
 export interface CategoryEntryData {
   categoryId: string;
-  entries: EntryValue[];
-  values?: any[]; // Eksik sahəni əlavə etdik
-  isCompleted?: boolean; // Eksik sahəni əlavə etdik
-  isSubmitted?: boolean; // Eksik sahəni əlavə etdik
-  completionPercentage?: number; // Eksik sahəni əlavə etdik
-  approvalStatus?: 'pending' | 'approved' | 'rejected'; // Eksik sahəni əlavə etdik
+  entries?: EntryValue[];
+  values?: any[]; 
+  isCompleted?: boolean;
+  isSubmitted?: boolean;
+  completionPercentage?: number;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface ColumnValidationError {
   columnId: string;
   message: string;
 }
+
+// CategoryWithColumns tipi həm burada, həm də column.ts-də olduğundan onu yenidən ixrac edirik
+export { CategoryWithColumns } from './column';

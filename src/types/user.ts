@@ -1,4 +1,3 @@
-
 import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
 export interface User {
@@ -40,6 +39,7 @@ export interface User {
     sms?: boolean;
   };
   twoFactorEnabled?: boolean;
+  last_sign_in_at?: string; // Mock data üçün əlavə edildi
 }
 
 export interface UserFormData {
