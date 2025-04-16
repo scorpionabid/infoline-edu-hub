@@ -21,7 +21,7 @@ export const useDataEntry = ({
 }: UseDataEntryProps = {}): UseDataEntryResult => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { categories: fetchedCategories, loading: categoriesLoading } = useCategoryData();
+  const { categories: fetchedCategories, loading: categoriesLoading } = useCategoryData({ schoolId });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
