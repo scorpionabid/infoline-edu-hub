@@ -30,7 +30,7 @@ const useSchoolAdminDashboard = () => {
       console.log('Məktəb admin dashboard məlumatları yüklənir...', user.schoolId);
       
       // Edge function vasitəsilə məlumatları əldə etməyə çalışaq
-      const { data: dashboardData, error: apiError } = await supabase.functions.invoke('get-school-admin-dashboard', {
+      const { data: dashboardData, error: apiError } = await supabase.functions.invoke('get-dashboard-data', {
         body: { schoolId: user.schoolId }
       });
 
