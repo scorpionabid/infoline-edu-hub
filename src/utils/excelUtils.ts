@@ -484,8 +484,8 @@ export const mapRegionNameToId = async (regionName: string): Promise<string | nu
     const { data, error } = await supabase
       .from('regions')
       .select('id, name')
-      .ilike('name', `%${regionName}%`)
-      .limit(1);
+      .or(`name.eq.${regionName},name.ilike.%${regionName}%`)
+      .limit(10);
       
     if (error) {
       console.error('Region axtarışı zamanı Supabase xətası:', error);
@@ -494,7 +494,8 @@ export const mapRegionNameToId = async (regionName: string): Promise<string | nu
     
     console.log(`Region axtarışı nəticəsi:`, data);
     
-    return data && data.length > 0 ? data[0].id : null;
+    const exactMatch = data?.find(r => r.name.toLowerCase() === regionName.toLowerCase());
+    return exactMatch?.id || (data && data.length > 0 ? data[0].id : null);
   } catch (error) {
     console.error('Region adını ID-yə çevirərkən xəta:', error);
     return null;
@@ -508,25 +509,42 @@ export const mapSectorNameToId = async (sectorName: string, regionId?: string): 
   try {
     console.log(`Sektor adına görə axtarılır: "${sectorName}"${regionId ? `, region ID: ${regionId}` : ''}`);
     
+    // İlk olaraq regionId ilə birlikdə axtarın
     let query = supabase
       .from('sectors')
       .select('id, name, region_id')
-      .ilike('name', `%${sectorName}%`);
+      .or(`name.eq.${sectorName},name.ilike.%${sectorName}%`);
       
     if (regionId) {
       query = query.eq('region_id', regionId);
     }
     
-    const { data, error } = await query.limit(1);
+    let { data, error } = await query.limit(10);
     
     if (error) {
       console.error('Sektor axtarışı zamanı Supabase xətası:', error);
       throw error;
     }
     
+    // Əgər regionId ilə tapılmadısa, regionId olmadan da yoxla
+    if ((!data || data.length === 0) && regionId) {
+      console.log('RegionId ilə sektor tapılmadı, region olmadan axtarılır');
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('sectors')
+        .select('id, name, region_id')
+        .or(`name.eq.${sectorName},name.ilike.%${sectorName}%`)
+        .limit(5);
+        
+      if (!fallbackError && fallbackData && fallbackData.length > 0) {
+        data = fallbackData;
+      }
+    }
+    
     console.log(`Sektor axtarışı nəticəsi:`, data);
     
-    return data && data.length > 0 ? data[0].id : null;
+    // Əgər tam uyğunluq varsa onu götür, əks halda ilk nəticəni
+    const exactMatch = data?.find(s => s.name.toLowerCase() === sectorName.toLowerCase());
+    return exactMatch?.id || (data && data.length > 0 ? data[0].id : null);
   } catch (error) {
     console.error('Sektor adını ID-yə çevirərkən xəta:', error);
     return null;
