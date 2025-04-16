@@ -1,41 +1,46 @@
 
-import { Notification, NotificationType } from './notification';
-import { DashboardNotification } from './dashboard';
-import { format } from 'date-fns';
+import { DashboardNotification, NotificationType } from './dashboard';
+import { 
+  SchoolFormData, 
+  School, 
+  SchoolCreateParams, 
+  SchoolUpdateParams,
+  SchoolAdmin
+} from './school';
 
-// Bildiriş adapterlərini təyin edirik
-export function adaptNotificationToDashboard(notification: Notification): DashboardNotification {
+export interface FormNotification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  type: NotificationType;
+  read: boolean;
+}
+
+export const adaptNotification = (notification: DashboardNotification): FormNotification => {
   return {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type,
-    userId: notification.userId,
-    isRead: notification.isRead,
-    priority: notification.priority,
-    date: notification.date || format(new Date(notification.createdAt), 'yyyy-MM-dd'),
-    time: notification.time || format(new Date(notification.createdAt), 'HH:mm'),
-    createdAt: notification.createdAt,
-    relatedEntityId: notification.relatedId,
-    relatedEntityType: notification.relatedType
+    timestamp: notification.timestamp,
+    type: notification.type || 'info',
+    read: notification.read
   };
-}
+};
 
-export function adaptDashboardToNotification(dashboardNotification: DashboardNotification): Notification {
+export const adaptForm = (school: School): SchoolFormData => {
   return {
-    id: dashboardNotification.id,
-    type: dashboardNotification.type as NotificationType,
-    title: dashboardNotification.title,
-    message: dashboardNotification.message,
-    isRead: dashboardNotification.isRead,
-    createdAt: dashboardNotification.createdAt || new Date().toISOString(),
-    userId: dashboardNotification.userId,
-    priority: dashboardNotification.priority as 'low' | 'normal' | 'high',
-    relatedId: dashboardNotification.relatedEntityId,
-    relatedType: dashboardNotification.relatedEntityType,
-    date: dashboardNotification.date,
-    time: dashboardNotification.time
+    name: school.name,
+    regionId: school.regionId || school.region_id || '',
+    sectorId: school.sectorId || school.sector_id || '',
+    address: school.address || '',
+    phone: school.phone || '',
+    email: school.email || '',
+    type: school.type || '',
+    language: school.language || '',
+    status: school.status || 'active',
+    principal_name: school.principal_name || '',
+    student_count: school.student_count || 0,
+    teacher_count: school.teacher_count || 0,
   };
-}
-
-// Burada digər adapterlər də əlavə edilə bilər...
+};

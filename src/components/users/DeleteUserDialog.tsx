@@ -14,7 +14,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
 
-interface DeleteUserDialogProps {
+export interface DeleteUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User;
@@ -59,7 +59,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserConfirmation')} <strong>{user.name}</strong>?
+            {t('deleteUserConfirmation')} <strong>{user.name || user.full_name}</strong>?
             <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>

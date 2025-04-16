@@ -1,200 +1,127 @@
 
-import { Column, ColumnType } from '@/types/column';
-import { ColumnValidationError } from '@/types/dataEntry';
+import { ColumnValidationError, Column } from '@/types/column';
 
-/**
- * Tip əsasında məlumatı təsdiqləyir və çevirir
- * @param column Sütun
- * @param value Dəyər
- */
-export function formatValueByType(column: Column, value: any): any {
-  if (value === null || value === undefined || value === '') {
-    return '';
-  }
-
-  switch (column.type) {
-    case 'number':
-      return parseFloat(value);
-    case 'checkbox':
-      return value === true || value === 'true' || value === 1;
-    case 'date':
-      // Tarixin düzgün formatda olduğunu əmin olmaq
-      try {
-        return new Date(value).toISOString().split('T')[0];
-      } catch {
-        return '';
-      }
-    default:
-      return value;
-  }
-}
-
-/**
- * Dəyərin boş olub-olmadığını yoxlayır
- * @param value Yoxlanacaq dəyər
- */
-export function isEmptyValue(value: any): boolean {
-  if (value === null || value === undefined) return true;
-  if (typeof value === 'string') return value.trim() === '';
-  if (typeof value === 'number') return isNaN(value);
-  if (Array.isArray(value)) return value.length === 0;
-  return false;
-}
-
-/**
- * Sütun dəyərini validasiya edir
- * @param column Sütun
- * @param value Dəyər
- * @returns Xəta mesajı və ya boş string
- */
-export function validateColumnValue(column: Column, value: any): ColumnValidationError | null {
-  // Əgər sütun məcburidirsə və dəyər boşdursa
-  if (column.is_required && isEmptyValue(value)) {
-    return {
-      columnId: column.id,
-      message: 'Bu sahə tələb olunur',
+export function validateColumnValue(value: string, column: Column): ColumnValidationError[] {
+  const errors: ColumnValidationError[] = [];
+  
+  // Məcburi sahələri yoxla
+  if (column.is_required && (!value || value.trim() === '')) {
+    errors.push({
+      field: column.id,
+      message: `${column.name} məcburidir`,
+      type: 'required',
       severity: 'error'
-    };
+    });
+    return errors; // Dəyər boşdursa, digər yoxlamaları etmirik
   }
-
-  // Əgər dəyər boşdursa və məcburi deyilsə, validasiya etmə
-  if (isEmptyValue(value)) {
-    return null;
+  
+  // Əgər dəyər boşdursa və məcburi deyilsə, yoxlama etmirik
+  if (!value || value.trim() === '') {
+    return errors;
   }
-
-  // Validation qaydalarına uyğun olaraq yoxlama
-  const validation = column.validation || {};
-
+  
+  // Validasiya qaydalarını yoxla
+  const validation = column.validation;
+  if (!validation) return errors;
+  
   switch (column.type) {
     case 'number':
-      const numValue = parseFloat(value);
-      
-      if (isNaN(numValue)) {
-        return {
-          columnId: column.id,
-          message: 'Düzgün bir rəqəm daxil edin',
+      // Ədəd olub olmadığını yoxla
+      if (isNaN(Number(value))) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} bir ədəd olmalıdır`,
+          type: 'type',
           severity: 'error'
-        };
-      }
-      
-      if (validation.minValue !== undefined && numValue < validation.minValue) {
-        return {
-          columnId: column.id,
-          message: `Minimum dəyər ${validation.minValue} olmalıdır`,
-          severity: 'error'
-        };
-      }
-      
-      if (validation.maxValue !== undefined && numValue > validation.maxValue) {
-        return {
-          columnId: column.id,
-          message: `Maksimum dəyər ${validation.maxValue} olmalıdır`,
-          severity: 'error'
-        };
+        });
+      } else {
+        const numValue = Number(value);
+        // Minimum dəyəri yoxla
+        if (validation.min !== undefined && numValue < validation.min) {
+          errors.push({
+            field: column.id,
+            message: `${column.name} minimum ${validation.min} olmalıdır`,
+            type: 'min',
+            severity: 'error'
+          });
+        }
+        // Maksimum dəyəri yoxla
+        if (validation.max !== undefined && numValue > validation.max) {
+          errors.push({
+            field: column.id,
+            message: `${column.name} maksimum ${validation.max} olmalıdır`,
+            type: 'max',
+            severity: 'error'
+          });
+        }
       }
       break;
       
     case 'text':
     case 'textarea':
-      const strValue = String(value);
-      
-      if (validation.minLength !== undefined && strValue.length < validation.minLength) {
-        return {
-          columnId: column.id,
-          message: `Minimum ${validation.minLength} simvol olmalıdır`,
+      // Minimum uzunluğu yoxla
+      if (validation.minLength !== undefined && value.length < validation.minLength) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} minimum ${validation.minLength} simvol olmalıdır`,
+          type: 'minLength',
           severity: 'error'
-        };
+        });
       }
-      
-      if (validation.maxLength !== undefined && strValue.length > validation.maxLength) {
-        return {
-          columnId: column.id,
-          message: `Maksimum ${validation.maxLength} simvol olmalıdır`,
+      // Maksimum uzunluğu yoxla
+      if (validation.maxLength !== undefined && value.length > validation.maxLength) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} maksimum ${validation.maxLength} simvol olmalıdır`,
+          type: 'maxLength',
           severity: 'error'
-        };
-      }
-      
-      if (validation.pattern && validation.regex) {
-        try {
-          const regex = new RegExp(validation.regex);
-          if (!regex.test(strValue)) {
-            return {
-              columnId: column.id,
-              message: validation.patternError || 'Format düzgün deyil',
-              severity: 'error'
-            };
-          }
-        } catch (e) {
-          console.error('Regex xətası:', e);
-        }
-      }
-      break;
-      
-    case 'date':
-      try {
-        const dateValue = new Date(value);
-        
-        if (isNaN(dateValue.getTime())) {
-          return {
-            columnId: column.id,
-            message: 'Düzgün tarix formatı deyil',
-            severity: 'error'
-          };
-        }
-        
-        if (validation.minDate) {
-          const minDate = new Date(validation.minDate);
-          if (dateValue < minDate) {
-            return {
-              columnId: column.id,
-              message: `Tarix ${validation.minDate}-dən sonra olmalıdır`,
-              severity: 'error'
-            };
-          }
-        }
-        
-        if (validation.maxDate) {
-          const maxDate = new Date(validation.maxDate);
-          if (dateValue > maxDate) {
-            return {
-              columnId: column.id,
-              message: `Tarix ${validation.maxDate}-dən əvvəl olmalıdır`,
-              severity: 'error'
-            };
-          }
-        }
-      } catch (e) {
-        return {
-          columnId: column.id,
-          message: 'Düzgün tarix formatı deyil',
-          severity: 'error'
-        };
+        });
       }
       break;
       
     case 'email':
+      // E-poçt formatını yoxla
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(String(value))) {
-        return {
-          columnId: column.id,
-          message: 'Düzgün email formatı deyil',
+      if (!emailRegex.test(value)) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} düzgün e-poçt formatında olmalıdır`,
+          type: 'email',
           severity: 'error'
-        };
+        });
       }
       break;
       
-    case 'phone':
-      // Telefon nömrəsi validasiyası
-      const phoneRegex = /^[+]?[\d\s()-]{7,15}$/;
-      if (!phoneRegex.test(String(value))) {
-        return {
-          columnId: column.id,
-          message: 'Düzgün telefon nömrəsi formatı deyil',
+    case 'date':
+      // Tarix formatını yoxla
+      const dateObj = new Date(value);
+      if (isNaN(dateObj.getTime())) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} düzgün tarix formatında olmalıdır`,
+          type: 'date',
           severity: 'error'
-        };
+        });
       }
       break;
   }
-
-  return null;
+  
+  // Pattern validasiyası
+  if (validation.pattern && typeof validation.pattern === 'string') {
+    try {
+      const regex = new RegExp(validation.pattern);
+      if (!regex.test(value)) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} düzgün formatda deyil`,
+          type: 'pattern',
+          severity: 'error'
+        });
+      }
+    } catch (e) {
+      console.error('Invalid regex pattern:', validation.pattern);
+    }
+  }
+  
+  return errors;
 }

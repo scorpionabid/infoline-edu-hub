@@ -1,137 +1,136 @@
 
 import { useState, useEffect, useCallback } from 'react';
+import { CategoryWithColumns } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, CategoryWithColumns } from '@/types/column';
-import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { ColumnType } from '@/types/column';
 
-export const useCategoryData = (categoryId?: string) => {
+export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { t } = useLanguage();
-
-  // Konverter fonksiyonları
-  const convertOptions = (options: any): string[] | { value: string; label: string }[] => {
-    if (!options) return [];
-    
-    try {
-      // options bir string ise, JSON olarak parse edelim
-      if (typeof options === 'string') {
-        return JSON.parse(options);
-      }
-      // options array ise
-      if (Array.isArray(options)) {
-        return options;
-      }
-      // options nesne ise
-      return options;
-    } catch (error) {
-      console.error('Options dönüştürme hatası:', error);
-      return [];
-    }
-  };
+  const [error, setError] = useState('');
 
   const fetchCategories = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      let query = supabase
+      setLoading(true);
+      setError('');
+
+      // Kateqoriyaları əldə edirik
+      const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
         .eq('status', 'active')
         .order('priority', { ascending: true });
+
+      if (categoriesError) throw categoriesError;
+
+      // Sütunları əldə edirik
+      const { data: columnsData, error: columnsError } = await supabase
+        .from('columns')
+        .select('*')
+        .in('category_id', categoriesData.map(c => c.id))
+        .eq('status', 'active')
+        .order('order_index', { ascending: true });
+
+      if (columnsError) throw columnsError;
+
+      // Əgər bir məktəb seçilibsə, məlumatları da əldə edirik
+      let entriesData: any[] = [];
       
-      if (categoryId) {
-        query = query.eq('id', categoryId);
+      if (schoolId) {
+        const { data: entriesResult, error: entriesError } = await supabase
+          .from('data_entries')
+          .select('*')
+          .eq('school_id', schoolId)
+          .in('category_id', categoriesData.map(c => c.id));
+
+        if (!entriesError) {
+          entriesData = entriesResult || [];
+        }
       }
-      
-      const { data: categoriesData, error: categoriesError } = await query;
-      
-      if (categoriesError) {
-        throw categoriesError;
-      }
-      
-      if (!categoriesData || categoriesData.length === 0) {
-        setCategories([]);
-        setLoading(false);
-        return;
-      }
-      
-      // For each category, fetch its columns
-      const categoriesWithColumns = await Promise.all(
-        categoriesData.map(async (category) => {
-          const { data: columnsData, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id)
-            .order('order_index', { ascending: true });
-          
-          if (columnsError) {
-            console.error('Sütunlar çekilirken hata:', columnsError);
-            return {
-              ...category,
-              columns: []
-            };
-          }
-          
-          // Convert column data from Supabase to our app format
-          const columns: Column[] = (columnsData || []).map(dbColumn => {
-            const column: Column = {
-              id: dbColumn.id,
-              category_id: dbColumn.category_id,
-              name: dbColumn.name,
-              type: dbColumn.type,
-              is_required: dbColumn.is_required,
-              help_text: dbColumn.help_text,
-              placeholder: dbColumn.placeholder,
-              options: convertOptions(dbColumn.options),
-              validation: dbColumn.validation as any,
-              default_value: dbColumn.default_value,
-              order_index: dbColumn.order_index,
-              status: dbColumn.status || 'active',
-              created_at: dbColumn.created_at,
-              updated_at: dbColumn.updated_at,
-              // Add the parent_column_id property
-              parent_column_id: null
-            };
-            return column;
-          });
-          
-          return {
-            ...category,
-            columns
-          };
-        })
-      );
-      
-      setCategories(categoriesWithColumns as CategoryWithColumns[]);
-    } catch (error: any) {
-      console.error('Kategorilər yüklənərkən xəta:', error);
-      setError(t('errorLoadingData'));
-      toast.error(t('errorLoadingData'), {
-        description: error.message
+
+      // Kateqoriyaları və onların sütunlarını birləşdiririk
+      const formattedCategories = categoriesData.map(category => {
+        const categoryColumns = columnsData
+          .filter(column => column.category_id === category.id)
+          .map(column => ({
+            id: column.id,
+            category_id: column.category_id,
+            name: column.name,
+            type: column.type as ColumnType,
+            is_required: column.is_required,
+            placeholder: column.placeholder,
+            help_text: column.help_text,
+            order_index: column.order_index,
+            status: column.status as 'active' | 'inactive' | 'draft',
+            validation: column.validation,
+            default_value: column.default_value,
+            options: column.options,
+            parent_column_id: column.parent_column_id,
+            created_at: column.created_at,
+            updated_at: column.updated_at,
+            // Əgər məlumat varsa, onu əlavə edirik
+            entry: schoolId 
+              ? entriesData.find(entry => 
+                  entry.column_id === column.id && 
+                  entry.school_id === schoolId
+                ) 
+              : null
+          }));
+
+        return {
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          assignment: category.assignment,
+          deadline: category.deadline,
+          status: category.status,
+          priority: category.priority,
+          created_at: category.created_at,
+          updated_at: category.updated_at,
+          columns: categoryColumns,
+          // Tamamlanma faizini hesablayırıq (əgər məktəb ID varsa)
+          completionPercentage: schoolId ? 
+            calculateCompletionPercentage(categoryColumns.map(col => col.entry)) : 0
+        };
       });
+
+      setCategories(formattedCategories);
+    } catch (err: any) {
+      console.error('Kateqoriyaları əldə edərkən xəta:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [categoryId, t]);
+  }, [schoolId]);
 
+  // Kateqoriyalar yüklənərkən onları əldə edirik
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const getCategoryById = useCallback((id?: string): CategoryWithColumns | undefined => {
-    if (!id) return undefined;
-    return categories.find(cat => cat.id === id);
-  }, [categories]);
+  // ID-yə görə kateqoriyanı əldə etmək üçün helper funksiya
+  const getCategoryById = (id?: string): CategoryWithColumns => {
+    if (!id) return categories[0] || { id: '', name: '', columns: [] };
+    return categories.find(cat => cat.id === id) || categories[0] || { id: '', name: '', columns: [] };
+  };
+
+  const refreshCategories = async () => {
+    return fetchCategories();
+  };
 
   return {
     categories,
     loading,
     error,
     getCategoryById,
-    refreshCategories: fetchCategories
+    refreshCategories
   };
 };
+
+// Bir kateqoriya üçün tamamlanma faizini hesablamaq üçün helper funksiya
+function calculateCompletionPercentage(entries: any[]) {
+  if (!entries || entries.length === 0) return 0;
+  
+  const filledEntries = entries.filter(entry => entry && entry.value);
+  return Math.round((filledEntries.length / entries.length) * 100);
+}

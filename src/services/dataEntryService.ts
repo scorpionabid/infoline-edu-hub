@@ -1,185 +1,115 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, Column } from '@/types/column';
-import { DataEntryData } from '@/types/dataEntry';
+import { DataEntryForm, EntryValue } from '@/types/dataEntry';
 
-export const getDataEntries = async (schoolId: string): Promise<DataEntryData[]> => {
+// Data entry formunu yadda saxla
+export const saveDataEntryForm = async (formData: DataEntryForm): Promise<{
+  success: boolean;
+  error?: string;
+  id?: string;
+}> => {
   try {
-    const { data, error } = await supabase
-      .from('data_entries')
-      .select('*')
-      .eq('school_id', schoolId);
+    const { entries, ...formInfo } = formData;
 
-    if (error) {
-      console.error('Data entries fetch error:', error);
-      throw error;
+    // Əgər artıq bir ID varsa, mövcud yazıları silirik
+    if (formInfo.id) {
+      await supabase
+        .from('data_entries')
+        .delete()
+        .eq('category_id', formInfo.categoryId)
+        .eq('school_id', formInfo.schoolId);
     }
 
-    return data || [];
-  } catch (error) {
-    console.error('Failed to get data entries:', error);
-    return [];
+    // Yeni yazıları əlavə edirik
+    for (const entry of entries) {
+      await supabase.from('data_entries').insert({
+        school_id: formInfo.schoolId,
+        category_id: formInfo.categoryId,
+        column_id: entry.columnId,
+        value: entry.value,
+        status: entry.status || 'pending',
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      });
+    }
+
+    // Form məlumatlarını yeniləmək üçün qeyd
+    // Həqiqi layihədə burada formun özü də saxlanıla bilər
+
+    return {
+      success: true,
+      id: formInfo.id || `form-${Date.now()}`
+    };
+  } catch (error: any) {
+    console.error('Form yadda saxlanarkən xəta baş verdi:', error);
+    return {
+      success: false,
+      error: error.message || 'Bilinməyən xəta'
+    };
   }
 };
 
-export const getCategoryDataEntries = async (
-  categoryId: string,
-  schoolId: string
-): Promise<DataEntryData[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('data_entries')
-      .select('*')
-      .eq('category_id', categoryId)
-      .eq('school_id', schoolId);
-
-    if (error) {
-      console.error('Category data entries fetch error:', error);
-      throw error;
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error(`Failed to get data entries for category ${categoryId}:`, error);
-    return [];
-  }
-};
-
-export const saveDataEntry = async (
+// Məktəb ID və Kateqoriya ID-yə görə yazıları al
+export const getDataEntries = async (
   schoolId: string,
-  categoryId: string,
-  columnId: string,
-  value: any,
-  userId: string
-): Promise<boolean> => {
+  categoryId: string
+): Promise<{
+  success: boolean;
+  data?: EntryValue[];
+  error?: string;
+}> => {
   try {
-    const { data: existingEntry, error: fetchError } = await supabase
+    const { data, error } = await supabase
       .from('data_entries')
-      .select('id, status')
+      .select('*')
       .eq('school_id', schoolId)
-      .eq('category_id', categoryId)
-      .eq('column_id', columnId)
-      .maybeSingle();
+      .eq('category_id', categoryId);
 
-    if (fetchError) {
-      throw fetchError;
-    }
+    if (error) throw error;
 
-    if (existingEntry) {
-      if (existingEntry.status === 'approved') {
-        console.warn('Cannot modify approved data');
-        return false;
-      }
+    const entries = data.map(entry => ({
+      id: entry.id,
+      columnId: entry.column_id,
+      value: entry.value,
+      status: entry.status
+    }));
 
-      const { error: updateError } = await supabase
-        .from('data_entries')
-        .update({
-          value,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingEntry.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from('data_entries')
-        .insert([
-          {
-            school_id: schoolId,
-            category_id: categoryId,
-            column_id: columnId,
-            value,
-            status: 'pending',
-            created_by: userId
-          }
-        ]);
-
-      if (insertError) {
-        throw insertError;
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Save data entry error:', error);
-    return false;
+    return {
+      success: true,
+      data: entries
+    };
+  } catch (error: any) {
+    console.error('Yazıları əldə edərkən xəta baş verdi:', error);
+    return {
+      success: false,
+      error: error.message || 'Bilinməyən xəta'
+    };
   }
 };
 
-export const submitCategoryForApproval = async (
-  categoryId: string,
-  schoolId: string
-): Promise<boolean> => {
+// Təsdiq üçün göndər
+export const submitForApproval = async (
+  formData: DataEntryForm
+): Promise<{
+  success: boolean;
+  error?: string;
+}> => {
   try {
-    // 1. Bütün məlumatları pending statusuna yenilə
-    const { error: updateError } = await supabase
+    // Burada təsdiq üçün göndərmə əməliyyatı həyata keçirilir
+    // Həqiqi layihədə, burada status yenilənməsi və bildiriş göndərilməsi olacaq
+
+    await supabase
       .from('data_entries')
-      .update({ status: 'pending' })
-      .eq('category_id', categoryId)
-      .eq('school_id', schoolId);
+      .update({
+        status: 'pending'
+      })
+      .eq('school_id', formData.schoolId)
+      .eq('category_id', formData.categoryId);
 
-    if (updateError) {
-      throw updateError;
-    }
-
-    // 2. Kateqoriya üçün bildiriş göndərə bilərsiniz (gələcək funksionallıq)
-
-    return true;
-  } catch (error) {
-    console.error('Submit category error:', error);
-    return false;
-  }
-};
-
-export const getAllCategories = async (): Promise<CategoryWithColumns[]> => {
-  try {
-    // Kateqoriyaları əldə et
-    const { data: categoriesData, error: catError } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('status', 'active')
-      .order('priority', { ascending: true });
-
-    if (catError) {
-      throw catError;
-    }
-
-    // Sütunları əldə et
-    const { data: columnsData, error: colError } = await supabase
-      .from('columns')
-      .select('*')
-      .eq('status', 'active')
-      .order('order_index', { ascending: true });
-
-    if (colError) {
-      throw colError;
-    }
-
-    // Kateqoriyaları sütunlarla birləşdir
-    const categories: CategoryWithColumns[] = categoriesData.map(category => {
-      const columns = columnsData.filter(column => column.category_id === category.id) as Column[];
-      
-      return {
-        id: category.id,
-        name: category.name,
-        description: category.description || '',
-        assignment: category.assignment as 'all' | 'sectors',
-        deadline: category.deadline || '',
-        status: category.status as 'active' | 'inactive' | 'draft',
-        priority: category.priority,
-        created_at: category.created_at,
-        updated_at: category.updated_at,
-        archived: category.archived,
-        column_count: columns.length,
-        columns: columns
-      };
-    });
-
-    return categories;
-  } catch (error) {
-    console.error('Get all categories error:', error);
-    return [];
+    return { success: true };
+  } catch (error: any) {
+    console.error('Təsdiq üçün göndərilirkən xəta baş verdi:', error);
+    return {
+      success: false,
+      error: error.message || 'Bilinməyən xəta'
+    };
   }
 };

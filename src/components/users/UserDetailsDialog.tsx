@@ -1,211 +1,163 @@
 
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription,
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Building2, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  Clock, 
-  User2,
-  BookOpen, 
-  School, 
-  Briefcase,
-  Languages
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { Separator } from '@/components/ui/separator';
-import { FullUserData } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
+import { FullUserData } from '@/types/user';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Mail, Phone, Calendar, UserCircle, Building, MapPin } from 'lucide-react';
 
-interface UserDetailsDialogProps {
+export interface UserDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: FullUserData;
+  user: FullUserData | null;
+  onEdit: () => void;
 }
 
-const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  user 
+const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
+  open,
+  onOpenChange,
+  user,
+  onEdit,
 }) => {
   const { t } = useLanguage();
 
-  const formatDate = (dateStr: string | undefined) => {
-    if (!dateStr) return t('notAvailable');
-    try {
-      return format(new Date(dateStr), 'dd/MM/yyyy HH:mm');
-    } catch (error) {
-      return t('invalidDate');
-    }
-  };
-
-  const getRoleBadgeStyle = (role: string) => {
-    switch (role) {
-      case 'superadmin':
-        return 'bg-purple-100 text-purple-800';
-      case 'regionadmin':
-        return 'bg-blue-100 text-blue-800';
-      case 'sectoradmin':
-        return 'bg-green-100 text-green-800';
-      case 'schooladmin':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'blocked':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  if (!user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>{t('userDetails')}</DialogTitle>
-          <DialogDescription>{t('viewUserInfoDesc')}</DialogDescription>
+          <DialogDescription>
+            {t('userDetailsDescription')}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row gap-4 items-start">
-          <div className="flex flex-col items-center space-y-2">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={user.avatar} alt={user.full_name} />
-              <AvatarFallback className="text-lg">
-                {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <Badge variant="outline" className={getRoleBadgeStyle(user.role)}>
-              {t(user.role)}
-            </Badge>
-            <Badge variant="outline" className={getStatusBadgeStyle(user.status)}>
-              {t(user.status)}
-            </Badge>
+        <div className="py-4 space-y-6">
+          <div className="flex flex-col md:flex-row gap-6 items-center">
+            <div className="flex-shrink-0">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.full_name}
+                  className="h-24 w-24 rounded-full"
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserCircle className="h-14 w-14 text-primary" />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl font-semibold mb-1">{user.full_name}</h3>
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                <Badge variant={user.status === 'active' ? 'success' : 'destructive'}>
+                  {user.status === 'active' ? t('active') : t('inactive')}
+                </Badge>
+                <Badge>{user.role}</Badge>
+              </div>
+            </div>
           </div>
           
-          <div className="flex-1">
-            <Card className="border-0 shadow-none">
-              <CardHeader className="p-0 pb-2">
-                <CardTitle className="text-xl">{user.full_name}</CardTitle>
-                <CardDescription className="flex items-center">
-                  <Mail className="h-4 w-4 mr-1" />
-                  {user.email}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="p-0 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">{t('contactInfo')}</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>{user.email}</span>
+                  </div>
                   {user.phone && (
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>{user.phone}</span>
                     </div>
                   )}
-                  
-                  {user.position && (
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">{t('assignment')}</h4>
+                <div className="space-y-2">
+                  {user.region_id && (
                     <div className="flex items-center">
-                      <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{user.position}</span>
+                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{user.adminEntity?.regionName || t('regionAssigned')}</span>
                     </div>
                   )}
-                  
-                  <div className="flex items-center">
-                    <Languages className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{t(`language_${user.language}`)}</span>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{t('lastLogin')}: {formatDate(user.last_login)}</span>
-                  </div>
-                  
+                  {user.sector_id && (
+                    <div className="flex items-center">
+                      <Building className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{user.adminEntity?.sectorName || t('sectorAssigned')}</span>
+                    </div>
+                  )}
+                  {user.school_id && (
+                    <div className="flex items-center">
+                      <Building className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{user.adminEntity?.name || t('schoolAssigned')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">{t('accountInfo')}</h4>
+                <div className="space-y-2">
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{t('accountCreated')}: {formatDate(user.created_at)}</span>
+                    <span>{t('createdAt')}: {new Date(user.createdAt || user.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>{t('lastLogin')}: {user.lastLogin || user.last_login
+                      ? new Date(user.lastLogin || user.last_login).toLocaleDateString()
+                      : t('never')}
+                    </span>
                   </div>
                 </div>
-                
-                {/* Admin Entity Information */}
-                {user.adminEntity && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <h3 className="font-medium">{t('adminEntityDetails')}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center">
-                          {user.adminEntity.type === 'region' ? (
-                            <Building2 className="h-4 w-4 mr-2 text-blue-600" />
-                          ) : user.adminEntity.type === 'sector' ? (
-                            <BookOpen className="h-4 w-4 mr-2 text-green-600" />
-                          ) : (
-                            <School className="h-4 w-4 mr-2 text-orange-600" />
-                          )}
-                          <span><strong>{t('entityName')}:</strong> {user.adminEntity.name}</span>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <User2 className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span><strong>{t('entityType')}:</strong> {t(user.adminEntity.type)}</span>
-                        </div>
-                        
-                        {user.adminEntity.regionName && user.adminEntity.type !== 'region' && (
-                          <div className="flex items-center">
-                            <Building2 className="h-4 w-4 mr-2 text-blue-600" />
-                            <span><strong>{t('region')}:</strong> {user.adminEntity.regionName}</span>
-                          </div>
-                        )}
-                        
-                        {user.adminEntity.sectorName && user.adminEntity.type === 'school' && (
-                          <div className="flex items-center">
-                            <BookOpen className="h-4 w-4 mr-2 text-green-600" />
-                            <span><strong>{t('sector')}:</strong> {user.adminEntity.sectorName}</span>
-                          </div>
-                        )}
-                        
-                        {user.adminEntity.schoolType && (
-                          <div className="flex items-center">
-                            <School className="h-4 w-4 mr-2 text-orange-600" />
-                            <span><strong>{t('schoolType')}:</strong> {user.adminEntity.schoolType}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+              
+              {user.position && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">{t('position')}</h4>
+                  <p>{user.position}</p>
+                </div>
+              )}
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">{t('preferences')}</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <span>{t('language')}: {user.language || 'az'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span>{t('notifications')}: {user.notificationSettings?.email ? t('enabled') : t('disabled')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
+        
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('close')}
+          </Button>
+          <Button onClick={onEdit} className="flex items-center">
+            <Edit className="h-4 w-4 mr-2" />
+            {t('edit')}
           </Button>
         </DialogFooter>
       </DialogContent>

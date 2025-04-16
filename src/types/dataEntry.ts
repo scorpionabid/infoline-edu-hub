@@ -1,78 +1,80 @@
 
-import { Column, Category } from './column';
+import { Column } from './column';
+
+export interface EntryValue {
+  id?: string;
+  columnId: string;
+  value: any;
+  status?: 'pending' | 'approved' | 'rejected';
+}
+
+export interface CategoryEntryData {
+  categoryId: string;
+  values: { columnId: string; value: any }[];
+  completionPercentage: number;
+}
 
 export interface DataEntryForm {
   id?: string;
   schoolId: string;
   categoryId: string;
   title?: string;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted';
-  entries: EntryValue[];
+  status?: 'pending' | 'approved' | 'rejected' | 'draft' | 'submitted';
   submittedAt?: string;
   updatedAt?: string;
+  entries: EntryValue[];
   lastSaved?: string;
 }
 
-export interface EntryValue {
-  id?: string;
-  categoryId: string;
-  columnId: string;
-  value: string | number | boolean | null;
-  status?: 'pending' | 'approved' | 'rejected';
-  rejectionReason?: string;
-  values?: Array<{columnId: string; value: any}>;
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  assignment?: string;
+  deadline?: string;
+  status?: string;
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
+  columns: Column[];
   completionPercentage?: number;
-  isCompleted?: boolean;
 }
 
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error'
-}
-
-export interface UseDataEntryProps {
-  schoolId?: string;
-  categoryId?: string;
-  categories?: CategoryWithColumns[];
-  onComplete?: () => void;
+export interface DataEntryData {
+  id: string;
+  schoolId: string;
+  title: string;
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+  submittedAt?: string;
+  entries: EntryValue[];
 }
 
 export interface UseDataEntryResult {
   formData: DataEntryForm;
-  updateFormData: (newData: Partial<DataEntryForm>) => void;
+  updateFormData: (data: Partial<DataEntryForm>) => void;
   categories: CategoryWithColumns[];
   loading: boolean;
-  error?: string | null;
-  selectedCategory?: CategoryWithColumns;
-  saveStatus: DataEntrySaveStatus;
-  isDataModified: boolean;
+  submitting: boolean;
+  handleEntriesChange: (entries: EntryValue[]) => void;
   handleSave: () => Promise<void>;
   handleSubmitForApproval: () => Promise<void>;
-  handleEntriesChange: (columnId: string, value: string | number | boolean | null) => void;
   loadDataForSchool: (schoolId: string) => Promise<void>;
   entries: EntryValue[];
-  submitting?: boolean;
-  submitForApproval: () => void;
-}
-
-export interface CategoryEntryData {
-  categoryId: string;
-  entries?: EntryValue[];
-  values?: any[]; 
-  isCompleted?: boolean;
-  isSubmitted?: boolean;
-  completionPercentage?: number;
-  approvalStatus?: 'pending' | 'approved' | 'rejected';
-}
-
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-}
-
-// Tip tanımlamaları
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
+  submitForApproval: () => Promise<void>;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  isDataModified?: boolean;
+  error?: string | null;
+  selectedCategory?: CategoryWithColumns;
+  isAutoSaving?: boolean;
+  isSubmitting?: boolean;
+  isLoading?: boolean;
+  updateValue?: (columnId: string, value: any) => void;
+  saveForm?: () => Promise<void>;
+  getErrorForColumn?: (columnId: string) => any[];
+  validation?: {
+    errors: any[];
+    isValid: boolean;
+  };
 }

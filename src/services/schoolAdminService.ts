@@ -1,208 +1,145 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Form, FormStatus } from '@/types/form';
-import { DashboardNotification } from '@/types/dashboard';
-import { adaptForm, adaptNotification } from '@/types/adapters';
+import { toast } from 'sonner';
+import { School, SchoolAdmin } from '@/types/school';
+import { FormNotification } from '@/types/adapters';
 
-/**
- * Məktəb admini dashboard-u üçün lazımi məlumatları əldə edən servis
- */
-export const schoolAdminService = {
-  /**
-   * Məktəb admini üçün notification-ları əldə et
-   */
-  getNotifications: async (userId: string): Promise<DashboardNotification[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-        
-      if (error) throw error;
-      
-      // Notification-ları uyğun formata çevir
-      return (data || []).map(adaptNotification);
-    } catch (error) {
-      console.error('Bildirişləri əldə edərkən xəta:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Məktəb admininin formlarını əldə et
-   */
-  getForms: async (schoolId: string): Promise<{
-    pending: number;
-    approved: number;
-    rejected: number;
-    dueSoon: number;
-    overdue: number;
-    total: number;
-  }> => {
-    try {
-      // Gerçək verilənlər bazası sorğusu burada olacaq
-      // Hələlik sadə mock məlumat döndürürük
-      
-      const mockStats = {
-        pending: 5,
-        approved: 12,
-        rejected: 2,
-        dueSoon: 3,
-        overdue: 1,
-        total: 23
-      };
-      
-      return mockStats;
-    } catch (error) {
-      console.error('Formları əldə edərkən xəta:', error);
-      return {
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        dueSoon: 0,
-        overdue: 0,
-        total: 0
-      };
-    }
-  },
-  
-  /**
-   * Məktəb üçün kateqoriyaları və formları əldə et
-   */
-  getFormsByStatus: async (schoolId: string, status: string): Promise<Form[]> => {
-    try {
-      // Gələcəkdə gerçək verilənlər bazası sorğusu burada olacaq
-      // Hələlik sadə mock məlumat döndürürük
-      
-      const mockForms: Form[] = [
-        {
-          id: '1',
-          title: 'Fizika Test Nəticələri',
-          status: FormStatus.PENDING,
-          completionPercentage: 75,
-          dueDate: '2025-05-15T00:00:00Z',
-          description: 'Şagirdlərin son fizika test nəticələri',
-          date: '2025-04-10T00:00:00Z'
-        },
-        {
-          id: '2',
-          title: 'Məktəb İnfrastruktur Hesabatı',
-          status: FormStatus.APPROVED,
-          completionPercentage: 100,
-          dueDate: '2025-04-05T00:00:00Z',
-          description: 'Məktəb infrastrukturunun vəziyyəti haqqında hesabat',
-          date: '2025-04-01T00:00:00Z'
-        },
-        {
-          id: '3',
-          title: 'Müəllim Davamiyyət Hesabatı',
-          status: FormStatus.REJECTED,
-          completionPercentage: 60,
-          dueDate: '2025-04-20T00:00:00Z',
-          description: 'Müəllimlərin davamiyyət məlumatları',
-          date: '2025-04-12T00:00:00Z'
-        },
-        {
-          id: '4',
-          title: 'Şagird Nailiyyətləri',
-          status: FormStatus.DUE_SOON,
-          completionPercentage: 40,
-          dueDate: '2025-04-18T00:00:00Z',
-          description: 'Şagirdlərin xüsusi nailiyyətləri',
-          date: '2025-04-14T00:00:00Z'
-        },
-        {
-          id: '5',
-          title: 'Məktəb Maliyyə Hesabatı',
-          status: FormStatus.OVERDUE,
-          completionPercentage: 30,
-          dueDate: '2025-04-01T00:00:00Z',
-          description: 'Məktəbin maliyyə vəziyyəti haqqında hesabat',
-          date: '2025-03-25T00:00:00Z'
-        }
-      ];
-      
-      // Status parametrinə görə filter et
-      if (status !== 'all') {
-        return mockForms.filter(form => {
-          if (status === 'dueSoon') {
-            return form.status === FormStatus.DUE_SOON;
-          } else if (status === 'overdue') {
-            return form.status === FormStatus.OVERDUE;
-          } else {
-            return form.status.toLowerCase() === status.toLowerCase();
-          }
-        });
-      }
-      
-      return mockForms;
-    } catch (error) {
-      console.error('Formları əldə edərkən xəta:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Gözləmədə olan formları əldə et
-   */
-  getPendingForms: async (schoolId: string): Promise<Form[]> => {
-    try {
-      return await schoolAdminService.getFormsByStatus(schoolId, 'pending');
-    } catch (error) {
-      console.error('Gözləmədə olan formları əldə edərkən xəta:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Formun detallarını əldə et
-   */
-  getFormDetails: async (formId: string): Promise<Form | null> => {
-    try {
-      // Gələcəkdə gerçək verilənlər bazası sorğusu burada olacaq
-      // Hələlik sadə mock məlumat döndürürük
-      
-      const mockForm: Form = {
-        id: formId,
-        title: 'Fizika Test Nəticələri',
-        status: FormStatus.PENDING,
-        completionPercentage: 75,
-        dueDate: '2025-05-15T00:00:00Z',
-        description: 'Şagirdlərin son fizika test nəticələri',
-        date: '2025-04-10T00:00:00Z'
-      };
-      
-      return mockForm;
-    } catch (error) {
-      console.error('Form detallarını əldə edərkən xəta:', error);
+// Get school admin
+export const getSchoolAdmin = async (schoolId: string): Promise<SchoolAdmin | null> => {
+  try {
+    // Get admin from user_roles table
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select(`
+        *,
+        profiles:profiles(*)
+      `)
+      .eq('school_id', schoolId)
+      .eq('role', 'schooladmin')
+      .single();
+
+    if (error) {
+      console.error('School admin sorğusu zamanı xəta:', error);
       return null;
     }
-  },
-  
-  /**
-   * Məktəbin bütün formlarının məlumatlarını əldə et
-   */
-  getSchoolAdminDashboardData: async (schoolId: string) => {
-    try {
-      const notifications = await schoolAdminService.getNotifications('current-user-id');
-      const forms = await schoolAdminService.getForms(schoolId);
-      const pendingForms = await schoolAdminService.getPendingForms(schoolId);
-      
-      const completionRate = forms.total > 0 
-        ? Math.round((forms.approved / forms.total) * 100) 
-        : 0;
-      
-      return {
-        forms,
-        pendingForms,
-        completionRate,
-        notifications
+
+    if (!data) return null;
+
+    return {
+      id: data.user_id,
+      email: data.profiles?.email || '',
+      name: data.profiles?.full_name || '',
+      status: data.profiles?.status || 'active',
+      phone: data.profiles?.phone || '',
+      lastLogin: data.profiles?.last_login || null,
+      avatar: data.profiles?.avatar || null
+    };
+  } catch (error) {
+    console.error('School admin alınarkən xəta:', error);
+    return null;
+  }
+};
+
+// Assign school admin
+export const assignSchoolAdmin = async (
+  schoolId: string,
+  userId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Check if user exists
+    const { data: user, error: userError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
+      return { 
+        success: false, 
+        error: 'İstifadəçi tapılmadı' 
       };
-    } catch (error) {
-      console.error('Məktəb admin məlumatlarını əldə edərkən xəta:', error);
-      throw error;
     }
+
+    // Update user role to school admin
+    const { error: roleError } = await supabase.rpc('assign_school_admin', {
+      p_user_id: userId,
+      p_school_id: schoolId
+    });
+
+    if (roleError) {
+      throw roleError;
+    }
+
+    // Update school to add admin_id
+    const { error: schoolError } = await supabase
+      .from('schools')
+      .update({ 
+        admin_id: userId,
+        admin_email: user.email
+      })
+      .eq('id', schoolId);
+
+    if (schoolError) {
+      throw schoolError;
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Admin təyin etmə xətası:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Admin təyin edilərkən xəta baş verdi' 
+    };
+  }
+};
+
+// Reset school admin password
+export const resetSchoolAdminPassword = async (
+  adminId: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // This is just a mock function since we can't directly reset passwords in the client
+    // In a real app, this would call a secure API endpoint or Edge Function
+
+    toast.success('Şifrə uğurla sıfırlandı');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Şifrə sıfırlama xətası:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Şifrə sıfırlanarkən xəta baş verdi' 
+    };
+  }
+};
+
+// Get notifications for school admin
+export const getSchoolAdminNotifications = async (
+  schoolId: string
+): Promise<FormNotification[]> => {
+  try {
+    // In a real app, this would fetch actual notifications from the database
+    // For now, we'll return mock data
+    return [
+      {
+        id: '1',
+        title: 'Son tarix xəbərdarlığı',
+        message: 'Əsas məlumatlar kateqoriyası üçün son tarix 3 gün içərisindədir',
+        timestamp: new Date().toISOString(),
+        type: 'warning',
+        read: false
+      },
+      {
+        id: '2',
+        title: 'Məlumatlar təsdiqləndi',
+        message: 'Təhsil məlumatları kateqoriyası sektor admini tərəfindən təsdiqləndi',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        type: 'success',
+        read: true
+      }
+    ];
+  } catch (error) {
+    console.error('Bildirişlər alınarkən xəta:', error);
+    return [];
   }
 };

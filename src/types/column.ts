@@ -8,121 +8,59 @@ export type ColumnType =
   | 'checkbox' 
   | 'radio' 
   | 'textarea' 
-  | 'file' 
-  | 'image' 
-  | 'time' 
   | 'email' 
-  | 'url' 
   | 'phone' 
-  | 'header' 
-  | 'divider';
+  | 'file' 
+  | 'image';
 
-export interface ColumnOption {
-  value: string;
-  label: string;
-  color?: string;
-  disabled?: boolean;
-}
-
-export type ValidationRule = {
-  type: 'required' | 'min' | 'max' | 'minLength' | 'maxLength' | 'pattern' | 'email' | 'url' | 'customMessage';
-  value?: number | string | boolean;
-  message?: string;
-};
-
-export interface ValidationRules {
-  required?: boolean | string;
-  min?: number | { value: number; message: string };
-  max?: number | { value: number; message: string };
-  minLength?: number | { value: number; message: string };
-  maxLength?: number | { value: number; message: string };
-  pattern?: RegExp | { value: RegExp; message: string };
-  email?: boolean | { message: string };
-  url?: boolean | { message: string };
-  customMessage?: string;
-  minValue?: number | { value: number; message: string }; 
-  maxValue?: number | { value: number; message: string }; 
-}
-
-export interface DependsOnCondition {
-  columnId: string;
-  operator: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'greaterThan' | 'lessThan';
-  value: string | number | boolean;
-}
+export type ColumnStatus = 'active' | 'inactive' | 'draft';
 
 export interface Column {
   id: string;
   category_id: string;
   name: string;
   type: ColumnType;
-  help_text?: string;
-  placeholder?: string;
   is_required?: boolean;
-  options?: string[] | ColumnOption[];
+  placeholder?: string;
+  help_text?: string;
+  order_index?: number;
+  status?: ColumnStatus;
   validation?: ValidationRules;
   default_value?: string;
-  order_index?: number;
-  status?: 'active' | 'inactive' | 'draft';
-  dependsOn?: DependsOnCondition;
+  options?: any;
+  parent_column_id?: string;
   created_at?: string;
   updated_at?: string;
-  parent_column_id?: string | null;
 }
 
-export interface ColumnFormData {
-  id?: string;
-  category_id: string;
-  name: string;
-  type: ColumnType;
-  help_text?: string;
-  placeholder?: string;
-  is_required?: boolean;
-  options?: string | ColumnOption[];
-  validation?: ValidationRules;
-  default_value?: string;
-  order_index?: number;
-  status?: 'active' | 'inactive' | 'draft';
-  dependsOn?: DependsOnCondition;
-  parent_column_id?: string | null;
+export interface ColumnOption {
+  value: string;
+  label: string;
 }
 
-// Category tipini əlavə edirik
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  assignment?: 'all' | 'sectors';
-  deadline?: string;
-  status?: 'active' | 'inactive' | 'draft';
-  priority?: number;
-  created_at?: string;
-  updated_at?: string;
-  archived?: boolean;
-  column_count?: number;
+export interface ValidationRules {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string | RegExp;
+  email?: boolean;
+  url?: boolean;
+  numeric?: boolean;
+  integer?: boolean;
+  date?: boolean;
+  custom?: string;
 }
 
-// CategoryWithColumns tipini əlavə edirik və ixrac edirik
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
+export interface ColumnValidationError {
+  field: string;
+  message: string;
+  type: string;
+  severity?: 'warning' | 'error' | 'info';
 }
 
-// DB-dən gələn column formatını uyğunlaşdırmaq üçün funksiya
-export const adaptDbColumnToAppColumn = (dbColumn: any): Column => {
-  return {
-    id: dbColumn.id,
-    category_id: dbColumn.category_id,
-    name: dbColumn.name,
-    type: dbColumn.type,
-    is_required: dbColumn.is_required,
-    help_text: dbColumn.help_text,
-    placeholder: dbColumn.placeholder,
-    options: dbColumn.options,
-    validation: dbColumn.validation,
-    default_value: dbColumn.default_value,
-    order_index: dbColumn.order_index,
-    status: dbColumn.status || 'active',
-    created_at: dbColumn.created_at,
-    updated_at: dbColumn.updated_at,
-    parent_column_id: dbColumn.parent_column_id
-  };
-};
+export interface ColumnFormData extends Omit<Column, 'validation' | 'options'> {
+  validation: ValidationRules;
+  options: ColumnOption[];
+}

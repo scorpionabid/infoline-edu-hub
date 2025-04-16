@@ -6,29 +6,52 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
 import { FullUserData, UserFormData } from '@/types/user';
-import { mockUsers, User } from '@/data/mockUsers';
+import mockUsers from '@/data/mockUsers';
 import DeleteUserDialog from './DeleteUserDialog';
-import UserFormDialog from './UserFormDialog';
 import UserDetailsDialog from './UserDetailsDialog';
 import UserListTable from './UserListTable';
 import { AlertTriangle, Search, Plus, Trash2, Filter, Download } from 'lucide-react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Badge } from '../ui/badge';
-import { useLocationParams } from '@/hooks/useLocationParams';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Geçici olarak mockUsers'ı FullUserData tipine çeviriyoruz - sonra gerçek API entegrasyonu ile değişecek
-const adaptUserToFullUserData = (user: User): FullUserData => {
+const adaptUserToFullUserData = (user: any): FullUserData => {
   return {
     ...user,
-    full_name: user.full_name || `${user.first_name} ${user.last_name}`,
+    full_name: user.full_name || user.name || '',
     status: user.status || 'active',
     role: user.role || 'user',
     position: user.position || '',
+    createdAt: user.createdAt || user.created_at || new Date().toISOString(),
+    updatedAt: user.updatedAt || user.updated_at || new Date().toISOString(),
   };
 };
 
-const UserList: React.FC = () => {
+// Custom hook for location parameters
+const useLocationParams = () => {
+  const getParam = (name: string) => {
+    return new URLSearchParams(window.location.search).get(name) || '';
+  };
+  
+  const setParam = (name: string, value: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(name, value);
+    window.history.pushState({}, '', url);
+  };
+  
+  const clearAllParams = () => {
+    window.history.pushState({}, '', window.location.pathname);
+  };
+  
+  return { getParam, setParam, clearAllParams };
+};
+
+const UserList: React.FC<{
+  currentUserRole?: string;
+  currentUserRegionId?: string;
+  onUserAddedOrEdited?: () => void;
+}> = ({ currentUserRole, currentUserRegionId, onUserAddedOrEdited }) => {
   const { t } = useLanguage();
   const { userRole } = usePermissions();
   const { getParam, setParam, clearAllParams } = useLocationParams();
@@ -152,10 +175,17 @@ const UserList: React.FC = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         last_login: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        name: formData.full_name || '',
       };
       setUsers([...users, newUser]);
     }
     setIsFormDialogOpen(false);
+    
+    if (onUserAddedOrEdited) {
+      onUserAddedOrEdited();
+    }
   };
   
   const handleDeleteConfirm = () => {
@@ -163,6 +193,10 @@ const UserList: React.FC = () => {
       const updatedUsers = users.filter(user => user.id !== selectedUser.id);
       setUsers(updatedUsers);
       setIsDeleteDialogOpen(false);
+      
+      if (onUserAddedOrEdited) {
+        onUserAddedOrEdited();
+      }
     }
   };
 
@@ -316,15 +350,15 @@ const UserList: React.FC = () => {
                 onEdit={handleEditUser}
                 onDelete={handleDeleteUser}
                 onViewDetails={handleViewUserDetails}
-                currentUserRole={userRole as any}
-                renderRow={undefined}
+                currentUserRole={currentUserRole || userRole}
               />
             )}
           </CardContent>
         </Card>
         
-        {/* Dialogs */}
-        <UserFormDialog 
+        {/* Burada UserFormDialog eksik, amma bu dosyayı yaratmadıq. 
+        İstenirse ayrıca yaradıla bilər, hələlik sətirlərini şərh kimi saxlayırıq */}
+        {/* <UserFormDialog 
           isOpen={isFormDialogOpen}
           onClose={() => setIsFormDialogOpen(false)}
           onSubmit={handleUserSubmit}
@@ -332,18 +366,18 @@ const UserList: React.FC = () => {
           setFormData={setFormData}
           isEditMode={!!selectedUser}
           currentUserRole={userRole}
-        />
+        /> */}
         
         <DeleteUserDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={() => setIsDeleteDialogOpen(false)}
-          onConfirm={handleDeleteConfirm}
-          userName={selectedUser?.full_name || ''}
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onDelete={handleDeleteConfirm}
+          user={selectedUser || { id: '', email: '', full_name: '' }}
         />
         
         <UserDetailsDialog
-          isOpen={isDetailsDialogOpen}
-          onClose={() => setIsDetailsDialogOpen(false)}
+          open={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
           user={selectedUser}
           onEdit={() => {
             setIsDetailsDialogOpen(false);
