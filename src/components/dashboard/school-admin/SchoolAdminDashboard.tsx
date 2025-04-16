@@ -10,12 +10,11 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import FormStatusSection from './FormStatusSection';
 
 interface SchoolAdminDashboardProps {
-  data: SchoolAdminDashboardData;
+  data: SchoolAdminDashboardData | null;
   isLoading: boolean;
   error: Error | null;
   onRefresh: () => void;
@@ -32,6 +31,18 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   handleFormClick
 }) => {
   const { t } = useLanguage();
+
+  // Əminliklə yoxlayırıq ki, data null deyil, əgər nulldursa default dəyərlər istifadə edirik
+  const safeData = data || {
+    completion: { percentage: 0, total: 0, completed: 0 },
+    status: { pending: 0, approved: 0, rejected: 0, total: 0 },
+    categories: [],
+    upcoming: [],
+    forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
+    pendingForms: [],
+    completionRate: 0,
+    notifications: []
+  };
 
   // Status rəngləri üçün funksiya
   const getStatusColor = (status: string) => {
@@ -71,7 +82,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
           <CardHeader>
             <Skeleton className="h-4 w-[120px]" />
           </CardHeader>
-          <CardContent className="h-[400px]">
+          <CardContent className="h-[300px]">
             <Skeleton className="h-full w-full" />
           </CardContent>
         </Card>
@@ -95,17 +106,22 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     );
   }
 
-  // Əmin olaq ki, data və onun alt sahələri undefined deyil
-  const forms = data?.forms || { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 };
-  const pendingForms = data?.pendingForms || [];
-  const completionRate = data?.completionRate || 0;
+  // Təhlükəsiz əldə edilmiş məlumatlar
+  const forms = safeData.forms || { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 };
+  const pendingForms = safeData.pendingForms || [];
+  const completionRate = safeData.completionRate || safeData.completion?.percentage || 0;
   
   // Notification tipini uyğunlaşdırırıq
-  const notifications = (data?.notifications || []).map(notification => {
+  const notifications = (safeData.notifications || []).map(notification => {
     const processedNotification = { ...notification };
     
-    // Əgər date və time yoxdursa, amma createdAt varsa
-    if (!notification.date && notification.createdAt) {
+    // Əgər date və time yoxdursa, amma timestamp varsa
+    if (!notification.date && notification.timestamp) {
+      const createdDate = new Date(notification.timestamp);
+      processedNotification.date = createdDate.toISOString().split('T')[0];
+      processedNotification.time = createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00';
+    } else if (!notification.date && notification.createdAt) {
+      // Əgər createdAt varsa
       const createdDate = new Date(notification.createdAt);
       processedNotification.date = createdDate.toISOString().split('T')[0];
       processedNotification.time = createdDate.toISOString().split('T')[1]?.substring(0, 5) || '00:00';
@@ -114,6 +130,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     // Əgər time yoxdursa əlavə edək
     if (!processedNotification.time) {
       processedNotification.time = '00:00';
+    }
+    
+    // read və isRead sahələrinin uyğunluğu
+    if (notification.isRead !== undefined && notification.read === undefined) {
+      processedNotification.read = notification.isRead;
+    } else if (notification.read !== undefined) {
+      processedNotification.isRead = notification.read;
     }
     
     return processedNotification;
@@ -193,7 +216,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status)}`}>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status.toString())}`}>
                         {t(form.status.toString())}
                       </div>
                       <div className="w-24 bg-gray-200 rounded-full h-2.5">

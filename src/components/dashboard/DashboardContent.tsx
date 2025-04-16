@@ -75,12 +75,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
           console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
           return (
             <SchoolAdminDashboard 
-              data={schoolAdminData}
-              isLoading={schoolAdminLoading}
-              error={schoolAdminError}
-              onRefresh={refreshSchoolAdminData}
-              navigateToDataEntry={navigateToDataEntry}
-              handleFormClick={handleFormClick}
+              data={null}
+              isLoading={false}
+              error={new Error(t('unknownUserRole'))}
+              onRefresh={() => window.location.reload()}
+              navigateToDataEntry={() => navigate('/data-entry')}
+              handleFormClick={(id) => navigate(`/data-entry/${id}`)}
             />
           );
       }

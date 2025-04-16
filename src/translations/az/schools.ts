@@ -74,7 +74,18 @@ const schools = {
   errorAssigningAdmin: "Admin təyin edilərkən xəta",
   adminAssigned: "Admin təyin edildi",
   adminAssignedDesc: "İstifadəçi məktəb admini olaraq uğurla təyin edildi",
-  assign: "Təyin et"
+  assign: "Təyin et",
+  
+  // Admin əlaqələndirmə xətaları
+  adminEmailWithoutId: "Admin e-poçtu mövcuddur, lakin admin ID təyin edilməyib. Zəhmət olmasa, bu məktəb üçün admini yenidən təyin edin.",
+  adminIdMissing: "Admin ID çatışmır, zəhmət olmasa, admini yenidən təyin edin!",
+  unknownUserRole: "Naməlum istifadəçi rolu",
+  
+  // Dashboard xətaları
+  errorLoadingData: "Məlumatları yükləyərkən xəta baş verdi",
+  tryAgain: "Yenidən cəhd edin",
+  errorOccurred: "Xəta baş verdi",
+  dashboardRenderError: "Dashboard göstərilə bilmədi"
 };
 
 export default schools;

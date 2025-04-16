@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, UserPlus, Mail } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Mail, AlertCircle } from 'lucide-react';
 import { School } from '@/types/school';
 import { useLanguage } from '@/context/LanguageContext';
 import { highlightText } from '@/utils/textUtils';
@@ -45,6 +45,11 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
     );
   };
 
+  // Admin məlumatlarının yoxlanılması
+  const hasAdminIssue = (school: School) => {
+    return school.admin_email && !school.admin_id;
+  };
+
   if (currentItems.length === 0) {
     return (
       <EmptyState
@@ -84,7 +89,7 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
         </TableHeader>
         <TableBody>
           {currentItems.map((school) => (
-            <TableRow key={school.id}>
+            <TableRow key={school.id} className={hasAdminIssue(school) ? "bg-amber-50" : ""}>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
                   {highlightText(school.name, searchTerm)}
@@ -96,11 +101,30 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate max-w-[200px]">{school.admin_email}</span>
+                        <span className="truncate max-w-[200px]">
+                          {school.admin_email}
+                        </span>
+                        {hasAdminIssue(school) && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <AlertCircle className="h-4 w-4 text-amber-500 ml-1" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">{t('adminEmailWithoutId')}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{school.admin_email}</p>
+                      <p>
+                        {school.admin_email}
+                        {hasAdminIssue(school) && (
+                          <span className="block text-amber-500 font-semibold mt-1">
+                            {t('adminIdMissing')}
+                          </span>
+                        )}
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 ) : (
@@ -126,10 +150,11 @@ const SchoolTable: React.FC<SchoolTableProps> = ({
                   </Button>
                   
                   <Button
-                    variant="ghost"
+                    variant={hasAdminIssue(school) ? "outline" : "ghost"}
                     size="icon"
                     onClick={() => handleAdminDialogOpen(school)}
                     title={t('manageAdmin')}
+                    className={hasAdminIssue(school) ? "text-amber-600 border-amber-300 hover:bg-amber-50" : ""}
                   >
                     <UserPlus className="h-4 w-4" />
                   </Button>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, ChangeEvent } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -14,6 +13,39 @@ import ImportDialog from './ImportDialog';
 import { useImportExport } from '@/hooks/schools/useImportExport';
 import { UserRole } from '@/types/supabase';
 import { School, adaptSchoolFromSupabase, adaptSchoolToSupabase } from '@/types/school';
+import { Button, Plus, Upload, Download, RefreshCw, AlertCircle, Badge } from '@/components/ui/button';
+import { exportSchoolsToExcel } from '@/utils/exportSchoolsToExcel';
+
+const syncSchoolAdmins = async (): Promise<void> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('sync-school-admins');
+    
+    if (error) {
+      console.error('Məktəb adminlərini sinxronlaşdırarkən xəta:', error);
+      throw error;
+    }
+    
+    console.log('Məktəb adminləri sinxronlaşdırıldı:', data);
+    
+    if (data && data.fixed > 0) {
+      toast.success('Admin məlumatları sinxronlaşdırıldı', {
+        description: `${data.fixed} məktəbdə admin məlumatları düzəldildi`
+      });
+    } else {
+      toast.info('Bütün admin məlumatları aktual', {
+        description: 'Sinxronlaşdırmaya ehtiyac yoxdur'
+      });
+    }
+    
+    document.dispatchEvent(new Event('refresh-schools'));
+    
+  } catch (error) {
+    console.error('Məktəb adminlərini sinxronlaşdırarkən xəta:', error);
+    toast.error('Sinxronlaşdırma xətası', {
+      description: 'Admin məlumatları sinxronlaşdırılarkən xəta baş verdi'
+    });
+  }
+};
 
 const SchoolsContainer: React.FC = () => {
   const {
@@ -41,11 +73,9 @@ const SchoolsContainer: React.FC = () => {
     userRole
   } = useSchoolsStore();
 
-  // Supabase School tipini App School tipinə çeviririk
   const schools = useMemo(() => supabaseSchools.map(adaptSchoolFromSupabase), [supabaseSchools]);
   const currentItems = useMemo(() => supabaseCurrentItems.map(adaptSchoolFromSupabase), [supabaseCurrentItems]);
 
-  // Change event handler adaptörleri
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => originalHandleSearch(e);
   const handleRegionFilter = (e: ChangeEvent<HTMLSelectElement>) => originalHandleRegionFilter(e);
   const handleSectorFilter = (e: ChangeEvent<HTMLSelectElement>) => originalHandleSectorFilter(e);
@@ -63,9 +93,9 @@ const SchoolsContainer: React.FC = () => {
     closeAddDialog,
     closeAdminDialog,
     handleAddDialogOpen,
-    handleEditDialogOpen: handleEditDialogOpenOriginal,
-    handleDeleteDialogOpen: handleDeleteDialogOpenOriginal,
-    handleAdminDialogOpen: handleAdminDialogOpenOriginal,
+    handleEditDialogOpenOriginal,
+    handleDeleteDialogOpenOriginal,
+    handleAdminDialogOpenOriginal,
     handleAddSubmit,
     handleEditSubmit,
     handleDeleteConfirm,
@@ -77,7 +107,6 @@ const SchoolsContainer: React.FC = () => {
     handleFormChange
   } = useSchoolDialogHandlers();
 
-  // Supabase və app School tipləri arasında adapter funksiyaları
   const handleEditDialogOpen = (school: School) => {
     handleEditDialogOpenOriginal(adaptSchoolToSupabase(school) as any);
   };
@@ -104,7 +133,6 @@ const SchoolsContainer: React.FC = () => {
     }
   }, [isOperationComplete, fetchSchools, setIsOperationComplete]);
 
-  // İstifadəçinin roluna əsasən sektorları filtrləmək
   const filteredSectors = useMemo(() => {
     let sectorsList = sectors.map(sector => ({
       id: sector.id,
@@ -112,17 +140,14 @@ const SchoolsContainer: React.FC = () => {
       regionId: sector.region_id
     }));
     
-    // Əvvəlcə userRole'un düzgün tipə uyğun olduğunu yoxlayaq
     const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
     const userRoleTyped: UserRole | null = userRole && validRoles.includes(userRole as UserRole) 
       ? (userRole as UserRole) 
       : null;
     
-    // Sektor admin üçün yalnız öz sektorunu göstərmək
     if (userRoleTyped === 'sectoradmin') {
       sectorsList = sectorsList.filter(sector => sector.id === selectedSector);
     }
-    // Region admin üçün yalnız öz regionuna aid sektorları göstərmək
     else if (userRoleTyped === 'regionadmin' && selectedRegion) {
       sectorsList = sectorsList.filter(sector => sector.regionId === selectedRegion);
     }
@@ -130,10 +155,7 @@ const SchoolsContainer: React.FC = () => {
     return sectorsList;
   }, [sectors, userRole, selectedSector, selectedRegion]);
 
-  // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
-    // Burada supabase tipindən app tipinə çevirmək əvəzinə, 
-    // birbaşa supabase tipi göndərək
     handleExportToExcel(supabaseSchools);
   };
 
@@ -141,7 +163,6 @@ const SchoolsContainer: React.FC = () => {
     setIsImportDialogOpen(true);
   };
 
-  // UserRole tipini təhlükəsizləşdirmək üçün əlavə düzəliş
   const safeUserRole = useMemo(() => {
     const validRoles = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'] as const;
     const currentRole = userRole as string;
@@ -150,9 +171,62 @@ const SchoolsContainer: React.FC = () => {
            'schooladmin' as const;
   }, [userRole]);
 
+  const schoolsWithAdminIssues = useMemo(() => {
+    return schools.filter(school => school.admin_email && !school.admin_id).length;
+  }, [schools]);
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('schools')}</h1>
+            <p className="text-muted-foreground">{t('schoolsDescription')}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {(userRole === 'superadmin' || userRole === 'regionadmin') && (
+              <>
+                <Button onClick={handleAddDialogOpen}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t('addSchool')}
+                </Button>
+                <Button variant="outline" onClick={handleImportClick}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {t('importSchools')}
+                </Button>
+                <Button variant="outline" onClick={() => exportSchoolsToExcel(schools, regionNames, sectorNames)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('exportSchools')}
+                </Button>
+                
+                {schoolsWithAdminIssues > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={syncSchoolAdmins} 
+                    className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Admin sinxronlaşdır
+                    <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                      {schoolsWithAdminIssues}
+                    </Badge>
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {schoolsWithAdminIssues > 0 && userRole === 'superadmin' && (
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-md flex items-center">
+            <AlertCircle className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0" />
+            <div className="text-amber-800">
+              <p className="font-medium">Diqqət! {schoolsWithAdminIssues} məktəbdə admin əlaqələndirmə problemi var.</p>
+              <p className="text-sm">Bu məktəblərdə admin e-poçtu təyin edilib, lakin admin ID əlaqələndirilməyib. Sinxronlaşdır düyməsini klikləyin və ya hər bir məktəb üçün admin məlumatlarını əl ilə yeniləyin.</p>
+            </div>
+          </div>
+        )}
+
         <SchoolHeader 
           userRole={safeUserRole} 
           onAddClick={handleAddDialogOpen}
@@ -220,7 +294,6 @@ const SchoolsContainer: React.FC = () => {
           filteredSectors={filteredSectors}
         />
         
-        {/* Import Dialog */}
         <ImportDialog 
           isOpen={isImportDialogOpen}
           onClose={() => setIsImportDialogOpen(false)}
