@@ -56,7 +56,7 @@ export const useFormActions = ({
     // Burada serverə məlumatları göndərməyi simulyasiya edirik
     // Real layihədə burada API çağırışı olacaq
     updateFormData({ 
-      submittedAt: new Date().toISOString()
+      lastSaved: new Date().toISOString()
     });
     
     return Promise.resolve();

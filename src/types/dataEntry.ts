@@ -72,5 +72,7 @@ export interface ColumnValidationError {
   message: string;
 }
 
-// CategoryWithColumns tipi həm burada, həm də column.ts-də olduğundan onu yenidən ixrac edirik
-export { CategoryWithColumns } from './column';
+// Tip tanımlamaları
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
+}

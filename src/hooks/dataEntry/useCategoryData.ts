@@ -1,139 +1,137 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns, Column } from '@/types/column';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
+import { Column, CategoryWithColumns } from '@/types/column';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
-export const useCategoryData = () => {
+export const useCategoryData = (categoryId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
-  const { user } = useAuth();
 
-  const formatColumnOptions = (options: any): string[] | { value: string; label: string }[] => {
+  // Konverter fonksiyonları
+  const convertOptions = (options: any): string[] | { value: string; label: string }[] => {
     if (!options) return [];
     
     try {
+      // options bir string ise, JSON olarak parse edelim
       if (typeof options === 'string') {
-        const parsed = JSON.parse(options);
-        return Array.isArray(parsed) ? parsed : [];
+        return JSON.parse(options);
       }
+      // options array ise
       if (Array.isArray(options)) {
-        // Tip uyğunsuzluğunu həll etmək üçün ya string[] ya da ColumnOption[] qaytaraq
-        if (options.length === 0) return [];
-        
-        if (typeof options[0] === 'string') {
-          return options as string[];
-        }
-        
-        return options.map(opt => {
-          if (typeof opt === 'string') return { value: opt, label: opt };
-          if (typeof opt === 'object' && 'value' in opt && 'label' in opt) {
-            return { value: String(opt.value), label: String(opt.label) };
-          }
-          return { value: String(opt), label: String(opt) };
-        });
+        return options;
       }
-    } catch (e) {
-      console.error('Error parsing column options:', e);
+      // options nesne ise
+      return options;
+    } catch (error) {
+      console.error('Options dönüştürme hatası:', error);
+      return [];
     }
-    return [];
   };
 
   const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-
-      const { data: categoriesData, error: categoriesError } = await supabase
+      let query = supabase
         .from('categories')
         .select('*')
-        .eq('archived', false)
-        .order('priority', { ascending: true });
-
-      if (categoriesError) throw categoriesError;
-
-      const { data: columnsData, error: columnsError } = await supabase
-        .from('columns')
-        .select('*')
         .eq('status', 'active')
-        .order('order_index', { ascending: true });
-
-      if (columnsError) throw columnsError;
-
-      const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
-        const categoryColumns = columnsData
-          .filter(column => column.category_id === category.id)
-          .map(column => {
-            const formattedOptions = formatColumnOptions(column.options);
-            const formattedColumn: Column = {
-              id: column.id,
-              category_id: column.category_id,
-              name: column.name,
-              type: column.type as any,
-              is_required: column.is_required,
-              order_index: column.order_index,
-              status: column.status as 'active' | 'inactive' | 'draft',
-              validation: column.validation as any,
-              default_value: column.default_value,
-              placeholder: column.placeholder,
-              help_text: column.help_text,
-              options: formattedOptions,
-              created_at: column.created_at,
-              updated_at: column.updated_at,
-              parent_column_id: column.parent_column_id
+        .order('priority', { ascending: true });
+      
+      if (categoryId) {
+        query = query.eq('id', categoryId);
+      }
+      
+      const { data: categoriesData, error: categoriesError } = await query;
+      
+      if (categoriesError) {
+        throw categoriesError;
+      }
+      
+      if (!categoriesData || categoriesData.length === 0) {
+        setCategories([]);
+        setLoading(false);
+        return;
+      }
+      
+      // For each category, fetch its columns
+      const categoriesWithColumns = await Promise.all(
+        categoriesData.map(async (category) => {
+          const { data: columnsData, error: columnsError } = await supabase
+            .from('columns')
+            .select('*')
+            .eq('category_id', category.id)
+            .order('order_index', { ascending: true });
+          
+          if (columnsError) {
+            console.error('Sütunlar çekilirken hata:', columnsError);
+            return {
+              ...category,
+              columns: []
             };
-            return formattedColumn;
+          }
+          
+          // Convert column data from Supabase to our app format
+          const columns: Column[] = (columnsData || []).map(dbColumn => {
+            const column: Column = {
+              id: dbColumn.id,
+              category_id: dbColumn.category_id,
+              name: dbColumn.name,
+              type: dbColumn.type,
+              is_required: dbColumn.is_required,
+              help_text: dbColumn.help_text,
+              placeholder: dbColumn.placeholder,
+              options: convertOptions(dbColumn.options),
+              validation: dbColumn.validation as any,
+              default_value: dbColumn.default_value,
+              order_index: dbColumn.order_index,
+              status: dbColumn.status || 'active',
+              created_at: dbColumn.created_at,
+              updated_at: dbColumn.updated_at,
+              // Add the parent_column_id property
+              parent_column_id: null
+            };
+            return column;
           });
-
-        const formattedCategory: CategoryWithColumns = {
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          assignment: category.assignment as 'all' | 'sectors',
-          deadline: category.deadline,
-          status: category.status as 'active' | 'inactive' | 'draft',
-          priority: category.priority,
-          created_at: category.created_at,
-          updated_at: category.updated_at,
-          archived: category.archived || false,
-          column_count: categoryColumns.length,
-          columns: categoryColumns
-        };
-
-        return formattedCategory;
-      });
-
-      setCategories(categoriesWithColumns);
-    } catch (err: any) {
-      console.error('Kateqoriyaları əldə edərkən xəta:', err);
-      setError(new Error(t('errorFetchingCategories')));
-      toast({
-        title: t('error'),
-        description: t('errorFetchingCategories'),
-        variant: 'destructive'
+          
+          return {
+            ...category,
+            columns
+          };
+        })
+      );
+      
+      setCategories(categoriesWithColumns as CategoryWithColumns[]);
+    } catch (error: any) {
+      console.error('Kategorilər yüklənərkən xəta:', error);
+      setError(t('errorLoadingData'));
+      toast.error(t('errorLoadingData'), {
+        description: error.message
       });
     } finally {
       setLoading(false);
     }
-  }, [t, toast]);
+  }, [categoryId, t]);
 
   useEffect(() => {
-    if (user) {
-      fetchCategories();
-    }
-  }, [user, fetchCategories]);
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const getCategoryById = useCallback((id?: string): CategoryWithColumns | undefined => {
+    if (!id) return undefined;
+    return categories.find(cat => cat.id === id);
+  }, [categories]);
 
   return {
     categories,
     loading,
     error,
-    refetch: fetchCategories
+    getCategoryById,
+    refreshCategories: fetchCategories
   };
 };
-
-export default useCategoryData;

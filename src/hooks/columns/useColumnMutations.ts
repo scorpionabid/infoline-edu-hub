@@ -1,163 +1,153 @@
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Column } from '@/types/column';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { Column, ColumnOption, ColumnType } from '@/types/column';
-import { Database } from '@/types/supabase';
+import { useColumnAdapters } from './useColumnAdapters';
 
-// Helper function to convert a simple string to column option format
-const convertToColumnOptions = (optionsStr: string): ColumnOption[] => {
-  if (!optionsStr) return [];
-  
-  try {
-    // Check if already in the correct format (JSON string of array)
-    const parsed = JSON.parse(optionsStr);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch {
-    // If not a valid JSON, treat as comma-separated values
-    return optionsStr.split(',').map(option => ({
-      value: option.trim(),
-      label: option.trim()
-    }));
-  }
-  
-  return [];
-};
-
+/**
+ * @description Sütun əlavə etmə, düzənləmə və silmə əməliyyatları üçün hook
+ */
 export const useColumnMutations = () => {
-  const { toast } = useToast();
-  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Create or update a column
-  const saveColumn = async (column: Partial<Column>) => {
+  const { t } = useLanguage();
+  const { adaptColumnToDb } = useColumnAdapters();
+
+  /**
+   * @description Sütun əlavə etmə və ya düzənləmə üçün məlumatları göndərir
+   */
+  const saveColumn = useCallback(async (column: Partial<Column>) => {
     setIsLoading(true);
     
     try {
-      // Ensure required fields are present
-      if (!column.category_id) {
-        throw new Error(t('categoryIdRequired'));
-      }
-      
-      if (!column.name) {
-        throw new Error(t('columnNameRequired'));
-      }
-      
+      // Sütun tipi əlavə edilməlidi
       if (!column.type) {
-        throw new Error(t('columnTypeRequired'));
+        throw new Error(t('columnTypeMissing'));
       }
       
-      // Format options if needed
-      let processedColumn = { ...column };
-      
-      // Convert options to the correct format if it's a string
-      if (typeof processedColumn.options === 'string') {
-        processedColumn.options = convertToColumnOptions(processedColumn.options);
+      // Sütun adı əlavə edilməlidi
+      if (!column.name) {
+        throw new Error(t('columnNameMissing'));
       }
       
-      // Handle upsert based on whether we have an ID
+      // Kateqoriya ID-si əlavə edilməlidi
+      if (!column.category_id) {
+        throw new Error(t('categoryIdMissing'));
+      }
+      
+      // Sütun məlumatlarını verilənlər bazasına uyğunlaşdır
+      const dbColumn = adaptColumnToDb(column);
+      
+      // Convert complex types to string (JSON)
+      const dbColumnForInsert = {
+        ...dbColumn,
+        options: dbColumn.options ? JSON.stringify(dbColumn.options) : null,
+        validation: dbColumn.validation ? JSON.stringify(dbColumn.validation) : null
+      };
+      
       let result;
       
       if (column.id) {
-        // Update existing column
-        result = await supabase
+        // Mövcud sütunu yenilə
+        const { data, error } = await supabase
           .from('columns')
-          .update({
-            name: processedColumn.name,
-            type: processedColumn.type,
-            help_text: processedColumn.help_text,
-            placeholder: processedColumn.placeholder,
-            is_required: processedColumn.is_required,
-            options: processedColumn.options as any,
-            validation: processedColumn.validation as any,
-            default_value: processedColumn.default_value,
-            status: processedColumn.status,
-            order_index: processedColumn.order_index,
-            parent_column_id: processedColumn.parent_column_id
-          })
-          .eq('id', column.id);
+          .update(dbColumnForInsert)
+          .eq('id', column.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        toast.success(t('columnUpdated'), {
+          description: t('columnUpdatedDesc')
+        });
       } else {
-        // Create new column
-        result = await supabase
+        // Yeni sütun əlavə et
+        const { data, error } = await supabase
           .from('columns')
-          .insert({
-            category_id: processedColumn.category_id,
-            name: processedColumn.name,
-            type: processedColumn.type,
-            help_text: processedColumn.help_text,
-            placeholder: processedColumn.placeholder,
-            is_required: processedColumn.is_required !== false,
-            options: processedColumn.options as any,
-            validation: processedColumn.validation as any,
-            default_value: processedColumn.default_value,
-            status: processedColumn.status || 'active',
-            order_index: processedColumn.order_index || 0,
-            parent_column_id: processedColumn.parent_column_id
-          });
+          .insert([dbColumnForInsert])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        // Kateqoriyanın sütun sayını bir artır
+        await supabase.rpc('increment_column_count', {
+          p_category_id: column.category_id
+        });
+        
+        toast.success(t('columnAdded'), {
+          description: t('columnAddedDesc')
+        });
       }
       
-      if (result.error) {
-        throw result.error;
-      }
-      
-      toast({
-        title: column.id ? t('columnUpdated') : t('columnCreated'),
-        description: column.id ? t('columnUpdatedDesc') : t('columnCreatedDesc')
-      });
-      
-      return { success: true, data: result.data };
-      
+      return { success: true, data: result };
     } catch (error: any) {
-      console.error('Error saving column:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorSavingColumn'),
-        variant: 'destructive'
+      console.error('Sütun saxlama zamanı xəta:', error.message);
+      
+      toast.error(column.id ? t('columnUpdateError') : t('columnAddError'), {
+        description: error.message
       });
+      
       return { success: false, error };
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  // Delete a column
-  const deleteColumn = async (columnId: string) => {
+  }, [t, adaptColumnToDb]);
+
+  /**
+   * @description Sütunu verilənlər bazasından silir
+   */
+  const deleteColumn = useCallback(async (columnId: string) => {
     setIsLoading(true);
     
     try {
+      // Sütunu silmədən əvvəl kateqoriya ID-sini əldə et
+      const { data: columnData, error: columnError } = await supabase
+        .from('columns')
+        .select('category_id')
+        .eq('id', columnId)
+        .single();
+      
+      if (columnError) throw columnError;
+      
+      // Sütunu sil
       const { error } = await supabase
         .from('columns')
         .delete()
         .eq('id', columnId);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      toast({
-        title: t('columnDeleted'),
+      // Kateqoriyanın sütun sayını bir azalt
+      await supabase.rpc('decrement_column_count', {
+        p_category_id: columnData.category_id
+      });
+      
+      toast.success(t('columnDeleted'), {
         description: t('columnDeletedDesc')
       });
       
       return { success: true };
-      
     } catch (error: any) {
-      console.error('Error deleting column:', error);
-      toast({
-        title: t('error'),
-        description: error.message || t('errorDeletingColumn'),
-        variant: 'destructive'
+      console.error('Sütun silmə zamanı xəta:', error.message);
+      
+      toast.error(t('columnDeleteError'), {
+        description: error.message
       });
+      
       return { success: false, error };
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  return { saveColumn, deleteColumn, isLoading };
-};
+  }, [t]);
 
-export default useColumnMutations;
+  return {
+    saveColumn,
+    deleteColumn,
+    isLoading
+  };
+};

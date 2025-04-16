@@ -52,7 +52,9 @@ export const adaptSchoolFromSupabase = (supabaseSchool: any): School => {
     logo: supabaseSchool.logo,
     adminEmail: supabaseSchool.admin_email,
     admin_email: supabaseSchool.admin_email,
-    completion_rate: supabaseSchool.completion_rate
+    completion_rate: supabaseSchool.completion_rate,
+    region: supabaseSchool.region,
+    sector: supabaseSchool.sector
   };
 };
 

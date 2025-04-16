@@ -1,8 +1,9 @@
-import { useCallback, useEffect } from 'react';
+
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useSchools } from '../useSchools';
 import { SchoolFormData } from '@/types/school-form';
-import { School } from '@/data/schoolsData';
+import { School } from '@/types/school';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseSchoolOperationsReturn {
@@ -122,7 +123,7 @@ export const useSchoolOperations = (
       }
       
       // Əgər məktəbin admini varsa, user_roles cədvəlindən uyğun rolu silək
-      if (selectedSchool.admin_email) {
+      if (selectedSchool.adminEmail) {
         const { error: roleError } = await supabase
           .from('user_roles')
           .delete()
@@ -201,27 +202,6 @@ export const useSchoolOperations = (
       return false;
     }
   }, [onSuccess]);
-
-  useEffect(() => {
-    if (selectedSchool) {
-      setFormData({
-        id: selectedSchool.id,
-        name: selectedSchool.name,
-        address: selectedSchool.address || '',
-        phone: selectedSchool.phone || '',
-        email: selectedSchool.email || '',
-        principalName: selectedSchool.principalName || '',
-        adminEmail: selectedSchool.adminEmail || '',  // admin_email əvəzinə adminEmail istifadə edirik
-        studentCount: selectedSchool.studentCount || 0,
-        teacherCount: selectedSchool.teacherCount || 0,
-        type: selectedSchool.type || '',
-        language: selectedSchool.language || '',
-        regionId: selectedSchool.regionId,
-        sectorId: selectedSchool.sectorId,
-        status: selectedSchool.status || 'active'
-      });
-    }
-  }, [selectedSchool]);
 
   return {
     handleAddSubmit,

@@ -1,273 +1,290 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import { 
-  DataEntryForm, 
-  EntryValue, 
-  CategoryWithColumns, 
-  UseDataEntryProps,
-  DataEntrySaveStatus,
-  UseDataEntryResult
-} from '@/types/dataEntry';
+import { useCategoryData } from './dataEntry/useCategoryData';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
+import { useFormState } from './form/useFormState';
+import { useFormActions } from './form/useFormActions';
+import { useFormInitialization } from './form/useFormInitialization';
+import { DataEntryForm, EntryValue, DataEntrySaveStatus, UseDataEntryProps, UseDataEntryResult, CategoryWithColumns } from '@/types/dataEntry';
 
-export const useDataEntry = ({ schoolId, categoryId, onComplete }: UseDataEntryProps): UseDataEntryResult => {
-  const { t } = useLanguage();
-  const { toast } = useToast();
+/**
+ * @description Məlumatların daxil edilməsi üçün hook
+ */
+export const useDataEntry = ({
+  schoolId,
+  categoryId,
+  categories: initialCategories,
+  onComplete
+}: UseDataEntryProps = {}): UseDataEntryResult => {
   const { user } = useAuth();
-  
-  const [formData, setFormData] = useState<DataEntryForm>({
-    schoolId: schoolId || '',
-    categoryId: categoryId || '',
-    entries: []
-  });
-  
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
+  const { t } = useLanguage();
+  const { categories: fetchedCategories, loading: categoriesLoading } = useCategoryData();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryWithColumns | undefined>(undefined);
-  const [entries, setEntries] = useState<EntryValue[]>([]);
   const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
   const [isDataModified, setIsDataModified] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [entries, setEntries] = useState<EntryValue[]>([]);
   
-  // Load categories and columns
+  // Categories: Öncelikle initialCategories değerini kullan, yoksa fetchedCategories değerini kullan
+  const categories = initialCategories || fetchedCategories;
+  
+  // Form state
+  const { formData, setFormData, updateFormData } = useFormState();
+  
+  // Select the category based on the categoryId
+  const selectedCategory = categories?.find(cat => cat.id === categoryId);
+  
   useEffect(() => {
-    const fetchCategories = async () => {
-      if (!schoolId) return;
-      
-      try {
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('status', 'active')
-          .is('archived', false)
-          .order('priority', { ascending: true });
-        
-        if (categoriesError) throw categoriesError;
-        
-        const { data: columnsData, error: columnsError } = await supabase
-          .from('columns')
-          .select('*')
-          .eq('status', 'active')
-          .order('order_index', { ascending: true });
-        
-        if (columnsError) throw columnsError;
-        
-        // Build categories with columns
-        const categoriesWithColumns = categoriesData.map(category => {
-          const cols = columnsData.filter(col => col.category_id === category.id);
-          return {
-            ...category,
-            columns: cols.map(col => ({
-              ...col,
-              options: col.options || null,
-              validation: col.validation || null
-            }))
-          };
-        });
-        
-        setCategories(categoriesWithColumns);
-        
-        // Set selected category if categoryId is provided
-        if (categoryId) {
-          const selectedCat = categoriesWithColumns.find(cat => cat.id === categoryId);
-          setSelectedCategory(selectedCat);
-        }
-        
-      } catch (err: any) {
-        console.error('Error fetching categories:', err);
-        setError(t('errorFetchingCategories'));
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchCategories();
-  }, [schoolId, categoryId, t]);
+    if (schoolId) {
+      updateFormData({ schoolId });
+    }
+  }, [schoolId, updateFormData]);
   
-  // Load data for a specific school
+  useEffect(() => {
+    if (categoryId) {
+      updateFormData({ categoryId });
+    }
+  }, [categoryId, updateFormData]);
+  
+  // Initialize form data
+  const { initializeForm } = useFormInitialization({ setFormData });
+  
+  // Load form data for a specific school
   const loadDataForSchool = useCallback(async (schoolId: string) => {
-    if (!schoolId) return;
+    if (!schoolId) {
+      setError(t('missingSchoolId'));
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
+    setError(null);
     
     try {
-      const { data, error: entriesError } = await supabase
+      // 1. Fetch existing entries for the school
+      const { data: entriesData, error: entriesError } = await supabase
         .from('data_entries')
         .select('*')
         .eq('school_id', schoolId);
       
-      if (entriesError) throw entriesError;
+      if (entriesError) {
+        throw entriesError;
+      }
       
-      // Convert to our entry format
-      const formattedEntries = data.map(entry => ({
+      // Convert the entries from DB format to app format
+      const convertedEntries: EntryValue[] = (entriesData || []).map(entry => ({
         id: entry.id,
         categoryId: entry.category_id,
         columnId: entry.column_id,
         value: entry.value,
-        status: entry.status
+        status: entry.status as 'pending' | 'approved' | 'rejected'
       }));
       
-      setEntries(formattedEntries);
+      // Set entries
+      setEntries(convertedEntries);
       
       // Update form data
-      setFormData(prev => ({
-        ...prev,
+      updateFormData({
         schoolId,
-        entries: formattedEntries
-      }));
+        entries: convertedEntries
+      });
       
-    } catch (err: any) {
-      console.error('Error loading school data:', err);
-      setError(t('errorLoadingSchoolData'));
+      // If no existing entries, initialize empty form
+      if (convertedEntries.length === 0 && categories.length > 0) {
+        // Find active category (first one if categoryId not provided)
+        const targetCategory = categoryId 
+          ? categories.find(cat => cat.id === categoryId) 
+          : categories[0];
+        
+        if (targetCategory) {
+          const initialEntries = targetCategory.columns.map(column => ({
+            categoryId: targetCategory.id,
+            columnId: column.id,
+            value: column.default_value || null
+          }));
+          
+          initializeForm(initialEntries as EntryValue[], 'draft');
+        }
+      }
+    } catch (error: any) {
+      console.error('Məlumatlar yüklənərkən xəta:', error);
+      setError(t('errorLoadingData'));
+      toast.error(t('errorLoadingData'), {
+        description: error.message
+      });
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [categories, categoryId, initializeForm, t, updateFormData]);
   
-  // Handle form update
-  const updateFormData = useCallback((newData: Partial<DataEntryForm>) => {
-    setFormData(prev => ({ ...prev, ...newData }));
+  useEffect(() => {
+    if (schoolId && categories.length > 0 && !categoriesLoading) {
+      loadDataForSchool(schoolId);
+    }
+  }, [schoolId, categories, categoriesLoading, loadDataForSchool]);
+  
+  // Form actions
+  const { 
+    isAutoSaving, 
+    updateValue, 
+    saveForm, 
+    submitForm 
+  } = useFormActions({
+    formData,
+    setFormData,
+    updateFormData,
+    categories
+  });
+  
+  // When entries change, update isDataModified
+  useEffect(() => {
     setIsDataModified(true);
-  }, []);
+  }, [formData.entries]);
   
-  // Handle entries change
-  const handleEntriesChange = useCallback((columnId: string, value: string | number | boolean | null) => {
-    setEntries(prev => {
-      // Check if entry already exists
-      const existingEntryIndex = prev.findIndex(entry => 
-        entry.columnId === columnId && entry.categoryId === formData.categoryId
-      );
-      
-      const newEntries = [...prev];
-      
-      if (existingEntryIndex >= 0) {
-        // Update existing entry
-        newEntries[existingEntryIndex] = {
-          ...newEntries[existingEntryIndex],
-          value
-        };
-      } else {
-        // Add new entry
-        newEntries.push({
-          categoryId: formData.categoryId,
-          columnId,
-          value
-        });
+  // Auto-save setup
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isDataModified && !isAutoSaving) {
+        handleSave();
       }
-      
-      return newEntries;
-    });
+    }, 60000); // 1 minute
     
+    return () => clearInterval(interval);
+  }, [isDataModified, isAutoSaving]);
+  
+  // Handle entry value changes
+  const handleEntriesChange = useCallback((columnId: string, value: string | number | boolean | null) => {
+    if (!categoryId) return;
+    
+    updateValue(categoryId, columnId, value);
     setIsDataModified(true);
-  }, [formData.categoryId]);
+  }, [categoryId, updateValue]);
   
   // Save form data
   const handleSave = useCallback(async () => {
-    if (!schoolId || !formData.categoryId) {
-      toast({
-        title: t('error'),
-        description: t('missingRequiredFields'),
-        variant: 'destructive'
+    if (!schoolId || !user?.id) {
+      toast.error(t('cannotSaveData'), {
+        description: t('missingRequiredInfo')
       });
-      return;
+      return Promise.resolve();
     }
     
     setSaveStatus(DataEntrySaveStatus.SAVING);
     
     try {
-      // Get entries for current category
-      const categoryEntries = entries.filter(entry => entry.categoryId === formData.categoryId);
-      
-      // Prepare the entries for Supabase format
-      const supabaseEntries = categoryEntries.map(entry => ({
-        school_id: schoolId,
-        category_id: entry.categoryId,
-        column_id: entry.columnId,
-        value: entry.value,
-        status: 'pending',
-        created_by: user?.id,
-        updated_at: new Date().toISOString()
-      }));
-      
-      // For each entry, upsert to database
-      for (const entry of supabaseEntries) {
-        const { error } = await supabase
-          .from('data_entries')
-          .upsert(entry, { 
-            onConflict: 'school_id,category_id,column_id',
-            returning: 'minimal'
-          });
+      // For each entry, insert or update in the database
+      for (const entry of formData.entries) {
+        const { categoryId, columnId, value } = entry;
         
-        if (error) throw error;
+        if (!categoryId || !columnId) continue;
+        
+        // Check if entry already exists
+        const { data: existingEntry } = await supabase
+          .from('data_entries')
+          .select('id')
+          .eq('school_id', schoolId)
+          .eq('category_id', categoryId)
+          .eq('column_id', columnId)
+          .maybeSingle();
+        
+        if (existingEntry) {
+          // Update existing entry
+          await supabase
+            .from('data_entries')
+            .update({
+              value: String(value),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingEntry.id);
+        } else {
+          // Insert new entry
+          await supabase
+            .from('data_entries')
+            .insert({
+              school_id: schoolId,
+              category_id: categoryId,
+              column_id: columnId,
+              value: String(value),
+              status: 'pending',
+              created_by: user.id,
+              updated_at: new Date().toISOString()
+            });
+        }
       }
       
-      toast({
-        title: t('success'),
-        description: t('dataSavedSuccessfully')
+      updateFormData({
+        lastSaved: new Date().toISOString()
       });
       
       setSaveStatus(DataEntrySaveStatus.SAVED);
       setIsDataModified(false);
       
-    } catch (err: any) {
-      console.error('Error saving data:', err);
-      toast({
-        title: t('error'),
-        description: t('errorSavingData'),
-        variant: 'destructive'
-      });
+      // Show success message
+      toast.success(t('dataSavedSuccessfully'));
+      
+      setTimeout(() => {
+        setSaveStatus(DataEntrySaveStatus.IDLE);
+      }, 3000);
+      
+      return Promise.resolve();
+    } catch (error: any) {
+      console.error('Məlumatları saxlayarkən xəta:', error);
+      
       setSaveStatus(DataEntrySaveStatus.ERROR);
+      
+      toast.error(t('errorSavingData'), {
+        description: error.message
+      });
+      
+      setTimeout(() => {
+        setSaveStatus(DataEntrySaveStatus.IDLE);
+      }, 3000);
+      
+      return Promise.reject(error);
     }
-  }, [schoolId, formData.categoryId, entries, user, t, toast]);
+  }, [formData.entries, schoolId, t, updateFormData, user?.id]);
   
-  // Submit for approval
-  const handleSubmitForApproval = useCallback(async () => {
-    // First save the data
-    await handleSave();
+  // Submit form for approval
+  const submitForApproval = useCallback(() => {
+    setSubmitting(true);
     
-    // Then update status to pending for approval
-    if (saveStatus !== DataEntrySaveStatus.ERROR) {
-      try {
-        const { error } = await supabase.functions.invoke('submit-category-for-approval', {
-          body: { 
-            schoolId,
-            categoryId: formData.categoryId
-          }
+    handleSave()
+      .then(() => {
+        updateFormData({
+          status: 'pending'
         });
         
-        if (error) throw error;
-        
-        toast({
-          title: t('success'),
-          description: t('dataSubmittedForApproval')
-        });
+        toast.success(t('dataSubmittedForApproval'));
         
         if (onComplete) {
           onComplete();
         }
-        
-      } catch (err: any) {
-        console.error('Error submitting for approval:', err);
-        toast({
-          title: t('error'),
-          description: t('errorSubmittingForApproval'),
-          variant: 'destructive'
-        });
-      }
-    }
-  }, [handleSave, saveStatus, schoolId, formData.categoryId, toast, t, onComplete]);
+      })
+      .catch(error => {
+        console.error('Təsdiq üçün göndərilən zaman xəta:', error);
+        toast.error(t('errorSubmittingData'));
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
+  }, [handleSave, onComplete, t, updateFormData]);
   
-  // For compatibility
-  const submitForApproval = handleSubmitForApproval;
-  
+  // Handle submit for approval
+  const handleSubmitForApproval = useCallback(async () => {
+    await handleSave();
+    submitForApproval();
+    return Promise.resolve();
+  }, [handleSave, submitForApproval]);
+
   return {
     formData,
     updateFormData,
     categories,
-    loading,
+    loading: loading || categoriesLoading,
     error,
     selectedCategory,
     saveStatus,
@@ -277,6 +294,7 @@ export const useDataEntry = ({ schoolId, categoryId, onComplete }: UseDataEntryP
     handleEntriesChange,
     loadDataForSchool,
     entries,
+    submitting,
     submitForApproval
   };
 };
