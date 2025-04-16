@@ -1,151 +1,160 @@
 
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType, ColumnOption } from '@/types/column';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
+import { Column, ColumnOption, ColumnType } from '@/types/column';
 
-// Supabase'e göndermek için options alanını JSON'a dönüştürme
-const prepareColumnForDB = (column: Partial<Column>) => {
-  const preparedColumn = { ...column };
+// Helper function to convert a simple string to column option format
+const convertToColumnOptions = (optionsStr: string): ColumnOption[] => {
+  if (!optionsStr) return [];
   
-  // options array'sə JSON'a çevir
-  if (preparedColumn.options) {
-    preparedColumn.options = JSON.stringify(preparedColumn.options);
+  try {
+    // Check if already in the correct format (JSON string of array)
+    const parsed = JSON.parse(optionsStr);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // If not a valid JSON, treat as comma-separated values
+    return optionsStr.split(',').map(option => ({
+      value: option.trim(),
+      label: option.trim()
+    }));
   }
   
-  // validation objesini JSON'a çevir
-  if (preparedColumn.validation) {
-    preparedColumn.validation = JSON.stringify(preparedColumn.validation);
-  }
-  
-  return preparedColumn;
+  return [];
 };
 
 export const useColumnMutations = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Birden çox sütun əlavə etmək
-  const addColumns = async (columns: Column[]): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  const { toast } = useToast();
+  const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Create or update a column
+  const saveColumn = async (column: Partial<Column>) => {
+    setIsLoading(true);
     
     try {
-      for (const column of columns) {
-        // Hər bir sütunu JSON formatına çevir və əlavə et
-        const preparedColumn = prepareColumnForDB(column);
-        
-        const { error } = await supabase
-          .from('columns')
-          .insert(preparedColumn);
-          
-        if (error) throw error;
+      // Ensure required fields are present
+      if (!column.category_id) {
+        throw new Error(t('categoryIdRequired'));
       }
       
-      toast.success('Sütunlar uğurla əlavə edildi');
-      return true;
-    } catch (err) {
-      console.error('Sütunlar əlavə edilərkən xəta:', err);
-      setError(err as Error);
-      toast.error('Sütunlar əlavə edilərkən xəta baş verdi', {
-        description: (err as Error).message
+      if (!column.name) {
+        throw new Error(t('columnNameRequired'));
+      }
+      
+      if (!column.type) {
+        throw new Error(t('columnTypeRequired'));
+      }
+      
+      // Format options if needed
+      let processedColumn = { ...column };
+      
+      // Convert options to the correct format if it's a string
+      if (typeof processedColumn.options === 'string') {
+        processedColumn.options = convertToColumnOptions(processedColumn.options);
+      }
+      
+      // Handle upsert based on whether we have an ID
+      let result;
+      
+      if (column.id) {
+        // Update existing column
+        result = await supabase
+          .from('columns')
+          .update({
+            name: processedColumn.name,
+            type: processedColumn.type,
+            help_text: processedColumn.help_text,
+            placeholder: processedColumn.placeholder,
+            is_required: processedColumn.is_required,
+            options: processedColumn.options,
+            validation: processedColumn.validation,
+            default_value: processedColumn.default_value,
+            status: processedColumn.status,
+            order_index: processedColumn.order_index
+          })
+          .eq('id', column.id);
+      } else {
+        // Create new column
+        result = await supabase
+          .from('columns')
+          .insert({
+            category_id: processedColumn.category_id,
+            name: processedColumn.name,
+            type: processedColumn.type,
+            help_text: processedColumn.help_text,
+            placeholder: processedColumn.placeholder,
+            is_required: processedColumn.is_required !== false,
+            options: processedColumn.options,
+            validation: processedColumn.validation,
+            default_value: processedColumn.default_value,
+            status: processedColumn.status || 'active',
+            order_index: processedColumn.order_index || 0
+          });
+      }
+      
+      if (result.error) {
+        throw result.error;
+      }
+      
+      toast({
+        title: column.id ? t('columnUpdated') : t('columnCreated'),
+        description: column.id ? t('columnUpdatedDesc') : t('columnCreatedDesc')
       });
-      return false;
+      
+      return { success: true, data: result.data };
+      
+    } catch (error: any) {
+      console.error('Error saving column:', error);
+      toast({
+        title: t('error'),
+        description: error.message || t('errorSavingColumn'),
+        variant: 'destructive'
+      });
+      return { success: false, error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  // Tək sütun əlavə etmək
-  const addColumn = async (column: Column): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const preparedColumn = prepareColumnForDB(column);
-      
-      const { error } = await supabase
-        .from('columns')
-        .insert(preparedColumn);
-        
-      if (error) throw error;
-      
-      toast.success('Sütun uğurla əlavə edildi');
-      return true;
-    } catch (err) {
-      console.error('Sütun əlavə edilərkən xəta:', err);
-      setError(err as Error);
-      toast.error('Sütun əlavə edilərkən xəta baş verdi', {
-        description: (err as Error).message
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sütun redaktə etmək
-  const updateColumn = async (id: string, column: Partial<Column>): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const preparedColumn = prepareColumnForDB(column);
-      
-      const { error } = await supabase
-        .from('columns')
-        .update(preparedColumn)
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      toast.success('Sütun uğurla yeniləndi');
-      return true;
-    } catch (err) {
-      console.error('Sütun yenilənərkən xəta:', err);
-      setError(err as Error);
-      toast.error('Sütun yenilənərkən xəta baş verdi', {
-        description: (err as Error).message
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sütun silmək
-  const deleteColumn = async (id: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+  
+  // Delete a column
+  const deleteColumn = async (columnId: string) => {
+    setIsLoading(true);
     
     try {
       const { error } = await supabase
         .from('columns')
         .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+        .eq('id', columnId);
       
-      toast.success('Sütun uğurla silindi');
-      return true;
-    } catch (err) {
-      console.error('Sütun silinərkən xəta:', err);
-      setError(err as Error);
-      toast.error('Sütun silinərkən xəta baş verdi', {
-        description: (err as Error).message
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: t('columnDeleted'),
+        description: t('columnDeletedDesc')
       });
-      return false;
+      
+      return { success: true };
+      
+    } catch (error: any) {
+      console.error('Error deleting column:', error);
+      toast({
+        title: t('error'),
+        description: error.message || t('errorDeletingColumn'),
+        variant: 'destructive'
+      });
+      return { success: false, error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  return {
-    loading,
-    error,
-    addColumns,
-    addColumn,
-    updateColumn,
-    deleteColumn
-  };
+  
+  return { saveColumn, deleteColumn, isLoading };
 };
+
+export default useColumnMutations;

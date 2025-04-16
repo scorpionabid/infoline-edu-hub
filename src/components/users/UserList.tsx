@@ -11,7 +11,7 @@ import UserListTable from './UserListTable';
 import UserFilters from './UserFilters';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { User, fullUserDataToUser, userToFullUserData } from '@/types/user';
+import { User, userToFullUserData } from '@/types/user';
 
 interface UserListProps {
   currentUserRole?: Role;
@@ -144,22 +144,9 @@ const UserList: React.FC<UserListProps> = ({
             onOpenChange={setIsEditDialogOpen}
             user={selectedUser as User}
             onSave={(updatedUser) => {
-              // Kullanıcı güncelleme işlemi
-              const updatedUserWithDefaults = {
-                ...updatedUser,
-                name: updatedUser.full_name || updatedUser.name, // name alanını full_name ile senkronize et
-                full_name: updatedUser.full_name || updatedUser.name, // full_name alanını da güncelle
-                language: updatedUser.language || 'az',
-                status: (updatedUser.status as 'active' | 'inactive' | 'blocked') || 'active',
-                // Ensure notificationSettings is complete
-                notificationSettings: {
-                  email: updatedUser.notificationSettings?.email ?? true,
-                  push: updatedUser.notificationSettings?.push ?? false, 
-                  sms: updatedUser.notificationSettings?.sms ?? false,
-                  system: updatedUser.notificationSettings?.system ?? true
-                }
-              };
-              handleUpdateUserConfirm(updatedUserWithDefaults as any);
+              // Convert to FullUserData before sending to API
+              const fullUserData = userToFullUserData(updatedUser);
+              handleUpdateUserConfirm(fullUserData);
               handleUserUpdated();
             }}
           />

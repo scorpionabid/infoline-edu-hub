@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CategoryWithColumns } from '@/types/dataEntry';
 import { useLanguage } from '@/context/LanguageContext';
-import { Save, Send } from 'lucide-react';
+import { CategoryWithColumns } from '@/types/dataEntry';
+import { Loader2, Check, Send } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { az } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { formatDate } from '@/utils/formatDateUtils';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
@@ -27,57 +28,69 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const formatDeadline = (deadline?: string) => {
+  const formatDeadline = (deadline: string | undefined) => {
     if (!deadline) return '';
-    
     try {
-      return formatDate(new Date(deadline));
-    } catch (error) {
+      return format(new Date(deadline), 'PPP', { locale: az });
+    } catch (err) {
+      console.error('Tarix formatı xətası:', err);
       return deadline;
     }
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <CardTitle>{category.name}</CardTitle>
-          
-          {category.deadline && (
-            <Badge variant="outline" className="text-sm">
+    <div className="flex justify-between items-start border rounded-lg p-4 bg-white">
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">{category.name}</h2>
+        {category.description && (
+          <p className="mt-1 text-sm text-gray-500">{category.description}</p>
+        )}
+        {category.deadline && (
+          <div className="mt-2">
+            <Badge variant="secondary">
               {t('deadline')}: {formatDeadline(category.deadline)}
             </Badge>
-          )}
-        </div>
-        
-        {category.description && (
-          <p className="text-muted-foreground text-sm">{category.description}</p>
+          </div>
         )}
-      </CardHeader>
-      
-      <CardContent>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={onSave}
-            disabled={isSaving || !isModified}
-            className="gap-1"
-          >
-            <Save className="h-4 w-4" />
-            {t('save')}
-          </Button>
-          
-          <Button
-            onClick={onSubmit}
-            disabled={isSubmitting || !isModified}
-            className="gap-1"
-          >
-            <Send className="h-4 w-4" />
-            {t('submitForApproval')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex space-x-2">
+        <Button
+          onClick={onSave}
+          disabled={isSaving || !isModified}
+          className={cn("min-w-[100px]")}
+          variant="outline"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t('saving')}
+            </>
+          ) : (
+            <>
+              <Check className="mr-2 h-4 w-4" />
+              {t('save')}
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={onSubmit}
+          disabled={isSaving || isSubmitting}
+          className="min-w-[130px]"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t('submitting')}
+            </>
+          ) : (
+            <>
+              <Send className="mr-2 h-4 w-4" />
+              {t('submitForApproval')}
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };
 

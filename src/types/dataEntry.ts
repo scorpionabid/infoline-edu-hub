@@ -41,8 +41,27 @@ export enum DataEntrySaveStatus {
 
 export interface UseDataEntryProps {
   schoolId?: string;
+  categoryId?: string; // Əlavə edildi
   categories?: CategoryWithColumns[];
   onComplete?: () => void;
+}
+
+export interface UseDataEntryResult {
+  formData: DataEntryForm;
+  updateFormData: (newData: Partial<DataEntryForm>) => void;
+  categories: CategoryWithColumns[];
+  loading: boolean;
+  error?: string | null;
+  selectedCategory?: CategoryWithColumns;
+  saveStatus: DataEntrySaveStatus;
+  isDataModified: boolean;
+  handleSave: () => Promise<void>;
+  handleSubmitForApproval: () => Promise<void>;
+  handleEntriesChange: (columnId: string, value: string | number | boolean | null) => void;
+  loadDataForSchool: (schoolId: string) => Promise<void>;
+  entries: EntryValue[];
+  submitting?: boolean;
+  submitForApproval: () => void;
 }
 
 export interface CategoryEntryData {

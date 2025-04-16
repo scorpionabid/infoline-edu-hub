@@ -33,13 +33,15 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   // Convert User to UserFormData
   const initialFormData: UserFormData = {
     full_name: user.full_name || '',
-    name: user.name || user.full_name || '',
     email: user.email,
-    role: user.role,
-    regionId: user.regionId,
-    sectorId: user.sectorId,
-    schoolId: user.schoolId,
-    status: user.status,
+    role: user.role || 'user',
+    region_id: user.region_id || user.regionId,
+    sector_id: user.sector_id || user.sectorId,
+    school_id: user.school_id || user.schoolId,
+    regionId: user.regionId || user.region_id,
+    sectorId: user.sectorId || user.sector_id,
+    schoolId: user.schoolId || user.school_id,
+    status: user.status || 'active',
     phone: user.phone,
     position: user.position,
     language: user.language,
@@ -65,7 +67,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
       const updatedUser: User = {
         ...user,
         ...formData,
-        name: formData.full_name, // name field should match full_name
         full_name: formData.full_name,
         updated_at: new Date().toISOString(), // use consistent field name
         // Cast role to UserRole type

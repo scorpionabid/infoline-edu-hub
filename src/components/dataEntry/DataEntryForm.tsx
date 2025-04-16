@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -26,7 +27,7 @@ const DataEntryForm: React.FC = () => {
     updateFormData, 
     categories, 
     loading, 
-    error, 
+    error,
     selectedCategory,
     saveStatus,
     isDataModified,

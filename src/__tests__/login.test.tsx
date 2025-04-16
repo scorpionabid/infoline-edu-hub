@@ -61,6 +61,8 @@ const mockLanguageContext = () => {
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
       en: { nativeName: 'English', flag: '🇬🇧' },
+      tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
+      ru: { nativeName: 'Русский', flag: '🇷🇺' }
     }
   });
 };

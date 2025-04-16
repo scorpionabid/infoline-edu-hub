@@ -38,7 +38,7 @@ export const useRealDashboardData = () => {
       const { data: response, error: apiError } = await supabase.functions.invoke('get-dashboard-data', {
         body: { 
           role: user.role,
-          entity_id: user.regionId || user.sectorId || user.schoolId 
+          entity_id: user.regionId || user.sectorId || user.schoolId || user.region_id || user.sector_id || user.school_id
         }
       });
 
@@ -52,12 +52,16 @@ export const useRealDashboardData = () => {
       
       // SuperAdmin üçün əlavə qrafik məlumatlarını əldə edirik
       if (user.role === 'superadmin') {
-        const { data: chartsResponse, error: chartsError } = await supabase.functions.invoke('get-dashboard-charts');
-        
-        if (!chartsError && chartsResponse) {
-          setChartData(chartsResponse);
-        } else if (chartsError) {
-          console.error('Qrafik məlumatları əldə edilərkən xəta:', chartsError);
+        try {
+          const { data: chartsResponse, error: chartsError } = await supabase.functions.invoke('get-dashboard-charts');
+          
+          if (!chartsError && chartsResponse) {
+            setChartData(chartsResponse);
+          } else if (chartsError) {
+            console.error('Qrafik məlumatları əldə edilərkən xəta:', chartsError);
+          }
+        } catch (chartErr) {
+          console.error('Qrafik məlumatları əldə edilərkən xəta:', chartErr);
         }
       }
 

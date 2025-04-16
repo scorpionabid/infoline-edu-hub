@@ -40,6 +40,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     password: '',
     role: getInitialRole(),
     status: 'active',
+    region_id: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     regionId: currentUser?.role === 'regionadmin' ? currentUser.regionId : undefined,
     notificationSettings: {
       email: true,

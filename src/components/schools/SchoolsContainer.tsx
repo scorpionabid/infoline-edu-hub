@@ -131,7 +131,9 @@ const SchoolsContainer: React.FC = () => {
 
   // Excel ixrac və idxal funksiyaları
   const handleExportClick = () => {
-    handleExportToExcel(schools);
+    // Burada supabase tipindən app tipinə çevirmək əvəzinə, 
+    // birbaşa supabase tipi göndərək
+    handleExportToExcel(supabaseSchools);
   };
 
   const handleImportClick = () => {
@@ -140,9 +142,10 @@ const SchoolsContainer: React.FC = () => {
 
   // UserRole tipini təhlükəsizləşdirmək üçün əlavə düzəliş
   const safeUserRole = useMemo(() => {
-    return (userRole === 'superadmin' || userRole === 'regionadmin' || 
-           userRole === 'sectoradmin' || userRole === 'schooladmin') ? 
-           userRole as 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' : 'schooladmin';
+    const validRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
+    return validRoles.includes(userRole as UserRole) ? 
+           (userRole as Extract<UserRole, 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin'>) : 
+           'schooladmin';
   }, [userRole]);
 
   return (

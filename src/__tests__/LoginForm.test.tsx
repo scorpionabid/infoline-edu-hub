@@ -36,6 +36,8 @@ const mockLanguageContext = () => {
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
       en: { nativeName: 'English', flag: '🇬🇧' },
+      tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
+      ru: { nativeName: 'Русский', flag: '🇷🇺' }
     }
   });
 };
@@ -49,6 +51,13 @@ vi.mock('react-router-dom', () => ({
 function mockUseAuth(loginImpl = vi.fn().mockResolvedValue(true)) {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     login: loginImpl,
+    logout: vi.fn(),
+    updateUser: vi.fn(),
+    clearError: vi.fn(),
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null
   });
 }
 
@@ -79,7 +88,7 @@ describe('LoginForm Component', () => {
       expect(screen.getByText(mockTranslations.passwordRequired)).toBeInTheDocument();
     });
     
-    // Login funksiyası çağırılmamalıdır
+    // Login funksiyası çağırılmalıdır
     expect(loginMock).not.toHaveBeenCalled();
   });
 

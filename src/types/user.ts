@@ -1,3 +1,4 @@
+
 import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
 export interface User {
@@ -9,16 +10,16 @@ export interface User {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
+  regionId?: string; // legacy support
+  sectorId?: string; // legacy support
+  schoolId?: string; // legacy support
   phone?: string;
   position?: string;
   language?: string;
   avatar?: string;
   status?: 'active' | 'inactive' | 'blocked';
   last_login?: string;
-  lastLogin?: string;
+  lastLogin?: string; // legacy support
   createdAt?: string;
   updatedAt?: string;
   created_at?: string;
@@ -45,10 +46,14 @@ export interface UserFormData {
   id?: string;
   email: string;
   full_name: string;
+  name?: string; // Added for compatibility
   role: UserRole;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  regionId?: string; // Added for compatibility
+  sectorId?: string; // Added for compatibility
+  schoolId?: string; // Added for compatibility
   phone?: string;
   position?: string;
   language?: string;
@@ -105,6 +110,7 @@ export interface FullUserData {
   twoFactorEnabled?: boolean;
 }
 
+// Helper function to convert between different property naming styles
 export const userToFullUserData = (user: User): FullUserData => {
   return {
     id: user.id,
