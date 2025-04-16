@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   SuperAdminDashboardData, 
   RegionAdminDashboardData, 
@@ -10,13 +11,6 @@ import {
   SchoolAdminDashboardData,
   ChartData
 } from '@/types/dashboard';
-import { 
-  createMockSuperAdminData,
-  createMockRegionAdminData,
-  createMockSectorAdminData,
-  createMockSchoolAdminData,
-  createMockChartData
-} from '@/utils/dashboardUtils';
 
 export const useRealDashboardData = () => {
   const { user } = useAuth();
@@ -27,44 +21,35 @@ export const useRealDashboardData = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
     
     try {
       setIsLoading(true);
       setError(null);
-      
-      // API-dən məlumatları əldə etməyi simulyasiya edirik
-      // Real layihədə bu hissəni API sorğuları ilə əvəz edəcəksiniz
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      let data = null;
-      
-      // İstifadəçi roluna əsasən müvafiq dashboard məlumatlarını əldə et
-      switch (user.role) {
-        case 'superadmin':
-          data = createMockSuperAdminData();
-          break;
-        case 'regionadmin':
-          data = createMockRegionAdminData();
-          break;
-        case 'sectoradmin':
-          data = createMockSectorAdminData();
-          break;
-        case 'schooladmin':
-          data = createMockSchoolAdminData();
-          break;
-        default:
-          throw new Error(t('unknownRole'));
+
+      const { data: response, error: apiError } = await supabase.functions.invoke('get-dashboard-data', {
+        body: { role: user.role }
+      });
+
+      if (apiError) throw new Error(apiError.message);
+
+      if (!response) {
+        throw new Error('Dashboard məlumatları əldə edilə bilmədi');
       }
+
+      setDashboardData(response.data);
       
-      setDashboardData(data);
-      
-      // Chart məlumatlarını əldə et
-      const charts = createMockChartData();
-      setChartData(charts);
-      
+      // Əgər SuperAdmin-dirsə əlavə qrafik məlumatlarını əldə edirik
+      if (user.role === 'superadmin') {
+        const { data: chartsResponse, error: chartsError } = await supabase.functions.invoke('get-dashboard-charts');
+        
+        if (!chartsError && chartsResponse) {
+          setChartData(chartsResponse);
+        }
+      }
+
     } catch (err: any) {
       console.error("Dashboard məlumatlarını əldə edərkən xəta:", err);
       setError(err);
@@ -77,10 +62,34 @@ export const useRealDashboardData = () => {
       setIsLoading(false);
     }
   }, [user, t, toast]);
-  
+
+  // İlk yükləmə və user dəyişdikdə məlumatları yenilə
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Real-time yeniləmələri dinlə
+  useEffect(() => {
+    if (!user) return;
+
+    // Kanal yaradaq
+    const channel = supabase
+      .channel('dashboard-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public' },
+        (payload) => {
+          // Dəyişiklik baş verdikdə məlumatları yenilə
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      // Komponenti tərk etdikdə kanalı bağla
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchDashboardData]);
   
   return {
     dashboardData,
