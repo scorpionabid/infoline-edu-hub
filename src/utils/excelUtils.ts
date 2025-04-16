@@ -1,3 +1,4 @@
+
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { School } from '@/types/supabase';
@@ -138,32 +139,69 @@ export const exportSchoolsToExcel = (
   }
 };
 
-// Excel faylından məktəb məlumatlarını idxal edir
+// Detallı xəta mesajı
+const formatErrorMessage = (error: any): string => {
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error) return String(error.message);
+  return 'Bilinməyən xəta baş verdi';
+};
+
+// Excel faylından məktəb məlumatlarını idxal edir - təkmilləşdirilmiş
 export const importSchoolsFromExcel = async (
   file: File,
-  onComplete: (schools: Partial<School>[]) => void
+  onComplete: (schools: Partial<School>[]) => void,
+  onProgress?: (progress: number, message: string) => void,
+  onLog?: (message: string, type?: 'info' | 'warning' | 'error') => void
 ): Promise<void> => {
   try {
+    const logInfo = (message: string) => {
+      console.log(message);
+      onLog?.(message, 'info');
+    };
+    
+    const logWarning = (message: string) => {
+      console.warn(message);
+      onLog?.(message, 'warning');
+    };
+    
+    const logError = (message: string) => {
+      console.error(message);
+      onLog?.(message, 'error');
+    };
+    
+    logInfo(`Excel idxalı başladı: ${file.name}`);
+    onProgress?.(5, 'Fayl oxunur...');
+    
     return new Promise((resolve, reject) => {
-      console.log('Excel idxalı başladı:', file.name);
       const reader = new FileReader();
       
       reader.onload = async (e) => {
         try {
           if (!e.target || !e.target.result) {
             const error = 'Fayl oxunarkən xəta baş verdi';
-            console.error(error);
+            logError(error);
             toast.error(error);
             reject(new Error(error));
             return;
           }
           
           const data = new Uint8Array(e.target.result as ArrayBuffer);
-          console.log('Fayl oxundu, Excel-ə çevrilir...');
+          logInfo('Fayl oxundu, Excel-ə çevrilir...');
+          onProgress?.(10, 'Excel faylı işlənir...');
+          
           const workbook = XLSX.read(data, { type: 'array' });
           
           // İlk worksheeti alırıq
           const firstSheetName = workbook.SheetNames[0];
+          if (!firstSheetName) {
+            const error = 'Excel faylında heç bir vərəq tapılmadı';
+            logError(error);
+            toast.error(error);
+            reject(new Error(error));
+            return;
+          }
+          
           const worksheet = workbook.Sheets[firstSheetName];
           
           // JSON-a çeviririk
@@ -171,23 +209,33 @@ export const importSchoolsFromExcel = async (
           
           if (!jsonData || jsonData.length === 0) {
             const error = 'Excel faylında məlumat tapılmadı';
-            console.error(error);
+            logError(error);
             toast.error(error);
             reject(new Error(error));
             return;
           }
           
-          console.log('Excel məlumatları JSON-a çevrildi:', jsonData);
+          logInfo(`Excel məlumatları JSON-a çevrildi: ${jsonData.length} sətir tapıldı`);
+          onProgress?.(20, `${jsonData.length} sətir işlənməyə başlayır...`);
           
           try {
             // Region və sektor adlarının ID-lərə çevrilməsi
             const processedSchools: Partial<School>[] = [];
+            const processErrors: string[] = [];
+            const totalRows = jsonData.length;
             
             for (const [index, row] of jsonData.entries()) {
-              console.log(`Sətir ${index + 1} işlənir:`, row);
+              const rowNum = index + 1;
+              const progressPercent = Math.floor(20 + (index / totalRows) * 60);
+              onProgress?.(progressPercent, `Sətir ${rowNum}/${totalRows} işlənir...`);
               
+              logInfo(`Sətir ${rowNum} işlənir: ${JSON.stringify(row)}`);
+              
+              // İşləmək üçün məktəb adı mütləq olmalıdır
               if (!row['Məktəb adı']) {
-                console.warn(`Sətir ${index + 1}: Məktəb adı boşdur, keçilir`);
+                const warning = `Sətir ${rowNum}: Məktəb adı boşdur, keçilir`;
+                logWarning(warning);
+                processErrors.push(warning);
                 continue;
               }
 
@@ -206,11 +254,7 @@ export const importSchoolsFromExcel = async (
               
               // Admin məlumatlarını əlavə edək
               if (row['Admin e-poçt']) {
-                console.log(`Sətir ${index + 1}: Admin məlumatları tapıldı:`, {
-                  email: row['Admin e-poçt'],
-                  name: row['Admin adı'],
-                  phone: row['Admin telefonu']
-                });
+                logInfo(`Sətir ${rowNum}: Admin məlumatları tapıldı: ${row['Admin e-poçt']}`);
 
                 (schoolData as any).adminData = {
                   email: row['Admin e-poçt'],
@@ -222,36 +266,52 @@ export const importSchoolsFromExcel = async (
               
               // Region adını ID-yə çevir
               if (row['Region']) {
-                console.log(`Sətir ${index + 1}: Region axtarılır:`, row['Region']);
+                logInfo(`Sətir ${rowNum}: Region axtarılır: ${row['Region']}`);
                 try {
                   const regionId = await mapRegionNameToId(row['Region']);
                   if (regionId) {
                     schoolData.region_id = regionId;
-                    console.log(`Sətir ${index + 1}: Region tapıldı, ID:`, regionId);
+                    logInfo(`Sətir ${rowNum}: Region tapıldı, ID: ${regionId}`);
                   } else {
-                    console.warn(`Sətir ${index + 1}: Region tapılmadı:`, row['Region']);
+                    const warning = `Sətir ${rowNum}: "${row['Region']}" adlı region tapılmadı`;
+                    logWarning(warning);
+                    processErrors.push(warning);
                     toast.warning(`${row['Məktəb adı']}: "${row['Region']}" adlı region tapılmadı`);
                   }
                 } catch (error) {
-                  console.error(`Sətir ${index + 1}: Region axtarışı zamanı xəta:`, error);
+                  const errorMsg = `Sətir ${rowNum}: Region axtarışı zamanı xəta: ${formatErrorMessage(error)}`;
+                  logError(errorMsg);
+                  processErrors.push(errorMsg);
                 }
+              } else {
+                const warning = `Sətir ${rowNum}: Region qeyd olunmayıb`;
+                logWarning(warning);
+                processErrors.push(warning);
               }
               
               // Sektor adını ID-yə çevir
               if (row['Sektor']) {
-                console.log(`Sətir ${index + 1}: Sektor axtarılır:`, row['Sektor']);
+                logInfo(`Sətir ${rowNum}: Sektor axtarılır: ${row['Sektor']}`);
                 try {
                   const sectorId = await mapSectorNameToId(row['Sektor'], schoolData.region_id);
                   if (sectorId) {
                     schoolData.sector_id = sectorId;
-                    console.log(`Sətir ${index + 1}: Sektor tapıldı, ID:`, sectorId);
+                    logInfo(`Sətir ${rowNum}: Sektor tapıldı, ID: ${sectorId}`);
                   } else {
-                    console.warn(`Sətir ${index + 1}: Sektor tapılmadı:`, row['Sektor']);
+                    const warning = `Sətir ${rowNum}: "${row['Sektor']}" adlı sektor tapılmadı`;
+                    logWarning(warning);
+                    processErrors.push(warning);
                     toast.warning(`${row['Məktəb adı']}: "${row['Sektor']}" adlı sektor tapılmadı`);
                   }
                 } catch (error) {
-                  console.error(`Sətir ${index + 1}: Sektor axtarışı zamanı xəta:`, error);
+                  const errorMsg = `Sətir ${rowNum}: Sektor axtarışı zamanı xəta: ${formatErrorMessage(error)}`;
+                  logError(errorMsg);
+                  processErrors.push(errorMsg);
                 }
+              } else {
+                const warning = `Sətir ${rowNum}: Sektor qeyd olunmayıb`;
+                logWarning(warning);
+                processErrors.push(warning);
               }
               
               // Məcburi sahələri yoxla
@@ -261,55 +321,74 @@ export const importSchoolsFromExcel = async (
                 if (!schoolData.region_id) missingFields.push('Region');
                 if (!schoolData.sector_id) missingFields.push('Sektor');
                 
-                console.error(`Sətir ${index + 1}: Məcburi sahələr çatışmır:`, missingFields);
+                const error = `Sətir ${rowNum}: Məcburi sahələr çatışmır: ${missingFields.join(', ')}`;
+                logError(error);
+                processErrors.push(error);
                 toast.error(`${schoolData.name || 'Məktəb'}: ${missingFields.join(', ')} tələb olunur`);
                 continue;
               }
               
               processedSchools.push(schoolData);
-              console.log(`Sətir ${index + 1}: Məlumatlar hazırlandı:`, schoolData);
+              logInfo(`Sətir ${rowNum}: Məlumatlar hazırlandı: ${JSON.stringify(schoolData)}`);
             }
             
             if (processedSchools.length === 0) {
-              const error = 'Heç bir məktəb məlumatı idxal edilmədi';
-              console.error(error);
-              toast.error(error);
-              reject(new Error(error));
+              const errorMsg = processErrors.length > 0 
+                ? `Heç bir məktəb idxal edilmədi. Xətalar:\n${processErrors.join('\n')}`
+                : 'Heç bir məktəb məlumatı idxal edilmədi';
+              
+              logError(errorMsg);
+              toast.error(errorMsg);
+              reject(new Error(errorMsg));
               return;
             }
             
-            console.log('Bütün məlumatlar hazırlandı:', processedSchools);
+            logInfo(`Bütün məlumatlar hazırlandı: ${processedSchools.length} məktəb`);
+            if (processErrors.length > 0) {
+              logWarning(`${processErrors.length} xəta baş verdi:
+${processErrors.join('\n')}`);
+            }
+            
+            onProgress?.(90, 'Məlumatlar işləndi, tamamlanır...');
             onComplete(processedSchools);
+            onProgress?.(100, 'Tamamlandı!');
             resolve();
           } catch (error: any) {
-            console.error('Məlumatlar işlənərkən xəta:', error);
+            const errorMsg = `Məlumatlar işlənərkən xəta: ${formatErrorMessage(error)}`;
+            logError(errorMsg);
             toast.error('Məlumatlar işlənərkən xəta baş verdi', {
-              description: error.message
+              description: formatErrorMessage(error)
             });
             reject(error);
           }
         } catch (error: any) {
-          console.error('Excel faylı işlənərkən xəta:', error);
+          const errorMsg = `Excel faylı işlənərkən xəta: ${formatErrorMessage(error)}`;
+          console.error(errorMsg);
           toast.error('Excel faylı işlənərkən xəta baş verdi', {
-            description: error.message
+            description: formatErrorMessage(error)
           });
+          onLog?.(errorMsg, 'error');
           reject(error);
         }
       };
       
       reader.onerror = (error) => {
-        console.error('Fayl oxunarkən xəta:', error);
+        const errorMsg = `Fayl oxunarkən xəta: ${formatErrorMessage(error)}`;
+        console.error(errorMsg);
         toast.error('Fayl oxunarkən xəta baş verdi');
+        onLog?.(errorMsg, 'error');
         reject(error);
       };
       
       reader.readAsArrayBuffer(file);
     });
   } catch (error: any) {
-    console.error('Excel idxalı zamanı xəta:', error);
+    const errorMsg = `Excel idxalı zamanı xəta: ${formatErrorMessage(error)}`;
+    console.error(errorMsg);
     toast.error('Excel idxalı zamanı xəta baş verdi', {
-      description: error.message
+      description: formatErrorMessage(error)
     });
+    onLog?.(errorMsg, 'error');
     throw error;
   }
 };
@@ -400,13 +479,20 @@ export const mapRegionNameToId = async (regionName: string): Promise<string | nu
   if (!regionName) return null;
   
   try {
+    console.log(`Region adına görə axtarılır: "${regionName}"`);
+    
     const { data, error } = await supabase
       .from('regions')
-      .select('id')
+      .select('id, name')
       .ilike('name', `%${regionName}%`)
       .limit(1);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Region axtarışı zamanı Supabase xətası:', error);
+      throw error;
+    }
+    
+    console.log(`Region axtarışı nəticəsi:`, data);
     
     return data && data.length > 0 ? data[0].id : null;
   } catch (error) {
@@ -420,9 +506,11 @@ export const mapSectorNameToId = async (sectorName: string, regionId?: string): 
   if (!sectorName) return null;
   
   try {
+    console.log(`Sektor adına görə axtarılır: "${sectorName}"${regionId ? `, region ID: ${regionId}` : ''}`);
+    
     let query = supabase
       .from('sectors')
-      .select('id')
+      .select('id, name, region_id')
       .ilike('name', `%${sectorName}%`);
       
     if (regionId) {
@@ -431,7 +519,12 @@ export const mapSectorNameToId = async (sectorName: string, regionId?: string): 
     
     const { data, error } = await query.limit(1);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Sektor axtarışı zamanı Supabase xətası:', error);
+      throw error;
+    }
+    
+    console.log(`Sektor axtarışı nəticəsi:`, data);
     
     return data && data.length > 0 ? data[0].id : null;
   } catch (error) {
