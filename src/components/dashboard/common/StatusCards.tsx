@@ -46,8 +46,7 @@ const StatusCards: React.FC<StatusCardsProps> = ({
                     "text-xs",
                     stat.changeType === 'increase' && "text-green-600",
                     stat.changeType === 'decrease' && "text-red-600",
-                    stat.changeType === 'neutral' && "text
-                    -gray-600"
+                    stat.changeType === 'neutral' && "text-gray-600"
                   )}>
                     {stat.changeType === 'increase' ? '↑' : stat.changeType === 'decrease' ? '↓' : '→'}
                   </div>
