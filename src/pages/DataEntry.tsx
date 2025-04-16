@@ -13,7 +13,7 @@ import { Loader2 } from 'lucide-react';
 import FormField from '@/components/dataEntry/components/FormField';
 import { cn } from '@/lib/utils';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns } from '@/types/dataEntry';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -54,7 +54,7 @@ const DataEntryPage: React.FC = () => {
   const initialCategoryId = queryParams.get('categoryId');
   const statusFilter = queryParams.get('status');
   
-  const { categories, loading, error, refetch } = useCategoryData();
+  const { categories, loading, error, refreshCategories } = useCategoryData({ schoolId: user?.schoolId });
   const [currentCategoryIndex, setCurrentCategoryIndex] = React.useState(0);
   
   const {
@@ -63,8 +63,9 @@ const DataEntryPage: React.FC = () => {
     isSubmitting,
     isLoading,
     updateValue,
-    updateFormData,
+    handleEntriesChange,
     saveForm,
+    handleSave,
     getErrorForColumn,
     validation
   } = useDataEntry({ 
@@ -74,10 +75,10 @@ const DataEntryPage: React.FC = () => {
   
   // Təsdiq üçün formnu göndərmək
   const submitForApproval = React.useCallback(() => {
-    if (validation.validateForm()) {
+    if (validation?.validateForm && validation.validateForm()) {
       // Form təsdiqlənmir və göndərilir
       toast.success(t('dataEntrySubmitted'));
-      saveForm();
+      saveForm && saveForm();
     } else {
       // Validation xətaları var
       toast.error(t('pleaseFixErrors'));
@@ -101,7 +102,11 @@ const DataEntryPage: React.FC = () => {
   };
   
   const handleValueChange = (columnId: string, value: any) => {
-    updateValue(currentCategory.id, columnId, value);
+    if (updateValue && currentCategory) {
+      updateValue(currentCategory.id, columnId, value);
+    } else {
+      handleEntriesChange(columnId, value);
+    }
   };
 
   const handleSubmitForApproval = useCallback(() => {
@@ -161,10 +166,9 @@ const DataEntryPage: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {currentCategory.columns.map((column) => {
-            const error = getErrorForColumn(column.id);
-            const currentEntry = formData.categories.find(e => e.categoryId === currentCategory.id);
-            const valueObj = currentEntry?.entries.find(v => v.columnId === column.id);
-            const value = valueObj?.value;
+            const error = getErrorForColumn ? getErrorForColumn(column.id) : [];
+            const currentEntry = formData?.entries?.find(v => v.columnId === column.id);
+            const value = currentEntry?.value;
             
             return (
               <FormField
@@ -240,7 +244,7 @@ const DataEntryPage: React.FC = () => {
           {renderForm()}
           
           <div className="mt-6 flex justify-end space-x-2">
-            <Button variant="secondary" onClick={saveForm} disabled={isAutoSaving}>
+            <Button variant="secondary" onClick={saveForm || handleSave} disabled={isAutoSaving}>
               {isAutoSaving ? t('saving') : t('save')}
             </Button>
             <Button onClick={handleSubmitForApproval} disabled={isSubmitting}>

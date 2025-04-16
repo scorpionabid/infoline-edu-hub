@@ -78,7 +78,6 @@ export const useDataEntry = ({
       // Convert the entries from DB format to app format
       const convertedEntries: EntryValue[] = (entriesData || []).map(entry => ({
         id: entry.id,
-        categoryId: entry.category_id,
         columnId: entry.column_id,
         value: entry.value,
         status: entry.status as 'pending' | 'approved' | 'rejected'
@@ -102,7 +101,6 @@ export const useDataEntry = ({
         
         if (targetCategory) {
           const initialEntries = targetCategory.columns.map(column => ({
-            categoryId: targetCategory.id,
             columnId: column.id,
             value: column.default_value || null
           }));
@@ -178,9 +176,9 @@ export const useDataEntry = ({
     try {
       // For each entry, insert or update in the database
       for (const entry of formData.entries) {
-        const { categoryId, columnId, value } = entry;
+        const { columnId, value } = entry;
         
-        if (!categoryId || !columnId) continue;
+        if (!columnId) continue;
         
         // Check if entry already exists
         const { data: existingEntry } = await supabase
@@ -246,7 +244,7 @@ export const useDataEntry = ({
       
       return Promise.reject(error);
     }
-  }, [formData.entries, schoolId, t, updateFormData, user?.id]);
+  }, [formData.entries, schoolId, categoryId, t, updateFormData, user?.id]);
   
   // Submit form for approval
   const submitForApproval = useCallback(() => {
@@ -295,6 +293,17 @@ export const useDataEntry = ({
     loadDataForSchool,
     entries,
     submitting,
-    submitForApproval
+    submitForApproval,
+    isAutoSaving,
+    isSubmitting: submitting,
+    isLoading: loading,
+    updateValue,
+    saveForm: handleSave,
+    getErrorForColumn: () => [],
+    validation: {
+      errors: [],
+      isValid: true,
+      validateForm: () => true
+    }
   };
 };

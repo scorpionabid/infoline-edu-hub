@@ -1,6 +1,13 @@
 
 import { Column } from './column';
 
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error'
+}
+
 export interface EntryValue {
   id?: string;
   columnId: string;
@@ -51,30 +58,38 @@ export interface DataEntryData {
   entries: EntryValue[];
 }
 
+export interface UseDataEntryProps {
+  schoolId?: string;
+  categoryId?: string;
+  categories?: CategoryWithColumns[];
+  onComplete?: () => void;
+}
+
 export interface UseDataEntryResult {
   formData: DataEntryForm;
   updateFormData: (data: Partial<DataEntryForm>) => void;
   categories: CategoryWithColumns[];
   loading: boolean;
   submitting: boolean;
-  handleEntriesChange: (entries: EntryValue[]) => void;
+  handleEntriesChange: (columnId: string, value: any) => void;
   handleSave: () => Promise<void>;
   handleSubmitForApproval: () => Promise<void>;
   loadDataForSchool: (schoolId: string) => Promise<void>;
   entries: EntryValue[];
   submitForApproval: () => Promise<void>;
-  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  saveStatus?: DataEntrySaveStatus;
   isDataModified?: boolean;
   error?: string | null;
   selectedCategory?: CategoryWithColumns;
   isAutoSaving?: boolean;
   isSubmitting?: boolean;
   isLoading?: boolean;
-  updateValue?: (columnId: string, value: any) => void;
+  updateValue?: (categoryId: string, columnId: string, value: any) => void;
   saveForm?: () => Promise<void>;
   getErrorForColumn?: (columnId: string) => any[];
   validation?: {
     errors: any[];
     isValid: boolean;
+    validateForm?: () => boolean;
   };
 }
