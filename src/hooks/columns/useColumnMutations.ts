@@ -187,3 +187,22 @@ export const useColumnMutations = () => {
     error
   };
 };
+const createColumn = async (column: Partial<Column>) => {
+  try {
+    console.log('Creating column with data:', column);
+    const columnToCreate = adaptColumnToDb(column);
+    console.log('Adapted column data:', columnToCreate);
+
+    const { data, error: columnError } = await supabase
+      .from('columns')
+      .insert(columnToCreate)
+      .select()
+      .single();
+
+    console.log('Supabase response:', data, columnError);
+    // ...
+  } catch (error) {
+    console.error('Column creation error:', error);
+    // ...
+  }
+};

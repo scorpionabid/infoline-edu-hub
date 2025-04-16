@@ -19,6 +19,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
 
 interface FormFieldProps {
   id: string;
@@ -96,109 +97,97 @@ const FormField: React.FC<FormFieldProps> = ({
         return (
           <Select
             value={value || ''}
-            onValueChange={onChange}
+            onValueChange={(newValue) => {
+              onChange(newValue);
+              // Seçim dəyişdikdə bildiriş göstərmək
+              toast.success(t('optionSaved') || 'Seçim yadda saxlanıldı');
+            }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder={placeholder || t('selectOption')} />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={placeholder || t('selectOption') || 'Seçim edin'} />
             </SelectTrigger>
             <SelectContent>
-              {normalizedOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              {normalizedOptions.length === 0 ? (
+                <div className="p-2 text-center text-muted-foreground">
+                  {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
+                </div>
+              ) : (
+                normalizedOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         );
       
       case 'multiselect':
         return (
-          <div className="space-y-2">
-            {normalizedOptions.map((option) => {
-              const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
-              
-              return (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${id}-${option.value}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        const newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
-                        onChange(newValue);
-                      } else {
-                        const newValue = Array.isArray(value) 
-                          ? value.filter(v => v !== option.value) 
-                          : [];
-                        onChange(newValue);
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor={`${id}-${option.value}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {option.label}
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-        );
-      
-      case 'checkbox':
-        return (
-          <div className="space-y-2">
-            {normalizedOptions.map((option) => {
-              const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
-              
-              return (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${id}-${option.value}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        const newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
-                        onChange(newValue);
-                      } else {
-                        const newValue = Array.isArray(value) 
-                          ? value.filter(v => v !== option.value) 
-                          : [];
-                        onChange(newValue);
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor={`${id}-${option.value}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {option.label}
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-        );
-      
-      case 'radio':
-        return (
-          <RadioGroup
-            value={value || ''}
-            onValueChange={onChange}
-          >
-            {normalizedOptions.map((option) => (
-              <div key={option.value} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
-                <label
-                  htmlFor={`${id}-${option.value}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {option.label}
-                </label>
+          <div className="space-y-2 border rounded-md p-3">
+            <div className="text-sm font-medium mb-2 text-muted-foreground">
+              {t('selectMultipleOptions') || 'Bir neçə variant seçin'}
+            </div>
+            
+            {normalizedOptions.length === 0 ? (
+              <div className="p-2 text-center text-muted-foreground">
+                {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
               </div>
-            ))}
-          </RadioGroup>
+            ) : (
+              normalizedOptions.map((option) => {
+                const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
+                
+                return (
+                  <div key={option.value} className="flex items-center space-x-2 py-1 hover:bg-muted/50 px-1 rounded-sm">
+                    <Checkbox
+                      id={`${id}-${option.value}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        let newValue;
+                        
+                        if (checked) {
+                          newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
+                        } else {
+                          newValue = Array.isArray(value) 
+                            ? value.filter(v => v !== option.value) 
+                            : [];
+                        }
+                        
+                        onChange(newValue);
+                        
+                        // Seçim dəyişdikdə bildiriş göstərmək
+                        toast.success(t('optionSaved') || 'Seçim yadda saxlanıldı');
+                      }}
+                    />
+                    <label
+                      htmlFor={`${id}-${option.value}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full"
+                    >
+                      {option.label}
+                    </label>
+                  </div>
+                );
+              })
+            )}
+            
+            {Array.isArray(value) && value.length > 0 && (
+              <div className="mt-2 flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  {t('selectedOptions') || 'Seçilmiş variantlar'}: {value.length}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onChange([]);
+                    toast.success(t('optionsCleared') || 'Bütün seçimlər silindi');
+                  }}
+                >
+                  {t('clearAll') || 'Hamısını sil'}
+                </Button>
+              </div>
+            )}
+          </div>
         );
       
       case 'email':
@@ -321,6 +310,61 @@ const FormField: React.FC<FormFieldProps> = ({
               />
             </PopoverContent>
           </Popover>
+        );
+      
+      case 'checkbox':
+        return (
+          <div className="space-y-2">
+            {normalizedOptions.map((option) => {
+              const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
+              
+              return (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${id}-${option.value}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        const newValue = Array.isArray(value) ? [...value, option.value] : [option.value];
+                        onChange(newValue);
+                      } else {
+                        const newValue = Array.isArray(value) 
+                          ? value.filter(v => v !== option.value) 
+                          : [];
+                        onChange(newValue);
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`${id}-${option.value}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {option.label}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        );
+      
+      case 'radio':
+        return (
+          <RadioGroup
+            value={value || ''}
+            onValueChange={onChange}
+          >
+            {normalizedOptions.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
+                <label
+                  htmlFor={`${id}-${option.value}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
         );
       
       default:
