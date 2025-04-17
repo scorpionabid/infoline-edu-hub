@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Globe } from 'lucide-react';
-import { useLanguage, Language, LanguageInfo } from '@/context/LanguageContext';
+import { useLanguageSafe, Language } from '@/context/LanguageContext';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -8,14 +9,26 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 
+interface LanguageInfo {
+  flag: string;
+  nativeName: string;
+}
+
 const LanguageSelector: React.FC = () => {
-  // languages hook-dan alınır, amma undefined ola bilər, ona görə default dəyər verilir
-  const { language, setLanguage, languages = {}, t } = useLanguage();
+  const { currentLanguage, setLanguage, availableLanguages, t } = useLanguageSafe();
   const [open, setOpen] = useState(false);
 
   const handleSelectLanguage = (lang: Language) => {
     setLanguage(lang);
     setOpen(false);
+  };
+
+  // Əgər availableLanguages undefined olarsa, əlavə yoxlama edirik
+  const languages = availableLanguages || {
+    az: { flag: '🇦🇿', nativeName: 'Azərbaycan' },
+    en: { flag: '🇬🇧', nativeName: 'English' },
+    ru: { flag: '🇷🇺', nativeName: 'Русский' },
+    tr: { flag: '🇹🇷', nativeName: 'Türkçe' }
   };
 
   return (
@@ -35,7 +48,7 @@ const LanguageSelector: React.FC = () => {
           <DropdownMenuItem
             key={code}
             className={`flex items-center justify-between ${
-              language === code ? 'font-semibold bg-accent/50' : ''
+              currentLanguage === code ? 'font-semibold bg-accent/50' : ''
             }`}
             onClick={() => handleSelectLanguage(code as Language)}
           >

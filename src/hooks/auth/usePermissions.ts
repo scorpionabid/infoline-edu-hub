@@ -1,85 +1,62 @@
-import { useCallback } from 'react';
-import { useAuth } from '@/context/auth';
 
-/**
- * İstifadəçi səlahiyyətlərini idarə etmək üçün hook
- */
-export const usePermissions = () => {
+import { useAuth } from '@/context/auth';
+import { useMemo } from 'react';
+
+type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+interface UsePermissionsReturn {
+  userRole: UserRole;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  isRegionAdmin: boolean;
+  isSectorAdmin: boolean;
+  isSchoolAdmin: boolean;
+  regionId: string | null;
+  sectorId: string | null;
+  schoolId: string | null;
+}
+
+export const usePermissions = (): UsePermissionsReturn => {
   const { user } = useAuth();
-  const userRole = user?.role;
   
-  // Əsas rol yoxlamaları
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
-  const isSchoolAdmin = userRole === 'schooladmin';
-  
-  // Məlumat əldə etmə
-  const sectorId = user?.sector_id;
-  const regionId = user?.region_id;
-  const schoolId = user?.school_id;
-  
-  // Xüsusi icazələr
-  const canManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
-  const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canViewReports = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
-  
-  /**
-   * İstifadəçinin müəyyən rol olub olmadığını yoxlayır
-   * @param role Yoxlanılacaq rol
-   */
-  const hasRole = useCallback((role: string | string[]) => {
-    if (!userRole) return false;
-    
-    if (Array.isArray(role)) {
-      return role.includes(userRole);
+  return useMemo(() => {
+    // Default permissions for not logged-in users
+    if (!user) {
+      return {
+        userRole: 'user' as UserRole,
+        isAdmin: false,
+        isSuperAdmin: false,
+        isRegionAdmin: false,
+        isSectorAdmin: false,
+        isSchoolAdmin: false,
+        regionId: null,
+        sectorId: null,
+        schoolId: null
+      };
     }
     
-    return role === userRole;
-  }, [userRole]);
-
-  /**
-   * İstifadəçinin müəyyən regionda olub olmadığını yoxlayır
-   * @param targetRegionId Yoxlanılacaq region ID
-   */
-  const isInRegion = useCallback((targetRegionId: string) => {
-    if (isSuperAdmin) return true;
-    return regionId === targetRegionId;
-  }, [isSuperAdmin, regionId]);
-
-  /**
-   * İstifadəçinin müəyyən sektorda olub olmadığını yoxlayır
-   * @param targetSectorId Yoxlanılacaq sektor ID
-   */
-  const isInSector = useCallback((targetSectorId: string) => {
-    if (isSuperAdmin || isRegionAdmin) return true;
-    return sectorId === targetSectorId;
-  }, [isSuperAdmin, isRegionAdmin, sectorId]);
-
-  /**
-   * İstifadəçinin müəyyən məktəbdə olub olmadığını yoxlayır
-   * @param targetSchoolId Yoxlanılacaq məktəb ID
-   */
-  const isInSchool = useCallback((targetSchoolId: string) => {
-    if (isSuperAdmin || isRegionAdmin || isSectorAdmin) return true;
-    return schoolId === targetSchoolId;
-  }, [isSuperAdmin, isRegionAdmin, isSectorAdmin, schoolId]);
-
-  return {
-    userRole,
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    sectorId,
-    regionId,
-    schoolId,
-    hasRole,
-    isInRegion,
-    isInSector,
-    isInSchool,
-    canManageCategoriesColumns,
-    canManageUsers,
-    canViewReports
-  };
+    // Get user role
+    const userRole = user.role as UserRole;
+    
+    // Check if user is an admin (any kind)
+    const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole);
+    
+    // Specific roles
+    const isSuperAdmin = userRole === 'superadmin';
+    const isRegionAdmin = userRole === 'regionadmin';
+    const isSectorAdmin = userRole === 'sectoradmin';
+    const isSchoolAdmin = userRole === 'schooladmin';
+    
+    return {
+      userRole,
+      isAdmin,
+      isSuperAdmin,
+      isRegionAdmin,
+      isSectorAdmin,
+      isSchoolAdmin,
+      regionId: user.regionId || null,
+      sectorId: user.sectorId || null,
+      schoolId: user.schoolId || null
+    };
+  }, [user]);
 };

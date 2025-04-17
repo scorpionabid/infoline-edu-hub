@@ -635,13 +635,13 @@ export type Database = {
       }
       assign_school_admin: {
         Args:
-          | { user_id_param: string; school_id_param: string }
           | {
               user_id: string
               school_id: string
               region_id: string
               sector_id: string
             }
+          | { user_id_param: string; school_id_param: string }
         Returns: Json
       }
       assign_school_admin_role: {

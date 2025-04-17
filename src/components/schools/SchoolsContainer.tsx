@@ -3,7 +3,7 @@ import React from 'react';
 import { School } from '@/types/supabase';
 import { Region } from '@/types/supabase';
 import { Sector } from '@/types/supabase';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -40,6 +40,7 @@ import EditSchoolDialog from './EditSchoolDialog';
 import DeleteSchoolDialog from './DeleteSchoolDialog';
 import SchoolAdminDialog from './SchoolAdminDialog';
 import exportSchoolsToExcel from '@/utils/exportSchoolsToExcel';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SchoolsContainerProps {
   schools: School[];
@@ -69,7 +70,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   regionNames,
   sectorNames
 }) => {
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const { userRole, regionId } = usePermissions();
   const { user } = useAuth();
 
@@ -174,6 +175,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     sectorFilter: string,
     statusFilter: string
   ): School[] => {
+    if (!schools || !Array.isArray(schools)) {
+      console.error("filterSchools: schools is not an array", schools);
+      return [];
+    }
+    
     return schools.filter(school => {
       const searchMatch = searchTerm
         ? school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,6 +231,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     }
   };
   
+  // Ensure regions and sectors are arrays to prevent length issues
+  const regionsArray = Array.isArray(regions) ? regions : [];
+  const sectorsArray = Array.isArray(sectors) ? sectors : [];
+  const schoolsArray = Array.isArray(schools) ? schools : [];
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -240,7 +251,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
           <Button 
             variant="outline" 
             onClick={handleExportToExcel}
-            disabled={isLoading || schools.length === 0}
+            disabled={isLoading || schoolsArray.length === 0}
           >
             <Download className="mr-2 h-4 w-4" />
             {t('export')}
@@ -269,7 +280,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('allRegions')}</SelectItem>
-              {regions.map(region => (
+              {regionsArray.map(region => (
                 <SelectItem key={region.id} value={region.id}>
                   {regionNames[region.id] || region.name}
                 </SelectItem>
@@ -282,7 +293,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('allSectors')}</SelectItem>
-              {sectors.map(sector => (
+              {sectorsArray.map(sector => (
                 <SelectItem key={sector.id} value={sector.id}>
                   {sectorNames[sector.id] || sector.name}
                 </SelectItem>
@@ -317,11 +328,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filterSchools(schools, searchTerm, regionFilter, sectorFilter, statusFilter).map(school => (
+            {filterSchools(schoolsArray, searchTerm, regionFilter, sectorFilter, statusFilter).map(school => (
               <TableRow key={school.id}>
                 <TableCell>{school.name}</TableCell>
-                <TableCell>{regionNames[school.region_id] || school.region_name}</TableCell>
-                <TableCell>{sectorNames[school.sector_id] || school.sector_name}</TableCell>
+                <TableCell>{regionNames[school.region_id] || ''}</TableCell>
+                <TableCell>{sectorNames[school.sector_id] || ''}</TableCell>
                 <TableCell>{school.principal_name}</TableCell>
                 <TableCell>{school.status}</TableCell>
                 <TableCell className="text-right">
@@ -358,8 +369,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
         <AddSchoolDialog
           isOpen={isAddDialogOpen}
           onClose={() => setIsAddDialogOpen(false)}
-          regions={regions}
-          sectors={sectors}
+          regions={regionsArray}
+          sectors={sectorsArray}
           onSubmit={handleCreateSchool}
           regionNames={regionNames}
           sectorNames={sectorNames}
@@ -372,8 +383,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
           school={selectedSchool}
-          regions={regions}
-          sectors={sectors}
+          regions={regionsArray}
+          sectors={sectorsArray}
           onSubmit={handleEditSchool}
           regionNames={regionNames}
           sectorNames={sectorNames}

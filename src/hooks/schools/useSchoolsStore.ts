@@ -5,7 +5,7 @@ import { School } from '@/types/supabase';
 import { useRegions } from '@/hooks/useRegions';
 import { useSectors } from '@/hooks/useSectors';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -25,50 +25,62 @@ export const useSchoolsStore = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { t } = useLanguage();
+  const { t } = useLanguageSafe();
   const { user } = useAuth();
-  const { userRole, sectorId } = usePermissions();
+  const { userRole, sectorId, regionId } = usePermissions();
   const [isOperationComplete, setIsOperationComplete] = useState(false);
   
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
-  const { regions } = useRegions();
-  const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
+  const { regions = [], loading: regionsLoading } = useRegions() || {};
+  const { sectors = [], loading: sectorsLoading } = useSectors(selectedRegion) || {};
 
   // Məktəbləri yükləmək metodu
   const fetchSchools = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    
     try {
+      console.log("Məktəblər yüklənir...");
       let query = supabase.from('schools').select('*');
       
       // Sectoradmin olaraq yalnız öz sektoruna aid məktəbləri görmək
       if (userRole === 'sectoradmin' && sectorId) {
+        console.log("Sektor admin filtri tətbiq olunur:", sectorId);
         query = query.eq('sector_id', sectorId);
       } else {
         // Digər rollar üçün filter funksionalığı
         if (selectedRegion) {
+          console.log("Region filtri tətbiq olunur:", selectedRegion);
           query = query.eq('region_id', selectedRegion);
         }
         
         if (selectedSector) {
+          console.log("Sektor filtri tətbiq olunur:", selectedSector);
           query = query.eq('sector_id', selectedSector);
         }
       }
       
       if (selectedStatus) {
+        console.log("Status filtri tətbiq olunur:", selectedStatus);
         query = query.eq('status', selectedStatus);
       }
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase sorğu xətası:", error);
+        throw error;
+      }
       
-      setSchools(data as School[]);
+      console.log("Məktəblər yükləndi:", data?.length || 0);
+      setSchools(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Error fetching schools:', err);
       setError(err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotLoadSchools')
       });
+      setSchools([]);
     } finally {
       setLoading(false);
     }
@@ -76,12 +88,15 @@ export const useSchoolsStore = () => {
 
   // Filtrlənmiş məktəblər
   const filteredSchools = schools.filter(school => {
-    const searchMatch = 
-      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (school.principal_name && school.principal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.address && school.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.phone && school.phone.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!school) return false;
+    
+    const searchMatch = searchTerm
+      ? (school.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (school.principal_name?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
+        (school.address?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
+        (school.email?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
+        (school.phone?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false)
+      : true;
     
     return searchMatch;
   });
@@ -109,7 +124,7 @@ export const useSchoolsStore = () => {
 
   // Paginated məktəblər
   const totalPages = Math.ceil(sortedSchools.length / itemsPerPage);
-  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+  const adjustedCurrentPage = Math.min(currentPage, Math.max(1, totalPages > 0 ? totalPages : 1));
   const indexOfLastItem = adjustedCurrentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedSchools.slice(indexOfFirstItem, indexOfLastItem);
@@ -121,15 +136,15 @@ export const useSchoolsStore = () => {
       setSelectedSector(sectorId);
       
       // Sektorun aid olduğu regionu tapmaq
-      const sector = sectors.find(s => s.id === sectorId);
+      const sector = sectors.find(s => s?.id === sectorId);
       if (sector && sector.region_id) {
         setSelectedRegion(sector.region_id);
       }
-    } else if (userRole === 'regionadmin' && user?.regionId) {
+    } else if (userRole === 'regionadmin' && regionId) {
       // RegionAdmin üçün region filtri avtomatik təyin edilir
-      setSelectedRegion(user.regionId);
+      setSelectedRegion(regionId);
     }
-  }, [userRole, sectorId, sectors, user]);
+  }, [userRole, sectorId, sectors, regionId]);
 
   // Event handlers
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,7 +177,7 @@ export const useSchoolsStore = () => {
   }, [sortConfig]);
 
   const handlePageChange = useCallback((page: number) => {
-    if (page > 0 && page <= totalPages) {
+    if (page > 0 && page <= (totalPages > 0 ? totalPages : 1)) {
       setCurrentPage(page);
     }
   }, [totalPages]);
@@ -182,12 +197,13 @@ export const useSchoolsStore = () => {
 
   // Məlumatların ilkin yüklənməsi
   useEffect(() => {
+    console.log("useEffect - fetchSchools çağırılır");
     fetchSchools();
   }, [fetchSchools]);
 
   return {
     schools,
-    loading,
+    loading: loading || regionsLoading || sectorsLoading,
     error,
     searchTerm,
     selectedRegion,
@@ -199,7 +215,7 @@ export const useSchoolsStore = () => {
     filteredSchools,
     sortedSchools,
     currentItems,
-    totalPages,
+    totalPages: totalPages > 0 ? totalPages : 1,
     regions,
     sectors,
     sectorsLoading,
