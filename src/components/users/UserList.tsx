@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Table, 
@@ -103,8 +102,7 @@ const UserList: React.FC<UserListProps> = ({
 
   const isUserSelected = (userId: string) => selectedUsers.includes(userId);
 
-  // XƏTALİ HİSSƏ: Massiv undefined olduğunda slice xətası
-  // Bu hissədə dəyişiklik edirik - əvvəlcə users massivinin varlığını yoxlayırıq
+  // Array'in mövcud olub-olmadığını yoxlayırıq
   const paginatedUsers = users ? users.slice(
     (currentPage - 1) * pageSize, 
     currentPage * pageSize
@@ -233,7 +231,6 @@ const UserList: React.FC<UserListProps> = ({
         </CardContent>
         <CardFooter className="flex justify-between items-center">
           <div className="flex items-center">
-            {/* Yeni Pagination komponenti */}
             {totalPages > 1 && (
               <div className="flex items-center space-x-2">
                 <Button
@@ -287,8 +284,8 @@ const UserList: React.FC<UserListProps> = ({
       <DeleteUserDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDeleteUserConfirm}
-        onCancel={() => setIsDeleteDialogOpen(false)}
+        user={selectedUser || undefined}
+        onDelete={handleDeleteUserConfirm}
       />
 
       {selectedUser && (

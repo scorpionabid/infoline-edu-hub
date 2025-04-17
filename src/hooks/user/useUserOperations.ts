@@ -27,6 +27,7 @@ export const useUserOperations = (onComplete: () => void) => {
     setIsDetailsDialogOpen(true);
   }, []);
 
+  // İstifadəçi məlumatlarını yeniləyir
   const handleUpdateUserConfirm = useCallback(async (updatedUser: FullUserData) => {
     try {
       console.log('Updating user:', updatedUser);
@@ -62,6 +63,7 @@ export const useUserOperations = (onComplete: () => void) => {
       
       toast.success(t('userUpdated'));
       setIsEditDialogOpen(false);
+      setSelectedUser(null); // İstifadəçi yeniləndikdən sonra selectedUser-i təmizləyirik
       onComplete();
     } catch (error: any) {
       console.error('Error updating user:', error);
@@ -71,6 +73,7 @@ export const useUserOperations = (onComplete: () => void) => {
     }
   }, [t, onComplete]);
 
+  // İstifadəçini silir
   const handleDeleteUserConfirm = useCallback(async () => {
     if (!selectedUser) return;
     
@@ -95,6 +98,7 @@ export const useUserOperations = (onComplete: () => void) => {
       
       toast.success(t('userDeleted'));
       setIsDeleteDialogOpen(false);
+      setSelectedUser(null); // İstifadəçi silindikdən sonra selectedUser-i təmizləyirik
       onComplete();
     } catch (error: any) {
       console.error('Error deleting user:', error);

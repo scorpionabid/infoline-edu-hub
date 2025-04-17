@@ -11,13 +11,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/context/LanguageContext';
-import { User } from '@/types/user';
+import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 export interface DeleteUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: User;
+  user?: FullUserData; // user prop-u optional edildi
   onDelete: (userId: string) => void;
 }
 
@@ -31,27 +32,34 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   const [loading, setLoading] = React.useState(false);
 
   const handleDelete = () => {
+    if (!user) {
+      console.error('No user provided to delete');
+      onOpenChange(false);
+      return;
+    }
+    
     setLoading(true);
     
-    // API çağırışını simulyasiya et
-    setTimeout(() => {
-      try {
-        // Gerçək tətbiqdə, burada istifadəçinin silinməsi üçün API çağırışı olacaq
-        onDelete(user.id);
-        setLoading(false);
-        onOpenChange(false);
-        
-        toast.success(t('userDeleted'), {
-          description: t('userDeletedDesc')
-        });
-      } catch (error) {
-        setLoading(false);
-        toast.error(t('deleteError'), {
-          description: t('deleteErrorDesc')
-        });
-      }
-    }, 1000);
+    try {
+      onDelete(user.id);
+      setLoading(false);
+      onOpenChange(false);
+      
+      toast.success(t('userDeleted'), {
+        description: t('userDeletedDesc')
+      });
+    } catch (error) {
+      setLoading(false);
+      toast.error(t('deleteError'), {
+        description: t('deleteErrorDesc')
+      });
+    }
   };
+
+  // User verisi olmadığı halda dialog göstərilməməlidir
+  if (!user) {
+    return null;
+  }
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -64,13 +72,20 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t('cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={loading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {loading ? t('deleting') : t('delete')}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('deleting')}
+              </>
+            ) : (
+              t('delete')
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
