@@ -1,5 +1,5 @@
-
-import { Category, CategoryWithColumns, Column } from '@/types/column';
+import { Column } from '@/types/column';
+import { Category, CategoryWithColumns } from '@/types/dataEntry';
 
 // Kateqoriyalar və sütunların mock datası
 

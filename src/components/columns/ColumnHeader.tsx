@@ -1,11 +1,11 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Plus, Search, Filter, X, ChevronDown, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, FileDown, FileUp } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { useRole } from "@/context/AuthContext";
+import { useRole } from "@/context/auth/useRole";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ColumnHeaderProps {
   onAddColumn: () => void;

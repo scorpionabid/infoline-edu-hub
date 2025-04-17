@@ -1,393 +1,549 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { FullUserData, UserFormData } from '@/types/user';
-import mockUsers from '@/data/mockUsers';
-import DeleteUserDialog from './DeleteUserDialog';
-import UserDetailsDialog from './UserDetailsDialog';
-import UserListTable from './UserListTable';
-import { AlertTriangle, Search, Plus, Trash2, Filter, Download } from 'lucide-react';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Badge } from '../ui/badge';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { FullUserData, UserRole } from '@/types/supabase'; // Düzəliş: düzgün tip istifadəsi
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
 
-// Geçici olarak mockUsers'ı FullUserData tipine çeviriyoruz - sonra gerçek API entegrasyonu ile değişecek
-const adaptUserToFullUserData = (user: any): FullUserData => {
-  return {
-    ...user,
-    full_name: user.full_name || user.name || '',
-    status: user.status || 'active',
-    role: user.role || 'user',
-    position: user.position || '',
-    createdAt: user.createdAt || user.created_at || new Date().toISOString(),
-    updatedAt: user.updatedAt || user.updated_at || new Date().toISOString(),
-  };
-};
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Edit, Trash2, MoreHorizontal, Eye, UserPlus, UserX } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import { DeleteUserDialog } from './DeleteUserDialog';
+import { EditUserDialog } from './EditUserDialog';
+import { UserFilters } from './UserFilters';
+import { Badge } from '@/components/ui/badge';
+import { UserStatus } from '@/types/supabase';
 
-// Custom hook for location parameters
-const useLocationParams = () => {
-  const getParam = (name: string) => {
-    return new URLSearchParams(window.location.search).get(name) || '';
+interface User {
+  id: string;
+  full_name?: string | null;
+  status: UserStatus;
+  role: UserRole;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  last_login: null;
+  createdAt: string;
+  updatedAt: string;
+  regionId: null;
+  sectorId: null;
+  schoolId: null;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+    push?: boolean;
+    sms?: boolean;
   };
-  
-  const setParam = (name: string, value: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set(name, value);
-    window.history.pushState({}, '', url);
-  };
-  
-  const clearAllParams = () => {
-    window.history.pushState({}, '', window.location.pathname);
-  };
-  
-  return { getParam, setParam, clearAllParams };
-};
+}
 
-const UserList: React.FC<{
-  currentUserRole?: string;
-  currentUserRegionId?: string;
-  onUserAddedOrEdited?: () => void;
-}> = ({ currentUserRole, currentUserRegionId, onUserAddedOrEdited }) => {
+const mockUsers: FullUserData[] = [
+  {
+    id: "1",
+    full_name: "Admin User",
+    status: "active",
+    role: "superadmin", // Düzəliş: string yerinə UserRole tipi
+    email: "admin@example.com",
+    language: "az", // Əlavə: tələb olunan 'language' sahəsi
+    created_at: "2023-01-01T10:00:00Z",
+    updated_at: "2023-01-01T10:00:00Z",
+    last_login: null,
+    createdAt: "2023-01-01T10:00:00Z",
+    updatedAt: "2023-01-01T10:00:00Z",
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  },
+  {
+    id: "2",
+    full_name: "Region Admin",
+    status: "active",
+    role: "regionadmin", // Düzəliş: string yerinə UserRole tipi
+    email: "region@example.com",
+    language: "az", // Əlavə: tələb olunan 'language' sahəsi
+    created_at: "2023-02-15T14:30:00Z",
+    updated_at: "2023-02-15T14:30:00Z",
+    last_login: null,
+    createdAt: "2023-02-15T14:30:00Z",
+    updatedAt: "2023-02-15T14:30:00Z",
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  },
+  {
+    id: "3",
+    full_name: "Sector Admin",
+    status: "inactive",
+    role: "sectoradmin", // Düzəliş: string yerinə UserRole tipi
+    email: "sector@example.com",
+    language: "az", // Əlavə: tələb olunan 'language' sahəsi
+    created_at: "2023-03-22T09:15:00Z",
+    updated_at: "2023-03-22T09:15:00Z",
+    last_login: null,
+    createdAt: "2023-03-22T09:15:00Z",
+    updatedAt: "2023-03-22T09:15:00Z",
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  },
+  {
+    id: "4",
+    full_name: "School Admin",
+    status: "active",
+    role: "schooladmin", // Düzəliş: string yerinə UserRole tipi
+    email: "school@example.com",
+    language: "az", // Əlavə: tələb olunan 'language' sahəsi
+    created_at: "2023-04-05T16:45:00Z",
+    updated_at: "2023-04-05T16:45:00Z",
+    last_login: null,
+    createdAt: "2023-04-05T16:45:00Z",
+    updatedAt: "2023-04-05T16:45:00Z",
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  },
+  {
+    id: "5",
+    full_name: "Regular User",
+    status: "active",
+    role: "user", // Düzəliş: string yerinə UserRole tipi
+    email: "user@example.com",
+    language: "az", // Əlavə: tələb olunan 'language' sahəsi
+    created_at: "2023-05-12T11:20:00Z",
+    updated_at: "2023-05-12T11:20:00Z",
+    last_login: null,
+    createdAt: "2023-05-12T11:20:00Z",
+    updatedAt: "2023-05-12T11:20:00Z",
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    notificationSettings: {
+      email: true,
+      system: true
+    }
+  },
+];
+
+const UserList: React.FC = () => {
   const { t } = useLanguage();
-  const { userRole } = usePermissions();
-  const { getParam, setParam, clearAllParams } = useLocationParams();
-  
-  // State
+  const navigate = useNavigate();
   const [users, setUsers] = useState<FullUserData[]>([]);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
-  const [formData, setFormData] = useState<UserFormData>({
-    email: '',
-    full_name: '',
-    role: 'user',
-    status: 'active',
-  });
-  
-  // Filters
-  const [searchQuery, setSearchQuery] = useState(getParam('search') || '');
-  const [roleFilter, setRoleFilter] = useState(getParam('role') || '');
-  const [statusFilter, setStatusFilter] = useState(getParam('status') || '');
-  const [isDataLoading, setIsDataLoading] = useState(true);
-  
-  // Load mock data - will be replaced with real API calls
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
   useEffect(() => {
-    // Simulating API call
-    setTimeout(() => {
-      const adaptedUsers = mockUsers.map(adaptUserToFullUserData);
-      setUsers(adaptedUsers);
-      setIsDataLoading(false);
-    }, 500);
+    setUsers(mockUsers);
+    setLoading(false);
   }, []);
-  
-  // Apply filters
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = roleFilter ? user.role === roleFilter : true;
-    const matchesStatus = statusFilter ? user.status === statusFilter : true;
-    
-    return matchesSearch && matchesRole && matchesStatus;
+
+  const columns: ColumnDef<FullUserData>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={(event) => {
+            table.toggleAllPageRowsSelected(event.target.checked)
+          }}
+          className="translate-y-[2px] h-4 w-4"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+          className="translate-y-[2px] h-4 w-4"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "full_name",
+      header: t("fullName"),
+    },
+    {
+      accessorKey: "email",
+      header: t("email"),
+    },
+    {
+      accessorKey: "role",
+      header: t("role"),
+      filterFn: (row, id, value) => {
+        return value === 'all' || row.getValue<string>(id) === value;
+      },
+      cell: ({ row }) => {
+        const role = row.getValue<string>("role");
+        let badgeText = t(role);
+        let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "secondary";
+
+        switch (role) {
+          case "superadmin":
+            badgeVariant = "default";
+            break;
+          case "regionadmin":
+            badgeVariant = "secondary";
+            break;
+          case "sectoradmin":
+            badgeVariant = "outline";
+            break;
+          case "schooladmin":
+            badgeVariant = "outline";
+            break;
+          case "user":
+            badgeVariant = "outline";
+            break;
+          default:
+            badgeText = "Unknown";
+            break;
+        }
+
+        return <Badge variant={badgeVariant}>{badgeText}</Badge>;
+      },
+    },
+    {
+      accessorKey: "status",
+      header: t("status"),
+      filterFn: (row, id, value) => {
+        return value === 'all' || row.getValue<string>(id) === value;
+      },
+      cell: ({ row }) => {
+        const status = row.getValue<string>("status");
+        let badgeText = t(status);
+        let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "secondary";
+
+        switch (status) {
+          case "active":
+            badgeVariant = "default";
+            break;
+          case "inactive":
+            badgeVariant = "secondary";
+            break;
+          case "blocked":
+            badgeVariant = "destructive";
+            break;
+          default:
+            badgeText = "Unknown";
+            break;
+        }
+
+        return <Badge variant={badgeVariant}>{badgeText}</Badge>;
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: t("createdAt"),
+    },
+    {
+      accessorKey: "updated_at",
+      header: t("updatedAt"),
+    },
+    {
+      id: "actions",
+      header: t("actions"),
+      cell: ({ row }) => {
+        const user = row.original;
+
+        const handleEdit = () => {
+          setSelectedUser(user);
+          setIsEditOpen(true);
+        };
+
+        const handleDelete = () => {
+          setSelectedUser(user);
+          setIsDeleteOpen(true);
+        };
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate(`/users/${user.id}`)}>
+                <Eye className="mr-2 h-4 w-4" />
+                {t("view")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleEdit}>
+                <Edit className="mr-2 h-4 w-4" />
+                {t("edit")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:text-red-500">
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const table = useReactTable({
+    data: users,
+    columns,
+    onRowSelectionChange: setRowSelection,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: {
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+      sorting,
+    },
   });
 
-  // Handlers  
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setParam('search', e.target.value);
-  };
-  
-  const handleRoleFilterChange = (value: string) => {
-    setRoleFilter(value);
-    setParam('role', value);
-  };
-  
-  const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value);
-    setParam('status', value);
-  };
-  
-  const resetFilters = () => {
-    setSearchQuery('');
-    setRoleFilter('');
-    setStatusFilter('');
-    clearAllParams();
-  };
-  
-  const handleAddUser = () => {
-    setSelectedUser(null);
-    setFormData({
-      email: '',
-      full_name: '',
-      role: 'user',
-      status: 'active',
-    });
-    setIsFormDialogOpen(true);
-  };
-  
-  const handleEditUser = (user: FullUserData) => {
-    setSelectedUser(user);
-    setFormData({
-      email: user.email,
-      full_name: user.full_name,
-      role: user.role,
-      status: user.status,
-      phone: user.phone || '',
-      position: user.position || '',
-      region_id: user.region_id,
-      sector_id: user.sector_id,
-      school_id: user.school_id,
-    });
-    setIsFormDialogOpen(true);
-  };
-  
-  const handleViewUserDetails = (user: FullUserData) => {
-    setSelectedUser(user);
-    setIsDetailsDialogOpen(true);
-  };
-  
-  const handleDeleteUser = (user: FullUserData) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  };
-  
-  const handleUserSubmit = (formData: UserFormData) => {
-    if (selectedUser) {
-      // Edit existing user
-      const updatedUsers = users.map(user => 
-        user.id === selectedUser.id ? { ...user, ...formData } : user
-      );
-      setUsers(updatedUsers);
-    } else {
-      // Add new user
-      const newUser: FullUserData = {
-        id: `new-user-${Date.now()}`,
-        ...formData,
-        full_name: formData.full_name || '',
-        status: formData.status || 'active',
-        role: formData.role || 'user',
-        email: formData.email || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_login: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        name: formData.full_name || '',
-      };
-      setUsers([...users, newUser]);
-    }
-    setIsFormDialogOpen(false);
-    
-    if (onUserAddedOrEdited) {
-      onUserAddedOrEdited();
-    }
-  };
-  
-  const handleDeleteConfirm = () => {
-    if (selectedUser) {
-      const updatedUsers = users.filter(user => user.id !== selectedUser.id);
-      setUsers(updatedUsers);
-      setIsDeleteDialogOpen(false);
-      
-      if (onUserAddedOrEdited) {
-        onUserAddedOrEdited();
-      }
-    }
+  const handleCreateUser = () => {
+    navigate('/users/create');
   };
 
-  // Custom user rendering for the table
-  const renderUserRow = (user: FullUserData) => {
-    return (
-      <tr key={user.id} className="hover:bg-muted/50">
-        <td className="p-4 align-middle">{user.full_name}</td>
-        <td className="p-4 align-middle">{user.email}</td>
-        <td className="p-4 align-middle">
-          <Badge variant="outline">{user.role}</Badge>
-        </td>
-        <td className="p-4 align-middle">
-          {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Heç vaxt'}
-        </td>
-        <td className="p-4 align-middle">
-          <Badge variant={user.status === 'active' ? 'success' : 'destructive'}>
-            {user.status === 'active' ? t('active') : t('inactive')}
-          </Badge>
-        </td>
-        <td className="p-4 align-middle text-right">
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewUserDetails(user)}
-            >
-              {t('details')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleEditUser(user)}
-            >
-              {t('edit')}
-            </Button>
-            {userRole === 'superadmin' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive"
-                onClick={() => handleDeleteUser(user)}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                {t('delete')}
-              </Button>
-            )}
-          </div>
-        </td>
-      </tr>
-    );
+  const handleDeleteUser = async (user: User) => {
+    // Simulate API call
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        setUsers(prevUsers => prevUsers.filter(u => u.id !== user.id));
+        setIsDeleteOpen(false);
+        setSelectedUser(null);
+        toast.success(t('userDeleted'), {
+          description: t('userDeletedDesc')
+        });
+        resolve();
+      }, 1000);
+    });
   };
+
+  const handleSaveUser = async (updatedUser: FullUserData) => {
+    // Simulate API call
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        setUsers(prevUsers =>
+          prevUsers.map(u => (u.id === updatedUser.id ? updatedUser : u))
+        );
+        setIsEditOpen(false);
+        setSelectedUser(null);
+        resolve();
+      }, 1000);
+    });
+  };
+
+  const filteredUsers = React.useMemo(() => {
+    let filtered = mockUsers;
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(user => user.status === statusFilter);
+    }
+
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(user =>
+        user.full_name?.toLowerCase().includes(term) ||
+        user.email.toLowerCase().includes(term)
+      );
+    }
+
+    return filtered;
+  }, [statusFilter, roleFilter, searchTerm]);
 
   return (
-    <TooltipProvider>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">{t('userManagement')}</h1>
-          <div className="flex gap-2">
-            {(userRole === 'superadmin' || userRole === 'regionadmin') && (
-              <Button onClick={handleAddUser}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('addUser')}
-              </Button>
-            )}
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t("users")}</h1>
+          <p className="text-muted-foreground">{t("usersDescription")}</p>
         </div>
-
-        <Card>
-          <CardHeader className="px-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle>{t('users')}</CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('searchUsers')}
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                  />
-                </div>
-                
-                <Button variant="outline" size="sm" onClick={() => {}}>
-                  <Download className="h-4 w-4 mr-1" />
-                  {t('export')}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => {}}
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-6">
-            <div className="rounded-lg border mb-6 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t('filterByRole')}</label>
-                <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('allRoles')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">{t('allRoles')}</SelectItem>
-                    <SelectItem value="superadmin">{t('superadmin')}</SelectItem>
-                    <SelectItem value="regionadmin">{t('regionAdmin')}</SelectItem>
-                    <SelectItem value="sectoradmin">{t('sectorAdmin')}</SelectItem>
-                    <SelectItem value="schooladmin">{t('schoolAdmin')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t('filterByStatus')}</label>
-                <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('allStatuses')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">{t('allStatuses')}</SelectItem>
-                    <SelectItem value="active">{t('active')}</SelectItem>
-                    <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-end">
-                <Button variant="ghost" size="sm" onClick={resetFilters}>
-                  {t('resetFilters')}
-                </Button>
-              </div>
-            </div>
-            
-            {isDataLoading ? (
-              <div className="flex justify-center items-center h-40">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-10 flex flex-col items-center">
-                <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
-                <h3 className="font-semibold text-lg">{t('noUsersFound')}</h3>
-                <p className="text-muted-foreground mt-1">{t('tryChangingFilters')}</p>
-              </div>
-            ) : (
-              <UserListTable
-                users={filteredUsers}
-                onEdit={handleEditUser}
-                onDelete={handleDeleteUser}
-                onViewDetails={handleViewUserDetails}
-                currentUserRole={currentUserRole || userRole}
-              />
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Burada UserFormDialog eksik, amma bu dosyayı yaratmadıq. 
-        İstenirse ayrıca yaradıla bilər, hələlik sətirlərini şərh kimi saxlayırıq */}
-        {/* <UserFormDialog 
-          isOpen={isFormDialogOpen}
-          onClose={() => setIsFormDialogOpen(false)}
-          onSubmit={handleUserSubmit}
-          formData={formData}
-          setFormData={setFormData}
-          isEditMode={!!selectedUser}
-          currentUserRole={userRole}
-        /> */}
-        
-        <DeleteUserDialog
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-          onDelete={handleDeleteConfirm}
-          user={selectedUser || { id: '', email: '', full_name: '' }}
-        />
-        
-        <UserDetailsDialog
-          open={isDetailsDialogOpen}
-          onOpenChange={setIsDetailsDialogOpen}
-          user={selectedUser}
-          onEdit={() => {
-            setIsDetailsDialogOpen(false);
-            if (selectedUser) {
-              handleEditUser(selectedUser);
-            }
-          }}
-        />
+        <Button onClick={handleCreateUser}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          {t("createUser")}
+        </Button>
       </div>
-    </TooltipProvider>
+
+      <UserFilters
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHeader key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : (
+                          <div className="flex items-center">
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {header.column.getCanSort() && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => header.column.toggleSorting(header.column.getIsSorted() === "asc")}
+                                className="ml-2"
+                              >
+                                {header.column.getIsSorted() === false ? (
+                                  <span className="sr-only">Sort</span>
+                                ) : header.column.getIsSorted() === "asc" ? (
+                                  "▲"
+                                ) : (
+                                  "▼"
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                    </TableHeader>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {columns.map((column) => (
+                      <TableCell key={column.id}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </>
+            ) : users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center">
+                  {t("noUsersFound")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
+      <DeleteUserDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        user={selectedUser}
+        onDelete={handleDeleteUser}
+      />
+
+      <EditUserDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        user={selectedUser}
+        onSave={handleSaveUser}
+      />
+    </div>
   );
 };
 

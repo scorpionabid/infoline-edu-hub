@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { User, UserFormData } from '@/types/user';
-import { useAuth, useRole } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth/useAuth';
+import { useRole } from '@/context/auth/useRole'; // Düzəliş burada
 import { toast } from 'sonner';
 import UserForm from './UserForm';
 import { UserRole } from '@/types/supabase';

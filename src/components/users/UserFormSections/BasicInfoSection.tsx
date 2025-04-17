@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Role } from '@/context/AuthContext';
+import { Role } from '@/context/auth/types';
 import { UserFormData } from '@/types/user';
 
 interface BasicInfoSectionProps {

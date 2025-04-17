@@ -1,11 +1,6 @@
 
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error',
-  SUBMITTED = 'submitted'
-}
+import { Category } from './category';
+import { Column } from './column';
 
 export interface EntryValue {
   id?: string;
@@ -13,60 +8,24 @@ export interface EntryValue {
   category_id: string;
   school_id: string;
   value: any;
-  status?: 'pending' | 'approved' | 'rejected';
-  columnId?: string; // Əlavə edildi (uyğunluq üçün)
-}
-
-export interface ColumnValidationError {
-  field: string;
-  message: string;
-  type: string;
-  severity?: 'warning' | 'error' | 'info';
-}
-
-// Kateqoriya və sütunlar üçün tiplər
-export interface CategoryWithColumns {
-  id: string;
-  name: string;
-  description?: string;
   status?: string;
-  deadline?: string;
-  columns: Column[];
-  columnCount?: number;
-}
-
-export interface Column {
-  id: string;
-  name: string;
-  type: string;
-  category_id: string;
-  is_required?: boolean;
-  help_text?: string;
-  placeholder?: string;
-  validation?: any;
-  options?: any;
-  order_index?: number;
-  default_value?: any;
-  parent_column_id?: string;
-}
-
-export interface DataEntryState {
-  status: DataEntrySaveStatus;
-  error: string | null;
-  isModified: boolean;
-  entries: EntryValue[];
-  categories: CategoryWithColumns[];
-  selectedCategory: CategoryWithColumns | null;
+  columnId?: string; // Əlavə field column_id ilə eyni dəyəri saxlayır
 }
 
 export interface CategoryEntryData {
-  categoryId: string;
-  entries: EntryData[];
+  id: string;
+  name: string;
+  entries: EntryValue[];
+  status?: string;
+  deadline?: string;
+  completionPercentage?: number;
 }
 
-export interface EntryData {
-  columnId: string;
-  value: any;
-  errors?: string[];
-  touched?: boolean;
+export type FormStatus = 'idle' | 'loading' | 'success' | 'error' | 
+                         'completed' | 'pending' | 'rejected' | 
+                         'dueSoon' | 'overdue' | 'approved' | 'draft';
+
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
+  columnCount?: number;
 }

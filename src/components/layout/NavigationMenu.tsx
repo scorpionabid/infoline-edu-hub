@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -15,17 +14,18 @@ import {
   Sheet, SheetContent, SheetTrigger
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth/useAuth';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
   Collapsible, CollapsibleContent, CollapsibleTrigger 
 } from '@/components/ui/collapsible';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Language } from '@/types/supabase';
 
 const NavigationMenu: React.FC = () => {
   const { t, setLanguage, currentLanguage } = useLanguage();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { userRole } = usePermissions();
@@ -33,7 +33,6 @@ const NavigationMenu: React.FC = () => {
   const [openMobile, setOpenMobile] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   
-  // Hər bir rola uyğun menyu elementlərini müəyyən edək
   const getMenuItems = () => {
     const items = [
       {
@@ -115,21 +114,16 @@ const NavigationMenu: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    await logout();
     navigate('/login');
   };
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
-    // İstifadəçi dil seçimini yadda saxla
-    if (user) {
-      // TODO: Dil seçimini verilənlər bazasında saxla
-    }
   };
 
   const menuItems = getMenuItems();
 
-  // Mobil menyu düyməsi
   const mobileMenuButton = (
     <Button 
       variant="ghost" 
@@ -142,7 +136,6 @@ const NavigationMenu: React.FC = () => {
     </Button>
   );
 
-  // İstifadəçi profil elementi
   const userProfile = (
     <div className="flex items-center gap-2">
       <Avatar className="h-8 w-8">
@@ -158,7 +151,6 @@ const NavigationMenu: React.FC = () => {
     </div>
   );
 
-  // İstifadəçi menyusu
   const userMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -192,16 +184,16 @@ const NavigationMenu: React.FC = () => {
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleLanguageChange('az')}>
+            <DropdownMenuItem onClick={() => handleLanguageChange('az' as Language)}>
               {t('language_az')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+            <DropdownMenuItem onClick={() => handleLanguageChange('en' as Language)}>
               {t('language_en')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleLanguageChange('ru')}>
+            <DropdownMenuItem onClick={() => handleLanguageChange('ru' as Language)}>
               {t('language_ru')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleLanguageChange('tr')}>
+            <DropdownMenuItem onClick={() => handleLanguageChange('tr' as Language)}>
               {t('language_tr')}
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -215,7 +207,6 @@ const NavigationMenu: React.FC = () => {
     </DropdownMenu>
   );
 
-  // Desktop menyu
   const desktopMenu = (
     <div className="hidden lg:flex h-full">
       <div className="flex items-center">
@@ -287,7 +278,6 @@ const NavigationMenu: React.FC = () => {
     </div>
   );
 
-  // Mobile menyu
   const mobileMenu = (
     <Sheet open={openMobile} onOpenChange={setOpenMobile}>
       <SheetTrigger asChild>

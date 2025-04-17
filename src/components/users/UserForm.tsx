@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { UserFormData } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
 import { Form } from '@/components/ui/form';
-import { Role, useRole } from '@/context/AuthContext';
+import { Role, useRole } from '@/context/auth/index'; // Düzəliş burada
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Import custom hook

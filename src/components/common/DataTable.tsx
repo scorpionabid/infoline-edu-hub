@@ -1,15 +1,7 @@
-
-import React from "react";
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRole } from "@/context/auth/useRole";
 import { useLanguage } from "@/context/LanguageContext";
-import { useRole } from "@/context/AuthContext";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -56,7 +48,7 @@ interface DataTableProps {
       label: string;
       onClick: (item: any) => void;
       variant?: "default" | "destructive";
-      isHidden?: (item: any) => boolean; // Əlavə edilmiş xüsusiyyət
+      isHidden?: (item: any) => boolean;
     }[];
   };
   deleteDialog?: {
@@ -79,7 +71,6 @@ const DataTable: React.FC<DataTableProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  // Loading state
   if (isLoading) {
     return (
       <Card>
@@ -92,7 +83,6 @@ const DataTable: React.FC<DataTableProps> = ({
     );
   }
 
-  // Error state
   if (isError) {
     return (
       <Card>
@@ -107,7 +97,6 @@ const DataTable: React.FC<DataTableProps> = ({
     );
   }
 
-  // Empty state
   if (data.length === 0) {
     return (
       <Card>
@@ -155,7 +144,6 @@ const DataTable: React.FC<DataTableProps> = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {actionColumn.actions.map((action, idx) => (
-                            // isHidden xüsusiyyətini yoxlayırıq və gizlədilməli olan elementləri göstərmirik
                             !action.isHidden || !action.isHidden(item) ? (
                               <DropdownMenuItem
                                 key={idx}
@@ -178,7 +166,6 @@ const DataTable: React.FC<DataTableProps> = ({
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
       {deleteDialog && (
         <AlertDialog 
           open={!!deleteDialog.itemToDelete} 

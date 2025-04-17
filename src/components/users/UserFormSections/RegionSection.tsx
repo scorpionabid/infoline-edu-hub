@@ -3,7 +3,8 @@ import { useLanguage } from '@/context/LanguageContext';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserFormData } from '@/types/user';
-import { Role } from '@/context/AuthContext';
+import { Region } from '@/types/supabase';
+import { Role } from '@/context/auth/types';
 
 interface RegionSectionProps {
   form: any;

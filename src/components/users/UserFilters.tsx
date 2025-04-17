@@ -1,18 +1,9 @@
-
-import React, { useState } from 'react';
-import { UserFilter } from '@/hooks/useUserList';
-import { useLanguage } from '@/context/LanguageContext';
-import { Role } from '@/context/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Role } from '@/context/auth/types';
+import { Card, CardContent } from '@/components/ui/card';
 import { Search, X } from 'lucide-react';
 import { mockRegions, getFilteredSectors, getFilteredSchools } from '@/data/formData';
 
@@ -34,20 +25,17 @@ const UserFilters: React.FC<UserFiltersProps> = ({
   const { t } = useLanguage();
   const [searchValue, setSearchValue] = useState(filter.search || '');
   
-  // Filtrlər sıfırlandıqda axtarış dəyərini də sıfırla
   const handleResetFilter = () => {
     setSearchValue('');
     resetFilter();
   };
 
-  // Axtarış üçün enter düyməsi ilə təsdiqləmə
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       updateFilter({ search: searchValue });
     }
   };
 
-  // İstifadəçinin roluna əsasən mövcud regionları əldə etmək
   const availableRegions = React.useMemo(() => {
     if (currentUserRole === 'regionadmin' && currentUserRegionId) {
       return mockRegions.filter(region => region.id === currentUserRegionId);
@@ -55,24 +43,20 @@ const UserFilters: React.FC<UserFiltersProps> = ({
     return mockRegions;
   }, [currentUserRole, currentUserRegionId]);
 
-  // Region seçiminə əsasən sektorları filtrləmək
   const filteredSectors = React.useMemo(() => {
     return getFilteredSectors(filter.region);
   }, [filter.region]);
 
-  // Sektor seçiminə əsasən məktəbləri filtrləmək
   const filteredSchools = React.useMemo(() => {
     return getFilteredSchools(filter.sector);
   }, [filter.sector]);
 
-  // Region admin olduqda region filtri deaktiv olmalıdır
   const isRegionFilterDisabled = currentUserRole === 'regionadmin';
 
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          {/* Axtarış */}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -98,7 +82,6 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             )}
           </div>
 
-          {/* Rol filtri */}
           <Select
             value={filter.role || "all"}
             onValueChange={(value: string) => {
@@ -118,7 +101,6 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             </SelectContent>
           </Select>
 
-          {/* Status filtri */}
           <Select
             value={filter.status || "all"}
             onValueChange={(value) => updateFilter({ status: value === "all" ? undefined : value })}
@@ -134,7 +116,6 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             </SelectContent>
           </Select>
 
-          {/* Region filtri */}
           <Select
             value={filter.region || "all"}
             onValueChange={(value) => {
@@ -159,7 +140,6 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             </SelectContent>
           </Select>
 
-          {/* Təmizləmə düyməsi */}
           <Button
             variant="outline"
             onClick={handleResetFilter}
@@ -170,10 +150,8 @@ const UserFilters: React.FC<UserFiltersProps> = ({
           </Button>
         </div>
 
-        {/* Əlavə filtrlər (Sektor və Məktəb) */}
         {(filter.region || filter.sector) && (
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {/* Sektor filtri */}
             {filter.region && (
               <Select
                 value={filter.sector || "all"}
@@ -198,7 +176,6 @@ const UserFilters: React.FC<UserFiltersProps> = ({
               </Select>
             )}
 
-            {/* Məktəb filtri */}
             {filter.sector && (
               <Select
                 value={filter.school || "all"}

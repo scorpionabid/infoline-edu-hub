@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
 
@@ -333,4 +332,38 @@ export const addAuditLog = async (
   } catch (error) {
     console.error('Audit loq əlavə edilərkən xəta:', error);
   }
+};
+
+// lastLogin əvəzinə last_login istifadə et
+export const mapUserDataToFullUserData = (userData: any): FullUserData => {
+  return {
+    id: userData.id,
+    email: userData.email,
+    full_name: userData.full_name,
+    role: userData.role,
+    region_id: userData.regionId,
+    sector_id: userData.sectorId,
+    school_id: userData.schoolId,
+    phone: userData.phone,
+    position: userData.position,
+    language: userData.language,
+    avatar: userData.avatar,
+    status: userData.status,
+    last_login: userData.lastLogin || null,
+    created_at: userData.createdAt,
+    updated_at: userData.updated_at,
+    
+    name: userData.full_name,
+    regionId: userData.regionId,
+    sectorId: userData.sectorId,
+    schoolId: userData.schoolId,
+    lastLogin: userData.lastLogin,
+    createdAt: userData.createdAt,
+    updatedAt: userData.updated_at,
+    
+    adminEntity: userData.adminEntity,
+    
+    twoFactorEnabled: userData.twoFactorEnabled,
+    notificationSettings: userData.notificationSettings
+  };
 };

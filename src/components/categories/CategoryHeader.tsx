@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, FileSpreadsheet, HelpCircle } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { useRole } from "@/context/AuthContext";
+import { useRole } from "@/context/auth/useRole"; // Düzəliş burada
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 

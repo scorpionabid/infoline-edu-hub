@@ -1,10 +1,10 @@
 
 import { FullUserData, UserRole } from '@/types/supabase';
 
-// User roles
+// İstifadəçi rolları
 export type Role = UserRole;
 
-// Auth state interface
+// Auth vəziyyət interfeysi
 export interface AuthState {
   user: FullUserData | null;
   isAuthenticated: boolean;
@@ -12,7 +12,7 @@ export interface AuthState {
   error: string | null;
 }
 
-// Auth context interface
+// Auth kontext interfeysi
 export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;

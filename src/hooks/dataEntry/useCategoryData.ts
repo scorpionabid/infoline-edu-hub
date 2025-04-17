@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/dataEntry';
-import { supabase } from '@/integrations/supabase/client';
-import { ColumnType } from '@/types/column';
+import { supabase } from '@/lib/supabase';
+import { columnAdapter } from '@/utils/columnAdapter';
 
 export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
@@ -14,7 +13,6 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
       setLoading(true);
       setError('');
 
-      // Kateqoriyaları əldə edirik
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
@@ -23,7 +21,6 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
 
       if (categoriesError) throw categoriesError;
 
-      // Sütunları əldə edirik
       const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
         .select('*')
@@ -33,9 +30,8 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
 
       if (columnsError) throw columnsError;
 
-      // Əgər bir məktəb seçilibsə, məlumatları da əldə edirik
       let entriesData: any[] = [];
-      
+
       if (schoolId) {
         const { data: entriesResult, error: entriesError } = await supabase
           .from('data_entries')
@@ -48,7 +44,6 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
         }
       }
 
-      // Kateqoriyaları və onların sütunlarını birləşdiririk
       const formattedCategories = categoriesData.map(category => {
         const categoryColumns = columnsData
           .filter(column => column.category_id === category.id)
@@ -68,7 +63,6 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
             parent_column_id: column.parent_column_id,
             created_at: column.created_at,
             updated_at: column.updated_at,
-            // Əgər məlumat varsa, onu əlavə edirik
             entry: schoolId 
               ? entriesData.find(entry => 
                   entry.column_id === column.id && 
@@ -88,7 +82,6 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
           created_at: category.created_at,
           updated_at: category.updated_at,
           columns: categoryColumns,
-          // Tamamlanma faizini hesablayırıq (əgər məktəb ID varsa)
           completionPercentage: schoolId ? 
             calculateCompletionPercentage(categoryColumns.map(col => col.entry)) : 0
         };
@@ -103,12 +96,10 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
     }
   }, [schoolId]);
 
-  // Kateqoriyalar yüklənərkən onları əldə edirik
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // ID-yə görə kateqoriyanı əldə etmək üçün helper funksiya
   const getCategoryById = (id?: string): CategoryWithColumns => {
     if (!id) return categories[0] || { id: '', name: '', columns: [] };
     return categories.find(cat => cat.id === id) || categories[0] || { id: '', name: '', columns: [] };
@@ -127,10 +118,36 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
   };
 };
 
-// Bir kateqoriya üçün tamamlanma faizini hesablamaq üçün helper funksiya
 function calculateCompletionPercentage(entries: any[]) {
   if (!entries || entries.length === 0) return 0;
   
   const filledEntries = entries.filter(entry => entry && entry.value);
   return Math.round((filledEntries.length / entries.length) * 100);
 }
+
+const fetchCategoryColumns = async (categoryId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('columns')
+      .select('*')
+      .eq('category_id', categoryId)
+      .order('order_index', { ascending: true });
+      
+    if (error) throw error;
+    
+    if (!data) return [];
+    
+    return data.map(column => {
+      if (column.parent_column_id) {
+        return columnAdapter.adaptSupabaseToColumn({
+          ...column,
+          parent_column_id: column.parent_column_id
+        });
+      }
+      return columnAdapter.adaptSupabaseToColumn(column);
+    });
+  } catch (err) {
+    console.error('Error fetching columns:', err);
+    return [];
+  }
+};

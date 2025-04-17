@@ -1,13 +1,15 @@
-
-import React, { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/context/auth/useAuth';
 import { Shield, Phone, Upload, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -23,7 +25,6 @@ const ProfileSettings: React.FC = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // User tipine uyğun olsun deyə phone və position xüsusiyyətlərini daxil edirik
     updateUser({ 
       name, 
       email,
@@ -42,7 +43,6 @@ const ProfileSettings: React.FC = () => {
       if (!file) return;
       
       setIsUploading(true);
-      // Burada real API sorğusu olmalıdır
       setTimeout(() => {
         setIsUploading(false);
         toast.success(t('avatarUpdated'));
@@ -52,11 +52,9 @@ const ProfileSettings: React.FC = () => {
   };
   
   const handleTwoFactorToggle = () => {
-    // Real həyatda bu daha mürəkkəb olacaq, 2FA qeydiyyat prosesi ilə
     setTwoFactorEnabled(!twoFactorEnabled);
     toast.success(twoFactorEnabled ? t('twoFactorDisabled') : t('twoFactorEnabled'));
     
-    // Bunu real API çağırışı ilə əvəz edin
     if (!twoFactorEnabled) {
       toast.info(t('twoFactorSetupInstructions'), {
         duration: 5000,
