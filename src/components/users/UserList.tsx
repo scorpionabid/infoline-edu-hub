@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Table, 
@@ -231,72 +230,37 @@ const UserList: React.FC<UserListProps> = ({
             </Table>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between items-center">
-          <div className="flex items-center">
-            {/* Yeni Pagination komponenti */}
-            {totalPages > 1 && (
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                >
-                  {t('first')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  {t('previous')}
-                </Button>
-                <span className="text-sm">
-                  {t('pageXOfY', { current: currentPage, total: totalPages })}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  {t('next')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  {t('last')}
-                </Button>
-              </div>
-            )}
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            {t('showing')} {paginatedUsers?.length || 0} {t('of')} {users?.length || 0} {t('users')}
           </div>
-          <div>
-            {selectedUsers.length > 0 && (
-              <Button variant="destructive" size="sm">
-                {t('deleteSelected')} ({selectedUsers.length})
-              </Button>
-            )}
-          </div>
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </CardFooter>
       </Card>
 
-      <DeleteUserDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDeleteUserConfirm}
-        onCancel={() => setIsDeleteDialogOpen(false)}
-      />
-
+      {/* Edit Dialog - selectedUser undefined olduğu halda xətanın qarşısını alırıq */}
       {selectedUser && (
         <EditUserDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           user={selectedUser}
           onSave={handleUpdateUserConfirm}
+        />
+      )}
+
+      {/* Delete Dialog - selectedUser undefined olduğu halda xətanın qarşısını alırıq */}
+      {selectedUser && (
+        <DeleteUserDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          user={selectedUser}
+          onDelete={handleDeleteUserConfirm}
         />
       )}
     </div>

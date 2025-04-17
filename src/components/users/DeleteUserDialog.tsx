@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AlertDialog,
@@ -31,6 +30,8 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   const [loading, setLoading] = React.useState(false);
 
   const handleDelete = () => {
+    if (!user) return; // Əgər user undefined olsa, əməliyyatı dayandır
+    
     setLoading(true);
     
     // API çağırışını simulyasiya et
@@ -53,13 +54,18 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
     }, 1000);
   };
 
+  // Əgər user undefined olsa, dialoqu göstərmə
+  if (!user) {
+    return null;
+  }
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserConfirmation')} <strong>{user.name || user.full_name}</strong>?
+            {t('deleteUserConfirmation')} <strong>{user?.name || user?.full_name || t('unknownUser')}</strong>?
             <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>
