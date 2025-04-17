@@ -5,6 +5,7 @@ export interface FullUserData {
   id: string;
   email: string;
   full_name: string;
+  name?: string; // İstifadəçi adı üçün istifadə olunur (UI tərəfindən)
   phone?: string;
   position?: string;
   status: 'active' | 'inactive' | 'blocked';
@@ -12,8 +13,11 @@ export interface FullUserData {
   role?: UserRole;
   role_data?: any;
   region_id?: string;
+  regionId?: string; // React komponentlərdə uyğunluq üçün
   sector_id?: string;
+  sectorId?: string; // React komponentlərdə uyğunluq üçün
   school_id?: string;
+  schoolId?: string; // React komponentlərdə uyğunluq üçün
   region_name?: string;
   sector_name?: string;
   school_name?: string;
@@ -22,6 +26,7 @@ export interface FullUserData {
   avatar?: string;
   language: string;
   permissions?: string[];
+  twoFactorEnabled?: boolean; // İki faktorlu identifikasiyanı təmsil edir
   notificationSettings?: {
     email: boolean;
     system: boolean;
@@ -130,3 +135,22 @@ export interface Notification {
   priority?: 'low' | 'normal' | 'high';
   created_at?: string;
 }
+
+export type DataEntry = {
+  id: string;
+  school_id: string;
+  column_id: string;
+  category_id: string;
+  value: any;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+};
+
+export type Profile = UserProfile;
+export type UserRoleData = UserRole;

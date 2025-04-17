@@ -12,13 +12,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { School } from '@/types/supabase';
 import { useLanguage } from '@/context/LanguageContext';
+import { Loader2 } from 'lucide-react';
 
 const DeleteSchoolDialog: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   school: School | null;
-}> = ({ isOpen, onClose, onConfirm, school }) => {
+  isSubmitting?: boolean;
+}> = ({ isOpen, onClose, onConfirm, school, isSubmitting = false }) => {
   const { t } = useLanguage();
 
   return (
@@ -36,7 +38,14 @@ const DeleteSchoolDialog: React.FC<{
         <AlertDialogFooter>
           <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-destructive hover:bg-destructive/90">
-            {t('delete')}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('deleting')}
+              </>
+            ) : (
+              t('delete')
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { School } from '@/types/supabase';
 import { Region } from '@/types/supabase';
@@ -25,17 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -88,6 +78,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = React.useState(false);
   const [selectedSchool, setSelectedSchool] = React.useState<School | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [regionFilter, setRegionFilter] = React.useState('all');
@@ -118,28 +109,35 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
 
   const handleCreateSchool = async (schoolData: Omit<School, 'id'>) => {
     try {
+      setIsSubmitting(true);
       await onCreate(schoolData);
       setIsAddDialogOpen(false);
       toast.success(t('schoolCreated'));
     } catch (error) {
       console.error("Məktəb yaratma xətası:", error);
       toast.error(t('schoolCreationFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEditSchool = async (schoolData: School) => {
     try {
+      setIsSubmitting(true);
       await onEdit(schoolData);
       setIsEditDialogOpen(false);
       toast.success(t('schoolUpdated'));
     } catch (error) {
       console.error("Məktəb redaktə xətası:", error);
       toast.error(t('schoolUpdateFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteSchool = async (school: School) => {
     try {
+      setIsSubmitting(true);
       if (school) {
         await onDelete(school);
         setIsDeleteDialogOpen(false);
@@ -150,17 +148,22 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     } catch (error) {
       console.error("Məktəb silmə xətası:", error);
       toast.error(t('schoolDeletionFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAssignAdmin = async (schoolId: string, userId: string) => {
     try {
+      setIsSubmitting(true);
       await onAssignAdmin(schoolId, userId);
       setIsAdminDialogOpen(false);
       toast.success(t('adminAssigned'));
     } catch (error) {
       console.error("Admin təyin etmə xətası:", error);
       toast.error(t('adminAssignmentFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -353,44 +356,48 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
       {/* Dialogs */}
       {isAddDialogOpen && (
         <AddSchoolDialog
-          open={isAddDialogOpen}
-          setOpen={setIsAddDialogOpen}
+          isOpen={isAddDialogOpen}
+          onClose={() => setIsAddDialogOpen(false)}
           regions={regions}
           sectors={sectors}
           onSubmit={handleCreateSchool}
           regionNames={regionNames}
           sectorNames={sectorNames}
+          isSubmitting={isSubmitting}
         />
       )}
       
       {isEditDialogOpen && selectedSchool && (
         <EditSchoolDialog
-          open={isEditDialogOpen}
-          setOpen={setIsEditDialogOpen}
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
           school={selectedSchool}
           regions={regions}
           sectors={sectors}
           onSubmit={handleEditSchool}
           regionNames={regionNames}
           sectorNames={sectorNames}
+          isSubmitting={isSubmitting}
         />
       )}
       
       {isDeleteDialogOpen && selectedSchool && (
         <DeleteSchoolDialog
-          open={isDeleteDialogOpen}
-          setOpen={setIsDeleteDialogOpen}
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
           school={selectedSchool}
           onConfirm={() => handleDeleteSchool(selectedSchool)}
+          isSubmitting={isSubmitting}
         />
       )}
       
       {isAdminDialogOpen && selectedSchool && (
         <SchoolAdminDialog
-          open={isAdminDialogOpen}
-          setOpen={setIsAdminDialogOpen}
+          isOpen={isAdminDialogOpen}
+          onClose={() => setIsAdminDialogOpen(false)}
           school={selectedSchool}
           onSubmit={handleAssignAdmin}
+          isSubmitting={isSubmitting}
         />
       )}
     </div>

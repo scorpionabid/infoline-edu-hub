@@ -1,52 +1,57 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PendingItem } from '@/types/dashboard';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, ClipboardCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { PendingItem } from '@/types/dashboard';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
-interface PendingApprovalsCardProps {
+export interface PendingApprovalsCardProps {
   pendingItems: PendingItem[];
+  className?: string; // className property əlavə edildi
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems }) => {
+const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ pendingItems, className }) => {
   const { t } = useLanguage();
-
-  if (!pendingItems || pendingItems.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('pendingApprovals')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{t('noPendingApprovals')}</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const navigate = useNavigate();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('pendingApprovals')}</CardTitle>
+    <Card className={cn("w-full", className)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl flex items-center">
+          <AlertCircle className="h-5 w-5 mr-2 text-orange-500" />
+          {t('pendingApprovals')}
+        </CardTitle>
+        <CardDescription>{t('pendingApprovalsDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {pendingItems.map((item) => (
-            <div key={item.id} className="flex flex-col space-y-1">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{item.school || item.schoolName}</p>
-                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                  {t('pending')}
-                </span>
+        {pendingItems.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <p>{t('noPendingApprovals')}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {pendingItems.map((item, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-md">
+                <div>
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(item.route)}
+                  className="text-primary hover:text-primary/80"
+                >
+                  <ClipboardCheck className="h-4 w-4 mr-2" />
+                  {t('review')}
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">{item.category || item.categoryName}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('dueDate')}: {item.date || item.dueDate || item.submittedAt}
-              </p>
-              <div className="h-px bg-muted my-1"></div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

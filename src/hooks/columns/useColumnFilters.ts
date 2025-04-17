@@ -4,68 +4,71 @@ import { Column } from '@/types/column';
 
 interface ColumnFilters {
   searchQuery: string;
-  categoryFilter: string | undefined;
-  typeFilter: string | undefined;
-  statusFilter: 'active' | 'inactive' | undefined;
+  categoryFilter: string;
+  typeFilter: string;
+  statusFilter: string;
 }
 
 export const useColumnFilters = () => {
   const [filters, setFilters] = useState<ColumnFilters>({
     searchQuery: '',
-    categoryFilter: undefined,
-    typeFilter: undefined,
-    statusFilter: undefined
+    categoryFilter: 'all',
+    typeFilter: 'all',
+    statusFilter: 'all'
   });
-
+  
+  // Axtarış sorğusunu yeniləmə
   const setSearchQuery = useCallback((query: string) => {
     setFilters(prev => ({ ...prev, searchQuery: query }));
   }, []);
-
-  const setCategoryFilter = useCallback((categoryId?: string) => {
-    setFilters(prev => ({ ...prev, categoryFilter: categoryId }));
+  
+  // Kateqoriya filtrini yeniləmə
+  const setCategoryFilter = useCallback((category: string) => {
+    setFilters(prev => ({ ...prev, categoryFilter: category }));
   }, []);
-
-  const setTypeFilter = useCallback((type?: string) => {
+  
+  // Tip filtrini yeniləmə
+  const setTypeFilter = useCallback((type: string) => {
     setFilters(prev => ({ ...prev, typeFilter: type }));
   }, []);
-
-  const setStatusFilter = useCallback((status?: 'active' | 'inactive') => {
+  
+  // Status filtrini yeniləmə
+  const setStatusFilter = useCallback((status: string) => {
     setFilters(prev => ({ ...prev, statusFilter: status }));
   }, []);
-
+  
+  // Bütün filtrləri sıfırlama
+  const resetFilters = useCallback(() => {
+    setFilters({
+      searchQuery: '',
+      categoryFilter: 'all',
+      typeFilter: 'all',
+      statusFilter: 'all'
+    });
+  }, []);
+  
+  // Sütunları filtrlər əsasında filtrinləmə
   const applyFilters = useCallback((columns: Column[]) => {
     return columns.filter(column => {
-      // Axtarış sorğusu
-      if (filters.searchQuery && 
-          !column.name.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
-        return false;
-      }
-
-      // Kateqoriya filtri
-      if (filters.categoryFilter && column.category_id !== filters.categoryFilter) {
-        return false;
-      }
-
-      // Tip filtri
-      if (filters.typeFilter && column.type !== filters.typeFilter) {
-        return false;
-      }
-
-      // Status filtri
-      if (filters.statusFilter && column.status !== filters.statusFilter) {
-        return false;
-      }
-
-      return true;
+      const nameMatch = filters.searchQuery 
+        ? column.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) 
+        : true;
+      
+      const categoryMatch = filters.categoryFilter === 'all' || column.category_id === filters.categoryFilter;
+      const typeMatch = filters.typeFilter === 'all' || column.type === filters.typeFilter;
+      const statusMatch = filters.statusFilter === 'all' || column.status === filters.statusFilter;
+      
+      return nameMatch && categoryMatch && typeMatch && statusMatch;
     });
   }, [filters]);
-
+  
   return {
     filters,
     setSearchQuery,
     setCategoryFilter,
     setTypeFilter,
     setStatusFilter,
+    resetFilters,
     applyFilters
   };
 };

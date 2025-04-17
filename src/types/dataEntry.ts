@@ -58,3 +58,15 @@ export interface DataEntryState {
   categories: CategoryWithColumns[];
   selectedCategory: CategoryWithColumns | null;
 }
+
+export interface CategoryEntryData {
+  categoryId: string;
+  entries: EntryData[];
+}
+
+export interface EntryData {
+  columnId: string;
+  value: any;
+  errors?: string[];
+  touched?: boolean;
+}

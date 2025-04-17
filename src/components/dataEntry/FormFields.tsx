@@ -1,13 +1,15 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CategoryWithColumns, EntryValue } from '@/types/dataEntry';
-import { Separator } from '@/components/ui/separator';
 import TextInput from './inputs/TextInput';
 import NumberInput from './inputs/NumberInput';
 import SelectInput from './inputs/SelectInput';
 import DateInput from './inputs/DateInput';
 import CheckboxInput from './inputs/CheckboxInput';
+import { Form } from '@/components/ui/form';
 
 interface FormFieldsProps {
   category: CategoryWithColumns;
@@ -22,86 +24,132 @@ const FormFields: React.FC<FormFieldsProps> = ({
   onChange,
   disabled = false
 }) => {
-  const { t } = useLanguage();
+  // Formun başlanğıc dəyərlərini hazırlayaq
+  const initialValues = React.useMemo(() => {
+    const values: Record<string, any> = { fields: {} };
+    category.columns.forEach(column => {
+      // Mövcud qeydi tapaq
+      const entry = entries.find(e => e.column_id === column.id);
+      if (entry) {
+        values.fields[column.id] = entry.value;
+      } else {
+        // Default dəyər
+        values.fields[column.id] = column.default_value || '';
+      }
+    });
+    return values;
+  }, [category, entries]);
 
-  const handleEntryChange = (entry: EntryValue) => {
-    // Eyni sütun üçün mövcud giriş axtarırıq
-    const existingEntryIndex = entries.findIndex(
-      (e) => e.column_id === entry.column_id
-    );
+  // Dinamik validasiya sxemi yaradaq
+  const schema = React.useMemo(() => {
+    const fieldsSchema: Record<string, any> = {};
+    
+    category.columns.forEach(column => {
+      let fieldSchema = z.any();
+      
+      if (column.is_required) {
+        if (column.type === 'text' || column.type === 'textarea') {
+          fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+        } else if (column.type === 'number') {
+          fieldSchema = z.number().or(z.string().min(1, { message: 'Bu sahə məcburidir' }));
+        } else if (column.type === 'select') {
+          fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+        } else if (column.type === 'checkbox') {
+          fieldSchema = z.array(z.string()).min(1, { message: 'Bu sahə məcburidir' });
+        } else if (column.type === 'date') {
+          fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+        }
+      } else {
+        // Məcburi olmayan sahələr üçün tipləri müəyyən edək
+        if (column.type === 'number') {
+          fieldSchema = z.number().optional().or(z.string().optional());
+        } else if (column.type === 'checkbox') {
+          fieldSchema = z.array(z.string()).optional();
+        } else {
+          fieldSchema = z.any().optional();
+        }
+      }
+      
+      fieldsSchema[column.id] = fieldSchema;
+    });
+    
+    return z.object({ fields: z.object(fieldsSchema) });
+  }, [category]);
 
-    // Yeni entries yaradırıq
-    let updatedEntries: EntryValue[];
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: initialValues,
+    mode: 'onChange'
+  });
 
-    if (existingEntryIndex >= 0) {
-      // Mövcud girişi yeniləyirik
-      updatedEntries = [...entries];
-      updatedEntries[existingEntryIndex] = {
-        ...updatedEntries[existingEntryIndex],
-        value: entry.value
-      };
-    } else {
-      // Yeni giriş əlavə edirik
-      updatedEntries = [...entries, entry];
-    }
-
+  // Form dəyərləri dəyişdikdə işləyən funksiya
+  const handleFormChange = React.useCallback((values: any) => {
+    if (!values.fields) return;
+    
+    const updatedEntries: EntryValue[] = [];
+    
+    // Bütün sütunlar üçün
+    Object.entries(values.fields).forEach(([columnId, value]) => {
+      const column = category.columns.find(c => c.id === columnId);
+      if (!column) return;
+      
+      // Mövcud qeydi tapaq
+      const existingEntry = entries.find(e => e.column_id === columnId);
+      
+      updatedEntries.push({
+        id: existingEntry?.id,
+        column_id: columnId,
+        category_id: category.id,
+        school_id: existingEntry?.school_id || '',
+        value: value,
+        status: existingEntry?.status || 'pending',
+        columnId: columnId // Əlavə edilmiş column_id 
+      });
+    });
+    
     onChange(updatedEntries);
+  }, [category, entries, onChange]);
+
+  // Form dəyərləri dəyişdikdə handleFormChange funksiyasını çağıraq
+  React.useEffect(() => {
+    const subscription = form.watch((values) => {
+      handleFormChange(values);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, handleFormChange]);
+
+  // Sütun tipinə görə müvafiq input komponentini qaytarır
+  const renderFieldByType = (column: any) => {
+    switch(column.type) {
+      case 'text':
+      case 'textarea':
+        return <TextInput column={column} form={form} disabled={disabled} />;
+      case 'number':
+        return <NumberInput column={column} form={form} disabled={disabled} />;
+      case 'select':
+        return <SelectInput column={column} form={form} disabled={disabled} />;
+      case 'date':
+        return <DateInput column={column} form={form} disabled={disabled} />;
+      case 'checkbox':
+        return <CheckboxInput column={column} form={form} disabled={disabled} />;
+      default:
+        return <TextInput column={column} form={form} disabled={disabled} />;
+    }
   };
-
-  // Sütun üçün dəyəri tapan metod
-  const getEntryValue = (columnId: string) => {
-    const entry = entries.find((e) => e.column_id === columnId);
-    return entry ? entry.value : '';
-  };
-
-  if (!category || !category.columns || category.columns.length === 0) {
-    return (
-      <div className="py-8 text-center text-muted-foreground">
-        {t('noColumnsInCategory')}
-      </div>
-    );
-  }
-
-  // Sütunları order_index-ə görə sıralayırıq
-  const sortedColumns = [...category.columns].sort(
-    (a, b) => (a.order_index || 0) - (b.order_index || 0)
-  );
 
   return (
-    <div className="space-y-6">
-      {sortedColumns.map((column) => {
-        const entry = {
-          column_id: column.id,
-          category_id: category.id,
-          school_id: '', // Bu dəyər useDataEntry hook-da məktəb ID-si ilə əvəz olunacaq
-          value: getEntryValue(column.id)
-        };
-
-        const commonProps = {
-          key: column.id,
-          column: column,
-          value: entry.value,
-          onChange: (value: any) => handleEntryChange({ ...entry, value }),
-          disabled: disabled
-        };
-
-        switch (column.type) {
-          case 'text':
-          case 'textarea':
-            return <TextInput {...commonProps} />;
-          case 'number':
-            return <NumberInput {...commonProps} />;
-          case 'select':
-            return <SelectInput {...commonProps} />;
-          case 'date':
-            return <DateInput {...commonProps} />;
-          case 'checkbox':
-            return <CheckboxInput {...commonProps} />;
-          default:
-            return <TextInput {...commonProps} />;
-        }
-      })}
-    </div>
+    <Form {...form}>
+      <form className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {category.columns.map((column: any) => (
+            <div key={column.id}>
+              {renderFieldByType(column)}
+            </div>
+          ))}
+        </div>
+      </form>
+    </Form>
   );
 };
 

@@ -44,6 +44,8 @@ export interface ValidationRules {
   max?: number;
   minLength?: number;
   maxLength?: number;
+  minValue?: number; // Əlavə edildi
+  maxValue?: number; // Əlavə edildi
   pattern?: string | RegExp;
   email?: boolean;
   url?: boolean;
