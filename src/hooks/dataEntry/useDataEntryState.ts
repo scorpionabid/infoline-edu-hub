@@ -10,7 +10,7 @@ export const useDataEntryState = (schoolId?: string) => {
   const [entries, setEntries] = useState<Record<string, EntryValue[]>>({});
   
   // useCategoryData'dan döndürülən dəyərləri al
-  const categoryDataResult = useCategoryData();
+  const categoryDataResult = useCategoryData({ schoolId });
   const { categories, loading, error, getCategoryById, refreshCategories } = categoryDataResult;
   
   // Düzəliş: refreshCategories istifadə et

@@ -2,10 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';
-import { columnAdapter } from '@/utils/columnAdapter';
-import { ColumnType } from '@/types/column';
+import { Column, ColumnType } from '@/types/column';
 
-export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
+export const useCategoryData = ({ schoolId }: { schoolId?: string } = {}) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -60,7 +59,6 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
               help_text: column.help_text,
               order_index: column.order_index,
               status: column.status as 'active' | 'inactive' | 'archived',
-              parent_column_id: column.parent_column_id,
               validation: column.validation,
               default_value: column.default_value,
               options: column.options,
@@ -72,7 +70,7 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
                     entry.school_id === schoolId
                   ) 
                 : null
-            };
+            } as Column;
           });
 
         return {
@@ -141,15 +139,22 @@ const fetchCategoryColumns = async (categoryId: string) => {
     
     if (!data) return [];
     
-    return data.map(column => {
-      if (column.parent_column_id) {
-        return columnAdapter.adaptSupabaseToColumn({
-          ...column,
-          parent_column_id: column.parent_column_id
-        });
-      }
-      return columnAdapter.adaptSupabaseToColumn(column);
-    });
+    return data.map(column => ({
+      id: column.id,
+      category_id: column.category_id,
+      name: column.name,
+      type: column.type as ColumnType,
+      is_required: column.is_required,
+      placeholder: column.placeholder,
+      help_text: column.help_text,
+      order_index: column.order_index,
+      status: column.status as 'active' | 'inactive' | 'archived',
+      validation: column.validation,
+      default_value: column.default_value,
+      options: column.options,
+      created_at: column.created_at,
+      updated_at: column.updated_at
+    } as Column));
   } catch (err) {
     console.error('Error fetching columns:', err);
     return [];

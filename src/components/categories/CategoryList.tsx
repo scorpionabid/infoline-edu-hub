@@ -191,7 +191,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
   };
   
   // Status ikonlarını FormStatus enum standartına uyğunlaşdıraq.
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: FormStatus) => {
     switch (status) {
       case FormStatus.COMPLETED:
         return <CheckCircle className="h-4 w-4 text-green-500" />;

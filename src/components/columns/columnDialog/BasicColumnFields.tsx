@@ -9,7 +9,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/context/LanguageContext';
 
-// columns və editColumn proplarını əlavə et
+// props interface-i təyin edək
 export interface BasicColumnFieldsProps {
   form: any;
   handleTypeChange: (type: string) => void;
@@ -31,7 +31,14 @@ const typeOptions = [
   { label: 'Image', value: 'image' },
 ];
 
-export const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({ form, handleTypeChange, selectedType, columns, editColumn, categories }) => {
+export const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({ 
+  form, 
+  handleTypeChange, 
+  selectedType, 
+  columns, 
+  editColumn, 
+  categories 
+}) => {
   const { t } = useLanguage();
   const { control } = useFormContext();
 
