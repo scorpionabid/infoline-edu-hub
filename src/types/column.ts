@@ -1,5 +1,5 @@
 
-import { Json } from './supabase';
+import { Json } from './json';
 
 export interface Column {
   id: string;
@@ -10,13 +10,13 @@ export interface Column {
   order_index: number;
   placeholder?: string;
   help_text?: string;
-  options?: any;
+  options?: ColumnOption[];
   validation?: ColumnValidation;
   default_value?: any;
   status: string;
   created_at?: string;
   updated_at?: string;
-  parent_column_id?: string;
+  parent_column_id?: string | null;
 }
 
 export interface ColumnValidation {
@@ -30,10 +30,10 @@ export interface ColumnValidation {
 
 export type ColumnType = 'text' | 'number' | 'select' | 'date' | 'checkbox' | 'textarea' | 'radio' | 'file';
 
-export type ColumnOption = {
+export interface ColumnOption {
   label: string;
-  value: string | number;
-};
+  value: string;
+}
 
 export interface Category {
   id: string;
@@ -64,4 +64,13 @@ export interface ColumnFormData {
   default_value?: any;
   status: 'active' | 'inactive' | 'draft';
   parent_column_id?: string;
+}
+
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+
+export interface FormStatus {
+  isSubmitting: boolean;
+  isSaving: boolean;
+  isLoading: boolean;
+  error: string | null;
 }

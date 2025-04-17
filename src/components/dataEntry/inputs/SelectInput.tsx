@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
-import { Column } from '@/types/column';
+import { Column, ColumnOption } from '@/types/column';
 
 interface SelectInputProps {
   column: Column;
@@ -27,7 +27,10 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
         if (typeof option === 'string') {
           return { label: option, value: option };
         }
-        return option;
+        return {
+          label: option.label || String(option),
+          value: option.value || String(option)
+        };
       });
     }
     
@@ -47,7 +50,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
           <Select
             disabled={disabled}
             onValueChange={field.onChange}
-            value={field.value?.toString() || ''}
+            value={String(field.value || '')}
           >
             <FormControl>
               <SelectTrigger>
@@ -55,8 +58,8 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {options.map((option, index) => (
-                <SelectItem key={index} value={option.value.toString()}>
+              {options.map((option: ColumnOption, index) => (
+                <SelectItem key={index} value={String(option.value)}>
                   {option.label}
                 </SelectItem>
               ))}

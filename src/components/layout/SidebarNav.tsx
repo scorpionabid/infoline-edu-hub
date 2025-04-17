@@ -48,14 +48,12 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const { t } = useLanguage();
   const { 
     userRole, 
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
+    isSchoolAdmin,
     canRegionAdminManageCategoriesColumns 
   } = usePermissions();
-  
-  // Rol əsasında məlumat idarəetmə icazələrini yoxlayırıq
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
-  const isSchoolAdmin = userRole === 'schooladmin';
   
   // İcazələri müəyyənləşdiririk
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;

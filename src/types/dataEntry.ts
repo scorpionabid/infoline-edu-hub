@@ -1,57 +1,44 @@
 
-import { Category, Column } from './column';
-import { FormStatus } from './form';
+import { CategoryWithColumns } from '@/types/column';
 
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
   SAVING = 'saving',
   SAVED = 'saved',
-  ERROR = 'error'
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
 }
 
-export type DataEntry = {
+export interface DataEntry {
   id?: string;
-  school_id: string;
-  category_id: string;
   column_id: string;
-  value: string | null;
+  category_id: string;
+  school_id: string;
+  value: string;
   status?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
   approved_at?: string;
   approved_by?: string;
+  rejected_at?: string;
   rejected_by?: string;
   rejection_reason?: string;
-};
-
-export interface ColumnValidationError {
-  message: string;
-  type: string;
-  column_id: string;
-  column_name: string;
 }
 
-export interface EntriesMap {
-  [columnId: string]: DataEntry;
-}
-
-export interface CategoryEntries {
-  [categoryId: string]: EntriesMap;
-}
-
-export interface CategoryFormState {
-  status: FormStatus;
+export interface DataEntryForm {
+  entries: DataEntry[];
   isModified: boolean;
-  completionPercentage: number;
-  entries: EntriesMap;
+  saveStatus: DataEntrySaveStatus;
+  error: string | null;
 }
 
-export interface CategoryFormData {
-  [categoryId: string]: CategoryFormState;
+export interface CategoryEntryData {
+  category: CategoryWithColumns;
+  entries: DataEntry[];
 }
 
-export type CategoryWithProgress = Category & {
-  completionPercentage: number;
-  status: FormStatus;
-};
+export interface EntryValue {
+  [columnId: string]: string | number | boolean | string[] | null;
+}

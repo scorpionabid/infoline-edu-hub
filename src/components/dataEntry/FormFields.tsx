@@ -120,7 +120,7 @@ const FormFields: React.FC<FormFieldsProps> = ({
           column_id: columnId,
           category_id: category.id,
           school_id: existingEntry?.school_id || '',
-          value: value,
+          value: value as string,
           status: existingEntry?.status || 'pending'
         });
       });

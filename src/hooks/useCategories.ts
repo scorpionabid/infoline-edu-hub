@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Category } from '@/types/category';
+import { Category, CategoryStatus } from '@/types/category';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { usePermissions } from './auth/usePermissions';
@@ -9,15 +9,22 @@ import { usePermissions } from './auth/usePermissions';
 export const useCategories = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { userRole } = usePermissions();
+  const { userRole, isSchoolAdmin } = usePermissions();
   const isSuperAdmin = userRole === 'superadmin';
 
   // Kateqoriyaları çəkmək üçün funksiya - RLS ilə filtrələnəcək
   const fetchCategories = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('categories')
       .select('*')
       .order('created_at');
+    
+    // Əgər istifadəçi school_admin rolundadırsa, yalnız "all" təyinatlı kateqoriyaları göstərək
+    if (isSchoolAdmin) {
+      query = query.eq('assignment', 'all');
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;
@@ -28,6 +35,20 @@ export const useCategories = () => {
 
   // Bir kateqoriyanı əldə etmək üçün funksiya
   const fetchCategory = async (id: string) => {
+    // Əgər school_admin-dirsə və kateqoriya sectors təyinatlıdırsa, 
+    // icazə yoxdur xətası qaytaraq
+    if (isSchoolAdmin) {
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('assignment')
+        .eq('id', id)
+        .single();
+      
+      if (categoryData && categoryData.assignment === 'sectors') {
+        throw new Error('Bu kateqoriyaya icazəniz yoxdur');
+      }
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .select('*')

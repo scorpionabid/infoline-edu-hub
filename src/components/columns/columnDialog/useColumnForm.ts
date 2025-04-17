@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,10 +18,12 @@ const columnFormSchema = z.object({
   status: z.string().optional().default("active"),
   parent_column_id: z.string().uuid({ message: "Please select a valid parent column." }).nullable().optional(),
   validation: z.record(z.any()).optional(),
-  options: z.array(z.object({
-    label: z.string(),
-    value: z.string()
-  })).optional()
+  options: z.array(
+    z.object({
+      label: z.string(),
+      value: z.string()
+    })
+  ).optional()
 });
 
 export type ColumnFormValues = z.infer<typeof columnFormSchema>;
@@ -29,7 +32,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
   const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     editColumn?.options && Array.isArray(editColumn.options)
-      ? editColumn.options
+      ? (editColumn.options as ColumnOption[])
       : []
   );
   const [newOption, setNewOption] = useState("");
@@ -52,7 +55,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       status: editColumn?.status || "active",
       parent_column_id: editColumn?.parent_column_id || undefined,
       validation: editColumn?.validation as Record<string, any> || {},
-      options: editColumn?.options || []
+      options: editColumn?.options as ColumnOption[] || []
     }
   });
 
@@ -71,8 +74,9 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       form.setValue("validation", editColumn.validation as Record<string, any> || {});
       
       if (editColumn.options && Array.isArray(editColumn.options)) {
-        setOptions(editColumn.options);
-        form.setValue("options", editColumn.options);
+        const typedOptions = editColumn.options as ColumnOption[];
+        setOptions(typedOptions);
+        form.setValue("options", typedOptions);
       }
     }
   }, [editColumn, form]);

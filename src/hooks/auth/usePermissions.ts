@@ -2,7 +2,7 @@
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
 
-type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 interface UsePermissionsReturn {
   userRole: UserRole;
@@ -14,6 +14,7 @@ interface UsePermissionsReturn {
   regionId: string | null;
   sectorId: string | null;
   schoolId: string | null;
+  canRegionAdminManageCategoriesColumns: boolean;
 }
 
 export const usePermissions = (): UsePermissionsReturn => {
@@ -31,7 +32,8 @@ export const usePermissions = (): UsePermissionsReturn => {
         isSchoolAdmin: false,
         regionId: null,
         sectorId: null,
-        schoolId: null
+        schoolId: null,
+        canRegionAdminManageCategoriesColumns: false
       };
     }
     
@@ -47,6 +49,9 @@ export const usePermissions = (): UsePermissionsReturn => {
     const isSectorAdmin = userRole === 'sectoradmin';
     const isSchoolAdmin = userRole === 'schooladmin';
     
+    // Region adminləri kateqoriya və sütunları idarə edə bilər
+    const canRegionAdminManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
+    
     return {
       userRole,
       isAdmin,
@@ -56,7 +61,8 @@ export const usePermissions = (): UsePermissionsReturn => {
       isSchoolAdmin,
       regionId: user.regionId || null,
       sectorId: user.sectorId || null,
-      schoolId: user.schoolId || null
+      schoolId: user.schoolId || null,
+      canRegionAdminManageCategoriesColumns
     };
   }, [user]);
 };

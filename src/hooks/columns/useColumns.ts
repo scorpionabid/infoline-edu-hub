@@ -32,7 +32,7 @@ export const useColumns = (categoryId?: string) => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { createColumn, updateColumn, deleteColumn, loading: mutationLoading } = useColumnMutations();
-  const { userRole, canRegionAdminManageCategoriesColumns } = usePermissions();
+  const { userRole, canRegionAdminManageCategoriesColumns, isSchoolAdmin } = usePermissions();
   
   // Filter vəziyyətləri
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,8 +119,26 @@ export const useColumns = (categoryId?: string) => {
     }
   }, [userRole, canRegionAdminManageCategoriesColumns, deleteColumn, queryClient, t]);
 
+  // Schema adminlər üçün kateqoriya istisnaları
+  const filteredColumnsForAssignment = React.useMemo(() => {
+    if (isSchoolAdmin) {
+      // Əgər school admin-dirsə, yalnız "all" təyinatlı kateqoriyalara aid sütunları göstər
+      return columns.filter(column => {
+        // Əgər query caching gec yüklənibsə, column.category_id null ola bilər
+        if (!column.category_id) return false;
+        
+        // Kateqoriya məlumatlarını yoxla
+        return queryClient.getQueryData<any[]>(['categories'])?.some(
+          category => category.id === column.category_id && category.assignment === 'all'
+        ) ?? true; // Əgər kateqoriya məlumatları mövcud deyilsə, default olaraq göstər
+      });
+    }
+    
+    return columns; // Digər istifadəçilər üçün bütün sütunları göstər
+  }, [columns, isSchoolAdmin, queryClient]);
+
   // Filtrelənmiş sütunları əldə et
-  const filteredColumns = columns.filter(column => {
+  const filteredColumns = filteredColumnsForAssignment.filter(column => {
     const nameMatch = searchQuery 
       ? column.name.toLowerCase().includes(searchQuery.toLowerCase()) 
       : true;
@@ -133,7 +151,7 @@ export const useColumns = (categoryId?: string) => {
   });
 
   return {
-    columns,
+    columns: filteredColumnsForAssignment,
     filteredColumns,
     isLoading: isLoading || mutationLoading,
     isError,
