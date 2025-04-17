@@ -30,7 +30,7 @@ export const useColumnForm = (categories: any[], column: Column | null, onSubmit
   const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     column?.options && Array.isArray(column.options)
-      ? column.options
+      ? column.options as ColumnOption[]
       : []
   );
   const [newOption, setNewOption] = useState("");
@@ -52,8 +52,12 @@ export const useColumnForm = (categories: any[], column: Column | null, onSubmit
       order_index: column?.order_index || 0,
       status: column?.status || "active",
       parent_column_id: column?.parent_column_id || undefined,
-      validation: column?.validation || {},
-      options: column?.options || []
+      validation: column?.validation && typeof column.validation === 'object' 
+        ? column.validation as Record<string, any> 
+        : {},
+      options: column?.options && Array.isArray(column.options) 
+        ? column.options as ColumnOption[] 
+        : []
     }
   });
 
@@ -69,11 +73,14 @@ export const useColumnForm = (categories: any[], column: Column | null, onSubmit
       form.setValue("order_index", column.order_index || 0);
       form.setValue("status", column.status || "active");
       form.setValue("parent_column_id", column.parent_column_id);
-      form.setValue("validation", column.validation || {});
+      
+      if (column.validation && typeof column.validation === 'object') {
+        form.setValue("validation", column.validation as Record<string, any>);
+      }
       
       if (column.options && Array.isArray(column.options)) {
-        setOptions(column.options);
-        form.setValue("options", column.options);
+        setOptions(column.options as ColumnOption[]);
+        form.setValue("options", column.options as ColumnOption[]);
       }
     }
   }, [column, form]);

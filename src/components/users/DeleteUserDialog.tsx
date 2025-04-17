@@ -67,7 +67,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteUserConfirmation')} <strong>{user.name || user.full_name}</strong>?
+            {t('deleteUserConfirmation')} <strong>{user.full_name || user.name || t('unknownUser')}</strong>?
             <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
           </AlertDialogDescription>
         </AlertDialogHeader>

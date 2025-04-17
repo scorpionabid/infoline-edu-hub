@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock, Timer, AlertCircle, Save, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -186,6 +185,28 @@ const CategoryList: React.FC<CategoryListProps> = ({
         );
       default:
         return null;
+    }
+  };
+  
+  // Status ikonlarını FormStatus enum standartına uyğunlaşdıraq. Status mətnlərini direkt FormStatus enum-u ilə müqayisə etmək lazımdır.
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case FormStatus.COMPLETED:
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case FormStatus.PENDING:
+        return <Clock className="h-4 w-4 text-orange-500" />;
+      case FormStatus.REJECTED:
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case FormStatus.DUE_SOON:
+        return <Timer className="h-4 w-4 text-amber-500" />;
+      case FormStatus.OVERDUE:
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case FormStatus.APPROVED:
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      case FormStatus.DRAFT:
+        return <Save className="h-4 w-4 text-gray-500" />;
+      default:
+        return <HelpCircle className="h-4 w-4 text-gray-500" />;
     }
   };
   

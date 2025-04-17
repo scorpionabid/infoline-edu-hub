@@ -1,46 +1,70 @@
 
-import { Category } from './category';
 import { Column } from './column';
 
+// Kateqoriya interfeysi
+export interface CategoryData {
+  id: string;
+  name: string;
+  description: string;
+  assignment: 'all' | 'sectors';
+  deadline: string | null;
+  status: 'active' | 'inactive' | 'archived';
+  priority: number;
+  created_at: string;
+  updated_at: string;
+  column_count?: number;
+  archived?: boolean;
+}
+
+// Kateqoriya və sütun daxil olan tip
+export interface CategoryWithColumns extends CategoryData {
+  columns: (Column & { entry?: any })[];
+  completionPercentage: number;
+}
+
+// Daxil edilmiş dəyərlər üçün tip
 export interface EntryValue {
-  id?: string;
   column_id: string;
   category_id: string;
   school_id: string;
   value: any;
-  status?: string;
-  columnId?: string; // Əlavə field column_id ilə eyni dəyəri saxlayır
+  id?: string;
+  status?: EntryStatus;
 }
 
-export interface CategoryEntryData {
-  id: string;
-  name: string;
-  entries: EntryValue[];
-  status?: string;
-  deadline?: string;
-  completionPercentage?: number;
+// Daxil edilən məlumatın statusu
+export type EntryStatus = 'pending' | 'approved' | 'rejected';
+
+// Form-un ümumi statusu
+export enum FormStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  OVERDUE = 'overdue',
+  DUE_SOON = 'dueSoon',
+  COMPLETED = 'completed'
 }
 
-export type FormStatus = 'idle' | 'loading' | 'success' | 'error' | 
-                         'completed' | 'pending' | 'rejected' | 
-                         'dueSoon' | 'overdue' | 'approved' | 'draft';
-
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  columnCount?: number;
-}
-
-// ColumnValidationError tipinin əlavə edilməsi
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-  type: string;
-}
-
-// DataEntrySaveStatus enum-un əlavə edilməsi
+// Data daxil etmə statusu
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
   SAVING = 'saving',
   SAVED = 'saved',
-  ERROR = 'error'
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
 }
+
+// Validasiya xətası
+export interface ColumnValidationError {
+  columnId: string;  // Əvvəlki field
+  message: string;
+  type: 'required' | 'type' | 'min' | 'max' | 'pattern' | 'custom';
+}
+
+// Validasiya xətaları üçün köməkçi alətlər
+export const validateEntry = (column: Column, value: any): ColumnValidationError | null => {
+  // Validasiya məntiqini burada həyata keçirə bilərsiniz
+  return null;
+};

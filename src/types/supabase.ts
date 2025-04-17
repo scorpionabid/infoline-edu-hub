@@ -1,4 +1,3 @@
-
 import { Json } from './json';
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
@@ -14,34 +13,65 @@ export interface NotificationSettings {
   sms?: boolean;
 }
 
-export interface FullUserData {
+export interface Profile {
   id: string;
-  full_name?: string | null;
-  name?: string | null; // NavigationMenu və ProfileSettings üçün əlavə edildi
-  email?: string | null;
-  role: UserRole;
-  region_id?: string | null;
-  regionId?: string | null;
-  sector_id?: string | null;
-  sectorId?: string | null;
-  school_id?: string | null;
-  schoolId?: string | null;
-  region_name?: string | null;
-  sector_name?: string | null;
-  school_name?: string | null;
-  status: UserStatus;
-  last_login?: string | null;
-  lastLogin?: string | null;
+  full_name: string;
+  avatar?: string | null;
   phone?: string | null;
   position?: string | null;
+  language: 'az' | 'en' | 'ru' | 'tr';
+  last_login?: string | null;
+  status: 'active' | 'inactive' | 'blocked';
+  created_at: string;
+  updated_at: string;
+  email?: string;
+}
+
+export interface UserRoleData {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  phone?: string | null;
+  position?: string | null;
+  language: 'az' | 'en' | 'ru' | 'tr';
   avatar?: string | null;
-  language: Language;
-  created_at?: string | null;
-  updated_at?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  notificationSettings?: NotificationSettings;
-  twoFactorEnabled?: boolean; // PreferencesForm və ProfileSettings üçün əlavə edildi
+  status: 'active' | 'inactive' | 'blocked';
+  last_login?: string | null;
+  created_at: string;
+  updated_at: string;
+  
+  name: string;
+  regionId?: string | null;
+  sectorId?: string | null;
+  schoolId?: string | null;
+  lastLogin?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  
+  adminEntity?: any;
+  
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+    push?: boolean;
+    sms?: boolean;
+  };
 }
 
 export interface Region {
@@ -87,6 +117,6 @@ export interface School {
   completion_rate?: number;
   created_at?: string;
   updated_at?: string;
-  region_name?: string; // SchoolsContainer üçün əlavə edildi
-  sector_name?: string; // SchoolsContainer üçün əlavə edildi
+  region_name?: string;
+  sector_name?: string;
 }

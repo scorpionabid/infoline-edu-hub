@@ -1,3 +1,4 @@
+
 import { EntryValue } from '@/types/dataEntry';
 import { Column } from '@/types/column';
 import { ColumnValidationError } from '@/types/dataEntry';
@@ -36,7 +37,7 @@ export const validateForm = (entries: EntryValue[], columns: Column[]): ColumnVa
     // Məcburi sahələrin yoxlanması
     if (column.is_required && (value === undefined || value === null || value === '')) {
       errors.push({
-        field: column.id,
+        columnId: column.id,
         message: `${column.name} sahəsi mütləq doldurulmalıdır`,
         type: 'required'
       });
@@ -50,7 +51,7 @@ export const validateForm = (entries: EntryValue[], columns: Column[]): ColumnVa
         
         if (isNaN(numValue)) {
           errors.push({
-            field: column.id,
+            columnId: column.id,
             message: `${column.name} sahəsi ədəd olmalıdır`,
             type: 'type'
           });
@@ -65,7 +66,7 @@ export const validateForm = (entries: EntryValue[], columns: Column[]): ColumnVa
             
           if (validation.min !== undefined && numValue < validation.min) {
             errors.push({
-              field: column.id,
+              columnId: column.id,
               message: `${column.name} sahəsi minimum ${validation.min} olmalıdır`,
               type: 'min'
             });
@@ -73,7 +74,7 @@ export const validateForm = (entries: EntryValue[], columns: Column[]): ColumnVa
           
           if (validation.max !== undefined && numValue > validation.max) {
             errors.push({
-              field: column.id,
+              columnId: column.id,
               message: `${column.name} sahəsi maksimum ${validation.max} olmalıdır`,
               type: 'max'
             });

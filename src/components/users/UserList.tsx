@@ -75,7 +75,6 @@ const UserList: React.FC<UserListProps> = ({
     }
   }, [searchQuery, updateFilter]);
 
-  // Timeout üçün useEffect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery) {
@@ -102,13 +101,11 @@ const UserList: React.FC<UserListProps> = ({
 
   const isUserSelected = (userId: string) => selectedUsers.includes(userId);
 
-  // Array'in mövcud olub-olmadığını yoxlayırıq
   const paginatedUsers = users ? users.slice(
     (currentPage - 1) * pageSize, 
     currentPage * pageSize
   ) : [];
 
-  // Əgər yükləmə vəziyyətindədirsə yükləmə indikatoru göstər
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -117,7 +114,6 @@ const UserList: React.FC<UserListProps> = ({
     );
   }
 
-  // Xəta varsa göstər
   if (error) {
     return (
       <div className="p-4 bg-destructive/10 text-destructive rounded-md">
@@ -250,7 +246,7 @@ const UserList: React.FC<UserListProps> = ({
                   {t('previous')}
                 </Button>
                 <span className="text-sm">
-                  {t('pageXOfY', { current: currentPage, total: totalPages })}
+                  {t('pageXOfY', { current: String(currentPage), total: String(totalPages) })}
                 </span>
                 <Button
                   variant="outline"

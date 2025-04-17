@@ -74,17 +74,15 @@ export const useUserOperations = (onComplete: () => void) => {
   }, [t, onComplete]);
 
   // İstifadəçini silir
-  const handleDeleteUserConfirm = useCallback(async () => {
-    if (!selectedUser) return;
-    
+  const handleDeleteUserConfirm = useCallback(async (userId: string) => {
     try {
-      console.log('Deleting user:', selectedUser.id);
+      console.log('Deleting user:', userId);
       
       // İlk olaraq user_roles cədvəlindən silirik
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
-        .eq('user_id', selectedUser.id);
+        .eq('user_id', userId);
       
       if (roleError) throw roleError;
       
@@ -92,7 +90,7 @@ export const useUserOperations = (onComplete: () => void) => {
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', selectedUser.id);
+        .eq('id', userId);
       
       if (profileError) throw profileError;
       
@@ -106,7 +104,7 @@ export const useUserOperations = (onComplete: () => void) => {
         description: error.message
       });
     }
-  }, [selectedUser, t, onComplete]);
+  }, [t, onComplete]);
 
   return {
     selectedUser,

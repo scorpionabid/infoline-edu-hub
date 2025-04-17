@@ -19,24 +19,20 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLanguage } from "@/context/LanguageContext";
-import { Column, ColumnType } from "@/types/column";
+import { ColumnType } from "@/types/column";
 
 interface BasicColumnFieldsProps {
   form: UseFormReturn<any>;
-  categories: { id: string; name: string }[];
-  columns: Column[];
-  editColumn?: Column;
+  categories: any[];
   selectedType: ColumnType;
-  handleTypeChange: (value: string) => void;
+  onTypeChange: (type: string) => void;
 }
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   form,
   categories,
-  columns,
-  editColumn,
   selectedType,
-  handleTypeChange,
+  onTypeChange,
 }) => {
   const { t } = useLanguage();
 
@@ -49,9 +45,11 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
           <FormItem>
             <FormLabel>{t("columnName")}</FormLabel>
             <FormControl>
-              <Input placeholder={t("columnNamePlaceholder")} {...field} />
+              <Input placeholder={t("enterColumnName")} {...field} />
             </FormControl>
-            <FormDescription>{t("columnNameDescription")}</FormDescription>
+            <FormDescription>
+              {t("columnNameDescription")}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -59,14 +57,13 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 
       <FormField
         control={form.control}
-        name="categoryId"
+        name="category_id"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("category")}</FormLabel>
             <Select
               onValueChange={field.onChange}
               defaultValue={field.value}
-              value={field.value}
             >
               <FormControl>
                 <SelectTrigger>
@@ -81,7 +78,9 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <FormDescription>{t("categoryDescription")}</FormDescription>
+            <FormDescription>
+              {t("categoryDescription")}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -92,33 +91,34 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("columnType")}</FormLabel>
+            <FormLabel>{t("fieldType")}</FormLabel>
             <Select
               onValueChange={(value) => {
-                handleTypeChange(value);
                 field.onChange(value);
+                onTypeChange(value);
               }}
               defaultValue={field.value}
-              value={field.value}
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("selectColumnType")} />
+                  <SelectValue placeholder={t("selectFieldType")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="text">{t("text")}</SelectItem>
-                <SelectItem value="textarea">{t("textarea")}</SelectItem>
                 <SelectItem value="number">{t("number")}</SelectItem>
-                <SelectItem value="date">{t("date")}</SelectItem>
+                <SelectItem value="textarea">{t("textarea")}</SelectItem>
                 <SelectItem value="select">{t("select")}</SelectItem>
                 <SelectItem value="checkbox">{t("checkbox")}</SelectItem>
                 <SelectItem value="radio">{t("radio")}</SelectItem>
-                <SelectItem value="email">{t("email")}</SelectItem>
-                <SelectItem value="phone">{t("phone")}</SelectItem>
+                <SelectItem value="date">{t("date")}</SelectItem>
+                <SelectItem value="file">{t("file")}</SelectItem>
+                <SelectItem value="image">{t("image")}</SelectItem>
               </SelectContent>
             </Select>
-            <FormDescription>{t("columnTypeDescription")}</FormDescription>
+            <FormDescription>
+              {t("fieldTypeDescription")}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -126,7 +126,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 
       <FormField
         control={form.control}
-        name="isRequired"
+        name="is_required"
         render={({ field }) => (
           <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
             <FormControl>
@@ -136,25 +136,13 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
               />
             </FormControl>
             <div className="space-y-1 leading-none">
-              <FormLabel>{t("isRequired")}</FormLabel>
-              <FormDescription>{t("isRequiredDescription")}</FormDescription>
+              <FormLabel>
+                {t("required")}
+              </FormLabel>
+              <FormDescription>
+                {t("requiredDescription")}
+              </FormDescription>
             </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="order"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("order")}</FormLabel>
-            <FormControl>
-              <Input type="number" min="1" {...field} />
-            </FormControl>
-            <FormDescription>{t("orderDescription")}</FormDescription>
-            <FormMessage />
           </FormItem>
         )}
       />
