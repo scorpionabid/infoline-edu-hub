@@ -1,68 +1,68 @@
 
-import { Column } from './column'; 
-import { Json } from '@/integrations/supabase/types';
-
-// Category status tipi
 export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+export type CategoryAssignment = 'all' | 'sectors';
 
-// Əsas Category interfeysi
 export interface Category {
   id: string;
   name: string;
-  description: string;
-  assignment: 'all' | 'sectors';
-  deadline: string | null;
-  status: CategoryStatus;
-  priority: number;
-  created_at: string;
-  updated_at: string;
+  description?: string;
+  status?: CategoryStatus;
+  deadline?: string;
+  assignment?: CategoryAssignment;
   column_count?: number;
   archived?: boolean;
-  completionPercentage?: number;
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// Sütunları olan kateqoriya interfeysi
 export interface CategoryWithColumns extends Category {
   columns: Column[];
-  completionPercentage: number;
+  columnCount?: number;
 }
 
-// Kateqoriya filtri üçün interfeys
-export interface CategoryFilter {
-  status: string[];
-  assignment: string[];
-  search: string;
-}
-
-// Supabase-dən gələn məlumatları Category tipinə çevirmək üçün funksiya
-export const adaptSupabaseCategory = (dbData: any): Category => {
+// Adapter funksiyası əlavə edək
+export const adaptSupabaseCategory = (data: any): Category => {
   return {
-    id: dbData.id,
-    name: dbData.name,
-    description: dbData.description || '',
-    assignment: dbData.assignment || 'all',
-    deadline: dbData.deadline,
-    status: dbData.status || 'active',
-    priority: dbData.priority || 0,
-    created_at: dbData.created_at,
-    updated_at: dbData.updated_at,
-    column_count: dbData.column_count || 0,
-    archived: dbData.archived || false,
-    completionPercentage: dbData.completionPercentage || 0
+    id: data.id,
+    name: data.name,
+    description: data.description || "",
+    status: data.status || "active",
+    deadline: data.deadline,
+    assignment: data.assignment || "all",
+    column_count: data.column_count || 0,
+    archived: data.archived || false,
+    priority: data.priority || 0,
+    created_at: data.created_at,
+    updated_at: data.updated_at
   };
 };
 
-// Category tipindən Supabase-ə göndərmək üçün funksiya
-export const adaptCategoryToSupabase = (category: Category): Record<string, any> => {
+export const adaptCategoryToSupabase = (category: Category): any => {
   return {
     id: category.id,
     name: category.name,
     description: category.description,
-    assignment: category.assignment,
-    deadline: category.deadline,
     status: category.status,
+    deadline: category.deadline,
+    assignment: category.assignment,
     priority: category.priority,
-    column_count: category.column_count || 0,
-    archived: category.archived || false,
+    archived: category.archived,
+    column_count: category.column_count,
+    created_at: category.created_at,
+    updated_at: category.updated_at
   };
 };
+
+// Tip uyğunluğunu təmin etmək üçün Column tipinə istinad
+import { Column } from './column';
+
+// Filtrlər üçün tip
+export interface CategoryFilter {
+  status: string;
+  assignment: string;
+  deadline: string;
+}
+
+// Form statusu
+export type FormStatus = 'idle' | 'loading' | 'success' | 'error';

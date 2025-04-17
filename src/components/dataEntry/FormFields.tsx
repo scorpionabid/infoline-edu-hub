@@ -110,7 +110,8 @@ const FormFields: React.FC<FormFieldsProps> = ({
         category_id: category.id,
         school_id: existingEntry?.school_id || '',
         value: value,
-        status: existingEntry?.status || 'pending'
+        status: existingEntry?.status || 'pending',
+        columnId: columnId // Əlavə edilmiş column_id 
       });
     });
     

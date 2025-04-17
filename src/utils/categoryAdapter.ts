@@ -1,5 +1,5 @@
 
-import { Category, CategoryWithColumns, adaptSupabaseCategory } from '@/types/category';
+import { Category, CategoryWithColumns } from '@/types/category';
 import { Column } from '@/types/column';
 import { columnAdapter } from './columnAdapter';
 
@@ -29,7 +29,19 @@ export const categoryAdapter = {
   },
   
   adaptSupabaseToCategory: (dbCategory: any): Category => {
-    return adaptSupabaseCategory(dbCategory);
+    return {
+      id: dbCategory.id,
+      name: dbCategory.name,
+      description: dbCategory.description || '',
+      status: dbCategory.status || 'active',
+      deadline: dbCategory.deadline || null,
+      assignment: dbCategory.assignment || 'all',
+      column_count: dbCategory.column_count || 0,
+      archived: dbCategory.archived || false,
+      priority: dbCategory.priority || 0,
+      created_at: dbCategory.created_at,
+      updated_at: dbCategory.updated_at
+    };
   },
   
   adaptToCategoryWithColumns: (
@@ -39,7 +51,7 @@ export const categoryAdapter = {
     return {
       ...category,
       columns: columns.filter(col => col.category_id === category.id),
-      completionPercentage: 0 // Default değer, gerçek hesaplama implementasyonu eklenebilir
+      columnCount: category.column_count || columns.filter(col => col.category_id === category.id).length
     };
   },
   
@@ -47,36 +59,17 @@ export const categoryAdapter = {
     dbCategory: any, 
     dbColumns: any[] = []
   ): CategoryWithColumns => {
-    const category = adaptSupabaseCategory(dbCategory);
+    const category = categoryAdapter.adaptSupabaseToCategory(dbCategory);
     
     // DB-dən gələn sütunları modellərə çevir
     const columns = dbColumns
       .filter(col => col.category_id === dbCategory.id)
-      .map((col) => {
-        // ColumnOption tipinə uyğun konversiya
-        let options = null;
-        if (col.options) {
-          if (Array.isArray(col.options)) {
-            options = col.options.map((opt: any) => ({
-              id: opt.id || String(Math.random()),
-              label: opt.label,
-              value: opt.value
-            }));
-          } else if (typeof col.options === 'object') {
-            options = []
-          }
-        }
-        
-        return {
-          ...col,
-          options
-        };
-      });
+      .map(columnAdapter.adaptSupabaseToColumn);
     
     return {
       ...category,
       columns,
-      completionPercentage: 0 // Default dəyər, real hesablama implementasiyası əlavə edilə bilər
+      columnCount: category.column_count || columns.length
     };
   }
 };

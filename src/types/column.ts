@@ -1,40 +1,60 @@
 
-import { Json } from '@/integrations/supabase/types';
+import { Json } from './json';
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file' | 'image';
-
-export type ColumnStatus = 'active' | 'inactive' | 'archived';
-
-export interface ColumnOption {
-  id: string;
-  label: string;
-  value: string;
-}
-
-export interface ColumnValidation {
-  minValue?: number;
-  maxValue?: number;
+export interface ValidationRules {
+  required?: boolean;
+  min?: number;
+  max?: number;
   minLength?: number;
   maxLength?: number;
-  email?: boolean;
   pattern?: string;
-  required?: boolean;
+  email?: boolean;
+  url?: boolean;
+  numeric?: boolean;
+  integer?: boolean;
+  date?: boolean;
+  custom?: string;
+}
+
+export interface ColumnOptions {
+  choices?: string[];
+  multiple?: boolean;
+  other?: boolean;
+  defaultValue?: string | string[];
 }
 
 export interface Column {
   id: string;
-  category_id: string;
   name: string;
-  type: ColumnType;
+  category_id: string;
+  type: string;
   is_required: boolean;
-  placeholder: string | null;
-  help_text: string | null;
   order_index: number;
-  status: ColumnStatus;
-  validation: any; // Validasiya qaydaları
-  default_value: string | null;
-  options: ColumnOption[] | null;
+  help_text?: string;
+  placeholder?: string;
+  default_value?: string;
+  options?: Json;
+  validation?: Json;
+  status?: string;
   created_at: string;
   updated_at: string;
   parent_column_id?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string;
+  priority?: number;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+  assignment?: string;
+  column_count?: number;
+  archived?: boolean;
+}
+
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
 }

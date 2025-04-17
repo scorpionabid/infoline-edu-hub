@@ -1,86 +1,69 @@
+
 import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 import { CategoryEntryData } from '@/types/dataEntry';
 
-export const useDataUpdates = () => {
-  const { toast } = useToast();
+interface UseDataUpdatesProps {
+  categories: any[];
+  formData: any;
+  validationErrors: any[];
+  initializeForm: (entries: any[], status: string) => void;
+  validateAllEntries: (entries: any[], columns: Record<string, any>) => boolean;
+  submitForm: () => void;
+  setCurrentCategoryIndex: (index: number) => void;
+  updateValue: (categoryId: string, columnId: string, value: any) => void;
+  saveForm: () => void;
+}
 
-  const handleEntryChange = useCallback(
-    (
-      entries: CategoryEntryData[],
-      categoryId: string,
-      columnId: string,
-      value: any
-    ): CategoryEntryData[] => {
-      return entries.map((entry) => {
-        if (entry.categoryId === categoryId) {
-          const updatedValues = entry.values.map((val) => {
-            if (val.column_id === columnId) {
-              return { ...val, value: value };
-            }
-            return val;
-          });
-
-          return {
-            ...entry,
-            values: updatedValues,
-          };
-        }
-        return entry;
+/**
+ * @description Məlumat yeniləmələrini idarə etmək üçün hook
+ */
+export const useDataUpdates = ({
+  categories,
+  formData,
+  validationErrors,
+  initializeForm,
+  validateAllEntries,
+  submitForm,
+  setCurrentCategoryIndex,
+  updateValue,
+  saveForm
+}: UseDataUpdatesProps) => {
+  const { t } = useLanguage();
+  
+  // Excel-dən məlumatları yeniləmək üçün funksiya
+  const updateFormDataFromExcel = useCallback((data: Record<string, any>, categoryId: string) => {
+    try {
+      // Yalnız bir kateqoriya üçün dəyişiklikləri tətbiq et
+      Object.entries(data).forEach(([columnId, value]) => {
+        updateValue(categoryId, columnId, value);
       });
-    },
-    []
-  );
-
-  const handleEntrySubmit = useCallback(
-    (entries: CategoryEntryData[], categoryId: string): CategoryEntryData[] => {
-      return entries.map((entry) => {
-        if (entry.categoryId === categoryId) {
-          return {
-            ...entry,
-            isSubmitted: true,
-          };
-        }
-        return entry;
+      
+      saveForm();
+      
+      toast.success(t('excelDataImported'), {
+        description: t('excelImportSuccess')
       });
-    },
-    []
-  );
-
-  const handleEntryApproval = useCallback(
-    (entries: CategoryEntryData[], categoryId: string): CategoryEntryData[] => {
-      return entries.map((entry) => {
-        if (entry.categoryId === categoryId) {
-          return {
-            ...entry,
-            approvalStatus: 'approved',
-          };
-        }
-        return entry;
+    } catch (error) {
+      console.error('Excel data update error:', error);
+      toast.error(t('excelImportError'), {
+        description: t('excelImportFailed')
       });
-    },
-    []
-  );
-
-  const handleEntryRejection = useCallback(
-    (entries: CategoryEntryData[], categoryId: string): CategoryEntryData[] => {
-      return entries.map((entry) => {
-        if (entry.categoryId === categoryId) {
-          return {
-            ...entry,
-            approvalStatus: 'rejected',
-          };
-        }
-        return entry;
-      });
-    },
-    []
-  );
-
+    }
+  }, [updateValue, saveForm, t]);
+  
+  // Kateqoriyanı dəyişmək üçün funksiya
+  const changeCategory = useCallback((index: number) => {
+    // Mövcud dəyişiklikləri saxla
+    saveForm();
+    
+    // Yeni kateqoriyaya keç
+    setCurrentCategoryIndex(index);
+  }, [saveForm, setCurrentCategoryIndex]);
+  
   return {
-    handleEntryChange,
-    handleEntrySubmit,
-    handleEntryApproval,
-    handleEntryRejection,
+    updateFormDataFromExcel,
+    changeCategory
   };
 };

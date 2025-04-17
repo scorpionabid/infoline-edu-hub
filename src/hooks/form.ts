@@ -1,31 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CategoryEntryData } from '@/types/dataEntry';
 
-export const useForm = () => {
-  const [entries, setEntries] = useState<CategoryEntryData[]>([]);
+interface UseCategoryFormReturn {
+  categoryStatus: string;
+  updateCategoryStatus: (category: CategoryEntryData) => void;
+}
 
-  const updateEntryValue = (categoryId: string, columnId: string, value: any) => {
-    setEntries(prevEntries => {
-      return prevEntries.map(entry => {
-        if (entry.categoryId === categoryId) {
-          return {
-            ...entry,
-            values: entry.values.map(val => {
-              if (val.column_id === columnId) {
-                return { ...val, value };
-              }
-              return val;
-            })
-          };
-        }
-        return entry;
-      });
-    });
+export function useCategoryForm(): UseCategoryFormReturn {
+  const [categoryStatus, setCategoryStatus] = useState<string>('idle');
+
+  const updateCategoryStatus = (category: CategoryEntryData) => {
+    // Calculate completion percentage (if missing)
+    const completionPercentage = category.completionPercentage || 0; 
+
+    if (completionPercentage === 100) {
+      setCategoryStatus('completed');
+    } else if (completionPercentage > 0) {
+      setCategoryStatus('pending');
+    } else {
+      setCategoryStatus('draft');
+    }
   };
 
   return {
-    entries,
-    setEntries,
-    updateEntryValue
+    categoryStatus,
+    updateCategoryStatus,
   };
-};
+}

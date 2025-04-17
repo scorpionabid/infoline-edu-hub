@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock, Timer, AlertCircle, Save, HelpCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -11,11 +11,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Category, CategoryStatus } from '@/types/category';
+import { Category, CategoryStatus, FormStatus } from '@/types/category';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { az } from 'date-fns/locale';
-import { FormStatus } from '@/types/form';
 
 export interface CategoryListProps {
   categories: Category[];
@@ -125,21 +124,21 @@ const CategoryList: React.FC<CategoryListProps> = ({
   };
   
   // Form statusu üçün badge
-  const renderFormStatusBadge = (status: string) => {
+  const renderFormStatusBadge = (status: FormStatus) => {
     switch (status) {
-      case FormStatus.COMPLETED:
+      case 'completed':
         return <Badge variant="success">Tamamlanıb</Badge>;
-      case FormStatus.PENDING:
+      case 'pending':
         return <Badge variant="secondary">Gözləmədə</Badge>;
-      case FormStatus.REJECTED:
+      case 'rejected':
         return <Badge variant="destructive">Rədd edilib</Badge>;
-      case FormStatus.DUE_SOON:
+      case 'dueSoon':
         return <Badge variant="warning">Tezliklə</Badge>;
-      case FormStatus.OVERDUE:
+      case 'overdue':
         return <Badge variant="destructive">Gecikib</Badge>;
-      case FormStatus.APPROVED:
+      case 'approved':
         return <Badge variant="success">Təsdiqlənib</Badge>;
-      case FormStatus.DRAFT:
+      case 'draft':
         return <Badge variant="outline">Qaralama</Badge>;
       default:
         return null;
@@ -187,28 +186,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
         );
       default:
         return null;
-    }
-  };
-  
-  // Status ikonlarını FormStatus enum standartına uyğunlaşdıraq.
-  const getStatusIcon = (status: FormStatus) => {
-    switch (status) {
-      case FormStatus.COMPLETED:
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case FormStatus.PENDING:
-        return <Clock className="h-4 w-4 text-orange-500" />;
-      case FormStatus.REJECTED:
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case FormStatus.DUE_SOON:
-        return <Timer className="h-4 w-4 text-amber-500" />;
-      case FormStatus.OVERDUE:
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case FormStatus.APPROVED:
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      case FormStatus.DRAFT:
-        return <Save className="h-4 w-4 text-gray-500" />;
-      default:
-        return <HelpCircle className="h-4 w-4 text-gray-500" />;
     }
   };
   

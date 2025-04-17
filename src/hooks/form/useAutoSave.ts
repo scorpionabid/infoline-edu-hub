@@ -1,71 +1,60 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useToast } from '@/hooks/use-toast';
+
+import { useCallback, useEffect } from 'react';
 import { DataEntryForm } from '@/types/dataEntry';
+import { toast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface UseAutoSaveProps {
-  form: DataEntryForm;
-  save: (form: DataEntryForm) => Promise<boolean>;
-  debounceTime?: number;
-  enabled?: boolean;
+  formData: DataEntryForm;
+  isAutoSaving: boolean;
+  setIsAutoSaving: React.Dispatch<React.SetStateAction<boolean>>;
+  lastOperationTimeRef: React.RefObject<number>;
 }
 
-export const useAutoSave = ({ form, save, debounceTime = 1000, enabled = true }: UseAutoSaveProps) => {
-  const { toast } = useToast();
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-  const isMounted = useRef(false);
-
-  const debouncedSave = useCallback(async (currentForm: DataEntryForm) => {
-    if (!isMounted.current) return;
-
-    try {
-      const success = await save(currentForm);
-      if (success) {
-        toast({
-          title: "Məlumat avtomatik olaraq yadda saxlanıldı!",
-          duration: 2000,
-        });
-      } else {
-        toast({
-          title: "Məlumatları yadda saxlamaq mümkün olmadı!",
-          variant: "destructive",
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Xəta baş verdi!",
-        description: "Məlumatları avtomatik yadda saxlamaq mümkün olmadı.",
-        variant: "destructive",
-        duration: 2000,
-      });
+/**
+ * Avtomatik saxlama funksionallığını idarə edən hook
+ */
+export const useAutoSave = ({
+  formData,
+  isAutoSaving,
+  setIsAutoSaving,
+  lastOperationTimeRef
+}: UseAutoSaveProps) => {
+  const { t } = useLanguage();
+  
+  // Auto saxlama simulyasiyası
+  const setupAutoSave = useCallback((validateFn: () => boolean) => {
+    if (isAutoSaving) {
+      // Yalnız son əməliyyatdan 1.5 saniyə keçibsə avtomatik saxlayaq
+      const timer = setTimeout(() => {
+        const currentTime = Date.now();
+        const timeSinceLastOperation = currentTime - lastOperationTimeRef.current;
+        
+        // Əgər istifadəçi son 1.5 saniyədə yeni dəyişiklik etməyibsə
+        if (timeSinceLastOperation >= 1500) {
+          // Burada real API çağırışı olmalıdır
+          console.log("Məlumatlar avtomatik saxlanıldı:", formData);
+          
+          // LocalStorage-də saxlayaq
+          localStorage.setItem('infolineFormData', JSON.stringify(formData));
+          
+          setIsAutoSaving(false);
+          
+          toast({
+            title: t('changesAutoSaved'),
+            variant: "default",
+          });
+          
+          // Məlumatları saxladıqdan sonra validasiya etmək
+          validateFn();
+        }
+      }, 1500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [save, toast]);
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!enabled || form.isSubmitting || form.isSubmitted) return;
-
-    if (timeoutIdRef.current) {
-      clearTimeout(timeoutIdRef.current);
-    }
-
-    timeoutIdRef.current = setTimeout(() => {
-      debouncedSave(form);
-    }, debounceTime);
-
-    return () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
-    };
-  }, [form, debouncedSave, debounceTime, enabled]);
+  }, [formData, isAutoSaving, t, setIsAutoSaving, lastOperationTimeRef]);
+  
+  return {
+    setupAutoSave
+  };
 };

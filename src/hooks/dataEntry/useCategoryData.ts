@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/dataEntry';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType } from '@/types/column';
+import { columnAdapter } from '@/utils/columnAdapter';
 
-export const useCategoryData = ({ schoolId }: { schoolId?: string } = {}) => {
+export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,7 +17,7 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string } = {}) => {
         .from('categories')
         .select('*')
         .eq('status', 'active')
-        .order('priority', { ascending: false });
+        .order('priority', { ascending: true });
 
       if (categoriesError) throw categoriesError;
 
@@ -48,30 +47,29 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string } = {}) => {
       const formattedCategories = categoriesData.map(category => {
         const categoryColumns = columnsData
           .filter(column => column.category_id === category.id)
-          .map(column => {
-            return {
-              id: column.id,
-              category_id: column.category_id,
-              name: column.name,
-              type: column.type as ColumnType,
-              is_required: column.is_required,
-              placeholder: column.placeholder,
-              help_text: column.help_text,
-              order_index: column.order_index,
-              status: column.status as 'active' | 'inactive' | 'archived',
-              validation: column.validation,
-              default_value: column.default_value,
-              options: column.options,
-              created_at: column.created_at,
-              updated_at: column.updated_at,
-              entry: schoolId 
-                ? entriesData.find(entry => 
-                    entry.column_id === column.id && 
-                    entry.school_id === schoolId
-                  ) 
-                : null
-            } as Column;
-          });
+          .map(column => ({
+            id: column.id,
+            category_id: column.category_id,
+            name: column.name,
+            type: column.type as ColumnType,
+            is_required: column.is_required,
+            placeholder: column.placeholder,
+            help_text: column.help_text,
+            order_index: column.order_index,
+            status: column.status as 'active' | 'inactive' | 'draft',
+            validation: column.validation,
+            default_value: column.default_value,
+            options: column.options,
+            parent_column_id: column.parent_column_id,
+            created_at: column.created_at,
+            updated_at: column.updated_at,
+            entry: schoolId 
+              ? entriesData.find(entry => 
+                  entry.column_id === column.id && 
+                  entry.school_id === schoolId
+                ) 
+              : null
+          }));
 
         return {
           id: category.id,
@@ -86,7 +84,7 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string } = {}) => {
           columns: categoryColumns,
           completionPercentage: schoolId ? 
             calculateCompletionPercentage(categoryColumns.map(col => col.entry)) : 0
-        } as CategoryWithColumns;
+        };
       });
 
       setCategories(formattedCategories);
@@ -103,8 +101,8 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string } = {}) => {
   }, [fetchCategories]);
 
   const getCategoryById = (id?: string): CategoryWithColumns => {
-    if (!id) return categories[0] || { id: '', name: '', columns: [], completionPercentage: 0 } as CategoryWithColumns;
-    return categories.find(cat => cat.id === id) || categories[0] || { id: '', name: '', columns: [], completionPercentage: 0 } as CategoryWithColumns;
+    if (!id) return categories[0] || { id: '', name: '', columns: [] };
+    return categories.find(cat => cat.id === id) || categories[0] || { id: '', name: '', columns: [] };
   };
 
   const refreshCategories = async () => {
@@ -139,22 +137,15 @@ const fetchCategoryColumns = async (categoryId: string) => {
     
     if (!data) return [];
     
-    return data.map(column => ({
-      id: column.id,
-      category_id: column.category_id,
-      name: column.name,
-      type: column.type as ColumnType,
-      is_required: column.is_required,
-      placeholder: column.placeholder,
-      help_text: column.help_text,
-      order_index: column.order_index,
-      status: column.status as 'active' | 'inactive' | 'archived',
-      validation: column.validation,
-      default_value: column.default_value,
-      options: column.options,
-      created_at: column.created_at,
-      updated_at: column.updated_at
-    } as Column));
+    return data.map(column => {
+      if (column.parent_column_id) {
+        return columnAdapter.adaptSupabaseToColumn({
+          ...column,
+          parent_column_id: column.parent_column_id
+        });
+      }
+      return columnAdapter.adaptSupabaseToColumn(column);
+    });
   } catch (err) {
     console.error('Error fetching columns:', err);
     return [];

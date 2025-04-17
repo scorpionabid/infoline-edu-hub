@@ -1,25 +1,62 @@
+
 import { useCallback } from 'react';
-import { EntryValue } from '@/types/dataEntry';
+import { EntryValue, DataEntryForm } from '@/types/dataEntry';
 
-// Xətani düzəldək: `categoryId` əvəzinə `category_id`, `columnId` əvəzinə `column_id` istifadə edək
+interface UseFormInitializationProps {
+  setFormData: React.Dispatch<React.SetStateAction<DataEntryForm>>;
+}
 
-export const useFormInitialization = (initialData?: any) => {
-  // İlkin məlumatlar varsa, onları hazırlayırıq
-  const prepareInitialValues = useCallback((data: any) => {
-    if (!data || !data.entries) return {};
-
-    const initialValues: Record<string, any> = {};
-
-    data.entries.forEach((entry: any) => {
-      entry.values?.forEach((value: EntryValue) => {
-        initialValues[`${value.category_id}_${value.column_id}`] = value.value;
-      });
-    });
-
-    return initialValues;
-  }, []);
-
+/**
+ * Formanın ilkin məlumatlarını yükləyən hook
+ */
+export const useFormInitialization = ({ setFormData }: UseFormInitializationProps) => {
+  // Formanı ilkin məlumatlarla doldurmaq
+  const initializeForm = useCallback((initialEntries: EntryValue[], formStatus: 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted' = 'draft') => {
+    // Daha öncə saxlanılmış məlumatlar varsa onları localStorage-dən yükləyək
+    const savedFormData = localStorage.getItem('infolineFormData');
+    
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        if (parsedData.entries && parsedData.entries.length > 0) {
+          // LocalStorage-də olan məlumatlarla serverdən gələn məlumatları birləşdirmək
+          const mergedEntries = initialEntries.map(initialEntry => {
+            const savedEntry = parsedData.entries.find((e: EntryValue) => 
+              e.categoryId === initialEntry.categoryId && e.columnId === initialEntry.columnId
+            );
+            
+            if (savedEntry) {
+              return {
+                ...initialEntry,
+                value: savedEntry.value
+              };
+            }
+            return initialEntry;
+          });
+          
+          setFormData(prev => ({
+            ...prev,
+            entries: mergedEntries,
+            status: formStatus === 'submitted' ? 'pending' : formStatus,
+            submittedAt: new Date().toISOString()
+          }));
+          return;
+        }
+      } catch (error) {
+        console.error('LocalStorage-dən məlumatların yüklənməsi zamanı xəta:', error);
+      }
+    }
+    
+    // Əgər localStorage-də məlumat yoxdursa, ilkin məlumatları istifadə et
+    setFormData(prev => ({
+      ...prev,
+      entries: initialEntries,
+      submittedAt: new Date().toISOString(),
+      status: formStatus === 'submitted' ? 'pending' : formStatus
+    }));
+  }, [setFormData]);
+  
   return {
-    prepareInitialValues
+    initializeForm
   };
 };

@@ -1,12 +1,10 @@
-
 import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useUsers } from '@/hooks/useUsers';
-import { Sector } from '@/types/supabase';
+import { Sector, FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth/useAuth'; 
-import { User } from '@/components/users/UserSelectParts/types';
+import { useAuth } from '@/context/auth/useAuth'; // useAuth düzgün kontekst
 
 export const useExistingUserForm = (
   sector: Sector | null,
@@ -14,7 +12,7 @@ export const useExistingUserForm = (
   onClose?: (open: boolean) => void
 ) => {
   const { t } = useLanguage();
-  const { user } = useAuth(); 
+  const { user } = useAuth(); // isAuthenticated əvəzinə user istifadə edək
   const form = useForm();
   const [showExistingAdmins, setShowExistingAdmins] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
