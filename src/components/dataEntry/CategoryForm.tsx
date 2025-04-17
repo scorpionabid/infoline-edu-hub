@@ -1,13 +1,10 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CalendarIcon, Clock, FilePlus2, SaveIcon, SendIcon } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryWithColumns } from '@/types/dataEntry';
-import { Loader2, Check, Send } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { az } from 'date-fns/locale';
-import { Badge } from '@/components/ui/badge';
+import { CategoryWithColumns } from '@/types/column';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
@@ -27,70 +24,78 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   onSubmit
 }) => {
   const { t } = useLanguage();
-
-  const formatDeadline = (deadline: string | undefined) => {
-    if (!deadline) return '';
-    try {
-      return format(new Date(deadline), 'PPP', { locale: az });
-    } catch (err) {
-      console.error('Tarix formatı xətası:', err);
-      return deadline;
-    }
-  };
-
+  
+  const deadlineDate = category.deadline ? new Date(category.deadline) : null;
+  const deadlineFormatted = deadlineDate ? 
+    deadlineDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+  
+  const daysToDeadline = deadlineDate ? 
+    Math.ceil((deadlineDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
+  
   return (
-    <div className="flex justify-between items-start border rounded-lg p-4 bg-white">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">{category.name}</h2>
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle>{category.name}</CardTitle>
         {category.description && (
-          <p className="mt-1 text-sm text-gray-500">{category.description}</p>
+          <CardDescription>{category.description}</CardDescription>
         )}
-        {category.deadline && (
-          <div className="mt-2">
-            <Badge variant="secondary">
-              {t('deadline')}: {formatDeadline(category.deadline)}
-            </Badge>
+      </CardHeader>
+      
+      <CardContent className="pb-3">
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          {deadlineFormatted && (
+            <div className="flex items-center text-sm">
+              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>
+                {t('deadline')}: {deadlineFormatted}
+                {daysToDeadline !== null && daysToDeadline > 0 ? (
+                  <span className="ml-1 text-muted-foreground">
+                    ({daysToDeadline} {t('daysRemaining')})
+                  </span>
+                ) : daysToDeadline !== null && daysToDeadline <= 0 ? (
+                  <span className="ml-1 text-destructive">
+                    ({t('overdue')})
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          )}
+          
+          <div className="flex items-center text-sm">
+            <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>
+              {t('autoSave')}: {t('enabled')}
+            </span>
           </div>
-        )}
-      </div>
-      <div className="flex space-x-2">
-        <Button
-          onClick={onSave}
-          disabled={isSaving || !isModified}
-          className={cn("min-w-[100px]")}
-          variant="outline"
+          
+          <div className="flex items-center text-sm">
+            <FilePlus2 className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>
+              {t('excelUpload')}: {t('available')}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="flex justify-between pt-3 border-t">
+        <Button 
+          variant="outline" 
+          onClick={onSave} 
+          disabled={isSaving || isSubmitting || !isModified}
         >
-          {isSaving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('saving')}
-            </>
-          ) : (
-            <>
-              <Check className="mr-2 h-4 w-4" />
-              {t('save')}
-            </>
-          )}
+          <SaveIcon className="mr-2 h-4 w-4" />
+          {isSaving ? t('saving') : t('save')}
         </Button>
-        <Button
-          onClick={onSubmit}
-          disabled={isSaving || isSubmitting}
-          className="min-w-[130px]"
+        
+        <Button 
+          onClick={onSubmit} 
+          disabled={isSubmitting || isSaving}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('submitting')}
-            </>
-          ) : (
-            <>
-              <Send className="mr-2 h-4 w-4" />
-              {t('submitForApproval')}
-            </>
-          )}
+          <SendIcon className="mr-2 h-4 w-4" />
+          {isSubmitting ? t('submitting') : t('submitForApproval')}
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 

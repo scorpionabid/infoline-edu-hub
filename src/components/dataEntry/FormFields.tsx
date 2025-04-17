@@ -3,7 +3,8 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CategoryWithColumns, EntryValue } from '@/types/dataEntry';
+import { CategoryWithColumns } from '@/types/column';
+import { DataEntry } from '@/types/dataEntry';
 import TextInput from './inputs/TextInput';
 import NumberInput from './inputs/NumberInput';
 import SelectInput from './inputs/SelectInput';
@@ -13,73 +14,82 @@ import { Form } from '@/components/ui/form';
 
 interface FormFieldsProps {
   category: CategoryWithColumns;
-  entries: EntryValue[];
-  onChange: (entries: EntryValue[]) => void;
+  entries: DataEntry[] | undefined;
+  onChange: (entries: DataEntry[]) => void;
   disabled?: boolean;
 }
 
 const FormFields: React.FC<FormFieldsProps> = ({
   category,
-  entries,
+  entries = [], // Default value as empty array
   onChange,
   disabled = false
 }) => {
+  // Ensure entries is always an array
+  const safeEntries = Array.isArray(entries) ? entries : [];
+  
   // Formun başlanğıc dəyərlərini hazırlayaq
   const initialValues = React.useMemo(() => {
     const values: Record<string, any> = { fields: {} };
-    category.columns.forEach(column => {
-      // Mövcud qeydi tapaq
-      const entry = entries.find(e => e.column_id === column.id);
-      if (entry) {
-        values.fields[column.id] = entry.value;
-      } else {
-        // Default dəyər
-        values.fields[column.id] = column.default_value || '';
-      }
-    });
+    
+    if (category && category.columns && Array.isArray(category.columns)) {
+      category.columns.forEach(column => {
+        // Mövcud qeydi tapaq
+        const entry = safeEntries.find(e => e.column_id === column.id);
+        if (entry) {
+          values.fields[column.id] = entry.value;
+        } else {
+          // Default dəyər
+          values.fields[column.id] = column.default_value || '';
+        }
+      });
+    }
+    
     return values;
-  }, [category, entries]);
+  }, [category, safeEntries]);
 
   // Dinamik validasiya sxemi yaradaq
   const schema = React.useMemo(() => {
     const fieldsSchema: Record<string, any> = {};
     
-    category.columns.forEach(column => {
-      let fieldSchema: any;
-      
-      if (column.is_required) {
-        if (column.type === 'text' || column.type === 'textarea') {
-          fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
-        } else if (column.type === 'number') {
-          fieldSchema = z.number().or(z.string().min(1, { message: 'Bu sahə məcburidir' }));
-        } else if (column.type === 'select') {
-          fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
-        } else if (column.type === 'checkbox') {
-          fieldSchema = z.array(z.string()).min(1, { message: 'Bu sahə məcburidir' });
-        } else if (column.type === 'date') {
-          fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+    if (category && category.columns && Array.isArray(category.columns)) {
+      category.columns.forEach(column => {
+        let fieldSchema: any;
+        
+        if (column.is_required) {
+          if (column.type === 'text' || column.type === 'textarea') {
+            fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+          } else if (column.type === 'number') {
+            fieldSchema = z.number().or(z.string().min(1, { message: 'Bu sahə məcburidir' }));
+          } else if (column.type === 'select') {
+            fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+          } else if (column.type === 'checkbox') {
+            fieldSchema = z.array(z.string()).min(1, { message: 'Bu sahə məcburidir' });
+          } else if (column.type === 'date') {
+            fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+          } else {
+            fieldSchema = z.any();
+          }
         } else {
-          fieldSchema = z.any();
+          // Məcburi olmayan sahələr üçün tipləri müəyyən edək
+          if (column.type === 'number') {
+            fieldSchema = z.number().optional().or(z.string().optional());
+          } else if (column.type === 'checkbox') {
+            fieldSchema = z.array(z.string()).optional();
+          } else if (column.type === 'text' || column.type === 'textarea') {
+            fieldSchema = z.string().optional();
+          } else if (column.type === 'select') {
+            fieldSchema = z.string().optional();
+          } else if (column.type === 'date') {
+            fieldSchema = z.string().optional();
+          } else {
+            fieldSchema = z.any().optional();
+          }
         }
-      } else {
-        // Məcburi olmayan sahələr üçün tipləri müəyyən edək
-        if (column.type === 'number') {
-          fieldSchema = z.number().optional().or(z.string().optional());
-        } else if (column.type === 'checkbox') {
-          fieldSchema = z.array(z.string()).optional();
-        } else if (column.type === 'text' || column.type === 'textarea') {
-          fieldSchema = z.string().optional();
-        } else if (column.type === 'select') {
-          fieldSchema = z.string().optional();
-        } else if (column.type === 'date') {
-          fieldSchema = z.string().optional();
-        } else {
-          fieldSchema = z.any().optional();
-        }
-      }
-      
-      fieldsSchema[column.id] = fieldSchema;
-    });
+        
+        fieldsSchema[column.id] = fieldSchema;
+      });
+    }
     
     return z.object({ fields: z.object(fieldsSchema) });
   }, [category]);
@@ -94,29 +104,30 @@ const FormFields: React.FC<FormFieldsProps> = ({
   const handleFormChange = React.useCallback((values: any) => {
     if (!values.fields) return;
     
-    const updatedEntries: EntryValue[] = [];
+    const updatedEntries: DataEntry[] = [];
     
     // Bütün sütunlar üçün
-    Object.entries(values.fields).forEach(([columnId, value]) => {
-      const column = category.columns.find(c => c.id === columnId);
-      if (!column) return;
-      
-      // Mövcud qeydi tapaq
-      const existingEntry = entries.find(e => e.column_id === columnId);
-      
-      updatedEntries.push({
-        id: existingEntry?.id,
-        column_id: columnId,
-        category_id: category.id,
-        school_id: existingEntry?.school_id || '',
-        value: value,
-        status: existingEntry?.status || 'pending',
-        columnId: columnId // Əlavə edilmiş column_id 
+    if (category && category.columns && Array.isArray(category.columns)) {
+      Object.entries(values.fields).forEach(([columnId, value]) => {
+        const column = category.columns.find(c => c.id === columnId);
+        if (!column) return;
+        
+        // Mövcud qeydi tapaq
+        const existingEntry = safeEntries.find(e => e.column_id === columnId);
+        
+        updatedEntries.push({
+          id: existingEntry?.id,
+          column_id: columnId,
+          category_id: category.id,
+          school_id: existingEntry?.school_id || '',
+          value: value,
+          status: existingEntry?.status || 'pending'
+        });
       });
-    });
+    }
     
     onChange(updatedEntries);
-  }, [category, entries, onChange]);
+  }, [category, safeEntries, onChange]);
 
   // Form dəyərləri dəyişdikdə handleFormChange funksiyasını çağıraq
   React.useEffect(() => {
@@ -150,11 +161,17 @@ const FormFields: React.FC<FormFieldsProps> = ({
     <Form {...form}>
       <form className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {category.columns.map((column: any) => (
-            <div key={column.id}>
-              {renderFieldByType(column)}
+          {category && category.columns && Array.isArray(category.columns) ? (
+            category.columns.map((column: any) => (
+              <div key={column.id}>
+                {renderFieldByType(column)}
+              </div>
+            ))
+          ) : (
+            <div className="col-span-2 text-center py-4">
+              Sütun məlumatları yüklənir və ya mövcud deyil
             </div>
-          ))}
+          )}
         </div>
       </form>
     </Form>

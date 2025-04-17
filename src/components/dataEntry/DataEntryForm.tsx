@@ -85,7 +85,7 @@ const DataEntryForm: React.FC = () => {
     setConfirmDialog({ open: true, action: 'submit' });
   };
 
-  if (loading && categories.length === 0) {
+  if (loading && (!categories || categories.length === 0)) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -102,7 +102,7 @@ const DataEntryForm: React.FC = () => {
     );
   }
 
-  if (categories.length === 0) {
+  if (!categories || categories.length === 0) {
     return (
       <Alert className="mb-6">
         <AlertDescription>{t('noCategoriesAvailable')}</AlertDescription>
@@ -133,7 +133,7 @@ const DataEntryForm: React.FC = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <div className="flex justify-between items-center">
           <TabsList className="h-auto p-1 overflow-x-auto max-w-screen-lg">
-            {categories.map((category) => (
+            {Array.isArray(categories) && categories.map((category) => (
               <TabsTrigger
                 key={category.id}
                 value={category.id}
@@ -150,7 +150,7 @@ const DataEntryForm: React.FC = () => {
           </TabsList>
         </div>
 
-        {categories.map((category) => (
+        {Array.isArray(categories) && categories.map((category) => (
           <TabsContent key={category.id} value={category.id} className="space-y-4">
             <CategoryForm
               category={category}
@@ -164,7 +164,7 @@ const DataEntryForm: React.FC = () => {
             <div className="border rounded-lg p-6 space-y-8">
               <FormFields
                 category={category}
-                entries={entries}
+                entries={Array.isArray(entries) ? entries : []}
                 onChange={handleEntriesChange}
                 disabled={saveStatus === DataEntrySaveStatus.SAVING}
               />

@@ -1,26 +1,22 @@
 
-import { Json } from './json';
+import { Json } from './supabase';
 
-export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'phone' | 'url' | 'boolean';
-
-export interface ColumnOption {
-  label: string;
-  value: string;
-}
-
-export interface ValidationRules {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  email?: boolean;
-  url?: boolean;
-  numeric?: boolean;
-  integer?: boolean;
-  date?: boolean;
-  custom?: string;
+export interface Column {
+  id: string;
+  category_id: string;
+  name: string;
+  type: ColumnType;
+  is_required: boolean;
+  order_index: number;
+  placeholder?: string;
+  help_text?: string;
+  options?: any;
+  validation?: ColumnValidation;
+  default_value?: any;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+  parent_column_id?: string;
 }
 
 export interface ColumnValidation {
@@ -29,42 +25,43 @@ export interface ColumnValidation {
   minLength?: number;
   maxLength?: number;
   pattern?: string;
-  required?: boolean;
-  [key: string]: any;
+  customMessage?: string;
 }
 
-export interface Column {
-  id: string;
-  name: string;
-  category_id: string;
-  type: ColumnType;
-  is_required: boolean;
-  order_index: number;
-  help_text?: string;
-  placeholder?: string;
-  default_value?: string;
-  options?: ColumnOption[];
-  validation?: ColumnValidation;
-  status?: string;
-  created_at: string;
-  updated_at: string;
-  parent_column_id?: string;
-}
+export type ColumnType = 'text' | 'number' | 'select' | 'date' | 'checkbox' | 'textarea' | 'radio' | 'file';
+
+export type ColumnOption = {
+  label: string;
+  value: string | number;
+};
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
+  assignment?: 'all' | 'sectors';
   deadline?: string;
-  priority?: number;
   status?: string;
-  created_at: string;
-  updated_at: string;
-  assignment?: string;
-  column_count?: number;
-  archived?: boolean;
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CategoryWithColumns extends Category {
   columns: Column[];
+  completionPercentage?: number;
+}
+
+export interface ColumnFormData {
+  name: string;
+  type: ColumnType;
+  is_required: boolean;
+  order_index: number;
+  placeholder?: string;
+  help_text?: string;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  default_value?: any;
+  status: 'active' | 'inactive' | 'draft';
+  parent_column_id?: string;
 }
