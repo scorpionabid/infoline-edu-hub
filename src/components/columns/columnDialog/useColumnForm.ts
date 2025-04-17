@@ -26,15 +26,15 @@ const columnFormSchema = z.object({
 
 export type ColumnFormValues = z.infer<typeof columnFormSchema>;
 
-export const useColumnForm = (categories: any[], column: Column | null, onSubmitCallback?: (columnData: any) => Promise<boolean>) => {
-  const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || "text");
+export const useColumnForm = (categories: any[], editColumn?: Column | null, onSubmitCallback?: (columnData: any) => Promise<boolean>) => {
+  const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
-    column?.options && Array.isArray(column.options)
-      ? column.options
+    editColumn?.options && Array.isArray(editColumn.options)
+      ? editColumn.options
       : []
   );
   const [newOption, setNewOption] = useState("");
-  const isEditMode = !!column;
+  const isEditMode = !!editColumn;
   const { t } = useLanguage();
 
   // Extract default category_id from categories if available
@@ -43,40 +43,40 @@ export const useColumnForm = (categories: any[], column: Column | null, onSubmit
   const form = useForm<ColumnFormValues>({
     resolver: zodResolver(columnFormSchema),
     defaultValues: {
-      name: column?.name || "",
-      category_id: column?.category_id || defaultCategoryId,
-      type: column?.type || "text",
-      is_required: column?.is_required !== false, // Default to true if not explicitly false
-      placeholder: column?.placeholder || "",
-      help_text: column?.help_text || "",
-      order_index: column?.order_index || 0,
-      status: column?.status || "active",
-      parent_column_id: column?.parent_column_id || undefined,
-      validation: column?.validation || {},
-      options: column?.options || []
+      name: editColumn?.name || "",
+      category_id: editColumn?.category_id || defaultCategoryId,
+      type: editColumn?.type || "text",
+      is_required: editColumn?.is_required !== false, // Default to true if not explicitly false
+      placeholder: editColumn?.placeholder || "",
+      help_text: editColumn?.help_text || "",
+      order_index: editColumn?.order_index || 0,
+      status: editColumn?.status || "active",
+      parent_column_id: editColumn?.parent_column_id || undefined,
+      validation: editColumn?.validation || {},
+      options: editColumn?.options || []
     }
   });
 
   // Update form fields when column or type changes
   useEffect(() => {
-    if (column) {
-      form.setValue("name", column.name);
-      form.setValue("category_id", column.category_id);
-      form.setValue("type", column.type);
-      form.setValue("is_required", column.is_required !== false);
-      form.setValue("placeholder", column.placeholder || "");
-      form.setValue("help_text", column.help_text || "");
-      form.setValue("order_index", column.order_index || 0);
-      form.setValue("status", column.status || "active");
-      form.setValue("parent_column_id", column.parent_column_id);
-      form.setValue("validation", column.validation || {});
+    if (editColumn) {
+      form.setValue("name", editColumn.name);
+      form.setValue("category_id", editColumn.category_id);
+      form.setValue("type", editColumn.type);
+      form.setValue("is_required", editColumn.is_required !== false);
+      form.setValue("placeholder", editColumn.placeholder || "");
+      form.setValue("help_text", editColumn.help_text || "");
+      form.setValue("order_index", editColumn.order_index || 0);
+      form.setValue("status", editColumn.status || "active");
+      form.setValue("parent_column_id", editColumn.parent_column_id);
+      form.setValue("validation", editColumn.validation || {});
       
-      if (column.options && Array.isArray(column.options)) {
-        setOptions(column.options);
-        form.setValue("options", column.options);
+      if (editColumn.options && Array.isArray(editColumn.options)) {
+        setOptions(editColumn.options);
+        form.setValue("options", editColumn.options);
       }
     }
-  }, [column, form]);
+  }, [editColumn, form]);
 
   // Update type-specific fields when type changes
   useEffect(() => {

@@ -1,6 +1,13 @@
 
 import { Json } from './json';
 
+export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'phone' | 'url' | 'boolean';
+
+export interface ColumnOption {
+  label: string;
+  value: string;
+}
+
 export interface ValidationRules {
   required?: boolean;
   min?: number;
@@ -27,13 +34,13 @@ export interface Column {
   id: string;
   name: string;
   category_id: string;
-  type: string;
+  type: ColumnType;
   is_required: boolean;
   order_index: number;
   help_text?: string;
   placeholder?: string;
   default_value?: string;
-  options?: Json;
+  options?: ColumnOption[];
   validation?: Json;
   status?: string;
   created_at: string;

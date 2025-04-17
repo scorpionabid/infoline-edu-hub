@@ -1,5 +1,6 @@
 
 import { Column, ColumnType, ColumnOption } from '@/types/column';
+import { Json } from '@/types/json';
 
 export const columnAdapter = {
   adaptColumnToForm: (column: Column) => {
@@ -87,36 +88,38 @@ export const columnAdapter = {
     // Seçenekleri parse et
     if (dbColumn.options) {
       try {
+        let parsedOptions;
+        
         if (typeof dbColumn.options === 'string') {
-          column.options = JSON.parse(dbColumn.options);
-        } else if (Array.isArray(dbColumn.options)) {
-          column.options = dbColumn.options;
+          parsedOptions = JSON.parse(dbColumn.options);
         } else {
-          column.options = [];
+          parsedOptions = dbColumn.options;
         }
         
         // Eğer options array değilse veya geçersizse, boş array ata
-        if (!Array.isArray(column.options)) {
+        if (!Array.isArray(parsedOptions)) {
           console.warn('Invalid options format, using empty array instead');
           column.options = [];
+        } else {
+          // Ensure all options have the correct format
+          column.options = parsedOptions.map((opt: any) => {
+            if (typeof opt === 'string') {
+              return { label: opt, value: opt };
+            } else if (typeof opt === 'object' && opt !== null) {
+              return {
+                label: opt.label || opt.toString(),
+                value: opt.value || opt.label || opt.toString()
+              };
+            }
+            return { label: String(opt), value: String(opt) };
+          });
         }
-        
-        // Ensure all options have the correct format
-        column.options = (column.options as any[]).map((opt: any): ColumnOption => {
-          if (typeof opt === 'string') {
-            return { label: opt, value: opt };
-          } else if (typeof opt === 'object' && opt !== null) {
-            return {
-              label: opt.label || opt.toString(),
-              value: opt.value || opt.label || opt.toString()
-            };
-          }
-          return { label: String(opt), value: String(opt) };
-        });
       } catch (e) {
         console.error('Seçenekler parse hatası:', e);
         column.options = [];
       }
+    } else {
+      column.options = [];
     }
     
     // Parent sütun ID'sini ekle
