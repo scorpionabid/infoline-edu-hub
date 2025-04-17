@@ -51,11 +51,14 @@ const FormField: React.FC<FormFieldProps> = ({
   const { t } = useLanguage();
   
   // Seçim növləri üçün seçim variantlarını standardlaşdırmaq
-  const normalizedOptions = options?.map(option => 
-    typeof option === 'string' 
-      ? { label: option, value: option } 
-      : option
-  ) || [];
+  // options dəyişəninin array olub-olmadığını yoxlayırıq
+  const normalizedOptions = Array.isArray(options) 
+    ? options.map(option => 
+        typeof option === 'string' 
+          ? { label: option, value: option } 
+          : option
+      ) 
+    : [];
 
   // Müxtəlif sütun tipləri üçün inputları render etmək
   const renderInput = () => {
@@ -107,12 +110,12 @@ const FormField: React.FC<FormFieldProps> = ({
               <SelectValue placeholder={placeholder || t('selectOption') || 'Seçim edin'} />
             </SelectTrigger>
             <SelectContent>
-              {normalizedOptions.length === 0 ? (
+              {Array.isArray(normalizedOptions) && normalizedOptions.length === 0 ? (
                 <div className="p-2 text-center text-muted-foreground">
                   {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
                 </div>
               ) : (
-                normalizedOptions.map((option) => (
+                Array.isArray(normalizedOptions) && normalizedOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -129,12 +132,12 @@ const FormField: React.FC<FormFieldProps> = ({
               {t('selectMultipleOptions') || 'Bir neçə variant seçin'}
             </div>
             
-            {normalizedOptions.length === 0 ? (
+            {Array.isArray(normalizedOptions) && normalizedOptions.length === 0 ? (
               <div className="p-2 text-center text-muted-foreground">
                 {t('noOptionsAvailable') || 'Seçim variantları mövcud deyil'}
               </div>
             ) : (
-              normalizedOptions.map((option) => {
+              Array.isArray(normalizedOptions) && normalizedOptions.map((option) => {
                 const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
                 
                 return (
@@ -315,7 +318,7 @@ const FormField: React.FC<FormFieldProps> = ({
       case 'checkbox':
         return (
           <div className="space-y-2">
-            {normalizedOptions.map((option) => {
+            {Array.isArray(normalizedOptions) && normalizedOptions.map((option) => {
               const isChecked = Array.isArray(value) ? value.includes(option.value) : false;
               
               return (
@@ -353,7 +356,7 @@ const FormField: React.FC<FormFieldProps> = ({
             value={value || ''}
             onValueChange={onChange}
           >
-            {normalizedOptions.map((option) => (
+            {Array.isArray(normalizedOptions) && normalizedOptions.map((option) => (
               <div key={option.value} className="flex items-center space-x-2">
                 <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
                 <label

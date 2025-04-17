@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -133,7 +132,12 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
     
     // Ensure options are correctly formatted for select/radio/checkbox
     if (["select", "radio", "checkbox"].includes(data.type)) {
-      data.options = options;
+      console.log("Setting options for select/radio/checkbox. Current options:", options);
+      data.options = JSON.parse(JSON.stringify(options)); // Deep copy to ensure we're not using a reference
+      console.log("Options after assignment:", data.options);
+    } else {
+      // For other field types, ensure options is null or empty array based on backend requirements
+      data.options = null;
     }
     
     // Ensure validation is an object if undefined
@@ -144,7 +148,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
     // If callback is provided, pass the data to it
     if (onSubmitCallback) {
       try {
-        console.log("Calling onSubmitCallback with data:", data);
+        console.log("Calling onSubmitCallback with data:", JSON.stringify(data, null, 2));
         const result = await onSubmitCallback(data);
         console.log("onSubmitCallback result:", result);
         return result;

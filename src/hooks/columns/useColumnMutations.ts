@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Column, ColumnType, ColumnValidation } from '@/types/column';
@@ -182,6 +181,11 @@ export const useColumnMutations = () => {
       console.log('Yenilənən sütun məlumatları:', columnToUpdate);
 
       // Edge function çağıraq
+      console.log('Edge function çağırılır: update-column', {
+        column: columnToUpdate,
+        userId
+      });
+      
       const { data, error: functionError } = await supabase.functions.invoke('update-column', {
         body: {
           column: columnToUpdate,
@@ -189,8 +193,16 @@ export const useColumnMutations = () => {
         }
       });
 
+      console.log('Edge function cavabı:', { data, error: functionError });
+
       if (functionError || !data?.success) {
         console.error('Sütun yeniləmə xətası:', functionError || data?.error);
+        console.error('Xəta detalları:', {
+          status: functionError?.status,
+          message: functionError?.message,
+          details: functionError?.details,
+          dataError: data?.error
+        });
         throw new Error(functionError?.message || data?.error || 'Sütun yeniləmə xətası');
       }
 
