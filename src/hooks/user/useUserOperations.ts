@@ -3,10 +3,10 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe } from '@/context/LanguageContext';
 
-export const useUserOperations = (onOperationComplete: () => void) => {
-  const { t } = useLanguage();
+export const useUserOperations = (onComplete: () => void) => {
+  const { t } = useLanguageSafe();
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -27,66 +27,82 @@ export const useUserOperations = (onOperationComplete: () => void) => {
     setIsDetailsDialogOpen(true);
   }, []);
 
-  const handleUpdateUserConfirm = useCallback(async (updatedUserData: FullUserData) => {
-    if (!selectedUser) return;
-    
+  const handleUpdateUserConfirm = useCallback(async (updatedUser: FullUserData) => {
     try {
+      console.log('Updating user:', updatedUser);
+      
+      // Profile məlumatlarını yeniləyirik
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: updatedUserData.full_name,
-          phone: updatedUserData.phone,
-          position: updatedUserData.position,
-          language: updatedUserData.language,
-          avatar: updatedUserData.avatar,
-          status: updatedUserData.status,
+          full_name: updatedUser.full_name,
+          phone: updatedUser.phone,
+          position: updatedUser.position,
+          language: updatedUser.language,
+          status: updatedUser.status,
           updated_at: new Date().toISOString()
         })
-        .eq('id', selectedUser.id);
+        .eq('id', updatedUser.id);
       
       if (profileError) throw profileError;
       
+      // Rol məlumatlarını yeniləyirik
       const { error: roleError } = await supabase
         .from('user_roles')
         .update({
-          role: updatedUserData.role as any,
-          region_id: updatedUserData.region_id,
-          sector_id: updatedUserData.sector_id,
-          school_id: updatedUserData.school_id,
+          role: updatedUser.role,
+          region_id: updatedUser.region_id,
+          sector_id: updatedUser.sector_id,
+          school_id: updatedUser.school_id,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', selectedUser.id);
+        .eq('user_id', updatedUser.id);
       
       if (roleError) throw roleError;
       
       toast.success(t('userUpdated'));
       setIsEditDialogOpen(false);
-      onOperationComplete();
-    } catch (err) {
-      console.error('İstifadəçi yeniləmə xətası:', err);
-      toast.error('İstifadəçi məlumatları yenilənərkən xəta baş verdi');
+      onComplete();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast.error(t('errorUpdatingUser'), {
+        description: error.message
+      });
     }
-  }, [selectedUser, t, onOperationComplete]);
+  }, [t, onComplete]);
 
   const handleDeleteUserConfirm = useCallback(async () => {
     if (!selectedUser) return;
     
     try {
-      const { error } = await supabase
+      console.log('Deleting user:', selectedUser.id);
+      
+      // İlk olaraq user_roles cədvəlindən silirik
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', selectedUser.id);
+      
+      if (roleError) throw roleError;
+      
+      // Sonra profiles cədvəlindən silirik
+      const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', selectedUser.id);
       
-      if (error) throw error;
+      if (profileError) throw profileError;
       
       toast.success(t('userDeleted'));
       setIsDeleteDialogOpen(false);
-      onOperationComplete();
-    } catch (err) {
-      console.error('İstifadəçi silmə xətası:', err);
-      toast.error('İstifadəçi silinərkən xəta baş verdi');
+      onComplete();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast.error(t('errorDeletingUser'), {
+        description: error.message
+      });
     }
-  }, [selectedUser, t, onOperationComplete]);
+  }, [selectedUser, t, onComplete]);
 
   return {
     selectedUser,

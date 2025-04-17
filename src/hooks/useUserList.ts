@@ -47,16 +47,27 @@ export const useUserList = () => {
     error,
     fetchUsers,
     setUsers,
+    totalCount: fetchedCount,
+    setTotalCount: setFetchedCount
   } = useUserFetch(filter, currentPage, pageSize);
+  
+  // Total count-u useUserFetch-dən alırıq
+  useEffect(() => {
+    if (fetchedCount !== undefined) {
+      setTotalCount(fetchedCount);
+    }
+  }, [fetchedCount, setTotalCount]);
   
   // İlk yükləmə zamanı istifadəçiləri əldə edirik
   useEffect(() => {
+    console.log('Initial fetch of users');
     fetchUsers();
   }, [fetchUsers]);
   
   // Hər hansı əməliyyat tamamlandıqda siyahını yeniləyirik
   useEffect(() => {
     if (operationComplete) {
+      console.log('Operation completed, refreshing users');
       fetchUsers();
       setOperationComplete(false);
     }

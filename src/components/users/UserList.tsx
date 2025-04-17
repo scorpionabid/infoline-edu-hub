@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -19,98 +20,75 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { Plus, MoreHorizontal, UserPlus, Search, Filter } from 'lucide-react';
+import { MoreHorizontal, Search, Filter } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserRole } from '@/types/supabase';
 import { User, FullUserData } from '@/types/user';
 import { Badge } from '@/components/ui/badge';
-import { mockUsers } from '@/data/mockUsers';
-import { useRole } from '@/context/auth/useRole';
+import { useUserList } from '@/hooks/useUserList';
 import { Pagination } from '@/components/ui/pagination';
 import UserFilters from './UserFilters';
 import DeleteUserDialog from './DeleteUserDialog';
 import EditUserDialog from './EditUserDialog';
 
 interface UserListProps {
-  users: User[];
-  loading: boolean;
-  error: string | null;
-  onAddUser: () => void;
-  onEditUser: (user: User) => void;
-  onDeleteUser: (userId: string) => void;
-  onFiltersChange: (filters: any) => void;
-  availableRoles: UserRole[];
+  currentUserRole?: string;
+  currentUserRegionId?: string;
+  onUserAddedOrEdited: () => void;
 }
 
 const UserList: React.FC<UserListProps> = ({
-  users,
-  loading,
-  error,
-  onAddUser,
-  onEditUser,
-  onDeleteUser,
-  onFiltersChange,
-  availableRoles
+  currentUserRole,
+  currentUserRegionId,
+  onUserAddedOrEdited
 }) => {
   const { t } = useLanguage();
-  const isSuperAdmin = useRole('superadmin');
+  const {
+    users,
+    loading,
+    error,
+    filter,
+    updateFilter,
+    resetFilter,
+    currentPage,
+    pageSize,
+    totalPages,
+    handlePageChange,
+    selectedUser,
+    isEditDialogOpen,
+    isDeleteDialogOpen,
+    setIsEditDialogOpen,
+    setIsDeleteDialogOpen,
+    handleEditUser,
+    handleDeleteUser,
+    handleUpdateUserConfirm,
+    handleDeleteUserConfirm,
+  } = useUserList();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [userToEdit, setUserToEdit] = useState<User | null>(null);
-  const [filters, setFilters] = useState({
-    role: [],
-    status: [],
-    region: [],
-    sector: [],
-    school: []
-  });
 
-  // Mock data istifadə edərək ümumi istifadəçi sayı
-  const totalUsersCount = mockUsers.length;
-
-  // Funksiya komponent yükləndikdə filtrləri tətbiq etmək üçün
   useEffect(() => {
-    onFiltersChange(filters);
-  }, [filters, onFiltersChange]);
+    if (searchQuery) {
+      updateFilter({ search: searchQuery });
+    } else {
+      updateFilter({ search: undefined });
+    }
+  }, [searchQuery, updateFilter]);
+
+  // Timeout üçün useEffect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery) {
+        updateFilter({ search: searchQuery });
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, updateFilter]);
 
   const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-  };
-
-  const handleEdit = (user: User) => {
-    setUserToEdit(user);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDelete = (userId: string) => {
-    setUserToDelete(userId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (userToDelete) {
-      onDeleteUser(userToDelete);
-      setIsDeleteDialogOpen(false);
-      setUserToDelete(null);
-      toast.success(t('userDeleted'));
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteDialogOpen(false);
-    setUserToDelete(null);
-  };
-
-  const handleSaveUser = (updatedUser: User) => {
-    onEditUser(updatedUser);
-    setIsEditDialogOpen(false);
-    setUserToEdit(null);
+    updateFilter(newFilters);
   };
 
   const handleSelectUser = (userId: string) => {
@@ -125,7 +103,30 @@ const UserList: React.FC<UserListProps> = ({
 
   const isUserSelected = (userId: string) => selectedUsers.includes(userId);
 
-  const paginatedUsers = users.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  // XƏTALİ HİSSƏ: Massiv undefined olduğunda slice xətası
+  // Bu hissədə dəyişiklik edirik - əvvəlcə users massivinin varlığını yoxlayırıq
+  const paginatedUsers = users ? users.slice(
+    (currentPage - 1) * pageSize, 
+    currentPage * pageSize
+  ) : [];
+
+  // Əgər yükləmə vəziyyətindədirsə yükləmə indikatoru göstər
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Xəta varsa göstər
+  if (error) {
+    return (
+      <div className="p-4 bg-destructive/10 text-destructive rounded-md">
+        <p>{t('errorLoadingUsers')}: {error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -133,12 +134,6 @@ const UserList: React.FC<UserListProps> = ({
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>{t('users')}</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Button onClick={onAddUser}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('addUser')}
-              </Button>
-            </div>
           </div>
           <CardDescription>
             {t('manageUsers')}
@@ -168,7 +163,7 @@ const UserList: React.FC<UserListProps> = ({
                   <CardContent>
                     <UserFilters
                       onFilterChange={handleFilterChange}
-                      availableRoles={availableRoles}
+                      availableRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}
                     />
                   </CardContent>
                 </Card>
@@ -190,52 +185,95 @@ const UserList: React.FC<UserListProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      <Checkbox
-                        checked={isUserSelected(user.id)}
-                        onCheckedChange={() => handleSelectUser(user.id)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{user.full_name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{user.role}</Badge>
-                    </TableCell>
-                    <TableCell>{user.status}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(user)}>
-                            {t('editUser')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(user.id)}>
-                            {t('deleteUser')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {paginatedUsers && paginatedUsers.length > 0 ? (
+                  paginatedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">
+                        <Checkbox
+                          checked={isUserSelected(user.id)}
+                          onCheckedChange={() => handleSelectUser(user.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{user.full_name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{user.role}</Badge>
+                      </TableCell>
+                      <TableCell>{user.status}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                              {t('editUser')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteUser(user)}>
+                              {t('deleteUser')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      {t('noUsersFound')}
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center">
-          <Pagination
-            page={page}
-            onPageChange={setPage}
-            totalCount={totalUsersCount}
-            itemsPerPage={itemsPerPage}
-            setItemPerPage={setItemsPerPage}
-          />
+          <div className="flex items-center">
+            {/* Yeni Pagination komponenti */}
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                >
+                  {t('first')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  {t('previous')}
+                </Button>
+                <span className="text-sm">
+                  {t('pageXOfY', { current: currentPage, total: totalPages })}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  {t('next')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  {t('last')}
+                </Button>
+              </div>
+            )}
+          </div>
           <div>
             {selectedUsers.length > 0 && (
               <Button variant="destructive" size="sm">
@@ -249,16 +287,18 @@ const UserList: React.FC<UserListProps> = ({
       <DeleteUserDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
+        onConfirm={handleDeleteUserConfirm}
+        onCancel={() => setIsDeleteDialogOpen(false)}
       />
 
-      <EditUserDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        user={userToEdit!}
-        onSave={handleSaveUser}
-      />
+      {selectedUser && (
+        <EditUserDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          user={selectedUser}
+          onSave={handleUpdateUserConfirm}
+        />
+      )}
     </div>
   );
 };
