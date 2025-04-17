@@ -147,6 +147,9 @@ const NavigationMenu: React.FC = () => {
       <div className="hidden md:block">
         <p className="text-sm font-medium">{user?.full_name || user?.name || user?.email}</p>
         <p className="text-xs text-muted-foreground capitalize">{user?.role || 'user'}</p>
+        {user?.school_name && (
+          <p className="text-xs text-muted-foreground">{user?.school_name}</p>
+        )}
       </div>
     </div>
   );
