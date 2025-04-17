@@ -3,7 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
-import { Column } from '@/types/column';
+import { Column, ColumnValidation } from '@/types/column';
 
 interface NumberInputProps {
   column: Column;
@@ -12,9 +12,10 @@ interface NumberInputProps {
 }
 
 const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = false }) => {
-  // Validation için min/max değerlerini al
-  const minValue = column.validation?.minValue;
-  const maxValue = column.validation?.maxValue;
+  // Validation üçün min/max dəyərlərini al
+  const validation = column.validation as ColumnValidation || {};
+  const minValue = validation?.minValue;
+  const maxValue = validation?.maxValue;
 
   return (
     <FormField

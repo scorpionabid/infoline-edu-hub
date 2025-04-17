@@ -1,46 +1,57 @@
 
-import { Category } from './category';
-import { Column } from './column';
+import { Category, Column } from './column';
+import { FormStatus } from './form';
 
-export interface EntryValue {
-  id?: string;
-  column_id: string;
-  category_id: string;
-  school_id: string;
-  value: any;
-  status?: string;
-  columnId?: string; // Əlavə field column_id ilə eyni dəyəri saxlayır
-}
-
-export interface CategoryEntryData {
-  id: string;
-  name: string;
-  entries: EntryValue[];
-  status?: string;
-  deadline?: string;
-  completionPercentage?: number;
-}
-
-export type FormStatus = 'idle' | 'loading' | 'success' | 'error' | 
-                         'completed' | 'pending' | 'rejected' | 
-                         'dueSoon' | 'overdue' | 'approved' | 'draft';
-
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  columnCount?: number;
-}
-
-// ColumnValidationError tipinin əlavə edilməsi
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-  type: string;
-}
-
-// DataEntrySaveStatus enum-un əlavə edilməsi
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
   SAVING = 'saving',
   SAVED = 'saved',
   ERROR = 'error'
 }
+
+export type DataEntry = {
+  id?: string;
+  school_id: string;
+  category_id: string;
+  column_id: string;
+  value: string | null;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  approved_at?: string;
+  approved_by?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+};
+
+export interface ColumnValidationError {
+  message: string;
+  type: string;
+  column_id: string;
+  column_name: string;
+}
+
+export interface EntriesMap {
+  [columnId: string]: DataEntry;
+}
+
+export interface CategoryEntries {
+  [categoryId: string]: EntriesMap;
+}
+
+export interface CategoryFormState {
+  status: FormStatus;
+  isModified: boolean;
+  completionPercentage: number;
+  entries: EntriesMap;
+}
+
+export interface CategoryFormData {
+  [categoryId: string]: CategoryFormState;
+}
+
+export type CategoryWithProgress = Category & {
+  completionPercentage: number;
+  status: FormStatus;
+};

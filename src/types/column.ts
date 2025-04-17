@@ -23,11 +23,14 @@ export interface ValidationRules {
   custom?: string;
 }
 
-export interface ColumnOptions {
-  choices?: string[];
-  multiple?: boolean;
-  other?: boolean;
-  defaultValue?: string | string[];
+export interface ColumnValidation {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  required?: boolean;
+  [key: string]: any;
 }
 
 export interface Column {
@@ -41,7 +44,7 @@ export interface Column {
   placeholder?: string;
   default_value?: string;
   options?: ColumnOption[];
-  validation?: Json;
+  validation?: ColumnValidation;
   status?: string;
   created_at: string;
   updated_at: string;

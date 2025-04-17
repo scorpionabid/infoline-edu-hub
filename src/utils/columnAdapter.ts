@@ -1,5 +1,5 @@
 
-import { Column, ColumnType, ColumnOption } from '@/types/column';
+import { Column, ColumnType, ColumnOption, ColumnValidation } from '@/types/column';
 import { Json } from '@/types/json';
 
 export const columnAdapter = {
@@ -40,9 +40,9 @@ export const columnAdapter = {
       parent_column_id: formData.parent_column_id
     };
     
-    // JSON tipinde olan alanları işle
+    // Validation və options sahələrini əlavə et
     if (formData.validation) {
-      column.validation = formData.validation;
+      column.validation = formData.validation as ColumnValidation;
     }
     
     if (formData.options) {
@@ -68,7 +68,7 @@ export const columnAdapter = {
       placeholder: dbColumn.placeholder || '',
       help_text: dbColumn.help_text || '',
       order_index: dbColumn.order_index || 0,
-      status: dbColumn.status as 'active' | 'inactive' | 'draft',
+      status: dbColumn.status || 'active',
       created_at: dbColumn.created_at,
       updated_at: dbColumn.updated_at
     };
@@ -78,7 +78,7 @@ export const columnAdapter = {
       try {
         column.validation = typeof dbColumn.validation === 'string' 
           ? JSON.parse(dbColumn.validation) 
-          : dbColumn.validation;
+          : dbColumn.validation as ColumnValidation;
       } catch (e) {
         console.error('Validasyon kuralları parse hatası:', e);
         column.validation = {};

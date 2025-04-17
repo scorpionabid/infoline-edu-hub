@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Column, ColumnType } from '@/types/column';
+import { Column, ColumnType, ColumnValidation } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { columnAdapter } from '@/utils/columnAdapter';
@@ -48,17 +48,17 @@ export const useColumnMutations = () => {
       const columnToCreate = adaptColumnToDb(column);
       console.log('Adaptasiya edilmiş sütun məlumatları:', columnToCreate);
 
-      // SERVICE_ROLE istifadə edərək sütunu yaratmaq üçün Edge Function çağıraq
-      const { data: createdColumn, error: functionError } = await supabase.functions.invoke('create-column', {
+      // Edge Function çağıraq
+      const { data, error: functionError } = await supabase.functions.invoke('create-column', {
         body: {
           column: columnToCreate,
           userId
         }
       });
 
-      if (functionError) {
-        console.error('Edge function xətası:', functionError);
-        throw functionError;
+      if (functionError || !data?.success) {
+        console.error('Edge function xətası:', functionError || data?.error);
+        throw new Error(functionError?.message || data?.error || 'Sütun yaratma xətası');
       }
 
       // Audit jurnalı əlavə et
@@ -67,12 +67,12 @@ export const useColumnMutations = () => {
         await supabase.from('audit_logs').insert({
           action: 'create',
           entity_type: 'column',
-          entity_id: createdColumn.id,
+          entity_id: data.data.id,
           user_id: userResponse.data.user?.id,
           new_value: {
-            name: createdColumn.name,
-            type: createdColumn.type,
-            category_id: createdColumn.category_id
+            name: data.data.name,
+            type: data.data.type,
+            category_id: data.data.category_id
           }
         });
       } catch (auditError) {
@@ -85,7 +85,7 @@ export const useColumnMutations = () => {
       // API-nin qaytardığı məlumatları adaptasiya edib qaytaraq
       return {
         success: true,
-        data: createdColumn ? columnAdapter.adaptSupabaseToColumn(createdColumn) : null
+        data: data.data ? columnAdapter.adaptSupabaseToColumn(data.data) : null
       };
     } catch (err: any) {
       setError(err.message);
@@ -119,7 +119,7 @@ export const useColumnMutations = () => {
         .single();
 
       // Edge function çağıraq
-      const { data: deleteResult, error: functionError } = await supabase.functions.invoke('delete-column', {
+      const { data, error: functionError } = await supabase.functions.invoke('delete-column', {
         body: {
           columnId,
           categoryId,
@@ -127,8 +127,8 @@ export const useColumnMutations = () => {
         }
       });
 
-      if (functionError || !deleteResult?.success) {
-        throw functionError || new Error('Sütun silinə bilmədi');
+      if (functionError || !data?.success) {
+        throw new Error(functionError?.message || data?.error || 'Sütun silinə bilmədi');
       }
 
       // Audit jurnalı əlavə et
@@ -182,16 +182,16 @@ export const useColumnMutations = () => {
       console.log('Yenilənən sütun məlumatları:', columnToUpdate);
 
       // Edge function çağıraq
-      const { data: updatedColumn, error: functionError } = await supabase.functions.invoke('update-column', {
+      const { data, error: functionError } = await supabase.functions.invoke('update-column', {
         body: {
           column: columnToUpdate,
           userId
         }
       });
 
-      if (functionError) {
-        console.error('Sütun yeniləmə xətası:', functionError);
-        throw functionError;
+      if (functionError || !data?.success) {
+        console.error('Sütun yeniləmə xətası:', functionError || data?.error);
+        throw new Error(functionError?.message || data?.error || 'Sütun yeniləmə xətası');
       }
 
       // Audit jurnalı əlavə et
@@ -203,7 +203,7 @@ export const useColumnMutations = () => {
           entity_id: column.id,
           user_id: userResponse.data.user?.id,
           old_value: oldColumn,
-          new_value: updatedColumn
+          new_value: data.data
         });
       } catch (auditError) {
         console.error('Audit jurnalı xətası:', auditError);
@@ -215,7 +215,7 @@ export const useColumnMutations = () => {
       // API-nin qaytardığı məlumatları adaptasiya edib qaytaraq
       return {
         success: true,
-        data: updatedColumn ? columnAdapter.adaptSupabaseToColumn(updatedColumn) : null
+        data: data.data ? columnAdapter.adaptSupabaseToColumn(data.data) : null
       };
     } catch (err: any) {
       setError(err.message);

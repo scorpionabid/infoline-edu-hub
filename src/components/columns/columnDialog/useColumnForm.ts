@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Column, ColumnOption, ColumnType } from "@/types/column";
+import { Column, ColumnOption, ColumnType, ColumnValidation } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
 
 // Form validation schema
@@ -52,7 +52,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       order_index: editColumn?.order_index || 0,
       status: editColumn?.status || "active",
       parent_column_id: editColumn?.parent_column_id || undefined,
-      validation: editColumn?.validation || {},
+      validation: editColumn?.validation as Record<string, any> || {},
       options: editColumn?.options || []
     }
   });
@@ -69,7 +69,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       form.setValue("order_index", editColumn.order_index || 0);
       form.setValue("status", editColumn.status || "active");
       form.setValue("parent_column_id", editColumn.parent_column_id);
-      form.setValue("validation", editColumn.validation || {});
+      form.setValue("validation", editColumn.validation as Record<string, any> || {});
       
       if (editColumn.options && Array.isArray(editColumn.options)) {
         setOptions(editColumn.options);
@@ -84,16 +84,18 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
     
     // Reset validation based on type
     if (selectedType === "number") {
+      const currentValidation = form.getValues("validation") as ColumnValidation || {};
       form.setValue("validation", { 
-        ...form.getValues("validation"),
-        minValue: form.getValues("validation")?.minValue || undefined,
-        maxValue: form.getValues("validation")?.maxValue || undefined
+        ...currentValidation,
+        minValue: currentValidation.minValue || undefined,
+        maxValue: currentValidation.maxValue || undefined
       });
     } else if (selectedType === "text" || selectedType === "textarea") {
+      const currentValidation = form.getValues("validation") as ColumnValidation || {};
       form.setValue("validation", { 
-        ...form.getValues("validation"),
-        minLength: form.getValues("validation")?.minLength || undefined,
-        maxLength: form.getValues("validation")?.maxLength || undefined
+        ...currentValidation,
+        minLength: currentValidation.minLength || undefined,
+        maxLength: currentValidation.maxLength || undefined
       });
     }
   }, [selectedType, form]);
