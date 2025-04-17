@@ -19,7 +19,6 @@ export interface Category {
   column_count?: number;
   archived?: boolean;
   completionPercentage?: number;
-  columns?: Column[];
 }
 
 // Sütunları olan kateqoriya interfeysi
@@ -49,6 +48,7 @@ export const adaptSupabaseCategory = (dbData: any): Category => {
     updated_at: dbData.updated_at,
     column_count: dbData.column_count || 0,
     archived: dbData.archived || false,
+    completionPercentage: dbData.completionPercentage || 0
   };
 };
 

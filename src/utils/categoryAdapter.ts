@@ -52,7 +52,26 @@ export const categoryAdapter = {
     // DB-dən gələn sütunları modellərə çevir
     const columns = dbColumns
       .filter(col => col.category_id === dbCategory.id)
-      .map(columnAdapter.adaptSupabaseToColumn);
+      .map((col) => {
+        // ColumnOption tipinə uyğun konversiya
+        let options = null;
+        if (col.options) {
+          if (Array.isArray(col.options)) {
+            options = col.options.map((opt: any) => ({
+              id: opt.id || String(Math.random()),
+              label: opt.label,
+              value: opt.value
+            }));
+          } else if (typeof col.options === 'object') {
+            options = []
+          }
+        }
+        
+        return {
+          ...col,
+          options
+        };
+      });
     
     return {
       ...category,

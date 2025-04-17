@@ -2,8 +2,6 @@
 import { Column } from './column';
 import { Category, CategoryStatus } from './category';
 
-// Kateqoriya interfeysi artıq əsas category.ts faylında təyin edilib
-
 // Kateqoriya və sütun daxil olan tip artıq category.ts-də CategoryWithColumns kimi təyin edilib
 export { CategoryWithColumns } from './category';
 
@@ -39,7 +37,7 @@ export interface DataEntryForm {
 export type EntryStatus = 'pending' | 'approved' | 'rejected';
 
 // FormStatus dəyişəni yenidən ixrac edirik
-export { FormStatus } from '../types/form';
+export { FormStatus } from './form';
 
 // Data daxil etmə statusu
 export enum DataEntrySaveStatus {

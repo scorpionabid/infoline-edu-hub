@@ -38,12 +38,13 @@ export const addCategory = async (categoryData: Partial<Category> & { name: stri
       description: categoryData.description || '',
       assignment: categoryData.assignment || 'all',
       status: categoryData.status || 'active',
-      deadline: categoryData.deadline,
+      deadline: categoryData.deadline || null,
       priority: categoryData.priority || 0,
       column_count: categoryData.column_count || 0,
       created_at: categoryData.created_at || now,
       updated_at: now,
-      archived: false
+      archived: false,
+      completionPercentage: 0
     };
     
     const supabaseData = adaptCategoryToSupabase(categoryWithId);
@@ -71,6 +72,7 @@ export const addCategory = async (categoryData: Partial<Category> & { name: stri
         .from('categories')
         .insert({
           ...supabaseData,
+          name: categoryData.name,
           created_at: now,
           updated_at: now
         })
