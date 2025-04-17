@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock, Timer, AlertCircle, Save, HelpCircle } from 'lucide-react';
@@ -10,10 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Category, CategoryStatus, FormStatus } from '@/types/category';
+import { Category, CategoryStatus } from '@/types/category';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { az } from 'date-fns/locale';
+import { FormStatus } from '@/types/form';
 
 export interface CategoryListProps {
   categories: Category[];
@@ -123,21 +125,21 @@ const CategoryList: React.FC<CategoryListProps> = ({
   };
   
   // Form statusu üçün badge
-  const renderFormStatusBadge = (status: FormStatus) => {
+  const renderFormStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
+      case FormStatus.COMPLETED:
         return <Badge variant="success">Tamamlanıb</Badge>;
-      case 'pending':
+      case FormStatus.PENDING:
         return <Badge variant="secondary">Gözləmədə</Badge>;
-      case 'rejected':
+      case FormStatus.REJECTED:
         return <Badge variant="destructive">Rədd edilib</Badge>;
-      case 'dueSoon':
+      case FormStatus.DUE_SOON:
         return <Badge variant="warning">Tezliklə</Badge>;
-      case 'overdue':
+      case FormStatus.OVERDUE:
         return <Badge variant="destructive">Gecikib</Badge>;
-      case 'approved':
+      case FormStatus.APPROVED:
         return <Badge variant="success">Təsdiqlənib</Badge>;
-      case 'draft':
+      case FormStatus.DRAFT:
         return <Badge variant="outline">Qaralama</Badge>;
       default:
         return null;
@@ -188,7 +190,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
     }
   };
   
-  // Status ikonlarını FormStatus enum standartına uyğunlaşdıraq. Status mətnlərini direkt FormStatus enum-u ilə müqayisə etmək lazımdır.
+  // Status ikonlarını FormStatus enum standartına uyğunlaşdıraq.
   const getStatusIcon = (status: string) => {
     switch (status) {
       case FormStatus.COMPLETED:

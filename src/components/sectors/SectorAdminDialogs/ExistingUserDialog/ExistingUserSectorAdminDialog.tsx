@@ -41,7 +41,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
     if (open) {
       resetForm();
     }
-  }, [open]);
+  }, [open, resetForm]);
 
   // Dialog content
   const dialogContent = (
@@ -49,7 +49,7 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       form={form}
       sector={sector}
       isEmbedded={isEmbedded}
-      error={error}
+      error={error ? new Error(error) : null}
       usersError={usersError}
       filteredUsers={filteredUsers}
       loadingUsers={loadingUsers}

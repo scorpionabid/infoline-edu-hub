@@ -3,7 +3,11 @@ export interface User {
   id: string;
   full_name?: string | null;
   email?: string | null;
-  role?: string;  // ExistingUserSectorAdminDialog üçün əlavə edildi
+  role?: string;  
+  language?: "az" | "en" | "ru" | "tr";
+  status?: "active" | "inactive" | "blocked";
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserSelectDataResult {

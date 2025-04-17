@@ -26,6 +26,7 @@ interface BasicColumnFieldsProps {
   categories: any[];
   selectedType: ColumnType;
   onTypeChange: (type: string) => void;
+  columns?: any[]; // Əlavə edildi 
 }
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
@@ -33,6 +34,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   categories,
   selectedType,
   onTypeChange,
+  columns = []
 }) => {
   const { t } = useLanguage();
 

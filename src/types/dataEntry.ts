@@ -16,6 +16,9 @@ export interface CategoryData {
   archived?: boolean;
 }
 
+// Təkrar bir çox yerdə istifadə edildiyi üçün Category alias əlavə edildi
+export type Category = CategoryData;
+
 // Kateqoriya və sütun daxil olan tip
 export interface CategoryWithColumns extends CategoryData {
   columns: (Column & { entry?: any })[];
@@ -35,16 +38,8 @@ export interface EntryValue {
 // Daxil edilən məlumatın statusu
 export type EntryStatus = 'pending' | 'approved' | 'rejected';
 
-// Form-un ümumi statusu
-export enum FormStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  OVERDUE = 'overdue',
-  DUE_SOON = 'dueSoon',
-  COMPLETED = 'completed'
-}
+// FormStatus dəyişəni yenidən ixrac edirik
+export { FormStatus } from '../types/form';
 
 // Data daxil etmə statusu
 export enum DataEntrySaveStatus {

@@ -16,13 +16,16 @@ import { useLanguage } from '@/context/LanguageContext';
 interface ValidationFieldsProps {
   form: UseFormReturn<any>;
   selectedType: ColumnType;
+  t?: (key: string, ...args: any[]) => string; // t xüsusiyyəti əlavə edildi
 }
 
 const ValidationFields: React.FC<ValidationFieldsProps> = ({
   form,
   selectedType,
+  t: propT
 }) => {
-  const { t } = useLanguage();
+  const { t: contextT } = useLanguage();
+  const t = propT || contextT; // propdan gələn t varsa onu, yoxsa kontekstdən gələni istifadə et
 
   if (selectedType === "number") {
     return (

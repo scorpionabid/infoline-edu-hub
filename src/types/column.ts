@@ -28,6 +28,7 @@ export interface ColumnOption {
   value: string;
   label: string;
 }
+
 // Köhnə adı saxlayaq (bəzən bu ad ilə istifadə olunur)
 export type ColumnOptions = ColumnOption[];
 
