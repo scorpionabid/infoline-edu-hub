@@ -7,11 +7,12 @@ import { useAuth } from '@/context/auth';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 import { Helmet } from 'react-helmet';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Users = () => {
   const { t } = useLanguage();
-  const isSuperOrRegionAdmin = useRole(['superadmin', 'regionadmin']);
-  const isSuperAdmin = useRole('superadmin');
+  const { isRegionAdmin, isSuperAdmin } = usePermissions();
+  const isSuperOrRegionAdmin = isSuperAdmin || isRegionAdmin;
   const { user } = useAuth();
   const navigate = useNavigate();
   
