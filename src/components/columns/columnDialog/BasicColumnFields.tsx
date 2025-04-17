@@ -1,3 +1,4 @@
+
 // Tip idxallarını düzəlt
 import { ColumnType } from '@/types/column';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ export interface BasicColumnFieldsProps {
   selectedType: ColumnType;
   columns?: any[];
   editColumn?: boolean;
+  categories?: any[];
 }
 
 const typeOptions = [
@@ -29,7 +31,7 @@ const typeOptions = [
   { label: 'Image', value: 'image' },
 ];
 
-export const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({ form, handleTypeChange, selectedType, columns, editColumn }) => {
+export const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({ form, handleTypeChange, selectedType, columns, editColumn, categories }) => {
   const { t } = useLanguage();
   const { control } = useFormContext();
 

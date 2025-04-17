@@ -1,11 +1,10 @@
-
 import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
 import { Column } from "@/types/column";
 import { useColumnForm } from "./columnDialog/useColumnForm";
-import BasicColumnFields from "./columnDialog/BasicColumnFields";
+import { BasicColumnFields } from "./columnDialog/BasicColumnFields";
 import ValidationFields from "./columnDialog/ValidationFields";
 import OptionsField from "./columnDialog/OptionsField";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,7 +43,6 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
     isEditMode 
   } = useColumnForm(categories, column, onEditColumn);
   
-  // Form değerlerini çütun tipi değiştiğinde güncellemek için useEffect
   useEffect(() => {
     if (column && selectedType) {
       form.setValue("type", selectedType);
@@ -55,13 +53,11 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
     try {
       if (!column) return false;
       
-      // Client-side validation
       if (!data.name.trim()) {
         form.setError("name", { message: t("columnNameRequired") });
         return false;
       }
       
-      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
       if (["select", "radio", "checkbox"].includes(data.type)) {
         data.options = options;
       }
@@ -102,7 +98,7 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
               form={form}
               categories={categories}
               columns={[]} // Boş array veririk, çünki parent column-ları üçün hazırda təyin etməyək
-              editColumn={column}
+              editColumn={true}
               selectedType={selectedType}
               handleTypeChange={handleTypeChange}
             />
@@ -121,7 +117,6 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
             <ValidationFields 
               form={form}
               selectedType={selectedType}
-              t={t}
             />
             
             <DialogFooter>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Column } from "@/types/column";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { useLanguage } from "@/context/LanguageContext";
 import { useColumnForm } from './columnDialog/useColumnForm';
-import BasicColumnFields from './columnDialog/BasicColumnFields';
+import { BasicColumnFields } from './columnDialog/BasicColumnFields';
 import ValidationFields from './columnDialog/ValidationFields';
 import OptionsField from './columnDialog/OptionsField';
 import { useToast } from "@/components/ui/use-toast";
@@ -51,12 +50,10 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
     isEditMode
   } = useColumnForm(categories, editColumn, onAddColumn);
   
-  // Handle form submission
   const handleSubmit = async (values: any) => {
     try {
       console.log("Form submitted with values:", values);
       
-      // Client-side validation
       if (!values.name.trim()) {
         form.setError("name", { message: t("columnNameRequired") });
         return;
@@ -67,7 +64,6 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
         return;
       }
       
-      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
       if (["select", "radio", "checkbox"].includes(values.type)) {
         values.options = options;
         
@@ -81,7 +77,6 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
         }
       }
       
-      // onSubmit funksiyasını çağırırıq
       const success = await onSubmit(values);
       if (success) {
         onClose();
@@ -111,24 +106,20 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Əsas sahələr */}
               <BasicColumnFields
                 form={form}
                 categories={categories}
                 columns={columns}
-                editColumn={editColumn}
+                editColumn={editColumn ? true : false}
                 selectedType={selectedType}
                 handleTypeChange={handleTypeChange}
               />
 
-              {/* Validasiya sahələri */}
               <ValidationFields
                 form={form}
                 selectedType={selectedType}
-                t={t}
               />
 
-              {/* Options for select, checkbox, radio */}
               {(selectedType === "select" || selectedType === "checkbox" || selectedType === "radio") && (
                 <OptionsField
                   control={form.control}
