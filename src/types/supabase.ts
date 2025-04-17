@@ -17,6 +17,7 @@ export interface NotificationSettings {
 export interface FullUserData {
   id: string;
   full_name?: string | null;
+  name?: string | null; // NavigationMenu və ProfileSettings üçün əlavə edildi
   email?: string | null;
   role: UserRole;
   region_id?: string | null;
@@ -30,6 +31,7 @@ export interface FullUserData {
   school_name?: string | null;
   status: UserStatus;
   last_login?: string | null;
+  lastLogin?: string | null;
   phone?: string | null;
   position?: string | null;
   avatar?: string | null;
@@ -39,6 +41,7 @@ export interface FullUserData {
   createdAt?: string;
   updatedAt?: string;
   notificationSettings?: NotificationSettings;
+  twoFactorEnabled?: boolean; // PreferencesForm və ProfileSettings üçün əlavə edildi
 }
 
 export interface Region {
@@ -84,4 +87,6 @@ export interface School {
   completion_rate?: number;
   created_at?: string;
   updated_at?: string;
+  region_name?: string; // SchoolsContainer üçün əlavə edildi
+  sector_name?: string; // SchoolsContainer üçün əlavə edildi
 }

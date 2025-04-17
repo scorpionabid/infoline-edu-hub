@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth/useAuth';
 import { Language } from '@/types/supabase';
+import { Save } from 'lucide-react';
 
 // Hesab parametrləri forması üçün schema
 const settingsFormSchema = z.object({

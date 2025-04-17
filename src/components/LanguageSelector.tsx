@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { Language } from '@/types/language';
+import { Language, LanguageInfo } from '@/types/language';
 import { Globe } from 'lucide-react';
 import {
   DropdownMenu,
@@ -41,8 +41,8 @@ const LanguageSelector = () => {
             }`}
             onClick={() => handleSelectLanguage(code as Language)}
           >
-            <span className="mr-2">{langInfo.flag}</span>
-            <span>{langInfo.nativeName}</span>
+            <span className="mr-2">{(langInfo as LanguageInfo).flag}</span>
+            <span>{(langInfo as LanguageInfo).nativeName}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

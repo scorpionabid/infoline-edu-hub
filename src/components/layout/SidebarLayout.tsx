@@ -11,7 +11,7 @@ interface SidebarLayoutProps {
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
-  const { user, isLoading, logout } = useAuth(); // logout əvəzinə düzəliş
+  const { user, isLoading, logout } = useAuth();
 
   if (isLoading) {
     return (

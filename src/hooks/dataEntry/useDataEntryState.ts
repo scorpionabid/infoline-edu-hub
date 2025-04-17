@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCategoryData } from './useCategoryData';
@@ -12,9 +13,9 @@ export const useDataEntryState = (schoolId?: string) => {
   const categoryDataResult = useCategoryData();
   const { categories, loading, error, getCategoryById, refreshCategories } = categoryDataResult;
   
-  // Düzəliş: refetch istifadə etmək əvəzinə refreshCategories istifadə et
+  // Düzəliş: refreshCategories istifadə et
   const handleRefresh = useCallback(async () => {
-    await refreshCategories(); // refetch yerinə refreshCategories
+    await refreshCategories(); 
   }, [refreshCategories]);
   
   return {

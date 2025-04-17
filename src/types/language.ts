@@ -17,4 +17,5 @@ export interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   t: TranslateFunction;
   languages: Record<Language, LanguageInfo>;
+  currentLanguage?: Language; // NavigationMenu.tsx üçün əlavə edildi
 }

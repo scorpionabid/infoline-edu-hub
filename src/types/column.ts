@@ -1,42 +1,5 @@
 
-export type ColumnType = 
-  | 'text' 
-  | 'number' 
-  | 'date' 
-  | 'select' 
-  | 'multiselect' 
-  | 'checkbox' 
-  | 'radio' 
-  | 'textarea' 
-  | 'email' 
-  | 'phone' 
-  | 'file' 
-  | 'image';
-
-export type ColumnStatus = 'active' | 'inactive' | 'draft';
-
-export interface Column {
-  id: string;
-  category_id: string;
-  name: string;
-  type: ColumnType;
-  is_required?: boolean;
-  placeholder?: string;
-  help_text?: string;
-  order_index?: number;
-  status?: ColumnStatus;
-  validation?: ValidationRules;
-  default_value?: string;
-  options?: any;
-  parent_column_id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ColumnOption {
-  value: string;
-  label: string;
-}
+import { Json } from './json';
 
 export interface ValidationRules {
   required?: boolean;
@@ -44,9 +7,7 @@ export interface ValidationRules {
   max?: number;
   minLength?: number;
   maxLength?: number;
-  minValue?: number; // Əlavə edildi
-  maxValue?: number; // Əlavə edildi
-  pattern?: string | RegExp;
+  pattern?: string;
   email?: boolean;
   url?: boolean;
   numeric?: boolean;
@@ -55,14 +16,45 @@ export interface ValidationRules {
   custom?: string;
 }
 
-export interface ColumnValidationError {
-  field: string;
-  message: string;
-  type: string;
-  severity?: 'warning' | 'error' | 'info';
+export interface ColumnOptions {
+  choices?: string[];
+  multiple?: boolean;
+  other?: boolean;
+  defaultValue?: string | string[];
 }
 
-export interface ColumnFormData extends Omit<Column, 'validation' | 'options'> {
-  validation: ValidationRules;
-  options: ColumnOption[];
+export interface Column {
+  id: string;
+  name: string;
+  category_id: string;
+  type: string;
+  is_required: boolean;
+  order_index: number;
+  help_text?: string;
+  placeholder?: string;
+  default_value?: string;
+  options?: Json;
+  validation?: Json;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+  parent_column_id?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  deadline?: string;
+  priority?: number;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+  assignment?: string;
+  column_count?: number;
+  archived?: boolean;
+}
+
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
 }

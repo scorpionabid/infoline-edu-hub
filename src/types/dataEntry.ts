@@ -29,3 +29,18 @@ export interface CategoryWithColumns extends Category {
   columns: Column[];
   columnCount?: number;
 }
+
+// ColumnValidationError tipinin əlavə edilməsi
+export interface ColumnValidationError {
+  columnId: string;
+  message: string;
+  type: string;
+}
+
+// DataEntrySaveStatus enum-un əlavə edilməsi
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error'
+}

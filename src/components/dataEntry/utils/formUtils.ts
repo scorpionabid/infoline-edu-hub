@@ -1,5 +1,6 @@
-
-import { Column, EntryValue, ColumnValidationError, CategoryWithColumns } from '@/types/dataEntry';
+import { EntryValue } from '@/types/dataEntry';
+import { Column } from '@/types/column';
+import { ColumnValidationError } from '@/types/dataEntry';
 
 /**
  * Daxil edilmiş dəyərləri çıxarır

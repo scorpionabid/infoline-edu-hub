@@ -1,93 +1,67 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Check, XCircle, Clock } from 'lucide-react';
 
-interface PendingItem {
+export interface PendingItem {
   id: string;
   title: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string;
   date: string;
-  route?: string; // route sahəsini əlavə et
+  category?: string;
+  route?: string; // Optional route property for navigation
 }
 
-interface PendingApprovalsCardProps {
-  title: string;
-  description: string;
-  items: PendingItem[];
-  viewAllRoute: string;
-  onAction?: (id: string, action: 'approve' | 'reject') => void;
+export interface PendingApprovalsCardProps {
+  pendingItems: PendingItem[];
+  className?: string;
 }
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'approved':
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case 'rejected':
-      return <XCircle className="h-4 w-4 text-red-500" />;
-    case 'pending':
-      return <Clock className="h-4 w-4 text-yellow-500" />;
-    default:
-      return <AlertCircle className="h-4 w-4 text-gray-500" />;
-  }
-};
 
 const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ 
-  title,
-  description,
-  items = [],
-  viewAllRoute,
-  onAction
+  pendingItems,
+  className
 }) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  
-  // Item'ə kliklədikdə istifadə olunan funksiya
-  const handleItemClick = (item: PendingItem) => {
-    // Əgər route təyin olunubsa, o route'a yönləndir
-    if (item.route) {
-      navigate(item.route);
-    }
-  };
-  
+
+  if (!pendingItems || pendingItems.length === 0) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle>{t('pendingApprovals')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{t('noPendingApprovals')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle>{t('pendingApprovals')}</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-border">
-          {items.map((item) => (
-            <li key={item.id} className="p-4 hover:bg-accent cursor-pointer" onClick={() => handleItemClick(item)}>
+      <CardContent>
+        <div className="space-y-4">
+          {pendingItems.map((item) => (
+            <div key={item.id} className="flex flex-col space-y-1">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(item.status)}
-                  <span>{item.title}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">{item.date}</div>
+                <p className="text-sm font-medium">{item.title}</p>
+                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                  {t('pending')}
+                </span>
               </div>
-            </li>
+              <p className="text-xs text-muted-foreground">{item.category}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('dueDate')}: {item.date}
+              </p>
+              <div className="h-px bg-muted my-1"></div>
+            </div>
           ))}
-        </ul>
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-between items-center">
-        <Button variant="link" onClick={() => navigate(viewAllRoute)}>
-          {t('viewAll')}
-        </Button>
-        {onAction && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onAction(items[0].id, 'reject')}>
-              {t('reject')}
-            </Button>
-            <Button size="sm" onClick={() => onAction(items[0].id, 'approve')}>
-              {t('approve')}
-            </Button>
-          </div>
-        )}
-      </CardFooter>
     </Card>
   );
 };

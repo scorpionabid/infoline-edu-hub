@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth/useAuth';
 import { Shield, Phone, Upload, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from "@/components/ui/label";
 
 const ProfileSettings: React.FC = () => {
   const { t } = useLanguage();
