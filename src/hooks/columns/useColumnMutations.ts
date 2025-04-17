@@ -54,37 +54,38 @@ export const useColumnMutations = () => {
         throw columnError;
       }
 
-      // Kateqoriyanın sütun sayını artırmaq üçün cəhd edirik
-      try {
-        // Öncə RPC funksiyasını çağırmağa çalışaq
-        await supabase.rpc('increment_column_count', {
-          category_id: column.category_id
-        });
-      } catch (rpcError) {
-        console.error('RPC xətası, alternativ metoda keçid:', rpcError);
-        
-        // Alternativ: Əgər RPC funksiyası mövcud deyilsə, manual yeniləmə
-        const { data: category } = await supabase
-          .from('categories')
-          .select('column_count')
-          .eq('id', column.category_id)
-          .single();
-        
-        if (category) {
-          await supabase
+      // Sütun sayını artırmaq
+      if (column.category_id) {
+        try {
+          // Kateqoriyanın mövcud sütun sayını əldə edək
+          const { data: category } = await supabase
             .from('categories')
-            .update({ column_count: (category.column_count || 0) + 1 })
-            .eq('id', column.category_id);
+            .select('column_count')
+            .eq('id', column.category_id)
+            .single();
+          
+          // Sütun sayını artıraq
+          if (category) {
+            const currentCount = category.column_count || 0;
+            await supabase
+              .from('categories')
+              .update({ column_count: currentCount + 1 })
+              .eq('id', column.category_id);
+          }
+        } catch (countError) {
+          console.error('Sütun sayı yeniləmə xətası:', countError);
+          // Bu xəta əsas əməliyyatı dayandırmamalıdır
         }
       }
 
       // Audit jurnalı əlavə et
       try {
+        const userResponse = await supabase.auth.getUser();
         await supabase.from('audit_logs').insert({
           action: 'create',
           entity_type: 'column',
           entity_id: data.id,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userResponse.data.user?.id,
           new_value: {
             name: data.name,
             type: data.type,
@@ -136,37 +137,38 @@ export const useColumnMutations = () => {
 
       if (deleteError) throw deleteError;
 
-      // Kateqoriyanın sütun sayını azaltmaq üçün cəhd edirik
-      try {
-        // Öncə RPC funksiyasını çağırmağa çalışaq
-        await supabase.rpc('decrement_column_count', {
-          category_id: categoryId
-        });
-      } catch (rpcError) {
-        console.error('RPC xətası, alternativ metoda keçid:', rpcError);
-        
-        // Alternativ: Əgər RPC funksiyası mövcud deyilsə, manual yeniləmə
-        const { data: category } = await supabase
-          .from('categories')
-          .select('column_count')
-          .eq('id', categoryId)
-          .single();
-        
-        if (category) {
-          await supabase
+      // Kateqoriyanın sütun sayını azaltmaq
+      if (categoryId) {
+        try {
+          // Kateqoriyanın mövcud sütun sayını əldə edək
+          const { data: category } = await supabase
             .from('categories')
-            .update({ column_count: Math.max((category.column_count || 0) - 1, 0) })
-            .eq('id', categoryId);
+            .select('column_count')
+            .eq('id', categoryId)
+            .single();
+          
+          // Sütun sayını azaldaq
+          if (category) {
+            const currentCount = category.column_count || 0;
+            await supabase
+              .from('categories')
+              .update({ column_count: Math.max(currentCount - 1, 0) })
+              .eq('id', categoryId);
+          }
+        } catch (countError) {
+          console.error('Sütun sayı yeniləmə xətası:', countError);
+          // Bu xəta əsas əməliyyatı dayandırmamalıdır
         }
       }
 
       // Audit jurnalı əlavə et
       try {
+        const userResponse = await supabase.auth.getUser();
         await supabase.from('audit_logs').insert({
           action: 'delete',
           entity_type: 'column',
           entity_id: columnId,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userResponse.data.user?.id,
           old_value: columnData
         });
       } catch (auditError) {
@@ -218,11 +220,12 @@ export const useColumnMutations = () => {
 
       // Audit jurnalı əlavə et
       try {
+        const userResponse = await supabase.auth.getUser();
         await supabase.from('audit_logs').insert({
           action: 'update',
           entity_type: 'column',
           entity_id: column.id,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userResponse.data.user?.id,
           old_value: oldColumn,
           new_value: data
         });

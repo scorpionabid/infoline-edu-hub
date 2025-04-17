@@ -12,20 +12,19 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { useLanguage } from "@/context/LanguageContext";
-
-// Refaktorlanmış komponentlər
 import { useColumnForm } from './columnDialog/useColumnForm';
 import BasicColumnFields from './columnDialog/BasicColumnFields';
 import ValidationFields from './columnDialog/ValidationFields';
 import OptionsField from './columnDialog/OptionsField';
+import { useToast } from "@/components/ui/use-toast";
 
 interface AddColumnDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAddColumn: (newColumn: Omit<Column, "id">) => Promise<boolean>;
   categories: { id: string; name: string }[];
-  editColumn?: Column; // For edit mode
-  columns?: Column[]; // For parent column selection
+  editColumn?: Column; 
+  columns?: Column[];
 }
 
 const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
@@ -37,6 +36,7 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   columns = [],
 }) => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   
   const {
     form, 
@@ -53,9 +53,46 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   
   // Handle form submission
   const handleSubmit = async (values: any) => {
-    const result = await onSubmit(values);
-    if (result) {
-      onClose();
+    try {
+      console.log("Form submitted with values:", values);
+      
+      // Client-side validation
+      if (!values.name.trim()) {
+        form.setError("name", { message: t("columnNameRequired") });
+        return;
+      }
+      
+      if (!values.category_id) {
+        form.setError("category_id", { message: t("categoryRequired") });
+        return;
+      }
+      
+      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
+      if (["select", "radio", "checkbox"].includes(values.type)) {
+        values.options = options;
+        
+        if (options.length === 0) {
+          toast({
+            title: t("validationError"),
+            description: t("optionsRequired"),
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+      
+      // onSubmit funksiyasını çağırırıq
+      const success = await onSubmit(values);
+      if (success) {
+        onClose();
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast({
+        title: t("error"),
+        description: t("errorSubmittingForm"),
+        variant: "destructive"
+      });
     }
   };
 

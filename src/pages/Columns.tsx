@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Plus, Database, Search } from 'lucide-react';
@@ -20,12 +20,13 @@ import EditColumnDialog from '@/components/columns/EditColumnDialog';
 import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/categories/useCategories';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useColumnActions } from '@/hooks/useColumnActions';
+import { useColumnMutations } from '@/hooks/columns/useColumnMutations';
 import { useQueryClient } from '@tanstack/react-query';
+import { Column } from '@/types/column';
 
 const Columns: React.FC = () => {
   const { t } = useLanguage();
@@ -33,12 +34,12 @@ const Columns: React.FC = () => {
   const queryClient = useQueryClient();
   const [addColumnDialogOpen, setAddColumnDialogOpen] = useState(false);
   const [editColumnDialogOpen, setEditColumnDialogOpen] = useState(false);
-  const [selectedColumn, setSelectedColumn] = useState<any>(null);
+  const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { columns, isLoading, isError, error, refetch } = useColumns();
-  const { categories, isLoading: categoriesLoading } = useCategories();
+  const { categories, isLoading: categoriesLoading, getCategories } = useCategories();
   const { userRole } = usePermissions();
-  const { handleDeleteColumn } = useColumnActions();
+  const { createColumn, updateColumn, deleteColumn } = useColumnMutations();
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,8 +53,19 @@ const Columns: React.FC = () => {
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     column: '',
-    columnName: ''
+    columnName: '',
+    categoryId: ''
   });
+
+  // Kategoriyaları yükləyin
+  useEffect(() => {
+    getCategories();
+  }, [getCategories]);
+
+  // Sütunları yükləyin
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Filter columns
   const filteredColumns = React.useMemo(() => {
@@ -90,10 +102,9 @@ const Columns: React.FC = () => {
 
   const handleCloseAddColumnDialog = () => {
     setAddColumnDialogOpen(false);
-    setSelectedColumn(null);
   };
 
-  const handleOpenEditColumnDialog = (column: any) => {
+  const handleOpenEditColumnDialog = (column: Column) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
         description: t('adminPermissionRequired')
@@ -109,7 +120,7 @@ const Columns: React.FC = () => {
     setSelectedColumn(null);
   };
 
-  const handleOpenDeleteDialog = (columnId: string, columnName: string) => {
+  const handleOpenDeleteDialog = (columnId: string, columnName: string, categoryId: string) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
         description: t('adminPermissionRequired')
@@ -119,7 +130,8 @@ const Columns: React.FC = () => {
     setDeleteDialog({
       isOpen: true,
       column: columnId,
-      columnName
+      columnName,
+      categoryId
     });
   };
 
@@ -127,11 +139,12 @@ const Columns: React.FC = () => {
     setDeleteDialog({
       isOpen: false,
       column: '',
-      columnName: ''
+      columnName: '',
+      categoryId: ''
     });
   };
 
-  const handleAddColumn = async (newColumn: any): Promise<boolean> => {
+  const handleAddColumn = async (newColumn: Omit<Column, "id">): Promise<boolean> => {
     if (!canManageColumns) {
       toast.error(t('noPermission'));
       return false;
@@ -139,22 +152,35 @@ const Columns: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      toast.success(t('columnCreated'));
-      handleCloseAddColumnDialog();
-      // Məlumatları yeniləyirik
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      await refetch();
-      return true;
-    } catch (error) {
-      console.error("Sütun yaratma xətası:", error);
-      toast.error(t('columnCreationFailed'));
+      console.log("handleAddColumn called with:", newColumn);
+      const result = await createColumn(newColumn);
+      
+      if (result.success) {
+        console.log("Column created successfully:", result.data);
+        // Refresh data
+        await queryClient.invalidateQueries({ queryKey: ['columns'] });
+        await queryClient.invalidateQueries({ queryKey: ['categories'] });
+        await refetch();
+        return true;
+      } else {
+        console.error("Error creating column:", result.error);
+        toast.error(t('columnCreationFailed'), {
+          description: result.error
+        });
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Column creation error:", error);
+      toast.error(t('columnCreationFailed'), {
+        description: error.message
+      });
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditColumn = async (columnData: any): Promise<boolean> => {
+  const handleEditColumn = async (columnData: Partial<Column>): Promise<boolean> => {
     if (!canManageColumns) {
       toast.error(t('noPermission'));
       return false;
@@ -166,15 +192,25 @@ const Columns: React.FC = () => {
         toast.error(t('columnIdRequired'));
         return false;
       }
-      toast.success(t('columnUpdated'));
-      handleCloseEditColumnDialog();
-      // Məlumatları yeniləyirik
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      await refetch();
-      return true;
-    } catch (error) {
-      console.error("Sütun redaktə xətası:", error);
-      toast.error(t('columnUpdateFailed'));
+      
+      const result = await updateColumn(columnData);
+      
+      if (result.success) {
+        // Refresh data
+        await queryClient.invalidateQueries({ queryKey: ['columns'] });
+        await refetch();
+        return true;
+      } else {
+        toast.error(t('columnUpdateFailed'), {
+          description: result.error
+        });
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Column update error:", error);
+      toast.error(t('columnUpdateFailed'), {
+        description: error.message
+      });
       return false;
     } finally {
       setIsSubmitting(false);
@@ -187,24 +223,34 @@ const Columns: React.FC = () => {
       return false;
     }
     
+    setIsSubmitting(true);
     try {
-      const result = await handleDeleteColumn(columnId);
-      if (result) {
-        toast.success(t('columnDeleted'));
-        handleCloseDeleteDialog();
-        // Məlumatları yeniləyirik
+      const categoryId = deleteDialog.categoryId || 
+        columns?.find(c => c.id === columnId)?.category_id || '';
+      
+      const result = await deleteColumn(columnId, categoryId);
+      
+      if (result.success) {
+        // Refresh data
         await queryClient.invalidateQueries({ queryKey: ['columns'] });
+        await queryClient.invalidateQueries({ queryKey: ['categories'] });
         await refetch();
+        handleCloseDeleteDialog();
         return true;
       } else {
-        toast.error(t('columnDeletionFailed'));
+        toast.error(t('columnDeletionFailed'), {
+          description: result.error
+        });
         return false;
       }
-    } catch (error) {
-      console.error("Sütun silmə xətası:", error);
-      toast.error(t('columnDeletionFailed'));
-      handleCloseDeleteDialog();
+    } catch (error: any) {
+      console.error("Column deletion error:", error);
+      toast.error(t('columnDeletionFailed'), {
+        description: error.message
+      });
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -214,16 +260,39 @@ const Columns: React.FC = () => {
       return;
     }
     
-    toast.success(t('columnStatusUpdated'));
-    // Məlumatları yeniləyirik
-    await queryClient.invalidateQueries({ queryKey: ['columns'] });
-    await refetch();
+    try {
+      setIsSubmitting(true);
+      const column = columns?.find(c => c.id === id);
+      
+      if (!column) {
+        toast.error(t('columnNotFound'));
+        return;
+      }
+      
+      const result = await updateColumn({
+        ...column,
+        status
+      });
+      
+      if (result.success) {
+        toast.success(t('columnStatusUpdated'));
+        // Refresh data
+        await queryClient.invalidateQueries({ queryKey: ['columns'] });
+        await refetch();
+      } else {
+        toast.error(t('columnStatusUpdateFailed'), {
+          description: result.error
+        });
+      }
+    } catch (error: any) {
+      console.error("Column status update error:", error);
+      toast.error(t('columnStatusUpdateFailed'), {
+        description: error.message
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  // Əgər kateqoriyalar yüklənməyibsə, useEffectlə yükləyək
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   return (
     <SidebarLayout>
@@ -326,7 +395,11 @@ const Columns: React.FC = () => {
           isLoading={isLoading || categoriesLoading}
           isError={!!error}
           onEditColumn={handleOpenEditColumnDialog}
-          onDeleteColumn={handleOpenDeleteDialog}
+          onDeleteColumn={(id, name) => handleOpenDeleteDialog(
+            id, 
+            name, 
+            columns?.find(c => c.id === id)?.category_id || ''
+          )}
           onUpdateStatus={handleUpdateColumnStatus}
           canManageColumns={canManageColumns}
         />
@@ -338,6 +411,7 @@ const Columns: React.FC = () => {
           onClose={handleCloseAddColumnDialog}
           onAddColumn={handleAddColumn}
           categories={categories || []}
+          columns={columns || []}
         />
       )}
 

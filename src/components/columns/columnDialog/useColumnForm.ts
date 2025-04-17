@@ -17,7 +17,7 @@ const columnFormSchema = z.object({
   order_index: z.number().optional().default(0),
   status: z.string().optional().default("active"),
   parent_column_id: z.string().uuid({ message: "Please select a valid parent column." }).nullable().optional(),
-  validation: z.object({}).optional(),
+  validation: z.record(z.any()).optional(),
   options: z.array(z.object({
     label: z.string(),
     value: z.string()
@@ -26,47 +26,77 @@ const columnFormSchema = z.object({
 
 export type ColumnFormValues = z.infer<typeof columnFormSchema>;
 
-interface UseColumnFormProps {
-  categories: any[];
-  column: Column | null;
-  onAddColumn?: (columnData: Omit<Column, "id"> & { id?: string }) => Promise<boolean>;
-}
-
-export const useColumnForm = (categories: any[], column: Column | null, onAddColumn?: (columnData: any) => Promise<boolean>) => {
+export const useColumnForm = (categories: any[], column: Column | null, onSubmitCallback?: (columnData: any) => Promise<boolean>) => {
   const [selectedType, setSelectedType] = useState<ColumnType>(column?.type || "text");
   const [options, setOptions] = useState<ColumnOption[]>(
     column?.options && Array.isArray(column.options)
-      ? column.options.map((option: any) => ({
-          label: option.label || option,
-          value: option.value || option,
-        }))
+      ? column.options
       : []
   );
   const [newOption, setNewOption] = useState("");
   const isEditMode = !!column;
   const { t } = useLanguage();
 
+  // Extract default category_id from categories if available
+  const defaultCategoryId = categories && categories.length > 0 ? categories[0].id : "";
+
   const form = useForm<ColumnFormValues>({
     resolver: zodResolver(columnFormSchema),
     defaultValues: {
       name: column?.name || "",
-      category_id: column?.category_id || (categories[0]?.id || ""),
+      category_id: column?.category_id || defaultCategoryId,
       type: column?.type || "text",
-      is_required: column?.is_required !== false,
+      is_required: column?.is_required !== false, // Default to true if not explicitly false
       placeholder: column?.placeholder || "",
       help_text: column?.help_text || "",
       order_index: column?.order_index || 0,
       status: column?.status || "active",
       parent_column_id: column?.parent_column_id || undefined,
       validation: column?.validation || {},
-      options: column?.options && Array.isArray(column.options) 
-        ? column.options.map((option: any) => ({
-            label: option.label || option,
-            value: option.value || option,
-          }))
-        : []
+      options: column?.options || []
     }
   });
+
+  // Update form fields when column or type changes
+  useEffect(() => {
+    if (column) {
+      form.setValue("name", column.name);
+      form.setValue("category_id", column.category_id);
+      form.setValue("type", column.type);
+      form.setValue("is_required", column.is_required !== false);
+      form.setValue("placeholder", column.placeholder || "");
+      form.setValue("help_text", column.help_text || "");
+      form.setValue("order_index", column.order_index || 0);
+      form.setValue("status", column.status || "active");
+      form.setValue("parent_column_id", column.parent_column_id);
+      form.setValue("validation", column.validation || {});
+      
+      if (column.options && Array.isArray(column.options)) {
+        setOptions(column.options);
+        form.setValue("options", column.options);
+      }
+    }
+  }, [column, form]);
+
+  // Update type-specific fields when type changes
+  useEffect(() => {
+    form.setValue("type", selectedType);
+    
+    // Reset validation based on type
+    if (selectedType === "number") {
+      form.setValue("validation", { 
+        ...form.getValues("validation"),
+        minValue: form.getValues("validation")?.minValue || undefined,
+        maxValue: form.getValues("validation")?.maxValue || undefined
+      });
+    } else if (selectedType === "text" || selectedType === "textarea") {
+      form.setValue("validation", { 
+        ...form.getValues("validation"),
+        minLength: form.getValues("validation")?.minLength || undefined,
+        maxLength: form.getValues("validation")?.maxLength || undefined
+      });
+    }
+  }, [selectedType, form]);
 
   const handleTypeChange = (type: string) => {
     setSelectedType(type as ColumnType);
@@ -75,37 +105,53 @@ export const useColumnForm = (categories: any[], column: Column | null, onAddCol
 
   const addOption = () => {
     if (newOption.trim() !== "") {
-      const newOptionObj: ColumnOption = { label: newOption, value: newOption };
-      setOptions([...options, newOptionObj]);
+      const newOptionObj: ColumnOption = { 
+        label: newOption, 
+        value: newOption.toLowerCase().replace(/\s+/g, '_') 
+      };
+      const updatedOptions = [...options, newOptionObj];
+      setOptions(updatedOptions);
       setNewOption("");
       
-      // Form's options field değerini güncelleme
-      const formOptions = form.getValues("options") || [];
-      form.setValue("options", [...formOptions, newOptionObj]);
+      // Update form options
+      form.setValue("options", updatedOptions);
     }
   };
 
   const removeOption = (optionToRemove: ColumnOption) => {
-    const updatedOptions = options.filter((option) => option.value !== optionToRemove.value);
+    const updatedOptions = options.filter(
+      (option) => option.value !== optionToRemove.value
+    );
     setOptions(updatedOptions);
-    
-    // Form's options field değerini güncelleme
     form.setValue("options", updatedOptions);
   };
 
   const onSubmit = async (data: ColumnFormValues) => {
-    // Hazırda seçilmiş optionları data-ya əlavə et
+    console.log("onSubmit called with data:", data);
+    
+    // Ensure options are correctly formatted for select/radio/checkbox
     if (["select", "radio", "checkbox"].includes(data.type)) {
       data.options = options;
     }
     
-    // Əgər xarici onAddColumn funksiyası varsa onu çağır
-    if (onAddColumn) {
-      const result = await onAddColumn(data);
-      return result;
+    // Ensure validation is an object if undefined
+    if (!data.validation) {
+      data.validation = {};
     }
     
-    console.log("Form submitted with data:", data);
+    // If callback is provided, pass the data to it
+    if (onSubmitCallback) {
+      try {
+        console.log("Calling onSubmitCallback with data:", data);
+        const result = await onSubmitCallback(data);
+        console.log("onSubmitCallback result:", result);
+        return result;
+      } catch (error) {
+        console.error("Error in onSubmitCallback:", error);
+        return false;
+      }
+    }
+    
     return true;
   };
 

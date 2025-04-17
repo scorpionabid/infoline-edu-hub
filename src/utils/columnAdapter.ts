@@ -1,14 +1,15 @@
 
-import { Column, ColumnType } from '@/types/column';
+import { Column, ColumnType, ColumnOption } from '@/types/column';
 
 export const columnAdapter = {
   adaptColumnToForm: (column: Column) => {
+    // Form için column nesnesini adapte et
     return {
       id: column.id,
       category_id: column.category_id,
       name: column.name,
       type: column.type,
-      is_required: column.is_required ?? true, // Default olaraq məcburi
+      is_required: column.is_required ?? true, // Default olarak zorunlu
       placeholder: column.placeholder || '',
       help_text: column.help_text || '',
       order_index: column.order_index || 0,
@@ -23,8 +24,8 @@ export const columnAdapter = {
   },
   
   adaptFormToColumn: (formData: Partial<Column>): Partial<Column> => {
-    // JSON tipində olan xüsusiyyətləri seriallaşdırma
-    return {
+    // Form verilerini Column tipine adapte et
+    const column: Partial<Column> = {
       id: formData.id,
       category_id: formData.category_id,
       name: formData.name,
@@ -34,15 +35,29 @@ export const columnAdapter = {
       help_text: formData.help_text,
       order_index: formData.order_index || 0,
       status: formData.status || 'active',
-      validation: formData.validation,
       default_value: formData.default_value || '',
-      options: formData.options,
       parent_column_id: formData.parent_column_id
     };
+    
+    // JSON tipinde olan alanları işle
+    if (formData.validation) {
+      column.validation = formData.validation;
+    }
+    
+    if (formData.options) {
+      column.options = formData.options;
+    }
+    
+    return column;
   },
   
   adaptSupabaseToColumn: (dbColumn: any): Column => {
-    // DB-dən gələn məlumatları bizim Model-ə uyğunlaşdır
+    if (!dbColumn) {
+      console.error('Null or undefined dbColumn in adaptSupabaseToColumn');
+      throw new Error('Cannot adapt null or undefined column data');
+    }
+    
+    // DB'den gelen verileri model tipine dönüştür
     const column: Column = {
       id: dbColumn.id,
       category_id: dbColumn.category_id,
@@ -57,36 +72,59 @@ export const columnAdapter = {
       updated_at: dbColumn.updated_at
     };
     
-    // Validasiya qaydalarını parse et
+    // Validasyon kurallarını parse et
     if (dbColumn.validation) {
       try {
         column.validation = typeof dbColumn.validation === 'string' 
           ? JSON.parse(dbColumn.validation) 
           : dbColumn.validation;
       } catch (e) {
-        console.error('Validasiya qaydaları parse xətası:', e);
+        console.error('Validasyon kuralları parse hatası:', e);
         column.validation = {};
       }
     }
     
-    // Seçimləri parse et
+    // Seçenekleri parse et
     if (dbColumn.options) {
       try {
-        column.options = typeof dbColumn.options === 'string' 
-          ? JSON.parse(dbColumn.options) 
-          : dbColumn.options;
+        if (typeof dbColumn.options === 'string') {
+          column.options = JSON.parse(dbColumn.options);
+        } else if (Array.isArray(dbColumn.options)) {
+          column.options = dbColumn.options;
+        } else {
+          column.options = [];
+        }
+        
+        // Eğer options array değilse veya geçersizse, boş array ata
+        if (!Array.isArray(column.options)) {
+          console.warn('Invalid options format, using empty array instead');
+          column.options = [];
+        }
+        
+        // Ensure all options have the correct format
+        column.options = (column.options as any[]).map((opt: any): ColumnOption => {
+          if (typeof opt === 'string') {
+            return { label: opt, value: opt };
+          } else if (typeof opt === 'object' && opt !== null) {
+            return {
+              label: opt.label || opt.toString(),
+              value: opt.value || opt.label || opt.toString()
+            };
+          }
+          return { label: String(opt), value: String(opt) };
+        });
       } catch (e) {
-        console.error('Seçimlər parse xətası:', e);
+        console.error('Seçenekler parse hatası:', e);
         column.options = [];
       }
     }
     
-    // Parent sütun ID-sini əlavə et
+    // Parent sütun ID'sini ekle
     if (dbColumn.parent_column_id) {
       column.parent_column_id = dbColumn.parent_column_id;
     }
     
-    // Default dəyər
+    // Default değer
     if (dbColumn.default_value !== null && dbColumn.default_value !== undefined) {
       column.default_value = dbColumn.default_value;
     }

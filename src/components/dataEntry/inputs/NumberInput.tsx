@@ -12,6 +12,10 @@ interface NumberInputProps {
 }
 
 const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = false }) => {
+  // Validation için min/max değerlerini al
+  const minValue = column.validation?.minValue;
+  const maxValue = column.validation?.maxValue;
+
   return (
     <FormField
       control={form.control}
@@ -28,6 +32,8 @@ const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = fals
               type="number"
               placeholder={column.placeholder}
               disabled={disabled}
+              min={minValue}
+              max={maxValue}
               onChange={(e) => {
                 // Parse string value to number
                 const value = e.target.value ? parseFloat(e.target.value) : '';

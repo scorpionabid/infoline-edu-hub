@@ -45,7 +45,7 @@ const FormFields: React.FC<FormFieldsProps> = ({
     const fieldsSchema: Record<string, any> = {};
     
     category.columns.forEach(column => {
-      let fieldSchema = z.any();
+      let fieldSchema: any;
       
       if (column.is_required) {
         if (column.type === 'text' || column.type === 'textarea') {
@@ -58,6 +58,8 @@ const FormFields: React.FC<FormFieldsProps> = ({
           fieldSchema = z.array(z.string()).min(1, { message: 'Bu sahə məcburidir' });
         } else if (column.type === 'date') {
           fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' });
+        } else {
+          fieldSchema = z.any();
         }
       } else {
         // Məcburi olmayan sahələr üçün tipləri müəyyən edək
@@ -65,6 +67,12 @@ const FormFields: React.FC<FormFieldsProps> = ({
           fieldSchema = z.number().optional().or(z.string().optional());
         } else if (column.type === 'checkbox') {
           fieldSchema = z.array(z.string()).optional();
+        } else if (column.type === 'text' || column.type === 'textarea') {
+          fieldSchema = z.string().optional();
+        } else if (column.type === 'select') {
+          fieldSchema = z.string().optional();
+        } else if (column.type === 'date') {
+          fieldSchema = z.string().optional();
         } else {
           fieldSchema = z.any().optional();
         }
