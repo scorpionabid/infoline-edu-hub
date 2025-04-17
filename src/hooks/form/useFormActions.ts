@@ -1,7 +1,6 @@
-
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
-import { DataEntryForm, EntryValue, CategoryEntryData } from '@/types/dataEntry';
+import { useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { DataEntryForm, CategoryEntryData } from '@/types/dataEntry';
 
 export interface UseFormActionsProps {
   formData: DataEntryForm;
@@ -18,6 +17,8 @@ export const useFormActions = ({
 }: UseFormActionsProps) => {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { toast } = useToast();
   
   // Form verilərini yeniləmək üçün funksiya
   const updateValue = useCallback((categoryId: string, columnId: string, newValue: any) => {

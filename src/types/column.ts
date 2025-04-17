@@ -18,6 +18,7 @@ export interface Column {
   options?: ColumnOption[] | Json;
   created_at: string;
   updated_at: string;
+  entry?: any; // Data daxil edilərkən istifadə olunur
 }
 
 // Sütun tipi
@@ -64,4 +65,12 @@ export interface ColumnFormValues {
   validation?: Record<string, any>;
   options?: ColumnOption[];
   default_value?: string;
+}
+
+// Sütunları kategori ilə birləşdirən tip
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  columns: Column[];
+  columnCount?: number;
 }

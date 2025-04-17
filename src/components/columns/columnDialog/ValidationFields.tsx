@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
@@ -13,10 +12,10 @@ import { Input } from "@/components/ui/input";
 import { ColumnType } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 
-interface ValidationFieldsProps {
-  form: UseFormReturn<any>;
+export interface ValidationFieldsProps {
+  form: any;
   selectedType: ColumnType;
-  t?: (key: string, ...args: any[]) => string; // t xüsusiyyəti əlavə edildi
+  t?: (key: string, args?: any) => string;
 }
 
 const ValidationFields: React.FC<ValidationFieldsProps> = ({
@@ -25,7 +24,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
   t: propT
 }) => {
   const { t: contextT } = useLanguage();
-  const t = propT || contextT; // propdan gələn t varsa onu, yoxsa kontekstdən gələni istifadə et
+  const t = propT || contextT;
 
   if (selectedType === "number") {
     return (

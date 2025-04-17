@@ -1,5 +1,5 @@
 
-import { Category, CategoryWithColumns } from '@/types/category';
+import { Category, CategoryWithColumns, adaptSupabaseCategory } from '@/types/category';
 import { Column } from '@/types/column';
 import { columnAdapter } from './columnAdapter';
 
@@ -29,19 +29,7 @@ export const categoryAdapter = {
   },
   
   adaptSupabaseToCategory: (dbCategory: any): Category => {
-    return {
-      id: dbCategory.id,
-      name: dbCategory.name,
-      description: dbCategory.description || '',
-      status: dbCategory.status || 'active',
-      deadline: dbCategory.deadline || null,
-      assignment: dbCategory.assignment || 'all',
-      column_count: dbCategory.column_count || 0,
-      archived: dbCategory.archived || false,
-      priority: dbCategory.priority || 0,
-      created_at: dbCategory.created_at,
-      updated_at: dbCategory.updated_at
-    };
+    return adaptSupabaseCategory(dbCategory);
   },
   
   adaptToCategoryWithColumns: (
@@ -51,7 +39,7 @@ export const categoryAdapter = {
     return {
       ...category,
       columns: columns.filter(col => col.category_id === category.id),
-      columnCount: category.column_count || columns.filter(col => col.category_id === category.id).length
+      completionPercentage: 0 // Default değer, gerçek hesaplama implementasyonu eklenebilir
     };
   },
   
@@ -59,7 +47,7 @@ export const categoryAdapter = {
     dbCategory: any, 
     dbColumns: any[] = []
   ): CategoryWithColumns => {
-    const category = categoryAdapter.adaptSupabaseToCategory(dbCategory);
+    const category = adaptSupabaseCategory(dbCategory);
     
     // DB-dən gələn sütunları modellərə çevir
     const columns = dbColumns
@@ -69,7 +57,7 @@ export const categoryAdapter = {
     return {
       ...category,
       columns,
-      columnCount: category.column_count || columns.length
+      completionPercentage: 0 // Default dəyər, real hesablama implementasiyası əlavə edilə bilər
     };
   }
 };

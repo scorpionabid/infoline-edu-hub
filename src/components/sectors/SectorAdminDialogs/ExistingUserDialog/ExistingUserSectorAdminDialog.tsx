@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Sector } from '@/types/supabase';
 import { useExistingUserForm } from './hooks/useExistingUserForm';
 import { DialogContent as SectorAdminDialogContent } from './components/DialogContent';
+import { User } from '@/components/users/UserSelectParts/types';
 
 interface ExistingUserSectorAdminDialogProps {
   open: boolean;
@@ -49,9 +50,9 @@ export const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDial
       form={form}
       sector={sector}
       isEmbedded={isEmbedded}
-      error={error ? new Error(error) : null}
+      error={error ? error : null}
       usersError={usersError}
-      filteredUsers={filteredUsers}
+      filteredUsers={filteredUsers as User[]}
       loadingUsers={loadingUsers}
       selectedUserId={selectedUserId}
       assigningUser={assigningUser}

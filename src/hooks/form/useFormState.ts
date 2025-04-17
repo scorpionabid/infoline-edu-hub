@@ -1,31 +1,24 @@
-
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { DataEntryForm } from '@/types/dataEntry';
 
-/**
- * @description Form vəziyyətini idarə etmək üçün hook
- */
 export const useFormState = () => {
-  const emptyForm: DataEntryForm = {
+  const [form, setForm] = useState<DataEntryForm>({
     schoolId: '',
-    categoryId: '',
     entries: [],
-    status: 'draft'
-  };
-  
-  const [formData, setFormData] = useState<DataEntryForm>(emptyForm);
-  
-  // Form məlumatlarının qismən yenilənməsi üçün funksiya
-  const updateFormData = useCallback((newData: Partial<DataEntryForm>) => {
-    setFormData(prevData => ({
-      ...prevData,
-      ...newData
+    isSubmitting: false,
+    isSubmitted: false,
+    errors: {}
+  });
+
+  const updateForm = (updates: Partial<DataEntryForm>) => {
+    setForm(prevForm => ({
+      ...prevForm,
+      ...updates
     }));
-  }, []);
-  
+  };
+
   return {
-    formData,
-    setFormData,
-    updateFormData
+    form,
+    updateForm,
   };
 };

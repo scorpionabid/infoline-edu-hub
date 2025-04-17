@@ -1,29 +1,11 @@
 
 import { Column } from './column';
+import { Category, CategoryStatus } from './category';
 
-// Kateqoriya interfeysi
-export interface CategoryData {
-  id: string;
-  name: string;
-  description: string;
-  assignment: 'all' | 'sectors';
-  deadline: string | null;
-  status: 'active' | 'inactive' | 'archived';
-  priority: number;
-  created_at: string;
-  updated_at: string;
-  column_count?: number;
-  archived?: boolean;
-}
+// Kateqoriya interfeysi artıq əsas category.ts faylında təyin edilib
 
-// Təkrar bir çox yerdə istifadə edildiyi üçün Category alias əlavə edildi
-export type Category = CategoryData;
-
-// Kateqoriya və sütun daxil olan tip
-export interface CategoryWithColumns extends CategoryData {
-  columns: (Column & { entry?: any })[];
-  completionPercentage: number;
-}
+// Kateqoriya və sütun daxil olan tip artıq category.ts-də CategoryWithColumns kimi təyin edilib
+export { CategoryWithColumns } from './category';
 
 // Daxil edilmiş dəyərlər üçün tip
 export interface EntryValue {
@@ -33,6 +15,24 @@ export interface EntryValue {
   value: any;
   id?: string;
   status?: EntryStatus;
+}
+
+// Kateqoriya daxiletmələri üçün data tipi
+export interface CategoryEntryData {
+  id: string;
+  categoryId: string;
+  isSubmitted: boolean;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  values: EntryValue[];
+}
+
+// Data daxiletmə formu üçün tip
+export interface DataEntryForm {
+  schoolId: string;
+  entries: CategoryEntryData[];
+  isSubmitting: boolean;
+  isSubmitted: boolean;
+  errors: Record<string, string[]>;
 }
 
 // Daxil edilən məlumatın statusu
@@ -63,3 +63,6 @@ export const validateEntry = (column: Column, value: any): ColumnValidationError
   // Validasiya məntiqini burada həyata keçirə bilərsiniz
   return null;
 };
+
+// İxrac edilən Category tipi
+export { Category, CategoryStatus };
