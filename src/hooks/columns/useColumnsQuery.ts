@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Column } from '@/types/column';
 import { useQuery } from '@tanstack/react-query';
 import { columnAdapter } from '@/utils/columnAdapter';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 // Sütunları çəkmək üçün sorğu funksiyası

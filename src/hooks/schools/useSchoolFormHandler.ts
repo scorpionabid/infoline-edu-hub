@@ -4,7 +4,7 @@ import { SchoolFormData } from '@/types/school-form';
 import { toast } from 'sonner';
 import { School as SupabaseSchool } from '@/types/supabase';
 import { mapToMockSchool } from './schoolTypeConverters';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 
 // Initial form data

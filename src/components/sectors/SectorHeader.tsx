@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRegions } from '@/hooks/useRegions';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { Loader2 } from 'lucide-react';
 
 interface SectorHeaderProps {

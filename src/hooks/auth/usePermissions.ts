@@ -1,106 +1,85 @@
-
-import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback } from 'react';
+import { useAuth } from '@/context/auth';
 
 /**
  * İstifadəçi səlahiyyətlərini idarə etmək üçün hook
  */
 export const usePermissions = () => {
   const { user } = useAuth();
-  const [userRole, setUserRole] = useState<string | undefined>(user?.role);
-  const [sectorId, setSectorId] = useState<string | undefined>(user?.sector_id);
-  const [regionId, setRegionId] = useState<string | undefined>(user?.region_id);
-  const [canRegionAdminManageCategoriesColumns, setCanRegionAdminManageCategoriesColumns] = useState<boolean>(false);
-
-  // İstifadəçi dəyişdikdə rolunu yenilə
-  useEffect(() => {
-    setUserRole(user?.role);
-    setSectorId(user?.sector_id);
-    setRegionId(user?.region_id);
-    
-    // SuperAdmin və RegionAdmin-lər kategoriya/sütunları idarə edə bilər
-    setCanRegionAdminManageCategoriesColumns(
-      user?.role === 'superadmin' || user?.role === 'regionadmin'
-    );
-  }, [user]);
-
+  const userRole = user?.role;
+  
+  // Əsas rol yoxlamaları
+  const isSuperAdmin = userRole === 'superadmin';
+  const isRegionAdmin = userRole === 'regionadmin';
+  const isSectorAdmin = userRole === 'sectoradmin';
+  const isSchoolAdmin = userRole === 'schooladmin';
+  
+  // Məlumat əldə etmə
+  const sectorId = user?.sector_id;
+  const regionId = user?.region_id;
+  const schoolId = user?.school_id;
+  
+  // Xüsusi icazələr
+  const canManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
+  const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  const canViewReports = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
+  
   /**
    * İstifadəçinin müəyyən rol olub olmadığını yoxlayır
    * @param role Yoxlanılacaq rol
    */
-  const hasRole = useCallback(async (role: string): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase.rpc('has_role_safe', { role_to_check: role });
-      if (error) throw error;
-      return !!data;
-    } catch (error) {
-      console.error('Rol yoxlama xətası:', error);
-      return false;
+  const hasRole = useCallback((role: string | string[]) => {
+    if (!userRole) return false;
+    
+    if (Array.isArray(role)) {
+      return role.includes(userRole);
     }
-  }, [user]);
+    
+    return role === userRole;
+  }, [userRole]);
 
   /**
-   * İstifadəçinin region üzərində səlahiyyəti olub olmadığını yoxlayır
-   * @param regionId Region ID
+   * İstifadəçinin müəyyən regionda olub olmadığını yoxlayır
+   * @param targetRegionId Yoxlanılacaq region ID
    */
-  const hasRegionAccess = useCallback(async (regionId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase.rpc('has_region_access', { region_id_param: regionId });
-      if (error) throw error;
-      return !!data;
-    } catch (error) {
-      console.error('Region səlahiyyəti yoxlama xətası:', error);
-      return false;
-    }
-  }, [user]);
+  const isInRegion = useCallback((targetRegionId: string) => {
+    if (isSuperAdmin) return true;
+    return regionId === targetRegionId;
+  }, [isSuperAdmin, regionId]);
 
   /**
-   * İstifadəçinin sektor üzərində səlahiyyəti olub olmadığını yoxlayır
-   * @param sectorId Sektor ID
+   * İstifadəçinin müəyyən sektorda olub olmadığını yoxlayır
+   * @param targetSectorId Yoxlanılacaq sektor ID
    */
-  const hasSectorAccess = useCallback(async (sectorId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase.rpc('has_sector_access', { sector_id_param: sectorId });
-      if (error) throw error;
-      return !!data;
-    } catch (error) {
-      console.error('Sektor səlahiyyəti yoxlama xətası:', error);
-      return false;
-    }
-  }, [user]);
+  const isInSector = useCallback((targetSectorId: string) => {
+    if (isSuperAdmin || isRegionAdmin) return true;
+    return sectorId === targetSectorId;
+  }, [isSuperAdmin, isRegionAdmin, sectorId]);
 
   /**
-   * İstifadəçinin məktəb üzərində səlahiyyəti olub olmadığını yoxlayır
-   * @param schoolId Məktəb ID
+   * İstifadəçinin müəyyən məktəbdə olub olmadığını yoxlayır
+   * @param targetSchoolId Yoxlanılacaq məktəb ID
    */
-  const hasSchoolAccess = useCallback(async (schoolId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase.rpc('has_school_access', { school_id_param: schoolId });
-      if (error) throw error;
-      return !!data;
-    } catch (error) {
-      console.error('Məktəb səlahiyyəti yoxlama xətası:', error);
-      return false;
-    }
-  }, [user]);
+  const isInSchool = useCallback((targetSchoolId: string) => {
+    if (isSuperAdmin || isRegionAdmin || isSectorAdmin) return true;
+    return schoolId === targetSchoolId;
+  }, [isSuperAdmin, isRegionAdmin, isSectorAdmin, schoolId]);
 
   return {
     userRole,
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
+    isSchoolAdmin,
     sectorId,
     regionId,
-    canRegionAdminManageCategoriesColumns,
+    schoolId,
     hasRole,
-    hasRegionAccess,
-    hasSectorAccess,
-    hasSchoolAccess
+    isInRegion,
+    isInSector,
+    isInSchool,
+    canManageCategoriesColumns,
+    canManageUsers,
+    canViewReports
   };
 };

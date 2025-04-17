@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserFormData } from '@/types/user';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import UserForm from './UserForm';
 import { useCreateUser } from '@/hooks/useCreateUser';
 import { Loader2 } from 'lucide-react';

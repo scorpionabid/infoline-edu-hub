@@ -34,7 +34,7 @@ import { useCreateSector } from '@/hooks/useCreateSector';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useRegions } from '@/hooks/useRegions';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const statusOptions = [

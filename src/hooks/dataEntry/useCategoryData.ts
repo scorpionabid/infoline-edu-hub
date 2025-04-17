@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/dataEntry';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { columnAdapter } from '@/utils/columnAdapter';
 
 export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FullUserData } from '@/types/supabase';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 
 /**
  * Mövcud istifadəçiləri əldə etmək üçün hook

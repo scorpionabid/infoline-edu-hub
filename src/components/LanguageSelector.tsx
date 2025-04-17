@@ -1,18 +1,16 @@
-
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { Language, LanguageInfo } from '@/types/language';
 import { Globe } from 'lucide-react';
+import { useLanguage, Language, LanguageInfo } from '@/context/LanguageContext';
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const LanguageSelector = () => {
-  const { language, setLanguage, languages, t } = useLanguage();
+const LanguageSelector: React.FC = () => {
+  // languages hook-dan alınır, amma undefined ola bilər, ona görə default dəyər verilir
+  const { language, setLanguage, languages = {}, t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const handleSelectLanguage = (lang: Language) => {
@@ -23,14 +21,14 @@ const LanguageSelector = () => {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
+          type="button"
           aria-label={t('language')}
           title={t('language')}
+          className="bg-transparent border-none p-0 m-0"
         >
           <Globe className="h-5 w-5 text-muted-foreground" />
-        </Button>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
         {Object.entries(languages).map(([code, langInfo]) => (

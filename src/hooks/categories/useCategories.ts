@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Category, adaptSupabaseCategory } from '@/types/category';
 import { toast } from 'sonner';
 
+
 const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);

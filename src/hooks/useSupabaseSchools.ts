@@ -61,13 +61,11 @@ export const useSupabaseSchools = () => {
       
       if (error) throw error;
       
-      setSchools(data as School[]);
-    } catch (err: any) {
+      setSchools(Array.isArray(data) ? data : []);
+    } catch (err) {
       console.error('Error fetching schools:', err);
-      setError(err);
-      toast.error(t('errorOccurred'), {
-        description: t('couldNotLoadSchools')
-      });
+      setError(err as Error);
+      setSchools([]);
     } finally {
       setLoading(false);
     }
