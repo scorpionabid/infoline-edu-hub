@@ -1,2 +1,4 @@
 
-export { ExistingUserSectorAdminDialog } from './ExistingUserSectorAdminDialog';
+import ExistingUserSectorAdminDialog from './ExistingUserSectorAdminDialog';
+
+export { ExistingUserSectorAdminDialog };

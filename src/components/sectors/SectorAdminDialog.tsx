@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { ExistingUserSectorAdminDialog } from './SectorAdminDialogs';
+import { ExistingUserSectorAdminDialog } from './SectorAdminDialogs/ExistingUserDialog';
 import { Sector } from '@/types/supabase';
 
 interface SectorAdminDialogProps {
@@ -65,13 +65,15 @@ export const SectorAdminDialog: React.FC<SectorAdminDialogProps> = ({
         </div>
 
         {activeTab === 'existing' ? (
-          <ExistingUserSectorAdminDialog
-            open={open}
-            setOpen={setOpen}
-            sector={sector}
-            onSuccess={onSuccess}
-            isEmbedded={true}
-          />
+          <div className="py-2">
+            <ExistingUserSectorAdminDialog
+              isOpen={open}
+              onClose={() => setOpen(false)}
+              sectorId={sector.id}
+              sectorName={sector.name}
+              onSuccess={onSuccess ? onSuccess : () => {}}
+            />
+          </div>
         ) : (
           <div className="py-4">
             <Alert>
