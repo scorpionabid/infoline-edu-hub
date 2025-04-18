@@ -9,11 +9,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import FormField from '@/components/dataEntry/components/FormField';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
-import { CategoryWithColumns } from '@/types/dataEntry';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 // Alert komponenti
 export const Alert = React.forwardRef<
@@ -53,9 +52,28 @@ const DataEntryPage: React.FC = () => {
   const queryParams = new URLSearchParams(location.search);
   const initialCategoryId = queryParams.get('categoryId');
   const statusFilter = queryParams.get('status');
+  const { isSchoolAdmin, canViewSectorCategories } = usePermissions();
   
-  const { categories, loading, error, refreshCategories } = useCategoryData({ schoolId: user?.schoolId });
+  // useCategoryData hook-u ilə real məlumatları əldə edirik
+  const { categories, loading, error } = useCategoryData(user?.schoolId);
   const [currentCategoryIndex, setCurrentCategoryIndex] = React.useState(0);
+  
+  // Kateqoriyaları filter edirik
+  const filteredCategories = React.useMemo(() => {
+    if (!categories || !Array.isArray(categories)) return [];
+    
+    return categories.filter(category => {
+      if (isSchoolAdmin && category.assignment === 'sectors') {
+        return false;
+      }
+      
+      if (canViewSectorCategories) {
+        return true;
+      }
+      
+      return category.assignment === 'all';
+    });
+  }, [categories, isSchoolAdmin, canViewSectorCategories]);
   
   const {
     formData,
@@ -70,7 +88,7 @@ const DataEntryPage: React.FC = () => {
     validation
   } = useDataEntry({ 
     schoolId: user?.schoolId,
-    categories
+    categories: filteredCategories
   });
   
   // Təsdiq üçün formnu göndərmək
@@ -95,7 +113,7 @@ const DataEntryPage: React.FC = () => {
     toast.success(t('excel.importSuccess'));
   }, [t]);
   
-  const currentCategory = categories[currentCategoryIndex];
+  const currentCategory = filteredCategories[currentCategoryIndex];
   
   const handleCategoryChange = (index: number) => {
     setCurrentCategoryIndex(index);
@@ -134,7 +152,7 @@ const DataEntryPage: React.FC = () => {
       <CardContent className="p-0">
         <ScrollArea className="h-[400px] w-full">
           <div className="flex flex-col space-y-1 p-2">
-            {categories.map((category, index) => (
+            {filteredCategories.map((category, index) => (
               <Button
                 key={category.id}
                 variant={index === currentCategoryIndex ? 'secondary' : 'outline'}
@@ -165,26 +183,28 @@ const DataEntryPage: React.FC = () => {
           <CardTitle>{currentCategory.name}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {currentCategory.columns.map((column) => {
+          {currentCategory.columns && currentCategory.columns.map((column) => {
             const error = getErrorForColumn ? getErrorForColumn(column.id) : [];
             const currentEntry = formData?.entries?.find(v => v.columnId === column.id);
             const value = currentEntry?.value;
             
             return (
-              <FormField
-                key={column.id}
-                id={column.id}
-                type={column.type}
-                name={column.name}
-                value={value}
-                onChange={(val) => handleValueChange(column.id, val)}
-                placeholder={column.placeholder}
-                helpText={column.help_text}
-                options={column.options as { label: string; value: string }[]}
-                validation={column.validation}
-                isRequired={column.is_required}
-                error={error}
-              />
+              <div key={column.id} className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  {column.name}
+                  {column.is_required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                <input 
+                  type="text"
+                  className="w-full p-2 border rounded"
+                  value={value || ''}
+                  onChange={(e) => handleValueChange(column.id, e.target.value)}
+                  placeholder={column.placeholder || ''}
+                />
+                {error && error.length > 0 && (
+                  <p className="text-red-500 text-sm mt-1">{error[0]?.message}</p>
+                )}
+              </div>
             );
           })}
         </CardContent>
@@ -209,7 +229,21 @@ const DataEntryPage: React.FC = () => {
     );
   }
   
-  if (!categories || categories.length === 0) {
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <div className="ml-6">{error}</div>
+        </Alert>
+        <Button onClick={() => navigate('/')}>
+          {t('backToDashboard')}
+        </Button>
+      </div>
+    );
+  }
+  
+  if (!filteredCategories || filteredCategories.length === 0) {
     return renderEmptyState();
   }
   

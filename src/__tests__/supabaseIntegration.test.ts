@@ -24,7 +24,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-const renderWithProviders = (component: React.ReactNode) => {
+const renderWithProviders = (component) => {
   return render(
     <BrowserRouter>
       <AuthProvider supabaseClient={supabase}>

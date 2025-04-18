@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,7 +18,7 @@ const DataEntryForm: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>(categoryId || '');
-  const { isSchoolAdmin } = usePermissions();
+  const { isSchoolAdmin, canViewSectorCategories } = usePermissions();
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'save' | 'submit' }>({
     open: false,
     action: 'save'
@@ -45,10 +46,18 @@ const DataEntryForm: React.FC = () => {
 
   // Filter categories based on assignment for school admin
   const filteredCategories = categories.filter(category => {
-    if (isSchoolAdmin) {
-      return category.assignment !== 'sectors';
+    // Məktəb admini üçün 'sectors' təyinatlı kateqoriyaları göstərmirik
+    if (isSchoolAdmin && category.assignment === 'sectors') {
+      return false;
     }
-    return true;
+    
+    // Sektor admini üçün bütün kateqoriyaları göstəririk
+    if (canViewSectorCategories) {
+      return true;
+    }
+    
+    // Default olaraq 'all' təyinatlı kateqoriyaları göstəririk
+    return category.assignment === 'all';
   });
 
   useEffect(() => {

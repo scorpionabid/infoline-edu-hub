@@ -52,7 +52,8 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
     isRegionAdmin,
     isSectorAdmin,
     isSchoolAdmin,
-    canRegionAdminManageCategoriesColumns 
+    canRegionAdminManageCategoriesColumns,
+    canViewSectorCategories 
   } = usePermissions();
   
   // İcazələri müəyyənləşdiririk
@@ -63,7 +64,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
   // Region admin məlumat daxil etmir, yalnız SuperAdmin, SectorAdmin və SchoolAdmin
-  const canAccessDataEntry = isSectorAdmin || isSchoolAdmin;
+  const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin;
   
   const navItems = [
     {
@@ -94,7 +95,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: true // Bütün istifadəçilər kateqoriyalara baxa bilər
+      show: true // Bütün istifadəçilər kateqoriyalara baxa bilər, amma School admin sector kateqoriyalarını görməyəcək
     },
     {
       href: "/columns",
@@ -112,7 +113,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/data-entry",
       icon: <FileInput size={20} />,
       label: t('dataEntry'),
-      show: canAccessDataEntry // Yalnız məktəb və sector adminlər məlumat daxil edə bilər
+      show: canAccessDataEntry // SuperAdmin, SectorAdmin və SchoolAdmin məlumat daxil edə bilər
     },
     {
       href: "/reports",

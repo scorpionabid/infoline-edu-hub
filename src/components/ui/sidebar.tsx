@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -42,24 +43,43 @@ export interface EntityInfoProps {
 }
 
 export const EntityInfo: React.FC<EntityInfoProps> = ({ user }) => {
-  if (!user?.adminEntity) return null;
+  if (!user) return null;
   
-  const { adminEntity } = user;
+  let entityName = null;
+  let entityType = null;
+  let regionName = null;
+  let sectorName = null;
+  
+  if (user.role === 'regionadmin' && user.regionName) {
+    entityName = user.regionName;
+    entityType = 'region';
+  } else if (user.role === 'sectoradmin' && user.sectorName) {
+    entityName = user.sectorName;
+    entityType = 'sector';
+    regionName = user.regionName;
+  } else if (user.role === 'schooladmin' && user.schoolName) {
+    entityName = user.schoolName;
+    entityType = 'school';
+    sectorName = user.sectorName;
+    regionName = user.regionName;
+  }
+  
+  if (!entityName) return null;
   
   return (
     <div className="px-4 py-3 border-t border-b">
-      <div className="font-medium text-sm truncate" title={adminEntity.name}>
-        {adminEntity.name}
+      <div className="font-medium text-sm truncate" title={entityName}>
+        {entityName}
       </div>
-      {adminEntity.type === 'sector' && adminEntity.regionName && (
+      {entityType === 'sector' && regionName && (
         <div className="text-xs text-muted-foreground mt-1">
-          {adminEntity.regionName}
+          {regionName}
         </div>
       )}
-      {adminEntity.type === 'school' && (
+      {entityType === 'school' && (
         <div className="text-xs text-muted-foreground mt-1">
-          {adminEntity.sectorName && <div>{adminEntity.sectorName}</div>}
-          {adminEntity.regionName && <div>{adminEntity.regionName}</div>}
+          {sectorName && <div>{sectorName}</div>}
+          {regionName && <div>{regionName}</div>}
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
 
@@ -15,6 +16,9 @@ interface UsePermissionsReturn {
   schoolId: string | null;
   canRegionAdminManageCategoriesColumns: boolean;
   canViewSectorCategories: boolean;
+  regionName: string | null;
+  sectorName: string | null;
+  schoolName: string | null;
 }
 
 export const usePermissions = (): UsePermissionsReturn => {
@@ -33,7 +37,10 @@ export const usePermissions = (): UsePermissionsReturn => {
         sectorId: null,
         schoolId: null,
         canRegionAdminManageCategoriesColumns: false,
-        canViewSectorCategories: false
+        canViewSectorCategories: false,
+        regionName: null,
+        sectorName: null,
+        schoolName: null
       };
     }
     
@@ -47,6 +54,11 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canRegionAdminManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
     const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
+    // Müəssisə adları əldə edilir
+    const regionName = user.regionName || null;
+    const sectorName = user.sectorName || null;
+    const schoolName = user.schoolName || null;
+    
     return {
       userRole,
       isAdmin,
@@ -58,7 +70,10 @@ export const usePermissions = (): UsePermissionsReturn => {
       sectorId: user.sectorId || null,
       schoolId: user.schoolId || null,
       canRegionAdminManageCategoriesColumns,
-      canViewSectorCategories
+      canViewSectorCategories,
+      regionName,
+      sectorName,
+      schoolName
     };
   }, [user]);
 };
