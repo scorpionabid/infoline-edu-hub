@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
 
@@ -15,13 +14,13 @@ interface UsePermissionsReturn {
   sectorId: string | null;
   schoolId: string | null;
   canRegionAdminManageCategoriesColumns: boolean;
+  canViewSectorCategories: boolean;
 }
 
 export const usePermissions = (): UsePermissionsReturn => {
   const { user } = useAuth();
   
   return useMemo(() => {
-    // Default permissions for not logged-in users
     if (!user) {
       return {
         userRole: 'user' as UserRole,
@@ -33,24 +32,20 @@ export const usePermissions = (): UsePermissionsReturn => {
         regionId: null,
         sectorId: null,
         schoolId: null,
-        canRegionAdminManageCategoriesColumns: false
+        canRegionAdminManageCategoriesColumns: false,
+        canViewSectorCategories: false
       };
     }
     
-    // Get user role
     const userRole = user.role as UserRole;
-    
-    // Check if user is an admin (any kind)
     const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole);
-    
-    // Specific roles
     const isSuperAdmin = userRole === 'superadmin';
     const isRegionAdmin = userRole === 'regionadmin';
     const isSectorAdmin = userRole === 'sectoradmin';
     const isSchoolAdmin = userRole === 'schooladmin';
     
-    // Region adminləri kateqoriya və sütunları idarə edə bilər
     const canRegionAdminManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
+    const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
     return {
       userRole,
@@ -62,7 +57,8 @@ export const usePermissions = (): UsePermissionsReturn => {
       regionId: user.regionId || null,
       sectorId: user.sectorId || null,
       schoolId: user.schoolId || null,
-      canRegionAdminManageCategoriesColumns
+      canRegionAdminManageCategoriesColumns,
+      canViewSectorCategories
     };
   }, [user]);
 };

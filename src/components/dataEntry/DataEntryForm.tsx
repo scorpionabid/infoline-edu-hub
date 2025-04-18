@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/context/LanguageContext';
 import { useDataEntry } from '@/hooks/useDataEntry';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CategoryForm from './CategoryForm';
@@ -17,6 +17,7 @@ const DataEntryForm: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>(categoryId || '');
+  const { isSchoolAdmin } = usePermissions();
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'save' | 'submit' }>({
     open: false,
     action: 'save'
@@ -24,8 +25,7 @@ const DataEntryForm: React.FC = () => {
 
   const { 
     formData, 
-    updateFormData, 
-    categories, 
+    categories = [], 
     loading, 
     submitting,
     handleEntriesChange,
@@ -36,12 +36,19 @@ const DataEntryForm: React.FC = () => {
     submitForApproval,
     saveStatus = DataEntrySaveStatus.IDLE,
     isDataModified = false,
-    error = null,
-    selectedCategory = undefined
+    error = null
   } = useDataEntry({
     schoolId,
     categoryId,
     onComplete: () => navigate('/dashboard')
+  });
+
+  // Filter categories based on assignment for school admin
+  const filteredCategories = categories.filter(category => {
+    if (isSchoolAdmin) {
+      return category.assignment !== 'sectors';
+    }
+    return true;
   });
 
   useEffect(() => {
@@ -85,7 +92,7 @@ const DataEntryForm: React.FC = () => {
     setConfirmDialog({ open: true, action: 'submit' });
   };
 
-  if (loading && (!categories || categories.length === 0)) {
+  if (loading && (!filteredCategories || filteredCategories.length === 0)) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -102,7 +109,7 @@ const DataEntryForm: React.FC = () => {
     );
   }
 
-  if (!categories || categories.length === 0) {
+  if (!filteredCategories || filteredCategories.length === 0) {
     return (
       <Alert className="mb-6">
         <AlertDescription>{t('noCategoriesAvailable')}</AlertDescription>
@@ -133,7 +140,7 @@ const DataEntryForm: React.FC = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <div className="flex justify-between items-center">
           <TabsList className="h-auto p-1 overflow-x-auto max-w-screen-lg">
-            {Array.isArray(categories) && categories.map((category) => (
+            {Array.isArray(filteredCategories) && filteredCategories.map((category) => (
               <TabsTrigger
                 key={category.id}
                 value={category.id}
@@ -150,7 +157,7 @@ const DataEntryForm: React.FC = () => {
           </TabsList>
         </div>
 
-        {Array.isArray(categories) && categories.map((category) => (
+        {Array.isArray(filteredCategories) && filteredCategories.map((category) => (
           <TabsContent key={category.id} value={category.id} className="space-y-4">
             <CategoryForm
               category={category}
