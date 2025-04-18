@@ -1,5 +1,5 @@
 
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns } from './category';
 
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
@@ -32,13 +32,26 @@ export interface DataEntryForm {
   isModified: boolean;
   saveStatus: DataEntrySaveStatus;
   error: string | null;
+  schoolId?: string;
+  categoryId?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  lastSaved?: string;
+  completionPercentage?: number;
 }
 
 export interface CategoryEntryData {
   category: CategoryWithColumns;
   entries: DataEntry[];
+  completionPercentage?: number;
 }
 
 export interface EntryValue {
   [columnId: string]: string | number | boolean | string[] | null;
+}
+
+export interface ColumnValidationError {
+  columnId: string;
+  message: string;
+  columnName?: string;
 }

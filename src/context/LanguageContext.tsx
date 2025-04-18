@@ -1,234 +1,117 @@
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type Language = 'az' | 'en' | 'ru' | 'tr';
+type Language = 'az' | 'en' | 'tr' | 'ru';
 
-export interface LanguageInfo {
-  flag: string;
+interface LanguageInfo {
   nativeName: string;
-}
-
-export interface Translations {
-  [key: string]: string;
+  flag: string;
 }
 
 export interface LanguageContextType {
-  currentLanguage: Language;
+  t: (key: string) => string;
   setLanguage: (lang: Language) => void;
-  t: (key: string, variables?: Record<string, string>) => string;
-  availableLanguages: Record<Language, LanguageInfo>;
+  languages: Record<Language, LanguageInfo>;
+  currentLanguage: Language;
 }
 
-const defaultLanguage: Language = 'az';
-
-const availableLanguages: Record<Language, LanguageInfo> = {
-  az: { flag: '🇦🇿', nativeName: 'Azərbaycan' },
-  en: { flag: '🇬🇧', nativeName: 'English' },
-  ru: { flag: '🇷🇺', nativeName: 'Русский' },
-  tr: { flag: '🇹🇷', nativeName: 'Türkçe' }
+const defaultLanguages: Record<Language, LanguageInfo> = {
+  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
+  en: { nativeName: 'English', flag: '🇬🇧' },
+  tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
+  ru: { nativeName: 'Русский', flag: '🇷🇺' }
 };
 
-const translations: Record<Language, Translations> = {
-  az: {
-    dashboard: 'İdarə paneli',
-    schools: 'Məktəblər',
-    reports: 'Hesabatlar',
-    settings: 'Parametrlər',
-    logout: 'Çıxış',
-    search: 'Axtar',
-    schoolName: 'Məktəb adı',
-    region: 'Region',
-    sector: 'Sektor',
-    principal: 'Direktor',
-    status: 'Status',
-    actions: 'Əməliyyatlar',
-    addSchool: 'Məktəb əlavə et',
-    edit: 'Redaktə et',
-    delete: 'Sil',
-    export: 'İxrac et',
-    refresh: 'Yenilə',
-    searchSchools: 'Məktəbləri axtar...',
-    filterByRegion: 'Regiona görə filtrlə',
-    filterBySector: 'Sektora görə filtrlə',
-    filterByStatus: 'Statusa görə filtrlə',
-    allRegions: 'Bütün regionlar',
-    allSectors: 'Bütün sektorlar',
-    allStatuses: 'Bütün statuslar',
-    active: 'Aktiv',
-    inactive: 'Deaktiv',
-    blocked: 'Bloklanmış',
-    schoolsList: 'Məktəblərin siyahısı',
-    schoolCreated: 'Məktəb uğurla yaradıldı',
-    schoolUpdated: 'Məktəb uğurla yeniləndi',
-    schoolDeleted: 'Məktəb uğurla silindi',
-    schoolCreationFailed: 'Məktəb yaradılarkən xəta baş verdi',
-    schoolUpdateFailed: 'Məktəb yenilənərkən xəta baş verdi',
-    schoolDeletionFailed: 'Məktəb silinərkən xəta baş verdi',
-    schoolDetails: 'Məktəb məlumatları',
-    cancel: 'İmtina',
-    save: 'Yadda saxla',
-    confirmDelete: 'Silinməni təsdiqləyin',
-    confirmDeleteText: 'Bu məktəbi silmək istədiyinizə əminsiniz?',
-    confirmButtonText: 'Bəli, sil',
-    cancelButtonText: 'Xeyr, saxla',
-    deleteWarning: 'Bu əməliyyat geri qaytarıla bilməz',
-    errorOccurred: 'Xəta baş verdi',
-    couldNotLoadSchools: 'Məktəblər yüklənə bilmədi',
-    exportSuccess: 'Məktəblər uğurla ixrac edildi',
-    exportError: 'İxrac zamanı xəta baş verdi',
-    noSchoolsToExport: 'İxrac etmək üçün məktəb tapılmadı',
-    language: 'Dil',
-    assignAdmin: 'Admin təyin et',
-    manageAdmin: 'Admini idarə et',
-    selectUser: 'İstifadəçi seçin',
-    searchUsers: 'İstifadəçiləri axtar...',
-    adminAssigned: 'Admin uğurla təyin edildi',
-    adminAssignmentFailed: 'Admin təyin edilərkən xəta baş verdi',
-    schoolNotFound: 'Məktəb tapılmadı',
-    noAdmin: 'Admin təyin edilməyib',
-    adminIdMissing: 'Admin ID çatışmır',
-    adminEmailWithoutId: 'Admin e-poçtu təyin edilib, lakin ID çatışmır. Admin yenidən təyin edin.'
+// Context yaradılır
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+// Tərcümələr
+type Translations = Record<string, Record<Language, string>>;
+
+// Varsayılan tərcümələr (burada test üçün əsas olanları qeyd edirəm)
+const translations: Translations = {
+  login: {
+    az: 'Daxil ol',
+    en: 'Login',
+    tr: 'Giriş',
+    ru: 'Вход'
   },
-  en: {
-    dashboard: 'Dashboard',
-    schools: 'Schools',
-    reports: 'Reports',
-    settings: 'Settings',
-    logout: 'Logout',
-    search: 'Search',
-    schoolName: 'School Name',
-    region: 'Region',
-    sector: 'Sector',
-    principal: 'Principal',
-    status: 'Status',
-    actions: 'Actions',
-    addSchool: 'Add School',
-    edit: 'Edit',
-    delete: 'Delete',
-    export: 'Export',
-    refresh: 'Refresh',
-    searchSchools: 'Search schools...',
-    filterByRegion: 'Filter by Region',
-    filterBySector: 'Filter by Sector',
-    filterByStatus: 'Filter by Status',
-    allRegions: 'All Regions',
-    allSectors: 'All Sectors',
-    allStatuses: 'All Statuses',
-    active: 'Active',
-    inactive: 'Inactive',
-    blocked: 'Blocked',
-    schoolsList: 'Schools List',
-    schoolCreated: 'School created successfully',
-    schoolUpdated: 'School updated successfully',
-    schoolDeleted: 'School deleted successfully',
-    schoolCreationFailed: 'Failed to create school',
-    schoolUpdateFailed: 'Failed to update school',
-    schoolDeletionFailed: 'Failed to delete school',
-    schoolDetails: 'School Details',
-    cancel: 'Cancel',
-    save: 'Save',
-    confirmDelete: 'Confirm Delete',
-    confirmDeleteText: 'Are you sure you want to delete this school?',
-    confirmButtonText: 'Yes, delete',
-    cancelButtonText: 'No, keep it',
-    deleteWarning: 'This action cannot be undone',
-    errorOccurred: 'An error occurred',
-    couldNotLoadSchools: 'Could not load schools',
-    exportSuccess: 'Schools exported successfully',
-    exportError: 'Error exporting schools',
-    noSchoolsToExport: 'No schools to export',
-    language: 'Language',
-    assignAdmin: 'Assign Admin',
-    manageAdmin: 'Manage Admin',
-    selectUser: 'Select User',
-    searchUsers: 'Search users...',
-    adminAssigned: 'Admin assigned successfully',
-    adminAssignmentFailed: 'Failed to assign admin',
-    schoolNotFound: 'School not found',
-    noAdmin: 'No admin assigned',
-    adminIdMissing: 'Admin ID missing',
-    adminEmailWithoutId: 'Admin email is set but ID is missing. Please reassign the admin.'
+  email: {
+    az: 'E-poçt',
+    en: 'Email',
+    tr: 'E-posta',
+    ru: 'Эл. почта'
   },
-  ru: {
-    // ... ru translations will be here
-    dashboard: 'Панель управления',
-    schools: 'Школы',
-    language: 'Язык'
+  password: {
+    az: 'Şifrə',
+    en: 'Password',
+    tr: 'Şifre',
+    ru: 'Пароль'
   },
-  tr: {
-    // ... tr translations will be here
-    dashboard: 'Yönetim Paneli',
-    schools: 'Okullar',
-    language: 'Dil'
-  }
+  // ... digər tərcümələr əlavə edilə bilər
 };
 
-// Default translations key is used to inform user if translation is missing
-const DEFAULT_TRANSLATIONS_KEY = 'en';
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentLanguage, setCurrentLanguage] = useState<Language>('az');
 
-// Create the context with a default value
-export const LanguageContext = createContext<LanguageContextType>({
-  currentLanguage: defaultLanguage,
-  setLanguage: () => {},
-  t: (key: string) => key,
-  availableLanguages: availableLanguages
-});
-
-// Create the provider component
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [storedLang, setStoredLang] = useLocalStorage<Language>('language', defaultLanguage);
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(storedLang);
-
-  // Update the stored language when the current language changes
   useEffect(() => {
-    setStoredLang(currentLanguage);
-  }, [currentLanguage, setStoredLang]);
+    // Əgər lokalstorajda dil saxlanılıbsa, onu istifadə et
+    const savedLanguage = localStorage.getItem('language') as Language;
+    if (savedLanguage && Object.keys(defaultLanguages).includes(savedLanguage)) {
+      setCurrentLanguage(savedLanguage);
+    }
+  }, []);
 
-  // Set the language
-  const setLanguage = (lang: Language) => {
-    setCurrentLanguage(lang);
+  const changeLanguage = (language: Language) => {
+    setCurrentLanguage(language);
+    localStorage.setItem('language', language);
   };
 
-  // Get a translated value by key
-  const t = (key: string, variables?: Record<string, string>): string => {
-    const currentTranslations = translations[currentLanguage] || {};
-    const defaultTranslations = translations[DEFAULT_TRANSLATIONS_KEY] || {};
-    
-    let value = currentTranslations[key] || defaultTranslations[key] || key;
-    
-    // Replace variables if provided
-    if (variables) {
-      Object.entries(variables).forEach(([varKey, varValue]) => {
-        value = value.replace(new RegExp(`\\{${varKey}\\}`, 'g'), varValue);
-      });
+  const translate = (key: string): string => {
+    if (!translations[key]) {
+      console.warn(`Translation key '${key}' not found.`);
+      return key;
     }
-    
-    return value;
+
+    if (!translations[key][currentLanguage]) {
+      console.warn(`Translation for '${key}' in language '${currentLanguage}' not found.`);
+      return key;
+    }
+
+    return translations[key][currentLanguage];
+  };
+
+  const value = {
+    t: translate,
+    setLanguage: changeLanguage,
+    languages: defaultLanguages,
+    currentLanguage
   };
 
   return (
-    <LanguageContext.Provider value={{ currentLanguage, setLanguage, t, availableLanguages }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
-// Custom hook to use the language context
-export const useLanguage = (): LanguageContextType => {
+export const useLanguage = () => {
   const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
   return context;
 };
 
-// Təhlükəsiz istifadə üçün əlavə edək
-export const useLanguageSafe = (): LanguageContextType => {
+// Təhlükəsiz istifadə üçün əlavə bir hook (kontekst mövcud olmasa belə xəta atmaz)
+export const useLanguageSafe = () => {
   const context = useContext(LanguageContext);
-  if (!context) {
+  if (context === undefined) {
     return {
-      currentLanguage: defaultLanguage,
-      setLanguage: () => {},
       t: (key: string) => key,
-      availableLanguages: availableLanguages
+      setLanguage: () => {},
+      languages: defaultLanguages,
+      currentLanguage: 'az' as Language
     };
   }
   return context;

@@ -1,18 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
-import { CategoryWithColumns } from '@/types/dataEntry';
-import { supabase } from '@/integrations/supabase/client';
-import { columnAdapter } from '@/utils/columnAdapter';
 
-export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { CategoryWithColumns } from '@/types/category';
+import { Column, ColumnType } from '@/types/column';
+import { Json } from '@/types/json';
+
+export const useCategoryData = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
+      setError(null);
 
+      // Əvvəlcə kateqoriyaları əldə edək
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
@@ -21,93 +24,109 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
 
       if (categoriesError) throw categoriesError;
 
+      // Bütün kateqoriyalar üçün sütunları əldə edək
       const { data: columnsData, error: columnsError } = await supabase
         .from('columns')
         .select('*')
-        .in('category_id', categoriesData.map(c => c.id))
+        .in('category_id', categoriesData.map(cat => cat.id))
         .eq('status', 'active')
         .order('order_index', { ascending: true });
 
       if (columnsError) throw columnsError;
 
-      let entriesData: any[] = [];
-
-      if (schoolId) {
-        const { data: entriesResult, error: entriesError } = await supabase
-          .from('data_entries')
-          .select('*')
-          .eq('school_id', schoolId)
-          .in('category_id', categoriesData.map(c => c.id));
-
-        if (!entriesError) {
-          entriesData = entriesResult || [];
-        }
-      }
-
-      const formattedCategories = categoriesData.map(category => {
-        const categoryColumns = columnsData
-          .filter(column => column.category_id === category.id)
-          .map(column => ({
-            id: column.id,
-            category_id: column.category_id,
-            name: column.name,
-            type: column.type as ColumnType,
-            is_required: column.is_required,
-            placeholder: column.placeholder,
-            help_text: column.help_text,
-            order_index: column.order_index,
-            status: column.status as 'active' | 'inactive' | 'draft',
-            validation: column.validation,
-            default_value: column.default_value,
-            options: column.options,
-            parent_column_id: column.parent_column_id,
-            created_at: column.created_at,
-            updated_at: column.updated_at,
-            entry: schoolId 
-              ? entriesData.find(entry => 
-                  entry.column_id === column.id && 
-                  entry.school_id === schoolId
-                ) 
-              : null
-          }));
-
+      // Sütunları düzgün formata çevirək
+      const processedColumns = columnsData.map((col: any) => {
         return {
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          assignment: category.assignment,
-          deadline: category.deadline,
-          status: category.status,
-          priority: category.priority,
-          created_at: category.created_at,
-          updated_at: category.updated_at,
-          columns: categoryColumns,
-          completionPercentage: schoolId ? 
-            calculateCompletionPercentage(categoryColumns.map(col => col.entry)) : 0
-        };
+          id: col.id,
+          category_id: col.category_id,
+          name: col.name,
+          type: col.type as ColumnType,
+          is_required: col.is_required,
+          order_index: col.order_index,
+          placeholder: col.placeholder,
+          help_text: col.help_text,
+          options: processOptions(col.options),
+          validation: processValidation(col.validation),
+          default_value: col.default_value,
+          status: col.status,
+          created_at: col.created_at,
+          updated_at: col.updated_at,
+          parent_column_id: col.parent_column_id
+        } as Column;
       });
 
-      setCategories(formattedCategories);
+      // Sütunları kateqoriyalara görə qruplaşdıraq
+      const groupedByCategory = processedColumns.reduce((acc, column) => {
+        if (!acc[column.category_id]) {
+          acc[column.category_id] = [];
+        }
+        acc[column.category_id].push(column);
+        return acc;
+      }, {} as Record<string, Column[]>);
+
+      // Son nəticəni hazırlayaq
+      const categoriesWithColumns = categoriesData.map(category => {
+        return {
+          ...category,
+          columns: groupedByCategory[category.id] || []
+        } as CategoryWithColumns;
+      });
+
+      setCategories(categoriesWithColumns);
     } catch (err: any) {
-      console.error('Kateqoriyaları əldə edərkən xəta:', err);
-      setError(err.message);
+      console.error('Error fetching category data:', err);
+      setError(err.message || 'Kateqoriya məlumatlarını əldə edərkən xəta baş verdi');
     } finally {
       setLoading(false);
     }
-  }, [schoolId]);
+  }, []);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const getCategoryById = (id?: string): CategoryWithColumns => {
-    if (!id) return categories[0] || { id: '', name: '', columns: [] };
-    return categories.find(cat => cat.id === id) || categories[0] || { id: '', name: '', columns: [] };
+  // Sütun variantlarını emal edən köməkçi funksiya
+  const processOptions = (options: Json) => {
+    if (!options) return [];
+    
+    try {
+      if (Array.isArray(options)) {
+        return options.map(opt => {
+          if (typeof opt === 'string') {
+            return { label: opt, value: opt };
+          }
+          return opt;
+        });
+      }
+      return [];
+    } catch (e) {
+      console.error('Error processing options:', e);
+      return [];
+    }
   };
 
-  const refreshCategories = async () => {
-    return fetchCategories();
+  // Validasiya məlumatlarını emal edən köməkçi funksiya
+  const processValidation = (validation: Json) => {
+    if (!validation) return {};
+    
+    try {
+      if (typeof validation === 'object' && validation !== null) {
+        return validation;
+      }
+      return {};
+    } catch (e) {
+      console.error('Error processing validation:', e);
+      return {};
+    }
   };
+
+  const getCategoryById = useCallback((id: string) => {
+    return categories.find(cat => cat.id === id);
+  }, [categories]);
+
+  const refreshCategories = useCallback(async () => {
+    await fetchCategories();
+  }, [fetchCategories]);
 
   return {
     categories,
@@ -116,38 +135,4 @@ export const useCategoryData = ({ schoolId }: { schoolId?: string }) => {
     getCategoryById,
     refreshCategories
   };
-};
-
-function calculateCompletionPercentage(entries: any[]) {
-  if (!entries || entries.length === 0) return 0;
-  
-  const filledEntries = entries.filter(entry => entry && entry.value);
-  return Math.round((filledEntries.length / entries.length) * 100);
-}
-
-const fetchCategoryColumns = async (categoryId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('columns')
-      .select('*')
-      .eq('category_id', categoryId)
-      .order('order_index', { ascending: true });
-      
-    if (error) throw error;
-    
-    if (!data) return [];
-    
-    return data.map(column => {
-      if (column.parent_column_id) {
-        return columnAdapter.adaptSupabaseToColumn({
-          ...column,
-          parent_column_id: column.parent_column_id
-        });
-      }
-      return columnAdapter.adaptSupabaseToColumn(column);
-    });
-  } catch (err) {
-    console.error('Error fetching columns:', err);
-    return [];
-  }
 };

@@ -1,62 +1,69 @@
 
-import { useCallback } from 'react';
-import { EntryValue, DataEntryForm } from '@/types/dataEntry';
+import { useState, useEffect } from 'react';
+import { DataEntry, DataEntryForm, DataEntrySaveStatus } from '@/types/dataEntry';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/auth';
 
 interface UseFormInitializationProps {
-  setFormData: React.Dispatch<React.SetStateAction<DataEntryForm>>;
+  schoolId: string;
+  categoryId: string;
 }
 
-/**
- * Formanın ilkin məlumatlarını yükləyən hook
- */
-export const useFormInitialization = ({ setFormData }: UseFormInitializationProps) => {
-  // Formanı ilkin məlumatlarla doldurmaq
-  const initializeForm = useCallback((initialEntries: EntryValue[], formStatus: 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted' = 'draft') => {
-    // Daha öncə saxlanılmış məlumatlar varsa onları localStorage-dən yükləyək
-    const savedFormData = localStorage.getItem('infolineFormData');
-    
-    if (savedFormData) {
-      try {
-        const parsedData = JSON.parse(savedFormData);
-        if (parsedData.entries && parsedData.entries.length > 0) {
-          // LocalStorage-də olan məlumatlarla serverdən gələn məlumatları birləşdirmək
-          const mergedEntries = initialEntries.map(initialEntry => {
-            const savedEntry = parsedData.entries.find((e: EntryValue) => 
-              e.categoryId === initialEntry.categoryId && e.columnId === initialEntry.columnId
-            );
-            
-            if (savedEntry) {
-              return {
-                ...initialEntry,
-                value: savedEntry.value
-              };
-            }
-            return initialEntry;
-          });
-          
-          setFormData(prev => ({
-            ...prev,
-            entries: mergedEntries,
-            status: formStatus === 'submitted' ? 'pending' : formStatus,
-            submittedAt: new Date().toISOString()
-          }));
-          return;
-        }
-      } catch (error) {
-        console.error('LocalStorage-dən məlumatların yüklənməsi zamanı xəta:', error);
-      }
+export const useFormInitialization = ({ schoolId, categoryId }: UseFormInitializationProps) => {
+  const [form, setForm] = useState<DataEntryForm>({
+    entries: [],
+    isModified: false,
+    saveStatus: DataEntrySaveStatus.IDLE,
+    error: null,
+    schoolId,
+    categoryId,
+    status: 'draft'
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!schoolId || !categoryId) {
+      setIsLoading(false);
+      return;
     }
-    
-    // Əgər localStorage-də məlumat yoxdursa, ilkin məlumatları istifadə et
-    setFormData(prev => ({
-      ...prev,
-      entries: initialEntries,
-      submittedAt: new Date().toISOString(),
-      status: formStatus === 'submitted' ? 'pending' : formStatus
-    }));
-  }, [setFormData]);
-  
+
+    const fetchEntries = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('data_entries')
+          .select('*')
+          .eq('school_id', schoolId)
+          .eq('category_id', categoryId);
+
+        if (error) throw error;
+
+        setForm(prev => ({
+          ...prev,
+          entries: data || [],
+          status: data?.length > 0 ? (data[0].status as any) : 'draft',
+          isModified: false,
+          saveStatus: DataEntrySaveStatus.IDLE,
+          error: null
+        }));
+      } catch (err: any) {
+        console.error('Error fetching form entries:', err);
+        setForm(prev => ({
+          ...prev,
+          error: err.message || 'Məlumatları yükləmək mümkün olmadı'
+        }));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEntries();
+  }, [schoolId, categoryId]);
+
   return {
-    initializeForm
+    form,
+    setForm,
+    isLoading
   };
 };

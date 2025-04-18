@@ -5,6 +5,7 @@ import * as AuthContext from '../context/auth';
 import * as PermissionsHook from '../hooks/auth/usePermissions';
 import * as LanguageContext from '../context/LanguageContext';
 import { vi } from 'vitest';
+import { UserRole } from '@/types/supabase';
 
 // Mock all sub-components
 vi.mock('../components/auth/LoginForm', () => ({
@@ -55,20 +56,20 @@ const mockTranslations = {
 // Mock language context
 const mockLanguageContext = () => {
   vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
-    language: 'az',
-    setLanguage: vi.fn(),
     t: (key) => mockTranslations[key] || key,
+    setLanguage: vi.fn(),
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
       en: { nativeName: 'English', flag: '🇬🇧' },
       tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
       ru: { nativeName: 'Русский', flag: '🇷🇺' }
-    }
+    },
+    currentLanguage: 'az'
   });
 };
 
 // Mock permissions hook
-const mockPermissionsHook = (role = 'superadmin') => {
+const mockPermissionsHook = (role: UserRole = 'superadmin') => {
   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
     userRole: role,
     sectorId: null,
@@ -78,6 +79,12 @@ const mockPermissionsHook = (role = 'superadmin') => {
     hasRegionAccess: vi.fn().mockResolvedValue(true),
     hasSectorAccess: vi.fn().mockResolvedValue(true),
     hasSchoolAccess: vi.fn().mockResolvedValue(true),
+    isAdmin: true,
+    isSuperAdmin: role === 'superadmin',
+    isRegionAdmin: role === 'regionadmin',
+    isSectorAdmin: role === 'sectoradmin',
+    isSchoolAdmin: role === 'schooladmin',
+    schoolId: null
   });
 };
 

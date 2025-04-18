@@ -1,47 +1,55 @@
 
-import { Column } from '@/types/column';
-
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+import { Column, ColumnType, ColumnOption, CategoryStatus } from './column';
+import { Json } from './json';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
+  assignment?: 'all' | 'sectors';
   deadline?: string;
+  status?: CategoryStatus;
   priority?: number;
-  status?: string;
-  created_at: string;
-  updated_at: string;
-  assignment?: string;
-  column_count?: number;
+  created_at?: string;
+  updated_at?: string;
   archived?: boolean;
+  column_count?: number;
 }
 
 export interface CategoryWithColumns extends Category {
   columns: Column[];
+  completionPercentage?: number;
 }
 
-// Supabase-dən gələn kateqoriya məlumatlarını modelə çevirmək üçün adapter
+export interface CategoryFilter {
+  status: 'all' | 'active' | 'inactive' | 'archived';
+  assignment: 'all' | 'sectors';
+  deadline: 'all' | 'upcoming' | 'passed' | 'none';
+}
+
+export interface CategoryFormData {
+  name: string;
+  description?: string;
+  assignment: 'all' | 'sectors';
+  deadline?: string;
+  status: CategoryStatus;
+  priority?: number;
+}
+
+export type FormStatus = 'completed' | 'pending' | 'rejected' | 'dueSoon' | 'overdue' | 'approved' | 'draft';
+
 export const adaptSupabaseCategory = (data: any): Category => {
   return {
     id: data.id,
     name: data.name,
-    description: data.description || '',
+    description: data.description,
+    assignment: data.assignment || 'all',
     deadline: data.deadline,
-    priority: data.priority || 0,
     status: data.status || 'active',
+    priority: data.priority || 0,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    assignment: data.assignment || 'all',
-    column_count: data.column_count || 0,
-    archived: data.archived || false
-  };
-};
-
-// Modeldən Supabase-ə göndəriləcək formatı çevirmək üçün adapter
-export const adaptCategoryToSupabase = (category: Partial<Category>): any => {
-  return {
-    ...category,
-    // Əlavə konversiyalar lazım olarsa burada edilə bilər
+    archived: data.archived || false,
+    column_count: data.column_count || 0
   };
 };

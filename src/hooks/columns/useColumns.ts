@@ -1,171 +1,181 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
-import { useColumnMutations } from './useColumnMutations';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { columnAdapter } from '@/utils/columnAdapter';
+import { Column, ColumnFormData, ColumnType } from '@/types/column';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-
-// Sütunları əldə etmək üçün sorğu funksiyası
-const fetchColumns = async (categoryId?: string): Promise<Column[]> => {
-  let query = supabase.from('columns').select('*');
-
-  if (categoryId) {
-    query = query.eq('category_id', categoryId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Sütunları yükləmə xətası:', error);
-    throw new Error(`Sütunları yükləmə xətası: ${error.message}`);
-  }
-
-  // Sütunları tip-təhlükəsiz formata çevir
-  return data.map(columnAdapter.adaptSupabaseToColumn);
-};
 
 export const useColumns = (categoryId?: string) => {
-  const { t } = useLanguage();
-  const queryClient = useQueryClient();
-  const { createColumn, updateColumn, deleteColumn, loading: mutationLoading } = useColumnMutations();
-  const { userRole, canRegionAdminManageCategoriesColumns, isSchoolAdmin } = usePermissions();
-  
-  // Filter vəziyyətləri
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [columns, setColumns] = useState<Column[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // React Query ilə sütunları əldə et
-  const {
-    data: columns = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['columns', categoryId],
-    queryFn: () => fetchColumns(categoryId),
-    staleTime: 1000 * 60 * 5, // 5 dəqiqə
-  });
-
-  // Sütun yaratma funksiyası
-  const saveColumn = useCallback(async (columnData: Partial<Column>) => {
+  const fetchColumns = useCallback(async () => {
     try {
-      // İcazə yoxlaması
-      if (
-        userRole !== 'superadmin' && 
-        (!canRegionAdminManageCategoriesColumns || userRole !== 'regionadmin')
-      ) {
-        toast.error(t('noPermission'));
-        return { success: false, error: 'No permission' };
-      }
+      setLoading(true);
+      setError(null);
 
-      let result;
+      let query = supabase.from('columns').select('*');
       
-      if (columnData.id) {
-        // Sütun mövcuddursa yenilə
-        result = await updateColumn(columnData);
-      } else {
-        // Yeni sütun yarat
-        result = await createColumn(columnData);
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
+      
+      query = query.order('order_index', { ascending: true });
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) {
+        throw fetchError;
       }
 
-      if (result.success) {
-        // Sorğuları yenilə
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        await queryClient.invalidateQueries({ queryKey: ['categories'] });
-        return { success: true, data: result.data };
-      } else {
-        return { success: false, error: result.error };
-      }
-    } catch (error: any) {
-      console.error('Sütun əməliyyatı xətası:', error);
-      toast.error(t('columnOperationFailed'));
-      return { success: false, error: error.message };
+      const formattedColumns = data.map((column: any) => ({
+        id: column.id,
+        category_id: column.category_id,
+        name: column.name,
+        type: column.type as ColumnType,
+        is_required: column.is_required,
+        placeholder: column.placeholder,
+        help_text: column.help_text,
+        order_index: column.order_index,
+        options: column.options ? JSON.parse(JSON.stringify(column.options)) : [],
+        validation: column.validation ? JSON.parse(JSON.stringify(column.validation)) : {},
+        default_value: column.default_value,
+        status: column.status || 'active',
+        created_at: column.created_at,
+        updated_at: column.updated_at,
+        parent_column_id: column.parent_column_id
+      }));
+
+      setColumns(formattedColumns);
+    } catch (err: any) {
+      console.error('Error fetching columns:', err);
+      setError(err.message || 'Sütunları əldə edərkən xəta baş verdi');
+      toast.error('Sütunları yükləmək mümkün olmadı');
+    } finally {
+      setLoading(false);
     }
-  }, [userRole, canRegionAdminManageCategoriesColumns, updateColumn, createColumn, queryClient, t]);
+  }, [categoryId]);
 
-  // Sütunu silmə funksiyası
-  const handleDeleteColumn = useCallback(async (columnId: string, categoryId: string) => {
+  useEffect(() => {
+    fetchColumns();
+  }, [fetchColumns]);
+
+  const createColumn = async (columnData: ColumnFormData, categoryId: string) => {
     try {
-      // İcazə yoxlaması
-      if (
-        userRole !== 'superadmin' && 
-        (!canRegionAdminManageCategoriesColumns || userRole !== 'regionadmin')
-      ) {
-        toast.error(t('noPermission'));
-        return false;
+      setError(null);
+      
+      const { data, error: insertError } = await supabase
+        .from('columns')
+        .insert({
+          category_id: categoryId,
+          name: columnData.name,
+          type: columnData.type,
+          is_required: columnData.is_required,
+          placeholder: columnData.placeholder,
+          help_text: columnData.help_text,
+          order_index: columnData.order_index,
+          options: columnData.options || [],
+          validation: columnData.validation || {},
+          default_value: columnData.default_value,
+          status: columnData.status,
+          parent_column_id: columnData.parent_column_id
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
       }
 
-      const result = await deleteColumn(columnId, categoryId);
+      toast.success('Sütun uğurla əlavə edildi');
       
-      if (result.success) {
-        // Sorğuları yenilə
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        await queryClient.invalidateQueries({ queryKey: ['categories'] });
-        return true;
-      } else {
-        return false;
+      // Yeni sütunu daxil et və siyahını yenilə
+      await fetchColumns();
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error creating column:', err);
+      setError(err.message || 'Sütun yaradarkən xəta baş verdi');
+      toast.error('Sütun yaratmaq mümkün olmadı');
+      return null;
+    }
+  };
+
+  const updateColumn = async (id: string, columnData: Partial<ColumnFormData>) => {
+    try {
+      setError(null);
+      
+      const { data, error: updateError } = await supabase
+        .from('columns')
+        .update({
+          name: columnData.name,
+          type: columnData.type,
+          is_required: columnData.is_required,
+          placeholder: columnData.placeholder,
+          help_text: columnData.help_text,
+          order_index: columnData.order_index,
+          options: columnData.options,
+          validation: columnData.validation,
+          default_value: columnData.default_value,
+          status: columnData.status,
+          parent_column_id: columnData.parent_column_id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
       }
-    } catch (error: any) {
-      console.error('Sütun silmə xətası:', error);
-      toast.error(t('columnDeleteFailed'));
+
+      toast.success('Sütun uğurla yeniləndi');
+      
+      // Siyahını yenilə
+      await fetchColumns();
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error updating column:', err);
+      setError(err.message || 'Sütunu yeniləyərkən xəta baş verdi');
+      toast.error('Sütunu yeniləmək mümkün olmadı');
+      return null;
+    }
+  };
+
+  const deleteColumn = async (id: string) => {
+    try {
+      setError(null);
+      
+      const { error: deleteError } = await supabase
+        .from('columns')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      toast.success('Sütun uğurla silindi');
+      
+      // Sütunu sil və siyahını yenilə
+      await fetchColumns();
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting column:', err);
+      setError(err.message || 'Sütunu silmək mümkün olmadı');
+      toast.error('Sütunu silmək mümkün olmadı');
       return false;
     }
-  }, [userRole, canRegionAdminManageCategoriesColumns, deleteColumn, queryClient, t]);
-
-  // Schema adminlər üçün kateqoriya istisnaları
-  const filteredColumnsForAssignment = React.useMemo(() => {
-    if (isSchoolAdmin) {
-      // Əgər school admin-dirsə, yalnız "all" təyinatlı kateqoriyalara aid sütunları göstər
-      return columns.filter(column => {
-        // Əgər query caching gec yüklənibsə, column.category_id null ola bilər
-        if (!column.category_id) return false;
-        
-        // Kateqoriya məlumatlarını yoxla
-        return queryClient.getQueryData<any[]>(['categories'])?.some(
-          category => category.id === column.category_id && category.assignment === 'all'
-        ) ?? true; // Əgər kateqoriya məlumatları mövcud deyilsə, default olaraq göstər
-      });
-    }
-    
-    return columns; // Digər istifadəçilər üçün bütün sütunları göstər
-  }, [columns, isSchoolAdmin, queryClient]);
-
-  // Filtrelənmiş sütunları əldə et
-  const filteredColumns = filteredColumnsForAssignment.filter(column => {
-    const nameMatch = searchQuery 
-      ? column.name.toLowerCase().includes(searchQuery.toLowerCase()) 
-      : true;
-    
-    const categoryMatch = categoryFilter === 'all' || column.category_id === categoryFilter;
-    const typeMatch = typeFilter === 'all' || column.type === typeFilter;
-    const statusMatch = statusFilter === 'all' || column.status === statusFilter;
-    
-    return nameMatch && categoryMatch && typeMatch && statusMatch;
-  });
+  };
 
   return {
-    columns: filteredColumnsForAssignment,
-    filteredColumns,
-    isLoading: isLoading || mutationLoading,
-    isError,
+    columns,
+    loading,
     error,
-    refetch,
-    searchQuery,
-    setSearchQuery,
-    categoryFilter,
-    setCategoryFilter,
-    typeFilter,
-    setTypeFilter,
-    statusFilter,
-    setStatusFilter,
-    saveColumn,
-    deleteColumn: handleDeleteColumn
+    fetchColumns,
+    createColumn,
+    updateColumn,
+    deleteColumn
   };
 };

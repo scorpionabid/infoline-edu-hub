@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { ProtectedRoute } from '@/routes/AppRoutes';
 import * as AuthContext from '@/context/auth';
 import * as PermissionsHook from '@/hooks/auth/usePermissions';
+import { UserRole } from '@/types/supabase';
 
 // Mock komponentləri
 const MockDashboard = () => <div data-testid="dashboard">Dashboard Content</div>;
@@ -43,7 +44,7 @@ function mockUseAuth({
 }
 
 // Permission hookunu mockla
-function mockPermissions(userRole = 'superadmin') {
+function mockPermissions(userRole: UserRole = 'superadmin') {
   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
     userRole,
     hasRole: vi.fn().mockResolvedValue(true),
@@ -52,7 +53,13 @@ function mockPermissions(userRole = 'superadmin') {
     hasSchoolAccess: vi.fn().mockResolvedValue(true),
     sectorId: null,
     regionId: null,
-    canRegionAdminManageCategoriesColumns: true
+    canRegionAdminManageCategoriesColumns: true,
+    isAdmin: true,
+    isSuperAdmin: userRole === 'superadmin',
+    isRegionAdmin: userRole === 'regionadmin',
+    isSectorAdmin: userRole === 'sectoradmin',
+    isSchoolAdmin: userRole === 'schooladmin',
+    schoolId: null
   });
 }
 

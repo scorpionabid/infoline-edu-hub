@@ -1,5 +1,5 @@
 import { Column } from '@/types/column';
-import { Category, CategoryWithColumns } from '@/types/dataEntry';
+import { Category, CategoryWithColumns } from '@/types/category';
 
 // Kateqoriyalar və sütunların mock datası
 
@@ -76,7 +76,6 @@ export const mockColumns: Column[] = [
       maxValue: 10000
     }
   },
-  // ... bütün digər sütunlar üçün
   {
     id: 'col5',
     category_id: 'cat2',
@@ -167,7 +166,6 @@ export const mockColumns: Column[] = [
       maxValue: 1000
     }
   },
-  // Təhsil səviyyəsi kateqoriyası üçün sütunlar
   {
     id: 'col10',
     category_id: 'cat3',
@@ -239,7 +237,6 @@ export const mockColumns: Column[] = [
     ],
     validation: {}
   },
-  // Digər kateqoriya sütunları...
   {
     id: 'col14',
     category_id: 'cat4',

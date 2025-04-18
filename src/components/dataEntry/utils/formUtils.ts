@@ -1,123 +1,160 @@
 
-import { ColumnValidationError } from '@/types/dataEntry';
-import { Column, ColumnValidation } from '@/types/column';
+import { DataEntry, ColumnValidationError } from '@/types/dataEntry';
+import { Column } from '@/types/column';
 
-// Sahə tipi üçün validasiyalar
-export function validateField(column: Column, value: any): ColumnValidationError | null {
-  // Məcburi sahə yoxlaması
-  if (column.is_required && (value === null || value === undefined || value === '')) {
-    return {
-      message: `${column.name} sahəsi boş qala bilməz`,
-      type: 'required',
-      column_id: column.id,
-      column_name: column.name
-    };
-  }
+export const validateEntries = (
+  entries: DataEntry[],
+  columns: Column[]
+): ColumnValidationError[] => {
+  const errors: ColumnValidationError[] = [];
 
-  // Əgər dəyər boşdursa və məcburi deyilsə, digər validasiyaları yoxlamırıq
-  if (value === null || value === undefined || value === '') {
-    return null;
-  }
+  // Hər sütun üçün məcburi sahələri yoxlayırıq
+  columns.forEach(column => {
+    if (column.is_required) {
+      const entry = entries.find(e => e.column_id === column.id);
+      
+      if (!entry || !entry.value || entry.value.trim() === '') {
+        errors.push({
+          columnId: column.id,
+          columnName: column.name,
+          message: `${column.name} sahəsi məcburidir.`
+        });
+      }
+    }
 
-  // Əgər tipə uyğun validasiya varsa
-  if (column.validation) {
-    const validation = column.validation as ColumnValidation;
-
-    switch (column.type) {
-      case 'number':
-        // Rəqəm tipində dəyərləri yoxla
-        const numValue = parseFloat(value);
+    // Ədəd tipli sütunlar üçün validasiya
+    if (column.type === 'number' && column.validation) {
+      const entry = entries.find(e => e.column_id === column.id);
+      
+      if (entry && entry.value) {
+        const numValue = parseFloat(entry.value);
         
         if (isNaN(numValue)) {
-          return {
-            message: `${column.name} sahəsi düzgün rəqəm formatında olmalıdır`,
-            type: 'format',
-            column_id: column.id,
-            column_name: column.name
-          };
+          errors.push({
+            columnId: column.id,
+            columnName: column.name,
+            message: `${column.name} ədəd olmalıdır.`
+          });
+        } else {
+          if (column.validation.minValue !== undefined && numValue < column.validation.minValue) {
+            errors.push({
+              columnId: column.id,
+              columnName: column.name,
+              message: `${column.name} minimum ${column.validation.minValue} olmalıdır.`
+            });
+          }
+          
+          if (column.validation.maxValue !== undefined && numValue > column.validation.maxValue) {
+            errors.push({
+              columnId: column.id,
+              columnName: column.name,
+              message: `${column.name} maksimum ${column.validation.maxValue} olmalıdır.`
+            });
+          }
         }
-        
-        if (validation.minValue !== undefined && numValue < validation.minValue) {
-          return {
-            message: `${column.name} sahəsi ${validation.minValue} qiymətindən böyük olmalıdır`,
-            type: 'min',
-            column_id: column.id,
-            column_name: column.name
-          };
-        }
-        
-        if (validation.maxValue !== undefined && numValue > validation.maxValue) {
-          return {
-            message: `${column.name} sahəsi ${validation.maxValue} qiymətindən kiçik olmalıdır`,
-            type: 'max',
-            column_id: column.id,
-            column_name: column.name
-          };
-        }
-        break;
-      
-      case 'text':
-      case 'textarea':
-        // Mətn uzunluğunu yoxla
-        if (validation.minLength !== undefined && value.length < validation.minLength) {
-          return {
-            message: `${column.name} sahəsi ən az ${validation.minLength} simvol olmalıdır`,
-            type: 'minLength',
-            column_id: column.id,
-            column_name: column.name
-          };
-        }
-        
-        if (validation.maxLength !== undefined && value.length > validation.maxLength) {
-          return {
-            message: `${column.name} sahəsi ən çox ${validation.maxLength} simvol olmalıdır`,
-            type: 'maxLength',
-            column_id: column.id,
-            column_name: column.name
-          };
-        }
-        break;
-      
-      // Lazım olduqda digər tip validasiyaları da əlavə edilə bilər
+      }
     }
-  }
 
-  return null;
-}
-
-// Bütün sahələrin validasiyasını yoxlayır və xətaları qaytarır
-export function validateFields(columns: Column[], values: Record<string, any>): ColumnValidationError[] {
-  const errors: ColumnValidationError[] = [];
-  
-  for (const column of columns) {
-    const value = values[column.id];
-    const error = validateField(column, value);
-    
-    if (error) {
-      errors.push(error);
+    // Text tipli sütunlar üçün validasiya
+    if ((column.type === 'text' || column.type === 'textarea') && column.validation) {
+      const entry = entries.find(e => e.column_id === column.id);
+      
+      if (entry && entry.value) {
+        if (column.validation.minLength !== undefined && entry.value.length < column.validation.minLength) {
+          errors.push({
+            columnId: column.id,
+            columnName: column.name,
+            message: `${column.name} minimum ${column.validation.minLength} simvol olmalıdır.`
+          });
+        }
+        
+        if (column.validation.maxLength !== undefined && entry.value.length > column.validation.maxLength) {
+          errors.push({
+            columnId: column.id,
+            columnName: column.name,
+            message: `${column.name} maksimum ${column.validation.maxLength} simvol olmalıdır.`
+          });
+        }
+        
+        if (column.validation.pattern) {
+          try {
+            const regex = new RegExp(column.validation.pattern);
+            if (!regex.test(entry.value)) {
+              errors.push({
+                columnId: column.id,
+                columnName: column.name,
+                message: column.validation.customMessage || `${column.name} düzgün formatda deyil.`
+              });
+            }
+          } catch (e) {
+            console.error('Invalid regex pattern:', column.validation.pattern);
+          }
+        }
+      }
     }
-  }
-  
+  });
+
   return errors;
-}
+};
 
-// JSON verilərini stringe çevirmək və əksinə
-export const safeParseJSON = <T>(jsonString: string | null | undefined, defaultValue: T): T => {
-  if (!jsonString) return defaultValue;
+export const calculateCompletionPercentage = (
+  entries: DataEntry[],
+  columns: Column[]
+): number => {
+  if (!columns.length) return 0;
+  
+  // Yalnız məlumat daxil edilmiş məcburi sahələri sayırıq
+  const requiredColumns = columns.filter(col => col.is_required);
+  if (!requiredColumns.length) return 100; // Əgər məcburi sahə yoxdursa, 100% tamamlanıb
+  
+  const completedEntries = requiredColumns.filter(col => {
+    const entry = entries.find(e => e.column_id === col.id);
+    return entry && entry.value && entry.value.trim() !== '';
+  });
+  
+  return Math.round((completedEntries.length / requiredColumns.length) * 100);
+};
+
+export const formatDate = (dateString?: string): string => {
+  if (!dateString) return '';
   
   try {
-    return JSON.parse(jsonString) as T;
-  } catch (err) {
-    console.error('JSON parse xətası:', err);
-    return defaultValue;
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('az-AZ', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  } catch (e) {
+    console.error('Invalid date format:', e);
+    return dateString;
   }
 };
 
-export const safeStringifyJSON = (data: any): string => {
-  try {
-    return JSON.stringify(data);
-  } catch (err) {
-    console.error('JSON stringify xətası:', err);
-    return '';
-  }
+export const mapEntriesToFormValues = (
+  entries: DataEntry[],
+  columns: Column[]
+): Record<string, any> => {
+  const formValues: Record<string, any> = {};
+  
+  columns.forEach(column => {
+    const entry = entries.find(e => e.column_id === column.id);
+    
+    if (entry) {
+      formValues[column.id] = entry.value;
+    } else {
+      // Default dəyər təyin edirik
+      if (column.type === 'checkbox') {
+        formValues[column.id] = [];
+      } else if (column.type === 'number') {
+        formValues[column.id] = column.default_value ? parseFloat(column.default_value) : '';
+      } else {
+        formValues[column.id] = column.default_value || '';
+      }
+    }
+  });
+  
+  return formValues;
 };

@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { CheckboxGroup, CheckboxItem } from '@/components/ui/checkbox-group';
 import { Role } from '@/context/auth/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserFilter } from './UserSelectParts/types';

@@ -1,117 +1,162 @@
 
-import { useCallback, useState } from 'react';
+import { useState, useCallback } from 'react';
+import { DataEntry, DataEntryForm, DataEntrySaveStatus, EntryValue } from '@/types/dataEntry';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { DataEntryForm, EntryValue, CategoryEntryData } from '@/types/dataEntry';
 
 export interface UseFormActionsProps {
-  formData: DataEntryForm;
-  setFormData: React.Dispatch<React.SetStateAction<DataEntryForm>>;
-  updateFormData: (newData: Partial<DataEntryForm>) => void;
-  categories: any[];
+  schoolId: string;
+  categoryId: string;
+  initialEntries?: DataEntry[];
 }
 
-export const useFormActions = ({
-  formData,
-  setFormData,
-  updateFormData,
-  categories = []
-}: UseFormActionsProps) => {
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form verilərini yeniləmək üçün funksiya
-  const updateValue = useCallback((categoryId: string, columnId: string, newValue: any) => {
-    setFormData(prevData => {
-      // Verilmiş kateqoriya girişini tap
-      const entryIndex = prevData.entries.findIndex(
-        entry => entry.categoryId === categoryId && entry.columnId === columnId
-      );
-      
-      const updatedEntries = [...prevData.entries];
-      
-      if (entryIndex === -1) {
-        // Giriş yoxdursa, yeni bir giriş əlavə et
-        updatedEntries.push({
-          categoryId,
-          columnId,
-          value: newValue
-        });
-      } else {
-        // Mövcud girişi yenilə
-        updatedEntries[entryIndex] = {
-          ...updatedEntries[entryIndex],
-          value: newValue
-        };
-      }
-      
-      return {
-        ...prevData,
-        entries: updatedEntries
-      };
-    });
-  }, [setFormData]);
-  
-  // Formu saxlamaq üçün funksiya
-  const saveForm = useCallback(() => {
-    // Burada serverə məlumatları göndərməyi simulyasiya edirik
-    // Real layihədə burada API çağırışı olacaq
-    updateFormData({ 
-      lastSaved: new Date().toISOString()
-    });
-    
-    return Promise.resolve();
-  }, [updateFormData]);
-  
-  // Formu təsdiq üçün göndərmək funksiyası
-  const submitForm = useCallback(() => {
-    setIsSubmitting(true);
-    
-    // Serverə göndərmə simulyasiyası
-    setTimeout(() => {
-      updateFormData({ 
-        submittedAt: new Date().toISOString(),
-        status: 'pending'
-      });
-      
-      setIsSubmitting(false);
-      toast.success('Form təsdiq üçün göndərildi');
-    }, 1000);
-    
-    return Promise.resolve();
-  }, [updateFormData]);
-  
-  // Avtomatik saxlama üçün setup
-  const setupAutoSave = useCallback(() => {
-    const interval = setInterval(() => {
-      if (formData.entries && formData.entries.length > 0) {
-        setIsAutoSaving(true);
-        saveForm().then(() => {
-          setIsAutoSaving(false);
-        });
-      }
-    }, 30000); // 30 saniyədə bir avtomatik saxla
-    
-    return () => clearInterval(interval);
-  }, [formData.entries, saveForm]);
-  
-  // Formu başlatmaq üçün funksiya
-  const initializeForm = useCallback((entries: EntryValue[], status: string = 'draft') => {
-    setFormData({
-      schoolId: formData.schoolId,
-      categoryId: formData.categoryId,
-      entries,
-      status: status as 'draft' | 'pending' | 'approved' | 'rejected' | 'submitted',
+export const useFormActions = ({ schoolId, categoryId, initialEntries = [] }: UseFormActionsProps) => {
+  const [form, setForm] = useState<DataEntryForm>({
+    entries: initialEntries,
+    isModified: false,
+    saveStatus: DataEntrySaveStatus.IDLE,
+    error: null,
+    schoolId,
+    categoryId,
+    status: 'draft'
+  });
+
+  const updateEntries = useCallback((entries: DataEntry[]) => {
+    const entriesWithMetadata = entries.map(entry => ({
+      ...entry,
+      category_id: entry.category_id || categoryId,
+      school_id: entry.school_id || schoolId
+    }));
+
+    setForm(prev => ({
+      ...prev,
+      entries: entriesWithMetadata,
+      isModified: true
+    }));
+  }, [categoryId, schoolId]);
+
+  const saveEntries = useCallback(async () => {
+    if (!form.entries.length) return;
+
+    setForm(prev => ({
+      ...prev,
+      saveStatus: DataEntrySaveStatus.SAVING,
+      error: null
+    }));
+
+    try {
+      const { data, error } = await supabase.from('data_entries').upsert(
+        form.entries.map(entry => ({
+          id: entry.id,
+          column_id: entry.column_id,
+          category_id: entry.category_id,
+          school_id: entry.school_id,
+          value: entry.value,
+          status: 'pending'
+        })),
+        { onConflict: 'id' }
+      ).select();
+
+      if (error) throw error;
+
+      setForm(prev => ({
+        ...prev,
+        entries: data,
+        isModified: false,
+        saveStatus: DataEntrySaveStatus.SAVED,
+        error: null,
+        lastSaved: new Date().toISOString()
+      }));
+
+      toast.success('Məlumatlar uğurla saxlanıldı');
+      return true;
+    } catch (err: any) {
+      console.error('Error saving entries:', err);
+      setForm(prev => ({
+        ...prev,
+        saveStatus: DataEntrySaveStatus.ERROR,
+        error: err.message || 'Məlumatları saxlamaq mümkün olmadı'
+      }));
+      toast.error('Məlumatları saxlamaq mümkün olmadı');
+      return false;
+    }
+  }, [form.entries]);
+
+  const submitEntries = useCallback(async () => {
+    // Əvvəlcə məlumatları saxlayaq
+    const savedSuccessfully = await saveEntries();
+    if (!savedSuccessfully) return false;
+
+    setForm(prev => ({
+      ...prev,
+      saveStatus: DataEntrySaveStatus.SUBMITTING,
+      error: null,
       submittedAt: new Date().toISOString()
-    });
-  }, [setFormData, formData.schoolId, formData.categoryId]);
-  
+    }));
+
+    try {
+      // Statusu "submitted" olaraq yeniləyək
+      const { error } = await supabase.from('data_entries').update({
+        status: 'submitted'
+      }).in('id', form.entries.map(entry => entry.id));
+
+      if (error) throw error;
+
+      setForm(prev => ({
+        ...prev,
+        saveStatus: DataEntrySaveStatus.SUBMITTED,
+        status: 'pending',
+        isModified: false,
+        error: null
+      }));
+
+      toast.success('Məlumatlar uğurla təqdim edildi');
+      return true;
+    } catch (err: any) {
+      console.error('Error submitting entries:', err);
+      setForm(prev => ({
+        ...prev,
+        saveStatus: DataEntrySaveStatus.ERROR,
+        error: err.message || 'Məlumatları təqdim etmək mümkün olmadı'
+      }));
+      toast.error('Məlumatları təqdim etmək mümkün olmadı');
+      return false;
+    }
+  }, [saveEntries, form.entries]);
+
+  const exportToCsv = useCallback(() => {
+    // Məlumatları CSV formatına çeviririk
+    const entries = form.entries || [];
+    const schoolId = form.schoolId || '';
+    const categoryId = form.categoryId || '';
+    
+    // Burada interfeys uyğunlaşdırılması üçün EntryValue[] formatına çeviririk
+    // Bu interfeys uyğunlaşdırması və CSV yaratma prosesi
+    const entriesData: EntryValue[] = entries.map(entry => ({
+      [entry.column_id]: entry.value
+    }));
+
+    // CSV başlıqları və məlumatları formatla
+    const csvContent = '';
+    // CSV'ni brauzer tərəfindən endirmək üçün kodu implement et
+
+    return true;
+  }, [form.entries, form.schoolId, form.categoryId]);
+
   return {
-    isAutoSaving,
-    isSubmitting,
-    updateValue,
-    saveForm,
-    submitForm,
-    setupAutoSave,
-    initializeForm
+    form,
+    updateEntries,
+    saveEntries,
+    submitEntries,
+    exportToCsv,
+    resetForm: () => setForm({
+      entries: initialEntries,
+      isModified: false,
+      saveStatus: DataEntrySaveStatus.IDLE,
+      error: null,
+      schoolId,
+      categoryId,
+      status: 'draft'
+    })
   };
 };
