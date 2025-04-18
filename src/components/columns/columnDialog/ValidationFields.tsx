@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import React from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   FormField,
   FormItem,
@@ -10,80 +10,46 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ColumnType } from '@/types/column';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ColumnType, COLUMN_TYPE_DEFINITIONS } from "@/types/column";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface ValidationFieldsProps {
-  form: UseFormReturn<any>;
+  form: any;
   selectedType: ColumnType;
-  t: (key: string) => string;
+  t: (key: string) => string; // Dil tərcüməsi üçün funksiya
 }
 
-const ValidationFields: React.FC<ValidationFieldsProps> = ({ form, selectedType, t }) => {
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col space-y-1.5">
-        <h3 className="text-sm font-medium">{t("validationRules")}</h3>
-        <p className="text-xs text-muted-foreground">{t("validationRulesDescription")}</p>
-      </div>
-
-      {(selectedType === "number") && (
-        <>
+const ValidationFields: React.FC<ValidationFieldsProps> = ({
+  form,
+  selectedType,
+  t,
+}) => {
+  // Seçilmiş tip üçün mümkün validasiyaları müəyyən et
+  const availableValidations = COLUMN_TYPE_DEFINITIONS[selectedType]?.validations || [];
+  
+  // Validasiya formunu uyğun şəkildə hazırla
+  const renderValidationFields = () => {
+    return (
+      <div className="space-y-4">
+        {availableValidations.includes('minLength') && (
           <FormField
             control={form.control}
-            name="validationRules.minValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("minValue")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder={t("minValuePlaceholder")}
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                  />
-                </FormControl>
-                <FormDescription>{t("minValueDescription")}</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="validationRules.maxValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("maxValue")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder={t("maxValuePlaceholder")}
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                  />
-                </FormControl>
-                <FormDescription>{t("maxValueDescription")}</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
-
-      {(selectedType === "text" || selectedType === "textarea") && (
-        <>
-          <FormField
-            control={form.control}
-            name="validationRules.minLength"
+            name="validation.minLength"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("minLength")}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder={t("minLengthPlaceholder")}
+                    placeholder={t("enterMinLength")}
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                    onChange={(e) => {
+                      const value = e.target.value ? parseInt(e.target.value) : undefined;
+                      field.onChange(value);
+                    }}
                   />
                 </FormControl>
                 <FormDescription>{t("minLengthDescription")}</FormDescription>
@@ -91,19 +57,24 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({ form, selectedType,
               </FormItem>
             )}
           />
+        )}
 
+        {availableValidations.includes('maxLength') && (
           <FormField
             control={form.control}
-            name="validationRules.maxLength"
+            name="validation.maxLength"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("maxLength")}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder={t("maxLengthPlaceholder")}
+                    placeholder={t("enterMaxLength")}
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                    onChange={(e) => {
+                      const value = e.target.value ? parseInt(e.target.value) : undefined;
+                      field.onChange(value);
+                    }}
                   />
                 </FormControl>
                 <FormDescription>{t("maxLengthDescription")}</FormDescription>
@@ -111,88 +82,142 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({ form, selectedType,
               </FormItem>
             )}
           />
+        )}
 
+        {availableValidations.includes('minValue') && (
           <FormField
             control={form.control}
-            name="validationRules.pattern"
+            name="validation.minValue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("minValue")}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder={t("enterMinValue")}
+                    {...field}
+                    onChange={(e) => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      field.onChange(value);
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>{t("minValueDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {availableValidations.includes('maxValue') && (
+          <FormField
+            control={form.control}
+            name="validation.maxValue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("maxValue")}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder={t("enterMaxValue")}
+                    {...field}
+                    onChange={(e) => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      field.onChange(value);
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>{t("maxValueDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {availableValidations.includes('pattern') && (
+          <FormField
+            control={form.control}
+            name="validation.pattern"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("pattern")}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t("patternPlaceholder")} {...field} />
+                  <Input
+                    placeholder={t("enterPattern")}
+                    {...field}
+                  />
                 </FormControl>
                 <FormDescription>{t("patternDescription")}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </>
-      )}
-
-      {selectedType === "date" && (
-        <>
+        )}
+        
+        {/* Əlavə validasiyalar */}
+        {(selectedType === 'email' || selectedType === 'url') && (
           <FormField
             control={form.control}
-            name="validationRules.minDate"
+            name={`validation.${selectedType}`}
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("minDate")}</FormLabel>
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    id={`validate-${selectedType}`}
+                  />
                 </FormControl>
-                <FormDescription>{t("minDateDescription")}</FormDescription>
-                <FormMessage />
+                <div className="space-y-1 leading-none">
+                  <Label htmlFor={`validate-${selectedType}`}>
+                    {t(`validate${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}`)}
+                  </Label>
+                  <FormDescription>
+                    {t(`validate${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}Description`)}
+                  </FormDescription>
+                </div>
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="validationRules.maxDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("maxDate")}</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormDescription>{t("maxDateDescription")}</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
-
-      <FormField
-        control={form.control}
-        name="placeholder"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("placeholder")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("placeholderPlaceholder")} {...field} />
-            </FormControl>
-            <FormDescription>{t("placeholderDescription")}</FormDescription>
-            <FormMessage />
-          </FormItem>
         )}
-      />
 
-      <FormField
-        control={form.control}
-        name="helpText"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("helpText")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("helpTextPlaceholder")} {...field} />
-            </FormControl>
-            <FormDescription>{t("helpTextDescription")}</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
+        {/* Xüsusi xəta mesajı sahəsi - bütün validasiyalar üçün */}
+        <FormField
+          control={form.control}
+          name="validation.customMessage"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("customErrorMessage")}</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder={t("enterCustomErrorMessage")}
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>{t("customErrorMessageDescription")}</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    );
+  };
+
+  // Validasiya sahələri yoxdursa, göstərmə
+  if (availableValidations.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{t("validationRules")}</CardTitle>
+      </CardHeader>
+      <Separator />
+      <CardContent className="pt-4">
+        {renderValidationFields()}
+      </CardContent>
+    </Card>
   );
 };
 

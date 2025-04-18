@@ -37,19 +37,19 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
       } else {
         const numValue = Number(value);
         // Minimum dəyəri yoxla
-        if (validation.min !== undefined && numValue < validation.min) {
+        if (validation.minValue !== undefined && numValue < validation.minValue) {
           errors.push({
             field: column.id,
-            message: `${column.name} minimum ${validation.min} olmalıdır`,
+            message: `${column.name} minimum ${validation.minValue} olmalıdır`,
             type: 'min',
             severity: 'error'
           });
         }
         // Maksimum dəyəri yoxla
-        if (validation.max !== undefined && numValue > validation.max) {
+        if (validation.maxValue !== undefined && numValue > validation.maxValue) {
           errors.push({
             field: column.id,
-            message: `${column.name} maksimum ${validation.max} olmalıdır`,
+            message: `${column.name} maksimum ${validation.maxValue} olmalıdır`,
             type: 'max',
             severity: 'error'
           });
@@ -59,6 +59,8 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
       
     case 'text':
     case 'textarea':
+    case 'password':
+    case 'richtext':
       // Minimum uzunluğu yoxla
       if (validation.minLength !== undefined && value.length < validation.minLength) {
         errors.push({
@@ -81,18 +83,50 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
       
     case 'email':
       // E-poçt formatını yoxla
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
+      if (validation.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+          errors.push({
+            field: column.id,
+            message: `${column.name} düzgün e-poçt formatında olmalıdır`,
+            type: 'email',
+            severity: 'error'
+          });
+        }
+      }
+      break;
+      
+    case 'url':
+      // URL formatını yoxla
+      if (validation.url) {
+        const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+        if (!urlRegex.test(value)) {
+          errors.push({
+            field: column.id,
+            message: `${column.name} düzgün URL formatında olmalıdır`,
+            type: 'url',
+            severity: 'error'
+          });
+        }
+      }
+      break;
+      
+    case 'phone':
+      // Telefon formatını yoxla
+      const phoneRegex = /^\+?[0-9]{10,15}$/;
+      if (!phoneRegex.test(value)) {
         errors.push({
           field: column.id,
-          message: `${column.name} düzgün e-poçt formatında olmalıdır`,
-          type: 'email',
+          message: `${column.name} düzgün telefon nömrəsi formatında olmalıdır`,
+          type: 'phone',
           severity: 'error'
         });
       }
       break;
       
     case 'date':
+    case 'datetime':
+    case 'time':
       // Tarix formatını yoxla
       const dateObj = new Date(value);
       if (isNaN(dateObj.getTime())) {
@@ -104,6 +138,36 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         });
       }
       break;
+      
+    case 'range':
+      // Range dəyəri yoxla
+      if (isNaN(Number(value))) {
+        errors.push({
+          field: column.id,
+          message: `${column.name} bir ədəd olmalıdır`,
+          type: 'type',
+          severity: 'error'
+        });
+      } else {
+        const numValue = Number(value);
+        if (validation.minValue !== undefined && numValue < validation.minValue) {
+          errors.push({
+            field: column.id,
+            message: `${column.name} minimum ${validation.minValue} olmalıdır`,
+            type: 'min',
+            severity: 'error'
+          });
+        }
+        if (validation.maxValue !== undefined && numValue > validation.maxValue) {
+          errors.push({
+            field: column.id,
+            message: `${column.name} maksimum ${validation.maxValue} olmalıdır`,
+            type: 'max',
+            severity: 'error'
+          });
+        }
+      }
+      break;
   }
   
   // Pattern validasiyası
@@ -113,7 +177,7 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
       if (!regex.test(value)) {
         errors.push({
           field: column.id,
-          message: `${column.name} düzgün formatda deyil`,
+          message: validation.customMessage || `${column.name} düzgün formatda deyil`,
           type: 'pattern',
           severity: 'error'
         });
@@ -123,5 +187,72 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
     }
   }
   
+  // Inclusion və exclusion validasiyaları
+  if (validation.inclusion && Array.isArray(validation.inclusion)) {
+    if (!validation.inclusion.includes(value)) {
+      errors.push({
+        field: column.id,
+        message: `${column.name} üçün qəbul edilən dəyərlərdən biri olmalıdır`,
+        type: 'inclusion',
+        severity: 'error'
+      });
+    }
+  }
+  
+  if (validation.exclusion && Array.isArray(validation.exclusion)) {
+    if (validation.exclusion.includes(value)) {
+      errors.push({
+        field: column.id,
+        message: `${column.name} üçün qadağan edilmiş dəyərdir`,
+        type: 'exclusion',
+        severity: 'error'
+      });
+    }
+  }
+  
   return errors;
+}
+
+// Sütun növləri üçün ön baxış mətnini qaytarır
+export function getColumnTypePreviewText(column: Column): string {
+  switch (column.type) {
+    case 'text':
+      return 'Mətn sahəsi';
+    case 'textarea':
+      return 'Çoxsətirli mətn';
+    case 'number':
+      return 'Ədəd sahəsi';
+    case 'select':
+      return 'Açılan siyahı';
+    case 'date':
+      return 'Tarix seçimi';
+    case 'checkbox':
+      return 'Çoxlu seçim';
+    case 'radio':
+      return 'Tək seçim';
+    case 'file':
+      return 'Fayl yükləmə';
+    case 'email':
+      return 'E-poçt sahəsi';
+    case 'url':
+      return 'URL sahəsi';
+    case 'phone':
+      return 'Telefon sahəsi';
+    case 'image':
+      return 'Şəkil yükləmə';
+    case 'range':
+      return 'Sürüşdürmə çubuğu';
+    case 'color':
+      return 'Rəng seçimi';
+    case 'password':
+      return 'Şifrə sahəsi';
+    case 'time':
+      return 'Vaxt seçimi';
+    case 'datetime':
+      return 'Tarix və vaxt';
+    case 'richtext':
+      return 'Formatlanmış mətn redaktoru';
+    default:
+      return 'Bilinməyən sahə';
+  }
 }

@@ -1,37 +1,44 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
-  TableHead,
   TableHeader,
+  TableHead,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Eye } from 'lucide-react';
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Column } from '@/hooks/columns';
-import { Category } from '@/types/category';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Button } from '@/components/ui/button';
+import { Copy, Edit, MoreVertical, Trash2 } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
+import { useLanguage } from '@/context/LanguageContext';
+import { Icons } from '@/components/ui/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ColumnListProps {
   columns: Column[];
-  categories: Category[];
+  categories: { id: string; name: string }[];
   isLoading: boolean;
   isError: boolean;
   onEditColumn: (column: Column) => void;
   onDeleteColumn: (id: string, name: string) => void;
   onUpdateStatus: (id: string, status: 'active' | 'inactive') => void;
-  canManageColumns?: boolean;
+  canManageColumns: boolean;
 }
 
 const ColumnList: React.FC<ColumnListProps> = ({
@@ -42,155 +49,180 @@ const ColumnList: React.FC<ColumnListProps> = ({
   onEditColumn,
   onDeleteColumn,
   onUpdateStatus,
-  canManageColumns = false
+  canManageColumns,
 }) => {
   const { t } = useLanguage();
-  const { userRole } = usePermissions();
 
-  // Rol əsasında idarəetmə icazələrini müəyyənləşdiririk
-  const canEdit = canManageColumns || userRole === 'superadmin';
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="bg-destructive/10 p-6 rounded-lg text-center">
-        <h3 className="text-xl font-semibold text-destructive">{t('error')}</h3>
-        <p className="text-muted-foreground mt-2">{t('errorLoadingColumns')}</p>
-      </div>
-    );
-  }
-
-  // Kateqoriya adlarını map-ləyək
+  // Kateqoriya adını ID əsasında tap
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : t('unknownCategory');
   };
 
-  // Sütun tipləri üçün badge
-  const getColumnTypeBadge = (type: string) => {
-    let color = '';
+  // Sütunun tipinə uyğun badge rəngini təyin et
+  const getTypeBadgeColor = (type: string) => {
     switch (type) {
       case 'text':
-        color = 'bg-blue-100 text-blue-800';
-        break;
+      case 'textarea':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100';
       case 'number':
-        color = 'bg-green-100 text-green-800';
-        break;
-      case 'date':
-        color = 'bg-purple-100 text-purple-800';
-        break;
-      case 'checkbox':
-        color = 'bg-yellow-100 text-yellow-800';
-        break;
-      case 'radio':
-        color = 'bg-orange-100 text-orange-800';
-        break;
+      case 'range':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100';
       case 'select':
-        color = 'bg-indigo-100 text-indigo-800';
-        break;
+      case 'radio':
+      case 'checkbox':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100';
+      case 'date':
+      case 'time':
+      case 'datetime':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100';
+      case 'file':
+      case 'image':
+        return 'bg-sky-100 text-sky-800 dark:bg-sky-800 dark:text-sky-100';
+      case 'email':
+      case 'url':
+      case 'phone':
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-800 dark:text-indigo-100';
+      case 'color':
+      case 'password':
+      case 'richtext':
+        return 'bg-rose-100 text-rose-800 dark:bg-rose-800 dark:text-rose-100';
       default:
-        color = 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100';
     }
-    return <Badge className={color}>{t(type)}</Badge>;
   };
 
-  if (columns.length === 0) {
+  // Status badge rəngini təyin et
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="success">{t('active')}</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">{t('inactive')}</Badge>;
+      case 'draft':
+        return <Badge variant="outline">{t('draft')}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="bg-card rounded-lg shadow p-8 text-center">
-        <h3 className="text-xl font-semibold mb-2">{t('noColumnsFound')}</h3>
-        <p className="text-muted-foreground">{t('noColumnsFoundDesc')}</p>
-        {canEdit && (
-          <p className="mt-4 text-sm text-muted-foreground">{t('noColumnsFoundDescription')}</p>
-        )}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('columns')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-card rounded-lg shadow">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableCaption>{columns.length} {t('columnsFound')}</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">{t('columnName')}</TableHead>
-              <TableHead>{t('category')}</TableHead>
-              <TableHead>{t('type')}</TableHead>
-              <TableHead>{t('required')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {columns.map((column) => (
-              <TableRow key={column.id} className="group hover:bg-muted/50">
-                <TableCell className="font-medium">{column.name}</TableCell>
-                <TableCell>{getCategoryName(column.category_id)}</TableCell>
-                <TableCell>{getColumnTypeBadge(column.type)}</TableCell>
-                <TableCell>{column.is_required ? t('yes') : t('no')}</TableCell>
-                <TableCell>
-                  <Badge variant={column.status === 'active' ? 'default' : 'secondary'}>
-                    {column.status === 'active' ? t('active') : t('inactive')}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <TooltipProvider>
-                    {canEdit ? (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="sm" className="mr-1" onClick={() => onEditColumn(column)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t('edit')}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-destructive" 
-                              onClick={() => onDeleteColumn(column.id, column.name)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t('delete')}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="mr-1">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{t('view')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </TooltipProvider>
-                </TableCell>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('columns')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('name')}</TableHead>
+                <TableHead>{t('type')}</TableHead>
+                <TableHead>{t('category')}</TableHead>
+                <TableHead>{t('required')}</TableHead>
+                <TableHead>{t('status')}</TableHead>
+                <TableHead className="text-right">{t('actions')}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {columns.map((column) => {
+                const typeInfo = COLUMN_TYPE_DEFINITIONS[column.type as keyof typeof COLUMN_TYPE_DEFINITIONS];
+                const IconComponent = Icons[typeInfo?.icon as keyof typeof Icons] || Icons.circle;
+                
+                return (
+                  <TableRow key={column.id}>
+                    <TableCell className="font-medium">{column.name}</TableCell>
+                    <TableCell>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center space-x-2">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(column.type)}`}>
+                                <IconComponent className="w-3 h-3 mr-1" />
+                                {typeInfo?.label || column.type}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{typeInfo?.description || t('columnTypeDescription')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell>{getCategoryName(column.category_id)}</TableCell>
+                    <TableCell>
+                      {column.is_required 
+                        ? <Badge variant="secondary">{t('yes')}</Badge> 
+                        : <Badge variant="outline">{t('no')}</Badge>
+                      }
+                    </TableCell>
+                    <TableCell>{getStatusBadge(column.status)}</TableCell>
+                    <TableCell className="text-right">
+                      {canManageColumns ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEditColumn(column)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              {t('edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onDeleteColumn(column.id, column.name)}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t('delete')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {column.status === 'active' ? (
+                              <DropdownMenuItem onClick={() => onUpdateStatus(column.id, 'inactive')}>
+                                {t('deactivate')}
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => onUpdateStatus(column.id, 'active')}>
+                                {t('activate')}
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button variant="ghost" size="icon" disabled>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

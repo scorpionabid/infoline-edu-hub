@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import React from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   FormField,
   FormItem,
@@ -9,7 +9,6 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -17,17 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useLanguage } from "@/context/LanguageContext";
-import { Column, ColumnType } from "@/types/column";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Column, ColumnType, COLUMN_TYPE_DEFINITIONS } from "@/types/column";
+import ColumnTypeSelector from "./ColumnTypeSelector";
 
 interface BasicColumnFieldsProps {
-  form: UseFormReturn<any>;
-  categories: { id: string; name: string }[];
+  form: any;
+  categories: any[];
   columns: Column[];
-  editColumn?: Column;
+  editColumn?: Column | null;
   selectedType: ColumnType;
-  handleTypeChange: (value: string) => void;
+  handleTypeChange: (type: string) => void;
 }
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
@@ -40,26 +41,14 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 }) => {
   const { t } = useLanguage();
 
+  // Seçilmiş sütun tipinin tərifini (icon, açıqlama və s.) alaq
+  const selectedTypeDefinition = COLUMN_TYPE_DEFINITIONS[selectedType];
+
   return (
     <div className="space-y-4">
       <FormField
         control={form.control}
-        name="name"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("columnName")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("columnNamePlaceholder")} {...field} />
-            </FormControl>
-            <FormDescription>{t("columnNameDescription")}</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="categoryId"
+        name="category_id"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("category")}</FormLabel>
@@ -67,6 +56,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
               onValueChange={field.onChange}
               defaultValue={field.value}
               value={field.value}
+              disabled={!!editColumn} // Düzənləmə zamanı kateqoriya dəyişdirilə bilməz
             >
               <FormControl>
                 <SelectTrigger>
@@ -81,7 +71,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <FormDescription>{t("categoryDescription")}</FormDescription>
+            <FormDescription>{t("selectCategoryDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -89,56 +79,41 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 
       <FormField
         control={form.control}
-        name="type"
+        name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("columnType")}</FormLabel>
-            <Select
-              onValueChange={(value) => {
-                handleTypeChange(value);
-                field.onChange(value);
-              }}
-              defaultValue={field.value}
-              value={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectColumnType")} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="text">{t("text")}</SelectItem>
-                <SelectItem value="textarea">{t("textarea")}</SelectItem>
-                <SelectItem value="number">{t("number")}</SelectItem>
-                <SelectItem value="date">{t("date")}</SelectItem>
-                <SelectItem value="select">{t("select")}</SelectItem>
-                <SelectItem value="checkbox">{t("checkbox")}</SelectItem>
-                <SelectItem value="radio">{t("radio")}</SelectItem>
-                <SelectItem value="email">{t("email")}</SelectItem>
-                <SelectItem value="phone">{t("phone")}</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormDescription>{t("columnTypeDescription")}</FormDescription>
+            <FormLabel>{t("columnName")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("enterColumnName")} {...field} />
+            </FormControl>
+            <FormDescription>{t("columnNameDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
+      {/* Sütun tipi seçimini əvəz edirik */}
+      <ColumnTypeSelector 
+        control={form.control} 
+        onChange={(type) => handleTypeChange(type)}
+        value={selectedType}
+      />
+
       <FormField
         control={form.control}
-        name="isRequired"
+        name="is_required"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+            <div className="space-y-0.5">
+              <FormLabel>{t("required")}</FormLabel>
+              <FormDescription>{t("requiredDescription")}</FormDescription>
+            </div>
             <FormControl>
-              <Checkbox
+              <Switch
                 checked={field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>
-            <div className="space-y-1 leading-none">
-              <FormLabel>{t("isRequired")}</FormLabel>
-              <FormDescription>{t("isRequiredDescription")}</FormDescription>
-            </div>
             <FormMessage />
           </FormItem>
         )}
@@ -146,18 +121,94 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
 
       <FormField
         control={form.control}
-        name="order"
+        name="order_index"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("order")}</FormLabel>
+            <FormLabel>{t("orderIndex")}</FormLabel>
             <FormControl>
-              <Input type="number" min="1" {...field} />
+              <Input
+                type="number"
+                placeholder={t("enterOrderIndex")}
+                {...field}
+                onChange={(e) => {
+                  field.onChange(parseInt(e.target.value) || 0);
+                }}
+              />
             </FormControl>
-            <FormDescription>{t("orderDescription")}</FormDescription>
+            <FormDescription>{t("orderIndexDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
+
+      <FormField
+        control={form.control}
+        name="placeholder"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("placeholder")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("enterPlaceholder")} {...field} />
+            </FormControl>
+            <FormDescription>{t("placeholderDescription")}</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="help_text"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("helpText")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("enterHelpText")} {...field} />
+            </FormControl>
+            <FormDescription>{t("helpTextDescription")}</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {columns.length > 0 && (
+        <FormField
+          control={form.control}
+          name="parent_column_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("parentColumn")}</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                value={field.value || ""}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("selectParentColumn")} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">{t("noParentColumn")}</SelectItem>
+                  {columns
+                    .filter(
+                      (col) => !editColumn || col.id !== editColumn.id
+                    )
+                    .map((column) => (
+                      <SelectItem key={column.id} value={column.id}>
+                        {column.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                {t("parentColumnDescription")}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
     </div>
   );
 };

@@ -724,6 +724,17 @@ export type Database = {
           admin_email: string
         }[]
       }
+      get_school_completion_stats: {
+        Args: { p_school_id: string }
+        Returns: {
+          category_id: string
+          category_name: string
+          total_columns: number
+          filled_columns: number
+          completion_percentage: number
+          status: string
+        }[]
+      }
       get_sector_admin_email: {
         Args: { sector_id_param: string }
         Returns: string
@@ -878,6 +889,31 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_entries_status: {
+        Args: {
+          p_school_id: string
+          p_category_id: string
+          p_status: string
+          p_user_id: string
+          p_reason?: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string
+          column_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          rejected_by: string | null
+          rejection_reason: string | null
+          school_id: string
+          status: string | null
+          updated_at: string
+          value: string | null
+        }[]
+      }
       update_user_metadata: {
         Args: { p_user_id: string; p_metadata: Json }
         Returns: undefined
@@ -895,6 +931,10 @@ export type Database = {
       uuid_generate_v4: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      validate_column_value: {
+        Args: { p_column_id: string; p_value: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Column, ColumnOption, ColumnType, ColumnValidation } from "@/types/column";
+import { Column, ColumnOption, ColumnType, ColumnValidation, COLUMN_TYPE_DEFINITIONS } from "@/types/column";
 import { useLanguage } from "@/context/LanguageContext";
 
-// Form validation schema
+// Form validasiya sxemi
 const columnFormSchema = z.object({
   name: z.string().min(2, { message: "Column name must be at least 2 characters." }),
   category_id: z.string().uuid({ message: "Please select a valid category." }),
@@ -21,7 +21,19 @@ const columnFormSchema = z.object({
   options: z.array(
     z.object({
       label: z.string(),
-      value: z.string()
+      value: z.string(),
+      description: z.string().optional(),
+      icon: z.string().optional(),
+      disabled: z.boolean().optional()
+    })
+  ).optional(),
+  default_value: z.any().optional(),
+  dependencies: z.array(z.string()).optional(),
+  visibility_conditions: z.array(
+    z.object({
+      column_id: z.string(),
+      operator: z.string(),
+      value: z.any()
     })
   ).optional()
 });
@@ -39,8 +51,11 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
   const isEditMode = !!editColumn;
   const { t } = useLanguage();
 
-  // Extract default category_id from categories if available
+  // Kateqoriyalardan default kateqoriya ID-si əldə et
   const defaultCategoryId = categories && categories.length > 0 ? categories[0].id : "";
+  
+  // Seçilmiş tip üçün default validasiya
+  const defaultValidation = COLUMN_TYPE_DEFINITIONS[selectedType]?.defaultValidation || {};
 
   const form = useForm<ColumnFormValues>({
     resolver: zodResolver(columnFormSchema),
@@ -48,18 +63,21 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       name: editColumn?.name || "",
       category_id: editColumn?.category_id || defaultCategoryId,
       type: editColumn?.type || "text",
-      is_required: editColumn?.is_required !== false, // Default to true if not explicitly false
+      is_required: editColumn?.is_required !== false, // Default olaraq true
       placeholder: editColumn?.placeholder || "",
       help_text: editColumn?.help_text || "",
       order_index: editColumn?.order_index || 0,
       status: editColumn?.status || "active",
       parent_column_id: editColumn?.parent_column_id || undefined,
-      validation: editColumn?.validation as Record<string, any> || {},
-      options: editColumn?.options as ColumnOption[] || []
+      validation: { ...defaultValidation, ...(editColumn?.validation as Record<string, any> || {}) },
+      options: editColumn?.options as ColumnOption[] || [],
+      default_value: editColumn?.default_value || "",
+      dependencies: editColumn?.dependencies || [],
+      visibility_conditions: editColumn?.visibility_conditions || []
     }
   });
 
-  // Update form fields when column or type changes
+  // Column və ya tip dəyişdikdə form sahələrini yenilə
   useEffect(() => {
     if (editColumn) {
       form.setValue("name", editColumn.name);
@@ -71,34 +89,66 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       form.setValue("order_index", editColumn.order_index || 0);
       form.setValue("status", editColumn.status || "active");
       form.setValue("parent_column_id", editColumn.parent_column_id);
-      form.setValue("validation", editColumn.validation as Record<string, any> || {});
+      
+      if (editColumn.validation) {
+        form.setValue("validation", editColumn.validation as Record<string, any> || {});
+      }
       
       if (editColumn.options && Array.isArray(editColumn.options)) {
         const typedOptions = editColumn.options as ColumnOption[];
         setOptions(typedOptions);
         form.setValue("options", typedOptions);
       }
+      
+      if (editColumn.default_value !== undefined) {
+        form.setValue("default_value", editColumn.default_value);
+      }
+      
+      if (editColumn.dependencies) {
+        form.setValue("dependencies", editColumn.dependencies);
+      }
+      
+      if (editColumn.visibility_conditions) {
+        form.setValue("visibility_conditions", editColumn.visibility_conditions);
+      }
     }
   }, [editColumn, form]);
 
-  // Update type-specific fields when type changes
+  // Tip dəyişdikdə tip-spesifik sahələri yenilə
   useEffect(() => {
     form.setValue("type", selectedType);
     
-    // Reset validation based on type
+    // Tip əsasında validasiyaları yenilə
+    const defaultTypValidation = COLUMN_TYPE_DEFINITIONS[selectedType]?.defaultValidation || {};
+    const currentValidation = form.getValues("validation") as ColumnValidation || {};
+    
     if (selectedType === "number") {
-      const currentValidation = form.getValues("validation") as ColumnValidation || {};
       form.setValue("validation", { 
+        ...defaultTypValidation,
         ...currentValidation,
         minValue: currentValidation.minValue || undefined,
         maxValue: currentValidation.maxValue || undefined
       });
     } else if (selectedType === "text" || selectedType === "textarea") {
-      const currentValidation = form.getValues("validation") as ColumnValidation || {};
       form.setValue("validation", { 
+        ...defaultTypValidation,
         ...currentValidation,
         minLength: currentValidation.minLength || undefined,
         maxLength: currentValidation.maxLength || undefined
+      });
+    } else if (selectedType === "email") {
+      form.setValue("validation", { 
+        ...defaultTypValidation,
+        ...currentValidation,
+        email: true,
+        pattern: currentValidation.pattern || '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+      });
+    } else if (selectedType === "url") {
+      form.setValue("validation", { 
+        ...defaultTypValidation,
+        ...currentValidation,
+        url: true,
+        pattern: currentValidation.pattern || '^(https?:\\/\\/)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?$'
       });
     }
   }, [selectedType, form]);
@@ -106,6 +156,11 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
   const handleTypeChange = (type: string) => {
     setSelectedType(type as ColumnType);
     form.setValue("type", type);
+    
+    // Əgər options tipli fielddirsə və options yoxdursa, error göstərmə
+    if (["select", "radio", "checkbox"].includes(type) && (!options || options.length === 0)) {
+      form.clearErrors("options");
+    }
   };
 
   const addOption = () => {
@@ -118,7 +173,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       setOptions(updatedOptions);
       setNewOption("");
       
-      // Update form options
+      // Form options-larını yenilə
       form.setValue("options", updatedOptions);
     }
   };
@@ -134,22 +189,22 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
   const onSubmit = async (data: ColumnFormValues) => {
     console.log("onSubmit called with data:", data);
     
-    // Ensure options are correctly formatted for select/radio/checkbox
+    // Select/radio/checkbox üçün options-ları düzgün formatla
     if (["select", "radio", "checkbox"].includes(data.type)) {
       console.log("Setting options for select/radio/checkbox. Current options:", options);
-      data.options = JSON.parse(JSON.stringify(options)); // Deep copy to ensure we're not using a reference
+      data.options = JSON.parse(JSON.stringify(options)); // Deep copy ilə referans istifadəsinin qarşısını al
       console.log("Options after assignment:", data.options);
     } else {
-      // For other field types, ensure options is null or empty array based on backend requirements
-      data.options = null;
+      // Digər field tipləri üçün options null və ya boş array olmalıdır
+      data.options = [];
     }
     
-    // Ensure validation is an object if undefined
+    // Validasiya undefined olduqda boş obyekt təyin et
     if (!data.validation) {
       data.validation = {};
     }
     
-    // If callback is provided, pass the data to it
+    // Callback funksiyası təmin edildikdə, datanı göndər
     if (onSubmitCallback) {
       try {
         console.log("Calling onSubmitCallback with data:", JSON.stringify(data, null, 2));
