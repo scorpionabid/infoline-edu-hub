@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { 
   Dialog, 
@@ -18,6 +18,14 @@ import { formatRelative } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import ReportChart from './ReportChart';
+import { useUsers } from '@/hooks/useUsers';
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface ReportPreviewDialogProps {
   report: Report;
@@ -27,12 +35,55 @@ interface ReportPreviewDialogProps {
 
 const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({ report, open, onClose }) => {
   const { t } = useLanguage();
-  const { downloadReport } = useReports();
+  const { downloadReport, shareReport } = useReports();
+  const { users, isLoading: usersLoading } = useUsers();
+  const [isSharePopoverOpen, setIsSharePopoverOpen] = useState(false);
+  const [shareEmail, setShareEmail] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
   
   const handleDownload = async () => {
     const url = await downloadReport(report.id);
     if (url) {
       window.open(url, '_blank');
+    }
+  };
+  
+  const handleShareReport = async () => {
+    if (!shareEmail.trim()) {
+      toast.error('Email daxil edin');
+      return;
+    }
+    
+    // E-maili təsdiqləyən sadə regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(shareEmail)) {
+      toast.error('Düzgün email formatı daxil edin');
+      return;
+    }
+    
+    setIsSharing(true);
+    
+    // Emailə görə istifadəçini tapaq
+    const userToShare = users.find(u => u.email === shareEmail);
+    
+    if (!userToShare) {
+      toast.error('Bu email ünvanı ilə istifadəçi tapılmadı');
+      setIsSharing(false);
+      return;
+    }
+    
+    try {
+      const shared = await shareReport(report.id, [userToShare.id]);
+      if (shared) {
+        toast.success('Hesabat uğurla paylaşıldı');
+        setShareEmail('');
+        setIsSharePopoverOpen(false);
+      }
+    } catch (error) {
+      toast.error('Hesabat paylaşılarkən xəta baş verdi');
+      console.error('Paylaşma xətası:', error);
+    } finally {
+      setIsSharing(false);
     }
   };
   
@@ -150,10 +201,37 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({ report, open,
               <Edit className="h-4 w-4 mr-2" />
               {t('edit')}
             </Button>
-            <Button variant="ghost" size="sm">
-              <Share2 className="h-4 w-4 mr-2" />
-              {t('share')}
-            </Button>
+            
+            <Popover open={isSharePopoverOpen} onOpenChange={setIsSharePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  {t('share')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-2">
+                  <h4 className="font-medium">{t('shareReport')}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t('enterEmailToShare')}
+                  </p>
+                  <div className="flex space-x-2">
+                    <Input 
+                      placeholder="info@example.com" 
+                      value={shareEmail}
+                      onChange={(e) => setShareEmail(e.target.value)}
+                    />
+                    <Button 
+                      size="sm" 
+                      onClick={handleShareReport}
+                      disabled={isSharing || !shareEmail.trim()}
+                    >
+                      {isSharing ? t('sharing') : t('share')}
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />

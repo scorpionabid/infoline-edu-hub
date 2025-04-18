@@ -7,13 +7,13 @@ import {
   addReport,
   editReport, 
   createReportTemplate, 
-  fetchSchoolColumnData, 
   exportReport,
   exportReportAsPdf,
   exportReportAsCsv,
-  shareReport
+  shareReportWithUsers
 } from '@/services/reportService';
 import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
 
 export const useReports = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -167,14 +167,19 @@ export const useReports = () => {
     }
   }, []);
 
-  const shareReportWithUsers = useCallback(async (reportId: string, userIds: string[]): Promise<boolean> => {
+  // Funksiya adını dəyişdik ki, eyni adlandırma problemi yaranmasın
+  const shareReport = useCallback(async (reportId: string, userIds: string[]): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
-      const success = await shareReport(reportId, userIds);
+      const success = await shareReportWithUsers(reportId, userIds);
+      if (success) {
+        toast.success('Hesabat uğurla paylaşıldı');
+      }
       return success;
     } catch (err: any) {
       setError(err.message || 'Hesabat paylaşılarkən xəta baş verdi');
+      toast.error('Hesabat paylaşılarkən xəta baş verdi');
       return false;
     } finally {
       setLoading(false);
@@ -209,6 +214,6 @@ export const useReports = () => {
     editReport: updateReport,
     addTemplate,
     downloadReport,
-    shareReportWithUsers
+    shareReport
   };
 };

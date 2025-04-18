@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Report } from '@/types/report';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -17,6 +17,8 @@ import {
   LineChart,
   Line
 } from 'recharts';
+import { fetchReportById } from '@/services/reportService';
+import { toast } from 'sonner';
 
 interface ReportChartProps {
   report: Report;
@@ -26,31 +28,89 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
   const { t } = useLanguage();
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  // Demo məlumatları (real həyata keçirilmədə hesabatın data hissəsindən gələcək)
-  const demoData = [
-    { name: 'Bakı', value: 400, count: 120 },
-    { name: 'Sumqayıt', value: 300, count: 80 },
-    { name: 'Gəncə', value: 300, count: 70 },
-    { name: 'Şəki', value: 200, count: 50 },
-    { name: 'Lənkəran', value: 278, count: 60 },
-    { name: 'Quba', value: 189, count: 40 }
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (report.id) {
+          // Hesabatı tam məlumatlarla əldə edək
+          const fullReport = await fetchReportById(report.id);
+          
+          if (fullReport && fullReport.content && fullReport.content.data) {
+            // Əgər verilənlər birbaşa reportda varsa
+            setChartData(fullReport.content.data);
+          } else {
+            // Mock data istifadə edək
+            setDefaultChartData(report.type);
+          }
+        } else {
+          // Hesabat ID-si yoxdursa mock data təyin edək
+          setDefaultChartData(report.type);
+        }
+      } catch (error) {
+        console.error('Report data loading error:', error);
+        setDefaultChartData(report.type);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [report.id, report.type]);
   
-  const completionData = [
-    { name: 'Tamamlanmış', value: 68 },
-    { name: 'Gözləyən', value: 23 },
-    { name: 'Rədd edilmiş', value: 9 }
-  ];
+  // Hesabat növünə uyğun olaraq mock data hazırlayaq
+  const setDefaultChartData = (reportType: string) => {
+    switch (reportType) {
+      case 'statistics':
+        setChartData([
+          { name: 'Bakı', value: 400, count: 120 },
+          { name: 'Sumqayıt', value: 300, count: 80 },
+          { name: 'Gəncə', value: 300, count: 70 },
+          { name: 'Şəki', value: 200, count: 50 },
+          { name: 'Lənkəran', value: 278, count: 60 },
+          { name: 'Quba', value: 189, count: 40 }
+        ]);
+        break;
+      case 'completion':
+        setChartData([
+          { name: 'Tamamlanmış', value: 68 },
+          { name: 'Gözləyən', value: 23 },
+          { name: 'Rədd edilmiş', value: 9 }
+        ]);
+        break;
+      case 'comparison':
+        setChartData([
+          { name: 'Bakı', value: 400, count: 120 },
+          { name: 'Sumqayıt', value: 300, count: 80 },
+          { name: 'Gəncə', value: 300, count: 70 },
+          { name: 'Şəki', value: 200, count: 50 },
+          { name: 'Lənkəran', value: 278, count: 60 },
+          { name: 'Quba', value: 189, count: 40 }
+        ]);
+        break;
+      default:
+        setChartData([
+          { name: 'Yanvar', value: 40 },
+          { name: 'Fevral', value: 45 },
+          { name: 'Mart', value: 60 },
+          { name: 'Aprel', value: 90 },
+          { name: 'May', value: 120 },
+          { name: 'İyun', value: 145 }
+        ]);
+    }
+  };
   
-  const timeSeriesData = [
-    { name: 'Yanvar', value: 40 },
-    { name: 'Fevral', value: 45 },
-    { name: 'Mart', value: 60 },
-    { name: 'Aprel', value: 90 },
-    { name: 'May', value: 120 },
-    { name: 'İyun', value: 145 }
-  ];
+  // Yükləmə göstəricisi
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-56">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   // Hesabat növünə görə müxtəlif qrafiklər göstər
   const renderChart = () => {
@@ -59,7 +119,7 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
         return (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
-              data={report.data || demoData}
+              data={chartData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
@@ -78,7 +138,7 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={report.data || completionData}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -87,7 +147,7 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {(report.data || completionData).map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -101,7 +161,7 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
         return (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
-              data={report.data || demoData}
+              data={chartData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               layout="vertical"
             >
@@ -117,10 +177,11 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
         );
         
       case 'custom':
+      default:
         return (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart
-              data={report.data || timeSeriesData}
+              data={chartData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
@@ -130,23 +191,6 @@ const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
               <Legend />
               <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} />
             </LineChart>
-          </ResponsiveContainer>
-        );
-        
-      default:
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={report.data || demoData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#0088FE" name={t('value')} />
-            </BarChart>
           </ResponsiveContainer>
         );
     }
