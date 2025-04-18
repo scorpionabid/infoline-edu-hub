@@ -16,9 +16,7 @@ vi.mock('@/lib/supabase', () => ({
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-      data: null,
-      error: null,
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
     })),
     storage: {
       from: vi.fn(),
@@ -30,37 +28,34 @@ const renderWithProviders = (component: React.ReactNode) => {
   return render(
     <BrowserRouter>
       <AuthProvider supabaseClient={supabase}>
-        <LanguageProvider>
-          {component}
-        </LanguageProvider>
+        <LanguageProvider>{component}</LanguageProvider>
       </AuthProvider>
     </BrowserRouter>
   );
 };
 
-describe('Columns Page', () => {
+describe('Columns Component Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders without crashing', () => {
     renderWithProviders(<Columns />);
-    expect(screen.getByText(/columns/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sütunlar/i)).toBeInTheDocument();
   });
 
   it('shows add column button for admin users', async () => {
     renderWithProviders(<Columns />);
-    const addButton = screen.queryByText(/add column/i);
-    expect(addButton).toBeInTheDocument();
+    expect(screen.getByText(/Sütun əlavə et/i)).toBeInTheDocument();
   });
 
   it('opens add column dialog when button is clicked', async () => {
     renderWithProviders(<Columns />);
-    const addButton = screen.getByText(/add column/i);
+    const addButton = screen.getByText(/Sütun əlavə et/i);
     fireEvent.click(addButton);
     
     await waitFor(() => {
-      expect(screen.getByText(/add new column/i)).toBeInTheDocument();
+      expect(screen.getByText(/Yeni sütun əlavə et/i)).toBeInTheDocument();
     });
   });
 });
