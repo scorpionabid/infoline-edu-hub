@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Language = 'az' | 'en' | 'tr' | 'ru';
@@ -47,6 +46,30 @@ const translations: Translations = {
     en: 'Password',
     tr: 'Şifre',
     ru: 'Пароль'
+  },
+  saveChanges: {
+    az: 'Dəyişiklikləri yadda saxla',
+    en: 'Save changes',
+    tr: 'Değişiklikleri kaydet',
+    ru: 'Сохранить изменения'
+  },
+  saveChangesDescription: {
+    az: 'Dəyişiklikləri yadda saxlamaq istədiyinizə əminsiniz?',
+    en: 'Are you sure you want to save changes?',
+    tr: 'Değişiklikleri kaydetmek istediğinizden emin misiniz?',
+    ru: 'Вы уверены, что хотите сохранить изменения?'
+  },
+  save: {
+    az: 'Yadda saxla',
+    en: 'Save',
+    tr: 'Kaydet',
+    ru: 'Сохранить'
+  },
+  cancel: {
+    az: 'Ləğv et',
+    en: 'Cancel',
+    tr: 'İptal',
+    ru: 'Отмена'
   },
   // ... digər tərcümələr əlavə edilə bilər
 };

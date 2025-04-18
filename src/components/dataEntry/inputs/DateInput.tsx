@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
@@ -33,6 +32,7 @@ const DateInput: React.FC<DateInputProps> = ({ column, form, disabled = false })
                 <Button
                   variant="outline"
                   disabled={disabled}
+                  aria-label={column.name}
                   className={cn(
                     "w-full pl-3 text-left font-normal",
                     !field.value && "text-muted-foreground"

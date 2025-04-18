@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -27,6 +26,8 @@ const TextInput: React.FC<TextInputProps> = ({ column, form, disabled = false })
               {...field}
               placeholder={column.placeholder}
               disabled={disabled}
+              aria-label={column.name}
+              id={`field-${column.id}`}
             />
           </FormControl>
           {column.help_text && (

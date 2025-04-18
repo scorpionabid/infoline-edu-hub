@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
-import { Column, ColumnValidation } from '@/types/column';
+import { Column } from '@/types/column';
 
 interface NumberInputProps {
   column: Column;
@@ -33,6 +32,8 @@ const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = fals
               type="number"
               placeholder={column.placeholder}
               disabled={disabled}
+              aria-label={column.name}
+              id={`field-${column.id}`}
               min={minValue}
               max={maxValue}
               onChange={(e) => {

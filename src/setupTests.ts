@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Mock Supabase client
 vi.mock('@supabase/supabase-js', () => {
-  const mockClient = {
+  const getMockSupabase = (customData = {}) => ({
     auth: {
       getSession: vi.fn().mockResolvedValue({
         data: {
@@ -28,20 +28,63 @@ vi.mock('@supabase/supabase-js', () => {
       signInWithPassword: vi.fn(),
       signOut: vi.fn(),
       onAuthStateChange: vi.fn(),
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: 'test-user-id',
+            email: 'test@example.com',
+            user_metadata: { role: 'superadmin' }
+          }
+        },
+        error: null
+      }),
     },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockReturnThis(),
-      then: vi.fn().mockImplementation(cb => cb({ data: [], error: null }))
-    }))
-  };
+    from: (table: string) => ({
+      select: (query = '*') => ({
+        eq: (column: string, value: any) => ({
+          order: (column: string, { ascending = true } = {}) => ({
+            limit: (limit: number) => ({
+              data: customData[table] || [],
+              error: null
+            }),
+            data: customData[table] || [],
+            error: null
+          }),
+          data: customData[table] || [],
+          error: null
+        }),
+        order: (column: string, { ascending = true } = {}) => ({
+          data: customData[table] || [],
+          error: null
+        }),
+        data: customData[table] || [],
+        error: null
+      }),
+      insert: (data: any) => ({
+        select: () => ({
+          data: [{ id: 'test-id', ...data }],
+          error: null
+        })
+      }),
+      update: (data: any) => ({
+        eq: () => ({
+          select: () => ({
+            data: [{ id: 'test-id', ...data }],
+            error: null
+          })
+        })
+      }),
+      delete: () => ({
+        eq: () => ({
+          data: null,
+          error: null
+        })
+      })
+    })
+  });
 
   return {
-    createClient: vi.fn(() => mockClient)
+    createClient: vi.fn(() => getMockSupabase())
   };
 });
 

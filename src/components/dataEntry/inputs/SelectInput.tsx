@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Select,
@@ -48,12 +47,15 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
             {column.is_required && <span className="text-destructive ml-1">*</span>}
           </FormLabel>
           <Select
-            disabled={disabled}
             onValueChange={field.onChange}
             value={String(field.value || '')}
           >
             <FormControl>
-              <SelectTrigger>
+              <SelectTrigger
+                disabled={disabled}
+                aria-label={column.name}
+                id={`field-${column.id}`}
+              >
                 <SelectValue placeholder={column.placeholder || 'Seçim edin'} />
               </SelectTrigger>
             </FormControl>

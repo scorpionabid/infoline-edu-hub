@@ -1,20 +1,20 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { LanguageProvider } from './context/LanguageContext';
-import { ThemeProvider } from './context/ThemeContext';
+import './index.css';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/auth/AuthProvider';
+import { LanguageProvider } from './context/LanguageContext';
+import { supabase } from './lib/supabase';
+import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppQueryProvider } from './context/QueryClientProvider';
-import './index.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <AppQueryProvider>
-      <BrowserRouter>
-        <AuthProvider>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider supabaseClient={supabase}>
           <LanguageProvider>
             <ThemeProvider>
               <NotificationProvider>

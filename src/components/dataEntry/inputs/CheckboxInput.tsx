@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -55,6 +54,7 @@ const CheckboxInput: React.FC<CheckboxInputProps> = ({ column, form, disabled = 
                         <Checkbox
                           checked={values.includes(option.value)}
                           disabled={disabled}
+                          aria-label={column.name}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               childField.onChange([...values, option.value]);

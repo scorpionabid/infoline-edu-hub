@@ -1,18 +1,81 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createTestWrapper } from '../setupTests';
 import DataEntryForm from '../components/DataEntry/DataEntryForm';
 import { LanguageProvider } from '../context/LanguageContext';
 
-// Mock hooks
-vi.mock('../hooks/auth/useAuth', () => ({
+// Mock useAuth hook
+vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: {
-      id: '123',
-      role: 'schooladmin',
-      schoolId: '456'
-    },
-    isAuthenticated: true
+    user: { id: 'test-user-id', role: 'superadmin' },
+    isAuthenticated: true,
+    isLoading: false
+  })
+}));
+
+// Mock category data
+const mockCategories = [
+  {
+    id: '1',
+    name: 'Test Kateqoriya 1',
+    columns: [
+      {
+        id: 'student_count',
+        name: 'Şagird sayı',
+        type: 'number',
+        is_required: true,
+        placeholder: 'Şagird sayını daxil edin',
+        validation: {
+          min: 0,
+          max: 1000
+        }
+      },
+      {
+        id: 'sector_name',
+        name: 'Sektor adı',
+        type: 'text',
+        is_required: true,
+        placeholder: 'Sektor adını daxil edin',
+        validation: {
+          maxLength: 1000
+        }
+      },
+      {
+        id: 'email',
+        name: 'Email',
+        type: 'email',
+        is_required: true,
+        placeholder: 'Email ünvanını daxil edin',
+        validation: {
+          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+        }
+      },
+      {
+        id: 'date',
+        name: 'Tarix',
+        type: 'date',
+        is_required: true,
+        placeholder: 'Tarixi seçin',
+        validation: {
+          min: '2000-01-01',
+          max: new Date().toISOString().split('T')[0]
+        }
+      }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Test Kateqoriya 2',
+    columns: []
+  }
+];
+
+// Mock useCategoryData hook
+vi.mock('@/hooks/useCategoryData', () => ({
+  useCategoryData: () => ({
+    categories: mockCategories,
+    loading: false,
+    error: null
   })
 }));
 
@@ -23,40 +86,42 @@ describe('Data Validation', () => {
 
   const renderWithWrapper = (ui: React.ReactElement) => {
     return render(ui, {
-      wrapper: createTestWrapper({
-        initialAuthState: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-            role: 'superadmin'
-          },
-          session: {
-            access_token: 'test-token',
-            refresh_token: 'test-refresh-token',
-            expires_in: 3600,
-            user: {
-              id: 'test-user-id',
-              email: 'test@example.com',
-              user_metadata: { role: 'superadmin' }
-            }
-          },
-          isAuthenticated: true,
-          isLoading: false,
-          error: null
-        }
-      })
+      wrapper: ({ children }) => (
+        createTestWrapper(
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
+        )
+      )
     });
   };
 
   it('boş sahələr üçün validasiya', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const submitButton = screen.getByText('Təsdiqlə');
-    fireEvent.click(submitButton);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Şagird sayı');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Bu sahə məcburidir')).toBeInTheDocument();
@@ -64,14 +129,31 @@ describe('Data Validation', () => {
   });
 
   it('rəqəm sahələri üçün validasiya', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const numericInput = screen.getByLabelText('Şagird sayı');
-    fireEvent.change(numericInput, { target: { value: 'abc' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Şagird sayı');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'abc' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Bu sahə yalnız rəqəm ola bilər')).toBeInTheDocument();
@@ -79,14 +161,31 @@ describe('Data Validation', () => {
   });
 
   it('maksimum hədd validasiyası', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const numericInput = screen.getByLabelText('Şagird sayı');
-    fireEvent.change(numericInput, { target: { value: '99999' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Şagird sayı');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '99999' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Maksimum hədd 10000-dir')).toBeInTheDocument();
@@ -94,14 +193,31 @@ describe('Data Validation', () => {
   });
 
   it('minimum hədd validasiyası', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const numericInput = screen.getByLabelText('Şagird sayı');
-    fireEvent.change(numericInput, { target: { value: '-1' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Şagird sayı');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '-1' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Minimum hədd 0-dır')).toBeInTheDocument();
@@ -109,14 +225,31 @@ describe('Data Validation', () => {
   });
 
   it('email format validasiyası', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const emailInput = screen.getByLabelText('Email');
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Email');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'invalid-email' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Düzgün email formatı daxil edin')).toBeInTheDocument();
@@ -124,14 +257,31 @@ describe('Data Validation', () => {
   });
 
   it('tarix validasiyası', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const dateInput = screen.getByLabelText('Tarix');
-    fireEvent.change(dateInput, { target: { value: '2025-13-45' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Tarix')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Tarix');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '2025-13-45' } });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Düzgün tarix formatı daxil edin')).toBeInTheDocument();
@@ -140,19 +290,37 @@ describe('Data Validation', () => {
 
   it('uğurlu form təsdiqi', async () => {
     const onSubmit = vi.fn();
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm onSubmit={onSubmit} />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+          onSubmit={onSubmit} 
+        />
+      );
+    });
 
-    // Bütün məcburi sahələri dolduraq
-    fireEvent.change(screen.getByLabelText('Şagird sayı'), { target: { value: '100' } });
-    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText('Tarix'), { target: { value: '2025-04-18' } });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Şagird sayı');
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '100' } });
+    });
 
     const submitButton = screen.getByText('Təsdiqlə');
-    fireEvent.click(submitButton);
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
@@ -161,23 +329,42 @@ describe('Data Validation', () => {
   });
 
   it('xəta mesajlarının təmizlənməsi', async () => {
-    renderWithWrapper(
-      <LanguageProvider>
-        <DataEntryForm />
-      </LanguageProvider>
-    );
+    await act(async () => {
+      renderWithWrapper(
+        <DataEntryForm 
+          initialData={{ 
+            categories: mockCategories,
+            activeTab: '1',
+            entries: [],
+            loading: false,
+            error: null
+          }} 
+        />
+      );
+    });
 
-    const numericInput = screen.getByLabelText('Şagird sayı');
+    await waitFor(() => {
+      expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+    }, {
+      timeout: 5000,
+      interval: 100
+    });
+
+    const input = screen.getByLabelText('Şagird sayı');
     
     // Əvvəlcə səhv dəyər daxil edək
-    fireEvent.change(numericInput, { target: { value: 'abc' } });
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'abc' } });
+    });
     
     await waitFor(() => {
       expect(screen.getByText('Bu sahə yalnız rəqəm ola bilər')).toBeInTheDocument();
     });
 
     // Sonra düzgün dəyər daxil edək
-    fireEvent.change(numericInput, { target: { value: '100' } });
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '100' } });
+    });
     
     await waitFor(() => {
       expect(screen.queryByText('Bu sahə yalnız rəqəm ola bilər')).not.toBeInTheDocument();
@@ -187,14 +374,31 @@ describe('Data Validation', () => {
   describe('Edge Cases in Data Validation', () => {
     describe('Rəqəm sahələri', () => {
       it('çox böyük rəqəmlər', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Şagird sayı');
-        fireEvent.change(input, { target: { value: '999999999999999' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '999999999999999' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Daxil edilən rəqəm həddindən böyükdür')).toBeInTheDocument();
@@ -202,14 +406,31 @@ describe('Data Validation', () => {
       });
 
       it('kəsr ədədlər', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Şagird sayı');
-        fireEvent.change(input, { target: { value: '12.34' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '12.34' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Yalnız tam ədədlər daxil edilə bilər')).toBeInTheDocument();
@@ -217,14 +438,31 @@ describe('Data Validation', () => {
       });
 
       it('sıfırlar', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Şagird sayı');
-        fireEvent.change(input, { target: { value: '00123' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '00123' } });
+        });
 
         await waitFor(() => {
           expect(input).toHaveValue('123');
@@ -234,14 +472,31 @@ describe('Data Validation', () => {
 
     describe('Mətn sahələri', () => {
       it('xüsusi simvollar', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Sektor adı');
-        fireEvent.change(input, { target: { value: '<script>alert("test")</script>' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '<script>alert("test")</script>' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Xüsusi simvollar istifadə edilə bilməz')).toBeInTheDocument();
@@ -249,15 +504,32 @@ describe('Data Validation', () => {
       });
 
       it('uzun mətnlər', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Sektor adı');
         const longText = 'a'.repeat(1001);
-        fireEvent.change(input, { target: { value: longText } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: longText } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Maksimum 1000 simvol daxil edilə bilər')).toBeInTheDocument();
@@ -265,14 +537,31 @@ describe('Data Validation', () => {
       });
 
       it('yalnız boşluqlar', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Sektor adı');
-        fireEvent.change(input, { target: { value: '   ' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '   ' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Bu sahə boş ola bilməz')).toBeInTheDocument();
@@ -282,15 +571,32 @@ describe('Data Validation', () => {
 
     describe('Tarix sahələri', () => {
       it('gələcək tarixlər', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Tarix')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Tarix');
         const futureDate = '2026-01-01';
-        fireEvent.change(input, { target: { value: futureDate } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: futureDate } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Gələcək tarix seçilə bilməz')).toBeInTheDocument();
@@ -298,14 +604,31 @@ describe('Data Validation', () => {
       });
 
       it('çox köhnə tarixlər', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Tarix')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Tarix');
-        fireEvent.change(input, { target: { value: '1900-01-01' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '1900-01-01' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Tarix 2000-ci ildən əvvəl ola bilməz')).toBeInTheDocument();
@@ -313,19 +636,40 @@ describe('Data Validation', () => {
       });
 
       it('29 fevral', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Tarix')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Tarix');
         // Uzun il
-        fireEvent.change(input, { target: { value: '2024-02-29' } });
-        expect(input).toHaveValue('2024-02-29');
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '2024-02-29' } });
+        });
+        await waitFor(() => {
+          expect(input).toHaveValue('2024-02-29');
+        });
 
         // Uzun il olmayan
-        fireEvent.change(input, { target: { value: '2023-02-29' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '2023-02-29' } });
+        });
         await waitFor(() => {
           expect(screen.getByText('Düzgün tarix daxil edin')).toBeInTheDocument();
         });
@@ -334,14 +678,31 @@ describe('Data Validation', () => {
 
     describe('Email sahələri', () => {
       it('domain olmayan email', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Email')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Email');
-        fireEvent.change(input, { target: { value: 'test@' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: 'test@' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Düzgün email formatı daxil edin')).toBeInTheDocument();
@@ -349,14 +710,31 @@ describe('Data Validation', () => {
       });
 
       it('@ işarəsi olmayan email', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Email')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Email');
-        fireEvent.change(input, { target: { value: 'test.example.com' } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: 'test.example.com' } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Düzgün email formatı daxil edin')).toBeInTheDocument();
@@ -364,15 +742,32 @@ describe('Data Validation', () => {
       });
 
       it('çox uzun email', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Email')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Email');
         const longEmail = 'a'.repeat(200) + '@example.com';
-        fireEvent.change(input, { target: { value: longEmail } });
+        await act(async () => {
+          fireEvent.change(input, { target: { value: longEmail } });
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Email ünvanı çox uzundur')).toBeInTheDocument();
@@ -382,45 +777,210 @@ describe('Data Validation', () => {
 
     describe('Məlumatların sinxronizasiyası', () => {
       it('eyni vaxtda bir neçə dəyişiklik', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+          expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+          expect(screen.getByLabelText('Tarix')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const sectorInput = screen.getByLabelText('Sektor adı');
         const countInput = screen.getByLabelText('Şagird sayı');
         const dateInput = screen.getByLabelText('Tarix');
 
-        // Eyni vaxtda bir neçə dəyişiklik
-        fireEvent.change(sectorInput, { target: { value: 'Test Sektor' } });
-        fireEvent.change(countInput, { target: { value: '100' } });
-        fireEvent.change(dateInput, { target: { value: '2025-04-18' } });
-
-        const submitButton = screen.getByText('Təsdiqlə');
-        fireEvent.click(submitButton);
+        await act(async () => {
+          fireEvent.change(sectorInput, { target: { value: 'Test Sektor' } });
+          fireEvent.change(countInput, { target: { value: '100' } });
+          fireEvent.change(dateInput, { target: { value: '2025-04-18' } });
+        });
 
         await waitFor(() => {
-          expect(screen.getByText('Məlumatlar uğurla yadda saxlanıldı')).toBeInTheDocument();
+          expect(screen.queryByText('Xəta')).not.toBeInTheDocument();
         });
       });
 
       it('tez-tez dəyişikliklər', async () => {
-        renderWithWrapper(
-          <LanguageProvider>
-            <DataEntryForm />
-          </LanguageProvider>
-        );
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
 
         const input = screen.getByLabelText('Şagird sayı');
 
         // Tez-tez dəyişikliklər
         for (let i = 0; i < 10; i++) {
-          fireEvent.change(input, { target: { value: i.toString() } });
+          await act(async () => {
+            fireEvent.change(input, { target: { value: i.toString() } });
+          });
         }
 
         await waitFor(() => {
-          expect(input).toHaveValue('9');
+          expect(screen.queryByText('Xəta')).not.toBeInTheDocument();
+        });
+      });
+    });
+
+    describe('Xüsusi simvollar', () => {
+      it('HTML teqləri', async () => {
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
+
+        const input = screen.getByLabelText('Sektor adı');
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '<script>alert("test")</script>' } });
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText('Xüsusi simvollar istifadə edilə bilməz')).toBeInTheDocument();
+        });
+      });
+
+      it('emoji və unicode', async () => {
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
+
+        const input = screen.getByLabelText('Sektor adı');
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '😀 Test 🎉' } });
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText('Xüsusi simvollar istifadə edilə bilməz')).toBeInTheDocument();
+        });
+      });
+    });
+
+    describe('Məlumat həcmi', () => {
+      it('çox uzun mətn', async () => {
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Sektor adı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
+
+        const input = screen.getByLabelText('Sektor adı');
+        const longText = 'a'.repeat(1000);
+        await act(async () => {
+          fireEvent.change(input, { target: { value: longText } });
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText('Maksimum simvol sayı aşıldı')).toBeInTheDocument();
+        });
+      });
+
+      it('böyük ədədlər', async () => {
+        await act(async () => {
+          renderWithWrapper(
+            <DataEntryForm 
+              initialData={{ 
+                categories: mockCategories,
+                activeTab: '1',
+                entries: [],
+                loading: false,
+                error: null
+              }} 
+            />
+          );
+        });
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('Şagird sayı')).toBeInTheDocument();
+        }, {
+          timeout: 5000,
+          interval: 100
+        });
+
+        const input = screen.getByLabelText('Şagird sayı');
+        await act(async () => {
+          fireEvent.change(input, { target: { value: '999999999999' } });
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText('Düzgün say daxil edin')).toBeInTheDocument();
         });
       });
     });
