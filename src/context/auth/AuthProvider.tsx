@@ -10,12 +10,14 @@ interface AuthProviderProps {
   children: ReactNode;
   initialState?: AuthState;
   supabaseClient?: any;
+  initialSession?: any;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ 
   children, 
   initialState,
-  supabaseClient 
+  supabaseClient,
+  initialSession
 }) => {
   const {
     user,
@@ -23,7 +25,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     signIn,
     signOut,
     updateProfile,
-  } = useSupabaseAuth(supabaseClient);
+  } = useSupabaseAuth(supabaseClient, initialSession);
 
   const [error, setError] = useState<string | null>(initialState?.error || null);
 

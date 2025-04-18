@@ -68,9 +68,6 @@ describe('Supabase Authentication', () => {
 
     await waitFor(() => {
       expect(mockSignIn).toHaveBeenCalled();
-      // Note: This might fail in the actual test since we're not displaying the error
-      // This is just for demonstration purposes
-      // expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
     });
   });
 });
