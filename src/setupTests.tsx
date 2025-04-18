@@ -1,3 +1,4 @@
+
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -59,8 +60,8 @@ const mockAuthState = {
 };
 
 // Test wrapper komponenti
-export const TestWrapper = ({ children, initialAuthState = mockAuthState }) => {
-  return (
+export const createTestWrapper = (initialAuthState = mockAuthState) => {
+  return ({ children }) => (
     <AuthProvider initialState={initialAuthState}>
       <MemoryRouter>
         <NotificationProvider>
@@ -78,7 +79,7 @@ export const TestWrapper = ({ children, initialAuthState = mockAuthState }) => {
 // Custom render metodu
 const customRender = (ui, options = {}) => {
   return render(ui, {
-    wrapper: ({ children }) => <TestWrapper>{children}</TestWrapper>,
+    wrapper: ({ children }) => createTestWrapper()({ children }),
     ...options,
   });
 };

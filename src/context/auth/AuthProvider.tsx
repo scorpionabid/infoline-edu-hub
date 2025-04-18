@@ -8,21 +8,27 @@ import { AuthState } from './types';
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialState?: AuthState;
+  supabaseClient?: any;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ 
+  children, 
+  initialState,
+  supabaseClient 
+}) => {
   const {
     user,
     loading,
     signIn,
     signOut,
     updateProfile,
-  } = useSupabaseAuth();
+  } = useSupabaseAuth(supabaseClient);
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialState?.error || null);
 
-  // Derive auth state from Supabase user
-  const authState: AuthState = {
+  // Derive auth state from Supabase user or initialState if provided
+  const authState: AuthState = initialState || {
     user,
     isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
     isLoading: loading,
