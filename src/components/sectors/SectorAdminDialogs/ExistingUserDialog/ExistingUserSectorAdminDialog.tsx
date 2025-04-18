@@ -1,163 +1,107 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUsers } from '@/hooks/users/useUsers';
-import { FullUserData } from '@/types/supabase';
-import { User } from '@/types/user';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 import { assignExistingUserAsSectorAdmin } from '@/services/sectorService';
 
-interface ExistingUserSectorAdminDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  sectorId: string;
-  sectorName: string;
-  onSuccess: () => void;
-}
-
-const ExistingUserSectorAdminDialog: React.FC<ExistingUserSectorAdminDialogProps> = ({
-  isOpen,
-  onClose,
-  sectorId,
-  sectorName,
-  onSuccess
-}) => {
+const ExistingUserSectorAdminDialog = ({ isOpen, onClose, sectorId, sectorName, onSuccess }) => {
   const { t } = useLanguage();
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [availableUsers, setAvailableUsers] = useState<FullUserData[]>([]);
-  
-  const { users, loading, fetchUsers } = useUsers();
-  
+  const [userId, setUserId] = useState('');
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/getUsers');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setUsers(data);
+      } catch (e) {
+        setError(t('errorFetchingUsers') || 'İstifadəçiləri əldə edərkən xəta baş verdi');
+        toast.error(t('errorFetchingUsers') || 'İstifadəçiləri əldə edərkən xəta baş verdi');
+      }
+    };
+
     if (isOpen) {
       fetchUsers();
+      setUserId('');
+      setError('');
     }
-  }, [isOpen, fetchUsers]);
-  
-  useEffect(() => {
-    // Mövcud istifadəçilər
-    const availableUsers = users.filter(user => 
-      !user.role || 
-      (user.role !== 'sectoradmin' && user.role !== 'superadmin' && user.role !== 'regionadmin')
-    );
-    
-    setAvailableUsers(availableUsers as unknown as FullUserData[]);
-    
-    // Axtarış sorğusuna görə filtrlənmiş istifadəçilər
-    if (searchQuery) {
-      const filtered = availableUsers.filter(user => 
-        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(availableUsers);
-    }
-  }, [users, searchQuery]);
-  
+  }, [isOpen, t]);
+
   const handleSubmit = async () => {
-    if (!selectedUserId) {
-      toast.error(t('pleaseSelectUser'));
+    if (!userId) {
+      setError(t('selectUser') || 'Zəhmət olmasa istifadəçi seçin');
       return;
     }
-    
-    setIsSubmitting(true);
-    setError(null);
-    
+
+    setLoading(true);
+    setError('');
+
     try {
-      const result = await assignExistingUserAsSectorAdmin(selectedUserId, sectorId);
-      
+      const result = await assignExistingUserAsSectorAdmin(userId, sectorId);
+
       if (result.success) {
-        toast.success(t('sectorAdminAssigned'));
+        toast.success(t('adminAssignedSuccessfully') || 'Admin uğurla təyin edildi');
         onSuccess();
         onClose();
       } else {
-        throw new Error(result.error || t('unknownError'));
+        setError(result.error || t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta baş verdi');
+        toast.error(result.error || t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta baş verdi');
       }
-    } catch (err: any) {
-      console.error('Error assigning sector admin:', err);
-      setError(err);
-      toast.error(err.message || t('errorAssigningSectorAdmin'));
+    } catch (e: any) {
+      setError(e.message || t('unknownError') || 'Bilinməyən xəta');
+      toast.error(e.message || t('unknownError') || 'Bilinməyən xəta');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{t('assignExistingUserAsSectorAdmin')}</DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>{t('sector')}</Label>
-            <div className="p-2 border rounded bg-muted/50">{sectorName}</div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="searchQuery">{t('searchUsers')}</Label>
-            <Input 
-              id="searchQuery"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('searchByNameOrEmail')}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="selectedUser">{t('selectUser')}</Label>
-            <Select 
-              value={selectedUserId} 
-              onValueChange={setSelectedUserId}
-              disabled={loading || filteredUsers.length === 0}
-            >
-              <SelectTrigger id="selectedUser">
-                <SelectValue placeholder={t('selectUser')} />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name} ({user.email})
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none" disabled>
-                    {loading ? t('loading') : t('noUsersFound')}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {error && (
-            <div className="bg-destructive/10 p-3 rounded text-destructive text-sm">
-              {error.message}
-            </div>
-          )}
+    <div>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="userId" className="text-right">
+            {t('selectUser') || 'İstifadəçi seçin'}
+          </Label>
+          <Select onValueChange={setUserId} defaultValue={userId} >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={t('selectUser')} />
+            </SelectTrigger>
+            <SelectContent>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.full_name} ({user.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            {t('cancel')}
-          </Button>
-          <Button onClick={handleSubmit} disabled={!selectedUserId || isSubmitting}>
-            {isSubmitting ? t('assigning') : t('assign')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          {t('cancel') || 'Ləğv et'}
+        </Button>
+        <Button type="submit" onClick={handleSubmit} disabled={loading}>
+          {loading ? t('assigning') || 'Təyin edilir...' : t('assign') || 'Təyin et'}
+        </Button>
+      </div>
+    </div>
   );
 };
 
