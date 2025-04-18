@@ -1,3 +1,4 @@
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useSupabaseSchools } from '../hooks/useSupabaseSchools';
@@ -50,7 +51,9 @@ describe('Supabase Schools Integration', () => {
   it('məktəb silinməsi', async () => {
     const mockDelete = vi.fn().mockResolvedValue({ data: null, error: null });
     const supabase = getMockSupabase();
-    supabase.from().delete = mockDelete;
+    supabase.from = vi.fn().mockReturnValue({
+      delete: mockDelete
+    });
 
     const TestComponent = () => {
       const { deleteSchool } = useSupabaseSchools();
@@ -74,7 +77,9 @@ describe('Supabase Schools Integration', () => {
   it('xəta halında error state-i yenilənir', async () => {
     const mockError = new Error('Test error');
     const supabase = getMockSupabase();
-    supabase.from().delete = vi.fn().mockRejectedValue(mockError);
+    supabase.from = vi.fn().mockReturnValue({
+      delete: vi.fn().mockRejectedValue(mockError)
+    });
 
     const TestComponent = () => {
       const { deleteSchool, error } = useSupabaseSchools();
