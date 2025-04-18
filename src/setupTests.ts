@@ -1,4 +1,3 @@
-
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -7,6 +6,8 @@ import { AuthProvider } from './context/auth/AuthProvider';
 import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { ReportProvider } from './context/ReportContext';
+import { DeadlineProvider } from './context/DeadlineContext';
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -144,6 +145,24 @@ Object.defineProperty(window, 'performance', {
   }
 });
 
+// Performance API mock - tam versiya
+Object.defineProperty(window, 'performance', {
+  value: {
+    ...window.performance,
+    now: () => Date.now(),
+    mark: vi.fn(),
+    measure: vi.fn(),
+    getEntriesByName: vi.fn(),
+    clearMarks: vi.fn(),
+    clearMeasures: vi.fn(),
+    // Əlavə property-ləri də əlavə edin (və ya mövcud olanları saxlayın)
+    eventCounts: {},
+    navigation: {},
+    onresourcetimingbufferfull: null,
+    timeOrigin: Date.now(),
+  }
+} as Performance);
+
 // Default auth state
 const mockAuthState = {
   user: {
@@ -171,7 +190,7 @@ interface TestWrapperProps {
   initialAuthState?: typeof mockAuthState;
 }
 
-// Test wrapper factory
+// Test wrapper factory - TypeScript versiyası
 export const createTestWrapper = (props: TestWrapperProps = { children: null }) => {
   const { children, initialAuthState = mockAuthState } = props;
   
@@ -198,7 +217,15 @@ export const createTestWrapper = (props: TestWrapperProps = { children: null }) 
             React.createElement(
               NotificationProvider,
               null,
-              innerChildren || children
+              React.createElement(
+                DeadlineProvider,
+                null,
+                React.createElement(
+                  ReportProvider,
+                  null,
+                  innerChildren || children
+                )
+              )
             )
           )
         )
@@ -207,13 +234,34 @@ export const createTestWrapper = (props: TestWrapperProps = { children: null }) 
   };
 };
 
+// Test wrapper komponenti - JSX versiyası
+export const createJsxTestWrapper = (initialAuthState = mockAuthState) => {
+  return ({ children }: { children: React.ReactNode }) => (
+    <AuthProvider initialState={initialAuthState}>
+      <MemoryRouter>
+        <ThemeProvider>
+          <LanguageProvider>
+            <NotificationProvider>
+              <DeadlineProvider>
+                <ReportProvider>
+                  {children}
+                </ReportProvider>
+              </DeadlineProvider>
+            </NotificationProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </MemoryRouter>
+    </AuthProvider>
+  );
+};
+
 // Custom render metodu
 const customRender = (
   ui: React.ReactElement,
   options: { wrapper?: React.ComponentType<any>; [key: string]: any } = {}
 ) => {
   return render(ui, {
-    wrapper: createTestWrapper(options),
+    wrapper: options.wrapper || createTestWrapper({ children: ui }),
     ...options,
   });
 };
