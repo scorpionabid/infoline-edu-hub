@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
@@ -40,103 +39,38 @@ const useSchoolAdminDashboard = () => {
       }
 
       if (!dashboardData) {
-        // Əgər edge function işləmirsə və ya məlumat boşdursa, test məlumatları istifadə edək
-        console.warn('Məlumatlar boşdur, test məlumatları istifadə edilir');
+        // Əgər edge function işləmirsə və ya məlumat boşdursa, default məlumatlar istifadə edək
+        console.warn('Məlumatlar boşdur, default məlumatlar istifadə edilir');
         
-        // Məktəb verilənlərini hazırlayaq
-        const mockData: SchoolAdminDashboardData = {
+        // Default minimal məlumatlar
+        const defaultData: SchoolAdminDashboardData = {
           completion: {
-            percentage: 45,
-            total: 20,
-            completed: 9
+            percentage: 0,
+            total: 0,
+            completed: 0
           },
           status: {
-            pending: 5,
-            approved: 9,
-            rejected: 2,
-            total: 16
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            total: 0
           },
-          categories: [
-            {
-              id: '1',
-              name: 'Əsas məlumatlar',
-              completion: {
-                percentage: 100,
-                total: 5,
-                completed: 5
-              },
-              status: 'approved',
-              deadline: new Date(Date.now() + 864000000).toISOString()
-            },
-            {
-              id: '2',
-              name: 'Təhsil məlumatları',
-              completion: {
-                percentage: 60,
-                total: 10,
-                completed: 6
-              },
-              status: 'pending',
-              deadline: new Date(Date.now() + 172800000).toISOString()
-            }
-          ],
-          upcoming: [
-            {
-              id: '1',
-              name: 'Büdcə məlumatları',
-              deadline: new Date(Date.now() + 432000000).toISOString(),
-              daysLeft: 5,
-              completion: 0
-            }
-          ],
+          categories: [],
+          upcoming: [],
           forms: {
-            pending: 5,
-            approved: 9,
-            rejected: 2,
-            dueSoon: 1,
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            dueSoon: 0,
             overdue: 0,
-            total: 16
+            total: 0
           },
-          pendingForms: [
-            {
-              id: '1',
-              title: 'Əsas məlumatlar',
-              category: 'Umumi',
-              date: new Date(Date.now() + 172800000).toLocaleDateString(),
-              status: 'pending' as const,
-              completionPercentage: 60
-            },
-            {
-              id: '2',
-              title: 'Təhsil məlumatları',
-              category: 'Təhsil',
-              date: new Date(Date.now() + 432000000).toLocaleDateString(),
-              status: 'dueSoon' as const,
-              completionPercentage: 20
-            }
-          ],
-          completionRate: 45,
-          notifications: [
-            {
-              id: '1',
-              title: 'Son tarix xəbərdarlığı',
-              message: 'Təhsil məlumatları üçün son tarix 2 gün içindədir',
-              timestamp: new Date().toISOString(),
-              type: 'warning',
-              read: false
-            },
-            {
-              id: '2',
-              title: 'Məlumatlar təsdiqləndi',
-              message: 'Əsas məlumatlar kategoriyası sektor admini tərəfindən təsdiqləndi',
-              timestamp: new Date(Date.now() - 86400000).toISOString(),
-              type: 'success',
-              read: true
-            }
-          ]
+          pendingForms: [],
+          completionRate: 0,
+          notifications: []
         };
         
-        setData(mockData);
+        setData(defaultData);
       } else {
         console.log('Dashboard məlumatları uğurla yükləndi:', dashboardData);
         setData(dashboardData);
@@ -149,8 +83,8 @@ const useSchoolAdminDashboard = () => {
         description: err.message || t('unexpectedError'),
       });
       
-      // Backup məlumatları hazırlayaq - əsas xətalar olduqda minimal göstəriş üçün
-      setData({
+      // Minimal default məlumatlar - xəta halında
+      const defaultData: SchoolAdminDashboardData = {
         completion: { percentage: 0, total: 0, completed: 0 },
         status: { pending: 0, approved: 0, rejected: 0, total: 0 },
         categories: [],
@@ -159,7 +93,9 @@ const useSchoolAdminDashboard = () => {
         pendingForms: [],
         completionRate: 0,
         notifications: []
-      });
+      };
+      
+      setData(defaultData);
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,5 @@
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,30 +70,31 @@ serve(async (req) => {
           }
         );
       }
-      
-      // Məktəb üçün formların statistikasını alırıq
-      const { data: formData, error: formError } = await supabaseClient
-        .from('data_entries')
-        .select('category_id, status')
-        .eq('school_id', schoolId.data)
-        .is('deleted_at', null);
-        
-      if (formError) {
+
+      // Məktəb məlumatlarını əldə edək
+      const { data: schoolData, error: schoolError } = await supabaseClient
+        .from('schools')
+        .select('id, name, region_id, sector_id')
+        .eq('id', schoolId.data)
+        .single();
+
+      if (schoolError) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Form məlumatları alınarkən xəta: ' + formError.message }),
+          JSON.stringify({ success: false, error: 'Məktəb məlumatları alınarkən xəta: ' + schoolError.message }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500 
           }
         );
       }
-      
-      // Məktəb üçün kateqoriyaları alırıq
+
+      // Aktiv kateqoriyaları əldə edək
       const { data: categories, error: categoriesError } = await supabaseClient
         .from('categories')
-        .select('id, name, deadline')
+        .select('id, name, description, deadline, status, priority')
         .eq('status', 'active')
-        .is('archived', false);
+        .is('archived', false)
+        .order('priority');
         
       if (categoriesError) {
         return new Response(
@@ -105,91 +105,176 @@ serve(async (req) => {
           }
         );
       }
-      
-      // Son bildirişləri alırıq
+
+      // Hər kateqoriya üçün sütunları və məlumat daxiletmələrini əldə edək
+      const categoriesWithStats = await Promise.all(categories.map(async (category) => {
+        // Kateqoriya üçün sütunları əldə edək
+        const { data: columns, error: columnsError } = await supabaseClient
+          .from('columns')
+          .select('id, name, type, is_required')
+          .eq('category_id', category.id)
+          .eq('status', 'active');
+          
+        if (columnsError) {
+          console.error(`Sütunlar alınarkən xəta (${category.name}):`, columnsError);
+          return {
+            ...category,
+            columns: [],
+            completion: { percentage: 0, total: 0, completed: 0 },
+            status: 'pending'
+          };
+        }
+        
+        // Kateqoriya üçün məlumat daxiletmələrini əldə edək
+        const { data: entries, error: entriesError } = await supabaseClient
+          .from('data_entries')
+          .select('id, column_id, value, status')
+          .eq('school_id', schoolId.data)
+          .eq('category_id', category.id);
+          
+        if (entriesError) {
+          console.error(`Məlumat daxiletmələri alınarkən xəta (${category.name}):`, entriesError);
+          return {
+            ...category,
+            columns,
+            completion: { percentage: 0, total: 0, completed: 0 },
+            status: 'pending'
+          };
+        }
+        
+        // Tamamlanma statistikasını hesablayaq
+        const totalColumns = columns.length;
+        const filledColumns = entries ? new Set(entries.map(entry => entry.column_id)).size : 0;
+        const completionPercentage = totalColumns > 0 ? Math.round((filledColumns / totalColumns) * 100) : 0;
+        
+        // Kateqoriyanın statusunu müəyyən edək
+        let status = 'pending';
+        if (entries && entries.length > 0) {
+          const hasRejected = entries.some(entry => entry.status === 'rejected');
+          const hasPending = entries.some(entry => entry.status === 'pending');
+          const hasApproved = entries.some(entry => entry.status === 'approved');
+          
+          if (hasRejected) status = 'rejected';
+          else if (hasPending) status = 'pending';
+          else if (hasApproved && filledColumns === totalColumns) status = 'approved';
+          else status = 'in_progress';
+        } else {
+          status = 'not_started';
+        }
+        
+        return {
+          ...category,
+          columns,
+          completion: {
+            percentage: completionPercentage,
+            total: totalColumns,
+            completed: filledColumns
+          },
+          status
+        };
+      }));
+
+      // Son bildirişləri əldə edək
       const { data: notifications, error: notificationsError } = await supabaseClient
         .from('notifications')
-        .select('*')
+        .select('id, title, message, type, is_read, created_at, priority')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
         
       if (notificationsError) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Bildiriş məlumatları alınarkən xəta: ' + notificationsError.message }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500 
-          }
-        );
+        console.error('Bildiriş məlumatları alınarkən xəta:', notificationsError);
       }
-      
-      // Form statistikalarını hesablayaq
-      const pending = formData?.filter(form => form.status === 'pending').length || 0;
-      const approved = formData?.filter(form => form.status === 'approved').length || 0;
-      const rejected = formData?.filter(form => form.status === 'rejected').length || 0;
-      const total = categories?.length || 0;
-      
-      // Son müddət yaxınlaşan və keçmiş formları hesablayaq
+
+      // Ümumi tamamlanma statistikasını hesablayaq
+      const totalColumns = categoriesWithStats.reduce((sum, cat) => sum + cat.completion.total, 0);
+      const completedColumns = categoriesWithStats.reduce((sum, cat) => sum + cat.completion.completed, 0);
+      const completionRate = totalColumns > 0 ? Math.round((completedColumns / totalColumns) * 100) : 0;
+
+      // Status statistikasını hesablayaq
+      const pending = categoriesWithStats.filter(cat => cat.status === 'pending' || cat.status === 'in_progress').length;
+      const approved = categoriesWithStats.filter(cat => cat.status === 'approved').length;
+      const rejected = categoriesWithStats.filter(cat => cat.status === 'rejected').length;
+      const total = categoriesWithStats.length;
+
+      // Son müddət yaxınlaşan formları hesablayaq
       const now = new Date();
-      const dueSoon = categories?.filter(cat => {
+      const dueSoonCategories = categoriesWithStats.filter(cat => {
         if (!cat.deadline) return false;
         const deadline = new Date(cat.deadline);
         const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 3600 * 24));
         return diffDays > 0 && diffDays <= 3;
-      }).length || 0;
-      
-      const overdue = categories?.filter(cat => {
+      });
+
+      const overdueCategories = categoriesWithStats.filter(cat => {
         if (!cat.deadline) return false;
         const deadline = new Date(cat.deadline);
         return deadline < now;
-      }).length || 0;
-      
-      // Tamamlanma faizini hesablayaq
-      const completionRate = total > 0 ? Math.round(((approved + rejected) / total) * 100) : 0;
-      
+      });
+
       // Gözləyən formların siyahısını yaradaq
-      const pendingForms = categories
-        ?.filter(cat => {
-          const formForCategory = formData?.find(form => form.category_id === cat.id);
-          return !formForCategory || formForCategory.status === 'pending';
-        })
+      const pendingForms = categoriesWithStats
+        .filter(cat => cat.status !== 'approved')
         .map(cat => {
-          const formStatus = formData?.find(form => form.category_id === cat.id)?.status || 'pending';
+          const isDueSoon = cat.deadline && new Date(cat.deadline) < new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+          const isOverdue = cat.deadline && new Date(cat.deadline) < now;
+          
           return {
             id: cat.id,
             title: cat.name,
-            description: '',
-            date: cat.deadline ? new Date(cat.deadline).toISOString() : '',
-            status: formStatus,
-            completionPercentage: formStatus === 'approved' ? 100 : formStatus === 'rejected' ? 0 : 50
+            description: cat.description || '',
+            date: cat.deadline || '',
+            status: isOverdue ? 'overdue' : isDueSoon ? 'dueSoon' : cat.status,
+            completionPercentage: cat.completion.percentage
           };
-        }) || [];
-      
-      // Son 5 bildirişi formatlayaq
-      const formattedNotifications = notifications?.map(notification => ({
-        id: notification.id,
-        title: notification.title,
-        message: notification.message,
-        date: notification.created_at,
-        isRead: notification.is_read,
-        priority: notification.priority,
-        type: notification.type
-      })) || [];
-      
+        });
+
       // Dashboard məlumatlarını hazırlayaq
       dashboardData = {
+        completion: {
+          percentage: completionRate,
+          total: totalColumns,
+          completed: completedColumns
+        },
+        status: {
+          pending,
+          approved,
+          rejected,
+          total
+        },
+        categories: categoriesWithStats.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          completion: cat.completion,
+          status: cat.status,
+          deadline: cat.deadline
+        })),
+        upcoming: dueSoonCategories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          deadline: cat.deadline,
+          daysLeft: cat.deadline ? Math.ceil((new Date(cat.deadline).getTime() - now.getTime()) / (1000 * 3600 * 24)) : 0,
+          completion: cat.completion.percentage
+        })),
         forms: {
           pending,
           approved,
           rejected,
-          dueSoon,
-          overdue,
+          dueSoon: dueSoonCategories.length,
+          overdue: overdueCategories.length,
           total
         },
+        pendingForms,
         completionRate,
-        notifications: formattedNotifications,
-        pendingForms
+        notifications: notifications ? notifications.map(notification => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          timestamp: notification.created_at,
+          type: notification.type,
+          read: notification.is_read,
+          priority: notification.priority
+        })) : []
       };
     } else if (role === 'sectoradmin') {
       // Sektor admin dashboard məlumatları (gələcək implementasiya)

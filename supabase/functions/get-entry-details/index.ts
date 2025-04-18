@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,7 +40,7 @@ serve(async (req) => {
     }
     
     // Sorğu parametrlərini alırıq
-    const { schoolId, categoryId, userId } = await req.json();
+    const { schoolId, categoryId } = await req.json();
     
     if (!schoolId || !categoryId) {
       return new Response(
@@ -52,7 +52,7 @@ serve(async (req) => {
       );
     }
     
-    // İstifadəçinin məktəb admini olub-olmadığını yoxlayırıq
+    // İstifadəçinin rolunu yoxlayırıq
     const { data: userRole, error: roleError } = await supabaseClient.rpc('get_user_role_safe');
     
     if (roleError) {
@@ -82,6 +82,34 @@ serve(async (req) => {
       );
     }
     
+    // Sektor admini üçün icazəni yoxlayırıq
+    if (userRole === 'sectoradmin') {
+      // İstifadəçinin sektor ID-sini alırıq
+      const { data: userSectorId, error: sectorError } = await supabaseClient.rpc('get_user_sector_id');
+      
+      if (sectorError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'İstifadəçi sektor ID alınarkən xəta: ' + sectorError.message }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        );
+      }
+      
+      // İstifadəçinin məktəbin aid olduğu sektora icazəsi olub-olmadığını yoxlayırıq
+      if (userSectorId !== school.sector_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Bu məktəb üzərində əməliyyat aparmaq üçün icazəniz yoxdur' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 403 
+          }
+        );
+      }
+    }
+    
+    // Kateqoriya məlumatlarını alırıq
     const { data: category, error: categoryError } = await supabaseClient
       .from('categories')
       .select('id, name')
@@ -98,19 +126,33 @@ serve(async (req) => {
       );
     }
     
-    // Məlumatların statusunu 'pending' olaraq yeniləyirik
-    const { error: updateError } = await supabaseClient
+    // Kateqoriyanın sütunlarını alırıq
+    const { data: columns, error: columnsError } = await supabaseClient
+      .from('columns')
+      .select('id, name, type, options, validation_rules')
+      .eq('category_id', categoryId)
+      .order('display_order');
+      
+    if (columnsError) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Sütun məlumatları alınarkən xəta: ' + columnsError.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      );
+    }
+    
+    // Məlumatları alırıq
+    const { data: entries, error: entriesError } = await supabaseClient
       .from('data_entries')
-      .update({
-        status: 'pending',
-        updated_at: new Date().toISOString()
-      })
+      .select('id, column_id, value, status, created_at, updated_at')
       .eq('school_id', schoolId)
       .eq('category_id', categoryId);
       
-    if (updateError) {
+    if (entriesError) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Məlumatların statusu yenilənərkən xəta: ' + updateError.message }),
+        JSON.stringify({ success: false, error: 'Məlumatlar alınarkən xəta: ' + entriesError.message }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -118,65 +160,29 @@ serve(async (req) => {
       );
     }
     
-    // Sektor adminini tapırıq
-    const { data: sectorAdmins, error: sectorAdminError } = await supabaseClient
-      .from('user_roles')
-      .select('user_id')
-      .eq('sector_id', school.sector_id)
-      .eq('role', 'sectoradmin');
+    // Məlumatları formatlaşdırırıq
+    const formattedEntries = columns.map(column => {
+      const entry = entries.find(e => e.column_id === column.id);
       
-    if (sectorAdminError) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Sektor admini tapılarkən xəta: ' + sectorAdminError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      );
-    }
-    
-    // Sektor admininə bildiriş göndəririk
-    if (sectorAdmins && sectorAdmins.length > 0) {
-      const notificationPromises = sectorAdmins.map(admin => {
-        return supabaseClient
-          .from('notifications')
-          .insert({
-            user_id: admin.user_id,
-            type: 'info',
-            title: 'Yeni məlumatlar təsdiq gözləyir',
-            message: `${school.name} məktəbi "${category.name}" kateqoriyası üçün məlumatları təsdiq üçün göndərdi.`,
-            related_entity_id: categoryId,
-            related_entity_type: 'category',
-            is_read: false,
-            priority: 'high',
-            created_at: new Date().toISOString()
-          });
-      });
-      
-      await Promise.all(notificationPromises);
-    }
-    
-    // Audit log yaradırıq
-    await supabaseClient
-      .from('audit_logs')
-      .insert({
-        user_id: userId || user.id,
-        action: 'submit_for_approval',
-        entity_type: 'category',
-        entity_id: categoryId,
-        old_value: null,
-        new_value: JSON.stringify({
-          school_id: schoolId,
-          category_id: categoryId,
-          status: 'pending'
-        }),
-        created_at: new Date().toISOString()
-      });
+      return {
+        columnId: column.id,
+        columnName: column.name,
+        columnType: column.type,
+        options: column.options,
+        validationRules: column.validation_rules,
+        value: entry ? entry.value : null,
+        entryId: entry ? entry.id : null,
+        status: entry ? entry.status : null,
+        createdAt: entry ? entry.created_at : null,
+        updatedAt: entry ? entry.updated_at : null
+      };
+    });
     
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Məlumatlar uğurla təsdiq üçün göndərildi' 
+      JSON.stringify({
+        school,
+        category,
+        entries: formattedEntries
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

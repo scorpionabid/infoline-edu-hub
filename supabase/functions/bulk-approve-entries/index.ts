@@ -5,12 +5,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Content-Type': 'application/json'
 };
 
 serve(async (req) => {
   // CORS üçün OPTIONS sorğusunu emal edirik
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
   
   try {
@@ -24,22 +26,6 @@ serve(async (req) => {
         },
       }
     );
-    
-    // Sorğu body-sini alırıq
-    const { entryIds, schoolId, categoryId } = await req.json();
-    
-    if (!entryIds || !Array.isArray(entryIds) || !schoolId || !categoryId) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Zəruri parametrlər çatışmır: entryIds, schoolId və ya categoryId'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      );
-    }
     
     // İstifadəçi məlumatlarını alırıq
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
@@ -59,7 +45,7 @@ serve(async (req) => {
     
     if (roleError) {
       return new Response(
-        JSON.stringify({ success: false, error: 'İstifadəçi rolu alınamadı' }),
+        JSON.stringify({ success: false, error: 'İstifadəçi rolu alınarkən xəta: ' + roleError.message }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -67,10 +53,10 @@ serve(async (req) => {
       );
     }
     
-    // Təsdiq səlahiyyətini yoxlayırıq
-    if (!['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole)) {
+    // Yalnız sektor admini və ya region admini və ya superadmin bu funksiyanı çağıra bilər
+    if (userRole !== 'sectoradmin' && userRole !== 'regionadmin' && userRole !== 'superadmin') {
       return new Response(
-        JSON.stringify({ success: false, error: 'Məlumatları təsdiqləmək üçün icazəniz yoxdur' }),
+        JSON.stringify({ success: false, error: 'Bu əməliyyat üçün icazəniz yoxdur' }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 403 
@@ -78,18 +64,51 @@ serve(async (req) => {
       );
     }
     
-    // Məlumatların toplu təsdiqlənməsi
-    const { data, error } = await supabaseClient.rpc('bulk_approve_data_entries', {
-      p_entry_ids: entryIds,
-      p_school_id: schoolId,
-      p_category_id: categoryId,
-      p_approved_by: user.id
-    });
+    // Sorğu parametrlərini alırıq
+    const { schoolId, categoryId, action, reason, entryIds } = await req.json();
     
-    if (error) {
-      console.error("Məlumatlar təsdiqlənərkən xəta:", error);
+    if (!schoolId || !categoryId || !action || !entryIds) {
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
+        JSON.stringify({ success: false, error: 'Məktəb ID, Kateqoriya ID, əməliyyat və ya məlumat ID-ləri təqdim edilməyib' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    // Əməliyyatın düzgün olub-olmadığını yoxlayırıq
+    if (action !== 'approve' && action !== 'reject') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Yanlış əməliyyat: ' + action + '. Yalnız "approve" və ya "reject" ola bilər' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    // Əgər əməliyyat "reject" olarsa, səbəb tələb olunur
+    if (action === 'reject' && !reason) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Rədd etmək üçün səbəb göstərilməlidir' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    // Məktəb və kateqoriya məlumatlarını alırıq
+    const { data: school, error: schoolError } = await supabaseClient
+      .from('schools')
+      .select('id, name, sector_id, region_id')
+      .eq('id', schoolId)
+      .single();
+      
+    if (schoolError) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Məktəb məlumatları alınarkən xəta: ' + schoolError.message }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -97,26 +116,223 @@ serve(async (req) => {
       );
     }
     
-    // Bildiriş yaradırıq
-    const { error: notificationError } = await supabaseClient
-      .from('notifications')
-      .insert({
-        user_id: data.school_admin_id, // Məktəb admininə bildiriş
-        type: 'data_approved',
-        title: 'Məlumatlar təsdiqləndi',
-        message: `${categoryId} kateqoriyasına aid ${entryIds.length} məlumat təsdiqləndi`,
-        related_entity_type: 'category',
-        related_entity_id: categoryId,
-        priority: 'normal'
-      });
+    // Sektor admini üçün icazəni yoxlayırıq
+    if (userRole === 'sectoradmin') {
+      // İstifadəçinin sektor ID-sini alırıq
+      const { data: userSectorId, error: sectorError } = await supabaseClient.rpc('get_user_sector_id');
+      
+      if (sectorError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'İstifadəçi sektor ID alınarkən xəta: ' + sectorError.message }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        );
+      }
+      
+      // İstifadəçinin məktəbin aid olduğu sektora icazəsi olub-olmadığını yoxlayırıq
+      if (userSectorId !== school.sector_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Bu məktəb üzərində əməliyyat aparmaq üçün icazəniz yoxdur' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 403 
+          }
+        );
+      }
+    }
     
-    if (notificationError) {
-      console.error("Bildiriş yaradılarkən xəta:", notificationError);
-      // Bildiriş yaratma xətası əsas əməliyyatı dayandırmamalıdır
+    // Region admini üçün icazəni yoxlayırıq
+    if (userRole === 'regionadmin') {
+      // İstifadəçinin region ID-sini alırıq
+      const { data: userRegionId, error: regionError } = await supabaseClient.rpc('get_user_region_id');
+      
+      if (regionError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'İstifadəçi region ID alınarkən xəta: ' + regionError.message }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        );
+      }
+      
+      // İstifadəçinin məktəbin aid olduğu regiona icazəsi olub-olmadığını yoxlayırıq
+      if (userRegionId !== school.region_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Bu məktəb üzərində əməliyyat aparmaq üçün icazəniz yoxdur' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 403 
+          }
+        );
+      }
+    }
+    
+    // Kateqoriya məlumatlarını alırıq
+    const { data: category, error: categoryError } = await supabaseClient
+      .from('categories')
+      .select('id, name')
+      .eq('id', categoryId)
+      .single();
+      
+    if (categoryError) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Kateqoriya məlumatları alınarkən xəta: ' + categoryError.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      );
+    }
+    
+    // Məktəb adminini tapırıq
+    const { data: schoolAdmins, error: schoolAdminError } = await supabaseClient
+      .from('user_roles')
+      .select('user_id')
+      .eq('school_id', schoolId)
+      .eq('role', 'schooladmin');
+      
+    if (schoolAdminError) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Məktəb admini tapılarkən xəta: ' + schoolAdminError.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      );
+    }
+    
+    // Məlumatların statusunu yeniləyirik
+    if (action === 'approve') {
+      // Məlumatları təsdiqləyirik
+      const { error: updateError } = await supabaseClient
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .in('id', entryIds);
+        
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Məlumatların statusu yenilənərkən xəta: ' + updateError.message }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        );
+      }
+      
+      // Məktəb admininə bildiriş göndəririk
+      if (schoolAdmins && schoolAdmins.length > 0) {
+        const notificationPromises = schoolAdmins.map(admin => {
+          return supabaseClient
+            .from('notifications')
+            .insert({
+              user_id: admin.user_id,
+              type: 'success',
+              title: 'Məlumatlar təsdiqləndi',
+              message: `"${category.name}" kateqoriyası üçün daxil etdiyiniz məlumatlar təsdiqləndi.`,
+              related_entity_id: categoryId,
+              related_entity_type: 'category',
+              is_read: false,
+              priority: 'normal',
+              created_at: new Date().toISOString()
+            });
+        });
+        
+        await Promise.all(notificationPromises);
+      }
+      
+      // Audit log yaradırıq
+      await supabaseClient
+        .from('audit_logs')
+        .insert({
+          user_id: user.id,
+          action: 'approve_entries',
+          entity_type: 'category',
+          entity_id: categoryId,
+          old_value: JSON.stringify({ status: 'pending' }),
+          new_value: JSON.stringify({ 
+            status: 'approved',
+            school_id: schoolId,
+            category_id: categoryId
+          }),
+          created_at: new Date().toISOString()
+        });
+        
+    } else if (action === 'reject') {
+      // Məlumatları rədd edirik
+      const { error: updateError } = await supabaseClient
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejected_by: user.id,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', entryIds);
+        
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Məlumatların statusu yenilənərkən xəta: ' + updateError.message }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        );
+      }
+      
+      // Məktəb admininə bildiriş göndəririk
+      if (schoolAdmins && schoolAdmins.length > 0) {
+        const notificationPromises = schoolAdmins.map(admin => {
+          return supabaseClient
+            .from('notifications')
+            .insert({
+              user_id: admin.user_id,
+              type: 'error',
+              title: 'Məlumatlar rədd edildi',
+              message: `"${category.name}" kateqoriyası üçün daxil etdiyiniz məlumatlar rədd edildi. Səbəb: ${reason}`,
+              related_entity_id: categoryId,
+              related_entity_type: 'category',
+              is_read: false,
+              priority: 'high',
+              created_at: new Date().toISOString()
+            });
+        });
+        
+        await Promise.all(notificationPromises);
+      }
+      
+      // Audit log yaradırıq
+      await supabaseClient
+        .from('audit_logs')
+        .insert({
+          user_id: user.id,
+          action: 'reject_entries',
+          entity_type: 'category',
+          entity_id: categoryId,
+          old_value: JSON.stringify({ status: 'pending' }),
+          new_value: JSON.stringify({ 
+            status: 'rejected',
+            school_id: schoolId,
+            category_id: categoryId,
+            reason: reason
+          }),
+          created_at: new Date().toISOString()
+        });
     }
     
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ 
+        success: true, 
+        message: action === 'approve' ? 'Məlumatlar uğurla təsdiqləndi' : 'Məlumatlar uğurla rədd edildi' 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

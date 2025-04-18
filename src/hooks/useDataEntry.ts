@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
@@ -8,7 +7,7 @@ import { toast } from 'sonner';
 import { useFormState } from './form/useFormState';
 import { useFormActions } from './form/useFormActions';
 import { useFormInitialization } from './form/useFormInitialization';
-import { DataEntryForm, EntryValue, DataEntrySaveStatus, UseDataEntryProps, UseDataEntryResult, CategoryWithColumns } from '@/types/dataEntry';
+import { DataEntryForm, EntryValue, DataEntrySaveStatus, UseDataEntryProps, UseDataEntryResult, CategoryWithColumns, ColumnValidationError } from '@/types/dataEntry';
 
 /**
  * @description Məlumatların daxil edilməsi üçün hook
@@ -69,7 +68,8 @@ export const useDataEntry = ({
       const { data: entriesData, error: entriesError } = await supabase
         .from('data_entries')
         .select('*')
-        .eq('school_id', schoolId);
+        .eq('school_id', schoolId)
+        .is('deleted_at', null);
       
       if (entriesError) {
         throw entriesError;
@@ -89,7 +89,9 @@ export const useDataEntry = ({
       // Update form data
       updateFormData({
         schoolId,
-        entries: convertedEntries
+        entries: convertedEntries,
+        status: getFormStatus(convertedEntries),
+        lastSaved: new Date().toISOString()
       });
       
       // If no existing entries, initialize empty form
@@ -125,6 +127,20 @@ export const useDataEntry = ({
     }
   }, [schoolId, categories, categoriesLoading, loadDataForSchool]);
   
+  // Helper function to determine form status based on entries
+  const getFormStatus = (entries: EntryValue[]): 'draft' | 'pending' | 'approved' | 'rejected' => {
+    if (!entries || entries.length === 0) return 'draft';
+    
+    const hasRejected = entries.some(entry => entry.status === 'rejected');
+    const hasPending = entries.some(entry => entry.status === 'pending');
+    const hasApproved = entries.some(entry => entry.status === 'approved');
+    
+    if (hasRejected) return 'rejected';
+    if (hasPending) return 'pending';
+    if (hasApproved) return 'approved';
+    return 'draft';
+  };
+
   // Form actions
   const { 
     isAutoSaving, 
@@ -174,48 +190,43 @@ export const useDataEntry = ({
     setSaveStatus(DataEntrySaveStatus.SAVING);
     
     try {
-      // For each entry, insert or update in the database
-      for (const entry of formData.entries) {
+      // Batch insert/update for better performance
+      const upsertData = formData.entries.map(entry => {
         const { columnId, value } = entry;
         
-        if (!columnId) continue;
+        if (!columnId) return null;
         
-        // Check if entry already exists
-        const { data: existingEntry } = await supabase
-          .from('data_entries')
-          .select('id')
-          .eq('school_id', schoolId)
-          .eq('category_id', categoryId)
-          .eq('column_id', columnId)
-          .maybeSingle();
-        
-        if (existingEntry) {
-          // Update existing entry
-          await supabase
-            .from('data_entries')
-            .update({
-              value: String(value),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingEntry.id);
-        } else {
-          // Insert new entry
-          await supabase
-            .from('data_entries')
-            .insert({
-              school_id: schoolId,
-              category_id: categoryId,
-              column_id: columnId,
-              value: String(value),
-              status: 'pending',
-              created_by: user.id,
-              updated_at: new Date().toISOString()
-            });
-        }
+        return {
+          school_id: schoolId,
+          category_id: categoryId,
+          column_id: columnId,
+          value: String(value || ''),
+          status: 'pending',
+          created_by: user.id,
+          updated_at: new Date().toISOString()
+        };
+      }).filter(Boolean);
+      
+      if (upsertData.length === 0) {
+        setSaveStatus(DataEntrySaveStatus.IDLE);
+        return Promise.resolve();
+      }
+      
+      // Use upsert operation for better performance
+      const { error: upsertError } = await supabase
+        .from('data_entries')
+        .upsert(upsertData, {
+          onConflict: 'school_id,category_id,column_id',
+          ignoreDuplicates: false
+        });
+      
+      if (upsertError) {
+        throw upsertError;
       }
       
       updateFormData({
-        lastSaved: new Date().toISOString()
+        lastSaved: new Date().toISOString(),
+        status: 'pending'
       });
       
       setSaveStatus(DataEntrySaveStatus.SAVED);
@@ -245,21 +256,42 @@ export const useDataEntry = ({
       return Promise.reject(error);
     }
   }, [formData.entries, schoolId, categoryId, t, updateFormData, user?.id]);
-  
+
   // Submit form for approval
   const submitForApproval = useCallback(() => {
     setSubmitting(true);
     
     handleSave()
-      .then(() => {
-        updateFormData({
-          status: 'pending'
-        });
-        
-        toast.success(t('dataSubmittedForApproval'));
-        
-        if (onComplete) {
-          onComplete();
+      .then(async () => {
+        try {
+          // Call Edge Function to submit category for approval
+          const { error: submitError } = await supabase.functions.invoke('submit-category-for-approval', {
+            body: { 
+              schoolId, 
+              categoryId,
+              userId: user?.id
+            }
+          });
+          
+          if (submitError) {
+            throw submitError;
+          }
+          
+          updateFormData({
+            status: 'pending',
+            submittedAt: new Date().toISOString()
+          });
+          
+          toast.success(t('dataSubmittedForApproval'));
+          
+          if (onComplete) {
+            onComplete();
+          }
+        } catch (error: any) {
+          console.error('Təsdiq üçün göndərilən zaman xəta:', error);
+          toast.error(t('errorSubmittingData'), {
+            description: error.message
+          });
         }
       })
       .catch(error => {
@@ -269,14 +301,114 @@ export const useDataEntry = ({
       .finally(() => {
         setSubmitting(false);
       });
-  }, [handleSave, onComplete, t, updateFormData]);
-  
-  // Handle submit for approval
-  const handleSubmitForApproval = useCallback(async () => {
-    await handleSave();
-    submitForApproval();
-    return Promise.resolve();
-  }, [handleSave, submitForApproval]);
+  }, [handleSave, onComplete, t, updateFormData, schoolId, categoryId, user?.id]);
+
+  // Calculate completion percentage
+  const calculateCompletionPercentage = useCallback((entries: EntryValue[], columns: Column[]) => {
+    if (!columns || columns.length === 0) return 0;
+    
+    const requiredColumns = columns.filter(col => col.is_required);
+    if (requiredColumns.length === 0) return 100;
+    
+    const filledRequiredColumns = requiredColumns.filter(col => {
+      const entry = entries.find(e => e.columnId === col.id);
+      return entry && entry.value !== null && entry.value !== undefined && entry.value !== '';
+    });
+    
+    return Math.round((filledRequiredColumns.length / requiredColumns.length) * 100);
+  }, []);
+
+  // Validate form before submission
+  const validateForm = useCallback(() => {
+    if (!formData.entries || !categoryId) return false;
+    
+    const selectedCategory = categories.find(cat => cat.id === categoryId);
+    if (!selectedCategory) return false;
+    
+    const errors: ColumnValidationError[] = [];
+    
+    selectedCategory.columns.forEach(column => {
+      const entry = formData.entries.find(e => e.columnId === column.id);
+      const value = entry ? entry.value : null;
+      
+      // Check required fields
+      if (column.is_required && (value === null || value === undefined || value === '')) {
+        errors.push({
+          columnId: column.id,
+          message: t('fieldIsRequired'),
+          columnName: column.name
+        });
+        return;
+      }
+      
+      // Skip validation if value is empty and not required
+      if (!column.is_required && (value === null || value === undefined || value === '')) {
+        return;
+      }
+      
+      // Validate based on column type
+      if (column.type === 'number') {
+        const numValue = Number(value);
+        
+        if (isNaN(numValue)) {
+          errors.push({
+            columnId: column.id,
+            message: t('invalidNumber'),
+            columnName: column.name
+          });
+          return;
+        }
+        
+        if (column.validation) {
+          if (column.validation.minValue !== undefined && numValue < column.validation.minValue) {
+            errors.push({
+              columnId: column.id,
+              message: t('valueTooSmall', { min: column.validation.minValue }),
+              columnName: column.name
+            });
+          }
+          
+          if (column.validation.maxValue !== undefined && numValue > column.validation.maxValue) {
+            errors.push({
+              columnId: column.id,
+              message: t('valueTooLarge', { max: column.validation.maxValue }),
+              columnName: column.name
+            });
+          }
+        }
+      } else if (column.type === 'text' || column.type === 'textarea') {
+        const strValue = String(value || '');
+        
+        if (column.validation) {
+          if (column.validation.minLength !== undefined && strValue.length < column.validation.minLength) {
+            errors.push({
+              columnId: column.id,
+              message: t('textTooShort', { min: column.validation.minLength }),
+              columnName: column.name
+            });
+          }
+          
+          if (column.validation.maxLength !== undefined && strValue.length > column.validation.maxLength) {
+            errors.push({
+              columnId: column.id,
+              message: t('textTooLong', { max: column.validation.maxLength }),
+              columnName: column.name
+            });
+          }
+          
+          if (column.validation.pattern && !new RegExp(column.validation.pattern).test(strValue)) {
+            errors.push({
+              columnId: column.id,
+              message: column.validation.customMessage || t('invalidFormat'),
+              columnName: column.name
+            });
+          }
+        }
+      }
+    });
+    
+    return errors.length === 0;
+  }, [formData.entries, categoryId, categories, t]);
 
   return {
     formData,
@@ -288,7 +420,7 @@ export const useDataEntry = ({
     saveStatus,
     isDataModified,
     handleSave,
-    handleSubmitForApproval,
+    handleSubmitForApproval: submitForApproval,
     handleEntriesChange,
     loadDataForSchool,
     entries,
@@ -302,8 +434,8 @@ export const useDataEntry = ({
     getErrorForColumn: () => [],
     validation: {
       errors: [],
-      isValid: true,
-      validateForm: () => true
+      isValid: validateForm(),
+      validateForm
     }
   };
 };
