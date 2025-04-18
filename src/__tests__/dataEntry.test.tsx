@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import DataEntry from '../pages/DataEntry';
+import DataEntryPage from '../pages/DataEntry';
+import { LanguageProvider } from '../context/LanguageContext';
 
-// MemoryRouter və digər React Router komponentlərini saxlamaq üçün
+// React Router mock
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -13,76 +14,129 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Auth Context
-vi.mock('../context/AuthContext', () => ({
+// Auth Context mock
+vi.mock('../context/auth', () => ({
   useAuth: () => ({
     user: {
-      id: 'user-1',
-      schoolId: 'school-1',
-      role: 'schooladmin'
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'schooladmin',
+      schoolId: '123e4567-e89b-12d3-a456-426614174001'
     },
-    isAuthenticated: true
+    isAuthenticated: true,
+    isLoading: false,
+    error: null
   })
 }));
 
-// Language Context
+// Language Context mock
 vi.mock('../context/LanguageContext', () => ({
   useLanguage: () => ({
-    t: (key) => key, // Key-i olduğu kimi qaytarır
-    language: 'az',
-    setLanguage: vi.fn(),
-    languages: { az: { nativeName: 'Azərbaycan', flag: '🇦🇿' } }
+    t: (key: string) => key,
+    currentLanguage: 'az',
+    setLanguage: vi.fn()
+  }),
+  LanguageProvider: ({ children }) => children
+}));
+
+// Category Data Hook mock
+vi.mock('../hooks/dataEntry/useCategoryData', () => ({
+  useCategoryData: () => ({
+    categories: [
+      {
+        id: 1,
+        name: 'Sektorlara aid kateqoriya',
+        description: 'Sektorlar üzrə məlumatlar',
+        columns: [
+          { id: 1, name: 'Sektor adı', type: 'text', required: true },
+          { id: 2, name: 'Məktəb sayı', type: 'number', required: true }
+        ]
+      },
+      {
+        id: 2,
+        name: 'Şagird Statistikası',
+        description: 'Şagirdlər haqqında məlumatlar',
+        columns: [
+          { id: 3, name: 'Sinif', type: 'text', required: true },
+          { id: 4, name: 'Şagird sayı', type: 'number', required: true }
+        ]
+      },
+      {
+        id: 3,
+        name: 'Müəllim və personal heyyəti',
+        description: 'Müəllim və personal haqqında məlumatlar',
+        columns: [
+          { id: 5, name: 'Vəzifə', type: 'text', required: true },
+          { id: 6, name: 'İşçi sayı', type: 'number', required: true }
+        ]
+      },
+      {
+        id: 4,
+        name: 'Təhsil Keyfiyyət Göstəriciləri',
+        description: 'Təhsil keyfiyyəti haqqında məlumatlar',
+        columns: [
+          { id: 7, name: 'Göstərici', type: 'text', required: true },
+          { id: 8, name: 'Dəyər', type: 'number', required: true }
+        ]
+      }
+    ],
+    loading: false,
+    error: null,
+    refreshCategories: vi.fn()
   })
 }));
 
-// Toasts
-vi.mock('../components/ui/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn()
-  })
-}));
-
-// Mock data və servisləri
-vi.mock('../services/dataEntryService', () => ({
-  fetchCategoriesWithColumns: vi.fn().mockResolvedValue([
-    {
-      id: 'cat-1',
-      name: 'Test Category',
-      description: 'Test Description',
-      columns: [{
-        id: 'col-1',
-        name: 'Test Column',
-        type: 'text'
-      }]
-    }
-  ]),
-  fetchSchoolDataEntries: vi.fn().mockResolvedValue({}),
-  saveDataEntryValue: vi.fn().mockResolvedValue({ success: true }),
-  saveAllCategoryData: vi.fn().mockResolvedValue({ success: true }),
-  submitCategoryForApproval: vi.fn().mockResolvedValue({ success: true }),
-  prepareExcelTemplateData: vi.fn().mockReturnValue({})
-}));
-
-// DOM-əsaslı testlər
 describe('DataEntry Component', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
   });
 
-  it('loading spinnerini göstərir', () => {
+  it('loading spinnerini göstərir', async () => {
     render(
       <MemoryRouter>
-        <DataEntry />
+        <LanguageProvider>
+          <DataEntryPage />
+        </LanguageProvider>
       </MemoryRouter>
     );
-    
-    // Spinner elementini yoxlayırıq
-    const spinner = document.querySelector('.animate-spin');
-    expect(spinner).toBeInTheDocument();
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  // Test xətasını təsdiqlə, amma bunu boşuna test kimi işarələyirərk 
-  it.todo('kateqoriya seçimi göstərilir (SKIP - servis çağrısı problemi)', async () => {
-    // Bu test servis çağırılması problemini həll etdikdən sonra yazılacaq
+  it('kateqoriyaları düzgün göstərir', async () => {
+    render(
+      <MemoryRouter>
+        <LanguageProvider>
+          <DataEntryPage />
+        </LanguageProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Sektorlara aid kateqoriya')).toBeInTheDocument();
+      expect(screen.getByText('Şagird Statistikası')).toBeInTheDocument();
+      expect(screen.getByText('Müəllim və personal heyyəti')).toBeInTheDocument();
+      expect(screen.getByText('Təhsil Keyfiyyət Göstəriciləri')).toBeInTheDocument();
+    });
+  });
+
+  it('kateqoriya seçildikdə formu göstərir', async () => {
+    render(
+      <MemoryRouter>
+        <LanguageProvider>
+          <DataEntryPage />
+        </LanguageProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      const categoryButton = screen.getByText('Sektorlara aid kateqoriya');
+      expect(categoryButton).toBeInTheDocument();
+      fireEvent.click(categoryButton);
+    }, { timeout: 5000 });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sektor adı')).toBeInTheDocument();
+      expect(screen.getByText('Məktəb sayı')).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 });

@@ -205,4 +205,76 @@ describe('Login Page', () => {
     // onu yoxlaya bilərik ki, render uğurla tamamlanıb
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
   });
+
+  it('superadmin istifadəçisini dashboard-a yönləndirir', async () => {
+    mockUseAuth({ 
+      isAuthenticated: true, 
+      user: { ...mockUser, role: 'superadmin' }
+    });
+    mockPermissionsHook('superadmin');
+    
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/test-path', { replace: true });
+    });
+  });
+
+  it('regionadmin istifadəçisini dashboard-a yönləndirir', async () => {
+    mockUseAuth({ 
+      isAuthenticated: true, 
+      user: { ...mockUser, role: 'regionadmin' }
+    });
+    mockPermissionsHook('regionadmin');
+    
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/test-path', { replace: true });
+    });
+  });
+
+  it('sektoradmin istifadəçisini dashboard-a yönləndirir', async () => {
+    mockUseAuth({ 
+      isAuthenticated: true, 
+      user: { ...mockUser, role: 'sektoradmin' }
+    });
+    mockPermissionsHook('sektoradmin');
+    
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/test-path', { replace: true });
+    });
+  });
+
+  it('mektebadmin istifadəçisini dashboard-a yönləndirir', async () => {
+    mockUseAuth({ 
+      isAuthenticated: true, 
+      user: { ...mockUser, role: 'mektebadmin' }
+    });
+    mockPermissionsHook('mektebadmin');
+    
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/test-path', { replace: true });
+    });
+  });
 });
