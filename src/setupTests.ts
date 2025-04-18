@@ -126,7 +126,23 @@ const localStorageMock = {
   length: 0,
   key: vi.fn(),
 };
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+Object.defineProperty(window, 'performance', {
+  value: {
+    ...window.performance,
+    now: () => Date.now(),
+    mark: vi.fn(),
+    measure: vi.fn(),
+    getEntriesByName: vi.fn(),
+    clearMarks: vi.fn(),
+    clearMeasures: vi.fn(),
+    // Əlavə property-ləri də əlavə edin (və ya mövcud olanları saxlayın)
+    eventCounts: {},
+    navigation: {},
+    onresourcetimingbufferfull: null,
+    timeOrigin: Date.now(),
+    // və s.
+  }
+});
 
 // Default auth state
 const mockAuthState = {
@@ -166,6 +182,7 @@ export const createTestWrapper = (props: TestWrapperProps = { children: null }) 
     return React.createElement(
       AuthProvider,
       { 
+        children: innerChildren,
         supabaseClient: supabase,
         initialSession: initialAuthState.session
       },
