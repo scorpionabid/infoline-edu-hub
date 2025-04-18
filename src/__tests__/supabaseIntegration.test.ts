@@ -5,6 +5,7 @@ import { useSupabaseSchools } from '../hooks/useSupabaseSchools';
 import { createTestWrapper } from '../setupTests';
 import { createClient } from '@supabase/supabase-js';
 
+// Get mocked Supabase client
 const getMockSupabase = () => createClient('http://localhost:54321', 'test-anon-key');
 
 // Mock useSupabaseSchools hook
@@ -36,7 +37,9 @@ describe('Supabase Authentication', () => {
     supabase.auth.signInWithPassword = mockSignIn;
 
     const TestComponent = () => {
-      return <div>Test Component</div>;
+      return (
+        <div>Test Component</div>
+      );
     };
 
     render(<TestComponent />, { wrapper: createTestWrapper() });
@@ -52,7 +55,9 @@ describe('Supabase Authentication', () => {
     supabase.auth.signInWithPassword = mockSignIn;
 
     const TestComponent = () => {
-      return <div>Test Component</div>;
+      return (
+        <div>Test Component</div>
+      );
     };
 
     render(<TestComponent />, { wrapper: createTestWrapper() });
@@ -128,3 +133,4 @@ describe('Supabase Schools Integration', () => {
     });
   });
 });
+
