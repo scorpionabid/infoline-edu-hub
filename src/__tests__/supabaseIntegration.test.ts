@@ -133,4 +133,3 @@ describe('Supabase Schools Integration', () => {
     });
   });
 });
-
