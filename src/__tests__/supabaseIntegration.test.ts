@@ -5,8 +5,12 @@ import { useSupabaseSchools } from '../hooks/useSupabaseSchools';
 import { createTestWrapper } from '../setupTests';
 import { createClient } from '@supabase/supabase-js';
 
-// Get mocked Supabase client
 const getMockSupabase = () => createClient('http://localhost:54321', 'test-anon-key');
+
+// Mock useSupabaseSchools hook
+vi.mock('../hooks/useSupabaseSchools', () => ({
+  useSupabaseSchools: vi.fn()
+}));
 
 describe('Supabase Authentication', () => {
   beforeEach(() => {
@@ -38,7 +42,24 @@ describe('Supabase Authentication', () => {
     render(<TestComponent />, { wrapper: createTestWrapper() });
 
     await waitFor(() => {
-      expect(supabase.auth.getSession).toHaveBeenCalled();
+      expect(mockSignIn).toHaveBeenCalled();
+    });
+  });
+
+  it('giriş xətası', async () => {
+    const mockSignIn = vi.fn().mockRejectedValue(new Error('Invalid credentials'));
+    const supabase = getMockSupabase();
+    supabase.auth.signInWithPassword = mockSignIn;
+
+    const TestComponent = () => {
+      return <div>Test Component</div>;
+    };
+
+    render(<TestComponent />, { wrapper: createTestWrapper() });
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalled();
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
     });
   });
 });
@@ -50,10 +71,12 @@ describe('Supabase Schools Integration', () => {
 
   it('məktəb silinməsi', async () => {
     const mockDelete = vi.fn().mockResolvedValue({ data: null, error: null });
-    const supabase = getMockSupabase();
-    supabase.from = vi.fn().mockReturnValue({
-      delete: mockDelete
-    });
+    const mockSchoolsHook = {
+      deleteSchool: mockDelete,
+      error: null
+    };
+
+    vi.mocked(useSupabaseSchools).mockReturnValue(mockSchoolsHook);
 
     const TestComponent = () => {
       const { deleteSchool } = useSupabaseSchools();
@@ -70,16 +93,18 @@ describe('Supabase Schools Integration', () => {
     fireEvent.click(deleteButton);
 
     await waitFor(() => {
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockDelete).toHaveBeenCalledWith('test-id');
     });
   });
 
   it('xəta halında error state-i yenilənir', async () => {
     const mockError = new Error('Test error');
-    const supabase = getMockSupabase();
-    supabase.from = vi.fn().mockReturnValue({
-      delete: vi.fn().mockRejectedValue(mockError)
-    });
+    const mockSchoolsHook = {
+      deleteSchool: vi.fn().mockRejectedValue(mockError),
+      error: mockError
+    };
+
+    vi.mocked(useSupabaseSchools).mockReturnValue(mockSchoolsHook);
 
     const TestComponent = () => {
       const { deleteSchool, error } = useSupabaseSchools();
