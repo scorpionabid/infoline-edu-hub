@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User } from '@/types/user';
 import ReportChart from './ReportChart';
-import ReportTable from './ReportTable';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUsers } from '@/hooks/users/useUsers';
 import { Label } from '@/components/ui/label';

@@ -9,8 +9,8 @@ import { useUsers } from '@/hooks/users/useUsers';
 import { FullUserData } from '@/types/supabase';
 import { User } from '@/types/user';
 import { useLanguage } from '@/context/LanguageContext';
-import { assignExistingUserAsSectorAdmin } from '@/services/sectorService';
 import { toast } from 'sonner';
+import { assignExistingUserAsSectorAdmin } from '@/services/sectorService';
 
 interface ExistingUserSectorAdminDialogProps {
   isOpen: boolean;
