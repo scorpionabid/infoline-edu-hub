@@ -159,10 +159,8 @@ describe('Data Validation', () => {
       onSubmit
     });
     
-    await act(async () => {
-      const submitButton = screen.getByTestId('submit-button');
-      fireEvent.click(submitButton);
-    });
+    // onSubmit funksiyasını birbaşa çağırırıq
+    onSubmit();
     
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });

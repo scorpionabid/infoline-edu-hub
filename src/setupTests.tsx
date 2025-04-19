@@ -33,19 +33,13 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Test wrapper funksiyası
 export const createTestWrapper = (initialRoute = '/') => {
-  return ({ children }) => {
-    return React.createElement(
-      MemoryRouter,
-      { initialEntries: [initialRoute] },
-      React.createElement(
-        AuthProvider,
-        null,
-        React.createElement(
-          LanguageProvider,
-          null,
-          children
-        )
-      )
-    );
-  };
+  return ({ children }) => (
+    <MemoryRouter initialEntries={[initialRoute]}>
+      <AuthProvider>
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
+      </AuthProvider>
+    </MemoryRouter>
+  );
 };
