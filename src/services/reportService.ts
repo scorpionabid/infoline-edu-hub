@@ -438,3 +438,74 @@ export const exportReportToExcel = async (report: Report): Promise<void> => {
     throw handleError(error);
   }
 };
+
+// Məlumatların statusunu yeniləmək üçün funksiya
+export const updateDataStatus = async (
+  schoolId: string,
+  categoryId: string,
+  status: 'pending' | 'approved' | 'rejected',
+  feedback?: string
+): Promise<void> => {
+  try {
+    // Əvvəlcə mövcud məlumatları yoxlayırıq
+    const { data: existingData, error: fetchError } = await supabase
+      .from('school_data_submissions')
+      .select('*')
+      .eq('school_id', schoolId)
+      .eq('category_id', categoryId)
+      .single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
+      throw fetchError;
+    }
+    
+    const currentDate = new Date().toISOString();
+    
+    if (existingData) {
+      // Mövcud məlumatları yeniləyirik
+      const { error: updateError } = await supabase
+        .from('school_data_submissions')
+        .update({
+          status: status,
+          feedback: feedback || existingData.feedback,
+          updated_at: currentDate,
+          reviewed_at: currentDate
+        })
+        .eq('id', existingData.id);
+      
+      if (updateError) throw updateError;
+    } else {
+      // Yeni məlumat yaradırıq
+      const { error: insertError } = await supabase
+        .from('school_data_submissions')
+        .insert({
+          school_id: schoolId,
+          category_id: categoryId,
+          status: status,
+          feedback: feedback || '',
+          created_at: currentDate,
+          updated_at: currentDate,
+          reviewed_at: currentDate
+        });
+      
+      if (insertError) throw insertError;
+    }
+    
+    // Status dəyişikliyi haqqında jurnal qeydini əlavə edirik
+    await supabase
+      .from('data_status_history')
+      .insert({
+        school_id: schoolId,
+        category_id: categoryId,
+        status: status,
+        feedback: feedback || '',
+        created_at: currentDate
+      });
+    
+    // Bildiriş göndəririk (bu hissə daha sonra əlavə edilə bilər)
+    // await sendNotification(schoolId, status, feedback);
+    
+  } catch (error) {
+    throw handleError(error);
+  }
+};
