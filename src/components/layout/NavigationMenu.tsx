@@ -88,7 +88,7 @@ const NavigationMenu: React.FC = () => {
         title: t('dataEntry'),
         icon: <FileText className="h-5 w-5" />,
         link: '/data-entry',
-        roles: ['schooladmin'],
+        roles: ['superadmin', 'sectoradmin', 'schooladmin'],
       },
       {
         title: t('reports'),
