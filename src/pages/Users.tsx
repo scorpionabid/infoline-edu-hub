@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import UserList from '@/components/users/UserList';
@@ -11,8 +10,8 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Users = () => {
   const { t } = useLanguage();
-  const { isRegionAdmin, isSuperAdmin } = usePermissions();
-  const isSuperOrRegionAdmin = isSuperAdmin || isRegionAdmin;
+  const { isRegionAdmin, isSuperAdmin, isSectorAdmin, sectorId } = usePermissions();
+  const isAuthorized = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -21,24 +20,30 @@ const Users = () => {
   
   // Redirect if not allowed to access this page
   React.useEffect(() => {
-    if (!isSuperOrRegionAdmin) {
+    if (!isAuthorized) {
       navigate('/dashboard');
     }
-  }, [isSuperOrRegionAdmin, navigate]);
+  }, [isAuthorized, navigate]);
 
-  if (!isSuperOrRegionAdmin) {
+  if (!isAuthorized) {
     return null;
   }
 
-  // SuperAdmin bütün entity növlərinə çıxışı var, RegionAdmin yalnız sektor və məktəblərə
-  const entityTypes: Array<'region' | 'sector' | 'school'> = isSuperAdmin 
-    ? ['region', 'sector', 'school'] 
-    : ['sector', 'school'];
+  // SuperAdmin bütün entity növlərinə çıxışı var, RegionAdmin yalnız sektor və məktəblərə, SectorAdmin yalnız məktəblərə
+  const entityTypes: Array<'region' | 'sector' | 'school'> = 
+    isSuperAdmin 
+      ? ['region', 'sector', 'school'] 
+      : isRegionAdmin 
+        ? ['sector', 'school'] 
+        : ['school'];
 
   // İstifadəçi əlavə edildikdə, yenilənməni işə sal
   const handleUserAddedOrEdited = () => {
     setRefreshTrigger(prev => prev + 1);
   };
+
+  // Sektoradmin üçün filter parametrləri
+  const filterParams = isSectorAdmin && sectorId ? { sectorId } : undefined;
 
   return (
     <SidebarLayout>
@@ -49,11 +54,11 @@ const Users = () => {
         <UserHeader 
           entityTypes={entityTypes} 
           onUserAddedOrEdited={handleUserAddedOrEdited}
+          filterParams={filterParams}
         />
         <UserList 
-          currentUserRole={user?.role} 
-          currentUserRegionId={user?.regionId}
-          onUserAddedOrEdited={handleUserAddedOrEdited}
+          refreshTrigger={refreshTrigger} 
+          filterParams={filterParams}
         />
       </div>
     </SidebarLayout>

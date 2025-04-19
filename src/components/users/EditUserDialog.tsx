@@ -1,164 +1,231 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { User, UserFormData } from '@/types/user';
-import { useAuth } from '@/context/auth/useAuth';
-import { useRole } from '@/context/auth/useRole'; // Düzəliş burada
+import { FullUserData } from '@/types/user';
+import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import UserForm from './UserForm';
-import { UserRole } from '@/types/supabase';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EditUserDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  user: User;
-  onSave: (user: User) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onComplete: () => void;
+  user: FullUserData | null;
 }
 
 const EditUserDialog: React.FC<EditUserDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  user, 
-  onSave 
+  isOpen, 
+  onClose, 
+  onComplete,
+  user 
 }) => {
   const { t } = useLanguage();
   const { user: currentUser } = useAuth();
+  const { isSuperAdmin, isRegionAdmin } = usePermissions();
   const [loading, setLoading] = React.useState(false);
-  const [showPasswordReset, setShowPasswordReset] = React.useState(false);
-  const canResetPassword = useRole(['superadmin', 'regionadmin']) && 
-                           currentUser?.role !== user.role &&
-                           user.id !== currentUser?.id;
+  const [formData, setFormData] = React.useState<any>({});
   
-  // Convert User to UserFormData
-  const initialFormData: UserFormData = {
-    full_name: user.full_name || '',
-    email: user.email,
-    role: user.role || 'user',
-    region_id: user.region_id || user.regionId,
-    sector_id: user.sector_id || user.sectorId,
-    school_id: user.school_id || user.schoolId,
-    regionId: user.regionId || user.region_id,
-    sectorId: user.sectorId || user.sector_id,
-    schoolId: user.schoolId || user.school_id,
-    status: user.status || 'active',
-    phone: user.phone,
-    position: user.position,
-    language: user.language,
-    notificationSettings: user.notificationSettings,
-    password: ''  // Add empty password field for reset
-  };
-  
-  const [formData, setFormData] = React.useState<UserFormData>(initialFormData);
-  
-  // Reset form when user changes
+  // İstifadəçi məlumatlarını form məlumatlarına çevir
   React.useEffect(() => {
     if (user) {
-      setFormData(initialFormData);
-      setShowPasswordReset(false);
+      setFormData({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        role: user.role || '',
+        regionId: user.regionId || '',
+        sectorId: user.sectorId || '',
+        schoolId: user.schoolId || '',
+        status: user.status || 'active',
+        phone: user.phone || '',
+        position: user.position || '',
+        language: user.language || 'az',
+      });
     }
   }, [user]);
-  
-  const handleSubmit = () => {
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const updatedUser: User = {
-        ...user,
-        ...formData,
-        full_name: formData.full_name,
-        updated_at: new Date().toISOString(), // use consistent field name
-        // Cast role to UserRole type
-        role: formData.role as UserRole,
-        // Make sure notificationSettings is complete
-        notificationSettings: {
-          email: formData.notificationSettings?.email || true,
-          push: formData.notificationSettings?.push || false,
-          sms: formData.notificationSettings?.sms || false,
-          system: formData.notificationSettings?.system || false
-        },
-        // Əgər parol sıfırlanması aktivləşdirilibsə, passwordResetDate-i indiki zamana təyin etmək
-        ...(showPasswordReset && { passwordResetDate: new Date().toISOString() }) // Date -> string
-      };
-      
-      onSave(updatedUser);
-      
-      if (showPasswordReset) {
-        toast.success(t('passwordResetSuccess'), {
-          description: t('passwordResetRequired')
-        });
-      } else {
-        toast.success(t('userUpdated'), {
-          description: t('userUpdatedDesc')
-        });
-      }
-      
-      setLoading(false);
-      setShowPasswordReset(false);
-      onOpenChange(false);
-    }, 1000);
+
+  // Form məlumatlarının dəyişməsi
+  const handleFormChange = (newData: any) => {
+    setFormData(newData);
   };
 
-  const togglePasswordReset = () => {
-    setShowPasswordReset(!showPasswordReset);
-    if (!showPasswordReset) {
-      // Parol sıfırlanma aktivləşdirildikdə, təsadüfi parol təyin etmək və ya boş saxlamaq
-      setFormData(prev => ({ ...prev, password: 'password123' }));
-    } else {
-      // Parol sıfırlanma deaktivləşdirildikdə, parolu təmizləmək
-      setFormData(prev => ({ ...prev, password: '' }));
+  // İstifadəçini yenilə
+  const handleSave = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // İstifadəçi məlumatlarını yenilə
+      const { error } = await supabase
+        .from('users')
+        .update({
+          full_name: formData.fullName,
+          email: formData.email,
+          role: formData.role,
+          region_id: formData.regionId,
+          sector_id: formData.sectorId,
+          school_id: formData.schoolId,
+          status: formData.status,
+          phone: formData.phone,
+          position: formData.position,
+          language: formData.language,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success(t('userUpdatedSuccessfully'));
+      onComplete();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast.error(t('errorUpdatingUser'));
+    } finally {
+      setLoading(false);
     }
   };
-  
+
+  // Şifrəni sıfırla
+  const handleResetPassword = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Şifrə sıfırlama e-poçtu göndər
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      
+      if (error) throw error;
+      
+      toast.success(t('passwordResetEmailSent'));
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error(t('errorResettingPassword'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // İstifadəçini deaktiv et
+  const handleDeactivate = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // İstifadəçini deaktiv et
+      const { error } = await supabase
+        .from('users')
+        .update({ status: 'inactive', updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success(t('userDeactivatedSuccessfully'));
+      onComplete();
+    } catch (error: any) {
+      console.error('Error deactivating user:', error);
+      toast.error(t('errorDeactivatingUser'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // İstifadəçini aktivləşdir
+  const handleActivate = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // İstifadəçini aktivləşdir
+      const { error } = await supabase
+        .from('users')
+        .update({ status: 'active', updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success(t('userActivatedSuccessfully'));
+      onComplete();
+    } catch (error: any) {
+      console.error('Error activating user:', error);
+      toast.error(t('errorActivatingUser'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Şifrə sıfırlama icazəsi
+  const canResetPassword = (isSuperAdmin || isRegionAdmin) && 
+                           currentUser?.id !== user?.id;
+
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!open) {
-        setShowPasswordReset(false);
-      }
-      onOpenChange(open);
-    }}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('editUser')}</DialogTitle>
-          <DialogDescription>{t('editUserDesc')}</DialogDescription>
+          <DialogDescription>
+            {t('editUserDescription')}
+          </DialogDescription>
         </DialogHeader>
         
-        <UserForm 
-          data={formData} 
-          onChange={setFormData} 
-          currentUserRole={currentUser?.role}
-          currentUserRegionId={currentUser?.regionId}
-          isEdit={true}
-          passwordRequired={showPasswordReset}
-        />
+        {user && (
+          <UserForm 
+            initialData={formData}
+            onChange={handleFormChange}
+            isEditMode={true}
+          />
+        )}
         
-        <DialogFooter>
-          {canResetPassword && (
-            <div className="mr-auto">
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={togglePasswordReset}
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+          <div className="flex gap-2">
+            {canResetPassword && (
+              <Button
+                variant="outline"
+                onClick={handleResetPassword}
+                disabled={loading}
               >
-                {showPasswordReset ? t('cancelPasswordReset') : t('resetPassword')}
+                {t('resetPassword')}
               </Button>
-            </div>
-          )}
+            )}
+            
+            {user?.status === 'active' ? (
+              <Button
+                variant="destructive"
+                onClick={handleDeactivate}
+                disabled={loading}
+              >
+                {t('deactivate')}
+              </Button>
+            ) : (
+              <Button
+                variant="default"
+                onClick={handleActivate}
+                disabled={loading}
+              >
+                {t('activate')}
+              </Button>
+            )}
+          </div>
           
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-          >
-            {t('cancel')}
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading || !formData.full_name || !formData.email || (showPasswordReset && (!formData.password || formData.password.length < 6))}
-          >
-            {loading ? t('saving') : t('saveChanges')}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+            >
+              {t('cancel')}
+            </Button>
+            
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? t('saving') : t('save')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

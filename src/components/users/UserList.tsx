@@ -31,15 +31,16 @@ import DeleteUserDialog from './DeleteUserDialog';
 import EditUserDialog from './EditUserDialog';
 
 interface UserListProps {
-  currentUserRole?: string;
-  currentUserRegionId?: string;
-  onUserAddedOrEdited: () => void;
+  refreshTrigger?: number;
+  filterParams?: {
+    sectorId?: string;
+    regionId?: string;
+  };
 }
 
 const UserList: React.FC<UserListProps> = ({
-  currentUserRole,
-  currentUserRegionId,
-  onUserAddedOrEdited
+  refreshTrigger = 0,
+  filterParams
 }) => {
   const { t } = useLanguage();
   const {
@@ -49,221 +50,247 @@ const UserList: React.FC<UserListProps> = ({
     filter,
     updateFilter,
     resetFilter,
-    currentPage,
-    pageSize,
+    totalCount,
     totalPages,
-    handlePageChange,
-    selectedUser,
-    isEditDialogOpen,
-    isDeleteDialogOpen,
-    setIsEditDialogOpen,
-    setIsDeleteDialogOpen,
-    handleEditUser,
-    handleDeleteUser,
-    handleUpdateUserConfirm,
-    handleDeleteUserConfirm,
+    currentPage,
+    setCurrentPage,
+    deleteUser,
+    fetchUsers
   } = useUserList();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  // Filteri yeniləyək
   useEffect(() => {
-    if (searchQuery) {
-      updateFilter({ search: searchQuery });
-    } else {
-      updateFilter({ search: undefined });
+    if (filterParams) {
+      updateFilter({
+        ...filter,
+        ...filterParams
+      });
     }
-  }, [searchQuery, updateFilter]);
+  }, [filterParams]);
 
-  // Timeout üçün useEffect
+  // refreshTrigger dəyişdikdə istifadəçiləri yenidən yükləyək
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery) {
-        updateFilter({ search: searchQuery });
-      }
-    }, 300);
+    fetchUsers();
+  }, [refreshTrigger]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, updateFilter]);
-
-  const handleFilterChange = (newFilters: any) => {
-    updateFilter(newFilters);
+  // Axtarış sorğusu dəyişdikdə
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    updateFilter({ ...filter, search: e.target.value });
   };
 
-  const handleSelectUser = (userId: string) => {
-    setSelectedUsers(prev => {
-      if (prev.includes(userId)) {
-        return prev.filter(id => id !== userId);
-      } else {
-        return [...prev, userId];
-      }
-    });
+  // İstifadəçi silmə əməliyyatı
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      await deleteUser(selectedUser.id);
+      toast.success(t('userDeletedSuccessfully'));
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error(t('errorDeletingUser'));
+    }
   };
 
-  const isUserSelected = (userId: string) => selectedUsers.includes(userId);
+  // İstifadəçi redaktə əməliyyatı tamamlandıqda
+  const handleEditComplete = () => {
+    setIsEditDialogOpen(false);
+    fetchUsers();
+  };
 
-  // XƏTALİ HİSSƏ: Massiv undefined olduğunda slice xətası
-  // Bu hissədə dəyişiklik edirik - əvvəlcə users massivinin varlığını yoxlayırıq
-  const paginatedUsers = users ? users.slice(
-    (currentPage - 1) * pageSize, 
-    currentPage * pageSize
-  ) : [];
+  // Filterlər tətbiq edildikdə
+  const handleApplyFilters = (newFilters: any) => {
+    updateFilter({ ...filter, ...newFilters });
+    setShowFilters(false);
+  };
 
-  // Əgər yükləmə vəziyyətindədirsə yükləmə indikatoru göstər
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Filterləri sıfırla
+  const handleResetFilters = () => {
+    resetFilter();
+    setShowFilters(false);
+  };
 
-  // Xəta varsa göstər
-  if (error) {
-    return (
-      <div className="p-4 bg-destructive/10 text-destructive rounded-md">
-        <p>{t('errorLoadingUsers')}: {error.message}</p>
-      </div>
-    );
-  }
+  // Səhifələmə
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // İstifadəçi rolunu formatla
+  const formatRole = (role: string) => {
+    switch (role) {
+      case 'superadmin':
+        return t('superadmin');
+      case 'regionadmin':
+        return t('regionadmin');
+      case 'sectoradmin':
+        return t('sectoradmin');
+      case 'schooladmin':
+        return t('schooladmin');
+      default:
+        return role;
+    }
+  };
+
+  // Rola görə badge rəngi
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'superadmin':
+        return 'bg-red-100 text-red-800';
+      case 'regionadmin':
+        return 'bg-blue-100 text-blue-800';
+      case 'sectoradmin':
+        return 'bg-green-100 text-green-800';
+      case 'schooladmin':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>{t('users')}</CardTitle>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>{t('usersList')}</CardTitle>
+          <CardDescription>{t('manageUsers')}</CardDescription>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('searchUsers')}
+              className="pl-8 w-[250px]"
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
           </div>
-          <CardDescription>
-            {t('manageUsers')}
-          </CardDescription>
-        </CardHeader>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {t('filter')}
+          </Button>
+        </div>
+      </CardHeader>
+      
+      {showFilters && (
         <CardContent>
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div className="relative w-full md:w-1/3">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={t('searchUsers')}
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="mr-2 h-4 w-4" />
-                  {t('filters')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <Card>
-                  <CardContent>
-                    <UserFilters
-                      onFilterChange={handleFilterChange}
-                      availableRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}
-                    />
-                  </CardContent>
-                </Card>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <UserFilters 
+            currentFilters={filter} 
+            onApplyFilters={handleApplyFilters} 
+            onResetFilters={handleResetFilters}
+          />
+        </CardContent>
+      )}
+      
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
-          <div className="mt-4 overflow-x-auto">
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">
+            {error}
+          </div>
+        ) : users.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {t('noUsersFound')}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">
-                    <Checkbox />
-                  </TableHead>
                   <TableHead>{t('name')}</TableHead>
                   <TableHead>{t('email')}</TableHead>
                   <TableHead>{t('role')}</TableHead>
+                  <TableHead>{t('entity')}</TableHead>
                   <TableHead>{t('status')}</TableHead>
-                  <TableHead className="text-right"></TableHead>
+                  <TableHead className="text-right">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedUsers && paginatedUsers.length > 0 ? (
-                  paginatedUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        <Checkbox
-                          checked={isUserSelected(user.id)}
-                          onCheckedChange={() => handleSelectUser(user.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{user.full_name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{user.role}</Badge>
-                      </TableCell>
-                      <TableCell>{user.status}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                              {t('editUser')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteUser(user)}>
-                              {t('deleteUser')}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                      {t('noUsersFound')}
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.fullName || user.email.split('@')[0]}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
+                        {formatRole(user.role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.entityName || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                        {user.status === 'active' ? t('active') : t('inactive')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedUser(user);
+                            setIsEditDialogOpen(true);
+                          }}>
+                            {t('edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedUser(user);
+                            setIsDeleteDialogOpen(true);
+                          }}>
+                            {t('delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="text-sm text-muted-foreground">
-            {t('showing')} {paginatedUsers?.length || 0} {t('of')} {users?.length || 0} {t('users')}
-          </div>
-          {totalPages > 1 && (
+        )}
+        
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
             />
-          )}
-        </CardFooter>
-      </Card>
-
-      {/* Edit Dialog - selectedUser undefined olduğu halda xətanın qarşısını alırıq */}
-      {selectedUser && (
-        <EditUserDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          user={selectedUser}
-          onSave={handleUpdateUserConfirm}
-        />
-      )}
-
-      {/* Delete Dialog - selectedUser undefined olduğu halda xətanın qarşısını alırıq */}
-      {selectedUser && (
-        <DeleteUserDialog
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-          user={selectedUser}
-          onDelete={handleDeleteUserConfirm}
-        />
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+      
+      <DeleteUserDialog 
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteUser}
+        userName={selectedUser?.fullName || selectedUser?.email || ''}
+      />
+      
+      <EditUserDialog 
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onComplete={handleEditComplete}
+        user={selectedUser}
+      />
+    </Card>
   );
 };
 

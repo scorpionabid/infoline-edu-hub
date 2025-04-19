@@ -1,8 +1,7 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { UserPlus, Upload, Download, Filter, Building2, MapPin, School } from 'lucide-react';
+import { UserPlus, Upload, Download, Filter } from 'lucide-react';
 import { H1 } from '@/components/ui/typography';
 import AddUserDialog from './AddUserDialog';
 import { 
@@ -21,198 +20,201 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface UserHeaderProps {
-  entityTypes?: Array<'region' | 'sector' | 'school'>;
-  onUserAddedOrEdited?: () => void;
+  onRefresh?: () => void;
+  filterParams?: {
+    sectorId?: string;
+    regionId?: string;
+  };
 }
 
 const UserHeader: React.FC<UserHeaderProps> = ({ 
-  entityTypes = [],
-  onUserAddedOrEdited
+  onRefresh,
+  filterParams
 }) => {
   const { t } = useLanguage();
-  const [showAddDialog, setShowAddDialog] = React.useState(false);
-  const [importDialogOpen, setImportDialogOpen] = React.useState(false);
-  const [selectedEntityType, setSelectedEntityType] = React.useState<'region' | 'sector' | 'school' | undefined>(undefined);
-  const [loading, setLoading] = React.useState({
-    import: false,
-    export: false
-  });
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // İmport funksiyası
-  const handleImport = () => {
-    setLoading(prev => ({ ...prev, import: true }));
-    
-    // İmport əməliyyatını simulyasiya et
-    setTimeout(() => {
-      setLoading(prev => ({ ...prev, import: false }));
-      setImportDialogOpen(false);
-      toast.success(t('usersImported'));
-    }, 1500);
-  };
-  
-  // Export funksiyası
-  const handleExport = (format: string) => {
-    setLoading(prev => ({ ...prev, export: true }));
-    
-    // Export əməliyyatını simulyasiya et
-    setTimeout(() => {
-      setLoading(prev => ({ ...prev, export: false }));
-      toast.success(t('usersExported'));
-    }, 1500);
-  };
-
-  // Xüsusi tip istifadəçi əlavə etmək üçün
-  const handleAddEntityAdmin = (type: 'region' | 'sector' | 'school') => {
-    setSelectedEntityType(type);
-    setShowAddDialog(true);
-  };
-
-  // Sadəcə istifadəçi əlavə etmək üçün
-  const handleAddUser = () => {
-    setSelectedEntityType(undefined);
-    setShowAddDialog(true);
+  // İstifadəçi əlavə etmə dialoqu
+  const handleOpenAddDialog = () => {
+    setIsAddDialogOpen(true);
   };
 
   // İstifadəçi əlavə edildikdən sonra
   const handleUserAdded = () => {
-    if (onUserAddedOrEdited) {
-      onUserAddedOrEdited();
+    setIsAddDialogOpen(false);
+    if (onRefresh) {
+      onRefresh();
     }
+  };
+
+  // İmport dialoqu
+  const handleOpenImportDialog = () => {
+    setIsImportDialogOpen(true);
+  };
+
+  // Fayl seçimi
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImportFile(e.target.files[0]);
+    }
+  };
+
+  // İmport funksiyası
+  const handleImport = () => {
+    if (!importFile) {
+      toast.error(t('pleaseSelectFile'));
+      return;
+    }
+
+    setIsImporting(true);
     
-    // Həmçinin, global event kimi göndərək ki, digər komponentlər də xəbərdar olsun
-    const event = new CustomEvent('user-added-or-edited');
-    window.dispatchEvent(event);
+    // İmport əməliyyatını simulyasiya et
+    setTimeout(() => {
+      setIsImporting(false);
+      setIsImportDialogOpen(false);
+      setImportFile(null);
+      toast.success(t('usersImported'));
+      if (onRefresh) {
+        onRefresh();
+      }
+    }, 2000);
+  };
+
+  // Export funksiyası
+  const handleExport = () => {
+    setIsExporting(true);
+    
+    // Export əməliyyatını simulyasiya et
+    setTimeout(() => {
+      setIsExporting(false);
+      toast.success(t('usersExported'));
+    }, 2000);
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <H1>{t('usersManagement')}</H1>
-      
-      <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline"
-              disabled={loading.export}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {loading.export ? t('exporting') : t('export')}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleExport('excel')}>
-              Excel (.xlsx)
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('csv')}>
-              CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('pdf')}>
-              PDF
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <div className="flex flex-col space-y-4">
+      <div className="flex justify-between items-center">
+        <H1>{t('users')}</H1>
         
-        <Button 
-          variant="outline"
-          onClick={() => setImportDialogOpen(true)}
-          disabled={loading.import}
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          {loading.import ? t('importing') : t('import')}
-        </Button>
-        
-        {entityTypes.length > 0 ? (
+        <div className="flex space-x-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t('addNew')}
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                {t('filters')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {entityTypes.includes('region') && (
-                <DropdownMenuItem onClick={() => handleAddEntityAdmin('region')}>
-                  <Building2 className="mr-2 h-4 w-4" />
-                  {t('addRegionWithAdmin')}
-                </DropdownMenuItem>
-              )}
-              
-              {entityTypes.includes('sector') && (
-                <DropdownMenuItem onClick={() => handleAddEntityAdmin('sector')}>
-                  <MapPin className="mr-2 h-4 w-4" />
-                  {t('addSectorWithAdmin')}
-                </DropdownMenuItem>
-              )}
-              
-              {entityTypes.includes('school') && (
-                <DropdownMenuItem onClick={() => handleAddEntityAdmin('school')}>
-                  <School className="mr-2 h-4 w-4" />
-                  {t('addSchoolWithAdmin')}
-                </DropdownMenuItem>
-              )}
-              
-              {entityTypes.length > 0 && (
-                <DropdownMenuSeparator />
-              )}
-              
-              <DropdownMenuItem onClick={handleAddUser}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t('addUser')}
+              <DropdownMenuItem onClick={() => {}}>
+                {t('showAll')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {}}>
+                {t('onlyActive')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {}}>
+                {t('onlyInactive')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => {}}>
+                {t('superadmins')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {}}>
+                {t('regionadmins')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {}}>
+                {t('sectoradmins')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {}}>
+                {t('schooladmins')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <Button 
-            onClick={handleAddUser}
-            className="flex items-center gap-2"
-          >
-            <UserPlus className="size-4" />
-            <span>{t('addUser')}</span>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                {t('export')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
+                {isExporting ? t('exporting') : t('exportToCsv')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
+                {isExporting ? t('exporting') : t('exportToExcel')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button variant="outline" size="sm" onClick={handleOpenImportDialog}>
+            <Upload className="h-4 w-4 mr-2" />
+            {t('import')}
           </Button>
-        )}
+          
+          <Button size="sm" onClick={handleOpenAddDialog}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            {t('addUser')}
+          </Button>
+        </div>
       </div>
-
+      
+      {/* İstifadəçi əlavə etmə dialoqu */}
       <AddUserDialog 
-        open={showAddDialog} 
-        onOpenChange={setShowAddDialog}
-        entityType={selectedEntityType}
-        onSuccess={handleUserAdded}
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onComplete={handleUserAdded}
+        filterParams={filterParams}
       />
       
-      {/* Import Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+      {/* İmport dialoqu */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('importUsers')}</DialogTitle>
-            <DialogDescription>{t('importUsersDescription')}</DialogDescription>
+            <DialogDescription>
+              {t('importUsersDescription')}
+            </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center justify-center border-2 border-dashed rounded-md p-8">
-              <div className="text-center">
-                <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-sm font-medium">{t('dragAndDropFiles')}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{t('orClickToSelectExcel')}</p>
-                <div className="mt-4 space-y-2">
-                  <Button variant="outline" size="sm" className="w-full">
-                    {t('selectFile')}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full">
-                    {t('downloadTemplate')}
-                  </Button>
-                </div>
-              </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="file">{t('selectFile')}</Label>
+              <Input 
+                id="file" 
+                type="file" 
+                accept=".csv,.xlsx,.xls" 
+                onChange={handleFileChange}
+              />
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              {t('supportedFormats')}: CSV, Excel
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsImportDialogOpen(false)}
+              disabled={isImporting}
+            >
               {t('cancel')}
             </Button>
-            <Button onClick={handleImport} disabled={loading.import}>
-              {loading.import ? t('importing') : t('import')}
+            
+            <Button
+              onClick={handleImport}
+              disabled={isImporting || !importFile}
+            >
+              {isImporting ? t('importing') : t('import')}
             </Button>
           </DialogFooter>
         </DialogContent>
