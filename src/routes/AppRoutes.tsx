@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/auth";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
+import SidebarLayout from "@/components/layout/SidebarLayout";
 
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -220,7 +221,9 @@ const AppRoutes = [
     path: "/data-entry",
     element: (
       <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
-        <DataEntry />
+        <SidebarLayout>
+          <DataEntry />
+        </SidebarLayout>
       </ProtectedRoute>
     ),
   },
@@ -228,7 +231,9 @@ const AppRoutes = [
     path: "/data-entry/:categoryId",
     element: (
       <ProtectedRoute allowedRoles={['superadmin', 'sectoradmin', 'schooladmin']}>
-        <DataEntry />
+        <SidebarLayout>
+          <DataEntry />
+        </SidebarLayout>
       </ProtectedRoute>
     ),
   },
