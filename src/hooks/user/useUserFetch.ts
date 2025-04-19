@@ -1,11 +1,10 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { UserFilter } from '@/hooks/useUserList';
-import { fetchAdminEntityData } from './useUserData';
 
 export const useUserFetch = (
   filter: UserFilter,
@@ -13,10 +12,73 @@ export const useUserFetch = (
   pageSize: number
 ) => {
   const { user: currentUser } = useAuth();
+  const { isSuperAdmin, isRegionAdmin, isSectorAdmin } = usePermissions();
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Region, sektor və məktəb məlumatlarını əldə etmək üçün köməkçi funksiya
+  const fetchEntityNames = async (userRoles: any[]) => {
+    try {
+      // Unikal region, sektor və məktəb ID-lərini toplayaq
+      const regionIds = Array.from(new Set(userRoles.map(role => role.region_id).filter(Boolean)));
+      const sectorIds = Array.from(new Set(userRoles.map(role => role.sector_id).filter(Boolean)));
+      const schoolIds = Array.from(new Set(userRoles.map(role => role.school_id).filter(Boolean)));
+      
+      // Nəticələri saxlamaq üçün obyektlər
+      const regionNames: Record<string, string> = {};
+      const sectorNames: Record<string, string> = {};
+      const schoolNames: Record<string, string> = {};
+      
+      // Region adlarını əldə edək
+      if (regionIds.length > 0) {
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('regions')
+          .select('id, name')
+          .in('id', regionIds);
+          
+        if (!regionsError && regionsData) {
+          regionsData.forEach(region => {
+            regionNames[region.id] = region.name;
+          });
+        }
+      }
+      
+      // Sektor adlarını əldə edək
+      if (sectorIds.length > 0) {
+        const { data: sectorsData, error: sectorsError } = await supabase
+          .from('sectors')
+          .select('id, name')
+          .in('id', sectorIds);
+          
+        if (!sectorsError && sectorsData) {
+          sectorsData.forEach(sector => {
+            sectorNames[sector.id] = sector.name;
+          });
+        }
+      }
+      
+      // Məktəb adlarını əldə edək
+      if (schoolIds.length > 0) {
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id, name')
+          .in('id', schoolIds);
+          
+        if (!schoolsError && schoolsData) {
+          schoolsData.forEach(school => {
+            schoolNames[school.id] = school.name;
+          });
+        }
+      }
+      
+      return { regionNames, sectorNames, schoolNames };
+    } catch (error) {
+      console.error('Error fetching entity names:', error);
+      return { regionNames: {}, sectorNames: {}, schoolNames: {} };
+    }
+  };
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -32,18 +94,35 @@ export const useUserFetch = (
         query = query.eq('role', filter.role as any);
       }
       
-      if (currentUser?.role === 'regionadmin' && currentUser?.regionId) {
+      // Regionadmin üçün filtrlənmə
+      if (isRegionAdmin && currentUser?.regionId) {
         query = query.eq('region_id', currentUser.regionId);
-      } else if (filter.region) {
-        query = query.eq('region_id', filter.region);
+      } 
+      // Sektoradmin üçün filtrlənmə
+      else if (isSectorAdmin && currentUser?.sectorId) {
+        query = query.eq('sector_id', currentUser.sectorId);
       }
-      
-      if (filter.sector) {
-        query = query.eq('sector_id', filter.sector);
+      // Filter parametrləri ilə filtrlənmə
+      else {
+        if (filter.region) {
+          query = query.eq('region_id', filter.region);
+        }
+        
+        if (filter.sector) {
+          query = query.eq('sector_id', filter.sector);
+        }
       }
       
       if (filter.school) {
         query = query.eq('school_id', filter.school);
+      }
+      
+      if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+      
+      if (filter.search) {
+        query = query.ilike('full_name', `%${filter.search}%`);
       }
       
       const from = (currentPage - 1) * pageSize;
@@ -51,15 +130,12 @@ export const useUserFetch = (
       query = query.range(from, to);
       
       const { data: rolesData, error: rolesError, count } = await query;
-      console.log('User roles fetched:', rolesData);
       
       if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
         throw rolesError;
       }
       
       if (!rolesData || rolesData.length === 0) {
-        console.log('No users found');
         setUsers([]);
         setTotalCount(0);
         setLoading(false);
@@ -74,11 +150,8 @@ export const useUserFetch = (
         .in('id', userIds);
       
       if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
         throw profilesError;
       }
-      
-      console.log('User profiles fetched:', profilesData);
       
       const profilesMap: Record<string, any> = {};
       if (profilesData) {
@@ -102,113 +175,52 @@ export const useUserFetch = (
         });
       }
       
-      let filteredRolesData = rolesData;
-      if (filter.status || filter.search) {
-        filteredRolesData = rolesData.filter(roleItem => {
-          const profile = profilesMap[roleItem.user_id] || {};
-          
-          if (filter.status && profile.status !== filter.status) {
-            return false;
-          }
-          
-          if (filter.search) {
-            const searchTerm = filter.search.toLowerCase();
-            const fullName = (profile.full_name || '').toLowerCase();
-            const email = (emailMap[roleItem.user_id] || '').toLowerCase();
-            
-            if (!fullName.includes(searchTerm) && !email.includes(searchTerm)) {
-              return false;
-            }
-          }
-          
-          return true;
-        });
-      }
+      // Entity adlarını əldə edək
+      const { regionNames, sectorNames, schoolNames } = await fetchEntityNames(rolesData);
       
-      // Admin entity məlumatlarını əldə edirik
-      console.log('Fetching admin entity data');
-      const adminEntityPromises = filteredRolesData.map(async (roleItem) => {
-        try {
-          return await fetchAdminEntityData(roleItem);
-        } catch (error) {
-          console.error('Error fetching admin entity data:', error);
-          return null;
-        }
-      });
-      
-      const adminEntities = await Promise.all(adminEntityPromises);
-      console.log('Admin entities fetched');
-      
-      // İstifadəçi məlumatlarını formatlayırıq
-      const formattedUsers: FullUserData[] = filteredRolesData.map((roleItem, index) => {
-        const profile = profilesMap[roleItem.user_id] || {};
-        
-        let typedStatus: 'active' | 'inactive' | 'blocked' = 'active';
-        const statusValue = profile.status || 'active';
-        
-        if (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'blocked') {
-          typedStatus = statusValue as 'active' | 'inactive' | 'blocked';
-        }
-        
-        // Rolu UserRole tipinə məcburi çeviririk
-        const roleValue = roleItem.role as UserRole;
+      // Tam istifadəçi məlumatlarını birləşdiririk
+      const fullUsers = rolesData.map(role => {
+        const profile = profilesMap[role.user_id] || {};
+        const email = emailMap[role.user_id] || '';
         
         return {
-          id: roleItem.user_id,
-          email: emailMap[roleItem.user_id] || 'N/A',
-          full_name: profile.full_name || 'İsimsiz İstifadəçi',
-          role: roleValue,
-          region_id: roleItem.region_id,
-          sector_id: roleItem.sector_id,
-          school_id: roleItem.school_id,
-          phone: profile.phone,
-          position: profile.position,
+          id: role.user_id,
+          fullName: profile.full_name || role.full_name || '',
+          email: email,
+          role: role.role,
+          status: role.status || 'active',
+          regionId: role.region_id,
+          sectorId: role.sector_id,
+          schoolId: role.school_id,
+          regionName: role.region_id ? regionNames[role.region_id] || '' : '',
+          sectorName: role.sector_id ? sectorNames[role.sector_id] || '' : '',
+          schoolName: role.school_id ? schoolNames[role.school_id] || '' : '',
+          phone: profile.phone || '',
+          position: profile.position || '',
           language: profile.language || 'az',
-          avatar: profile.avatar,
-          status: typedStatus,
-          last_login: profile.last_login,
-          created_at: profile.created_at || '',
-          updated_at: profile.updated_at || '',
-          
-          // Əlavə tətbiq xüsusiyyətləri üçün alias-lar
-          name: profile.full_name || 'İsimsiz İstifadəçi',
-          regionId: roleItem.region_id,
-          sectorId: roleItem.sector_id,
-          schoolId: roleItem.school_id,
-          lastLogin: profile.last_login,
-          createdAt: profile.created_at || '',
-          updatedAt: profile.updated_at || '',
-          
-          adminEntity: adminEntities[index],
-          
-          twoFactorEnabled: false,
-          notificationSettings: {
-            email: true,
-            system: true
-          }
+          createdAt: role.created_at,
+          updatedAt: role.updated_at,
         };
       });
       
-      console.log('Users formatted:', formattedUsers.length);
-      setUsers(formattedUsers);
-      setTotalCount(count || filteredRolesData.length);
-    } catch (err) {
-      console.error('İstifadəçiləri əldə edərkən xəta:', err);
-      setError(err instanceof Error ? err : new Error('İstifadəçilər yüklənərkən xəta baş verdi'));
-      toast.error('İstifadəçilər yüklənərkən xəta baş verdi');
-      setUsers([]); // Xəta baş verdikdə boş massiv qaytar
+      setUsers(fullUsers);
+      setTotalCount(count || fullUsers.length);
+    } catch (error: any) {
+      console.error('Error in fetchUsers:', error);
+      setError(error);
+      toast.error(`Error fetching users: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }, [filter, currentPage, pageSize, currentUser]);
+  }, [currentUser, filter, currentPage, pageSize, isSuperAdmin, isRegionAdmin, isSectorAdmin]);
 
   return {
     users,
-    totalCount,
     loading,
     error,
     fetchUsers,
     setUsers,
+    totalCount,
     setTotalCount
   };
 };
