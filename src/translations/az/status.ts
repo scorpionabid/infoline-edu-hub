@@ -19,6 +19,8 @@ const status = {
   visibility: "Görünürlük",
   visible: "Görünən",
   hidden: "Gizli",
+  draft: "Qaralama",
+  notStarted: "Başlanmayıb",
 };
 
 export default status;

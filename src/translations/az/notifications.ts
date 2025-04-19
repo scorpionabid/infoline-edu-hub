@@ -1,3 +1,4 @@
+
 /**
  * Bildiriş tərcümələri
  */
@@ -69,7 +70,34 @@ const notifications = {
     newUpdate: "Yeni yeniləmə mövcuddur",
     maintenance: "Texniki xidmət",
     deadlineApproaching: "Son tarix yaxınlaşır"
-  }
+  },
+  
+  // Approval process notifications
+  reviewAndApprove: "Məlumatları nəzərdən keçir və təsdiq et",
+  reviewCategoryDataDescription: "Məktəb tərəfindən təqdim edilmiş kateqoriya məlumatlarını nəzərdən keçirin və təsdiq edin və ya rədd edin",
+  pendingApproval: "Təsdiq gözləyir",
+  approving: "Təsdiqlənir...",
+  rejecting: "Rədd edilir...",
+  rejectionReason: "Rədd səbəbi",
+  enterRejectionReason: "Rədd səbəbini daxil edin",
+  dataApproved: "Məlumatlar təsdiqləndi",
+  dataApprovedSuccessfully: "Məlumatlar uğurla təsdiqləndi",
+  dataRejected: "Məlumatlar rədd edildi",
+  dataRejectedSuccessfully: "Məlumatlar uğurla rədd edildi",
+  errorApprovingData: "Məlumatları təsdiqləyərkən xəta baş verdi",
+  errorRejectingData: "Məlumatları rədd edərkən xəta baş verdi",
+  submittedAt: "Təqdim edilmə tarixi",
+  review: "Nəzərdən keçir",
+  dataPendingApproval: "Məlumatlar təsdiq gözləyir",
+  dataBeingReviewed: "Məlumatlarınız nəzərdən keçirilir",
+  dataApprovedDesc: "Məlumatlarınız təsdiqlənib və sistemdə qeyd olunub",
+  dataRejectedDesc: "Məlumatlarınız rədd edilib, zəhmət olmasa səbəbi nəzərdən keçirin və yenidən təqdim edin",
+  
+  // Status notifications
+  notStarted: "Başlanmayıb",
+  inProgress: "Davam edir",
+  formHasErrors: "Formda xətalar var",
+  andOtherErrors: "və digər xətalar"
 };
 
 export default notifications;
