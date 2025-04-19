@@ -1,4 +1,3 @@
-
 /**
  * Bildiriş tərcümələri
  */
@@ -42,6 +41,35 @@ const notifications = {
   unreadNotifications: "Oxunmamış bildirişlər",
   noUnreadNotifications: "Oxunmamış bildiriş yoxdur",
   newNotifications: "Yeni bildirişlər",
+
+  // Success notifications
+  success: {
+    dataSaved: "Məlumatlar uğurla saxlanıldı",
+    dataUpdated: "Məlumatlar uğurla yeniləndi",
+    dataDeleted: "Məlumatlar uğurla silindi",
+    formSubmitted: "Form uğurla təqdim edildi",
+    categoryCreated: "Kateqoriya uğurla yaradıldı",
+    settingsSaved: "Tənzimləmələr saxlanıldı"
+  },
+  
+  // Error notifications
+  error: {
+    generic: "Xəta baş verdi",
+    dataNotSaved: "Məlumatlar saxlanılmadı",
+    dataNotUpdated: "Məlumatlar yenilənmədi",
+    dataNotDeleted: "Məlumatlar silinmədi",
+    formNotSubmitted: "Form təqdim edilmədi",
+    networkError: "Şəbəkə xətası",
+    unauthorized: "İcazəsiz giriş"
+  },
+  
+  // Info notifications
+  info: {
+    sessionExpired: "Sessiyanın müddəti bitdi",
+    newUpdate: "Yeni yeniləmə mövcuddur",
+    maintenance: "Texniki xidmət",
+    deadlineApproaching: "Son tarix yaxınlaşır"
+  }
 };
 
 export default notifications;

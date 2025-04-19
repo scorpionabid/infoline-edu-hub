@@ -1,4 +1,3 @@
-
 const commonTranslations = {
   save: 'Yadda saxla',
   cancel: 'Ləğv et',
@@ -123,7 +122,54 @@ const commonTranslations = {
   image: 'Şəkil',
   email: 'E-poçt',
   phone: 'Telefon',
-  textarea: 'Mətn sahəsi'
+  textarea: 'Mətn sahəsi',
+  // Form və data entry tərcümələri
+  formStatus: "Form statusu",
+  formDetails: "Form detalları",
+  formActions: "Form əməliyyatları",
+  submitForm: "Formu təsdiq et",
+  saveAsDraft: "Qaralama kimi saxla",
+  fillRequired: "Məcburi sahələri doldurun",
+  formSaved: "Form saxlanıldı",
+  formSubmitted: "Form təqdim edildi",
+  formRejected: "Form rədd edildi",
+  enterValidData: "Düzgün məlumat daxil edin",
+  
+  // Status mesajları
+  loading: "Yüklənir...",
+  processing: "Emal edilir...",
+  saving: "Saxlanılır...",
+  deleting: "Silinir...",
+  updating: "Yenilənir...",
+  
+  // Təsdiq mesajları
+  confirmDelete: "Silməyi təsdiqləyin",
+  confirmSubmit: "Təqdim etməyi təsdiqləyin",
+  confirmCancel: "Ləğv etməyi təsdiqləyin",
+  
+  // Data entry
+  dataEntry: "Məlumat daxil etmə",
+  category: "Kateqoriya",
+  categories: "Kateqoriyalar",
+  selectCategory: "Kateqoriya seçin",
+  noCategoriesFound: "Kateqoriya tapılmadı",
+  fillAllFields: "Bütün sahələri doldurun",
+  
+  // Məktəb
+  schoolDetails: "Məktəb məlumatları",
+  schoolName: "Məktəbin adı",
+  schoolType: "Məktəbin növü",
+  studentCount: "Şagird sayı",
+  teacherCount: "Müəllim sayı",
+  
+  // İstifadəçi interfeysi
+  menu: "Menyu",
+  dashboard: "İdarə paneli",
+  profile: "Profil",
+  settings: "Tənzimləmələr",
+  logout: "Çıxış",
+  welcome: "Xoş gəlmisiniz",
+  backToHome: "Ana səhifəyə qayıt",
 };
 
 export const dashboardMessages = {

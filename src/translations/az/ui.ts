@@ -1,4 +1,3 @@
-
 /**
  * UI elementlər ilə bağlı tərcümələr
  */
@@ -193,12 +192,56 @@ const ui = {
   importData: "Məlumatları idxal et",
   exportData: "Məlumatları ixrac et",
   downloadTemplate: "Şablon yüklə",
-  uploadFile: "Fayl yüklə",
+  uploadFile: "Faylı yüklə",
   dropFileHere: "Faylı buraya atın və ya seçin",
   processing: "Emal edilir...",
   
   // Category changed
-  categoryChanged: "Kateqoriya dəyişdirildi"
+  categoryChanged: "Kateqoriya dəyişdirildi",
+
+  // Navigation və Menu
+  menu: {
+    toggle: "Menyunu aç/bağla",
+    main: "Əsas menyu",
+    user: "İstifadəçi menyusu",
+    admin: "Admin menyusu",
+    settings: "Tənzimləmələr menyusu"
+  },
+  
+  // Form elementləri
+  form: {
+    submit: "Təsdiq et",
+    save: "Saxla",
+    cancel: "Ləğv et",
+    reset: "Sıfırla",
+    search: "Axtar",
+    filter: "Filtrlə",
+    select: "Seç",
+    upload: "Yüklə",
+    remove: "Sil",
+    edit: "Redaktə et",
+    add: "Əlavə et"
+  },
+  
+  // Modal və Dialog
+  modal: {
+    close: "Bağla",
+    confirm: "Təsdiqlə",
+    cancel: "Ləğv et",
+    ok: "OK",
+    yes: "Bəli",
+    no: "Xeyr"
+  },
+  
+  // Loading və Progress
+  loading: {
+    default: "Yüklənir...",
+    data: "Məlumatlar yüklənir...",
+    submitting: "Göndərilir...",
+    processing: "Emal edilir...",
+    saving: "Saxlanılır...",
+    waiting: "Xahiş edirik gözləyin..."
+  }
 };
 
 export default ui;

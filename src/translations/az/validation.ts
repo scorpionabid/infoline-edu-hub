@@ -1,4 +1,3 @@
-
 /**
  * Validasiya tərcümələri
  */
@@ -59,6 +58,32 @@ const validation = {
   positiveNumber: "Müsbət rəqəm olmalıdır",
   wholeNumber: "Tam rəqəm olmalıdır",
   decimalPlaces: "Maksimum {max} onluq işarəsi ola bilər",
+  
+  // Form validation messages
+  formValidation: {
+    required: "Bu sahə məcburidir",
+    minLength: "Minimum {min} simvol daxil edin",
+    maxLength: "Maksimum {max} simvol daxil edin",
+    email: "Düzgün email ünvanı daxil edin",
+    number: "Rəqəm daxil edin",
+    date: "Düzgün tarix daxil edin",
+    phone: "Düzgün telefon nömrəsi daxil edin",
+    url: "Düzgün URL daxil edin",
+    match: "Məlumatlar uyğun gəlmir",
+    unique: "Bu məlumat artıq mövcuddur"
+  },
+  
+  // Data type validations
+  dataTypes: {
+    text: "Mətn",
+    number: "Rəqəm",
+    date: "Tarix",
+    email: "E-poçt",
+    phone: "Telefon",
+    url: "URL",
+    boolean: "Bəli/Xeyr",
+    select: "Seçim"
+  }
 };
 
 export default validation;
