@@ -23,6 +23,7 @@ const renderWithProviders = (ui: ReactElement) => {
   );
 };
 
+// Supabase Integration Tests üçün boş test blokları
 describe('Supabase Integration Tests', () => {
   it('should handle authentication correctly', () => {
     // Test implementations will go here
