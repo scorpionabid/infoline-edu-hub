@@ -525,7 +525,7 @@ const DataEntryPage: React.FC = () => {
   }
   
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto py-4 px-2">
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{t('dataEntry')}</h1>
@@ -568,41 +568,49 @@ const DataEntryPage: React.FC = () => {
             <TabsContent value="school" className="mt-4">
               {/* Məktəb seçimi */}
               <Card className="mb-4">
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('selectSchool')}</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <School className="mr-2 h-5 w-5 text-primary" />
+                    {t('selectSchool')}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="relative w-full">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder={t('searchSchool')}
-                          className="pl-8"
-                          value={schoolSearchQuery}
-                          onChange={(e) => setSchoolSearchQuery(e.target.value)}
-                        />
-                      </div>
+                    <div className="relative w-full mb-4">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t('searchSchool')}
+                        className="pl-10 py-2"
+                        value={schoolSearchQuery}
+                        onChange={(e) => setSchoolSearchQuery(e.target.value)}
+                      />
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {filteredSchools.map((school) => (
-                        <Button
-                          key={school.id}
-                          variant={selectedSchoolId === school.id ? "default" : "outline"}
-                          className="justify-start"
-                          onClick={() => handleSchoolChange(school.id)}
-                        >
-                          <School className="mr-2 h-4 w-4" />
-                          {school.name}
-                        </Button>
-                      ))}
-                    </div>
-                    
-                    {filteredSchools.length === 0 && (
+                    {filteredSchools.length === 0 ? (
                       <div className="text-center py-4 text-muted-foreground">
                         {schoolSearchQuery ? t('noSchoolsFound') : t('noSchools')}
                       </div>
+                    ) : (
+                      <ScrollArea className="h-[400px] pr-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {filteredSchools && Array.isArray(filteredSchools) && filteredSchools.map((school) => (
+                            <Button
+                              key={school.id}
+                              variant={selectedSchoolId === school.id ? "default" : "outline"}
+                              className={cn(
+                                "justify-start h-auto py-3 px-4 text-sm font-normal text-left",
+                                "border-gray-200 hover:border-gray-300 transition-colors",
+                                "shadow-sm hover:shadow",
+                                selectedSchoolId === school.id && "bg-primary text-primary-foreground border-primary"
+                              )}
+                              onClick={() => handleSchoolChange(school.id)}
+                            >
+                              <School className="mr-2 h-4 w-4 flex-shrink-0 mt-0.5" />
+                              <span className="truncate">{school.name}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
                   </div>
                 </CardContent>

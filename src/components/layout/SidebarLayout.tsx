@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavigationMenu from './NavigationMenu';
@@ -29,7 +28,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <NavigationMenu />
-      <main className="flex-1 container py-6">
+      <main className="flex-1 bg-background">
         {children}
       </main>
     </div>
