@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -46,22 +45,20 @@ const DataEntryForm: React.FC = () => {
 
   // Filter categories based on assignment for school admin
   const filteredCategories = categories.filter(category => {
-    // Məktəb admini üçün 'sectors' təyinatlı kateqoriyaları göstərmirik
     if (isSchoolAdmin && category.assignment === 'sectors') {
       return false;
     }
     
-    // Sektor admini üçün bütün kateqoriyaları göstəririk
     if (canViewSectorCategories) {
       return true;
     }
     
-    // Default olaraq 'all' təyinatlı kateqoriyaları göstəririk
     return category.assignment === 'all';
   });
 
   useEffect(() => {
     if (schoolId) {
+      console.log('Loading data for school:', schoolId);
       loadDataForSchool(schoolId);
     }
   }, [schoolId, loadDataForSchool]);

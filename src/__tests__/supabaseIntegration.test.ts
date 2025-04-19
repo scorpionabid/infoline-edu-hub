@@ -6,6 +6,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { BrowserRouter } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import Columns from '@/pages/Columns';
+import React from 'react';
 
 // Mock Supabase client
 vi.mock('@/lib/supabase', () => ({

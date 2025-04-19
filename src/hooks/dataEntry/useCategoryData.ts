@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/category';
@@ -14,6 +13,7 @@ export const useCategoryData = (schoolId?: string) => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching categories for school:', schoolId);
 
       // Əvvəlcə kateqoriyaları əldə edək
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -22,7 +22,12 @@ export const useCategoryData = (schoolId?: string) => {
         .eq('status', 'active')
         .order('priority', { ascending: true });
 
-      if (categoriesError) throw categoriesError;
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
+        throw categoriesError;
+      }
+
+      console.log('Found categories:', categoriesData?.length);
 
       // Bütün kateqoriyalar üçün sütunları əldə edək
       const { data: columnsData, error: columnsError } = await supabase
@@ -32,7 +37,12 @@ export const useCategoryData = (schoolId?: string) => {
         .eq('status', 'active')
         .order('order_index', { ascending: true });
 
-      if (columnsError) throw columnsError;
+      if (columnsError) {
+        console.error('Error fetching columns:', columnsError);
+        throw columnsError;
+      }
+
+      console.log('Found columns:', columnsData?.length);
 
       // Sütunları düzgün formata çevirək
       const processedColumns = columnsData.map((col: any) => {
@@ -79,7 +89,7 @@ export const useCategoryData = (schoolId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [schoolId]);
 
   useEffect(() => {
     fetchCategories();
