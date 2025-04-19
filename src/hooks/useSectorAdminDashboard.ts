@@ -59,8 +59,13 @@ export const useSectorAdminDashboard = () => {
       
       // Cari sessiya məlumatlarını alırıq
       const { data: sessionData } = await supabase.auth.getSession();
-      
-      // Edge Function-u çağıraraq dashboard məlumatlarını alırıq
+      console.log('Session data:', sessionData);
+      console.log('Access token:', sessionData?.session?.access_token);
+      if (!sessionData?.session?.access_token) {
+          console.error('No access token available');
+        throw new Error('Authentication token is missing');
+      }
+
       const { data, error } = await supabase.functions.invoke('get-sector-dashboard-data', {
         headers: {
           Authorization: `Bearer ${sessionData?.session?.access_token}`
