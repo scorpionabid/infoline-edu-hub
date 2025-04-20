@@ -5,9 +5,9 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: string;
+  assignment?: 'all' | 'sectors';
   deadline?: string;
-  status: string;
+  status: CategoryStatus;
   priority?: number;
   created_at: string;
   updated_at: string;
