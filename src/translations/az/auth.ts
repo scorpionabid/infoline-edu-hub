@@ -1,3 +1,4 @@
+
 const authTranslations = {
   login: 'Daxil ol',
   logout: 'Çıxış',
@@ -27,7 +28,6 @@ const authTranslations = {
   passwordMinLength: 'Şifrə minimum 6 simvol olmalıdır',
   unexpectedError: 'Gözlənilməz xəta baş verdi',
   registering: 'Qeydiyyat aparılır...',
-  register: 'Qeydiyyatdan keç',
   enterSamePassword: 'Eyni şifrəni daxil edin',
   passwordsDoNotMatch: 'Şifrələr uyğun gəlmir',
   missingFields: 'Bütün sahələri doldurun',
@@ -41,7 +41,25 @@ const authTranslations = {
   confirmPassword: 'Şifrəni təsdiqləyin',
   updating: 'Yenilənir...',
   updatePassword: 'Şifrəni yenilə',
-  enterNewPassword: 'Yeni şifrənizi daxil edin'
+  enterNewPassword: 'Yeni şifrənizi daxil edin',
+  accountPreferences: 'Hesab parametrləri',
+  accountPreferencesDescription: 'Hesabınızla bağlı əsas parametrləri idarə edin',
+  language: 'Dil',
+  selectLanguage: 'Dil seçin',
+  azerbaijani: 'Azərbaycan',
+  english: 'İngilis',
+  russian: 'Rus',
+  turkish: 'Türk',
+  additionalSettings: 'Əlavə parametrlər',
+  twoFactorAuth: 'İki faktorlu doğrulama',
+  twoFactorAuthDesc: 'Hesabınızı qorumaq üçün əlavə təhlükəsizlik təbəqəsi',
+  emailNotifications: 'E-poçt bildirişləri',
+  emailNotificationsDesc: 'Yeni tədbirlər haqqında e-poçt bildirişləri alın',
+  systemNotifications: 'Sistem bildirişləri',
+  systemNotificationsDesc: 'Sistemdə tətbiq daxilində bildirişlər alın',
+  saveSettings: 'Parametrləri saxla',
+  settingsSaved: 'Parametrlər saxlanıldı',
+  languageChanged: 'Dil dəyişdirildi'
 };
 
 export default authTranslations;

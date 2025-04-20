@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -10,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth/useAuth';
-import { Language } from '@/types/supabase';
+import { useAuth } from '@/context/auth';
+import { Language } from '@/types/language';
 import { Save } from 'lucide-react';
 
 // Hesab parametrləri forması üçün schema
@@ -27,14 +28,14 @@ const settingsFormSchema = z.object({
 type SettingsFormData = z.infer<typeof settingsFormSchema>;
 
 const PreferencesForm: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, setLanguage } = useLanguage();
   const { user, updateUser } = useAuth();
   
   // Hesab parametrləri forması
   const settingsForm = useForm<SettingsFormData>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
-      language: localStorage.getItem('infoline-language') || 'az',
+      language: localStorage.getItem('language') || 'az',
       notificationSettings: {
         email: user?.notificationSettings?.email ?? true,
         system: user?.notificationSettings?.system ?? true,
@@ -46,7 +47,8 @@ const PreferencesForm: React.FC = () => {
   // Hesab parametrlərini saxla
   const saveSettings = (data: SettingsFormData) => {
     // Dil dəyişdiklərini saxla
-    localStorage.setItem('infoline-language', data.language);
+    localStorage.setItem('language', data.language);
+    setLanguage(data.language as Language);
     
     // İstifadəçi məlumatlarını yenilə - User tipində yalnız mövcud olan xüsusiyyətləri istifadə et
     if (user) {

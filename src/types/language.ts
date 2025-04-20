@@ -13,9 +13,10 @@ export type TranslateFunction = (key: string) => string;
 
 // Context tipi
 export interface LanguageContextType {
-  language: Language;
+  language?: Language;
   setLanguage: (lang: Language) => void;
   t: TranslateFunction;
   languages: Record<Language, LanguageInfo>;
-  currentLanguage?: Language; // NavigationMenu.tsx üçün əlavə edildi
+  currentLanguage: Language;
+  availableLanguages?: Record<Language, LanguageInfo>;
 }

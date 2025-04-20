@@ -39,28 +39,46 @@ const az = {
   ...validation,
   ...categories,
   
-  // Spesifik tərcümələr (əgər lazımdırsa)
-  selectLanguage: 'Dil seçin',
-  loading: 'Yüklənir...',
-  more: 'Daha çox',
-  less: 'Daha az',
+  // Əlavə tərcümələr - Əsas menyu elementləri
+  dashboard: "İdarəetmə paneli",
+  regions: "Regionlar",
+  sectors: "Sektorlar",
+  schools: "Məktəblər",
+  users: "İstifadəçilər",
+  dataManagement: "Məlumat İdarəetməsi",
+  dataEntry: "Məlumat daxiletmə",
+  reports: "Hesabatlar",
+  templates: "Şablonlar",
+  settings: "Parametrlər",
+  profile: "Profil",
+  logout: "Çıxış",
   
-  // Hesabat əlavə tərcümələr
-  allReports: 'Bütün hesabatlar',
-  createNewReport: 'Yeni hesabat yarat',
-  reportType: 'Hesabat növü',
-  statistics: 'Statistika',
-  column: 'Sütun',
-  school: 'Məktəb',
-  region: 'Region',
-  sector: 'Sektor',
-  custom: 'Fərdi',
-  allTypes: 'Bütün növlər',
-  searchReports: 'Hesabatları axtar',
-  preview: 'Önizləmə',
-  download: 'Yüklə',
-  noReportsFound: 'Hesabat tapılmadı',
-  createYourFirstReport: 'İlk hesabatınızı yaradın'
+  // Xəta mesajları
+  errorLoadingData: "Məlumat yüklənərkən xəta",
+  unknownUserRole: "Naməlum istifadəçi rolu",
+  tryAgain: "Yenidən cəhd edin",
+  
+  // Dashboard elementləri
+  refresh: "Yenilə",
+  totalSchools: "Ümumi məktəblər",
+  activeUsers: "Aktiv istifadəçilər",
+  
+  // Zaman seçiciləri
+  thisMonth: "Bu ay",
+  thisWeek: "Bu həftə",
+  thisQuarter: "Bu rüb",
+  thisYear: "Bu il",
+  today: "Bu gün",
+  
+  // Axtarış
+  searchDashboard: "Axtarış...",
+  
+  // istifadəçi menu
+  superadmin: "Superadmin",
+  
+  // Əlavə interface elementləri
+  language: "Dil",
+  selectLanguage: "Dil seçin"
 };
 
 export default az;

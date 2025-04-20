@@ -1,19 +1,10 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import translations from '@/translations';
+import { getSavedLanguage, saveLanguage } from '@/utils/languageUtils';
+import { Language, LanguageInfo, LanguageContextType } from '@/types/language';
 
-type Language = 'az' | 'en' | 'tr' | 'ru';
-
-interface LanguageInfo {
-  nativeName: string;
-  flag: string;
-}
-
-export interface LanguageContextType {
-  t: (key: string) => string;
-  setLanguage: (lang: Language) => void;
-  languages: Record<Language, LanguageInfo>;
-  currentLanguage: Language;
-}
-
+// Default dillər məlumatı
 const defaultLanguages: Record<Language, LanguageInfo> = {
   az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
   en: { nativeName: 'English', flag: '🇬🇧' },
@@ -24,84 +15,27 @@ const defaultLanguages: Record<Language, LanguageInfo> = {
 // Context yaradılır
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Tərcümələr
-type Translations = Record<string, Record<Language, string>>;
-
-// Varsayılan tərcümələr (burada test üçün əsas olanları qeyd edirəm)
-const translations: Translations = {
-  login: {
-    az: 'Daxil ol',
-    en: 'Login',
-    tr: 'Giriş',
-    ru: 'Вход'
-  },
-  email: {
-    az: 'E-poçt',
-    en: 'Email',
-    tr: 'E-posta',
-    ru: 'Эл. почта'
-  },
-  password: {
-    az: 'Şifrə',
-    en: 'Password',
-    tr: 'Şifre',
-    ru: 'Пароль'
-  },
-  saveChanges: {
-    az: 'Dəyişiklikləri yadda saxla',
-    en: 'Save changes',
-    tr: 'Değişiklikleri kaydet',
-    ru: 'Сохранить изменения'
-  },
-  saveChangesDescription: {
-    az: 'Dəyişiklikləri yadda saxlamaq istədiyinizə əminsiniz?',
-    en: 'Are you sure you want to save changes?',
-    tr: 'Değişiklikleri kaydetmek istediğinizden emin misiniz?',
-    ru: 'Вы уверены, что хотите сохранить изменения?'
-  },
-  save: {
-    az: 'Yadda saxla',
-    en: 'Save',
-    tr: 'Kaydet',
-    ru: 'Сохранить'
-  },
-  cancel: {
-    az: 'Ləğv et',
-    en: 'Cancel',
-    tr: 'İptal',
-    ru: 'Отмена'
-  },
-  // ... digər tərcümələr əlavə edilə bilər
-};
-
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>('az');
-
-  useEffect(() => {
-    // Əgər lokalstorajda dil saxlanılıbsa, onu istifadə et
-    const savedLanguage = localStorage.getItem('language') as Language;
-    if (savedLanguage && Object.keys(defaultLanguages).includes(savedLanguage)) {
-      setCurrentLanguage(savedLanguage);
-    }
-  }, []);
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(getSavedLanguage());
 
   const changeLanguage = (language: Language) => {
     setCurrentLanguage(language);
-    localStorage.setItem('language', language);
+    saveLanguage(language);
   };
 
   const translate = (key: string): string => {
-    if (!translations[key]) {
-      console.warn(`Translation key '${key}' not found.`);
+    if (!translations[currentLanguage]) {
+      console.warn(`Dil tapılmadı: ${currentLanguage}`);
       return key;
     }
 
-    if (!translations[key][currentLanguage]) {
-      console.warn(`Translation for '${key}' in language '${currentLanguage}' not found.`);
+    const translation = translations[currentLanguage][key];
+    if (!translation) {
+      console.warn(`Tərcümə tapılmadı: ${key} (${currentLanguage})`);
       return key;
     }
 
-    return translations[key][currentLanguage];
+    return translation;
   };
 
   const value = {

@@ -13,12 +13,18 @@ const navigation = {
   news: "Xəbərlər",
   events: "Tədbirlər",
   gallery: "Qalereya",
-  faq: "FAQ",
+  faq: "Tez-tez verilən suallar",
   terms: "Şərtlər",
   privacy: "Gizlilik",
   forms: "Formalar",
   regions: "Regionlar",
   sectors: "Sektorlar",
+  schools: "Məktəblər",
+  users: "İstifadəçilər",
+  dataManagement: "Məlumat İdarəetməsi",
+  dataEntry: "Məlumat daxiletmə",
+  reports: "Hesabatlar",
+  settings: "Parametrlər",
   columns: "Sütunlar",
   formStatus: "Form statusu",
   formStatusDesc: "Formalarınızın ümumi vəziyyəti",
@@ -41,9 +47,8 @@ const navigation = {
   
   // Dashboard
   dashboard: "İdarəetmə paneli",
-  
-  // Users
-  users: "İstifadəçilər",
+  refresh: "Yenilə",
+  refreshing: "Yenilənir...",
   
   // Data Entry
   dataEntry: "Məlumat daxiletmə",
@@ -51,8 +56,50 @@ const navigation = {
   // Reports
   reports: "Hesabatlar",
   
+  // Settings
+  settings: "Parametrlər",
+  
+  // Templates
+  templates: "Şablonlar",
+  
   // School related
-  schools: "Məktəblər"
+  schools: "Məktəblər",
+  
+  // Users
+  users: "İstifadəçilər",
+  
+  // Logout
+  logout: "Çıxış",
+  
+  // Periods
+  thisMonth: "Bu ay",
+  thisWeek: "Bu həftə",
+  lastWeek: "Keçən həftə",
+  today: "Bu gün",
+  thisQuarter: "Bu rüb",
+  thisYear: "Bu il",
+  
+  // Search
+  searchDashboard: "Axtarış...",
+  
+  // Dashboard stats
+  totalSchools: "Ümumi məktəblər",
+  activeUsers: "Aktiv istifadəçilər",
+  regionSchools: "Region məktəbləri",
+  sectorSchools: "Sektor məktəbləri",
+  completionRate: "Tamamlanma faizi",
+  pendingForms: "Gözləyən formlar",
+  
+  // Dashboard notifications
+  dashboardRefreshed: "Panel yeniləndi",
+  dashboardRefreshedDesc: "Məlumatlar uğurla yeniləndi",
+  periodChanged: "Dövr dəyişdirildi",
+  periodChangedTo: "Dövr dəyişdirildi:",
+  
+  // Errors
+  errorLoadingData: "Məlumat yüklənərkən xəta baş verdi",
+  unknownUserRole: "Naməlum istifadəçi rolu",
+  tryAgain: "Yenidən cəhd edin"
 };
 
 export default navigation;
