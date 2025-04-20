@@ -1,4 +1,3 @@
-
 /**
  * Ümumi tərcümələr
  */
@@ -132,7 +131,24 @@ const general = {
   unarchive: "Arxivdən çıxar",
   archived: "Arxivlənmiş",
   allRegions: "Bütün regionlar",
-  sectorsOnly: "Yalnız sektorlar"
+  sectorsOnly: "Yalnız sektorlar",
+  navigation: {
+    home: 'Ana səhifə',
+    categories: 'Kateqoriyalar',
+    reports: 'Hesabatlar',
+    settings: 'Tənzimləmələr',
+    profile: 'Profil',
+    logout: 'Çıxış'
+  },
+
+  actions: {
+    add: 'Əlavə et',
+    edit: 'Redaktə et',
+    delete: 'Sil',
+    save: 'Yadda saxla',
+    cancel: 'Ləğv et',
+    confirm: 'Təsdiq et'
+  }
 };
 
 export default general;

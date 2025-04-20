@@ -1,4 +1,3 @@
-
 const authTranslations = {
   login: 'Daxil ol',
   logout: 'Çıxış',
@@ -15,6 +14,34 @@ const authTranslations = {
   unauthorized: 'İcazəsiz giriş',
   signIn: 'Daxil ol',
   signInWithEmail: 'E-poçt ilə daxil ol',
+  enterFullName: 'Ad və soyadınızı daxil edin',
+  enterEmail: 'E-poçt ünvanınızı daxil edin',
+  loginTitle: 'InfoLine-a xoş gəlmisiniz',
+  loginButton: 'Daxil ol',
+  loginDescription: 'Davam etmək üçün hesabınıza daxil olun',
+  loggingIn: 'Daxil olunur...',
+  emailRequired: 'E-poçt tələb olunur',
+  invalidEmail: 'Düzgün e-poçt ünvanı daxil edin',
+  passwordRequired: 'Şifrə tələb olunur',
+  passwordTooShort: 'Şifrə ən azı 6 simvol olmalıdır',
+  passwordMinLength: 'Şifrə minimum 6 simvol olmalıdır',
+  unexpectedError: 'Gözlənilməz xəta baş verdi',
+  registering: 'Qeydiyyat aparılır...',
+  register: 'Qeydiyyatdan keç',
+  enterSamePassword: 'Eyni şifrəni daxil edin',
+  passwordsDoNotMatch: 'Şifrələr uyğun gəlmir',
+  missingFields: 'Bütün sahələri doldurun',
+  checkYourEmail: 'E-poçtunuzu yoxlayın',
+  passwordResetEmailSent: 'Şifrə sıfırlama linki e-poçt ünvanınıza göndərildi',
+  backToLogin: 'Giriş səhifəsinə qayıt',
+  enterEmailToReset: 'Şifrəni sıfırlamaq üçün e-poçt ünvanınızı daxil edin',
+  sending: 'Göndərilir...',
+  alreadyHaveAccount: 'Artıq hesabınız var?',
+  newPassword: 'Yeni şifrə',
+  confirmPassword: 'Şifrəni təsdiqləyin',
+  updating: 'Yenilənir...',
+  updatePassword: 'Şifrəni yenilə',
+  enterNewPassword: 'Yeni şifrənizi daxil edin'
 };
 
 export default authTranslations;
