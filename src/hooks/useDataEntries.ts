@@ -1,10 +1,16 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { DataEntry } from '@/types/supabase';
+import { DataEntry } from '@/types/dataEntry';
 import { useAuth } from '@/context/auth';
+import { 
+  getDataEntries, 
+  addDataEntry, 
+  updateDataEntry, 
+  deleteDataEntry, 
+  approveDataEntry, 
+  rejectDataEntry 
+} from '@/services/dataEntryService';
 
 export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
   const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
@@ -16,32 +22,18 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
   const fetchDataEntries = useCallback(async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('data_entries')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Servis qatından məlumatları əldə edirik
+      const { success, data, error } = await getDataEntries({
+        schoolId: schoolId || user?.schoolId,
+        categoryId,
+        columnId
+      });
       
-      if (schoolId) {
-        query = query.eq('school_id', schoolId);
-      } else if (user?.schoolId) {
-        query = query.eq('school_id', user.schoolId);
-      }
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-      
-      if (columnId) {
-        query = query.eq('column_id', columnId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
+      if (!success) throw new Error(error);
       
       setDataEntries(data as DataEntry[]);
     } catch (err: any) {
-      console.error('Error fetching data entries:', err);
+      console.error('Məlumat elementlərini əldə edərkən xəta:', err);
       setError(err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotLoadDataEntries')
@@ -51,7 +43,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   }, [schoolId, categoryId, columnId, user, t]);
 
-  const addDataEntry = async (dataEntry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleAddDataEntry = async (dataEntry: Omit<DataEntry, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const entryWithSchoolId = {
         ...dataEntry,
@@ -60,13 +52,10 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         status: 'pending'
       };
 
-      const { data, error } = await supabase
-        .from('data_entries')
-        .insert([entryWithSchoolId])
-        .select()
-        .single();
-
-      if (error) throw error;
+      // Servis qatı vasitəsilə məlumat əlavə edirik
+      const { success, data, error } = await addDataEntry(entryWithSchoolId);
+      
+      if (!success) throw new Error(error);
       
       setDataEntries(prev => [data as DataEntry, ...prev]);
       toast.success(t('dataEntrySaved'), {
@@ -75,7 +64,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       
       return data;
     } catch (err: any) {
-      console.error('Error adding data entry:', err);
+      console.error('Məlumat elementi əlavə edərkən xəta:', err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotSaveData')
       });
@@ -83,16 +72,12 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
-  const updateDataEntry = async (id: string, updates: Partial<DataEntry>) => {
+  const handleUpdateDataEntry = async (id: string, updates: Partial<DataEntry>) => {
     try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      // Servis qatı vasitəsilə məlumatı yeniləyirik
+      const { success, data, error } = await updateDataEntry(id, updates);
+      
+      if (!success) throw new Error(error);
       
       setDataEntries(prev => prev.map(entry => 
         entry.id === id ? { ...entry, ...data } as DataEntry : entry
@@ -104,7 +89,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       
       return data;
     } catch (err: any) {
-      console.error('Error updating data entry:', err);
+      console.error('Məlumat elementi yeniləyərkən xəta:', err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotUpdateData')
       });
@@ -112,14 +97,12 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
-  const deleteDataEntry = async (id: string) => {
+  const handleDeleteDataEntry = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      // Servis qatı vasitəsilə məlumatı silirik
+      const { success, error } = await deleteDataEntry(id);
+      
+      if (!success) throw new Error(error);
       
       setDataEntries(prev => prev.filter(entry => entry.id !== id));
       
@@ -127,7 +110,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
         description: t('dataEntryDeletedDesc')
       });
     } catch (err: any) {
-      console.error('Error deleting data entry:', err);
+      console.error('Məlumat elementi silirkən xəta:', err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotDeleteData')
       });
@@ -135,16 +118,12 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
-  const approveDataEntry = async (id: string) => {
+  const handleApproveDataEntry = async (id: string) => {
     try {
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({ status: 'approved' })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      // Servis qatı vasitəsilə məlumatı təsdiqləyirik
+      const { success, data, error } = await approveDataEntry(id);
+      
+      if (!success) throw new Error(error);
       
       setDataEntries(prev => prev.map(entry => 
         entry.id === id ? { ...entry, ...data } as DataEntry : entry
@@ -156,7 +135,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       
       return data;
     } catch (err: any) {
-      console.error('Error approving data entry:', err);
+      console.error('Məlumat elementi təsdiqləyərkən xəta:', err);
       toast.error(t('errorOccurred'), {
         description: t('couldNotApproveData')
       });
@@ -164,23 +143,16 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
-  const rejectDataEntry = async (id: string, rejectionReason: string) => {
+  const handleRejectDataEntry = async (id: string, rejectionReason: string) => {
     try {
       if (!rejectionReason) {
-        throw new Error('Rejection reason is required');
+        throw new Error('Rədd səbəbi tələb olunur');
       }
 
-      const { data, error } = await supabase
-        .from('data_entries')
-        .update({ 
-          status: 'rejected',
-          rejection_reason: rejectionReason
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      // Servis qatı vasitəsilə məlumatı rədd edirik
+      const { success, data, error } = await rejectDataEntry(id, rejectionReason);
+      
+      if (!success) throw new Error(error);
       
       setDataEntries(prev => prev.map(entry => 
         entry.id === id ? { ...entry, ...data } as DataEntry : entry
@@ -192,7 +164,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       
       return data;
     } catch (err: any) {
-      console.error('Error rejecting data entry:', err);
+      console.error('Məlumat elementi rədd edərkən xəta:', err);
       toast.error(t('errorOccurred'), {
         description: err.message || t('couldNotRejectData')
       });
@@ -200,89 +172,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     }
   };
 
-  const getApprovalStatus = async (schoolId: string, categoryId?: string) => {
-    try {
-      let query = supabase
-        .from('data_entries')
-        .select('status')
-        .eq('school_id', schoolId);
-      
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      const statusCounts = {
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        total: 0
-      };
-      
-      if (data && data.length > 0) {
-        data.forEach((item: any) => {
-          const status = item.status as keyof typeof statusCounts;
-          if (status in statusCounts) {
-            statusCounts[status] += 1;
-            statusCounts.total += 1;
-          }
-        });
-      }
-      
-      return statusCounts;
-    } catch (err) {
-      console.error('Error fetching approval status:', err);
-      throw err;
-    }
-  };
-
-  const submitCategoryForApproval = async (categoryId: string, schoolId: string) => {
-    try {
-      if (!categoryId || !schoolId) {
-        throw new Error('Category ID and School ID are required');
-      }
-
-      // RPC çağırışı yerinə birbaşa sorğu edirik
-      const { data: entries, error: entriesError } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-
-      if (entriesError) throw entriesError;
-      
-      if (!entries || entries.length === 0) {
-        throw new Error('No data entries found for this category');
-      }
-      
-      // Bütün məlumatları 'pending' statusuna yeniləyirik
-      const { error: updateError } = await supabase
-        .from('data_entries')
-        .update({ status: 'pending' })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId);
-        
-      if (updateError) throw updateError;
-      
-      await fetchDataEntries();
-      
-      toast.success(t('categorySubmitted'), {
-        description: t('categorySubmittedDesc')
-      });
-      
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error submitting category for approval:', err);
-      toast.error(t('errorOccurred'), {
-        description: err.message || t('couldNotSubmitCategory')
-      });
-      throw err;
-    }
-  };
-
+  // Effektlər
   useEffect(() => {
     fetchDataEntries();
   }, [fetchDataEntries]);
@@ -291,13 +181,13 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     dataEntries,
     loading,
     error,
-    fetchDataEntries,
-    addDataEntry,
-    updateDataEntry,
-    deleteDataEntry,
-    getApprovalStatus,
-    approveDataEntry,
-    rejectDataEntry,
-    submitCategoryForApproval
+    refetch: fetchDataEntries,
+    addDataEntry: handleAddDataEntry,
+    updateDataEntry: handleUpdateDataEntry,
+    deleteDataEntry: handleDeleteDataEntry,
+    approveDataEntry: handleApproveDataEntry,
+    rejectDataEntry: handleRejectDataEntry
   };
 };
+
+export default useDataEntries;

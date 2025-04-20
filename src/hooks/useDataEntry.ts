@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
-import { useCategoryData } from './dataEntry/useCategoryData';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
+import { CategoryWithColumns } from '@/types/category';
+import { DataEntry, DataEntrySaveStatus } from '@/types/dataEntry';
+import { 
+  getDataEntries, 
+  saveDataEntryForm, 
+  submitForApproval 
+} from '@/services/dataEntryService';
 
 interface UseDataEntryProps {
   schoolId?: string | null;
@@ -18,90 +23,129 @@ export const useDataEntry = ({
 }: UseDataEntryProps = {}) => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategoryData(schoolId || undefined);
   
-  const [currentCategory, setCurrentCategory] = useState<any>(null);
+  // State
+  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
+  const [currentCategory, setCurrentCategory] = useState<CategoryWithColumns | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [loadingEntry, setLoadingEntry] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [entryError, setEntryError] = useState<string | null>(null);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [entryStatus, setEntryStatus] = useState<Record<string, string>>({});
   const [entryId, setEntryId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
   
-  // Kateqoriyaları yüklədikdən sonra ilk kateqoriyanı və ya seçilmiş kateqoriyanı təyin edirik
-  useEffect(() => {
-    if (!categoriesLoading && categories && categories.length > 0) {
-      if (initialCategoryId) {
-        const category = categories.find(c => c.id === initialCategoryId);
-        if (category) {
-          setCurrentCategory(category);
-        } else {
-          setCurrentCategory(categories[0]);
-        }
-      } else {
-        setCurrentCategory(categories[0]);
-      }
-    }
-  }, [categories, categoriesLoading, initialCategoryId]);
-  
-  // Məktəb və kateqoriya üçün mövcud məlumatları yükləyirik
-  useEffect(() => {
-    const fetchExistingEntries = async () => {
-      if (!schoolId || !currentCategory) {
-        setLoadingEntry(false);
+  // Kateqoriyaları yüklə
+  const fetchCategories = useCallback(async () => {
+    try {
+      setLoadingCategories(true);
+      setCategoriesError(null);
+      
+      // Burada servis qatından kateqoriyaları əldə edəcəyik
+      // Hələlik birbaşa Supabase sorğusu istifadə edirik
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('status', 'active')
+        .order('priority', { ascending: true });
+        
+      if (categoriesError) throw categoriesError;
+      
+      if (!categoriesData || !Array.isArray(categoriesData) || categoriesData.length === 0) {
+        setCategories([]);
         return;
       }
       
-      setLoadingEntry(true);
-      try {
-        // Bütün kateqoriyalar üçün statusları əldə edirik
-        const { data: statusData, error: statusError } = await supabase
-          .from('data_entries')
-          .select('id, category_id, status')
-          .eq('school_id', schoolId);
-          
-        if (statusError) throw statusError;
+      // Bütün kateqoriyalar üçün sütunları əldə edək
+      const { data: columnsData, error: columnsError } = await supabase
+        .from('columns')
+        .select('*')
+        .in('category_id', categoriesData.map(cat => cat.id))
+        .eq('status', 'active')
+        .order('order_index', { ascending: true });
         
-        // Statusları qeyd edirik
-        const statuses: Record<string, string> = {};
-        statusData?.forEach(entry => {
-          statuses[entry.category_id] = entry.status;
-        });
-        setEntryStatus(statuses);
-        
-        // Cari kateqoriya üçün məlumatları əldə edirik
-        const { data: entryData, error: entryError } = await supabase
-          .from('data_entries')
-          .select('id, column_id, value, status')
-          .eq('school_id', schoolId)
-          .eq('category_id', currentCategory.id);
-          
-        if (entryError) throw entryError;
-        
-        if (entryData && entryData.length > 0) {
-          // Məlumatları formData formatına çeviririk
-          const formattedData: Record<string, any> = {};
-          entryData.forEach(entry => {
-            formattedData[entry.column_id] = entry.value;
-          });
-          
-          setFormData(formattedData);
-          setEntryId(entryData[0].id); // Eyni kateqoriya üçün bütün sütunlar eyni ID-yə malik olmalıdır
-        } else {
-          setFormData({});
-          setEntryId(null);
+      if (columnsError) throw columnsError;
+      
+      // Kateqoriyaları və sütunları birləşdirək
+      const categoriesWithColumns = categoriesData.map(category => {
+        const categoryColumns = columnsData?.filter(col => col.category_id === category.id) || [];
+        return {
+          ...category,
+          columns: categoryColumns
+        } as CategoryWithColumns;
+      });
+      
+      setCategories(categoriesWithColumns);
+      
+      // İlk kateqoriyanı və ya seçilmiş kateqoriyanı təyin edirik
+      if (initialCategoryId) {
+        const category = categoriesWithColumns.find(c => c.id === initialCategoryId);
+        if (category) {
+          setCurrentCategory(category);
+        } else if (categoriesWithColumns.length > 0) {
+          setCurrentCategory(categoriesWithColumns[0]);
         }
-      } catch (error: any) {
-        console.error('Məlumatları yükləyərkən xəta:', error);
-        setEntryError(error.message);
-      } finally {
-        setLoadingEntry(false);
+      } else if (categoriesWithColumns.length > 0) {
+        setCurrentCategory(categoriesWithColumns[0]);
       }
-    };
+    } catch (error: any) {
+      console.error('Kateqoriyaları yükləyərkən xəta:', error);
+      setCategoriesError(error.message);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, [initialCategoryId]);
+  
+  // Məktəb və kateqoriya üçün mövcud məlumatları yükləyirik
+  const fetchExistingEntries = useCallback(async () => {
+    if (!schoolId || !currentCategory) {
+      setLoadingEntry(false);
+      return;
+    }
     
-    fetchExistingEntries();
-  }, [schoolId, currentCategory]);
+    setLoadingEntry(true);
+    try {
+      // Servis qatından məlumatları əldə edirik
+      const { success, data, error } = await getDataEntries({
+        schoolId,
+        categoryId: currentCategory.id,
+        status: statusFilter || undefined
+      });
+      
+      if (!success) throw new Error(error);
+      
+      // Statusları qeyd edirik
+      const statuses: Record<string, string> = {};
+      data?.forEach((entry: any) => {
+        statuses[entry.categoryId] = entry.status;
+      });
+      setEntryStatus(statuses);
+      
+      // Məlumatları formData formatına çeviririk
+      const formattedData: Record<string, any> = {};
+      data?.forEach((entry: any) => {
+        formattedData[entry.columnId] = entry.value;
+      });
+      
+      setFormData(formattedData);
+      
+      // Eyni kateqoriya üçün bütün sütunlar eyni ID-yə malik olmalıdır
+      if (data && data.length > 0) {
+        setEntryId(data[0].id);
+      } else {
+        setFormData({});
+        setEntryId(null);
+      }
+    } catch (error: any) {
+      console.error('Məlumatları yükləyərkən xəta:', error);
+      setEntryError(error.message);
+    } finally {
+      setLoadingEntry(false);
+    }
+  }, [schoolId, currentCategory, statusFilter]);
   
   // Form məlumatlarını yeniləyirik
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -110,12 +154,16 @@ export const useDataEntry = ({
       ...prev,
       [name]: value
     }));
+    
+    // Dəyişiklik olduğunu qeyd edirik
+    setSaveStatus(DataEntrySaveStatus.IDLE);
   }, []);
   
   // Formu təmizləyirik
   const handleReset = useCallback(() => {
     if (window.confirm(t('confirmReset'))) {
       setFormData({});
+      setSaveStatus(DataEntrySaveStatus.IDLE);
     }
   }, [t]);
   
@@ -127,36 +175,27 @@ export const useDataEntry = ({
     }
     
     setIsAutoSaving(true);
+    setSaveStatus(DataEntrySaveStatus.SAVING);
+    
     try {
-      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
-      if (entryId) {
-        const { error: deleteError } = await supabase
-          .from('data_entries')
-          .delete()
-          .eq('school_id', schoolId)
-          .eq('category_id', currentCategory.id);
-          
-        if (deleteError) throw deleteError;
-      }
-      
-      // Sonra yeni məlumatları əlavə edirik
+      // Məlumatları servis qatı vasitəsilə saxlayırıq
       const entries = Object.entries(formData).map(([columnId, value]) => ({
-        school_id: schoolId,
-        category_id: currentCategory.id,
-        column_id: columnId,
+        columnId,
         value: String(value || ''),
-        status: 'draft',
-        created_by: user.id,
-        updated_at: new Date().toISOString()
+        status: 'draft'
       }));
       
-      if (entries.length > 0) {
-        const { error: insertError } = await supabase
-          .from('data_entries')
-          .insert(entries);
-          
-        if (insertError) throw insertError;
-      }
+      const { success, error } = await saveDataEntryForm({
+        id: entryId || undefined,
+        schoolId,
+        categoryId: currentCategory.id,
+        entries,
+        isModified: true,
+        saveStatus: DataEntrySaveStatus.SAVING,
+        error: null
+      });
+      
+      if (!success) throw new Error(error);
       
       // Status məlumatlarını yeniləyirik
       setEntryStatus(prev => ({
@@ -164,9 +203,11 @@ export const useDataEntry = ({
         [currentCategory.id]: 'draft'
       }));
       
+      setSaveStatus(DataEntrySaveStatus.SAVED);
       toast.success(t('draftSaved'));
     } catch (error: any) {
       console.error('Məlumatları saxlayarkən xəta:', error);
+      setSaveStatus(DataEntrySaveStatus.ERROR);
       toast.error(t('errorSavingData'));
     } finally {
       setIsAutoSaving(false);
@@ -192,36 +233,28 @@ export const useDataEntry = ({
     }
     
     setIsSubmitting(true);
+    setSaveStatus(DataEntrySaveStatus.SUBMITTING);
+    
     try {
-      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
-      if (entryId) {
-        const { error: deleteError } = await supabase
-          .from('data_entries')
-          .delete()
-          .eq('school_id', schoolId)
-          .eq('category_id', currentCategory.id);
-          
-        if (deleteError) throw deleteError;
-      }
+      // Əvvəlcə məlumatları saxlayırıq
+      await handleSave();
       
-      // Sonra yeni məlumatları əlavə edirik
-      const entries = Object.entries(formData).map(([columnId, value]) => ({
-        school_id: schoolId,
-        category_id: currentCategory.id,
-        column_id: columnId,
-        value: String(value || ''),
-        status: 'pending',
-        created_by: user.id,
-        updated_at: new Date().toISOString()
-      }));
+      // Sonra təsdiq üçün göndəririk
+      const { success, error } = await submitForApproval({
+        id: entryId || undefined,
+        schoolId,
+        categoryId: currentCategory.id,
+        entries: Object.entries(formData).map(([columnId, value]) => ({
+          columnId,
+          value: String(value || ''),
+          status: 'pending'
+        })),
+        isModified: false,
+        saveStatus: DataEntrySaveStatus.SUBMITTING,
+        error: null
+      });
       
-      if (entries.length > 0) {
-        const { error: insertError } = await supabase
-          .from('data_entries')
-          .insert(entries);
-          
-        if (insertError) throw insertError;
-      }
+      if (!success) throw new Error(error);
       
       // Status məlumatlarını yeniləyirik
       setEntryStatus(prev => ({
@@ -229,33 +262,56 @@ export const useDataEntry = ({
         [currentCategory.id]: 'pending'
       }));
       
-      toast.success(t('dataSubmitted'));
+      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
+      toast.success(t('formSubmitted'));
+      
+      // Məlumatları yenidən yükləyirik
+      await fetchExistingEntries();
     } catch (error: any) {
-      console.error('Məlumatları göndərərkən xəta:', error);
-      toast.error(t('errorSubmittingData'));
+      console.error('Formu təqdim edərkən xəta:', error);
+      setSaveStatus(DataEntrySaveStatus.ERROR);
+      toast.error(t('errorSubmittingForm'));
     } finally {
       setIsSubmitting(false);
     }
-  }, [schoolId, currentCategory, formData, entryId, user?.id, t]);
+  }, [schoolId, currentCategory, formData, entryId, user?.id, t, handleSave, fetchExistingEntries]);
   
-  // Kateqoriyanı dəyişirik
-  const handleCategoryChange = useCallback((category: any) => {
-    setCurrentCategory(category);
-  }, []);
+  // Kateqoriyanı dəyişdiririk
+  const handleCategoryChange = useCallback((categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (category) {
+      setCurrentCategory(category);
+    }
+  }, [categories]);
+  
+  // Effektlər
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+  
+  useEffect(() => {
+    fetchExistingEntries();
+  }, [fetchExistingEntries]);
   
   return {
-    formData,
-    isAutoSaving,
-    isSubmitting,
-    handleInputChange,
-    handleSubmit,
-    handleSave,
-    handleReset,
-    handleCategoryChange,
+    categories,
     currentCategory,
-    loadingEntry,
+    formData,
     entryStatus,
+    isSubmitting,
+    isAutoSaving,
+    loadingEntry,
+    loadingCategories,
     entryError,
-    entryId
+    categoriesError,
+    saveStatus,
+    handleInputChange,
+    handleReset,
+    handleSave,
+    handleSubmit,
+    handleCategoryChange,
+    setCurrentCategory
   };
 };
+
+export default useDataEntry;
