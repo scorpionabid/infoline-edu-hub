@@ -152,8 +152,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         ...authState,
         login,
         logout,
+        signOut: logout,
         updateUser,
         clearError,
+        resetPassword: async () => {},
+        updatePassword: async () => {},
+        refreshUser: async () => {},
       }}
     >
       {children}

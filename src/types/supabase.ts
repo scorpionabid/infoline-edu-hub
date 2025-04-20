@@ -73,4 +73,11 @@ export interface FullUserData {
   phone?: string;
   position?: string;
   language?: string;
+  name?: string;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email?: boolean;
+    push?: boolean;
+    inApp?: boolean;
+  };
 }

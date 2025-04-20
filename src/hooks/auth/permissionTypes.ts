@@ -24,6 +24,7 @@ export interface UsePermissionsResult {
   sectorId?: string | undefined;
   schoolId?: string | undefined;
   canViewSectorCategories: boolean;
+  isSchoolAdmin?: boolean;
 }
 
 // Permission xəta tipi

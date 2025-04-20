@@ -1,6 +1,6 @@
 
 import { Category, CategoryStatus } from './category';
-import { Column } from './column';
+import { Column, ColumnValidationError } from './column';
 
 export interface DataEntry {
   id?: string;
@@ -78,3 +78,5 @@ export interface ColumnDataEntryProps {
   errors?: any[];
   disabled?: boolean;
 }
+
+export { ColumnValidationError };
