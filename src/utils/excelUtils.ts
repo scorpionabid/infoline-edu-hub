@@ -1,81 +1,84 @@
+import { School } from '@/types/school';
 
-import { Column } from '@/types/column';
-import * as XLSX from 'xlsx';
-import { formatValueForDisplay } from './columnValidation';
-
-export const generateExcelTemplate = (columns: Column[]): Blob => {
-  const headers = columns.map(col => ({
-    key: col.id,
-    header: col.name,
-    width: 20
-  }));
-
-  const worksheet = XLSX.utils.aoa_to_sheet([headers.map(h => h.header)]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Məlumatlar');
-
-  // Set column widths
-  const wscols = headers.map(() => ({ wch: 20 }));
-  worksheet['!cols'] = wscols;
-
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-};
-
-export const parseExcelData = (file: File, columns: Column[]): Promise<any[]> => {
+export const importSchoolsFromExcel = async (file: File): Promise<School[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    reader.onload = (e: any) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
 
-        // Remove header row
-        const rows = jsonData.slice(1);
-        const columnMap = new Map(columns.map(col => [col.name, col]));
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        // Map Excel data to our format
-        const formattedData = rows.map((row: any[]) => {
-          const rowData: Record<string, any> = {};
-          columns.forEach((col, index) => {
-            const value = row[index];
-            rowData[col.id] = value ?? null;
-          });
-          return rowData;
-        });
+      // Başlıq sətrini çıxar
+      const header = jsonData[0] as string[];
+      const schoolData: any[] = [];
 
-        resolve(formattedData);
-      } catch (error) {
-        reject(new Error('Excel faylını oxuyarkən xəta baş verdi'));
+      // İkinci sətrdən başlayaraq məlumatları oxu
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i] as any[];
+        if (!row || row.length === 0) continue; // Boş sətrləri atla
+
+        const school: any = {};
+        for (let j = 0; j < header.length; j++) {
+          school[header[j]] = row[j] || null; // Hücre boş olsa belə, null olaraq əlavə et
+        }
+        schoolData.push(school);
       }
+
+      const schools: School[] = schoolData.map(item => ({
+        id: item['id'] || '',
+        name: item['name'] || '',
+        principal_name: item['principal_name'] || '',
+        address: item['address'] || '',
+        region_id: item['region_id'] || '',
+        sector_id: item['sector_id'] || '',
+        phone: item['phone'] || '',
+        email: item['email'] || '',
+        student_count: item['student_count'] || 0,
+        teacher_count: item['teacher_count'] || 0,
+        status: item['status'] || 'active',
+        type: item['type'] || '',
+        language: item['language'] || '',
+        created_at: item['created_at'] || new Date(),
+        updated_at: item['updated_at'] || new Date(),
+        completion_rate: item['completion_rate'] || 0,
+        logo: item['logo'] || null,
+        admin_email: item['admin_email'] || null,
+        admin_id: item['admin_id'] || null,
+      }));
+
+      resolve(schools);
     };
 
-    reader.onerror = () => {
-      reject(new Error('Fayl oxunarkən xəta baş verdi'));
+    reader.onerror = (error) => {
+      reject(error);
     };
 
     reader.readAsArrayBuffer(file);
   });
 };
 
-export const exportToExcel = (data: any[], columns: Column[], filename: string): void => {
-  // Prepare data for export
-  const headers = columns.map(col => col.name);
-  const rows = data.map(item => 
-    columns.map(col => formatValueForDisplay(item[col.id], col.type))
-  );
+export const validateExcelData = (data: any[]): string[] => {
+  const errors: string[] = [];
+  if (!Array.isArray(data) || data.length === 0) {
+    errors.push('Excel faylında məlumat tapılmadı.');
+    return errors;
+  }
 
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Məlumatlar');
+  const header = data[0] as string[];
+  if (!header || header.length === 0) {
+    errors.push('Excel faylında başlıqlar tapılmadı.');
+    return errors;
+  }
 
-  // Set column widths
-  const wscols = headers.map(() => ({ wch: 20 }));
-  worksheet['!cols'] = wscols;
+  const requiredHeaders = ['name', 'region_id', 'sector_id'];
+  const missingHeaders = requiredHeaders.filter(requiredHeader => !header.includes(requiredHeader));
 
-  // Generate and download file
-  XLSX.writeFile(workbook, `${filename}.xlsx`);
+  if (missingHeaders.length > 0) {
+    errors.push(`Aşağıdakı başlıqlar tapılmadı: ${missingHeaders.join(', ')}`);
+  }
+  return errors;
 };

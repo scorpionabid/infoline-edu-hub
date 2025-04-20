@@ -5,37 +5,36 @@ import { useForm } from 'react-hook-form';
 import { CategoryWithColumns } from '@/types/column';
 import { TextInput } from './inputs/TextInput';
 import { NumberInput } from './inputs/NumberInput';
-import { EntryFormData } from '@/types/entry';
-import { DataEntry } from '@/types/dataEntry';
+import { EntryFormData, DataEntry } from '@/types/entry';
 
 interface EntryFormProps {
   category: CategoryWithColumns;
   entries: DataEntry[];
   onChange: (entries: DataEntry[]) => void;
   disabled?: boolean;
+  schoolId: string;
 }
 
 export const EntryForm: React.FC<EntryFormProps> = ({
   category,
   entries,
   onChange,
-  disabled
+  disabled,
+  schoolId
 }) => {
-  const form = useForm({
+  const form = useForm<EntryFormData>({
     defaultValues: {
-      fields: entries.reduce((acc, entry) => ({
-        ...acc,
-        [entry.column_id]: entry.value
-      }), {})
+      entries: entries
     }
   });
 
   React.useEffect(() => {
     const subscription = form.watch((values) => {
-      if (!values.fields) return;
+      if (!values.entries) return;
 
-      const newEntries = Object.entries(values.fields).map(([columnId, value]) => ({
+      const newEntries = Object.entries(values.entries).map(([columnId, value]) => ({
         column_id: columnId,
+        school_id: schoolId,
         category_id: category.id,
         value: value as string,
         status: 'pending'
@@ -45,22 +44,19 @@ export const EntryForm: React.FC<EntryFormProps> = ({
     });
 
     return () => subscription.unsubscribe();
-  }, [form, category.id, onChange]);
-
-  const renderInput = (column: Column) => {
-    switch (column.type) {
-      case 'number':
-        return <NumberInput key={column.id} column={column} disabled={disabled} />;
-      default:
-        return <TextInput key={column.id} column={column} disabled={disabled} />;
-    }
-  };
+  }, [form, category.id, onChange, schoolId]);
 
   return (
     <Form {...form}>
       <form className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {category.columns.map(column => renderInput(column))}
+          {category.columns.map((column) => (
+            column.type === 'number' ? (
+              <NumberInput key={column.id} column={column} disabled={disabled} />
+            ) : (
+              <TextInput key={column.id} column={column} disabled={disabled} />
+            )
+          ))}
         </div>
       </form>
     </Form>
