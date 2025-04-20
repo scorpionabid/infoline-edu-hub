@@ -241,6 +241,27 @@ const ui = {
     processing: "Emal edilir...",
     saving: "Saxlanılır...",
     waiting: "Xahiş edirik gözləyin..."
+  },
+
+  // İnterfeys elementləri üçün əlavə tərcümələr
+  themeToggle: {
+    light: 'İşıqlı rejim',
+    dark: 'Qaranlıq rejim',
+    system: 'Sistem rejimi'
+  },
+  
+  errorMessages: {
+    loginError: 'Giriş zamanı xəta baş verdi',
+    networkError: 'Şəbəkə xətası',
+    sessionExpired: 'Sessiya başa çatıb',
+    invalidCredentials: 'Yanlış e-poçt və ya şifrə'
+  },
+
+  dashboard: {
+    welcome: 'Xoş gəlmisiniz',
+    overview: 'Ümumi baxış',
+    statistics: 'Statistika',
+    recentActivity: 'Son fəaliyyət'
   }
 };
 
