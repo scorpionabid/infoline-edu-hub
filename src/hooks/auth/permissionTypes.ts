@@ -15,6 +15,7 @@ export interface UsePermissionsResult {
   // Rola əsaslanan hüquq helper funksiyaları
   canSectorAdminAccessCategoriesColumns?: () => boolean;
   canRegionAdminManageCategoriesColumns: () => boolean;
+  hasRole: (role: UserRole) => boolean;
   
   // İstifadəçi məlumatları
   userRole: UserRole | undefined;

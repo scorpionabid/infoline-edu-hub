@@ -29,7 +29,8 @@ const NavigationMenu: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userRole } = usePermissions();
-  
+  const { userData } = useAuth();
+
   const [openMobile, setOpenMobile] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   
@@ -147,8 +148,14 @@ const NavigationMenu: React.FC = () => {
       <div className="hidden md:block">
         <p className="text-sm font-medium">{user?.full_name || user?.name || user?.email}</p>
         <p className="text-xs text-muted-foreground capitalize">{user?.role || 'user'}</p>
-        {user?.school_name && (
-          <p className="text-xs text-muted-foreground">{user?.school_name}</p>
+        {userData?.schoolId && (
+          <Link 
+            to={`/schools/${userData.schoolId}`}
+            className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground"
+          >
+            <School className="h-4 w-4" />
+            {userData.schoolName || t('yourSchool')}
+          </Link>
         )}
       </div>
     </div>

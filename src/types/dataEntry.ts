@@ -1,5 +1,5 @@
 
-import { CategoryWithColumns } from './column';
+import { CategoryWithColumns, ColumnValidationError } from './column';
 
 export interface DataEntry {
   id?: string;
@@ -54,3 +54,5 @@ export interface UseDataEntryResult {
   saveStatus: DataEntrySaveStatus;
   isDataModified: boolean;
 }
+
+export { ColumnValidationError };
