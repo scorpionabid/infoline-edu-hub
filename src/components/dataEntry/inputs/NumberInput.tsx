@@ -1,54 +1,31 @@
 
 import React from 'react';
-import { useFormContext } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useLanguage } from '@/context/LanguageContext';
-import { ValidationRules } from '@/types/column';
+import { Input } from '@/components/ui/input';
+import { BaseInput } from './BaseInput';
+import { Column } from '@/types/column';
 
 interface NumberInputProps {
-  column: {
-    id: string;
-    name: string;
-    is_required?: boolean;
-    help_text?: string;
-    validation?: ValidationRules;
-  };
-  form: any;
+  column: Column;
   disabled?: boolean;
 }
 
-const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = false }) => {
-  const { t } = useLanguage();
-  
+export const NumberInput: React.FC<NumberInputProps> = ({ column, disabled }) => {
   return (
-    <FormField
-      control={form.control}
-      name={`fields.${column.id}`}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            {column.name}
-            {column.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
-          <FormControl>
-            <Input
-              {...field}
-              type="number"
-              placeholder={column.help_text}
-              disabled={disabled}
-              onChange={(e) => {
-                const value = e.target.value === '' ? '' : Number(e.target.value);
-                field.onChange(value);
-              }}
-              className="w-full"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
+    <BaseInput
+      column={column}
+      disabled={disabled}
+      renderInput={(value, onChange) => (
+        <Input
+          type="number"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={column.placeholder}
+          disabled={disabled}
+          min={column.validation?.minValue}
+          max={column.validation?.maxValue}
+          step={column.validation?.step || 1}
+        />
       )}
     />
   );
 };
-
-export default NumberInput;
