@@ -25,3 +25,9 @@ export interface UsePermissionsResult {
   schoolId?: string | undefined;
   canViewSectorCategories: boolean;
 }
+
+// Permission xəta tipi
+export interface PermissionError {
+  message: string;
+  code: string;
+}

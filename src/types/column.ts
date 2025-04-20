@@ -97,17 +97,19 @@ export interface CategoryWithColumns {
   created_at: string;
   updated_at: string;
   column_count?: number;
+  archived?: boolean;
 }
 
 export type ColumnStatus = 'active' | 'inactive' | 'draft';
 export type CategoryStatus = 'active' | 'inactive' | 'draft';
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'completed' | 'draft';
 
 export interface ColumnValidationError {
   field: string;
   message: string;
   type: string;
   severity: 'warning' | 'error' | 'info';
+  columnId?: string;
 }
 
 // Sütun tipləri üçün təriflər

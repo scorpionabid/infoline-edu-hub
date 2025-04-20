@@ -1,5 +1,5 @@
 
-import { CategoryWithColumns, CategoryStatus } from './column';
+import { CategoryWithColumns, CategoryStatus, FormStatus } from './column';
 
 export interface Category {
   id: string;
@@ -12,10 +12,16 @@ export interface Category {
   created_at: string;
   updated_at: string;
   column_count?: number;
+  archived?: boolean;
 }
 
-export type CategoryFilter = 'all' | 'active' | 'inactive' | 'draft';
-export { CategoryStatus, FormStatus } from './column';
+export type CategoryFilter = {
+  status?: 'all' | 'active' | 'inactive' | 'draft';
+  assignment?: 'all' | 'sectors';
+  deadline?: 'all' | 'upcoming' | 'past';
+};
+
+export { CategoryStatus, FormStatus };
 
 export const adaptCategoryToSupabase = (category: Partial<Category> & { name: string }): any => {
   return {
@@ -25,7 +31,8 @@ export const adaptCategoryToSupabase = (category: Partial<Category> & { name: st
     deadline: category.deadline || null,
     status: category.status || 'active',
     priority: category.priority || 0,
-    column_count: category.column_count || 0
+    column_count: category.column_count || 0,
+    archived: category.archived || false
   };
 };
 
@@ -40,6 +47,7 @@ export const adaptSupabaseCategory = (dbCategory: any): Category => {
     priority: dbCategory.priority || 0,
     created_at: dbCategory.created_at,
     updated_at: dbCategory.updated_at,
-    column_count: dbCategory.column_count || 0
+    column_count: dbCategory.column_count || 0,
+    archived: dbCategory.archived || false
   };
 };
