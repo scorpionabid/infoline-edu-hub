@@ -1,15 +1,14 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntry } from '@/types/dataEntry';
-import TextInput from './inputs/TextInput';
-import NumberInput from './inputs/NumberInput';
-import SelectInput from './inputs/SelectInput';
-import DateInput from './inputs/DateInput';
-import CheckboxInput from './inputs/CheckboxInput';
+import { TextInput } from './inputs/TextInput';
+import { NumberInput } from './inputs/NumberInput';
+import { SelectInput } from './inputs/SelectInput';
+import { DateInput } from './inputs/DateInput';
+import { CheckboxInput } from './inputs/CheckboxInput';
 import { Form } from '@/components/ui/form';
 
 interface FormFieldsProps {
@@ -21,25 +20,21 @@ interface FormFieldsProps {
 
 const FormFields: React.FC<FormFieldsProps> = ({
   category,
-  entries = [], // Default value as empty array
+  entries = [],
   onChange,
   disabled = false
 }) => {
-  // Ensure entries is always an array
   const safeEntries = Array.isArray(entries) ? entries : [];
   
-  // Formun başlanğıc dəyərlərini hazırlayaq
   const initialValues = React.useMemo(() => {
     const values: Record<string, any> = { fields: {} };
     
     if (category && category.columns && Array.isArray(category.columns)) {
       category.columns.forEach(column => {
-        // Mövcud qeydi tapaq
         const entry = safeEntries.find(e => e.column_id === column.id);
         if (entry) {
           values.fields[column.id] = entry.value;
         } else {
-          // Default dəyər
           values.fields[column.id] = column.default_value || '';
         }
       });
@@ -48,7 +43,6 @@ const FormFields: React.FC<FormFieldsProps> = ({
     return values;
   }, [category, safeEntries]);
 
-  // Dinamik validasiya sxemi yaradaq
   const schema = React.useMemo(() => {
     const fieldsSchema: Record<string, any> = {};
     
@@ -71,7 +65,6 @@ const FormFields: React.FC<FormFieldsProps> = ({
             fieldSchema = z.any();
           }
         } else {
-          // Məcburi olmayan sahələr üçün tipləri müəyyən edək
           if (column.type === 'number') {
             fieldSchema = z.number().optional().or(z.string().optional());
           } else if (column.type === 'checkbox') {
@@ -100,19 +93,16 @@ const FormFields: React.FC<FormFieldsProps> = ({
     mode: 'onChange'
   });
 
-  // Form dəyərləri dəyişdikdə işləyən funksiya
   const handleFormChange = React.useCallback((values: any) => {
     if (!values.fields) return;
     
     const updatedEntries: DataEntry[] = [];
     
-    // Bütün sütunlar üçün
     if (category && category.columns && Array.isArray(category.columns)) {
       Object.entries(values.fields).forEach(([columnId, value]) => {
         const column = category.columns.find(c => c.id === columnId);
         if (!column) return;
         
-        // Mövcud qeydi tapaq
         const existingEntry = safeEntries.find(e => e.column_id === columnId);
         
         updatedEntries.push({
@@ -129,7 +119,6 @@ const FormFields: React.FC<FormFieldsProps> = ({
     onChange(updatedEntries);
   }, [category, safeEntries, onChange]);
 
-  // Form dəyərləri dəyişdikdə handleFormChange funksiyasını çağıraq
   React.useEffect(() => {
     const subscription = form.watch((values) => {
       handleFormChange(values);
@@ -138,7 +127,6 @@ const FormFields: React.FC<FormFieldsProps> = ({
     return () => subscription.unsubscribe();
   }, [form, handleFormChange]);
 
-  // Sütun tipinə görə müvafiq input komponentini qaytarır
   const renderFieldByType = (column: any) => {
     switch(column.type) {
       case 'text':

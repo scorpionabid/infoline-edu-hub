@@ -18,6 +18,7 @@ export interface ValidationRules {
   minValue?: number;
   maxValue?: number;
   customMessage?: string;
+  step?: number;
 }
 
 export interface ColumnOption {
@@ -101,8 +102,6 @@ export interface CategoryWithColumns {
 }
 
 export type ColumnStatus = 'active' | 'inactive' | 'draft';
-export type CategoryStatus = 'active' | 'inactive' | 'draft';
-export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'completed' | 'draft';
 
 export interface ColumnValidationError {
   field: string;

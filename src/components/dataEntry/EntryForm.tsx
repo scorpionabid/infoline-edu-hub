@@ -37,7 +37,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
         school_id: schoolId,
         category_id: category.id,
         value: value as string,
-        status: 'pending'
+        status: 'pending' as const
       }));
 
       onChange(newEntries);
@@ -50,7 +50,7 @@ export const EntryForm: React.FC<EntryFormProps> = ({
     <Form {...form}>
       <form className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {category.columns.map((column) => (
+          {category.columns?.map((column) => (
             column.type === 'number' ? (
               <NumberInput key={column.id} column={column} disabled={disabled} />
             ) : (

@@ -1,5 +1,9 @@
 
-import { CategoryWithColumns, CategoryStatus, FormStatus } from './column';
+import { CategoryWithColumns, Column } from './column';
+
+// CategoryStatus və FormStatus tipləri burda təyin edilir
+export type CategoryStatus = 'active' | 'inactive' | 'draft';
+export type FormStatus = 'pending' | 'approved' | 'rejected' | 'dueSoon' | 'overdue' | 'completed' | 'draft';
 
 export interface Category {
   id: string;
@@ -20,8 +24,6 @@ export type CategoryFilter = {
   assignment?: 'all' | 'sectors';
   deadline?: 'all' | 'upcoming' | 'past';
 };
-
-export { CategoryStatus, FormStatus };
 
 export const adaptCategoryToSupabase = (category: Partial<Category> & { name: string }): any => {
   return {

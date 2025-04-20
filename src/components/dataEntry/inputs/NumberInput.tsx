@@ -1,7 +1,8 @@
 
 import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
-import { BaseInput } from './BaseInput';
 import { Column } from '@/types/column';
 
 interface NumberInputProps {
@@ -10,21 +11,39 @@ interface NumberInputProps {
 }
 
 export const NumberInput: React.FC<NumberInputProps> = ({ column, disabled }) => {
+  const form = useFormContext();
+
+  const minValue = column.validation?.minValue;
+  const maxValue = column.validation?.maxValue;
+  const step = column.validation?.step || 1;
+
   return (
-    <BaseInput
-      column={column}
-      disabled={disabled}
-      renderInput={(value, onChange) => (
-        <Input
-          type="number"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={column.placeholder}
-          disabled={disabled}
-          min={column.validation?.minValue}
-          max={column.validation?.maxValue}
-          step={column.validation?.step || 1}
-        />
+    <FormField
+      control={form.control}
+      name={`entries.${column.id}`}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>
+            {column.name}
+            {column.is_required && <span className="text-red-500 ml-1">*</span>}
+          </FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              placeholder={column.placeholder}
+              disabled={disabled}
+              min={minValue}
+              max={maxValue}
+              step={step}
+              {...field}
+              onChange={(e) => field.onChange(e.target.value)}
+            />
+          </FormControl>
+          {column.help_text && (
+            <p className="text-sm text-gray-500">{column.help_text}</p>
+          )}
+          <FormMessage />
+        </FormItem>
       )}
     />
   );

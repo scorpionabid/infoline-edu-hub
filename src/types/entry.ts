@@ -16,6 +16,6 @@ export interface DataEntry {
 
 export interface EntryFormData {
   entries: DataEntry[];
-  isValid: boolean;
-  errors: Record<string, string[]>;
+  isValid?: boolean;
+  errors?: Record<string, string[]>;
 }
