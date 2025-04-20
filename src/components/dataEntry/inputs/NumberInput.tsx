@@ -1,21 +1,26 @@
+
 import React from 'react';
-import { Input } from '@/components/ui/input';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { UseFormReturn } from 'react-hook-form';
-import { Column } from '@/types/column';
+import { useFormContext } from 'react-hook-form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useLanguage } from '@/context/LanguageContext';
+import { ValidationRules } from '@/types/column';
 
 interface NumberInputProps {
-  column: Column;
-  form: UseFormReturn<any>;
+  column: {
+    id: string;
+    name: string;
+    is_required?: boolean;
+    help_text?: string;
+    validation?: ValidationRules;
+  };
+  form: any;
   disabled?: boolean;
 }
 
 const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = false }) => {
-  // Validation üçün min/max dəyərlərini al
-  const validation = column.validation as ColumnValidation || {};
-  const minValue = validation?.minValue;
-  const maxValue = validation?.maxValue;
-
+  const { t } = useLanguage();
+  
   return (
     <FormField
       control={form.control}
@@ -30,22 +35,15 @@ const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = fals
             <Input
               {...field}
               type="number"
-              placeholder={column.placeholder}
+              placeholder={column.help_text}
               disabled={disabled}
-              aria-label={column.name}
-              id={`field-${column.id}`}
-              min={minValue}
-              max={maxValue}
               onChange={(e) => {
-                // Parse string value to number
-                const value = e.target.value ? parseFloat(e.target.value) : '';
+                const value = e.target.value === '' ? '' : Number(e.target.value);
                 field.onChange(value);
               }}
+              className="w-full"
             />
           </FormControl>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
           <FormMessage />
         </FormItem>
       )}

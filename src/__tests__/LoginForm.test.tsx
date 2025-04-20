@@ -1,3 +1,4 @@
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import LoginForm from '@/components/auth/LoginForm';
@@ -30,15 +31,15 @@ const mockTranslations = {
 // Mock language context
 const mockLanguageContext = () => {
   vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
-    language: 'az',
-    setLanguage: vi.fn(),
     t: (key) => mockTranslations[key] || key,
+    setLanguage: vi.fn(),
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
       en: { nativeName: 'English', flag: '🇬🇧' },
       tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
       ru: { nativeName: 'Русский', flag: '🇷🇺' }
-    }
+    },
+    currentLanguage: 'az'
   });
 };
 

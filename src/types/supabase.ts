@@ -1,5 +1,17 @@
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type Language = 'az' | 'en' | 'ru' | 'tr';
+
+export interface Region {
+  id: string;
+  name: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+  admin_id?: string;
+  admin_email?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Profile {
   id: string;
@@ -57,7 +69,11 @@ export interface FullUserData {
     regionName?: string;
     sectorName?: string;
     schoolType?: string;
+    schoolName?: string;
   };
+  regionName?: string;
+  sectorName?: string;
+  schoolName?: string;
   notificationSettings: {
     email: boolean;
     system: boolean;

@@ -1,10 +1,9 @@
 
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
+import { UserRole } from '@/types/supabase';
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-interface UsePermissionsReturn {
+export interface UsePermissionsReturn {
   userRole: UserRole;
   isAdmin: boolean;
   isSuperAdmin: boolean;
