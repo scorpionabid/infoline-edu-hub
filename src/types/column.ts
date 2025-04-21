@@ -1,4 +1,3 @@
-
 // Column tiplərini təyin edir
 export type ColumnType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox' | 'date' | 'email' | 'url' | 'file' | 'phone' | 'image' | 'range' | 'color' | 'password' | 'time' | 'datetime' | 'richtext' | 'radio';
 
@@ -111,7 +110,7 @@ export interface ColumnValidationError {
   columnId?: string;
 }
 
-// Sütun tipləri üçün təriflər
+// Sütun tiplərini üçün təriflər
 export interface ColumnTypeDefinition {
   label: string;
   description: string;

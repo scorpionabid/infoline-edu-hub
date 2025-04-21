@@ -20,7 +20,7 @@ export interface Category {
 }
 
 export type CategoryFilter = {
-  status?: 'all' | 'active' | 'inactive' | 'draft';
+  status?: 'all' | CategoryStatus;
   assignment?: 'all' | 'sectors';
   deadline?: 'all' | 'upcoming' | 'past';
 };

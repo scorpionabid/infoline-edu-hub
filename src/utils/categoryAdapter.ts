@@ -1,5 +1,5 @@
 
-import { Category, CategoryWithColumns } from '@/types/category';
+import { Category, CategoryWithColumns, CategoryStatus } from '@/types/category';
 import { Column } from '@/types/column';
 import { columnAdapter } from './columnAdapter';
 
