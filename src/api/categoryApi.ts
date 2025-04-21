@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Category, adaptSupabaseCategory, adaptCategoryToSupabase, CategoryStatus } from '@/types/category';
 
