@@ -1,7 +1,7 @@
 
 // Supabase ilə əlaqəli əsas tiplər
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 export interface Region {
   id: string;
@@ -79,5 +79,10 @@ export interface FullUserData {
     email?: boolean;
     push?: boolean;
     inApp?: boolean;
+    system?: boolean;
   };
+  // Legacy support
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }

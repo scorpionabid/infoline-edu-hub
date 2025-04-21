@@ -48,13 +48,17 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
 }));
 
-// Helper to mock useAuth
+// Helper to mock useAuth - xətaları aradan qaldırmaq üçün bütün AuthContextType funksiyaları əlavə edildi
 function mockUseAuth(loginImpl = vi.fn().mockResolvedValue(true)) {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     login: loginImpl,
     logout: vi.fn(),
+    signOut: vi.fn(),
     updateUser: vi.fn(),
     clearError: vi.fn(),
+    resetPassword: vi.fn(),
+    updatePassword: vi.fn(),
+    refreshUser: vi.fn(),
     user: null,
     isAuthenticated: false,
     isLoading: false,

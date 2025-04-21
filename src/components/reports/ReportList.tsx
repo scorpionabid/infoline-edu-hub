@@ -97,9 +97,11 @@ const ReportList: React.FC = () => {
       {/* Hesabat önizləmə dialoqu */}
       {previewReport && (
         <ReportPreviewDialog
-          report={previewReport}
-          open={!!previewReport}
+          isOpen={!!previewReport}
           onClose={closePreview}
+          reportId={previewReport.id}
+          reportTitle={previewReport.title || ''}
+          reportDescription={previewReport.description || ''}
         />
       )}
       

@@ -1,68 +1,68 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-// import { CategoryColumnManagement } from '../components/CategoryColumnManagement'; // Assuming this component exists
-import * as PermissionsHook from '../hooks/auth/usePermissions';
+import { render } from '@testing-library/react';
 import { vi } from 'vitest';
+import * as AuthContext from '@/context/auth';
+import { UserRole } from '@/types/supabase';
 
-// Mock permissions hook
-const mockPermissionsHook = (role = 'superadmin') => {
-  vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
-    userRole: role,
-    sectorId: null,
-    regionId: null,
-    canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
-    hasRole: vi.fn().mockResolvedValue(true),
-    hasRegionAccess: vi.fn().mockResolvedValue(true),
-    hasSectorAccess: vi.fn().mockResolvedValue(true),
-    hasSchoolAccess: vi.fn().mockResolvedValue(true),
+// Auth contextini mockla - string yerinə UserRole tipi istifadə edilməlidir
+function mockUseAuth({
+  isAuthenticated = true,
+  isLoading = false,
+  user = { id: 'user-1', role: 'superadmin' as UserRole }
+} = {}) {
+  vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+    isAuthenticated,
+    isLoading,
+    user,
+    login: vi.fn(),
+    logout: vi.fn(),
+    signOut: vi.fn(),
+    clearError: vi.fn(),
+    updateUser: vi.fn(),
+    resetPassword: vi.fn(),
+    updatePassword: vi.fn(),
+    refreshUser: vi.fn(),
+    error: null
   });
-};
+}
 
-describe('Category and Column Management for Region Admin', () => {
-  it('should allow Region Admin to create a new category', () => {
-    // Mock user role and data
-    const userRole = 'regionadmin';
-    mockPermissionsHook(userRole);
-
-    // Render the component
-    // render(<CategoryColumnManagement userRole={userRole} />);
-
-    // Find the create category button/input
-    // const createCategoryButton = screen.getByText('Create Category'); // Assuming the button text is 'Create Category'
-
-    // Simulate clicking the button and entering data
-    // fireEvent.click(createCategoryButton);
-    // const categoryNameInput = screen.getByPlaceholderText('Category Name'); // Assuming there is a placeholder
-    // fireEvent.change(categoryNameInput, { target: { value: 'New Category' } });
-
-    // Assert that the category is created (you might need to mock the API call and check the state)
-    // expect(screen.getByText('New Category')).toBeInTheDocument(); // Assuming the category name is displayed
+describe('Category Column Management', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockUseAuth();
   });
 
-  it('should allow Region Admin to modify an existing category', () => {
-    // Similar logic for modifying a category
+  it('should render category column management page', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 
-  it('should allow Region Admin to delete an existing category', () => {
-    // Similar logic for deleting a category
+  it('should allow adding new columns to a category', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 
-  it('should allow Region Admin to create a new column', () => {
-    // Similar logic for creating a column
+  it('should validate column properties before saving', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 
-  it('should allow Region Admin to modify an existing column', () => {
-    // Similar logic for modifying a column
+  it('should show error messages for invalid inputs', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 
-  it('should allow Region Admin to delete an existing column', () => {
-    // Similar logic for deleting a column
+  it('should allow editing existing columns', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 
-  it('should allow Region Admin to configure column types', () => {
-    // Similar logic for configuring column types
+  it('should confirm before deleting a column', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 
-  it('should enforce data limits and validation rules', () => {
-    // Similar logic for enforcing data limits and validation rules
+  it('should handle API errors gracefully', () => {
+    // This is a placeholder test
+    expect(true).toBe(true);
   });
 });

@@ -37,8 +37,12 @@ function mockUseAuth({
     user,
     login: vi.fn(),
     logout: vi.fn(),
+    signOut: vi.fn(),
     clearError: vi.fn(),
     updateUser: vi.fn(),
+    resetPassword: vi.fn(),
+    updatePassword: vi.fn(),
+    refreshUser: vi.fn(),
     error: null
   });
 }
@@ -47,7 +51,6 @@ function mockUseAuth({
 function mockPermissions(userRole: UserRole = 'superadmin') {
   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
     userRole,
-    hasRole: vi.fn().mockResolvedValue(true),
     hasRegionAccess: vi.fn().mockResolvedValue(true),
     hasSectorAccess: vi.fn().mockResolvedValue(true),
     hasSchoolAccess: vi.fn().mockResolvedValue(true),

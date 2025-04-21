@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -17,6 +18,15 @@ interface ReportPreviewDialogProps {
   reportTitle: string;
   reportDescription: string;
 }
+
+// ReportTable komponenti yaradıldı
+const ReportTable: React.FC<{ reportId: string }> = ({ reportId }) => {
+  return (
+    <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
+      Hesabat cədvəli üçün məlumatlar yüklənir...
+    </div>
+  );
+};
 
 const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   isOpen,

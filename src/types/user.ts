@@ -1,3 +1,4 @@
+
 import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
 export interface User {

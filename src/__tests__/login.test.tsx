@@ -1,3 +1,4 @@
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Login from '../pages/Login';
@@ -99,7 +100,11 @@ function mockUseAuth({
     login: loginImpl,
     clearError: clearErrorImpl,
     logout: vi.fn(),
+    signOut: vi.fn(),
     updateUser: vi.fn(),
+    resetPassword: vi.fn(),
+    updatePassword: vi.fn(),
+    refreshUser: vi.fn(),
     user,
   });
 }
