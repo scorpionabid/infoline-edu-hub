@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
 import SidebarLayout from '@/components/layout/SidebarLayout';
-import { SectorDialog } from '@/components/sectors/SectorDialog';
+import SectorDialog from '@/components/sectors/SectorDialog';
 import { SectorAdminDialog } from '@/components/sectors/SectorAdminDialog';
 import SectorHeader from '@/components/sectors/SectorHeader';
 import SectorTable from '@/components/sectors/SectorTable';
@@ -161,10 +161,9 @@ const Sectors = () => {
         )}
         
         <SectorDialog
-          open={openSectorDialog}
-          setOpen={setOpenSectorDialog}
-          selectedSector={selectedSector}
-          onSubmit={handleFormSubmit}
+          isOpen={openSectorDialog}
+          onClose={() => setOpenSectorDialog(false)}
+          sector={selectedSector}
         />
         
         <SectorAdminDialog

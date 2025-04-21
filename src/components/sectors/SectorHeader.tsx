@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Download } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { ExportButton } from '@/components/ui/export-button';
 
 interface SectorHeaderProps {
   setShowDialog: (show: boolean) => void;
@@ -30,14 +31,7 @@ const SectorHeader: React.FC<SectorHeaderProps> = ({ setShowDialog, handleExport
           {t('addSector')}
         </Button>
 
-        <Button
-          variant="outline"
-          onClick={handleExport}
-          className="whitespace-nowrap"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          {t('export')}
-        </Button>
+        <ExportButton onExport={handleExport} />
       </div>
     </div>
   );
