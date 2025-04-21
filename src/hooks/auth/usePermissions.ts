@@ -54,8 +54,8 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
     // Müəssisə adları əldə edilir
-    const regionName = user.regionName || null;
-    const sectorName = user.sectorName || null;
+    const regionName = user.region_name || null;
+    const sectorName = user.sector_name || null;
     const schoolName = user.schoolName || null;
     
     return {
@@ -65,9 +65,9 @@ export const usePermissions = (): UsePermissionsReturn => {
       isRegionAdmin,
       isSectorAdmin,
       isSchoolAdmin,
-      regionId: user.regionId || null,
-      sectorId: user.sectorId || null,
-      schoolId: user.schoolId || null,
+      regionId: user.region_id || user.regionId || null,
+      sectorId: user.sector_id || user.sectorId || null,
+      schoolId: user.school_id || user.schoolId || null,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
       regionName,

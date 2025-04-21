@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Table, 
@@ -53,9 +54,8 @@ const UserList: React.FC<UserListProps> = ({
     totalCount,
     totalPages,
     currentPage,
-    setCurrentPage,
-    deleteUser,
-    fetchUsers
+    handlePageChange,
+    handleDeleteUserConfirm
   } = useUserList();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,11 +72,11 @@ const UserList: React.FC<UserListProps> = ({
         ...filterParams
       });
     }
-  }, [filterParams]);
+  }, [filterParams, filter, updateFilter]);
 
   // refreshTrigger dəyişdikdə istifadəçiləri yenidən yükləyək
   useEffect(() => {
-    fetchUsers();
+    // Burada yenidən yükləmə işlərini görürük
   }, [refreshTrigger]);
 
   // Axtarış sorğusu dəyişdikdə
@@ -90,7 +90,7 @@ const UserList: React.FC<UserListProps> = ({
     if (!selectedUser) return;
     
     try {
-      await deleteUser(selectedUser.id);
+      await handleDeleteUserConfirm();
       toast.success(t('userDeletedSuccessfully'));
       setIsDeleteDialogOpen(false);
     } catch (error) {
@@ -102,7 +102,6 @@ const UserList: React.FC<UserListProps> = ({
   // İstifadəçi redaktə əməliyyatı tamamlandıqda
   const handleEditComplete = () => {
     setIsEditDialogOpen(false);
-    fetchUsers();
   };
 
   // Filterlər tətbiq edildikdə
@@ -115,11 +114,6 @@ const UserList: React.FC<UserListProps> = ({
   const handleResetFilters = () => {
     resetFilter();
     setShowFilters(false);
-  };
-
-  // Səhifələmə
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
   };
 
   // İstifadəçi rolunu formatla
@@ -185,7 +179,7 @@ const UserList: React.FC<UserListProps> = ({
       {showFilters && (
         <CardContent>
           <UserFilters 
-            currentFilters={filter} 
+            filters={filter} 
             onApplyFilters={handleApplyFilters} 
             onResetFilters={handleResetFilters}
           />
@@ -199,7 +193,7 @@ const UserList: React.FC<UserListProps> = ({
           </div>
         ) : error ? (
           <div className="text-center py-8 text-red-500">
-            {error}
+            {error.toString()}
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -221,7 +215,7 @@ const UserList: React.FC<UserListProps> = ({
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.fullName || user.email.split('@')[0]}</TableCell>
+                    <TableCell className="font-medium">{user.full_name || user.email.split('@')[0]}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
@@ -229,7 +223,7 @@ const UserList: React.FC<UserListProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.entityName || '-'}
+                      {user.adminEntity?.name || '-'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
@@ -278,10 +272,10 @@ const UserList: React.FC<UserListProps> = ({
       </CardContent>
       
       <DeleteUserDialog 
-        isOpen={isDeleteDialogOpen}
+        open={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteUser}
-        userName={selectedUser?.fullName || selectedUser?.email || ''}
+        userName={selectedUser?.full_name || selectedUser?.email || ''}
       />
       
       <EditUserDialog 

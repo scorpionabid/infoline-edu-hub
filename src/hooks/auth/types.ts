@@ -1,5 +1,7 @@
 
-import { Profile, UserRoleData, FullUserData } from '@/types/supabase';
+import { Profile } from '@/types/supabase';
+import { UserRole } from '@/types/supabase';
+import { FullUserData } from '@/types/supabase';
 
 export interface AuthState {
   user: FullUserData | null;

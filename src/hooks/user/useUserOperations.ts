@@ -1,12 +1,9 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { FullUserData } from '@/types/user';
 
-export const useUserOperations = (onComplete: () => void) => {
-  const { t } = useLanguageSafe();
+export const useUserOperations = (onOperationComplete: () => void) => {
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -27,57 +24,57 @@ export const useUserOperations = (onComplete: () => void) => {
     setIsDetailsDialogOpen(true);
   }, []);
 
-  const handleUpdateUserConfirm = useCallback(async (updatedUser: FullUserData) => {
+  const handleUpdateUserConfirm = useCallback(async () => {
+    if (!selectedUser) return;
+
     try {
-      console.log('Updating user:', updatedUser);
-      
-      // Profile məlumatlarını yeniləyirik
+      // İstifadəçi profilini yenilə
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: updatedUser.full_name,
-          phone: updatedUser.phone,
-          position: updatedUser.position,
-          language: updatedUser.language,
-          status: updatedUser.status,
+          full_name: selectedUser.full_name,
+          email: selectedUser.email,
+          phone: selectedUser.phone,
+          position: selectedUser.position,
+          language: selectedUser.language,
+          status: selectedUser.status,
           updated_at: new Date().toISOString()
         })
-        .eq('id', updatedUser.id);
+        .eq('id', selectedUser.id);
       
       if (profileError) throw profileError;
       
-      // Rol məlumatlarını yeniləyirik
+      // İstifadəçi rolunu yenilə
       const { error: roleError } = await supabase
         .from('user_roles')
         .update({
-          role: updatedUser.role,
-          region_id: updatedUser.region_id,
-          sector_id: updatedUser.sector_id,
-          school_id: updatedUser.school_id,
+          role: selectedUser.role,
+          region_id: selectedUser.region_id || selectedUser.regionId,
+          sector_id: selectedUser.sector_id || selectedUser.sectorId,
+          school_id: selectedUser.school_id || selectedUser.schoolId,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', updatedUser.id);
+        .eq('user_id', selectedUser.id);
       
       if (roleError) throw roleError;
       
-      toast.success(t('userUpdated'));
+      // İşləm tamamlandı
       setIsEditDialogOpen(false);
-      onComplete();
+      setSelectedUser(null);
+      onOperationComplete();
+      return true;
     } catch (error: any) {
       console.error('Error updating user:', error);
-      toast.error(t('errorUpdatingUser'), {
-        description: error.message
-      });
+      toast.error('İstifadəçi yenilənərkən xəta baş verdi');
+      return false;
     }
-  }, [t, onComplete]);
+  }, [selectedUser, onOperationComplete]);
 
   const handleDeleteUserConfirm = useCallback(async () => {
     if (!selectedUser) return;
-    
+
     try {
-      console.log('Deleting user:', selectedUser.id);
-      
-      // İlk olaraq user_roles cədvəlindən silirik
+      // İstifadəçi rolunu sil
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
@@ -85,24 +82,35 @@ export const useUserOperations = (onComplete: () => void) => {
       
       if (roleError) throw roleError;
       
-      // Sonra profiles cədvəlindən silirik
+      // İstifadəçi profilini sil
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', selectedUser.id);
-      
+
       if (profileError) throw profileError;
       
-      toast.success(t('userDeleted'));
+      // Auth istifadəçisini sil (bu edge function ilə edilməlidir)
+      const { error: authError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: selectedUser.id }
+      });
+      
+      if (authError) {
+        console.warn('Auth user could not be deleted:', authError);
+        // Burada tam xəta atmırıq, çünki profil və rol silindiyi üçün əsas işləm tamamlanmış sayılır
+      }
+
+      // İşləm tamamlandı
       setIsDeleteDialogOpen(false);
-      onComplete();
+      setSelectedUser(null);
+      onOperationComplete();
+      return true;
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error(t('errorDeletingUser'), {
-        description: error.message
-      });
+      toast.error('İstifadəçi silinərkən xəta baş verdi');
+      return false;
     }
-  }, [selectedUser, t, onComplete]);
+  }, [selectedUser, onOperationComplete]);
 
   return {
     selectedUser,

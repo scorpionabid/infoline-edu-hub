@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -32,12 +33,12 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
   React.useEffect(() => {
     if (user) {
       setFormData({
-        fullName: user.fullName || '',
+        fullName: user.full_name || '',
         email: user.email || '',
         role: user.role || '',
-        regionId: user.regionId || '',
-        sectorId: user.sectorId || '',
-        schoolId: user.schoolId || '',
+        regionId: user.regionId || user.region_id || '',
+        sectorId: user.sectorId || user.sector_id || '',
+        schoolId: user.schoolId || user.school_id || '',
         status: user.status || 'active',
         phone: user.phone || '',
         position: user.position || '',
@@ -59,23 +60,33 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     try {
       // İstifadəçi məlumatlarını yenilə
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({
           full_name: formData.fullName,
           email: formData.email,
-          role: formData.role,
-          region_id: formData.regionId,
-          sector_id: formData.sectorId,
-          school_id: formData.schoolId,
-          status: formData.status,
           phone: formData.phone,
           position: formData.position,
           language: formData.language,
+          status: formData.status,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
       
       if (error) throw error;
+      
+      // İstifadəçi rolunu yenilə
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({
+          role: formData.role,
+          region_id: formData.regionId,
+          sector_id: formData.sectorId,
+          school_id: formData.schoolId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+      
+      if (roleError) throw roleError;
       
       toast.success(t('userUpdatedSuccessfully'));
       onComplete();
@@ -117,7 +128,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     try {
       // İstifadəçini deaktiv et
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ status: 'inactive', updated_at: new Date().toISOString() })
         .eq('id', user.id);
       
@@ -141,7 +152,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
     try {
       // İstifadəçini aktivləşdir
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ status: 'active', updated_at: new Date().toISOString() })
         .eq('id', user.id);
       

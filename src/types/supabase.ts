@@ -3,6 +3,31 @@
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
+export interface Profile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  position?: string;
+  avatar?: string;
+  language?: string;
+  status?: string;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserRoleData {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Region {
   id: string;
   name: string;
@@ -68,6 +93,7 @@ export interface FullUserData {
   schoolName?: string;
   status?: string;
   created_at?: string;
+  updated_at?: string;
   last_login?: string;
   avatar?: string;
   phone?: string;
@@ -85,4 +111,19 @@ export interface FullUserData {
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
+  // UI helper properties
+  fullName?: string;
+  entityName?: string;
+  // For backward compatibility
+  createdAt?: string;
+  updatedAt?: string;
+  lastLogin?: string;
+  adminEntity?: {
+    type: string;
+    name: string;
+    status?: string;
+    regionName?: string;
+    sectorName?: string;
+    schoolType?: string;
+  };
 }

@@ -142,24 +142,43 @@ const validateTextField = (value: string, column: Column, errors: ColumnValidati
   }
 
   // Pattern yoxla
-  if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-    errors.push({
-      field: column.name,
-      message: validation.patternMessage || `${column.name} düzgün formatda deyil`,
-      type: 'pattern',
-      severity: 'error',
-      columnId: column.id
-    });
+  if (validation.pattern) {
+    const pattern = new RegExp(validation.pattern);
+    if (!pattern.test(value)) {
+      const errorMessage = validation.patternMessage || `${column.name} düzgün formatda deyil`;
+      errors.push({
+        field: column.name,
+        message: errorMessage,
+        type: 'pattern',
+        severity: 'error',
+        columnId: column.id
+      });
+    }
   }
 };
 
 // Seçim sahəsinin validasiyası
 const validateSelectField = (value: string, column: Column, errors: ColumnValidationError[]) => {
   const options = column.options || [];
-  const values = Array.isArray(options) ? options : Object.keys(options);
+  
+  // Selekt opsiyalarını əldə edirik
+  let optionValues: string[] = [];
+  
+  if (Array.isArray(options)) {
+    optionValues = options.map((option) => {
+      if (typeof option === 'string') {
+        return option;
+      } else if (typeof option === 'object' && option !== null) {
+        return String(option.value || '');
+      }
+      return '';
+    });
+  } else if (typeof options === 'object' && options !== null) {
+    optionValues = Object.keys(options);
+  }
 
   // Seçilən dəyər mümkün variantlar arasında olmalıdır
-  if (!values.includes(value)) {
+  if (!optionValues.includes(value)) {
     errors.push({
       field: column.name,
       message: `${column.name} üçün düzgün seçim edilməlidir`,
