@@ -1,11 +1,10 @@
-
-import React from 'react';
+import React from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -13,9 +12,9 @@ import {
   TableHeader,
   TableHead,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Copy, Edit, MoreVertical, Trash2 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -23,12 +22,24 @@ import {
   DropdownMenuItem, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
-import { useLanguage } from '@/context/LanguageContext';
-import { Icons } from '@/components/ui/icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Column, ColumnType } from "@/types/column";
+import { useLanguage } from "@/context/LanguageContext";
+import { Icons } from "@/components/ui/icons";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const COLUMN_TYPE_DEFINITIONS = {
+  text: "Mətn",
+  number: "Rəqəm",
+  date: "Tarix",
+  select: "Seçim",
+  checkbox: "Checkbox",
+  radio: "Radio",
+  textarea: "Açıqlama",
+  file: "Fayl",
+  image: "Şəkil"
+};
 
 interface ColumnListProps {
   columns: Column[];
@@ -53,13 +64,11 @@ const ColumnList: React.FC<ColumnListProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  // Kateqoriya adını ID əsasında tap
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : t('unknownCategory');
   };
 
-  // Sütunun tipinə uyğun badge rəngini təyin et
   const getTypeBadgeColor = (type: string) => {
     switch (type) {
       case 'text':
@@ -92,7 +101,6 @@ const ColumnList: React.FC<ColumnListProps> = ({
     }
   };
 
-  // Status badge rəngini təyin et
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':

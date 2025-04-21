@@ -1,5 +1,6 @@
-
-import React from 'react';
+import React from "react";
+import { CategoryStatus, FormStatus } from "@/types/category";
+import { CategoryWithColumns } from "@/types/category";
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,16 +12,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Category, CategoryStatus, FormStatus } from '@/types/category';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { az } from 'date-fns/locale';
 
 export interface CategoryListProps {
-  categories: Category[];
+  categories: CategoryWithColumns[];
   isLoading: boolean;
-  onEdit?: (category: Category) => void;
-  onDelete?: (category: Category) => void;
+  onEdit?: (category: CategoryWithColumns) => void;
+  onDelete?: (category: CategoryWithColumns) => void;
   handleStatusChange?: (id: string, status: CategoryStatus) => Promise<boolean>;
 }
 
@@ -53,13 +53,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
     return a.name.localeCompare(b.name);
   });
   
-  const handleEditClick = (category: Category) => {
+  const handleEditClick = (category: CategoryWithColumns) => {
     if (onEdit) {
       onEdit(category);
     }
   };
   
-  const handleDeleteClick = (category: Category) => {
+  const handleDeleteClick = (category: CategoryWithColumns) => {
     if (onDelete) {
       onDelete(category);
     }

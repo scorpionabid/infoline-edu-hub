@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { Region } from '@/types/supabase';
+import { Region } from '@/types/schema';
 import {
   Dialog,
   DialogContent,

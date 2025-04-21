@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -16,9 +15,8 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Region, School, Sector } from '@/types/supabase';
+import { Region, School, Sector } from '@/types/schema';
 
-// Form validasiya sxemi
 const formSchema = z.object({
   name: z.string().min(2, { message: "Məktəb adı ən az 2 simvol olmalıdır" }),
   region_id: z.string().uuid({ message: "Region seçilməlidir" }),
@@ -30,7 +28,6 @@ const formSchema = z.object({
   status: z.enum(["active", "inactive", "blocked"]).default("active"),
 });
 
-// Dialog propları
 interface AddSchoolDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,7 +52,6 @@ const AddSchoolDialog: React.FC<AddSchoolDialogProps> = ({
   const { t } = useLanguage();
   const [filteredSectors, setFilteredSectors] = React.useState<Sector[]>([]);
 
-  // Form hook
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -70,16 +66,13 @@ const AddSchoolDialog: React.FC<AddSchoolDialogProps> = ({
     },
   });
 
-  // Region dəyişdikdə sektorları filtrlə
   React.useEffect(() => {
     const regionId = form.watch('region_id');
     if (regionId) {
       const filtered = sectors.filter(sector => sector.region_id === regionId);
       setFilteredSectors(filtered);
       
-      // Əgər sektoru seçilibsə və yeni region üçün mövcud deyilsə, sıfırla
-      const currentSectorId = form.watch('sector_id');
-      if (currentSectorId && !filtered.some(s => s.id === currentSectorId)) {
+      if (form.watch('sector_id') && !filtered.some(s => s.id === form.watch('sector_id'))) {
         form.setValue('sector_id', '');
       }
     } else {
@@ -88,7 +81,6 @@ const AddSchoolDialog: React.FC<AddSchoolDialogProps> = ({
     }
   }, [form.watch('region_id'), sectors, form]);
 
-  // Form təqdim edildi funksiyası
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       await onSubmit(values as Omit<School, 'id'>);

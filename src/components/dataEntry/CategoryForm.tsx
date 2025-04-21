@@ -1,10 +1,9 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { CategoryWithColumns } from "@/types/category";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarIcon, Clock, FilePlus2, SaveIcon, SendIcon } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryWithColumns } from '@/types/column';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
