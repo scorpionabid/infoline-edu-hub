@@ -187,7 +187,7 @@ export interface SectorAdminDashboardData {
 
 // School admin dashboard data
 export interface SchoolAdminDashboardData {
-  formStats?: FormStats;
+  formStats: FormStats;
   categories: CategoryStat[];
   notifications: DashboardNotification[];
   forms?: {
@@ -196,12 +196,6 @@ export interface SchoolAdminDashboardData {
     rejected: number;
     dueSoon: number;
     overdue: number;
-    total: number;
-  };
-  status?: {
-    pending: number;
-    approved: number;
-    rejected: number;
     total: number;
   };
   pendingForms?: FormItem[];

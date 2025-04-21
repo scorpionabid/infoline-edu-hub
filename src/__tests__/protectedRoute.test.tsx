@@ -1,4 +1,3 @@
-
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { vi } from 'vitest';
@@ -38,12 +37,8 @@ function mockUseAuth({
     user,
     login: vi.fn(),
     logout: vi.fn(),
-    signOut: vi.fn(),
     clearError: vi.fn(),
     updateUser: vi.fn(),
-    resetPassword: vi.fn(),
-    updatePassword: vi.fn(),
-    refreshUser: vi.fn(),
     error: null
   });
 }
@@ -52,19 +47,19 @@ function mockUseAuth({
 function mockPermissions(userRole: UserRole = 'superadmin') {
   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
     userRole,
-    isAdmin: userRole !== 'user',
+    hasRole: vi.fn().mockResolvedValue(true),
+    hasRegionAccess: vi.fn().mockResolvedValue(true),
+    hasSectorAccess: vi.fn().mockResolvedValue(true),
+    hasSchoolAccess: vi.fn().mockResolvedValue(true),
+    sectorId: null,
+    regionId: null,
+    canRegionAdminManageCategoriesColumns: true,
+    isAdmin: true,
     isSuperAdmin: userRole === 'superadmin',
     isRegionAdmin: userRole === 'regionadmin',
     isSectorAdmin: userRole === 'sectoradmin',
     isSchoolAdmin: userRole === 'schooladmin',
-    regionId: null,
-    sectorId: null,
-    schoolId: null,
-    canRegionAdminManageCategoriesColumns: userRole === 'superadmin' || userRole === 'regionadmin',
-    canViewSectorCategories: userRole === 'superadmin' || userRole === 'regionadmin' || userRole === 'sectoradmin',
-    regionName: null,
-    sectorName: null,
-    schoolName: null
+    schoolId: null
   });
 }
 
@@ -122,7 +117,7 @@ describe('ProtectedRoute Component', () => {
   it('autentifikasiya olan istifadəçiyə qorunan məzmunu göstərir', () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { id: 'user-1', email: 'test@example.com', full_name: 'Test User', role: 'superadmin' } 
+      user: { id: 'user-1', role: 'superadmin' } 
     });
     mockPermissions('superadmin');
 
@@ -141,7 +136,7 @@ describe('ProtectedRoute Component', () => {
   it('icazəsi olmayan istifadəçiyə AccessDenied göstərir', () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { id: 'user-1', email: 'test@example.com', full_name: 'Test User', role: 'schooladmin' } 
+      user: { id: 'user-1', role: 'schooladmin' } 
     });
     mockPermissions('schooladmin');
 
@@ -163,7 +158,7 @@ describe('ProtectedRoute Component', () => {
   it('icazəsi olan istifadəçiyə qorunan məzmunu göstərir', () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { id: 'user-1', email: 'test@example.com', full_name: 'Test User', role: 'regionadmin' } 
+      user: { id: 'user-1', role: 'regionadmin' } 
     });
     mockPermissions('regionadmin');
 

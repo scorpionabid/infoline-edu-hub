@@ -1,115 +1,81 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckboxGroup, CheckboxItem } from '@/components/ui/checkbox-group';
+import { Role } from '@/context/auth/types';
 import { useLanguage } from '@/context/LanguageContext';
-import { UserFilter } from '@/hooks/useUserList';
+import { UserFilter } from './UserSelectParts/types';
 
 interface UserFiltersProps {
-  filters: UserFilter;
-  onApplyFilters: (filters: UserFilter) => void;
-  onResetFilters: () => void;
+  onFilterChange: (filters: UserFilter) => void;
+  availableRoles: Role[];
 }
 
-const UserFilters: React.FC<UserFiltersProps> = ({
-  filters,
-  onApplyFilters,
-  onResetFilters,
-}) => {
+const UserFilters: React.FC<UserFiltersProps> = ({ onFilterChange, availableRoles }) => {
   const { t } = useLanguage();
-  const [localFilters, setLocalFilters] = useState<UserFilter>(filters);
+  const [filters, setFilters] = useState<UserFilter>({
+    role: [],
+    status: [],
+    region: [],
+    sector: [],
+    school: [],
+  });
 
-  // İlkin filter değerlerini lokalda saxlayaq
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
-
-  // Filterləri dəyişdirmək üçün handler
-  const handleFilterChange = (key: keyof UserFilter, value: string) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
+  const handleFilterChange = (filterType: keyof UserFilter, values: string[]) => {
+    const newFilters = { ...filters, [filterType]: values };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
   };
 
-  // Filterləri tətbiq et
-  const handleApply = () => {
-    onApplyFilters(localFilters);
+  const handleClearFilters = () => {
+    const clearedFilters: UserFilter = {
+      role: [],
+      status: [],
+      region: [],
+      sector: [],
+      school: [],
+    };
+    setFilters(clearedFilters);
+    onFilterChange(clearedFilters);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="role-filter">{t('role')}</Label>
-          <Select
-            value={localFilters.role || ''}
-            onValueChange={(value) => handleFilterChange('role', value)}
+    <Card>
+      <CardContent className="space-y-4">
+        <h4 className="font-medium">{t('filters')}</h4>
+
+        <div>
+          <h5 className="mb-2">{t('role')}</h5>
+          <CheckboxGroup
+            defaultValue={filters.role}
+            onValueChange={(values) => handleFilterChange('role', values)}
           >
-            <SelectTrigger id="role-filter">
-              <SelectValue placeholder={t('selectRole')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">{t('all')}</SelectItem>
-              <SelectItem value="superadmin">{t('superadmin')}</SelectItem>
-              <SelectItem value="regionadmin">{t('regionadmin')}</SelectItem>
-              <SelectItem value="sectoradmin">{t('sectoradmin')}</SelectItem>
-              <SelectItem value="schooladmin">{t('schooladmin')}</SelectItem>
-            </SelectContent>
-          </Select>
+            {availableRoles.map((role) => (
+              <CheckboxItem key={role} value={role}>
+                {t(role)}
+              </CheckboxItem>
+            ))}
+          </CheckboxGroup>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="status-filter">{t('status')}</Label>
-          <Select
-            value={localFilters.status || ''}
-            onValueChange={(value) => handleFilterChange('status', value)}
+
+        <div>
+          <h5 className="mb-2">{t('status')}</h5>
+          <CheckboxGroup
+            defaultValue={filters.status}
+            onValueChange={(values) => handleFilterChange('status', values)}
           >
-            <SelectTrigger id="status-filter">
-              <SelectValue placeholder={t('selectStatus')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">{t('all')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-              <SelectItem value="blocked">{t('blocked')}</SelectItem>
-            </SelectContent>
-          </Select>
+            <CheckboxItem value="active">{t('active')}</CheckboxItem>
+            <CheckboxItem value="inactive">{t('inactive')}</CheckboxItem>
+            <CheckboxItem value="blocked">{t('blocked')}</CheckboxItem>
+          </CheckboxGroup>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="region-filter">{t('region')}</Label>
-          <Select
-            value={localFilters.region || ''}
-            onValueChange={(value) => handleFilterChange('region', value)}
-          >
-            <SelectTrigger id="region-filter">
-              <SelectValue placeholder={t('selectRegion')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">{t('all')}</SelectItem>
-              {/* Regionlar burada dinamik əlavə ediləcək */}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={onResetFilters}>
-          {t('resetFilters')}
+
+        <Button variant="outline" size="sm" onClick={handleClearFilters}>
+          {t('clearFilters')}
         </Button>
-        <Button onClick={handleApply}>
-          {t('applyFilters')}
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

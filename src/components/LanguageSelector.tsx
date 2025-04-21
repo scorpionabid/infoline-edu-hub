@@ -1,22 +1,34 @@
 
 import React, { useState } from 'react';
 import { Globe } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguageSafe, Language } from '@/context/LanguageContext';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { Language, LanguageInfo } from '@/types/language';
+
+interface LanguageInfo {
+  flag: string;
+  nativeName: string;
+}
 
 const LanguageSelector: React.FC = () => {
-  const { currentLanguage, setLanguage, languages, t } = useLanguage();
+  const { currentLanguage, setLanguage, availableLanguages, t } = useLanguageSafe();
   const [open, setOpen] = useState(false);
 
   const handleSelectLanguage = (lang: Language) => {
     setLanguage(lang);
     setOpen(false);
+  };
+
+  // Əgər availableLanguages undefined olarsa, əlavə yoxlama edirik
+  const languages = availableLanguages || {
+    az: { flag: '🇦🇿', nativeName: 'Azərbaycan' },
+    en: { flag: '🇬🇧', nativeName: 'English' },
+    ru: { flag: '🇷🇺', nativeName: 'Русский' },
+    tr: { flag: '🇹🇷', nativeName: 'Türkçe' }
   };
 
   return (

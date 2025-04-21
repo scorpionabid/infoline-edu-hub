@@ -1,13 +1,10 @@
+
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { afterEach } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { expect } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from './context/auth';
-import { LanguageProvider } from './context/LanguageContext';
 
 expect.extend(matchers);
 
@@ -31,21 +28,3 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Test wrapper funksiyası
-export const createTestWrapper = (initialRoute = '/') => {
-  return ({ children }) => {
-    return React.createElement(
-      MemoryRouter,
-      { initialEntries: [initialRoute] },
-      React.createElement(
-        AuthProvider,
-        null,
-        React.createElement(
-          LanguageProvider,
-          null,
-          children
-        )
-      )
-    );
-  };
-};

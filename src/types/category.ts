@@ -1,73 +1,55 @@
 
-import { Column } from './schema';
-
-export enum CategoryStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  DRAFT = 'draft'
-}
-
-export enum FormStatus {
-  IDLE = 'idle',
-  LOADING = 'loading',
-  SAVING = 'saving',
-  ERROR = 'error',
-  SUCCESS = 'success'
-}
+import { Column, ColumnType, ColumnOption, CategoryStatus } from './column';
+import { Json } from './json';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  status?: CategoryStatus | string;
-  assignment?: 'all' | 'sectors' | string;
+  assignment?: 'all' | 'sectors';
   deadline?: string;
+  status?: CategoryStatus;
+  priority?: number;
   created_at?: string;
   updated_at?: string;
-  priority?: number;
   archived?: boolean;
   column_count?: number;
 }
 
 export interface CategoryWithColumns extends Category {
   columns: Column[];
-  columnCount?: number;
+  completionPercentage?: number;
 }
 
 export interface CategoryFilter {
-  status: 'all' | CategoryStatus;
+  status: 'all' | 'active' | 'inactive' | 'archived';
   assignment: 'all' | 'sectors';
-  deadline: 'all' | 'upcoming' | 'past';
+  deadline: 'all' | 'upcoming' | 'passed' | 'none';
 }
 
-// Supabase-dən gələn datanı tiplərə uyğunlaşdırmaq üçün adapter funksiyaları
-export const adaptSupabaseCategory = (dbCategory: any): Category => {
-  return {
-    id: dbCategory.id,
-    name: dbCategory.name,
-    description: dbCategory.description || '',
-    status: dbCategory.status || CategoryStatus.ACTIVE,
-    deadline: dbCategory.deadline || null,
-    assignment: dbCategory.assignment || 'all',
-    column_count: dbCategory.column_count || 0,
-    archived: dbCategory.archived || false,
-    priority: dbCategory.priority || 0,
-    created_at: dbCategory.created_at,
-    updated_at: dbCategory.updated_at
-  };
-};
+export interface CategoryFormData {
+  name: string;
+  description?: string;
+  assignment: 'all' | 'sectors';
+  deadline?: string;
+  status: CategoryStatus;
+  priority?: number;
+}
 
-// Forma məlumatlarını verilənlər bazası formatına çevirmək üçün
-export const adaptCategoryToSupabase = (category: Category): any => {
+export type FormStatus = 'completed' | 'pending' | 'rejected' | 'dueSoon' | 'overdue' | 'approved' | 'draft';
+
+export const adaptSupabaseCategory = (data: any): Category => {
   return {
-    id: category.id,
-    name: category.name,
-    description: category.description,
-    status: category.status || CategoryStatus.ACTIVE,
-    deadline: category.deadline,
-    assignment: category.assignment || 'all',
-    priority: category.priority || 0,
-    column_count: category.column_count || 0,
-    archived: category.archived || false
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    assignment: data.assignment || 'all',
+    deadline: data.deadline,
+    status: data.status || 'active',
+    priority: data.priority || 0,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    archived: data.archived || false,
+    column_count: data.column_count || 0
   };
 };

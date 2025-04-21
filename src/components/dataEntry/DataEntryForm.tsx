@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,6 +24,7 @@ const DataEntryForm: React.FC = () => {
   });
 
   const { 
+    formData, 
     categories = [], 
     loading, 
     submitting,
@@ -33,6 +33,7 @@ const DataEntryForm: React.FC = () => {
     handleSubmitForApproval,
     loadDataForSchool,
     entries,
+    submitForApproval,
     saveStatus = DataEntrySaveStatus.IDLE,
     isDataModified = false,
     error = null

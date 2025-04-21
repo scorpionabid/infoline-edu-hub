@@ -1,6 +1,5 @@
 
-import { ColumnValidationError } from '@/types/dataEntry';
-import { Column } from '@/types/column';
+import { ColumnValidationError, Column } from '@/types/column';
 
 export function validateColumnValue(value: string, column: Column): ColumnValidationError[] {
   const errors: ColumnValidationError[] = [];

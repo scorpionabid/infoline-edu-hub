@@ -1,8 +1,10 @@
 
-import { UserRole, FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 
+// İstifadəçi rolları
 export type Role = UserRole;
 
+// Auth vəziyyət interfeysi
 export interface AuthState {
   user: FullUserData | null;
   isAuthenticated: boolean;
@@ -10,22 +12,10 @@ export interface AuthState {
   error: string | null;
 }
 
-export interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  user: FullUserData | null;
-  error: string | null;
+// Auth kontext interfeysi
+export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
-  refreshUser: () => Promise<void>;
-  userRole?: UserRole;
   logout: () => Promise<void>;
+  updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
   clearError: () => void;
-  updateUser?: (userData: Partial<FullUserData>) => Promise<boolean>;
-}
-
-export interface AuthProviderProps {
-  children: React.ReactNode;
 }

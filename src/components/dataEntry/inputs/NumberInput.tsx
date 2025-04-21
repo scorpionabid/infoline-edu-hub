@@ -1,36 +1,56 @@
-
 import React from 'react';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { UseFormReturn } from 'react-hook-form';
 import { Column } from '@/types/column';
-import { BaseInput } from './BaseInput';
 
 interface NumberInputProps {
   column: Column;
+  form: UseFormReturn<any>;
   disabled?: boolean;
 }
 
-export const NumberInput: React.FC<NumberInputProps> = ({ column, disabled }) => {
-  const minValue = column.validation?.minValue;
-  const maxValue = column.validation?.maxValue;
-  const step = column.validation?.step || 1;
+const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = false }) => {
+  // Validation üçün min/max dəyərlərini al
+  const validation = column.validation as ColumnValidation || {};
+  const minValue = validation?.minValue;
+  const maxValue = validation?.maxValue;
 
   return (
-    <BaseInput
-      column={column}
-      disabled={disabled}
-      renderInput={(value, onChange) => (
-        <Input
-          type="number"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={column.placeholder}
-          disabled={disabled}
-          min={minValue}
-          max={maxValue}
-          step={step}
-        />
+    <FormField
+      control={form.control}
+      name={`fields.${column.id}`}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>
+            {column.name}
+            {column.is_required && <span className="text-destructive ml-1">*</span>}
+          </FormLabel>
+          <FormControl>
+            <Input
+              {...field}
+              type="number"
+              placeholder={column.placeholder}
+              disabled={disabled}
+              aria-label={column.name}
+              id={`field-${column.id}`}
+              min={minValue}
+              max={maxValue}
+              onChange={(e) => {
+                // Parse string value to number
+                const value = e.target.value ? parseFloat(e.target.value) : '';
+                field.onChange(value);
+              }}
+            />
+          </FormControl>
+          {column.help_text && (
+            <FormDescription>{column.help_text}</FormDescription>
+          )}
+          <FormMessage />
+        </FormItem>
       )}
     />
   );
 };
+
+export default NumberInput;

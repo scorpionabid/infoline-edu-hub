@@ -1,164 +1,81 @@
 
+import { Column } from '@/types/column';
 import * as XLSX from 'xlsx';
+import { formatValueForDisplay } from './columnValidation';
 
-/**
- * Excel faylı yaratmaq və yükləmək üçün yardımçı funksiya
- * @param data Exceldə göstəriləcək məlumatlar
- * @param fileName Faylın adı
- */
-export const exportToExcel = (data: any[], fileName: string) => {
-  try {
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-    XLSX.writeFile(workbook, `${fileName}.xlsx`);
-  } catch (error) {
-    console.error('Excel export error:', error);
-    throw new Error('Excel faylı ixrac edilərkən xəta baş verdi');
-  }
+export const generateExcelTemplate = (columns: Column[]): Blob => {
+  const headers = columns.map(col => ({
+    key: col.id,
+    header: col.name,
+    width: 20
+  }));
+
+  const worksheet = XLSX.utils.aoa_to_sheet([headers.map(h => h.header)]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Məlumatlar');
+
+  // Set column widths
+  const wscols = headers.map(() => ({ wch: 20 }));
+  worksheet['!cols'] = wscols;
+
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 };
 
-/**
- * Excel şablonu yaratmaq üçün funksiya
- * @param columns Sütunlar
- * @param fileName Faylın adı
- */
-export const generateExcelTemplate = (columns: any[], fileName: string) => {
-  try {
-    // Nümunə məlumatlar yaradaq və sadəcə başlıqları göstərək
-    const sampleData = [{}];
-    
-    // Sütunları əlavə edək
-    columns.forEach(column => {
-      sampleData[0][column.name] = '';
-    });
-    
-    // Excel faylı yaradaq
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
-    
-    // Faylı yükləyək
-    XLSX.writeFile(workbook, `${fileName}.xlsx`);
-  } catch (error) {
-    console.error('Template generation error:', error);
-    throw new Error('Excel şablonu yaradılarkən xəta baş verdi');
-  }
-};
+export const parseExcelData = (file: File, columns: Column[]): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-/**
- * Excel faylındakı məlumatları oxumaq üçün funksiya
- * @param file Excel faylı
- * @returns Məlumatlar, xəta mesajı və xəta olub-olmadığı
- */
-export const parseExcelFile = (file: File): Promise<{ 
-  data: any[] | null; 
-  error: string | null;
-  hasError: boolean;
-}> => {
-  return new Promise((resolve) => {
-    try {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = e.target?.result;
-          if (!data) {
-            resolve({ data: null, error: 'Fayl oxuna bilmədi', hasError: true });
-            return;
-          }
-          
-          const workbook = XLSX.read(data, { type: 'binary' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          
-          // JSON-a çevirmək
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          
-          resolve({ data: jsonData, error: null, hasError: false });
-        } catch (error: any) {
-          console.error('Excel parsing error:', error);
-          resolve({ 
-            data: null, 
-            error: error.message || 'Excel faylı oxunarkən xəta baş verdi', 
-            hasError: true 
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        // Remove header row
+        const rows = jsonData.slice(1);
+        const columnMap = new Map(columns.map(col => [col.name, col]));
+
+        // Map Excel data to our format
+        const formattedData = rows.map((row: any[]) => {
+          const rowData: Record<string, any> = {};
+          columns.forEach((col, index) => {
+            const value = row[index];
+            rowData[col.id] = value ?? null;
           });
-        }
-      };
-      
-      reader.onerror = (error) => {
-        console.error('FileReader error:', error);
-        resolve({ 
-          data: null, 
-          error: 'Fayl oxunarkən xəta baş verdi', 
-          hasError: true 
+          return rowData;
         });
-      };
-      
-      reader.readAsBinaryString(file);
-    } catch (error: any) {
-      console.error('File processing error:', error);
-      resolve({ 
-        data: null, 
-        error: error.message || 'Fayl emal edilərkən xəta baş verdi', 
-        hasError: true 
-      });
-    }
+
+        resolve(formattedData);
+      } catch (error) {
+        reject(new Error('Excel faylını oxuyarkən xəta baş verdi'));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error('Fayl oxunarkən xəta baş verdi'));
+    };
+
+    reader.readAsArrayBuffer(file);
   });
 };
 
-/**
- * Excel məlumatlarını validasiya etmək üçün funksiya
- * @param data Excel məlumatları
- * @param requiredColumns Tələb olunan sütunlar
- * @returns Validasiya nəticəsi
- */
-export const validateExcelData = (data: any[], requiredColumns: string[]) => {
-  const errors: { row: number; column: string; message: string; type: string }[] = [];
-  
-  // Məlumatların tələb olunan sütunları olub-olmadığını yoxlayaq
-  if (data.length === 0) {
-    return {
-      valid: false,
-      message: 'Excel faylında məlumat yoxdur',
-      errors: [{ row: 0, column: 'all', message: 'Məlumat tapılmadı', type: 'error' }]
-    };
-  }
-  
-  // Tələb olunan sütunları yoxlayaq
-  const firstRow = data[0];
-  const missingColumns = requiredColumns.filter(col => !(col in firstRow));
-  
-  if (missingColumns.length > 0) {
-    return {
-      valid: false,
-      message: `Aşağıdakı tələb olunan sütunlar excel faylında yoxdur: ${missingColumns.join(', ')}`,
-      errors: missingColumns.map(col => ({ 
-        row: 0, 
-        column: col, 
-        message: 'Tələb olunan sütun yoxdur', 
-        type: 'error' 
-      }))
-    };
-  }
-  
-  // Hər bir sətirdə məlumatların düzgünlüyünü yoxlayaq
-  data.forEach((row, index) => {
-    requiredColumns.forEach(column => {
-      if (!row[column] && row[column] !== 0) {
-        errors.push({
-          row: index + 1, // Excel 1-dən başlayır
-          column,
-          message: 'Bu sahə boş ola bilməz',
-          type: 'error'
-        });
-      }
-    });
-  });
-  
-  return {
-    valid: errors.length === 0,
-    message: errors.length > 0 ? `${errors.length} xəta tapıldı` : 'Məlumatlar düzgündür',
-    errors
-  };
+export const exportToExcel = (data: any[], columns: Column[], filename: string): void => {
+  // Prepare data for export
+  const headers = columns.map(col => col.name);
+  const rows = data.map(item => 
+    columns.map(col => formatValueForDisplay(item[col.id], col.type))
+  );
+
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Məlumatlar');
+
+  // Set column widths
+  const wscols = headers.map(() => ({ wch: 20 }));
+  worksheet['!cols'] = wscols;
+
+  // Generate and download file
+  XLSX.writeFile(workbook, `${filename}.xlsx`);
 };

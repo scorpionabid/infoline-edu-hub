@@ -1,4 +1,3 @@
-
 import { FullUserData as SupabaseFullUserData, UserRole } from './supabase';
 
 export interface User {
@@ -38,14 +37,9 @@ export interface User {
     system: boolean;
     push?: boolean;
     sms?: boolean;
-    inApp?: boolean;
   };
   twoFactorEnabled?: boolean;
   last_sign_in_at?: string; // Mock data üçün əlavə edildi
-  
-  // UI helper properties
-  fullName?: string; // UI'da istifadə olunur
-  entityName?: string; // UI'da istifadə olunur
 }
 
 export interface UserFormData {
@@ -72,7 +66,6 @@ export interface UserFormData {
     system: boolean;
     push?: boolean;
     sms?: boolean;
-    inApp?: boolean;
   }
 }
 
@@ -80,7 +73,7 @@ export interface FullUserData {
   id: string;
   email: string;
   full_name: string;
-  name?: string;
+  name: string;
   role: UserRole;
   region_id?: string;
   sector_id?: string;
@@ -95,10 +88,10 @@ export interface FullUserData {
   status: 'active' | 'inactive' | 'blocked';
   last_login?: string;
   lastLogin?: string;
-  created_at?: string;
-  updated_at?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  created_at: string;
+  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   userRoleId?: string;
   adminEntity?: {
     type: string;
@@ -108,20 +101,13 @@ export interface FullUserData {
     sectorName?: string;
     schoolType?: string;
   };
-  notificationSettings?: {
+  notificationSettings: {
     email: boolean;
     system: boolean;
     push?: boolean;
     sms?: boolean;
-    inApp?: boolean;
   };
   twoFactorEnabled?: boolean;
-  
-  // UI helper properties
-  fullName?: string; 
-  entityName?: string;
-  region_name?: string;
-  sector_name?: string;
 }
 
 // Helper function to convert between different property naming styles
@@ -155,12 +141,9 @@ export const userToFullUserData = (user: User): FullUserData => {
       email: true,
       system: true,
       push: false,
-      sms: false,
-      inApp: true
+      sms: false
     },
-    twoFactorEnabled: user.twoFactorEnabled || false,
-    fullName: user.full_name || user.name || '',
-    entityName: user.adminEntity?.name || ''
+    twoFactorEnabled: user.twoFactorEnabled || false
   };
 };
 
@@ -190,8 +173,6 @@ export const fullUserDataToUser = (fullUserData: SupabaseFullUserData): User => 
     updatedAt: fullUserData.updatedAt,
     adminEntity: fullUserData.adminEntity,
     notificationSettings: fullUserData.notificationSettings,
-    twoFactorEnabled: fullUserData.twoFactorEnabled,
-    fullName: fullUserData.full_name,
-    entityName: fullUserData.adminEntity?.name
+    twoFactorEnabled: fullUserData.twoFactorEnabled
   };
 };

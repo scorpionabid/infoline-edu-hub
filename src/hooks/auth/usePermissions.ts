@@ -1,9 +1,10 @@
 
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
-import { UserRole } from '@/types/supabase';
 
-export interface UsePermissionsReturn {
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+interface UsePermissionsReturn {
   userRole: UserRole;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -54,8 +55,8 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
     // Müəssisə adları əldə edilir
-    const regionName = user.region_name || null;
-    const sectorName = user.sector_name || null;
+    const regionName = user.regionName || null;
+    const sectorName = user.sectorName || null;
     const schoolName = user.schoolName || null;
     
     return {
@@ -65,9 +66,9 @@ export const usePermissions = (): UsePermissionsReturn => {
       isRegionAdmin,
       isSectorAdmin,
       isSchoolAdmin,
-      regionId: user.region_id || user.regionId || null,
-      sectorId: user.sector_id || user.sectorId || null,
-      schoolId: user.school_id || user.schoolId || null,
+      regionId: user.regionId || null,
+      sectorId: user.sectorId || null,
+      schoolId: user.schoolId || null,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
       regionName,

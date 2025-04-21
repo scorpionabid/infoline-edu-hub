@@ -12,40 +12,46 @@ export enum DataEntrySaveStatus {
 
 export interface DataEntry {
   id?: string;
-  school_id: string;
-  category_id: string;
   column_id: string;
+  category_id: string;
+  school_id: string;
   value: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
-  approved_by?: string;
   approved_at?: string;
+  approved_by?: string;
+  rejected_at?: string;
   rejected_by?: string;
   rejection_reason?: string;
 }
 
+export interface DataEntryForm {
+  entries: DataEntry[];
+  isModified: boolean;
+  saveStatus: DataEntrySaveStatus;
+  error: string | null;
+  schoolId?: string;
+  categoryId?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  lastSaved?: string;
+  completionPercentage?: number;
+}
+
 export interface CategoryEntryData {
-  categoryId: string;
-  values: Record<string, string>;
-  modified: boolean;
+  category: CategoryWithColumns;
+  entries: DataEntry[];
+  completionPercentage?: number;
+}
+
+export interface EntryValue {
+  [columnId: string]: string | number | boolean | string[] | null;
 }
 
 export interface ColumnValidationError {
-  field: string;
   columnId: string;
-  type: string;
   message: string;
-  severity: 'error' | 'warning';
-}
-
-export interface EntryFormData {
-  categories: CategoryWithColumns[];
-  entries: DataEntry[];
-  status: DataEntrySaveStatus;
-  modified: boolean;
-  errors: ColumnValidationError[];
-  schoolId: string;
-  categoryId?: string;
+  columnName?: string;
 }

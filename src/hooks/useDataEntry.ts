@@ -1,253 +1,261 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { CategoryWithColumns } from '@/types/category';
-import { DataEntry, DataEntrySaveStatus } from '@/types/dataEntry';
+import { useAuth } from '@/context/auth';
+import { useCategoryData } from './dataEntry/useCategoryData';
+import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 
 interface UseDataEntryProps {
-  schoolId?: string;
-  categoryId?: string;
-  onComplete?: () => void;
+  schoolId?: string | null;
+  initialCategoryId?: string | null;
+  statusFilter?: string | null;
 }
 
-export const useDataEntry = ({ schoolId, categoryId, onComplete }: UseDataEntryProps = {}) => {
-  const { userRole, schoolId: userSchoolId } = usePermissions();
+export const useDataEntry = ({
+  schoolId,
+  initialCategoryId,
+  statusFilter
+}: UseDataEntryProps = {}) => {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategoryData(schoolId || undefined);
   
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
-  const [isDataModified, setIsDataModified] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [currentCategory, setCurrentCategory] = useState<any>(null);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [loadingEntry, setLoadingEntry] = useState(true);
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const [entryStatus, setEntryStatus] = useState<Record<string, string>>({});
+  const [entryId, setEntryId] = useState<string | null>(null);
   
-  // İstifadəçinin məktəbini təyin et
-  const effectiveSchoolId = schoolId || userSchoolId;
-  
-  // Kateqoriyaları yüklə
-  const loadCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('loadCategories çağırıldı');
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*, columns(*)')
-        .order('priority', { ascending: false })
-        .eq('status', 'active');
-      
-      if (error) {
-        throw error;
+  // Kateqoriyaları yüklədikdən sonra ilk kateqoriyanı və ya seçilmiş kateqoriyanı təyin edirik
+  useEffect(() => {
+    if (!categoriesLoading && categories && categories.length > 0) {
+      if (initialCategoryId) {
+        const category = categories.find(c => c.id === initialCategoryId);
+        if (category) {
+          setCurrentCategory(category);
+        } else {
+          setCurrentCategory(categories[0]);
+        }
+      } else {
+        setCurrentCategory(categories[0]);
       }
-      
-      if (data) {
-        console.log('Yüklənən kateqoriyalar:', data.length);
-        setCategories(data as CategoryWithColumns[]);
-      }
-    } catch (error: any) {
-      console.error('Kateqoriyaları yükləyərkən xəta:', error.message);
-      setError('Kateqoriyaları yükləyərkən xəta baş verdi.');
-    } finally {
-      setLoading(false);
     }
+  }, [categories, categoriesLoading, initialCategoryId]);
+  
+  // Məktəb və kateqoriya üçün mövcud məlumatları yükləyirik
+  useEffect(() => {
+    const fetchExistingEntries = async () => {
+      if (!schoolId || !currentCategory) {
+        setLoadingEntry(false);
+        return;
+      }
+      
+      setLoadingEntry(true);
+      try {
+        // Bütün kateqoriyalar üçün statusları əldə edirik
+        const { data: statusData, error: statusError } = await supabase
+          .from('data_entries')
+          .select('id, category_id, status')
+          .eq('school_id', schoolId);
+          
+        if (statusError) throw statusError;
+        
+        // Statusları qeyd edirik
+        const statuses: Record<string, string> = {};
+        statusData?.forEach(entry => {
+          statuses[entry.category_id] = entry.status;
+        });
+        setEntryStatus(statuses);
+        
+        // Cari kateqoriya üçün məlumatları əldə edirik
+        const { data: entryData, error: entryError } = await supabase
+          .from('data_entries')
+          .select('id, column_id, value, status')
+          .eq('school_id', schoolId)
+          .eq('category_id', currentCategory.id);
+          
+        if (entryError) throw entryError;
+        
+        if (entryData && entryData.length > 0) {
+          // Məlumatları formData formatına çeviririk
+          const formattedData: Record<string, any> = {};
+          entryData.forEach(entry => {
+            formattedData[entry.column_id] = entry.value;
+          });
+          
+          setFormData(formattedData);
+          setEntryId(entryData[0].id); // Eyni kateqoriya üçün bütün sütunlar eyni ID-yə malik olmalıdır
+        } else {
+          setFormData({});
+          setEntryId(null);
+        }
+      } catch (error: any) {
+        console.error('Məlumatları yükləyərkən xəta:', error);
+        setEntryError(error.message);
+      } finally {
+        setLoadingEntry(false);
+      }
+    };
+    
+    fetchExistingEntries();
+  }, [schoolId, currentCategory]);
+  
+  // Form məlumatlarını yeniləyirik
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   }, []);
   
-  // Məlumatları daxil etmək üçün
-  const handleEntriesChange = useCallback((updatedEntries: DataEntry[]) => {
-    setEntries(prev => {
-      // Yalnız dəyişmiş olanları güncəllə
-      const newEntries = [...prev];
-      
-      updatedEntries.forEach(updatedEntry => {
-        const index = newEntries.findIndex(e => 
-          e.column_id === updatedEntry.column_id && 
-          e.category_id === updatedEntry.category_id
-        );
-        
-        if (index >= 0) {
-          // Mövcud giriş dəyişikliyini yenilə
-          newEntries[index] = {
-            ...newEntries[index],
-            value: updatedEntry.value
-          };
-        } else {
-          // Yeni giriş əlavə et
-          newEntries.push({
-            column_id: updatedEntry.column_id,
-            category_id: updatedEntry.category_id,
-            school_id: effectiveSchoolId || '',
-            value: updatedEntry.value,
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        }
-      });
-      
-      setIsDataModified(true);
-      return newEntries;
-    });
-  }, [effectiveSchoolId]);
+  // Formu təmizləyirik
+  const handleReset = useCallback(() => {
+    if (window.confirm(t('confirmReset'))) {
+      setFormData({});
+    }
+  }, [t]);
   
-  // Dəyişiklikləri yadda saxlamaq üçün
+  // Qaralama olaraq saxlayırıq
   const handleSave = useCallback(async () => {
-    if (!effectiveSchoolId || entries.length === 0) {
+    if (!schoolId || !currentCategory || !user?.id) {
+      toast.error(t('missingRequiredFields'));
       return;
     }
     
+    setIsAutoSaving(true);
     try {
-      setSaveStatus(DataEntrySaveStatus.SAVING);
-      
-      // Girişləri döngüyə alıb hər biri üçün upsert əməliyyatı
-      for (const entry of entries) {
-        if (!entry.id) {
-          // Yeni giriş əlavə et
-          const { error } = await supabase
-            .from('data_entries')
-            .insert({
-              school_id: effectiveSchoolId,
-              category_id: entry.category_id,
-              column_id: entry.column_id,
-              value: entry.value,
-              status: 'pending',
-              created_by: userRole === 'schooladmin' ? 'user-id' : null // Real istifadəçi ID olmalıdır
-            });
-            
-          if (error) throw error;
-        } else {
-          // Mövcud girişi yenilə
-          const { error } = await supabase
-            .from('data_entries')
-            .update({
-              value: entry.value,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', entry.id);
-            
-          if (error) throw error;
-        }
+      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
+      if (entryId) {
+        const { error: deleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .eq('school_id', schoolId)
+          .eq('category_id', currentCategory.id);
+          
+        if (deleteError) throw deleteError;
       }
       
-      setSaveStatus(DataEntrySaveStatus.SAVED);
-      setIsDataModified(false);
+      // Sonra yeni məlumatları əlavə edirik
+      const entries = Object.entries(formData).map(([columnId, value]) => ({
+        school_id: schoolId,
+        category_id: currentCategory.id,
+        column_id: columnId,
+        value: String(value || ''),
+        status: 'draft',
+        created_by: user.id,
+        updated_at: new Date().toISOString()
+      }));
       
-      toast.success('Dəyişikliklər uğurla yadda saxlanıldı');
-      
-      // Məlumatları yenidən yüklə
-      await loadDataForSchool(effectiveSchoolId);
-    } catch (error: any) {
-      console.error('Yadda saxlama zamanı xəta:', error.message);
-      setSaveStatus(DataEntrySaveStatus.ERROR);
-      toast.error('Yadda saxlama zamanı xəta baş verdi');
-    }
-  }, [effectiveSchoolId, entries, userRole, loadDataForSchool]);
-  
-  // Təsdiq üçün göndərmək
-  const handleSubmitForApproval = useCallback(async () => {
-    if (!effectiveSchoolId) {
-      return;
-    }
-    
-    try {
-      setSaveStatus(DataEntrySaveStatus.SUBMITTING);
-      
-      // Əvvəlcə yadda saxla
-      await handleSave();
-      
-      // Təsdiq üçün status güncəllə
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'pending',
-          updated_at: new Date().toISOString()
-        })
-        .eq('school_id', effectiveSchoolId)
-        .in('id', entries.map(e => e.id).filter(Boolean));
-        
-      if (error) throw error;
-      
-      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
-      setIsDataModified(false);
-      
-      toast.success('Məlumatlar təsdiq üçün göndərildi');
-      
-      if (onComplete) {
-        onComplete();
-      }
-    } catch (error: any) {
-      console.error('Təsdiq üçün göndərmə zamanı xəta:', error.message);
-      setSaveStatus(DataEntrySaveStatus.ERROR);
-      toast.error('Təsdiq üçün göndərmə zamanı xəta baş verdi');
-    }
-  }, [effectiveSchoolId, entries, handleSave, onComplete]);
-  
-  // Məktəb məlumatlarını yüklə
-  const loadDataForSchool = useCallback(async (schoolId: string) => {
-    if (!schoolId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('loadDataForSchool çağırıldı:', schoolId);
-      
-      // Məktəb üçün mövcud giriş məlumatlarını al
-      const { data, error } = await supabase
-        .from('data_entries')
-        .select('*')
-        .eq('school_id', schoolId);
-        
-      if (error) throw error;
-      
-      if (data) {
-        console.log('Yüklənən giriş məlumatları:', data.length);
-        setEntries(data as DataEntry[]);
+      if (entries.length > 0) {
+        const { error: insertError } = await supabase
+          .from('data_entries')
+          .insert(entries);
+          
+        if (insertError) throw insertError;
       }
       
-      // Kateqoriyaları da yüklə
-      await loadCategories();
+      // Status məlumatlarını yeniləyirik
+      setEntryStatus(prev => ({
+        ...prev,
+        [currentCategory.id]: 'draft'
+      }));
+      
+      toast.success(t('draftSaved'));
     } catch (error: any) {
-      console.error('Məktəb məlumatlarını yükləyərkən xəta:', error.message);
-      setError('Məlumatları yükləyərkən xəta baş verdi.');
+      console.error('Məlumatları saxlayarkən xəta:', error);
+      toast.error(t('errorSavingData'));
     } finally {
-      setLoading(false);
+      setIsAutoSaving(false);
     }
-  }, [loadCategories]);
+  }, [schoolId, currentCategory, formData, entryId, user?.id, t]);
   
-  // Komponent yükləndikdə və ya effektiv məktəb ID-si dəyişdikdə məlumatları yüklə
-  useEffect(() => {
-    if (effectiveSchoolId) {
-      loadDataForSchool(effectiveSchoolId);
-    } else {
-      loadCategories();
+  // Təsdiq üçün göndəririk
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!schoolId || !currentCategory || !user?.id) {
+      toast.error(t('missingRequiredFields'));
+      return;
     }
-  }, [effectiveSchoolId, loadDataForSchool, loadCategories]);
+    
+    // Bütün məcburi sahələri yoxlayırıq
+    const requiredFields = currentCategory.columns.filter(col => col.is_required).map(col => col.id);
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length > 0) {
+      toast.error(t('fillRequiredFields'));
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
+      if (entryId) {
+        const { error: deleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .eq('school_id', schoolId)
+          .eq('category_id', currentCategory.id);
+          
+        if (deleteError) throw deleteError;
+      }
+      
+      // Sonra yeni məlumatları əlavə edirik
+      const entries = Object.entries(formData).map(([columnId, value]) => ({
+        school_id: schoolId,
+        category_id: currentCategory.id,
+        column_id: columnId,
+        value: String(value || ''),
+        status: 'pending',
+        created_by: user.id,
+        updated_at: new Date().toISOString()
+      }));
+      
+      if (entries.length > 0) {
+        const { error: insertError } = await supabase
+          .from('data_entries')
+          .insert(entries);
+          
+        if (insertError) throw insertError;
+      }
+      
+      // Status məlumatlarını yeniləyirik
+      setEntryStatus(prev => ({
+        ...prev,
+        [currentCategory.id]: 'pending'
+      }));
+      
+      toast.success(t('dataSubmitted'));
+    } catch (error: any) {
+      console.error('Məlumatları göndərərkən xəta:', error);
+      toast.error(t('errorSubmittingData'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [schoolId, currentCategory, formData, entryId, user?.id, t]);
   
-  // Kateqoriya ID dəyişdikdə UI-ı təmizlə
-  useEffect(() => {
-    if (isDataModified) {
-      // İstifadəçini xəbərdar et
-      console.log('Dəyişiklikləri yadda saxla');
-    }
-  }, [categoryId, isDataModified]);
+  // Kateqoriyanı dəyişirik
+  const handleCategoryChange = useCallback((category: any) => {
+    setCurrentCategory(category);
+  }, []);
   
   return {
-    categories,
-    entries,
-    loading,
-    submitting,
-    saveStatus,
-    isDataModified,
-    error,
-    handleEntriesChange,
+    formData,
+    isAutoSaving,
+    isSubmitting,
+    handleInputChange,
+    handleSubmit,
     handleSave,
-    handleSubmitForApproval,
-    loadDataForSchool
+    handleReset,
+    handleCategoryChange,
+    currentCategory,
+    loadingEntry,
+    entryStatus,
+    entryError,
+    entryId
   };
 };
-
-export default useDataEntry;

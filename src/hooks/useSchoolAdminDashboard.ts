@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
@@ -50,6 +49,14 @@ const useSchoolAdminDashboard = () => {
             total: 0,
             completed: 0
           },
+          status: {
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            total: 0
+          },
+          categories: [],
+          upcoming: [],
           forms: {
             pending: 0,
             approved: 0,
@@ -58,7 +65,6 @@ const useSchoolAdminDashboard = () => {
             overdue: 0,
             total: 0
           },
-          categories: [],
           pendingForms: [],
           completionRate: 0,
           notifications: []
@@ -80,8 +86,10 @@ const useSchoolAdminDashboard = () => {
       // Minimal default məlumatlar - xəta halında
       const defaultData: SchoolAdminDashboardData = {
         completion: { percentage: 0, total: 0, completed: 0 },
-        forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
+        status: { pending: 0, approved: 0, rejected: 0, total: 0 },
         categories: [],
+        upcoming: [],
+        forms: { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 },
         pendingForms: [],
         completionRate: 0,
         notifications: []

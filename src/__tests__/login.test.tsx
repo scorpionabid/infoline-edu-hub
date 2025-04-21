@@ -1,4 +1,3 @@
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Login from '../pages/Login';
@@ -8,6 +7,7 @@ import * as LanguageContext from '../context/LanguageContext';
 import { vi } from 'vitest';
 import { UserRole } from '@/types/supabase';
 
+// Mock all sub-components
 vi.mock('../components/auth/LoginForm', () => ({
   default: ({ error, clearError }) => (
     <div data-testid="login-form">
@@ -43,6 +43,7 @@ vi.mock('../components/auth/LoadingScreen', () => ({
   default: () => <div data-testid="loading-screen" role="status" className="animate-spin">Loading...</div>
 }));
 
+// Translations mock
 const mockTranslations = {
   loginTitle: 'Daxil ol',
   loginButton: 'Daxil ol',
@@ -52,6 +53,7 @@ const mockTranslations = {
   loginDescription: 'Hesabınıza daxil olun',
 };
 
+// Mock language context
 const mockLanguageContext = () => {
   vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
     t: (key) => mockTranslations[key] || key,
@@ -66,25 +68,27 @@ const mockLanguageContext = () => {
   });
 };
 
+// Mock permissions hook
 const mockPermissionsHook = (role: UserRole = 'superadmin') => {
   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
     userRole: role,
     sectorId: null,
     regionId: null,
     canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
+    hasRole: vi.fn().mockResolvedValue(true),
+    hasRegionAccess: vi.fn().mockResolvedValue(true),
+    hasSectorAccess: vi.fn().mockResolvedValue(true),
+    hasSchoolAccess: vi.fn().mockResolvedValue(true),
     isAdmin: true,
     isSuperAdmin: role === 'superadmin',
     isRegionAdmin: role === 'regionadmin',
     isSectorAdmin: role === 'sectoradmin',
     isSchoolAdmin: role === 'schooladmin',
-    schoolId: null,
-    canViewSectorCategories: true,
-    regionName: null,
-    sectorName: null,
-    schoolName: null
+    schoolId: null
   });
 };
 
+// Helper to mock useAuth
 function mockUseAuth({
   isAuthenticated = false,
   isLoading = false,
@@ -100,15 +104,12 @@ function mockUseAuth({
     login: loginImpl,
     clearError: clearErrorImpl,
     logout: vi.fn(),
-    signOut: vi.fn(),
     updateUser: vi.fn(),
-    resetPassword: vi.fn(),
-    updatePassword: vi.fn(),
-    refreshUser: vi.fn(),
     user,
   });
 }
 
+// Mock user data
 const mockUser = {
   id: 'user-1',
   email: 'test@example.com',
@@ -120,8 +121,10 @@ const mockUser = {
   updated_at: '',
 };
 
+// Mock navigate
 const mockNavigate = vi.fn();
 
+// Mock router
 vi.mock('react-router-dom', () => {
   const actual = require('react-router-dom');
   return {
@@ -147,6 +150,7 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
     
+    // Login komponentlərinin mövcudluğunu yoxlayın
     expect(screen.getByTestId('login-container')).toBeInTheDocument();
     expect(screen.getByTestId('login-header')).toBeInTheDocument();
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
@@ -204,6 +208,8 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
     
+    // clearError funksiyasının ötürülməsi çətin yoxlanılır, amma ən azı
+    // onu yoxlaya bilərik ki, render uğurla tamamlanıb
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
   });
 
@@ -246,9 +252,9 @@ describe('Login Page', () => {
   it('sektoradmin istifadəçisini dashboard-a yönləndirir', async () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { ...mockUser, role: 'sectoradmin' }
+      user: { ...mockUser, role: 'sektoradmin' }
     });
-    mockPermissionsHook('sectoradmin');
+    mockPermissionsHook('sektoradmin');
     
     render(
       <MemoryRouter>
@@ -264,9 +270,9 @@ describe('Login Page', () => {
   it('mektebadmin istifadəçisini dashboard-a yönləndirir', async () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { ...mockUser, role: 'schooladmin' }
+      user: { ...mockUser, role: 'mektebadmin' }
     });
-    mockPermissionsHook('schooladmin');
+    mockPermissionsHook('mektebadmin');
     
     render(
       <MemoryRouter>

@@ -1,5 +1,5 @@
-import { Json } from '@/types/supabase';
-import { Category } from './category';
+
+import { Json } from './json';
 
 export interface Column {
   id: string;
@@ -7,135 +7,234 @@ export interface Column {
   name: string;
   type: ColumnType;
   is_required: boolean;
+  order_index: number;
   placeholder?: string;
   help_text?: string;
-  default_value?: string;
-  options?: Record<string, any> | ColumnOption[];
-  validation?: Record<string, any>;
-  order_index: number;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
+  default_value?: any;
   status: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+  parent_column_id?: string | null;
+  dependencies?: string[]; // Asılılıq olan sütun ID-ləri
+  visibility_conditions?: VisibilityCondition[]; // Göstərmə şərtləri
 }
+
+export interface ColumnValidation {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  customMessage?: string;
+  required?: boolean;
+  email?: boolean;
+  url?: boolean;
+  date?: boolean;
+  numericality?: boolean;
+  inclusion?: string[]; // Daxil edilə biləcək dəyərlər
+  exclusion?: string[]; // Daxil edilə bilməyən dəyərlər
+}
+
+export type ColumnType = 'text' | 'number' | 'select' | 'date' | 'checkbox' | 'textarea' | 'radio' | 'file' | 'email' | 'url' | 'phone' | 'image' | 'range' | 'color' | 'password' | 'time' | 'datetime' | 'richtext';
 
 export interface ColumnOption {
   label: string;
   value: string;
+  description?: string;
+  icon?: string;
+  disabled?: boolean;
 }
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file' | 'image';
-
-export interface ColumnValidation {
-  min?: number;
-  max?: number;
-  required?: boolean;
-  pattern?: string;
-  customMessage?: string;
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  assignment?: 'all' | 'sectors';
+  deadline?: string;
+  status?: string;
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
+  column_count?: number;
 }
 
-export interface ColumnWithCategory extends Column {
-  category: Category;
+export interface CategoryWithColumns extends Category {
+  columns: Column[];
+  completionPercentage?: number;
 }
 
 export interface ColumnFormData {
-  id?: string;
-  category_id: string;
   name: string;
   type: ColumnType;
   is_required: boolean;
+  order_index: number;
   placeholder?: string;
   help_text?: string;
-  default_value?: string;
   options?: ColumnOption[];
   validation?: ColumnValidation;
-  order_index?: number;
-  status?: string;
+  default_value?: any;
+  status: 'active' | 'inactive' | 'draft';
+  parent_column_id?: string;
+  dependencies?: string[];
+  visibility_conditions?: VisibilityCondition[];
 }
 
-// Sütun tipləri üçün təriflər və konfiqurasiyalar
-export const COLUMN_TYPE_DEFINITIONS = {
+export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'archived';
+
+export interface FormStatus {
+  isSubmitting: boolean;
+  isSaving: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface VisibilityCondition {
+  column_id: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'starts_with' | 'ends_with';
+  value: string | number | boolean;
+}
+
+export interface ColumnTypeDefinition {
+  icon: string;
+  label: string;
+  description: string;
+  hasOptions: boolean;
+  validations: string[];
+  defaultValidation?: Partial<ColumnValidation>;
+}
+
+export const COLUMN_TYPE_DEFINITIONS: Record<ColumnType, ColumnTypeDefinition> = {
   text: {
-    label: 'Text',
-    icon: 'TextIcon',
-    validations: ['required', 'minLength', 'maxLength', 'pattern']
-  },
-  number: {
-    label: 'Number',
-    icon: 'HashIcon',
-    validations: ['required', 'min', 'max']
-  },
-  date: {
-    label: 'Date',
-    icon: 'CalendarIcon',
-    validations: ['required', 'minDate', 'maxDate']
-  },
-  select: {
-    label: 'Select',
-    icon: 'ListFilterIcon',
-    validations: ['required'],
-    hasOptions: true
-  },
-  checkbox: {
-    label: 'Checkbox',
-    icon: 'CheckSquareIcon',
-    validations: ['required']
-  },
-  radio: {
-    label: 'Radio',
-    icon: 'CircleIcon',
-    validations: ['required'],
-    hasOptions: true
+    icon: 'text',
+    label: 'Mətn',
+    description: 'Qısa mətn giriş sahəsi',
+    hasOptions: false,
+    validations: ['minLength', 'maxLength', 'pattern', 'required'],
   },
   textarea: {
-    label: 'Textarea',
-    icon: 'AlignLeftIcon',
-    validations: ['required', 'minLength', 'maxLength']
+    icon: 'alignLeft',
+    label: 'Mətn sahəsi',
+    description: 'Çoxsətirli mətn giriş sahəsi',
+    hasOptions: false,
+    validations: ['minLength', 'maxLength', 'required'],
+  },
+  number: {
+    icon: 'hash',
+    label: 'Ədəd',
+    description: 'Yalnız ədəd dəyəri üçün sahə',
+    hasOptions: false,
+    validations: ['minValue', 'maxValue', 'required'],
+    defaultValidation: { numericality: true }
+  },
+  select: {
+    icon: 'listChoice',
+    label: 'Seçim listi',
+    description: 'Açılan listdən seçim etmək üçün sahə',
+    hasOptions: true,
+    validations: ['required'],
+  },
+  date: {
+    icon: 'calendar',
+    label: 'Tarix',
+    description: 'Tarix seçimi üçün sahə',
+    hasOptions: false,
+    validations: ['required'],
+    defaultValidation: { date: true }
+  },
+  checkbox: {
+    icon: 'check',
+    label: 'Çoxlu seçim',
+    description: 'Çoxlu seçim etmək üçün sahə',
+    hasOptions: true,
+    validations: ['required'],
+  },
+  radio: {
+    icon: 'circleCheck',
+    label: 'Radio',
+    description: 'Bir seçim etmək üçün radio düymələri',
+    hasOptions: true,
+    validations: ['required'],
   },
   file: {
-    label: 'File',
-    icon: 'FileIcon',
-    validations: ['required', 'maxSize', 'fileType']
+    icon: 'fileUp',
+    label: 'Fayl',
+    description: 'Fayl yükləmək üçün sahə',
+    hasOptions: false,
+    validations: ['required'],
+  },
+  email: {
+    icon: 'mail',
+    label: 'E-poçt',
+    description: 'E-poçt adresi üçün sahə',
+    hasOptions: false,
+    validations: ['required', 'pattern'],
+    defaultValidation: { email: true, pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' }
+  },
+  url: {
+    icon: 'link',
+    label: 'URL',
+    description: 'Veb ünvan üçün sahə',
+    hasOptions: false,
+    validations: ['required', 'pattern'],
+    defaultValidation: { url: true, pattern: '^(https?:\\/\\/)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?$' }
+  },
+  phone: {
+    icon: 'phone',
+    label: 'Telefon',
+    description: 'Telefon nömrəsi üçün sahə',
+    hasOptions: false,
+    validations: ['required', 'pattern'],
+    defaultValidation: { pattern: '^\\+?[0-9]{10,15}$' }
   },
   image: {
-    label: 'Image',
-    icon: 'ImageIcon',
-    validations: ['required', 'maxSize', 'dimensions']
+    icon: 'image',
+    label: 'Şəkil',
+    description: 'Şəkil yükləmək üçün sahə',
+    hasOptions: false,
+    validations: ['required'],
+  },
+  range: {
+    icon: 'sliders',
+    label: 'Diapazon',
+    description: 'Dəyər aralığı seçimi üçün slayder',
+    hasOptions: false,
+    validations: ['minValue', 'maxValue', 'required'],
+  },
+  color: {
+    icon: 'palette',
+    label: 'Rəng',
+    description: 'Rəng seçimi üçün sahə',
+    hasOptions: false,
+    validations: ['required'],
+  },
+  password: {
+    icon: 'lock',
+    label: 'Şifrə',
+    description: 'Şifrə giriş sahəsi',
+    hasOptions: false,
+    validations: ['minLength', 'maxLength', 'pattern', 'required'],
+  },
+  time: {
+    icon: 'clock',
+    label: 'Vaxt',
+    description: 'Vaxt seçimi üçün sahə',
+    hasOptions: false,
+    validations: ['required'],
+  },
+  datetime: {
+    icon: 'calendarClock',
+    label: 'Tarix və vaxt',
+    description: 'Tarix və vaxt seçimi üçün sahə',
+    hasOptions: false,
+    validations: ['required'],
+  },
+  richtext: {
+    icon: 'fileEdit',
+    label: 'Formatlanmış mətn',
+    description: 'Formatlanmış mətn redaktoru',
+    hasOptions: false,
+    validations: ['minLength', 'maxLength', 'required'],
   }
-};
-
-// Adapterlər - verilənlər bazasından alınan dataları UI tiplərinə uyğunlaşdırmaq üçün
-export const adaptSupabaseColumn = (dbColumn: any): Column => {
-  return {
-    id: dbColumn.id,
-    category_id: dbColumn.category_id,
-    name: dbColumn.name,
-    type: dbColumn.type as ColumnType,
-    is_required: dbColumn.is_required || false,
-    placeholder: dbColumn.placeholder || '',
-    help_text: dbColumn.help_text || '',
-    default_value: dbColumn.default_value || '',
-    options: dbColumn.options || [],
-    validation: dbColumn.validation || {},
-    order_index: dbColumn.order_index || 0,
-    status: dbColumn.status || 'active',
-    created_at: dbColumn.created_at,
-    updated_at: dbColumn.updated_at
-  };
-};
-
-// UI formlarından gələn dataları verilənlər bazası formatına çevirmək üçün
-export const adaptColumnFormToSupabase = (formData: ColumnFormData): any => {
-  return {
-    category_id: formData.category_id,
-    name: formData.name,
-    type: formData.type,
-    is_required: formData.is_required,
-    placeholder: formData.placeholder || '',
-    help_text: formData.help_text || '',
-    default_value: formData.default_value || '',
-    options: formData.options || [],
-    validation: formData.validation || {},
-    order_index: formData.order_index || 0,
-    status: formData.status || 'active'
-  };
 };

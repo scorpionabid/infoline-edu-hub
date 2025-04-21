@@ -1,68 +1,45 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguage } from '@/context/LanguageContext';
 import { StatsItem } from '@/types/dashboard';
-import { cn } from '@/lib/utils';
+import { Users, School, Building2, MapPin } from 'lucide-react';
 
 interface StatsCardProps {
   stats: StatsItem[];
   className?: string;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ stats, className }) => {
-  const { t } = useLanguage();
-
-  if (stats.length === 0) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>{t('statistics')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{t('noStatsAvailable')}</p>
-        </CardContent>
-      </Card>
-    );
+const getIcon = (title: string) => {
+  switch (title.toLowerCase()) {
+    case 'users':
+      return <Users className="h-5 w-5 text-muted-foreground" />;
+    case 'schools':
+      return <School className="h-5 w-5 text-muted-foreground" />;
+    case 'sectors':
+      return <Building2 className="h-5 w-5 text-muted-foreground" />;
+    case 'regions':
+      return <MapPin className="h-5 w-5 text-muted-foreground" />;
+    default:
+      return null;
   }
+};
 
+const StatsCard: React.FC<StatsCardProps> = ({ stats, className }) => {
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>{t('statistics')}</CardTitle>
+        <CardTitle>Statistics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
-            <div 
-              key={index} 
-              className="flex flex-col space-y-2 p-4 rounded-lg border"
-            >
-              {stat.icon && (
-                <div className="bg-muted rounded-full w-8 h-8 flex items-center justify-center">
-                  {stat.icon}
-                </div>
-              )}
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-                <div className="flex items-end justify-between">
-                  <p className="text-2xl font-bold">{stat.count}</p>
-                  {(typeof stat.change !== 'undefined' && typeof stat.changeType !== 'undefined') && (
-                    <div className="flex items-center space-x-1">
-                      <span className={cn(
-                        "text-xs",
-                        stat.changeType === 'increase' && "text-green-600",
-                        stat.changeType === 'decrease' && "text-red-600",
-                        stat.changeType === 'neutral' && "text-gray-600"
-                      )}>
-                        {stat.changeType === 'increase' ? '↑' : stat.changeType === 'decrease' ? '↓' : '→'}
-                        {stat.change}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {stat.description && (
-                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {stats.map((item, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              {item.icon || getIcon(item.title)}
+              <div>
+                <p className="text-sm font-medium">{item.title}</p>
+                <p className="text-2xl font-bold">{item.count}</p>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
                 )}
               </div>
             </div>

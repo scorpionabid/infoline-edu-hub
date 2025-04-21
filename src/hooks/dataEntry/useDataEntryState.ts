@@ -11,7 +11,7 @@ export const useDataEntryState = (schoolId?: string) => {
   
   // useCategoryData'dan döndürülən dəyərləri al
   const categoryDataResult = useCategoryData(schoolId);
-  const { categories, loading, error, refreshCategories } = categoryDataResult;
+  const { categories, loading, error, getCategoryById, refreshCategories } = categoryDataResult;
   
   // Düzəliş: refreshCategories istifadə et
   const handleRefresh = useCallback(async () => {

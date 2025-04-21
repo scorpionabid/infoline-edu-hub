@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
@@ -107,16 +106,7 @@ export const useSectorAdminDashboard = () => {
   
   const approveEntries = async (schoolId: string, categoryId: string, entryIds: string[]) => {
     try {
-      // Sessiya token-ini əldə edirik
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session?.access_token) {
-        throw new Error('Authentication token is missing');
-      }
-      
       const { data, error } = await supabase.functions.invoke('bulk-approve-entries', {
-        headers: {
-          Authorization: `Bearer ${sessionData?.session?.access_token}`
-        },
         body: {
           schoolId,
           categoryId,
@@ -162,16 +152,7 @@ export const useSectorAdminDashboard = () => {
         return { success: false };
       }
       
-      // Sessiya token-ini əldə edirik
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session?.access_token) {
-        throw new Error('Authentication token is missing');
-      }
-      
       const { data, error } = await supabase.functions.invoke('bulk-approve-entries', {
-        headers: {
-          Authorization: `Bearer ${sessionData?.session?.access_token}`
-        },
         body: {
           schoolId,
           categoryId,
@@ -209,16 +190,7 @@ export const useSectorAdminDashboard = () => {
   
   const viewEntryDetails = async (schoolId: string, categoryId: string) => {
     try {
-      // Sessiya token-ini əldə edirik
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session?.access_token) {
-        throw new Error('Authentication token is missing');
-      }
-      
       const { data, error } = await supabase.functions.invoke('get-entry-details', {
-        headers: {
-          Authorization: `Bearer ${sessionData?.session?.access_token}`
-        },
         body: {
           schoolId,
           categoryId

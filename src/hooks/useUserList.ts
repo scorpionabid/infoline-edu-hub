@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FullUserData } from '@/types/user';
+import { FullUserData } from '@/types/supabase';
 import { useUserFilters } from './user/useUserFilters';
 import { useUserPagination } from './user/useUserPagination';
 import { useUserOperations } from './user/useUserOperations';

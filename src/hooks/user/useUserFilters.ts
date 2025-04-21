@@ -1,26 +1,21 @@
 
 import { useState, useCallback } from 'react';
-import { UserFilter } from '../useUserList';
+import { UserFilter } from '@/hooks/useUserList';
 
 export const useUserFilters = () => {
-  const defaultFilters: UserFilter = {
-    role: undefined,
-    status: undefined,
-    region: undefined,
-    sector: undefined,
-    school: undefined,
-    search: undefined
-  };
-
-  const [filter, setFilter] = useState<UserFilter>(defaultFilters);
+  const [filter, setFilter] = useState<UserFilter>({});
 
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
     setFilter(prev => ({ ...prev, ...newFilter }));
   }, []);
 
   const resetFilter = useCallback(() => {
-    setFilter(defaultFilters);
+    setFilter({});
   }, []);
 
-  return { filter, updateFilter, resetFilter };
+  return {
+    filter,
+    updateFilter,
+    resetFilter
+  };
 };

@@ -1,4 +1,3 @@
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import LoginForm from '@/components/auth/LoginForm';
@@ -31,15 +30,15 @@ const mockTranslations = {
 // Mock language context
 const mockLanguageContext = () => {
   vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
-    t: (key) => mockTranslations[key] || key,
+    language: 'az',
     setLanguage: vi.fn(),
+    t: (key) => mockTranslations[key] || key,
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
       en: { nativeName: 'English', flag: '🇬🇧' },
       tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
       ru: { nativeName: 'Русский', flag: '🇷🇺' }
-    },
-    currentLanguage: 'az'
+    }
   });
 };
 
@@ -48,17 +47,13 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
 }));
 
-// Helper to mock useAuth - xətaları aradan qaldırmaq üçün bütün AuthContextType funksiyaları əlavə edildi
+// Helper to mock useAuth
 function mockUseAuth(loginImpl = vi.fn().mockResolvedValue(true)) {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     login: loginImpl,
     logout: vi.fn(),
-    signOut: vi.fn(),
     updateUser: vi.fn(),
     clearError: vi.fn(),
-    resetPassword: vi.fn(),
-    updatePassword: vi.fn(),
-    refreshUser: vi.fn(),
     user: null,
     isAuthenticated: false,
     isLoading: false,

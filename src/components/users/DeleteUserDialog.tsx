@@ -1,68 +1,86 @@
-
 import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useLanguage } from '@/context/LanguageContext';
+import { User } from '@/types/user';
+import { toast } from 'sonner';
 
-interface DeleteUserDialogProps {
+export interface DeleteUserDialogProps {
   open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  userName: string;
+  onOpenChange: (open: boolean) => void;
+  user: User;
+  onDelete: (userId: string) => void;
 }
 
 const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   open,
-  onClose,
-  onConfirm,
-  userName,
+  onOpenChange,
+  user,
+  onDelete,
 }) => {
   const { t } = useLanguage();
   const [loading, setLoading] = React.useState(false);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    if (!user) return; // Əgər user undefined olsa, əməliyyatı dayandır
+    
     setLoading(true);
-    try {
-      await onConfirm();
-    } finally {
-      setLoading(false);
-    }
+    
+    // API çağırışını simulyasiya et
+    setTimeout(() => {
+      try {
+        // Gerçək tətbiqdə, burada istifadəçinin silinməsi üçün API çağırışı olacaq
+        onDelete(user.id);
+        setLoading(false);
+        onOpenChange(false);
+        
+        toast.success(t('userDeleted'), {
+          description: t('userDeletedDesc')
+        });
+      } catch (error) {
+        setLoading(false);
+        toast.error(t('deleteError'), {
+          description: t('deleteErrorDesc')
+        });
+      }
+    }, 1000);
   };
 
+  // Əgər user undefined olsa, dialoqu göstərmə
+  if (!user) {
+    return null;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('deleteUser')}</DialogTitle>
-          <DialogDescription>
-            {t('deleteUserConfirmation', { name: userName })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            {t('cancel')}
-          </Button>
-          <Button
-            variant="destructive"
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('deleteUserConfirmation')} <strong>{user?.name || user?.full_name || t('unknownUser')}</strong>?
+            <div className="mt-2 text-destructive font-semibold">{t('deleteUserWarning')}</div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogAction
             onClick={handleDelete}
             disabled={loading}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {loading ? t('deleting') : t('delete')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

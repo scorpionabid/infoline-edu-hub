@@ -8,27 +8,12 @@ import PendingApprovalsCard from './common/PendingApprovalsCard';
 import NotificationsCard from './common/NotificationsCard';
 import RegionsList from './super-admin/RegionsList';
 import { Users, School, Building2, MapPin } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
-  data: SuperAdminDashboardData | null;
+  data: SuperAdminDashboardData;
 }
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
-  if (!data) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <Skeleton className="h-40 col-span-full lg:col-span-2" />
-        <Skeleton className="h-40 col-span-full lg:col-span-1" />
-        <Skeleton className="h-40 col-span-full md:col-span-1" />
-        <Skeleton className="h-80 col-span-full xl:col-span-2" />
-        <Skeleton className="h-40 col-span-full" />
-      </div>
-    );
-  }
-
   // Statslar üçün array formatına çevirmə
   const statsItems: StatsItem[] = data.stats ? [
     { title: 'Regions', count: data.stats.regions, icon: <MapPin className="h-4 w-4 text-gray-500" /> },

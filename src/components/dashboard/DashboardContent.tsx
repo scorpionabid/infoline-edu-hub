@@ -1,234 +1,117 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import StatusCards from './common/StatusCards';
-import PendingItems from './common/PendingItems';
-import RecentActivity from './common/RecentActivity';
-import CategoryList from './common/CategoryList';
-import RegionList from './common/RegionList';
-import ReportChart from '../reports/ReportChart';
+import SuperAdminDashboard from './SuperAdminDashboard';
+import RegionAdminDashboard from './RegionAdminDashboard';
+import SectorAdminDashboard from './SectorAdminDashboard';
+import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
+import DashboardTabs from './DashboardTabs';
+import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 
 interface DashboardContentProps {
-  data: any;
-  chartData: any;
+  userRole: string | undefined;
+  dashboardData: any;
+  chartData: {
+    activityData: { name: string; value: number }[];
+    regionSchoolsData: { name: string; value: number }[];
+    categoryCompletionData: { name: string; completed: number }[];
+  };
   isLoading: boolean;
-  error: Error | null;
 }
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
-  data,
+  userRole,
+  dashboardData,
   chartData,
-  isLoading,
-  error
+  isLoading: mockDataLoading
 }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  
+  const { 
+    data: schoolAdminData,
+    isLoading: schoolAdminLoading,
+    error: schoolAdminError,
+    refetch: refreshSchoolAdminData,
+    handleFormClick,
+    navigateToDataEntry
+  } = useSchoolAdminDashboard();
+
+  const isLoading = userRole === 'schooladmin' ? schoolAdminLoading : mockDataLoading;
   
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-[300px] w-full" />
-          <Skeleton className="h-[300px] w-full" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-[400px] w-full" />
-          <Skeleton className="h-[400px] w-full lg:col-span-2" />
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
-  
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {error.message || t('errorLoadingDashboard')}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  if (!data) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {t('noDashboardData')}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  // Determine user role and show appropriate dashboard
-  const isSuperAdmin = data.stats?.regions !== undefined;
-  const isRegionAdmin = data.stats?.sectors !== undefined && !isSuperAdmin;
-  
-  const statsItems = isSuperAdmin ? [
-    {
-      title: t('regions'),
-      count: data.stats?.regions || 0,
-      description: t('totalRegions')
-    },
-    {
-      title: t('sectors'),
-      count: data.stats?.sectors || 0,
-      description: t('totalSectors')
-    },
-    {
-      title: t('schools'),
-      count: data.stats?.schools || 0,
-      description: t('totalSchools')
-    },
-    {
-      title: t('users'),
-      count: data.stats?.users || 0,
-      description: t('totalUsers')
+
+  const renderDashboard = () => {
+    const normalizedRole = typeof userRole === 'string' ? userRole.toLowerCase() : '';
+    
+    try {
+      switch (normalizedRole) {
+        case 'superadmin':
+          return <SuperAdminDashboard data={dashboardData || {}} />;
+        case 'regionadmin':
+          return <RegionAdminDashboard data={dashboardData || {}} />;
+        case 'sectoradmin':
+          return <SectorAdminDashboard data={dashboardData || {}} />;
+        case 'schooladmin':
+          return (
+            <SchoolAdminDashboard 
+              data={schoolAdminData}
+              isLoading={schoolAdminLoading}
+              error={schoolAdminError}
+              onRefresh={refreshSchoolAdminData}
+              navigateToDataEntry={navigateToDataEntry}
+              handleFormClick={handleFormClick}
+            />
+          );
+        default:
+          console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
+          return (
+            <SchoolAdminDashboard 
+              data={null}
+              isLoading={false}
+              error={new Error(t('unknownUserRole'))}
+              onRefresh={() => window.location.reload()}
+              navigateToDataEntry={() => navigate('/data-entry')}
+              handleFormClick={(id) => navigate(`/data-entry/${id}`)}
+            />
+          );
+      }
+    } catch (error) {
+      console.error("Dashboard render xətası:", error);
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <p className="text-destructive text-lg">{t('errorOccurred')}</p>
+          <p className="text-muted-foreground">{t('dashboardRenderError')}</p>
+        </div>
+      );
     }
-  ] : isRegionAdmin ? [
-    {
-      title: t('sectors'),
-      count: data.stats?.sectors || 0,
-      description: t('totalSectors')
-    },
-    {
-      title: t('schools'),
-      count: data.stats?.schools || 0,
-      description: t('totalSchools')
-    },
-    {
-      title: t('users'),
-      count: data.stats?.users || 0,
-      description: t('totalUsers')
-    }
-  ] : [];
-  
+  };
+
+  const safeChartData = {
+    activityData: Array.isArray(chartData?.activityData) ? chartData.activityData : [],
+    regionSchoolsData: Array.isArray(chartData?.regionSchoolsData) ? chartData.regionSchoolsData : [],
+    categoryCompletionData: Array.isArray(chartData?.categoryCompletionData) ? chartData.categoryCompletionData : []
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <StatusCards 
-        stats={statsItems}
-        completionRate={data.completionRate}
-        pendingItems={data.pendingApprovals?.length || 0}
-      />
-      
-      {/* Charts & Tables (SuperAdmin) */}
-      {isSuperAdmin && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('activityOverview')}</CardTitle>
-              <CardDescription>{t('recentActivityDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ReportChart 
-                data={chartData?.activityData || []} 
-                title={t('activityByType')}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('regionSchoolsDistribution')}</CardTitle>
-              <CardDescription>{t('schoolsDistributionDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ReportChart 
-                data={chartData?.regionSchoolsData || []} 
-                title={t('schoolsByRegion')}
-              />
-            </CardContent>
-          </Card>
-        </div>
+    <div className="space-y-4">
+      {userRole === 'superadmin' && chartData && (
+        <DashboardTabs 
+          activityData={safeChartData.activityData}
+          regionSchoolsData={safeChartData.regionSchoolsData}
+          categoryCompletionData={safeChartData.categoryCompletionData}
+        />
       )}
       
-      {/* RegionAdmin Charts */}
-      {isRegionAdmin && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('sectorCompletion')}</CardTitle>
-              <CardDescription>{t('sectorCompletionDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.sectors?.map((sector: any) => (
-                  <div key={sector.id} className="flex items-center justify-between">
-                    <div className="w-40 truncate">{sector.name}</div>
-                    <div className="flex-1 mx-4">
-                      <Progress value={sector.completionRate || 0} className="h-2" />
-                    </div>
-                    <div className="w-10 text-right">{sector.completionRate || 0}%</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('categoryCompletion')}</CardTitle>
-              <CardDescription>{t('categoryCompletionDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ReportChart 
-                data={chartData?.categoryCompletionData || []} 
-                title={t('completionByCategory')}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
-      {/* Tabs content based on role */}
-      <Tabs defaultValue="pending">
-        <TabsList className="mb-4">
-          <TabsTrigger value="pending">{t('pendingApprovals')}</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger value="regions">{t('regions')}</TabsTrigger>}
-          {isRegionAdmin && <TabsTrigger value="sectors">{t('sectors')}</TabsTrigger>}
-          {(isSuperAdmin || isRegionAdmin) && <TabsTrigger value="categories">{t('categories')}</TabsTrigger>}
-          <TabsTrigger value="activity">{t('recentActivity')}</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pending" className="space-y-4">
-          <PendingItems items={data.pendingApprovals || []} />
-        </TabsContent>
-        
-        {isSuperAdmin && (
-          <TabsContent value="regions" className="space-y-4">
-            <RegionList regions={data.regions || []} />
-          </TabsContent>
-        )}
-        
-        {isRegionAdmin && (
-          <TabsContent value="sectors" className="space-y-4">
-            <RegionList regions={data.sectors || []} />
-          </TabsContent>
-        )}
-        
-        {(isSuperAdmin || isRegionAdmin) && (
-          <TabsContent value="categories" className="space-y-4">
-            <CategoryList categories={data.categories || []} />
-          </TabsContent>
-        )}
-        
-        <TabsContent value="activity" className="space-y-4">
-          <RecentActivity activities={data.recentActivities || []} />
-        </TabsContent>
-      </Tabs>
+      {renderDashboard()}
     </div>
   );
 };

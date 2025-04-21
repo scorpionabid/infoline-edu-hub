@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -11,21 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ColumnType } from "@/types/column";
+import { ColumnType, COLUMN_TYPE_DEFINITIONS } from "@/types/column";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
-const COLUMN_TYPE_DEFINITIONS = {
-  text: "Mətn",
-  number: "Rəqəm",
-  date: "Tarix",
-  select: "Seçim",
-  checkbox: "Checkbox",
-  radio: "Radio",
-  textarea: "Açıqlama",
-  file: "Fayl",
-  image: "Şəkil"
-};
 
 interface ValidationFieldsProps {
   form: any;

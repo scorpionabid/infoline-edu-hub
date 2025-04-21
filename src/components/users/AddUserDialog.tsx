@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -37,8 +36,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     email: '',
     password: '',
     role: 'schooladmin',
-    regionId: filterParams.regionId || (isRegionAdmin ? currentUser?.region_id : ''),
-    sectorId: filterParams.sectorId || (isSectorAdmin ? currentUser?.sector_id : ''),
+    regionId: filterParams.regionId || (isRegionAdmin ? currentUser?.regionId : ''),
+    sectorId: filterParams.sectorId || (isSectorAdmin ? currentUser?.sectorId : ''),
     schoolId: filterParams.schoolId || '',
     status: 'active',
     phone: '',
@@ -58,8 +57,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       email: '',
       password: '',
       role: 'schooladmin',
-      regionId: filterParams.regionId || (isRegionAdmin ? currentUser?.region_id : ''),
-      sectorId: filterParams.sectorId || (isSectorAdmin ? currentUser?.sector_id : ''),
+      regionId: filterParams.regionId || (isRegionAdmin ? currentUser?.regionId : ''),
+      sectorId: filterParams.sectorId || (isSectorAdmin ? currentUser?.sectorId : ''),
       schoolId: filterParams.schoolId || '',
       status: 'active',
       phone: '',
@@ -109,8 +108,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       if (authError) throw authError;
 
       if (authData.user) {
-        // İstifadəçi məlumatlarını profiles cədvəlinə əlavə et
-        const { error: dbError } = await supabase.from('profiles').insert({
+        // İstifadəçi məlumatlarını users cədvəlinə əlavə et
+        const { error: dbError } = await supabase.from('users').insert({
           id: authData.user.id,
           email: formData.email,
           full_name: formData.fullName,

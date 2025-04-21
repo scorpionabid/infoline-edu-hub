@@ -1,8 +1,9 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, adaptSupabaseCategory, CategoryStatus } from '@/types/category';
+import { Category, adaptSupabaseCategory } from '@/types/category';
 import { toast } from 'sonner';
+
 
 const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);

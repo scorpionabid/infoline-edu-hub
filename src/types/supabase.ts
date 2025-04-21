@@ -1,37 +1,55 @@
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
-
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+export interface Profile {
+  id: string;
+  email?: string;
+  full_name: string;
+  phone?: string;
+  position?: string;
+  avatar?: string;
+  language: string;
+  status: 'active' | 'inactive' | 'blocked';
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserRoleData {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface FullUserData {
   id: string;
   email: string;
   full_name: string;
+  name: string;
   role: UserRole;
   region_id?: string;
-  regionId?: string;
   sector_id?: string;
-  sectorId?: string;
   school_id?: string;
+  regionId?: string;
+  sectorId?: string;
   schoolId?: string;
   phone?: string;
-  name?: string;
   position?: string;
-  language?: string;
+  language: string;
   avatar?: string;
-  status?: string;
+  status: 'active' | 'inactive' | 'blocked';
   last_login?: string;
   lastLogin?: string;
-  created_at?: string;
-  updated_at?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  created_at: string;
+  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
+  userRoleId?: string;
   adminEntity?: {
     type: string;
     name: string;
@@ -40,15 +58,11 @@ export interface FullUserData {
     sectorName?: string;
     schoolType?: string;
   };
-  notificationSettings?: {
+  notificationSettings: {
     email: boolean;
     system: boolean;
     push?: boolean;
     sms?: boolean;
-    inApp?: boolean;
   };
   twoFactorEnabled?: boolean;
-  region_name?: string;
-  sector_name?: string;
-  school_name?: string;
 }

@@ -32,6 +32,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 
+// Status badge funksiyası - ayrı funksiya olaraq təyin edilir
 const getStatusBadge = (status: string, t: (key: string) => string) => {
   switch (status) {
     case 'approved':
@@ -45,6 +46,7 @@ const getStatusBadge = (status: string, t: (key: string) => string) => {
   }
 };
 
+// Filtr komponenti
 const FilterSection = ({ 
   showFilters, 
   setShowFilters, 
@@ -175,6 +177,7 @@ const FilterSection = ({
   );
 };
 
+// Əsas cədvəl komponenti
 const SchoolTable = ({
   loading,
   error,
@@ -359,6 +362,7 @@ const SchoolTable = ({
   );
 };
 
+// Məlumat təfərrüatları dialoqu komponenti
 const SchoolDetailDialog = ({
   isOpen,
   onOpenChange,
@@ -468,11 +472,13 @@ const SchoolDetailDialog = ({
   );
 };
 
+// Əsas komponent
 const SchoolColumnTable: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { isSectorAdmin } = usePermissions();
   
+  // useSchoolColumnReport hook-undan gələn məlumatlar və funksiyalar
   const {
     data,
     loading,
@@ -491,6 +497,7 @@ const SchoolColumnTable: React.FC = () => {
     rejectData
   } = useSchoolColumnReport();
   
+  // State-lər
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
@@ -499,6 +506,7 @@ const SchoolColumnTable: React.FC = () => {
   const [selectedSchoolData, setSelectedSchoolData] = useState<any>(null);
   const [feedbackText, setFeedbackText] = useState('');
   
+  // Regionlar və sektorlar üçün sorğular
   const regionsQuery = useCachedQuery({
     queryKey: ['regions'],
     queryFn: async () => {
@@ -521,13 +529,14 @@ const SchoolColumnTable: React.FC = () => {
   });
   
   const categoriesQuery = useCachedQuery({
-    queryKey: ['categories'],
+    queryKey: ['report-categories'],
     queryFn: async () => {
-      const { data } = await supabase.from('categories').select('*');
+      const { data } = await supabase.from('report_categories').select('*');
       return data || [];
     }
   });
   
+  // Məlumatları filtrləmək
   const regionsData = (regionsQuery.data || []) as any[];
   const sectorsData = (sectorsQuery.data || []) as any[];
   const categoriesData = (categoriesQuery.data || []) as any[];
@@ -536,6 +545,7 @@ const SchoolColumnTable: React.FC = () => {
     school.schoolName.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
+  // Məktəb seçimini dəyişmək üçün funksiya
   const toggleSchoolSelection = useCallback((schoolId: string) => {
     setSelectedSchools(prev => {
       if (prev.includes(schoolId)) {
@@ -546,6 +556,7 @@ const SchoolColumnTable: React.FC = () => {
     });
   }, []);
   
+  // Filtrləri sıfırlamaq üçün funksiya
   const resetFilters = useCallback(() => {
     setRegionId(undefined);
     setSectorId(undefined);
@@ -553,16 +564,19 @@ const SchoolColumnTable: React.FC = () => {
     setSearchQuery('');
   }, [setRegionId, setSectorId, setStatusFilter]);
   
+  // Region dəyişdikdə sektorları yeniləmək
   useEffect(() => {
     if (regionId) {
       setSectorId(undefined);
     }
   }, [regionId, setSectorId]);
   
+  // Komponent yükləndikdə məlumatları yükləmək
   useEffect(() => {
     loadData();
   }, [loadData, categoryId, regionId, sectorId, statusFilter]);
   
+  // Seçilmiş məktəblərin sayı dəyişdikdə selectAll-u yeniləmək
   useEffect(() => {
     if (filteredData.length > 0 && selectedSchools.length === filteredData.length) {
       setSelectAll(true);

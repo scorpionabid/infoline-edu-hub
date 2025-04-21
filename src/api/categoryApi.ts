@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Category, adaptSupabaseCategory, adaptCategoryToSupabase, CategoryStatus } from '@/types/category';
+import { Category, adaptSupabaseCategory, adaptCategoryToSupabase } from '@/types/category';
 
 // Bütün kateqoriyaları əldə etmək üçün API funksiyası
 export const fetchCategories = async (): Promise<Category[]> => {
