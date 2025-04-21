@@ -1,235 +1,91 @@
 
-/**
- * Column və bağlı tiplərin tam tərifi və konfiqurasiya faylı.
- * Burada həm də ColumnType, ColumnValidation, CategoryWithColumns və əlaqəli konfiqurasiya obyektləri mövcuddur.
- */
+import { Json } from '@/types/supabase';
+import { Category } from './category';
 
-export type ColumnType =
-  | 'text'
-  | 'textarea'
-  | 'number'
-  | 'select'
-  | 'checkbox'
-  | 'radio'
-  | 'date'
-  | 'file'
-  | 'image'
-  | 'email'
-  | 'url'
-  | 'phone'
-  | 'range'
-  | 'color'
-  | 'password'
-  | 'time'
-  | 'datetime'
-  | 'richtext';
+export interface Column {
+  id: string;
+  category_id: string;
+  name: string;
+  type: ColumnType;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  default_value?: string;
+  options?: Record<string, any> | ColumnOption[];
+  validation?: Record<string, any>;
+  order_index: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface ColumnOption {
   label: string;
   value: string;
-  description?: string;
-  icon?: string;
-  disabled?: boolean;
 }
 
-export interface ValidationRules {
-  minValue?: number;
-  maxValue?: number;
-  minLength?: number;
-  maxLength?: number;
-  step?: number;
-  minDate?: string;
-  maxDate?: string;
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file' | 'image';
+
+export interface ColumnValidation {
+  min?: number;
+  max?: number;
   required?: boolean;
   pattern?: string;
-  patternMessage?: string;
-  email?: boolean;
-  url?: boolean;
-  numeric?: boolean;
-  integer?: boolean;
-  date?: boolean;
-  custom?: any;
   customMessage?: string;
 }
 
-export interface ColumnValidation extends ValidationRules {}
+export interface ColumnWithCategory extends Column {
+  category: Category;
+}
 
-export interface Column {
-  id: string;
-  category_id?: string;
+export interface ColumnFormData {
+  id?: string;
+  category_id: string;
   name: string;
   type: ColumnType;
+  is_required: boolean;
   placeholder?: string;
   help_text?: string;
-  is_required?: boolean;
   default_value?: string;
-  options?: ColumnOption[] | Record<string, any>;
-  validation?: ValidationRules;
+  options?: ColumnOption[];
+  validation?: ColumnValidation;
   order_index?: number;
-  status?: 'active' | 'inactive' | 'deleted';
-  created_at?: string;
-  updated_at?: string;
-
-  // Yeni sahələr (formlar və parent/şərt funksionallığı üçün)
-  parent_column_id?: string | null;
-  dependencies?: string[]; // Hansı sütunlardan asılıdır (bir neçə parent sütuna bağlılıq üçün)
-  visibility_conditions?: {
-    column_id: string;
-    operator: string;
-    value: any;
-  }[];
-}
-
-// Sütunun bir kateqoriyadakı tərifi
-export interface CategoryWithColumns {
-  id: string;
-  name: string;
-  description?: string;
   status?: string;
-  assignment?: string;
-  deadline?: string;
-  created_at?: string;
-  updated_at?: string;
-  columns: Column[];
-  priority?: number;
-  archived?: boolean;
 }
 
-// Sütun tipləri üçün konfiqurasiya və göstəricilər
-export const COLUMN_TYPE_DEFINITIONS: Record<
-  ColumnType,
-  {
-    icon: string;
-    label: string;
-    description: string;
-    validations?: (keyof ValidationRules)[];
-    defaultValidation?: Partial<ValidationRules>;
-  }
-> = {
-  text: {
-    icon: 'Text',
-    label: 'Mətn',
-    description: 'Qısa mətn üçün sahə',
-    validations: ['minLength', 'maxLength', 'pattern'],
-    defaultValidation: { minLength: 0, maxLength: 255 }
-  },
-  textarea: {
-    icon: 'AlignLeft',
-    label: 'Çoxsətirli mətn',
-    description: 'Uzun mətn, şərhlər üçün sahə',
-    validations: ['minLength', 'maxLength'],
-    defaultValidation: { minLength: 0 }
-  },
-  number: {
-    icon: 'Hash',
-    label: 'Say',
-    description: 'Rəqəmlər üçün sahə',
-    validations: ['minValue', 'maxValue', 'step'],
-    defaultValidation: { minValue: 0, maxValue: undefined }
-  },
-  select: {
-    icon: 'List',
-    label: 'Seçim',
-    description: 'Bir dəyər seçmək üçün drop-down',
-    validations: [],
-  },
-  checkbox: {
-    icon: 'CheckSquare',
-    label: 'Checkbox',
-    description: 'Bir neçə seçim üçün checkbox',
-    validations: [],
-  },
-  radio: {
-    icon: 'Dot',
-    label: 'Radio button',
-    description: 'Bir seçim üçün radio',
-    validations: [],
-  },
-  date: {
-    icon: 'Calendar',
-    label: 'Tarix',
-    description: 'Tarix seçimi',
-    validations: ['minDate', 'maxDate'],
-    defaultValidation: {}
-  },
-  file: {
-    icon: 'Paperclip',
-    label: 'Fayl',
-    description: 'Fayl əlavə et',
-    validations: [],
-  },
-  image: {
-    icon: 'Image',
-    label: 'Şəkil',
-    description: 'Şəkil yüklə',
-    validations: [],
-  },
-  email: {
-    icon: 'Mail',
-    label: 'Email',
-    description: 'Email ünvanı üçün',
-    validations: ['pattern', 'email'],
-    defaultValidation: {
-      pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
-      email: true
-    }
-  },
-  url: {
-    icon: 'Link',
-    label: 'URL',
-    description: 'Veb sayt linki üçün',
-    validations: ['pattern', 'url'],
-    defaultValidation: {
-      pattern:
-        '^(https?:\\/\\/)?([\\da-z.-]+)\\.([a-z.]{2,6})[\\/\\w .-]*/?$',
-      url: true
-    }
-  },
-  phone: {
-    icon: 'Phone',
-    label: 'Telefon',
-    description: 'Telefon nömrəsi üçün sahə',
-    validations: ['pattern'],
-    defaultValidation: {
-      pattern: '^\\+[0-9]{10,15}$'
-    }
-  },
-  range: {
-    icon: 'SlidersHorizontal',
-    label: 'Range',
-    description: 'Ən aşağı və ən yüksək dəyərlər üçün range input',
-    validations: ['minValue', 'maxValue'],
-    defaultValidation: {}
-  },
-  color: {
-    icon: 'Palette',
-    label: 'Rəng',
-    description: 'Rəng seçimi',
-    validations: [],
-  },
-  password: {
-    icon: 'Key',
-    label: 'Şifrə',
-    description: 'Şifrə sahəsi',
-    validations: ['minLength', 'maxLength'],
-    defaultValidation: { minLength: 6 }
-  },
-  time: {
-    icon: 'Clock',
-    label: 'Saat',
-    description: 'Saat seçimi üçün sahə',
-    validations: [],
-  },
-  datetime: {
-    icon: 'CalendarClock',
-    label: 'Tarix və saat',
-    description: 'Tarix və saat seçmək üçün',
-    validations: [],
-  },
-  richtext: {
-    icon: 'Heading1',
-    label: 'Formatlaşdırılmış mətn',
-    description: 'Formatlanmış (bold, italic və s.) mətn üçün sahə',
-    validations: [],
-  }
+// Adapterlər - verilənlər bazasından alınan dataları UI tiplərinə uyğunlaşdırmaq üçün
+export const adaptSupabaseColumn = (dbColumn: any): Column => {
+  return {
+    id: dbColumn.id,
+    category_id: dbColumn.category_id,
+    name: dbColumn.name,
+    type: dbColumn.type as ColumnType,
+    is_required: dbColumn.is_required || false,
+    placeholder: dbColumn.placeholder || '',
+    help_text: dbColumn.help_text || '',
+    default_value: dbColumn.default_value || '',
+    options: dbColumn.options || [],
+    validation: dbColumn.validation || {},
+    order_index: dbColumn.order_index || 0,
+    status: dbColumn.status || 'active',
+    created_at: dbColumn.created_at,
+    updated_at: dbColumn.updated_at
+  };
+};
+
+// UI formlarından gələn dataları verilənlər bazası formatına çevirmək üçün
+export const adaptColumnFormToSupabase = (formData: ColumnFormData): any => {
+  return {
+    category_id: formData.category_id,
+    name: formData.name,
+    type: formData.type,
+    is_required: formData.is_required,
+    placeholder: formData.placeholder || '',
+    help_text: formData.help_text || '',
+    default_value: formData.default_value || '',
+    options: formData.options || [],
+    validation: formData.validation || {},
+    order_index: formData.order_index || 0,
+    status: formData.status || 'active'
+  };
 };

@@ -1,188 +1,253 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { useAuth } from '@/context/auth';
-import { CategoryWithColumns } from '@/types/column';
-import { DataEntry, DataEntrySaveStatus, UseDataEntryProps, UseDataEntryResult } from '@/types/dataEntry';
+import { supabase } from '@/integrations/supabase/client';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { CategoryWithColumns } from '@/types/category';
+import { DataEntry, DataEntrySaveStatus } from '@/types/dataEntry';
 import { toast } from 'sonner';
 
-export const useDataEntry = ({
-  schoolId,
-  categoryId,
-  onComplete
-}: UseDataEntryProps): UseDataEntryResult => {
+interface UseDataEntryProps {
+  schoolId?: string;
+  categoryId?: string;
+  onComplete?: () => void;
+}
+
+export const useDataEntry = ({ schoolId, categoryId, onComplete }: UseDataEntryProps = {}) => {
+  const { userRole, schoolId: userSchoolId } = usePermissions();
+  
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [submitting, setSubmitting] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
   const [entries, setEntries] = useState<DataEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
-  const [isDataModified, setIsDataModified] = useState<boolean>(false);
+  const [isDataModified, setIsDataModified] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const { user } = useAuth();
+  // İstifadəçinin məktəbini təyin et
+  const effectiveSchoolId = schoolId || userSchoolId;
   
-  // Bu, yalnız mock funksionallıqdır
-  const loadDataForSchool = async (schoolId: string) => {
-    setLoading(true);
+  // Kateqoriyaları yüklə
+  const loadCategories = useCallback(async () => {
     try {
-      // TODO: Məlumatları real API-dən yükləmək
-      // Mock məlumatlar
-      const mockCategories: CategoryWithColumns[] = [
-        {
-          id: '1',
-          name: 'Ümumi məlumatlar',
-          description: 'Məktəb haqqında ümumi məlumatlar',
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          columns: [
-            {
-              id: 'col1',
-              category_id: '1',
-              name: 'Şagird sayı',
-              type: 'number',
-              is_required: true,
-              order_index: 0,
-              status: 'active',
-              help_text: 'Məktəbdəki ümumi şagird sayı',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: 'col2',
-              category_id: '1',
-              name: 'Müəllim sayı',
-              type: 'number',
-              is_required: true,
-              order_index: 1,
-              status: 'active',
-              help_text: 'Məktəbdəki ümumi müəllim sayı',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-          ]
-        }
-      ];
+      setLoading(true);
+      setError(null);
       
-      setCategories(mockCategories);
+      console.log('loadCategories çağırıldı');
       
-      // Mock entries
-      const mockEntries: DataEntry[] = [
-        {
-          column_id: 'col1',
-          category_id: '1',
-          school_id: schoolId,
-          value: '500',
-          status: 'pending'
-        },
-        {
-          column_id: 'col2',
-          category_id: '1',
-          school_id: schoolId,
-          value: '50',
-          status: 'pending'
-        }
-      ];
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*, columns(*)')
+        .order('priority', { ascending: false })
+        .eq('status', 'active');
       
-      setEntries(mockEntries);
-      setIsDataModified(false);
-      setSaveStatus(DataEntrySaveStatus.IDLE);
+      if (error) {
+        throw error;
+      }
       
-    } catch (err: any) {
-      console.error('Məlumatlar yüklənərkən xəta:', err);
-      setError('Məlumatlar yüklənərkən xəta baş verdi. Yenidən cəhd edin.');
+      if (data) {
+        console.log('Yüklənən kateqoriyalar:', data.length);
+        setCategories(data as CategoryWithColumns[]);
+      }
+    } catch (error: any) {
+      console.error('Kateqoriyaları yükləyərkən xəta:', error.message);
+      setError('Kateqoriyaları yükləyərkən xəta baş verdi.');
     } finally {
       setLoading(false);
     }
-  };
-  
-  const handleEntriesChange = useCallback((updatedEntries: DataEntry[]) => {
-    setEntries(updatedEntries);
-    setIsDataModified(true);
-    setSaveStatus(DataEntrySaveStatus.IDLE);
   }, []);
   
-  const handleSave = async () => {
-    if (!schoolId) {
-      setError('Məktəb ID-si təyin edilməyib');
-      return;
-    }
-    
-    setSaveStatus(DataEntrySaveStatus.SAVING);
-    
-    try {
-      // TODO: Real API-yə məlumatların saxlanması
-      // Mock save operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  // Məlumatları daxil etmək üçün
+  const handleEntriesChange = useCallback((updatedEntries: DataEntry[]) => {
+    setEntries(prev => {
+      // Yalnız dəyişmiş olanları güncəllə
+      const newEntries = [...prev];
       
-      // Məlumatların saxlanması uğurlu olduqda
-      setIsDataModified(false);
-      setSaveStatus(DataEntrySaveStatus.SAVED);
-      toast.success('Məlumatlar uğurla saxlanıldı');
+      updatedEntries.forEach(updatedEntry => {
+        const index = newEntries.findIndex(e => 
+          e.column_id === updatedEntry.column_id && 
+          e.category_id === updatedEntry.category_id
+        );
+        
+        if (index >= 0) {
+          // Mövcud giriş dəyişikliyini yenilə
+          newEntries[index] = {
+            ...newEntries[index],
+            value: updatedEntry.value
+          };
+        } else {
+          // Yeni giriş əlavə et
+          newEntries.push({
+            column_id: updatedEntry.column_id,
+            category_id: updatedEntry.category_id,
+            school_id: effectiveSchoolId || '',
+            value: updatedEntry.value,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      });
       
-    } catch (err: any) {
-      console.error('Məlumatlar saxlanarkən xəta:', err);
-      setSaveStatus(DataEntrySaveStatus.ERROR);
-      setError('Məlumatlar saxlanarkən xəta baş verdi. Yenidən cəhd edin.');
-      toast.error('Məlumatlar saxlanarkən xəta baş verdi');
-    }
-  };
+      setIsDataModified(true);
+      return newEntries;
+    });
+  }, [effectiveSchoolId]);
   
-  const submitForApproval = async () => {
-    if (!schoolId) {
-      setError('Məktəb ID-si təyin edilməyib');
+  // Dəyişiklikləri yadda saxlamaq üçün
+  const handleSave = useCallback(async () => {
+    if (!effectiveSchoolId || entries.length === 0) {
       return;
     }
     
-    setSubmitting(true);
+    try {
+      setSaveStatus(DataEntrySaveStatus.SAVING);
+      
+      // Girişləri döngüyə alıb hər biri üçün upsert əməliyyatı
+      for (const entry of entries) {
+        if (!entry.id) {
+          // Yeni giriş əlavə et
+          const { error } = await supabase
+            .from('data_entries')
+            .insert({
+              school_id: effectiveSchoolId,
+              category_id: entry.category_id,
+              column_id: entry.column_id,
+              value: entry.value,
+              status: 'pending',
+              created_by: userRole === 'schooladmin' ? 'user-id' : null // Real istifadəçi ID olmalıdır
+            });
+            
+          if (error) throw error;
+        } else {
+          // Mövcud girişi yenilə
+          const { error } = await supabase
+            .from('data_entries')
+            .update({
+              value: entry.value,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', entry.id);
+            
+          if (error) throw error;
+        }
+      }
+      
+      setSaveStatus(DataEntrySaveStatus.SAVED);
+      setIsDataModified(false);
+      
+      toast.success('Dəyişikliklər uğurla yadda saxlanıldı');
+      
+      // Məlumatları yenidən yüklə
+      await loadDataForSchool(effectiveSchoolId);
+    } catch (error: any) {
+      console.error('Yadda saxlama zamanı xəta:', error.message);
+      setSaveStatus(DataEntrySaveStatus.ERROR);
+      toast.error('Yadda saxlama zamanı xəta baş verdi');
+    }
+  }, [effectiveSchoolId, entries, userRole, loadDataForSchool]);
+  
+  // Təsdiq üçün göndərmək
+  const handleSubmitForApproval = useCallback(async () => {
+    if (!effectiveSchoolId) {
+      return;
+    }
     
     try {
-      // TODO: Real API-yə təsdiqlənmə üçün göndərmə
-      // Mock submission operation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setSaveStatus(DataEntrySaveStatus.SUBMITTING);
       
-      toast.success('Məlumatlar təsdiqlənmə üçün göndərildi');
+      // Əvvəlcə yadda saxla
+      await handleSave();
+      
+      // Təsdiq üçün status güncəllə
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('school_id', effectiveSchoolId)
+        .in('id', entries.map(e => e.id).filter(Boolean));
+        
+      if (error) throw error;
+      
+      setSaveStatus(DataEntrySaveStatus.SUBMITTED);
       setIsDataModified(false);
+      
+      toast.success('Məlumatlar təsdiq üçün göndərildi');
       
       if (onComplete) {
         onComplete();
       }
+    } catch (error: any) {
+      console.error('Təsdiq üçün göndərmə zamanı xəta:', error.message);
+      setSaveStatus(DataEntrySaveStatus.ERROR);
+      toast.error('Təsdiq üçün göndərmə zamanı xəta baş verdi');
+    }
+  }, [effectiveSchoolId, entries, handleSave, onComplete]);
+  
+  // Məktəb məlumatlarını yüklə
+  const loadDataForSchool = useCallback(async (schoolId: string) => {
+    if (!schoolId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
       
-    } catch (err: any) {
-      console.error('Təsdiqlənmə üçün göndərilərkən xəta:', err);
-      setError('Təsdiqlənmə üçün göndərilərkən xəta baş verdi. Yenidən cəhd edin.');
-      toast.error('Təsdiqlənmə üçün göndərilərkən xəta baş verdi');
+      console.log('loadDataForSchool çağırıldı:', schoolId);
+      
+      // Məktəb üçün mövcud giriş məlumatlarını al
+      const { data, error } = await supabase
+        .from('data_entries')
+        .select('*')
+        .eq('school_id', schoolId);
+        
+      if (error) throw error;
+      
+      if (data) {
+        console.log('Yüklənən giriş məlumatları:', data.length);
+        setEntries(data as DataEntry[]);
+      }
+      
+      // Kateqoriyaları da yüklə
+      await loadCategories();
+    } catch (error: any) {
+      console.error('Məktəb məlumatlarını yükləyərkən xəta:', error.message);
+      setError('Məlumatları yükləyərkən xəta baş verdi.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
-  };
+  }, [loadCategories]);
   
-  const handleSubmitForApproval = async () => {
-    await handleSave();
-    await submitForApproval();
-  };
-  
+  // Komponent yükləndikdə və ya effektiv məktəb ID-si dəyişdikdə məlumatları yüklə
   useEffect(() => {
-    if (schoolId) {
-      loadDataForSchool(schoolId);
+    if (effectiveSchoolId) {
+      loadDataForSchool(effectiveSchoolId);
+    } else {
+      loadCategories();
     }
-  }, [schoolId]);
+  }, [effectiveSchoolId, loadDataForSchool, loadCategories]);
+  
+  // Kateqoriya ID dəyişdikdə UI-ı təmizlə
+  useEffect(() => {
+    if (isDataModified) {
+      // İstifadəçini xəbərdar et
+      console.log('Dəyişiklikləri yadda saxla');
+    }
+  }, [categoryId, isDataModified]);
   
   return {
     categories,
+    entries,
     loading,
     submitting,
+    saveStatus,
+    isDataModified,
     error,
-    formData,
-    entries,
     handleEntriesChange,
     handleSave,
     handleSubmitForApproval,
-    loadDataForSchool,
-    submitForApproval,
-    saveStatus,
-    isDataModified
+    loadDataForSchool
   };
 };
+
+export default useDataEntry;

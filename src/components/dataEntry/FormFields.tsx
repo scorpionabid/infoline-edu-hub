@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CategoryWithColumns } from '@/types/column';
+import { CategoryWithColumns } from '@/types/category';
 import { DataEntry } from '@/types/dataEntry';
 import { TextInput } from './inputs/TextInput';
 import { NumberInput } from './inputs/NumberInput';
@@ -106,12 +107,14 @@ const FormFields: React.FC<FormFieldsProps> = ({
         const existingEntry = safeEntries.find(e => e.column_id === columnId);
         
         updatedEntries.push({
-          id: existingEntry?.id,
+          ...(existingEntry?.id ? { id: existingEntry.id } : {}),
           column_id: columnId,
           category_id: category.id,
           school_id: existingEntry?.school_id || '',
           value: value as string,
-          status: existingEntry?.status || 'pending'
+          status: existingEntry?.status || 'pending',
+          ...(existingEntry?.created_at ? { created_at: existingEntry.created_at } : {}),
+          ...(existingEntry?.updated_at ? { updated_at: existingEntry.updated_at } : {})
         });
       });
     }
