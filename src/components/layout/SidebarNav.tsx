@@ -120,19 +120,13 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       icon: <PieChart size={20} />,
       label: t('reports'),
       show: true
-    },
-    {
-      href: "/settings",
-      icon: <Settings size={20} />,
-      label: t('settings'),
-      show: true
     }
   ];
 
   return (
     <div className="flex-1 px-3 py-2 space-y-1">
       {navItems
-        .filter(item => isSuperAdmin || item.show) // SuperAdmin bütün elementlərə çıxış əldə edir
+        .filter(item => item.show)
         .map((item) => (
           <NavItem
             key={item.href}
