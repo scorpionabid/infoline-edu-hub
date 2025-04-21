@@ -1,4 +1,3 @@
-
 import { Json } from '@/types/supabase';
 import { Category } from './category';
 
@@ -52,6 +51,57 @@ export interface ColumnFormData {
   order_index?: number;
   status?: string;
 }
+
+// Sütun tipləri üçün təriflər və konfiqurasiyalar
+export const COLUMN_TYPE_DEFINITIONS = {
+  text: {
+    label: 'Text',
+    icon: 'TextIcon',
+    validations: ['required', 'minLength', 'maxLength', 'pattern']
+  },
+  number: {
+    label: 'Number',
+    icon: 'HashIcon',
+    validations: ['required', 'min', 'max']
+  },
+  date: {
+    label: 'Date',
+    icon: 'CalendarIcon',
+    validations: ['required', 'minDate', 'maxDate']
+  },
+  select: {
+    label: 'Select',
+    icon: 'ListFilterIcon',
+    validations: ['required'],
+    hasOptions: true
+  },
+  checkbox: {
+    label: 'Checkbox',
+    icon: 'CheckSquareIcon',
+    validations: ['required']
+  },
+  radio: {
+    label: 'Radio',
+    icon: 'CircleIcon',
+    validations: ['required'],
+    hasOptions: true
+  },
+  textarea: {
+    label: 'Textarea',
+    icon: 'AlignLeftIcon',
+    validations: ['required', 'minLength', 'maxLength']
+  },
+  file: {
+    label: 'File',
+    icon: 'FileIcon',
+    validations: ['required', 'maxSize', 'fileType']
+  },
+  image: {
+    label: 'Image',
+    icon: 'ImageIcon',
+    validations: ['required', 'maxSize', 'dimensions']
+  }
+};
 
 // Adapterlər - verilənlər bazasından alınan dataları UI tiplərinə uyğunlaşdırmaq üçün
 export const adaptSupabaseColumn = (dbColumn: any): Column => {
