@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,15 +19,6 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
-const initialValues = {
-  language: user?.language || 'az',
-  notifications: {
-    email: user?.notificationSettings?.email ?? true,
-    push: user?.notificationSettings?.push ?? false,
-    inApp: user?.notificationSettings?.inApp ?? true
-  }
-};
-
 // FormSchema tipini düzəldək
 const FormSchema = z.object({
   language: z.string(),
@@ -41,6 +33,16 @@ const PreferencesForm = () => {
   const { t } = useLanguage();
   const { user, updateUser } = useAuth();
   const [isSaving, setIsSaving] = React.useState(false);
+
+  // useState istifadə edərək user dəyərlərini alaq
+  const initialValues = {
+    language: user?.language || 'az',
+    notifications: {
+      email: user?.notificationSettings?.email ?? true,
+      push: user?.notificationSettings?.push ?? false,
+      inApp: user?.notificationSettings?.inApp ?? true
+    }
+  };
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
