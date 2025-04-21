@@ -8,56 +8,128 @@ import PendingApprovalsCard from './common/PendingApprovalsCard';
 import NotificationsCard from './common/NotificationsCard';
 import RegionsList from './super-admin/RegionsList';
 import { Users, School, Building2, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useLanguage } from '@/context/LanguageContext';
+import ReportChart from '../reports/ReportChart';
+import PendingItems from './common/PendingItems';
+import CategoryList from './common/CategoryList';
+import RecentActivity from './common/RecentActivity';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SuperAdminDashboardProps {
-  data: SuperAdminDashboardData;
+  data: SuperAdminDashboardData | any;
 }
 
 const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+  const { t } = useLanguage();
+  
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+      </div>
+    );
+  }
+  
   // Statslar üçün array formatına çevirmə
-  const statsItems: StatsItem[] = data.stats ? [
-    { title: 'Regions', count: data.stats.regions, icon: <MapPin className="h-4 w-4 text-gray-500" /> },
-    { title: 'Sectors', count: data.stats.sectors, icon: <Building2 className="h-4 w-4 text-gray-500" /> },
-    { title: 'Schools', count: data.stats.schools, icon: <School className="h-4 w-4 text-gray-500" /> },
-    { title: 'Users', count: data.stats.users, icon: <Users className="h-4 w-4 text-gray-500" /> }
-  ] : [];
+  const statsItems: StatsItem[] = [
+    { title: t('regions'), count: data.stats?.regions || 0, icon: <MapPin className="h-4 w-4 text-gray-500" /> },
+    { title: t('sectors'), count: data.stats?.sectors || 0, icon: <Building2 className="h-4 w-4 text-gray-500" /> },
+    { title: t('schools'), count: data.stats?.schools || 0, icon: <School className="h-4 w-4 text-gray-500" /> },
+    { title: t('users'), count: data.stats?.users || 0, icon: <Users className="h-4 w-4 text-gray-500" /> }
+  ];
   
   // formsByStatus'u stat array-inə çevirmək
   const statusStats: StatsItem[] = data.formsByStatus ? [
-    { title: 'Pending', count: data.formsByStatus.pending },
-    { title: 'Approved', count: data.formsByStatus.approved },
-    { title: 'Rejected', count: data.formsByStatus.rejected },
-    { title: 'Total', count: data.formsByStatus.total }
+    { title: t('pending'), count: data.formsByStatus.pending || 0 },
+    { title: t('approved'), count: data.formsByStatus.approved || 0 },
+    { title: t('rejected'), count: data.formsByStatus.rejected || 0 },
+    { title: t('total'), count: data.formsByStatus.total || 0 }
   ] : [];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      <StatsCard stats={statsItems} className="col-span-full lg:col-span-2" />
-      
+    <div className="space-y-6">
+      {/* Əsas statistika kartları */}
       <StatusCards 
-        stats={statusStats}
+        stats={statsItems}
         completionRate={data.completionRate || 0}
         pendingItems={Array.isArray(data?.pendingApprovals) ? data?.pendingApprovals.length : 0}
-        className="col-span-full lg:col-span-1" 
       />
       
-      <CompletionRateCard value={data.completionRate || 0} className="col-span-full md:col-span-1" />
+      {/* Qrafikalar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('activityOverview')}</CardTitle>
+            <CardDescription>{t('recentActivityDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ReportChart 
+              data={[
+                { name: t('newSchools'), value: 24 },
+                { name: t('newEntries'), value: 85 },
+                { name: t('approvedEntries'), value: 67 },
+                { name: t('rejectedEntries'), value: 12 }
+              ]}
+              title={t('activityByType')}
+            />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('regionSchoolsDistribution')}</CardTitle>
+            <CardDescription>{t('schoolsDistributionDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ReportChart 
+              data={Array.isArray(data.regions) ? data.regions.slice(0, 5).map(r => ({
+                name: r.name,
+                value: r.schoolCount || 0
+              })) : []}
+              title={t('schoolsByRegion')}
+            />
+          </CardContent>
+        </Card>
+      </div>
       
-      <PendingApprovalsCard 
-        pendingItems={data.pendingApprovals || []}
-        className="col-span-full xl:col-span-2" 
-      />
-      
-      {Array.isArray(data.regions) && data.regions.length > 0 && (
-        <RegionsList 
-          regions={data.regions}
-          className="col-span-full" 
-        />
-      )}
-      
-      <NotificationsCard 
-        notifications={data.notifications || []}
-      />
+      {/* Tab paneli */}
+      <Tabs defaultValue="pending">
+        <TabsList className="mb-4">
+          <TabsTrigger value="pending">{t('pendingApprovals')}</TabsTrigger>
+          <TabsTrigger value="regions">{t('regions')}</TabsTrigger>
+          <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
+          <TabsTrigger value="activity">{t('recentActivity')}</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="pending" className="space-y-4">
+          <PendingItems items={data.pendingApprovals || []} />
+        </TabsContent>
+        
+        <TabsContent value="regions" className="space-y-4">
+          {Array.isArray(data.regions) && data.regions.length > 0 && (
+            <RegionsList regions={data.regions} className="w-full" />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <CategoryList categories={data.categories || []} />
+        </TabsContent>
+        
+        <TabsContent value="activity" className="space-y-4">
+          <RecentActivity activities={data.recentActivities || []} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

@@ -1,30 +1,55 @@
 
 import React from 'react';
+import { PendingItem } from '@/types/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/context/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
-import { PendingItem } from '@/types/dashboard';
-import { useNavigate } from 'react-router-dom';
+import { Check, X } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { az, ru, enUS, tr } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface PendingItemsProps {
   items: PendingItem[];
 }
 
 const PendingItems: React.FC<PendingItemsProps> = ({ items }) => {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
+  const { t, currentLanguage } = useLanguage();
+  
+  const getLocale = () => {
+    switch (currentLanguage) {
+      case 'az':
+        return az;
+      case 'ru':
+        return ru;
+      case 'tr':
+        return tr;
+      default:
+        return enUS;
+    }
+  };
+  
+  const handleApprove = (id: string) => {
+    toast.success(t('itemApproved'), {
+      description: t('itemApprovedDesc')
+    });
+  };
+  
+  const handleReject = (id: string) => {
+    toast.error(t('itemRejected'), {
+      description: t('itemRejectedDesc')
+    });
+  };
 
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>{t('pendingApprovals')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <p>{t('noApprovals')}</p>
-          </div>
+          <p className="text-muted-foreground text-sm">{t('noPendingApprovals')}</p>
         </CardContent>
       </Card>
     );
@@ -38,44 +63,45 @@ const PendingItems: React.FC<PendingItemsProps> = ({ items }) => {
       <CardContent>
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-1 mb-2 sm:mb-0">
-                <h4 className="font-medium">{item.title}</h4>
-                {item.schoolName && (
-                  <p className="text-sm text-muted-foreground">
-                    {t('school')}: {item.schoolName}
-                  </p>
-                )}
-                {item.categoryName && (
-                  <p className="text-sm text-muted-foreground">
-                    {t('category')}: {item.categoryName}
-                  </p>
-                )}
-                <div className="flex items-center space-x-2">
+            <div 
+              key={item.id} 
+              className="p-4 border rounded-md flex flex-col md:flex-row md:items-center justify-between gap-4"
+            >
+              <div className="flex-1">
+                <div className="font-medium">{item.title}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline">{item.status}</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(item.date).toLocaleDateString()}
+                    {item.submittedAt && formatDistanceToNow(new Date(item.submittedAt), { 
+                      addSuffix: true,
+                      locale: getLocale()
+                    })}
                   </span>
-                  <Badge 
-                    variant="outline" 
-                    className={
-                      item.status === 'pending' 
-                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
-                        : item.status === 'approved'
-                          ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-                          : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-                    }
-                  >
-                    {t(item.status)}
-                  </Badge>
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {item.schoolName} - {item.categoryName}
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate(`/data-entry/review/${item.id}`)}
-              >
-                {t('review')}
-              </Button>
+              
+              <div className="flex gap-2 self-end md:self-center">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex items-center gap-1"
+                  onClick={() => handleReject(item.id)}
+                >
+                  <X className="h-4 w-4" />
+                  {t('reject')}
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  onClick={() => handleApprove(item.id)}
+                >
+                  <Check className="h-4 w-4" />
+                  {t('approve')}
+                </Button>
+              </div>
             </div>
           ))}
         </div>

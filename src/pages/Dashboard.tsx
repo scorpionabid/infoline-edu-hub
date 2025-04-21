@@ -1,17 +1,19 @@
+
 import React from 'react';
 import { useAuth } from '@/context/auth';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
+import SuperAdminDashboard from '@/components/dashboard/SuperAdminDashboard';
 import { useRealDashboardData } from '@/hooks/useRealDashboardData';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const isSchoolAdmin = user?.role === 'schooladmin';
-  const isSectorAdmin = user?.role === 'sectoradmin';
+  const { isSuperAdmin, isSchoolAdmin, isSectorAdmin } = usePermissions();
   
   const { 
     dashboardData, 
@@ -34,7 +36,9 @@ const Dashboard: React.FC = () => {
         
         {isSchoolAdmin && <SchoolAdminSetupCheck />}
         
-        {isSectorAdmin ? (
+        {isSuperAdmin ? (
+          <SuperAdminDashboard data={dashboardData} />
+        ) : isSectorAdmin ? (
           <SectorAdminDashboard />
         ) : (
           <DashboardContent 

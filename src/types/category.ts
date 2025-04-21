@@ -12,7 +12,16 @@ export enum FormStatus {
   LOADING = 'loading',
   SAVING = 'saving',
   ERROR = 'error',
-  SUCCESS = 'success'
+  SUCCESS = 'success',
+  ALL = 'all',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  DRAFT = 'draft',
+  EXPIRED = 'expired',
+  DUE_SOON = 'dueSoon',
+  OVERDUE = 'overdue',
+  COMPLETED = 'completed'
 }
 
 export interface Category {
