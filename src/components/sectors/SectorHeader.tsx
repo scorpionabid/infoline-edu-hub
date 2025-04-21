@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { ExportButton } from '@/components/ui/export-button';
+import { Plus, Download } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -30,7 +30,14 @@ const SectorHeader: React.FC<SectorHeaderProps> = ({ setShowDialog, handleExport
           {t('addSector')}
         </Button>
 
-        <ExportButton onExport={handleExport} />
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          className="whitespace-nowrap"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          {t('export')}
+        </Button>
       </div>
     </div>
   );

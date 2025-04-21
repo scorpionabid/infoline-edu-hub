@@ -1,325 +1,234 @@
-import React, { useState, useEffect } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { School, Users, FileBarChart, Building2, TrendingUp, AlertTriangle } from 'lucide-react';
-import { StatWidget } from '@/components/dashboard/StatWidget';
-import { RecentActivity } from '@/components/dashboard/RecentActivity';
-import { CompletionRateChart } from '@/components/dashboard/CompletionRateChart';
-import { RegionComparisonChart } from '@/components/dashboard/RegionComparisonChart';
-import { CategoryCompletionTable } from '@/components/dashboard/CategoryCompletionTable';
-import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { useStats } from '@/hooks/useStats';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import StatusCards from './common/StatusCards';
+import PendingItems from './common/PendingItems';
+import RecentActivity from './common/RecentActivity';
+import CategoryList from './common/CategoryList';
+import RegionList from './common/RegionList';
+import ReportChart from '../reports/ReportChart';
 
-const DashboardContent: React.FC = () => {
+interface DashboardContentProps {
+  data: any;
+  chartData: any;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+const DashboardContent: React.FC<DashboardContentProps> = ({
+  data,
+  chartData,
+  isLoading,
+  error
+}) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  const { isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
-  const [activeTab, setActiveTab] = useState('overview');
-  const { stats, isLoading } = useStats();
   
-  const {
-    schoolsCount = 0,
-    usersCount = 0,
-    categoriesCount = 0,
-    regionsCount = 0,
-    completionRate = 0,
-    pendingApprovals = 0
-  } = stats || {};
-
-  useEffect(() => {
-    // Rol əsasında başlanğıc tab seçimi
-    if (isSchoolAdmin) {
-      setActiveTab('school');
-    } else if (isSectorAdmin) {
-      setActiveTab('sector');
-    } else if (isRegionAdmin) {
-      setActiveTab('region');
-    }
-  }, [isSchoolAdmin, isSectorAdmin, isRegionAdmin]);
-
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[400px] w-full lg:col-span-2" />
+        </div>
+      </div>
+    );
   }
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">
-        {t('welcomeMessage', { name: user?.full_name || t('user') })}
-      </h1>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
-          {isRegionAdmin && <TabsTrigger value="region">{t('regionDashboard')}</TabsTrigger>}
-          {isSectorAdmin && <TabsTrigger value="sector">{t('sectorDashboard')}</TabsTrigger>}
-          {isSchoolAdmin && <TabsTrigger value="school">{t('schoolDashboard')}</TabsTrigger>}
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6">
-          <StatCards />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CompletionRateChart />
-            <RegionComparisonChart />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>{t('categoryCompletion')}</CardTitle>
-                <CardDescription>{t('categoryCompletionDescription')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CategoryCompletionTable />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('recentActivity')}</CardTitle>
-                <CardDescription>{t('recentActivityDescription')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RecentActivity />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="region" className="space-y-6">
-          <RegionDashboard />
-        </TabsContent>
-        
-        <TabsContent value="sector" className="space-y-6">
-          <SectorDashboard />
-        </TabsContent>
-        
-        <TabsContent value="school" className="space-y-6">
-          <SchoolDashboard />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-const StatCards = () => {
-  const { t } = useLanguage();
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatWidget
-        title={t('totalSchools')}
-        icon={<School className="text-blue-500" />}
-        value={schoolsCount}
-        trend={+5}
-        trendLabel={t('lastWeek')}
-      />
-      
-      <StatWidget
-        title={t('totalUsers')}
-        icon={<Users className="text-green-500" />}
-        value={usersCount}
-        trend={+12}
-        trendLabel={t('lastMonth')}
-      />
-      
-      <StatWidget
-        title={t('dataCategories')}
-        icon={<FileBarChart className="text-purple-500" />}
-        value={categoriesCount}
-        trend={+2}
-        trendLabel={t('lastMonth')}
-      />
-      
-      <StatWidget
-        title={t('regions')}
-        icon={<Building2 className="text-orange-500" />}
-        value={regionsCount}
-        trend={0}
-        trendLabel={t('noChange')}
-      />
-      
-      <StatWidget
-        title={t('completionRate')}
-        icon={<TrendingUp className="text-blue-500" />}
-        value={`${completionRate}%`}
-        trend={+8}
-        trendLabel={t('lastMonth')}
-        trendType="positive"
-      />
-      
-      <StatWidget
-        title={t('pendingApprovals')}
-        icon={<AlertTriangle className="text-yellow-500" />}
-        value={pendingApprovals}
-        trend={-3}
-        trendLabel={t('lastWeek')}
-        trendType="negative"
-      />
-    </div>
-  );
-};
-
-const RegionDashboard = () => {
-  const { t } = useLanguage();
+  
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error.message || t('errorLoadingDashboard')}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  if (!data) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {t('noDashboardData')}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  // Determine user role and show appropriate dashboard
+  const isSuperAdmin = data.stats?.regions !== undefined;
+  const isRegionAdmin = data.stats?.sectors !== undefined && !isSuperAdmin;
+  
+  const statsItems = isSuperAdmin ? [
+    {
+      title: t('regions'),
+      count: data.stats?.regions || 0,
+      description: t('totalRegions')
+    },
+    {
+      title: t('sectors'),
+      count: data.stats?.sectors || 0,
+      description: t('totalSectors')
+    },
+    {
+      title: t('schools'),
+      count: data.stats?.schools || 0,
+      description: t('totalSchools')
+    },
+    {
+      title: t('users'),
+      count: data.stats?.users || 0,
+      description: t('totalUsers')
+    }
+  ] : isRegionAdmin ? [
+    {
+      title: t('sectors'),
+      count: data.stats?.sectors || 0,
+      description: t('totalSectors')
+    },
+    {
+      title: t('schools'),
+      count: data.stats?.schools || 0,
+      description: t('totalSchools')
+    },
+    {
+      title: t('users'),
+      count: data.stats?.users || 0,
+      description: t('totalUsers')
+    }
+  ] : [];
   
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">{t('regionDashboard')}</h2>
-      <p className="text-muted-foreground">{t('regionDashboardDescription')}</p>
+      {/* Stats Cards */}
+      <StatusCards 
+        stats={statsItems}
+        completionRate={data.completionRate}
+        pendingItems={data.pendingApprovals?.length || 0}
+      />
       
-      {/* Region specific content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('sectorPerformance')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Sector performance chart would go here */}
-            <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-              {t('sectorPerformanceChartPlaceholder')}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('schoolsInRegion')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Schools in region table would go here */}
-            <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-              {t('schoolsInRegionTablePlaceholder')}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-const SectorDashboard = () => {
-  const { t } = useLanguage();
-  
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">{t('sectorDashboard')}</h2>
-      <p className="text-muted-foreground">{t('sectorDashboardDescription')}</p>
-      
-      {/* Sector specific content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('schoolPerformance')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* School performance chart would go here */}
-            <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-              {t('schoolPerformanceChartPlaceholder')}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('dataCompletionBySector')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Data completion chart would go here */}
-            <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-              {t('dataCompletionChartPlaceholder')}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-const SchoolDashboard = () => {
-  const { t } = useLanguage();
-  
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">{t('schoolDashboard')}</h2>
-      <p className="text-muted-foreground">{t('schoolDashboardDescription')}</p>
-      
-      {/* School specific content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('categoryStatus')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Category status chart would go here */}
-            <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-              {t('categoryStatusChartPlaceholder')}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('pendingTasks')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Pending tasks list would go here */}
-            <div className="h-80 flex items-center justify-center bg-muted rounded-md">
-              {t('pendingTasksListPlaceholder')}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-const DashboardSkeleton = () => {
-  return (
-    <div className="space-y-6">
-      <Skeleton className="h-10 w-2/3" />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <Skeleton className="h-5 w-1/2" />
+      {/* Charts & Tables (SuperAdmin) */}
+      {isSuperAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('activityOverview')}</CardTitle>
+              <CardDescription>{t('recentActivityDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-              <Skeleton className="h-4 w-1/4 mt-2" />
+              <ReportChart 
+                data={chartData?.activityData || []} 
+                title={t('activityByType')}
+              />
             </CardContent>
           </Card>
-        ))}
-      </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('regionSchoolsDistribution')}</CardTitle>
+              <CardDescription>{t('schoolsDistributionDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReportChart 
+                data={chartData?.regionSchoolsData || []} 
+                title={t('schoolsByRegion')}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[300px] w-full" />
-          </CardContent>
-        </Card>
+      {/* RegionAdmin Charts */}
+      {isRegionAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('sectorCompletion')}</CardTitle>
+              <CardDescription>{t('sectorCompletionDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {data.sectors?.map((sector: any) => (
+                  <div key={sector.id} className="flex items-center justify-between">
+                    <div className="w-40 truncate">{sector.name}</div>
+                    <div className="flex-1 mx-4">
+                      <Progress value={sector.completionRate || 0} className="h-2" />
+                    </div>
+                    <div className="w-10 text-right">{sector.completionRate || 0}%</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('categoryCompletion')}</CardTitle>
+              <CardDescription>{t('categoryCompletionDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReportChart 
+                data={chartData?.categoryCompletionData || []} 
+                title={t('completionByCategory')}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Tabs content based on role */}
+      <Tabs defaultValue="pending">
+        <TabsList className="mb-4">
+          <TabsTrigger value="pending">{t('pendingApprovals')}</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger value="regions">{t('regions')}</TabsTrigger>}
+          {isRegionAdmin && <TabsTrigger value="sectors">{t('sectors')}</TabsTrigger>}
+          {(isSuperAdmin || isRegionAdmin) && <TabsTrigger value="categories">{t('categories')}</TabsTrigger>}
+          <TabsTrigger value="activity">{t('recentActivity')}</TabsTrigger>
+        </TabsList>
         
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[300px] w-full" />
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="pending" className="space-y-4">
+          <PendingItems items={data.pendingApprovals || []} />
+        </TabsContent>
+        
+        {isSuperAdmin && (
+          <TabsContent value="regions" className="space-y-4">
+            <RegionList regions={data.regions || []} />
+          </TabsContent>
+        )}
+        
+        {isRegionAdmin && (
+          <TabsContent value="sectors" className="space-y-4">
+            <RegionList regions={data.sectors || []} />
+          </TabsContent>
+        )}
+        
+        {(isSuperAdmin || isRegionAdmin) && (
+          <TabsContent value="categories" className="space-y-4">
+            <CategoryList categories={data.categories || []} />
+          </TabsContent>
+        )}
+        
+        <TabsContent value="activity" className="space-y-4">
+          <RecentActivity activities={data.recentActivities || []} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
