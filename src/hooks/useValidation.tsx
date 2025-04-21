@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import { Column, ColumnValidationError } from '@/types/column';
+import { Column } from '@/types/column';
+import { ColumnValidationError } from '@/types/dataEntry';
 import { validateEntry, validateAllEntries } from '@/components/dataEntry/utils/formUtils';
 
 export interface ValidationState {

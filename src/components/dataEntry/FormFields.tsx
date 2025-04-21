@@ -6,9 +6,9 @@ import { CategoryWithColumns } from '@/types/column';
 import { DataEntry } from '@/types/dataEntry';
 import { TextInput } from './inputs/TextInput';
 import { NumberInput } from './inputs/NumberInput';
-import { SelectInput } from './inputs/SelectInput';
-import { DateInput } from './inputs/DateInput';
-import { CheckboxInput } from './inputs/CheckboxInput';
+import SelectInput from './inputs/SelectInput';
+import DateInput from './inputs/DateInput';
+import CheckboxInput from './inputs/CheckboxInput';
 import { Form } from '@/components/ui/form';
 
 interface FormFieldsProps {
@@ -131,9 +131,9 @@ const FormFields: React.FC<FormFieldsProps> = ({
     switch(column.type) {
       case 'text':
       case 'textarea':
-        return <TextInput column={column} form={form} disabled={disabled} />;
+        return <TextInput column={column} disabled={disabled} />;
       case 'number':
-        return <NumberInput column={column} form={form} disabled={disabled} />;
+        return <NumberInput column={column} disabled={disabled} />;
       case 'select':
         return <SelectInput column={column} form={form} disabled={disabled} />;
       case 'date':
@@ -141,7 +141,7 @@ const FormFields: React.FC<FormFieldsProps> = ({
       case 'checkbox':
         return <CheckboxInput column={column} form={form} disabled={disabled} />;
       default:
-        return <TextInput column={column} form={form} disabled={disabled} />;
+        return <TextInput column={column} disabled={disabled} />;
     }
   };
 

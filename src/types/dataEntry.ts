@@ -1,6 +1,14 @@
 
 import { Category, CategoryStatus } from './category';
-import { Column, ColumnValidationError } from './column';
+import { Column } from './column';
+
+export interface ColumnValidationError {
+  field: string;
+  message: string;
+  type: string;
+  severity: 'warning' | 'error' | 'info';
+  columnId?: string;
+}
 
 export interface DataEntry {
   id?: string;

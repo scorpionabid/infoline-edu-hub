@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { ColumnValidationError, CategoryEntryData } from '@/types/dataEntry';
 import { Column } from '@/types/column';
@@ -6,7 +5,7 @@ import { Column } from '@/types/column';
 /**
  * @description Formun validasiyası üçün hook
  */
-export const useValidation = (categories: any[], entries: CategoryEntryData[]) => {
+export const useValidation = (categories: any[] = [], entries: CategoryEntryData[] = []) => {
   const [validationErrors, setValidationErrors] = useState<ColumnValidationError[]>([]);
   
   // Bir girişin validasiyası
