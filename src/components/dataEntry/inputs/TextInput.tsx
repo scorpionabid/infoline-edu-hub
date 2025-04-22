@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
 import { Column } from '@/types/column';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TextInputProps {
   column: Column;
@@ -22,13 +24,24 @@ const TextInput: React.FC<TextInputProps> = ({ column, form, disabled = false })
             {column.is_required && <span className="text-destructive ml-1">*</span>}
           </FormLabel>
           <FormControl>
-            <Input
-              {...field}
-              placeholder={column.placeholder}
-              disabled={disabled}
-              aria-label={column.name}
-              id={`field-${column.id}`}
-            />
+            {column.type === 'textarea' ? (
+              <Textarea
+                {...field}
+                placeholder={column.placeholder}
+                disabled={disabled}
+                aria-label={column.name}
+                id={`field-${column.id}`}
+                className="min-h-[120px] resize-y"
+              />
+            ) : (
+              <Input
+                {...field}
+                placeholder={column.placeholder}
+                disabled={disabled}
+                aria-label={column.name}
+                id={`field-${column.id}`}
+              />
+            )}
           </FormControl>
           {column.help_text && (
             <FormDescription>{column.help_text}</FormDescription>

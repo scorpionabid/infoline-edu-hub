@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -7,19 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSectorAdminDashboard } from '@/hooks/useSectorAdminDashboard';
 import { useLanguage } from '@/context/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, CheckCircle, Clock, School, FileText } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, School, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { EnhancedApprovalDialog } from '@/components/ui/enhanced-approval-dialog';
+import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
 
 const SectorAdminDashboard: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [selectedApproval, setSelectedApproval] = React.useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
-  const [rejectionReason, setRejectionReason] = React.useState('');
   const [entryDetails, setEntryDetails] = React.useState<any>(null);
   const [isEntryDetailsLoading, setIsEntryDetailsLoading] = React.useState(false);
 
@@ -52,40 +51,6 @@ const SectorAdminDashboard: React.FC = () => {
       console.error('Məlumat detalları alınarkən xəta:', error);
     } finally {
       setIsEntryDetailsLoading(false);
-    }
-  };
-
-  const handleApprove = async () => {
-    if (!selectedApproval) return;
-
-    const result = await approveEntries(
-      selectedApproval.schoolId,
-      selectedApproval.categoryId,
-      [selectedApproval.id]
-    );
-
-    if (result.success) {
-      setIsDetailsOpen(false);
-      setSelectedApproval(null);
-      refreshData();
-    }
-  };
-
-  const handleReject = async () => {
-    if (!selectedApproval || !rejectionReason) return;
-
-    const result = await rejectEntries(
-      selectedApproval.schoolId,
-      selectedApproval.categoryId,
-      [selectedApproval.id],
-      rejectionReason
-    );
-
-    if (result.success) {
-      setIsDetailsOpen(false);
-      setSelectedApproval(null);
-      setRejectionReason('');
-      refreshData();
     }
   };
 
@@ -179,10 +144,13 @@ const SectorAdminDashboard: React.FC = () => {
 
       <Tabs defaultValue="pending" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="pending">
-            {t('pendingApprovals')} {pendingApprovals.length > 0 && <Badge className="ml-2">{pendingApprovals.length}</Badge>}
+          <TabsTrigger value="pending" className="flex items-center">
+            <FileText className="mr-2 h-4 w-4" />
+            {t('pendingApprovals')} 
+            {pendingApprovals.length > 0 && <Badge variant="secondary" className="ml-2">{pendingApprovals.length}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="schools">
+          <TabsTrigger value="schools" className="flex items-center">
+            <School className="mr-2 h-4 w-4" />
             {t('schools')}
           </TabsTrigger>
         </TabsList>
@@ -198,40 +166,53 @@ const SectorAdminDashboard: React.FC = () => {
             <CardContent>
               {pendingApprovals.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="mx-auto h-12 w-12 mb-2" />
+                  <CheckCircle className="mx-auto h-12 w-12 mb-2 text-green-500" />
                   <p>{t('noApprovals')}</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('school')}</TableHead>
-                      <TableHead>{t('category')}</TableHead>
-                      <TableHead>{t('submittedAt')}</TableHead>
-                      <TableHead>{t('status')}</TableHead>
-                      <TableHead>{t('actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pendingApprovals.map((approval) => (
-                      <TableRow key={approval.id}>
-                        <TableCell>{approval.schoolName}</TableCell>
-                        <TableCell>{approval.categoryName}</TableCell>
-                        <TableCell>{new Date(approval.submittedAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                            {t('pending')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm" onClick={() => handleViewDetails(approval)}>
-                            {t('viewDetails')}
-                          </Button>
-                        </TableCell>
+                <ScrollArea className="h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('school')}</TableHead>
+                        <TableHead>{t('category')}</TableHead>
+                        <TableHead>{t('submittedAt')}</TableHead>
+                        <TableHead>{t('status')}</TableHead>
+                        <TableHead>{t('actions')}</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingApprovals.map((approval) => (
+                        <TableRow key={approval.id}>
+                          <TableCell className="font-medium">{approval.schoolName}</TableCell>
+                          <TableCell>{approval.categoryName}</TableCell>
+                          <TableCell>{new Date(approval.submittedAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {t('pending')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleViewDetails(approval)}
+                              disabled={isEntryDetailsLoading}
+                            >
+                              {isEntryDetailsLoading && selectedApproval?.id === approval.id ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <FileText className="h-3 w-3 mr-1" />
+                              )}
+                              {t('viewDetails')}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
@@ -246,51 +227,54 @@ const SectorAdminDashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('school')}</TableHead>
-                    <TableHead>{t('address')}</TableHead>
-                    <TableHead>{t('completionRate')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead>{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {schools.map((school) => (
-                    <TableRow key={school.id}>
-                      <TableCell>{school.name}</TableCell>
-                      <TableCell>{school.address}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={school.completionRate} className="h-2 w-24" />
-                          <span>{school.completionRate}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {school.completionRate === 100 ? (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            {t('completed')}
-                          </Badge>
-                        ) : school.completionRate > 0 ? (
-                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                            {t('inProgress')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-                            {t('notStarted')}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/schools/${school.id}`)}>
-                          {t('viewDetails')}
-                        </Button>
-                      </TableCell>
+              <ScrollArea className="h-[400px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('school')}</TableHead>
+                      <TableHead>{t('address')}</TableHead>
+                      <TableHead>{t('completionRate')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('actions')}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {schools.map((school) => (
+                      <TableRow key={school.id}>
+                        <TableCell className="font-medium">{school.name}</TableCell>
+                        <TableCell>{school.address || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={school.completionRate} className="h-2 w-24" />
+                            <span>{school.completionRate}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {school.completionRate === 100 ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {t('completed')}
+                            </Badge>
+                          ) : school.completionRate > 0 ? (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              {t('inProgress')}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                              {t('notStarted')}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/schools/${school.id}`)}>
+                            <School className="h-3 w-3 mr-1" />
+                            {t('viewDetails')}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
