@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, Profile } from '@/types/supabase';
-import { AuthState, AuthActions, UseSupabaseAuthReturn } from './types';
+import { AuthState, UseSupabaseAuthReturn } from './types';
 import { signIn, signOut, signUp, resetPassword, updateProfile, updatePassword } from './authActions';
 
 export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
