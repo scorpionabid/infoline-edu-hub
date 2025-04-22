@@ -75,25 +75,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       return;
     }
 
-    // Rola uyğun olaraq region, sektor və məktəb seçimini yoxla
-    if (formData.role === 'regionadmin' && !formData.regionId) {
-      toast.error(t('pleaseSelectRegion'));
-      return;
-    }
-
-    if (formData.role === 'sectoradmin' && (!formData.regionId || !formData.sectorId)) {
-      toast.error(t('pleaseSelectRegionAndSector'));
-      return;
-    }
-
-    if (formData.role === 'schooladmin' && (!formData.regionId || !formData.sectorId || !formData.schoolId)) {
-      toast.error(t('pleaseSelectRegionSectorAndSchool'));
-      return;
-    }
-
     setLoading(true);
     try {
-      // İstifadəçi yaratmaq üçün Supabase Auth istifadə et
+      console.log('Creating new user with data:', {
+        email: formData.email,
+        fullName: formData.fullName,
+        role: formData.role
+      });
+      
+      // ADDIM 1: Supabase Auth ilə istifadəçi yarat
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -105,35 +95,90 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
         }
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // İstifadəçi məlumatlarını users cədvəlinə əlavə et
-        const { error: dbError } = await supabase.from('users').insert({
-          id: authData.user.id,
-          email: formData.email,
-          full_name: formData.fullName,
-          role: formData.role,
-          region_id: formData.regionId || null,
-          sector_id: formData.sectorId || null,
-          school_id: formData.schoolId || null,
-          status: 'active',
-          phone: formData.phone || null,
-          position: formData.position || null,
-          language: formData.language || 'az',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-        if (dbError) throw dbError;
-
-        toast.success(t('userAddedSuccessfully'));
-        resetForm();
-        onComplete();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw authError;
       }
+
+      console.log('User created in Auth:', authData);
+
+      if (!authData.user || !authData.user.id) {
+        throw new Error('User ID is missing from auth response');
+      }
+      
+      // ADDIM 2: Edge Function vasitəsilə email təsdiqləmə
+      try {
+        const { data: confirmData, error: confirmError } = await supabase.functions.invoke('confirm-user-email', {
+          body: { user_id: authData.user.id }
+        });
+        
+        if (confirmError) {
+          console.warn('Could not auto-confirm email via Edge Function:', confirmError);
+        } else {
+          console.log('User email auto-confirmed successfully via Edge Function');
+        }
+      } catch (confirmErr) {
+        // Email təsdiqini bypass edə bilmədik, amma istifadəçi yaradıldı
+        console.warn('Error during email confirmation via Edge Function:', confirmErr);
+      }
+      
+      // ADDIM 3: İstifadəçiyə region təyin etmək (əgər regionId varsa)
+      if (formData.regionId) {
+        try {
+          const { data: roleData, error: roleError } = await supabase.functions.invoke('assign-region-admin', {
+            body: { 
+              user_id: authData.user.id, 
+              region_id: formData.regionId,
+              role: formData.role || 'region_admin'
+            }
+          });
+          
+          if (roleError) {
+            console.warn('Could not assign region to user:', roleError);
+          } else {
+            console.log('User assigned to region successfully');
+          }
+        } catch (roleErr) {
+          console.warn('Error during region assignment:', roleErr);
+        }
+      }
+      
+      // İstifadəçi uğurla yaradıldı, indi istifadəçi siyahısını yeniləyirik
+      toast.success(t('userAddedSuccessfully'));
+      resetForm();
+      onComplete();
+      
+      // İstifadəçiyə bildiriş göstər
+      if (!formData.regionId) {
+        toast.info(t('userCreatedAssignRegionLater'), {
+          duration: 5000,
+          description: t('userCreatedAssignRegionLaterDescription')
+        });
+      }
+      
     } catch (error: any) {
       console.error('Error adding user:', error);
-      toast.error(error.message || t('errorAddingUser'));
+      
+      // Auth məhdudiyyəti xətası
+      if (error.message && error.message.includes('security purposes')) {
+        toast.error(t('authRateLimitError'));
+      }
+      // Unikal məhdudiyyət xətası
+      else if (error.message && error.message.includes('unique constraint')) {
+        toast.error(t('emailAlreadyExists'));
+      }
+      // Email təsdiqləmə xətası
+      else if (error.message && error.message.includes('email_not_confirmed')) {
+        toast.error(t('emailNotConfirmedError'));
+      }
+      // Email giriş deaktiv edilib xətası
+      else if (error.message && error.message.includes('Email logins are disabled')) {
+        toast.error(t('emailLoginsDisabledError'));
+      }
+      // Digər xətalar
+      else {
+        toast.error(error.message || t('errorAddingUser'));
+      }
     } finally {
       setLoading(false);
     }
