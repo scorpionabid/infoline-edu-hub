@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Column } from "@/types/column";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +15,9 @@ import { useColumnForm } from './columnDialog/useColumnForm';
 import BasicColumnFields from './columnDialog/BasicColumnFields';
 import ValidationFields from './columnDialog/ValidationFields';
 import OptionsField from './columnDialog/OptionsField';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AddColumnDialogProps {
   isOpen: boolean;
@@ -35,7 +37,6 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
   columns = [],
 }) => {
   const { t } = useLanguage();
-  const { toast } = useToast();
   
   const {
     form, 
@@ -49,146 +50,144 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
     onSubmit,
     isEditMode
   } = useColumnForm(categories, editColumn, onAddColumn);
-  
-  // Handle form submission
+
+  // Dialog açıldıqda və ya bağlandıqda log edirik
+  useEffect(() => {
+    console.log(`Dialog ${isOpen ? 'açıldı' : 'bağlandı'}`, { editColumn });
+  }, [isOpen, editColumn]);
+
+  // Form təqdim etmə funksiyası
   const handleSubmit = async (values: any) => {
+    console.log("Form təqdim edildi:", values);
+    
     try {
-      console.log("Form submitted with values:", values);
-      
-      // Client-side validation
-      if (!values.name.trim()) {
-        form.setError("name", { message: t("columnNameRequired") });
-        return;
-      }
-      
-      if (!values.category_id) {
-        form.setError("category_id", { message: t("categoryRequired") });
-        return;
-      }
-      
-      // Əlavə options əlavə edirik (select, radio, checkbox üçün)
-      if (["select", "radio", "checkbox"].includes(values.type)) {
-        values.options = options;
-        
-        if (options.length === 0) {
-          toast({
-            title: t("validationError"),
-            description: t("optionsRequired"),
-            variant: "destructive"
-          });
-          return;
-        }
-      }
-      
       // onSubmit funksiyasını çağırırıq
       const success = await onSubmit(values);
+      
       if (success) {
+        toast.success(isEditMode ? "Sütun uğurla yeniləndi" : "Sütun uğurla əlavə edildi");
         onClose();
+      } else {
+        toast.error("Xəta baş verdi");
       }
     } catch (error) {
-      console.error("Form submission error:", error);
-      toast({
-        title: t("error"),
-        description: t("errorSubmittingForm"),
-        variant: "destructive"
-      });
+      console.error("Form təqdim etmə xətası:", error);
+      toast.error("Xəta baş verdi");
     }
   };
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        console.log("Dialog state changing:", open);
-        if (!open) onClose();
-      }}
-    >
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log("Dialog onOpenChange:", open);
+      if (!open) onClose();
+    }}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? t("editColumn") : t("addColumn")}
+            {isEditMode ? "Sütunu redaktə et" : "Yeni sütun əlavə et"}
           </DialogTitle>
           <DialogDescription>
-            {t("columnDialogDescription")}
+            {isEditMode 
+              ? "Sütun məlumatlarını redaktə edin və yadda saxlayın" 
+              : "Yeni sütun üçün məlumatları daxil edin və əlavə edin"}
           </DialogDescription>
         </DialogHeader>
-
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid gap-6">
-              <BasicColumnFields 
-                form={form}
-                control={form.control} 
-                categories={categories}
-                columns={columns}
-                editColumn={editColumn}
-                selectedType={selectedType}
-                onTypeChange={handleTypeChange}
-                isEditMode={isEditMode}
-              />
-              
-              {/* Seçilmiş tipə görə əlavə sahələr göstəririk */}
-              {["text", "number", "date", "email", "url", "tel"].includes(selectedType) && (
-                <ValidationFields 
-                  control={form.control} 
-                  type={selectedType} 
-                />
-              )}
-              
-              {/* Select, radio və checkbox tipləri üçün options sahəsi */}
-              {["select", "radio", "checkbox"].includes(selectedType) && (
-                <OptionsField 
-                  control={form.control}
-                  options={options}
-                  newOption={newOption}
-                  setNewOption={setNewOption}
-                  addOption={addOption}
-                  removeOption={removeOption}
-                  updateOption={(oldOption, newOption) => {
-                    // Köhnə option-u tapıb yenisi ilə əvəz edirik
-                    const index = options.findIndex(opt => 
-                      opt.label === oldOption.label && opt.value === oldOption.value
-                    );
-                    
-                    if (index !== -1) {
-                      const newOptions = [...options];
-                      newOptions[index] = newOption;
-                      // Yeni options-ları təyin edirik
-                      const updatedOptions = [...options];
-                      updatedOptions[index] = newOption;
-                      // options state-ni yeniləyirik
-                      // Burada addOption və removeOption funksiyalarını istifadə etmək əvəzinə
-                      // birbaşa options state-ni yeniləyirik
-                      return true;
-                    }
-                    return false;
-                  }}
-                />
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  console.log("Cancel button clicked");
-                  onClose();
-                }}
-              >
-                {t("cancel")}
-              </Button>
-              <Button 
-                type="submit"
-                disabled={form.formState.isSubmitting}
-                onClick={() => {
-                  console.log("Save button clicked, current form values:", form.getValues());
-                }}
-              >
-                {form.formState.isSubmitting ? t("saving") : t("save")}
-              </Button>
-            </DialogFooter>
-          </form>
+          <ScrollArea className="h-[60vh] pr-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsTrigger value="basic">Əsas məlumatlar</TabsTrigger>
+                  <TabsTrigger value="validation">Validasiya</TabsTrigger>
+                  <TabsTrigger value="options">Seçimlər</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="basic" className="space-y-4">
+                  <BasicColumnFields 
+                    form={form}
+                    control={form.control} 
+                    categories={categories}
+                    columns={columns}
+                    editColumn={editColumn}
+                    selectedType={selectedType}
+                    onTypeChange={handleTypeChange}
+                    isEditMode={isEditMode}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="validation" className="space-y-4">
+                  {["text", "number", "date", "email", "url", "tel"].includes(selectedType) && (
+                    <ValidationFields 
+                      control={form.control} 
+                      type={selectedType} 
+                    />
+                  )}
+                  {!["text", "number", "date", "email", "url", "tel"].includes(selectedType) && (
+                    <p className="text-muted-foreground text-sm p-4 text-center">
+                      Bu sütun tipi üçün validasiya parametrləri mövcud deyil
+                    </p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="options" className="space-y-4">
+                  {["select", "radio", "checkbox"].includes(selectedType) && (
+                    <OptionsField 
+                      control={form.control}
+                      options={options}
+                      newOption={newOption}
+                      setNewOption={setNewOption}
+                      addOption={addOption}
+                      removeOption={removeOption}
+                      updateOption={(oldOption, newOption) => {
+                        // Köhnə option-u tapıb yenisi ilə əvəz edirik
+                        const index = options.findIndex(opt => 
+                          opt.label === oldOption.label && opt.value === oldOption.value
+                        );
+                        
+                        if (index !== -1) {
+                          const updatedOptions = [...options];
+                          updatedOptions[index] = newOption;
+                          return true;
+                        }
+                        return false;
+                      }}
+                    />
+                  )}
+                  {!["select", "radio", "checkbox"].includes(selectedType) && (
+                    <p className="text-muted-foreground text-sm p-4 text-center">
+                      Bu sütun tipi üçün seçimlər mövcud deyil
+                    </p>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </form>
+          </ScrollArea>
+          
+          <DialogFooter className="mt-4 pt-4 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+            >
+              Ləğv et
+            </Button>
+            <Button 
+              type="submit"
+              onClick={form.handleSubmit(handleSubmit)}
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Gözləyin...
+                </span>
+              ) : isEditMode ? "Yadda saxla" : "Əlavə et"}
+            </Button>
+          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>
