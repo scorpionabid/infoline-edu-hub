@@ -10,19 +10,27 @@ interface TextInputProps {
   column: Column;
   form: UseFormReturn<any>;
   disabled?: boolean;
+  showLabel?: boolean;
 }
 
-const TextInput: React.FC<TextInputProps> = ({ column, form, disabled = false }) => {
+const TextInput: React.FC<TextInputProps> = ({ 
+  column, 
+  form, 
+  disabled = false,
+  showLabel = true
+}) => {
   return (
     <FormField
       control={form.control}
       name={`fields.${column.id}`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>
-            {column.name}
-            {column.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
+          {showLabel && (
+            <FormLabel>
+              {column.name}
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+          )}
           <FormControl>
             {column.type === 'textarea' ? (
               <Textarea
@@ -40,6 +48,7 @@ const TextInput: React.FC<TextInputProps> = ({ column, form, disabled = false })
                 disabled={disabled}
                 aria-label={column.name}
                 id={`field-${column.id}`}
+                type={column.type === 'email' ? 'email' : column.type === 'url' ? 'url' : 'text'}
               />
             )}
           </FormControl>

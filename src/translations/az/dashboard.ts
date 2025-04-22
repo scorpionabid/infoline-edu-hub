@@ -15,6 +15,8 @@ export default {
   completionRate: 'Tamamlanma Faizi',
   pendingApprovals: 'Gözləyən Təsdiqlər',
   regionsWithCompletedData: 'Məlumatları Tamamlanmış Regionlar',
+  schoolsInSector: 'Sektordakı məktəblər',
+  schoolsInSectorDescription: 'Sektorunuzun nəzarətində olan məktəblərin siyahısı',
   
   // Status kartları
   formsByStatus: 'Formların Statusu',
@@ -38,6 +40,9 @@ export default {
   sectorName: 'Sektor Adı',
   schoolCountBySector: 'Sektorlar üzrə Məktəb Sayı',
   completionRateBySector: 'Sektorlar üzrə Tamamlanma Faizi',
+  completedSchools: 'Tamamlanmış Məktəblər',
+  pendingSchools: 'Davam Edən Məktəblər',
+  notStartedSchools: 'Başlamamış Məktəblər',
   
   // Məktəb statistikası
   schoolStatistics: 'Məktəb Statistikası',
@@ -47,6 +52,7 @@ export default {
   
   // Təsdiq gözləyən məlumatlar
   pendingApprovalItems: 'Təsdiq Gözləyən Məlumatlar',
+  pendingApprovalsDescription: 'Təsdiq gözləyən məlumatların siyahısı',
   schoolColumn: 'Məktəb',
   categoryColumn: 'Kateqoriya',
   dateColumn: 'Tarix',
@@ -74,6 +80,7 @@ export default {
   
   // Əməliyyat düymələri və menyu
   view: 'Bax',
+  viewDetails: 'Detallara bax',
   approve: 'Təsdiqlə',
   reject: 'Rədd Et',
   edit: 'Redaktə Et',
@@ -105,17 +112,56 @@ export default {
   approved: 'Təsdiqlənib',
   rejected: 'Rədd Edilib',
   draft: 'Qaralama',
+  completed: 'Tamamlanıb',
+  inProgress: 'Davam edir',
+  notStarted: 'Başlanmayıb',
+  
+  // Məktəb məlumatları
+  address: 'Ünvan',
+  email: 'E-poçt',
+  phone: 'Telefon',
   
   // Zaman mətnləri
   today: 'Bu gün',
   yesterday: 'Dünən',
   lastWeek: 'Keçən həftə',
   lastMonth: 'Keçən ay',
+  submittedAt: 'Təqdim edilmə tarixi',
   
   // Dəyişiklik tipləri
   increase: 'Artım',
   decrease: 'Azalma',
   neutral: 'Dəyişiklik yoxdur',
+  
+  // Məlumat daxil etmə
+  deadline: 'Son tarix',
+  deadlinePassed: 'Son tarix keçib',
+  deadlineApproaching: 'Son tarixə az qalıb',
+  daysLeft: 'gün qalıb',
+  saveDraft: 'Qaralamanı saxla',
+  saving: 'Saxlanılır...',
+  submitForApproval: 'Təsdiqə göndər',
+  submitting: 'Göndərilir...',
+  completeAllFieldsFirst: 'Əvvəlcə bütün sahələri doldurun',
+  alreadyApproved: 'Bu forma artıq təsdiqlənib',
+  alreadySubmitted: 'Bu forma artıq təsdiqə göndərilib',
+  cannotEditApprovedData: 'Təsdiqlənmiş məlumatları redaktə edə bilməzsiniz',
+  rejectionReason: 'Rədd səbəbi',
+  lastUpdated: 'Son yenilənmə',
+  
+  // Təsdiq və rədd əməliyyatları
+  approveEntry: 'Təsdiqlə',
+  rejectEntry: 'Rədd et',
+  approveConfirmation: 'Bu məlumatı təsdiqləmək istədiyinizə əminsiniz?',
+  rejectConfirmation: 'Bu məlumatı rədd etmək istədiyinizə əminsiniz?',
+  rejectReason: 'Rədd səbəbi',
+  provideRejectionReason: 'Xahiş edirik rədd səbəbini qeyd edin',
+  approvalSuccess: 'Məlumat uğurla təsdiqləndi',
+  rejectionSuccess: 'Məlumat rədd edildi',
+  
+  // Statistika
+  tryAgain: 'Yenidən cəhd edin',
+  error: 'Xəta',
   
   // Ümumi şablonlar
   submittedBy: '{name} tərəfindən təqdim edilib',
