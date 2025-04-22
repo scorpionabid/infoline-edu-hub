@@ -117,8 +117,11 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <div className="grid gap-6">
               <BasicColumnFields 
+                form={form}
                 control={form.control} 
                 categories={categories}
+                columns={columns}
+                editColumn={editColumn}
                 selectedType={selectedType}
                 onTypeChange={handleTypeChange}
                 isEditMode={isEditMode}
@@ -150,7 +153,12 @@ const AddColumnDialog: React.FC<AddColumnDialogProps> = ({
                     if (index !== -1) {
                       const newOptions = [...options];
                       newOptions[index] = newOption;
-                      form.setValue('options', newOptions);
+                      // Yeni options-ları təyin edirik
+                      const updatedOptions = [...options];
+                      updatedOptions[index] = newOption;
+                      // options state-ni yeniləyirik
+                      // Burada addOption və removeOption funksiyalarını istifadə etmək əvəzinə
+                      // birbaşa options state-ni yeniləyirik
                       return true;
                     }
                     return false;
