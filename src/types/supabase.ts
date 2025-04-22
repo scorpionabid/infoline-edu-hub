@@ -1,4 +1,3 @@
-
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 export interface Profile {
@@ -63,6 +62,7 @@ export interface FullUserData {
     system: boolean;
     push?: boolean;
     sms?: boolean;
+    inApp?: boolean;
   };
   twoFactorEnabled?: boolean;
 }

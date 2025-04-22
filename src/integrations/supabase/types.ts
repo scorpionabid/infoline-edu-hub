@@ -504,10 +504,84 @@ export type Database = {
           },
         ]
       }
+      sector_data_entries: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string
+          column_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          sector_id: string
+          status: string | null
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id: string
+          column_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          sector_id: string
+          status?: string | null
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string
+          column_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          sector_id?: string
+          status?: string | null
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sector_data_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sector_data_entries_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sector_data_entries_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sectors: {
         Row: {
           admin_email: string | null
           admin_id: string | null
+          completion_rate: number | null
           created_at: string
           description: string | null
           id: string
@@ -519,6 +593,7 @@ export type Database = {
         Insert: {
           admin_email?: string | null
           admin_id?: string | null
+          completion_rate?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -530,6 +605,7 @@ export type Database = {
         Update: {
           admin_email?: string | null
           admin_id?: string | null
+          completion_rate?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -666,6 +742,10 @@ export type Database = {
       }
       calculate_completion_rate: {
         Args: { school_id_param: string }
+        Returns: number
+      }
+      calculate_sector_completion_rate: {
+        Args: { sector_id_param: string }
         Returns: number
       }
       create_audit_log: {
