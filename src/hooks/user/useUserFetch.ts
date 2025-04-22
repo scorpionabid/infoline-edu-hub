@@ -115,72 +115,96 @@ export const useUserFetch = (
       // Rol filteri - enum tipləri ilə işləmək üçün düzgün format
       if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
         // Enum tipləri ilə işləmək üçün in operatorunu istifadə edirik
-        // Hər bir dəyəri ayrıca şəkildə əlavə edirik
-        const roleConditions = filter.role.map(r => `role.eq.${r}`).join(',');
-        query = query.or(roleConditions);
+        query = query.in('role', filter.role);
+        console.log('Applied role filter:', filter.role);
       }
       
       // İstifadəçi tipinə görə filtrlənmə
       if (isRegionAdmin && currentUser?.regionId) {
         // Regionadmin yalnız öz regionundakı istifadəçiləri görə bilər
         query = query.eq('region_id', currentUser.regionId);
+        console.log('Filtered by region_id:', currentUser.regionId);
       } 
       else if (isSectorAdmin && currentUser?.sectorId) {
         // Sektoradmin yalnız öz sektorundakı istifadəçiləri görə bilər
         query = query.eq('sector_id', currentUser.sectorId);
+        console.log('Filtered by sector_id:', currentUser.sectorId);
       }
       // Digər filter parametrləri ilə filtrlənmə
       else {
         if (filter.region && Array.isArray(filter.region) && filter.region.length > 0) {
           // Çoxlu region seçimi üçün
-          const regionConditions = filter.region.map(r => `region_id.eq.${r}`).join(',');
-          query = query.or(regionConditions);
+          query = query.in('region_id', filter.region);
+          console.log('Filtered by regions:', filter.region);
         }
         
         if (filter.sector && Array.isArray(filter.sector) && filter.sector.length > 0) {
           // Çoxlu sektor seçimi üçün
-          const sectorConditions = filter.sector.map(s => `sector_id.eq.${s}`).join(',');
-          query = query.or(sectorConditions);
+          query = query.in('sector_id', filter.sector);
+          console.log('Filtered by sectors:', filter.sector);
         }
       }
       
       if (filter.school && Array.isArray(filter.school) && filter.school.length > 0) {
         // Çoxlu məktəb seçimi üçün
-        const schoolConditions = filter.school.map(s => `school_id.eq.${s}`).join(',');
-        query = query.or(schoolConditions);
+        query = query.in('school_id', filter.school);
+        console.log('Filtered by schools:', filter.school);
       }
       
       // Status filteri - enum tipləri ilə işləmək üçün düzgün format
       if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
         // Enum tipləri ilə işləmək üçün in operatorunu istifadə edirik
-        // Hər bir dəyəri ayrıca şəkildə əlavə edirik
-        const statusConditions = filter.status.map(s => `status.eq.${s}`).join(',');
-        query = query.or(statusConditions);
+        query = query.in('status', filter.status);
+        console.log('Applied status filter:', filter.status);
       }
       
-      // Axtarış funksionallığı - email üzrə axtarış
-      // "users" cədvəli mövcud olmadığı üçün RPC funksiyasını istifadə edirik
+      // Axtarış funksionallığı - profiles cədvəlində axtarış
       if (filter.search && filter.search.trim() !== '') {
         try {
-          // Əvvəlcə bütün istifadəçi e-poçtlarını əldə edirik
-          const { data: emailsData, error: emailsError } = await supabase
-            .rpc('get_user_emails_by_ids', { user_ids: [] }, { headers: authHeaders });
+          console.log('Searching for:', filter.search);
+          // Profil cədvəlində axtarış
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id', { headers: authHeaders })
+            .ilike('full_name', `%${filter.search}%`);
             
-          if (emailsError) {
-            console.error('Error fetching emails for search:', emailsError);
+          if (profilesError) {
+            console.error('Error searching profiles:', profilesError);
             // Xəta olsa da davam edirik
-          } else if (emailsData && emailsData.length > 0) {
-            // Axtarış şərtinə uyğun e-poçtları filtrlə
-            const searchTerm = filter.search.toLowerCase();
-            const matchingUsers = emailsData.filter(user => 
-              user.email && user.email.toLowerCase().includes(searchTerm)
-            );
-            
-            if (matchingUsers.length > 0) {
-              const userIds = matchingUsers.map(u => u.id);
-              query = query.in('user_id', userIds);
+          } else if (profilesData && profilesData.length > 0) {
+            const userIds = profilesData.map(p => p.id);
+            console.log('Found matching profiles:', userIds.length);
+            query = query.in('user_id', userIds);
+          } else {
+            // Axtarış nəticəsi boşdursa, e-poçt üzrə axtarış edək
+            console.log('No matching profiles, trying email search');
+            const { data: emailsData, error: emailsError } = await supabase
+              .rpc('get_user_emails_by_ids', { user_ids: [] }, { headers: authHeaders });
+              
+            if (emailsError) {
+              console.error('Error fetching emails for search:', emailsError);
+            } else if (emailsData && emailsData.length > 0) {
+              // Axtarış şərtinə uyğun e-poçtları filtrlə
+              const searchTerm = filter.search.toLowerCase();
+              const matchingUsers = emailsData.filter(user => 
+                user.email && user.email.toLowerCase().includes(searchTerm)
+              );
+              
+              if (matchingUsers.length > 0) {
+                const userIds = matchingUsers.map(u => u.id);
+                console.log('Found matching emails:', userIds.length);
+                query = query.in('user_id', userIds);
+              } else {
+                // Axtarış nəticəsi boşdursa, boş nəticə qaytaraq
+                console.log('No matching emails, returning empty result');
+                setUsers([]);
+                setTotalCount(0);
+                setLoading(false);
+                return;
+              }
             } else {
               // Axtarış nəticəsi boşdursa, boş nəticə qaytaraq
+              console.log('No email data available, returning empty result');
               setUsers([]);
               setTotalCount(0);
               setLoading(false);
@@ -206,6 +230,8 @@ export const useUserFetch = (
         throw rolesError;
       }
       
+      console.log('Fetched roles data:', rolesData ? rolesData.length : 0);
+      
       if (!rolesData || rolesData.length === 0) {
         setUsers([]);
         setTotalCount(0);
@@ -226,6 +252,8 @@ export const useUserFetch = (
         // Xəta olsa da davam edirik
       }
       
+      console.log('Fetched profiles:', profilesData ? profilesData.length : 0);
+      
       const profilesMap: Record<string, any> = {};
       if (profilesData) {
         profilesData.forEach(profile => {
@@ -241,6 +269,8 @@ export const useUserFetch = (
         console.error('Warning: Could not fetch user emails:', emailsError);
         // İdeal halda xəta atmamalıyıq, əməliyyata davam edə bilərik
       }
+      
+      console.log('Fetched emails:', emailsData ? emailsData.length : 0);
       
       const emailMap: Record<string, string> = {};
       if (emailsData) {
