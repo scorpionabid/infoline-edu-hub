@@ -1,365 +1,324 @@
-import React, { useState, useEffect } from 'react';
-import { Control } from 'react-hook-form';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ColumnOption } from "@/types/column";
+import { Control, useFieldArray } from "react-hook-form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useLanguage } from "@/context/LanguageContext";
-import { X, Plus, Edit, Save, Trash } from "lucide-react";
-import { ColumnOption } from '@/types/column';
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from 'sonner';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, Edit2, Save, X, Import } from "lucide-react";
+import { toast } from "sonner";
 
 interface OptionsFieldProps {
   control: Control<any>;
-  options?: ColumnOption[];
-  newOption?: string;
-  setNewOption?: (value: string) => void;
-  addOption?: () => void;
-  removeOption?: (option: ColumnOption) => void;
-  updateOption?: (oldOption: ColumnOption, newOption: ColumnOption) => void;
+  options: ColumnOption[];
+  newOption: string;
+  setNewOption: (value: string) => void;
+  addOption: (option: string) => void;
+  removeOption: (index: number) => void;
+  updateOption?: (oldOption: ColumnOption, newOption: ColumnOption) => boolean;
 }
 
 const OptionsField: React.FC<OptionsFieldProps> = ({
   control,
-  options = [],
-  newOption = '',
-  setNewOption = () => {},
-  addOption = () => {},
-  removeOption = () => {},
-  updateOption = () => {}
+  options,
+  newOption,
+  setNewOption,
+  addOption,
+  removeOption,
+  updateOption
 }) => {
   const { t } = useLanguage();
-  const [editingOption, setEditingOption] = useState<ColumnOption | null>(null);
-  const [editLabel, setEditLabel] = useState('');
-  const [editValue, setEditValue] = useState('');
-  
-  // Əlavə etmə üçün klaviatura hadisəsi
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addOption();
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [jsonInput, setJsonInput] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("manual");
+
+  // useFieldArray hook-u ilə options sahəsini idarə edirik
+  const { fields, append, remove, update } = useFieldArray({
+    control,
+    name: "options"
+  });
+
+  // Options dəyişdikdə form sahəsini yeniləyirik
+  useEffect(() => {
+    console.log("Options changed in OptionsField:", options);
+  }, [options]);
+
+  // Yeni option əlavə etmə funksiyası
+  const handleAddOption = () => {
+    if (newOption.trim()) {
+      addOption(newOption.trim());
     }
   };
-  
-  // Redaktə etmə funksiyası
-  const handleEdit = (option: ColumnOption) => {
-    setEditingOption(option);
-    setEditLabel(option.label);
-    setEditValue(option.value);
+
+  // Option silmə funksiyası
+  const handleRemoveOption = (index: number) => {
+    removeOption(index);
+    remove(index);
   };
-  
-  // Redaktəni yadda saxlama funksiyası
-  const handleSaveEdit = () => {
-    if (!editingOption) return;
-    
-    if (!editLabel.trim() || !editValue.trim()) {
-      toast.error('Label və value boş ola bilməz');
-      return;
+
+  // Option redaktə etmə funksiyası
+  const handleEditOption = (index: number) => {
+    setEditingIndex(index);
+    setEditValue(options[index]?.label || "");
+  };
+
+  // Option redaktəsini yadda saxlama funksiyası
+  const handleSaveEdit = (index: number) => {
+    if (editValue.trim()) {
+      const oldOption = options[index];
+      const newOption = { ...oldOption, label: editValue.trim(), value: editValue.trim() };
+      
+      // Əgər updateOption prop-u təmin edilibsə, onu çağırırıq
+      if (updateOption) {
+        const success = updateOption(oldOption, newOption);
+        if (success) {
+          update(index, newOption);
+          toast.success(t("optionUpdated"));
+        } else {
+          toast.error(t("failedToUpdateOption"));
+        }
+      } else {
+        // Əks halda birbaşa update edirik
+        update(index, newOption);
+      }
+      
+      setEditingIndex(null);
+      setEditValue("");
     }
-    
-    const updatedOption = {
-      label: editLabel,
-      value: editValue
-    };
-    
-    updateOption(editingOption, updatedOption);
-    setEditingOption(null);
-    setEditLabel('');
-    setEditValue('');
-    
-    toast.success('Seçim uğurla yeniləndi');
   };
-  
-  // Redaktəni ləğv etmə funksiyası
+
+  // Option redaktəsini ləğv etmə funksiyası
   const handleCancelEdit = () => {
-    setEditingOption(null);
-    setEditLabel('');
-    setEditValue('');
+    setEditingIndex(null);
+    setEditValue("");
   };
-  
+
   // JSON formatını import etmə funksiyası
   const handleImportJSON = () => {
+    if (!jsonInput.trim()) {
+      toast.error(t("emptyJSONInput"));
+      return;
+    }
+
     try {
-      if (!newOption.trim()) {
-        toast.error('JSON məlumatı daxil edin');
-        return;
+      console.log("Importing JSON:", jsonInput);
+      
+      // Xüsusi simvolları düzəldirik
+      let cleanedInput = jsonInput
+        .replace(/\\"/g, '"') // Escape edilmiş dırnaqları düzəldirik
+        .replace(/(\w+):/g, '"$1":') // Dırnaqsız açarları dırnaqlı edirik
+        .replace(/'/g, '"'); // Tək dırnaqları cüt dırnaqlara çeviririk
+      
+      // Əgər array deyilsə, array-ə çeviririk
+      if (!cleanedInput.trim().startsWith('[')) {
+        cleanedInput = `[${cleanedInput}]`;
       }
       
-      let parsedOptions;
-      let optionsStr = newOption.trim();
+      // JSON kimi parse etməyə çalışırıq
+      let parsedOptions: any[] = [];
       
-      console.log("İmport ediləcək JSON:", optionsStr);
-      
-      // Xüsusi simvolları təmizləyirik
-      optionsStr = optionsStr.replace(/\\"/g, '"'); // Escape edilmiş dırnaqları düzəldirik
-      
-      // Əgər dırnaqlar içində deyilsə, əlavə edirik
-      if (!optionsStr.startsWith('"') && !optionsStr.startsWith('[') && !optionsStr.startsWith('{')) {
-        optionsStr = `"${optionsStr}"`;
-      }
-      
-      // Xüsusi format: {"label":"X","value":"x"},{"label":"Y","value":"y"}
-      if (optionsStr.includes('},{')) {
-        try {
-          // Əgər string [ ilə başlamırsa, onu array-ə çeviririk
-          let jsonStr = optionsStr;
-          if (!jsonStr.startsWith('[')) {
-            jsonStr = `[${jsonStr}]`;
-          }
-          
-          // JSON parse etməyə çalışırıq
-          try {
-            console.log("Parsing JSON:", jsonStr);
-            parsedOptions = JSON.parse(jsonStr);
-            console.log("Parsed options:", parsedOptions);
-          } catch (jsonError) {
-            console.warn(`JSON parse error:`, jsonError);
-            
-            // Əgər JSON parse işləmirsə, manual olaraq parçalayırıq
-            const items = optionsStr.split('},{').map(item => {
-              // İlk və son elementlər üçün xüsusi işləmə
-              let cleanItem = item;
-              if (item.startsWith('{') && !item.endsWith('}')) {
-                cleanItem = item + '}';
-              } else if (!item.startsWith('{') && item.endsWith('}')) {
-                cleanItem = '{' + item;
-              } else if (!item.startsWith('{') && !item.endsWith('}')) {
-                cleanItem = '{' + item + '}';
-              }
-              
-              try {
-                console.log("Parsing item:", cleanItem);
-                const parsed = JSON.parse(cleanItem);
-                console.log("Parsed item:", parsed);
-                return parsed;
-              } catch (e) {
-                console.warn(`Failed to parse item "${cleanItem}":`, e);
-                
-                // Əgər yenə parse edilə bilmirsə, daha sadə bir yanaşma sınayırıq
-                try {
-                  // Əsas label və value-nu əldə etməyə çalışırıq
-                  const labelMatch = cleanItem.match(/"label"\s*:\s*"([^"]*)"/);
-                  const valueMatch = cleanItem.match(/"value"\s*:\s*"([^"]*)"/);
-                  
-                  if (labelMatch && valueMatch) {
-                    return {
-                      label: labelMatch[1],
-                      value: valueMatch[1]
-                    };
-                  }
-                } catch (regexError) {
-                  console.warn("Regex extraction failed:", regexError);
-                }
-                
-                return null;
-              }
-            }).filter(Boolean);
-            
-            if (items.length > 0) {
-              console.log(`Manually parsed ${items.length} items`);
-              parsedOptions = items;
-            } else {
-              // Əgər heç bir element parse edilə bilmirsə, string-i birbaşa istifadə edirik
-              parsedOptions = [{ label: optionsStr, value: optionsStr }];
-            }
-          }
-        } catch (e) {
-          console.error(`Failed to process special format:`, e);
-          parsedOptions = [{ label: optionsStr, value: optionsStr }];
-        }
-      } else {
-        // 2. Normal JSON parse
-        try {
-          // Əgər string dırnaqlar içindədirsə və JSON formatında deyilsə
-          if (optionsStr.startsWith('"') && optionsStr.endsWith('"') && 
-              !optionsStr.includes('{') && !optionsStr.includes('[')) {
-            // Dırnaqları silir və sadə bir option yaradırıq
-            const cleanStr = optionsStr.substring(1, optionsStr.length - 1);
-            parsedOptions = [{ label: cleanStr, value: cleanStr }];
-          } else {
-            // Standard JSON parse
-            console.log("Attempting standard JSON parse");
-            parsedOptions = JSON.parse(optionsStr);
-            console.log("Standard JSON parse result:", parsedOptions);
-          }
-        } catch (parseError) {
-          console.warn(`Options JSON kimi parse edilə bilmədi:`, parseError);
-          
-          // Əgər JSON kimi parse edilə bilmirsə, string-i birbaşa istifadə edirik
-          // Əvvəlcə dırnaqları təmizləyirik
-          if (optionsStr.startsWith('"') && optionsStr.endsWith('"')) {
-            optionsStr = optionsStr.substring(1, optionsStr.length - 1);
-          }
-          
-          parsedOptions = [{ label: optionsStr, value: optionsStr }];
-        }
-      }
-      
-      console.log("Final parsed options:", parsedOptions);
-      
-      // Əgər array-dirsə
-      if (Array.isArray(parsedOptions)) {
-        // Hər bir element üçün addOption çağırırıq
-        parsedOptions.forEach(opt => {
-          if (typeof opt === 'string') {
-            // String formatında olan options
-            const option = { label: opt, value: opt };
-            const newOptions = [...options, option];
-            control.setValue('options', newOptions);
-          } else if (typeof opt === 'object' && opt !== null) {
-            // Obyekt formatında olan options
-            if ('label' in opt && 'value' in opt) {
-              const option = { 
-                label: String(opt.label), 
-                value: String(opt.value) 
-              };
-              const newOptions = [...options, option];
-              control.setValue('options', newOptions);
-            }
-          }
-        });
+      try {
+        parsedOptions = JSON.parse(cleanedInput);
+        console.log("Successfully parsed JSON:", parsedOptions);
+      } catch (e) {
+        console.error("Failed to parse JSON directly:", e);
         
-        setNewOption('');
-        toast.success(`${parsedOptions.length} seçim uğurla əlavə edildi`);
-      } else {
-        toast.error('Düzgün JSON formatı deyil');
+        // Alternativ parsing metodları
+        try {
+          // Əgər obyekt formatındadırsa
+          if (cleanedInput.trim().startsWith('{')) {
+            const obj = JSON.parse(cleanedInput);
+            parsedOptions = Object.entries(obj).map(([key, value]) => ({
+              label: String(value),
+              value: key
+            }));
+          } else {
+            // Vergüllə ayrılmış siyahı kimi qəbul edirik
+            parsedOptions = jsonInput.split(',')
+              .map(opt => opt.trim())
+              .filter(opt => opt)
+              .map(opt => ({ label: opt, value: opt }));
+          }
+          console.log("Parsed using alternative method:", parsedOptions);
+        } catch (e2) {
+          console.error("All parsing methods failed:", e2);
+          throw new Error("Invalid JSON format");
+        }
       }
-    } catch (e) {
-      console.error('JSON import error:', e);
-      toast.error('JSON formatını oxumaq mümkün olmadı');
+      
+      // Hər bir option-u düzgün formata çeviririk
+      const formattedOptions = parsedOptions.map(option => {
+        if (typeof option === 'string') {
+          return { label: option, value: option };
+        }
+        
+        // Əgər obyektdirsə, label və value-nu təmin edirik
+        return {
+          label: option.label || option.name || String(option.value || option),
+          value: String(option.value !== undefined ? option.value : (option.id || option.label || option)),
+          description: option.description,
+          icon: option.icon,
+          disabled: option.disabled
+        };
+      });
+      
+      console.log("Formatted options:", formattedOptions);
+      
+      // Mövcud options-ları təmizləyirik
+      while (fields.length > 0) {
+        remove(0);
+      }
+      
+      // Yeni options-ları əlavə edirik
+      formattedOptions.forEach(opt => {
+        append(opt);
+        addOption(opt.label);
+      });
+      
+      // JSON input-u təmizləyirik və manual tab-a keçirik
+      setJsonInput("");
+      setActiveTab("manual");
+      
+      toast.success(t("optionsImported", { count: formattedOptions.length }));
+    } catch (error) {
+      console.error("Error importing JSON:", error);
+      toast.error(t("invalidJSONFormat"));
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col space-y-1.5">
-        <h3 className="text-sm font-medium">{t("optionsField")}</h3>
-        <p className="text-xs text-muted-foreground">{t("optionsFieldDescription")}</p>
-      </div>
-      
-      {/* Yeni seçim əlavə etmə */}
-      <div className="flex flex-col space-y-2">
-        <div className="flex space-x-2">
-          <Input
-            value={newOption}
-            onChange={(e) => setNewOption(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t("addOptionPlaceholder")}
-            className="flex-1"
-          />
-          <Button 
-            type="button" 
-            onClick={addOption} 
-            size="sm"
-            variant="outline"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            {t("add")}
-          </Button>
-        </div>
-        
-        {/* JSON import etmə düyməsi */}
-        <Button 
-          type="button" 
-          onClick={handleImportJSON} 
-          size="sm"
-          variant="secondary"
-          className="w-full"
-        >
-          JSON formatından import et
-        </Button>
-      </div>
-      
-      {/* Mövcud seçimlərin siyahısı */}
-      <div className="border rounded-md p-2 min-h-[100px] max-h-[300px] overflow-y-auto">
-        {options.length === 0 ? (
-          <div className="flex items-center justify-center h-[100px] text-muted-foreground text-sm">
-            {t("noOptionsAdded")}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {options.map((option, index) => (
-              <Card key={`${option.value}-${index}`} className="p-0 shadow-sm">
-                <CardContent className="p-3">
-                  {editingOption === option ? (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          placeholder="Label"
-                          className="text-sm"
-                        />
-                        <Input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          placeholder="Value"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          type="button" 
-                          onClick={handleCancelEdit} 
-                          size="sm"
-                          variant="ghost"
-                        >
-                          Ləğv et
-                        </Button>
-                        <Button 
-                          type="button" 
-                          onClick={handleSaveEdit} 
-                          size="sm"
-                          variant="default"
-                        >
-                          <Save className="h-3 w-3 mr-1" />
-                          Yadda saxla
-                        </Button>
-                      </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{t("options")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manual">{t("manualEntry")}</TabsTrigger>
+            <TabsTrigger value="json">{t("jsonImport")}</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="manual" className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder={t("enterOption")}
+                value={newOption}
+                onChange={(e) => setNewOption(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddOption()}
+              />
+              <Button type="button" onClick={handleAddOption} size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                {t("add")}
+              </Button>
+            </div>
+            
+            <div className="space-y-2 mt-4">
+              <Label>{t("currentOptions")}</Label>
+              {options.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("noOptionsAdded")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {options.map((option, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      {editingIndex === index ? (
+                        <>
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(index)}
+                            autoFocus
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleSaveEdit(index)}
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex-1 p-2 border rounded-md">
+                            {option.label}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditOption(index)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleRemoveOption(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Value: {option.value}
-                        </span>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Button 
-                          type="button" 
-                          onClick={() => handleEdit(option)} 
-                          size="sm"
-                          variant="ghost"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          type="button" 
-                          onClick={() => removeOption(option)} 
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive"
-                        >
-                          <Trash className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="json" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="jsonInput">{t("pasteJSONOptions")}</Label>
+              <Textarea
+                id="jsonInput"
+                placeholder={`[
+  {"label": "Option 1", "value": "option1"},
+  {"label": "Option 2", "value": "option2"}
+]`}
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                rows={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("jsonFormatHint")}
+              </p>
+            </div>
+            <Button type="button" onClick={handleImportJSON}>
+              <Import className="h-4 w-4 mr-1" />
+              {t("importJSON")}
+            </Button>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      <CardFooter>
+        <FormField
+          control={control}
+          name="options"
+          render={() => (
+            <FormItem className="hidden">
+              <FormControl>
+                <Input type="hidden" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </CardFooter>
+    </Card>
   );
 };
 

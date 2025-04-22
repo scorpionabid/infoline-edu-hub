@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -40,13 +39,66 @@ const columnFormSchema = z.object({
 
 export type ColumnFormValues = z.infer<typeof columnFormSchema>;
 
+/**
+ * Options-ları düzgün formatda əldə etmək üçün funksiya
+ * @param options - Sütunun options məlumatları (string, array və ya obyekt ola bilər)
+ * @returns Düzgün formatda olan options array-i
+ */
+const parseColumnOptions = (options: any): ColumnOption[] => {
+  if (!options) return [];
+  
+  console.log("Parsing column options:", options);
+  
+  // Əgər artıq array formatındadırsa
+  if (Array.isArray(options)) {
+    // Hər bir elementin label və value xüsusiyyətləri olduğunu yoxlayırıq
+    return options.map(option => {
+      if (typeof option === 'string') {
+        return { label: option, value: option };
+      }
+      
+      // Əgər obyektdirsə, label və value-nu təmin edirik
+      return {
+        label: option.label || option.name || String(option.value || option),
+        value: String(option.value !== undefined ? option.value : (option.id || option.label || option)),
+        description: option.description,
+        icon: option.icon,
+        disabled: option.disabled
+      };
+    });
+  }
+  
+  // Əgər string formatındadırsa, JSON kimi parse etməyə çalışırıq
+  if (typeof options === 'string') {
+    try {
+      // Əvvəlcə düz JSON kimi parse etməyə çalışırıq
+      const parsedOptions = JSON.parse(options);
+      return parseColumnOptions(parsedOptions); // Rekursiv olaraq parse edirik
+    } catch (e) {
+      console.warn("Failed to parse options as JSON:", e);
+      
+      // Əgər JSON parse etmək alınmırsa, vergüllə ayrılmış siyahı kimi qəbul edirik
+      return options.split(',')
+        .map(opt => opt.trim())
+        .filter(opt => opt)
+        .map(opt => ({ label: opt, value: opt }));
+    }
+  }
+  
+  // Əgər obyekt formatındadırsa (key-value pairs)
+  if (typeof options === 'object' && options !== null && !Array.isArray(options)) {
+    return Object.entries(options).map(([key, value]) => ({
+      label: String(value),
+      value: key
+    }));
+  }
+  
+  return [];
+};
+
 export const useColumnForm = (categories: any[], editColumn?: Column | null, onSubmitCallback?: (columnData: any) => Promise<boolean>) => {
   const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || "text");
-  const [options, setOptions] = useState<ColumnOption[]>(
-    editColumn?.options && Array.isArray(editColumn.options)
-      ? (editColumn.options as ColumnOption[])
-      : []
-  );
+  const [options, setOptions] = useState<ColumnOption[]>([]);
   const [newOption, setNewOption] = useState("");
   const isEditMode = !!editColumn;
   const { t } = useLanguage();
@@ -70,7 +122,7 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       status: editColumn?.status || "active",
       parent_column_id: editColumn?.parent_column_id || undefined,
       validation: { ...defaultValidation, ...(editColumn?.validation as Record<string, any> || {}) },
-      options: editColumn?.options as ColumnOption[] || [],
+      options: [],
       default_value: editColumn?.default_value || "",
       dependencies: editColumn?.dependencies || [],
       visibility_conditions: editColumn?.visibility_conditions || []
@@ -80,6 +132,8 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
   // Column və ya tip dəyişdikdə form sahələrini yenilə
   useEffect(() => {
     if (editColumn) {
+      console.log("Initializing form with edit column:", editColumn);
+      
       form.setValue("name", editColumn.name);
       form.setValue("category_id", editColumn.category_id);
       form.setValue("type", editColumn.type);
@@ -88,17 +142,20 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       form.setValue("help_text", editColumn.help_text || "");
       form.setValue("order_index", editColumn.order_index || 0);
       form.setValue("status", editColumn.status || "active");
-      form.setValue("parent_column_id", editColumn.parent_column_id);
+      
+      if (editColumn.parent_column_id) {
+        form.setValue("parent_column_id", editColumn.parent_column_id);
+      }
       
       if (editColumn.validation) {
         form.setValue("validation", editColumn.validation as Record<string, any> || {});
       }
       
-      if (editColumn.options && Array.isArray(editColumn.options)) {
-        const typedOptions = editColumn.options as ColumnOption[];
-        setOptions(typedOptions);
-        form.setValue("options", typedOptions);
-      }
+      // Options-ları parse et və təyin et
+      const parsedOptions = parseColumnOptions(editColumn.options);
+      console.log("Parsed options:", parsedOptions);
+      setOptions(parsedOptions);
+      form.setValue("options", parsedOptions);
       
       if (editColumn.default_value !== undefined) {
         form.setValue("default_value", editColumn.default_value);
@@ -111,6 +168,9 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
       if (editColumn.visibility_conditions) {
         form.setValue("visibility_conditions", editColumn.visibility_conditions);
       }
+      
+      // Tip-i təyin et
+      setSelectedType(editColumn.type as ColumnType);
     }
   }, [editColumn, form]);
 
@@ -150,74 +210,70 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
         url: true,
         pattern: currentValidation.pattern || '^(https?:\\/\\/)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?$'
       });
+    } else if (selectedType === "date") {
+      form.setValue("validation", { 
+        ...defaultTypValidation,
+        ...currentValidation,
+        minDate: currentValidation.minDate || undefined,
+        maxDate: currentValidation.maxDate || undefined
+      });
+    } else if (selectedType === "select" || selectedType === "radio" || selectedType === "checkbox") {
+      // Options sahəsinin dəyərini yenilə
+      form.setValue("options", options);
     }
-  }, [selectedType, form]);
+  }, [selectedType, form, options]);
 
-  const handleTypeChange = (type: string) => {
-    setSelectedType(type as ColumnType);
-    form.setValue("type", type);
+  // Yeni option əlavə etmə funksiyası
+  const addOption = (option: string) => {
+    if (!option.trim()) return;
     
-    // Əgər options tipli fielddirsə və options yoxdursa, error göstərmə
-    if (["select", "radio", "checkbox"].includes(type) && (!options || options.length === 0)) {
-      form.clearErrors("options");
-    }
+    const newOptionObj: ColumnOption = { label: option, value: option };
+    const updatedOptions = [...options, newOptionObj];
+    setOptions(updatedOptions);
+    form.setValue("options", updatedOptions);
+    setNewOption("");
   };
 
-  const addOption = () => {
-    if (newOption.trim() !== "") {
-      const newOptionObj: ColumnOption = { 
-        label: newOption, 
-        value: newOption.toLowerCase().replace(/\s+/g, '_') 
-      };
-      const updatedOptions = [...options, newOptionObj];
-      setOptions(updatedOptions);
-      setNewOption("");
-      
-      // Form options-larını yenilə
-      form.setValue("options", updatedOptions);
-    }
-  };
-
-  const removeOption = (optionToRemove: ColumnOption) => {
-    const updatedOptions = options.filter(
-      (option) => option.value !== optionToRemove.value
-    );
+  // Option silmə funksiyası
+  const removeOption = (index: number) => {
+    const updatedOptions = [...options];
+    updatedOptions.splice(index, 1);
     setOptions(updatedOptions);
     form.setValue("options", updatedOptions);
   };
 
-  const onSubmit = async (data: ColumnFormValues) => {
-    console.log("onSubmit called with data:", data);
+  // Form təqdim etmə funksiyası
+  const onSubmit = async (values: ColumnFormValues) => {
+    console.log("Form submitted with values:", values);
     
-    // Select/radio/checkbox üçün options-ları düzgün formatla
-    if (["select", "radio", "checkbox"].includes(data.type)) {
-      console.log("Setting options for select/radio/checkbox. Current options:", options);
-      data.options = JSON.parse(JSON.stringify(options)); // Deep copy ilə referans istifadəsinin qarşısını al
-      console.log("Options after assignment:", data.options);
-    } else {
-      // Digər field tipləri üçün options null və ya boş array olmalıdır
-      data.options = [];
+    // Tip əsasında options-ları yoxla
+    if (["select", "radio", "checkbox"].includes(selectedType) && (!values.options || values.options.length === 0)) {
+      console.error("Options are required for this column type");
+      return false;
     }
     
-    // Validasiya undefined olduqda boş obyekt təyin et
-    if (!data.validation) {
-      data.validation = {};
-    }
-    
-    // Callback funksiyası təmin edildikdə, datanı göndər
-    if (onSubmitCallback) {
-      try {
-        console.log("Calling onSubmitCallback with data:", JSON.stringify(data, null, 2));
-        const result = await onSubmitCallback(data);
-        console.log("onSubmitCallback result:", result);
+    try {
+      // Callback funksiyasını çağır
+      if (onSubmitCallback) {
+        const result = await onSubmitCallback({
+          ...values,
+          type: selectedType,
+          options: values.options || options
+        });
+        
         return result;
-      } catch (error) {
-        console.error("Error in onSubmitCallback:", error);
-        return false;
       }
+      
+      return true;
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      return false;
     }
-    
-    return true;
+  };
+
+  // Tip dəyişmə funksiyası
+  const handleTypeChange = (type: ColumnType) => {
+    setSelectedType(type);
   };
 
   return {
@@ -225,13 +281,11 @@ export const useColumnForm = (categories: any[], editColumn?: Column | null, onS
     selectedType,
     handleTypeChange,
     options,
-    setOptions,
-    newOption,
-    setNewOption,
     addOption,
     removeOption,
+    newOption,
+    setNewOption,
     onSubmit,
-    isEditMode,
-    t
+    isEditMode
   };
 };
