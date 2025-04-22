@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -11,18 +11,17 @@ export const useUserFetch = (
   currentPage: number,
   pageSize: number
 ) => {
-  const { user: currentUser, session } = useAuth();
-  const { isSuperAdmin, isRegionAdmin, isSectorAdmin } = usePermissions();
   const [users, setUsers] = useState<FullUserData[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
-  // JWT token əldə etmə funksiyası
+  const [totalCount, setTotalCount] = useState(0);
+  const { session } = useAuth();
+  const { isRegionAdmin, isSectorAdmin, isSuperAdmin, currentUser } = usePermissions();
+  
+  // JWT token əldə etmək üçün köməkçi funksiya
   const getAuthHeaders = useCallback(() => {
-    // Supabase API key həmişə olmalıdır
     const headers: Record<string, string> = {
-      apikey: supabase.supabaseKey
+      'Content-Type': 'application/json',
     };
     
     // Session varsa, token əlavə edirik
@@ -151,50 +150,54 @@ export const useUserFetch = (
       // Sorğunu yaradaq
       let query = supabase
         .from('user_roles')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
       
-      // Headers-i tətbiq edək - bu çox vacibdir!
-      // Supabase-in select metoduna headers parametri ötürmək əvəzinə
-      // query obyektinin headers xüsusiyyətinə birbaşa dəyərləri təyin edirik
+      // Headers-i tətbiq edək
       Object.entries(headers).forEach(([key, value]) => {
         if (value) query.headers[key] = value;
       });
       
-      // Rol filteri
-      if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
-        query = query.in('role', filter.role);
-        console.log('Applied role filter:', filter.role);
-      }
-      
-      // İstifadəçi tipinə görə filtrlənmə
+      // İstifadəçi roluna əsasən filter tətbiq et
       if (isRegionAdmin && currentUser?.regionId) {
+        console.log('RegionAdmin filter tətbiq olunur:', currentUser.regionId);
         query = query.eq('region_id', currentUser.regionId);
-        console.log('Filtered by region_id (admin):', currentUser.regionId);
       } 
       else if (isSectorAdmin && currentUser?.sectorId) {
+        console.log('SectorAdmin filter tətbiq olunur:', currentUser.sectorId);
         query = query.eq('sector_id', currentUser.sectorId);
-        console.log('Filtered by sector_id (admin):', currentUser.sectorId);
       }
       else {
-        if (filter.region && Array.isArray(filter.region) && filter.region.length > 0) {
-          query = query.in('region_id', filter.region);
-          console.log('Filtered by regions:', filter.region);
+        // Seçilmiş filterlərə əsasən sorğunu filtrlə
+        // Rol filteri
+        if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
+          console.log('Rol filter tətbiq olunur:', filter.role);
+          query = query.in('role', filter.role);
         }
         
-        if (filter.sector && Array.isArray(filter.sector) && filter.sector.length > 0) {
-          query = query.in('sector_id', filter.sector);
-          console.log('Filtered by sectors:', filter.sector);
+        // Region filteri
+        if (filter.region && Array.isArray(filter.region) && filter.region.length > 0) {
+          console.log('Region filter tətbiq olunur:', filter.region);
+          query = query.in('region_id', filter.region);
         }
-      }
-      
-      if (filter.school && Array.isArray(filter.school) && filter.school.length > 0) {
-        query = query.in('school_id', filter.school);
-        console.log('Filtered by schools:', filter.school);
-      }
-      
-      if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
-        query = query.in('status', filter.status);
-        console.log('Applied status filter:', filter.status);
+        
+        // Sektor filteri
+        if (filter.sector && Array.isArray(filter.sector) && filter.sector.length > 0) {
+          console.log('Sektor filter tətbiq olunur:', filter.sector);
+          query = query.in('sector_id', filter.sector);
+        }
+        
+        // Məktəb filteri
+        if (filter.school && Array.isArray(filter.school) && filter.school.length > 0) {
+          console.log('Məktəb filter tətbiq olunur:', filter.school);
+          query = query.in('school_id', filter.school);
+        }
+        
+        // Status filteri
+        if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
+          console.log('Status filter tətbiq olunur:', filter.status);
+          query = query.in('status', filter.status);
+        }
       }
       
       // Paginasiya
@@ -321,7 +324,12 @@ export const useUserFetch = (
         
         fullUsers = fullUsers.filter(user => 
           (user.fullName && user.fullName.toLowerCase().includes(searchTerm)) || 
-          (user.email && user.email.toLowerCase().includes(searchTerm))
+          (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+          (user.phone && user.phone.toLowerCase().includes(searchTerm)) ||
+          (user.position && user.position.toLowerCase().includes(searchTerm)) ||
+          (user.regionName && user.regionName.toLowerCase().includes(searchTerm)) ||
+          (user.sectorName && user.sectorName.toLowerCase().includes(searchTerm)) ||
+          (user.schoolName && user.schoolName.toLowerCase().includes(searchTerm))
         );
         
         console.log('Users after search filter:', fullUsers.length);
@@ -339,13 +347,11 @@ export const useUserFetch = (
     }
   }, [currentUser, filter, currentPage, pageSize, isSuperAdmin, isRegionAdmin, isSectorAdmin, getAuthHeaders]);
 
-  return {
-    users,
-    loading,
-    error,
-    fetchUsers,
-    setUsers,
-    totalCount,
-    setTotalCount
-  };
+  // İlk yüklənmə və filter dəyişiklikləri zamanı istifadəçiləri əldə et
+  useEffect(() => {
+    console.log('useEffect - fetchUsers çağırılır');
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return { users, loading, error, totalCount, fetchUsers };
 };
