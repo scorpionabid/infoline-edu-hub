@@ -9,24 +9,21 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { MoreHorizontal, Search, Filter, X } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserRole } from '@/types/supabase';
 import { User, FullUserData } from '@/types/user';
 import { Badge } from '@/components/ui/badge';
 import { useUserList } from '@/hooks/useUserList';
 import { Pagination } from '@/components/ui/pagination';
-import UserFilters from './UserFilters';
 import DeleteUserDialog from './DeleteUserDialog';
 import EditUserDialog from './EditUserDialog';
 
@@ -58,8 +55,6 @@ const UserList: React.FC<UserListProps> = ({
     fetchUsers
   } = useUserList();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -79,12 +74,6 @@ const UserList: React.FC<UserListProps> = ({
     fetchUsers();
   }, [refreshTrigger]);
 
-  // Axtarış sorğusu dəyişdikdə
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    updateFilter({ ...filter, search: e.target.value });
-  };
-
   // İstifadəçi silmə əməliyyatı
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
@@ -103,18 +92,6 @@ const UserList: React.FC<UserListProps> = ({
   const handleEditComplete = () => {
     setIsEditDialogOpen(false);
     fetchUsers();
-  };
-
-  // Filterlər tətbiq edildikdə
-  const handleApplyFilters = (newFilters: any) => {
-    updateFilter({ ...filter, ...newFilters });
-    setShowFilters(false);
-  };
-
-  // Filterləri sıfırla
-  const handleResetFilters = () => {
-    resetFilter();
-    setShowFilters(false);
   };
 
   // Səhifələmə
@@ -154,25 +131,9 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
-  // Axtarışı təmizlə
-  const clearSearch = () => {
-    setSearchQuery('');
-    updateFilter({ ...filter, search: '' });
-  };
-
   return (
-    <Card>
+    <Card className="shadow-none border-0">
       <div className="px-4 pt-4">
-        {showFilters && (
-          <div className="pb-2">
-            <UserFilters 
-              currentFilters={filter} 
-              onApplyFilters={handleApplyFilters} 
-              onResetFilters={handleResetFilters}
-            />
-          </div>
-        )}
-      
         {loading ? (
           <div className="flex justify-center py-5">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -248,7 +209,7 @@ const UserList: React.FC<UserListProps> = ({
       </div>
       
       {!loading && users.length > 0 && (
-        <CardFooter className="py-4 flex justify-between items-center">
+        <div className="px-4 py-3 flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
             {t('showingResults', { from: (currentPage - 1) * 10 + 1, to: Math.min(currentPage * 10, totalCount), total: totalCount })}
           </div>
@@ -257,7 +218,7 @@ const UserList: React.FC<UserListProps> = ({
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />
-        </CardFooter>
+        </div>
       )}
 
       {/* İstifadəçi silmə dialoqu */}
