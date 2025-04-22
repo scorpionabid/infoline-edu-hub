@@ -25,7 +25,7 @@ const DataEntryForm: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(categoryId || '');
-  const { isSchoolAdmin, canViewSectorCategories } = usePermissions();
+  const { isSchoolAdmin, canViewSectorCategories, isSectorAdmin, isRegionAdmin, isSuperAdmin } = usePermissions();
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'save' | 'submit' }>({
     open: false,
     action: 'save'
@@ -44,22 +44,56 @@ const DataEntryForm: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
   const [isDataModified, setIsDataModified] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingCategories, setProcessingCategories] = useState<CategoryWithColumns[]>([]);
 
-  // Seçilmiş kateqoriyanı tapaq
-  const selectedCategory = categories.find(c => c.id === activeTab);
+  // Kateqoriyaları işləyirik və sütunları filtirləyirik
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      // Hər bir kateqoriya üçün sütunları filtirləyirik
+      const processedCategories = categories.map(category => {
+        // Sütunları filtirləyirik - əgər sütun statusu active deyilsə, onu göstərmirik
+        const filteredColumns = category.columns.filter(column => 
+          column.status === 'active' || column.status === undefined
+        );
+        
+        // Sütunları sıralayırıq
+        const sortedColumns = [...filteredColumns].sort((a, b) => 
+          (a.order_index || 0) - (b.order_index || 0)
+        );
+        
+        return {
+          ...category,
+          columns: sortedColumns
+        };
+      });
+      
+      setProcessingCategories(processedCategories);
+    }
+  }, [categories]);
 
   // Filter categories based on assignment for school admin
-  const filteredCategories = categories.filter(category => {
-    if (isSchoolAdmin && category.assignment === 'sectors') {
-      return false;
-    }
-    
-    if (canViewSectorCategories) {
+  const filteredCategories = processingCategories.filter(category => {
+    // SuperAdmin və RegionAdmin bütün kateqoriyaları görə bilər
+    if (isSuperAdmin || isRegionAdmin) {
       return true;
     }
     
+    // SectorAdmin yalnız "sectors" və "all" təyinatlı kateqoriyaları görə bilər
+    if (isSectorAdmin) {
+      return category.assignment === 'sectors' || category.assignment === 'all';
+    }
+    
+    // SchoolAdmin yalnız "all" təyinatlı kateqoriyaları görə bilər
+    if (isSchoolAdmin) {
+      return category.assignment === 'all';
+    }
+    
+    // Default olaraq "all" təyinatlı kateqoriyaları göstəririk
     return category.assignment === 'all';
   });
+
+  // Seçilmiş kateqoriyanı tapaq
+  const selectedCategory = filteredCategories.find(c => c.id === activeTab);
 
   // İlk yükləməde yoxlayırıq
   useEffect(() => {
@@ -88,16 +122,22 @@ const DataEntryForm: React.FC = () => {
           .eq('school_id', schoolId)
           .eq('category_id', activeTab);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Məlumatları yükləyərkən xəta:', error);
+          throw error;
+        }
+        
+        console.log(`${activeTab} kateqoriyası üçün ${data?.length || 0} məlumat yükləndi`);
         setEntries(data || []);
         setIsDataModified(false);
       } catch (err) {
         console.error('Məlumatları yükləyərkən xəta:', err);
+        toast.error(t('errorLoadingData'));
       }
     };
 
     loadEntries();
-  }, [schoolId, activeTab]);
+  }, [schoolId, activeTab, t]);
 
   // Tab dəyişdikdə URL-i də yeniləyək
   const handleTabChange = useCallback((value: string) => {
@@ -132,7 +172,10 @@ const DataEntryForm: React.FC = () => {
         .eq('school_id', schoolId)
         .eq('category_id', activeTab);
         
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Məlumatları silmə xətası:', deleteError);
+        throw deleteError;
+      }
       
       // Yeni məlumatları əlavə edirik
       if (entries.length > 0) {
@@ -150,7 +193,10 @@ const DataEntryForm: React.FC = () => {
           .from('data_entries')
           .insert(dataToInsert);
           
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Məlumatları əlavə etmə xətası:', insertError);
+          throw insertError;
+        }
       }
       
       setSaveStatus(DataEntrySaveStatus.SAVED);
@@ -179,7 +225,7 @@ const DataEntryForm: React.FC = () => {
       return;
     }
 
-    const selectedCat = categories.find(c => c.id === activeTab);
+    const selectedCat = filteredCategories.find(c => c.id === activeTab);
     
     if (!selectedCat) {
       toast.error(t('categoryNotFound'));
@@ -201,33 +247,6 @@ const DataEntryForm: React.FC = () => {
     setSaveStatus(DataEntrySaveStatus.SAVING);
     
     try {
-      // RLS xətasını aradan qaldırmaq üçün əvvəlcə notifications cədvəlində mövcud qeydləri yoxlayaq
-      try {
-        const { data: notificationData, error: notificationError } = await supabase
-          .from('notifications')
-          .select('id')
-          .eq('category_id', activeTab)
-          .eq('school_id', schoolId)
-          .eq('status', 'pending')
-          .limit(1);
-          
-        if (notificationError) {
-          console.warn('Notifications yoxlanarkən xəta:', notificationError);
-        } else if (notificationData && notificationData.length > 0) {
-          // Mövcud notification varsa, onu silirik
-          const { error: deleteNotificationError } = await supabase
-            .from('notifications')
-            .delete()
-            .eq('id', notificationData[0].id);
-            
-          if (deleteNotificationError) {
-            console.warn('Notification silinərkən xəta:', deleteNotificationError);
-          }
-        }
-      } catch (notificationCheckError) {
-        console.warn('Notifications yoxlanarkən xəta:', notificationCheckError);
-      }
-      
       // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
       const { error: deleteError } = await supabase
         .from('data_entries')
@@ -237,14 +256,14 @@ const DataEntryForm: React.FC = () => {
         
       if (deleteError) throw deleteError;
       
-      // Sonra yeni məlumatları əlavə edirik
+      // Yeni məlumatları əlavə edirik
       if (entries.length > 0) {
         const dataToInsert = entries.map(entry => ({
           school_id: schoolId,
           category_id: activeTab,
           column_id: entry.column_id,
           value: String(entry.value || ''),
-          status: 'pending',
+          status: 'pending', // Təsdiq gözləyən status
           created_by: user.id,
           updated_at: new Date().toISOString()
         }));
@@ -256,142 +275,33 @@ const DataEntryForm: React.FC = () => {
         if (insertError) throw insertError;
       }
       
-      // Edge Function çağırışı - JWT token ilə
+      // Bildiriş yaradaq
       try {
-        // Cari sessiyadan JWT token alırıq
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Sessiya məlumatlarını alarkən xəta:', sessionError);
-          throw sessionError;
-        }
-        
-        if (!sessionData.session) {
-          console.error('Aktiv sessiya tapılmadı');
-          throw new Error('Aktiv sessiya tapılmadı');
-        }
-        
-        // Əvvəlcə notifications cədvəlində mövcud bildirişləri yoxlayırıq və lazım gələrsə silirik
-        try {
-          const { data: existingNotifications, error: notificationsError } = await supabase
-            .from('notifications')
-            .select('id')
-            .eq('related_entity_id', schoolId)
-            .eq('related_entity_type', 'school')
-            .eq('type', 'category_submission');
-            
-          if (notificationsError) {
-            console.warn('Mövcud bildirişləri yoxlayarkən xəta:', notificationsError);
-          } else if (existingNotifications && existingNotifications.length > 0) {
-            console.log(`${existingNotifications.length} mövcud bildiriş tapıldı, silinir...`);
-            const { error: deleteError } = await supabase
-              .from('notifications')
-              .delete()
-              .in('id', existingNotifications.map(n => n.id));
-              
-            if (deleteError) {
-              console.warn('Mövcud bildirişləri silməkdə xəta:', deleteError);
-            } else {
-              console.log('Mövcud bildirişlər uğurla silindi');
-            }
-          }
-        } catch (notificationCheckError) {
-          console.warn('Bildirişləri yoxlayarkən xəta:', notificationCheckError);
-        }
-        
-        // Edge Function-a sorğu göndəririk
-        console.log('Edge Function çağırılır:', {
-          schoolId,
-          categoryId: activeTab,
-          userId: user.id
+        await supabase.from('notifications').insert({
+          user_id: user.id,
+          type: 'data_submission',
+          title: t('dataSubmittedTitle'),
+          message: t('dataSubmittedMessage', { category: selectedCat.name }),
+          related_entity_id: activeTab,
+          related_entity_type: 'category',
+          is_read: false,
+          priority: 'medium'
         });
-        
-        const response = await fetch(
-          'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/submit-category',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              // JWT token-i Authorization header-ində göndəririk
-              'Authorization': `Bearer ${sessionData.session.access_token}`
-            },
-            body: JSON.stringify({
-              schoolId,
-              categoryId: activeTab,
-              // Notifications cədvəli üçün əlavə məlumatlar
-              skipNotification: false, // Notifications cədvəlinə yazılmasına icazə veririk
-              userId: user.id // İstifadəçi ID-si
-            })
-          }
-        );
-        
-        // Xəta olduqda detallı məlumat əldə edirik
-        if (!response.ok) {
-          let errorMessage = 'Bilinməyən xəta';
-          let errorDetails = null;
-          
-          try {
-            const errorData = await response.json();
-            console.error('Edge Function xətası:', errorData);
-            errorMessage = errorData.message || errorMessage;
-            errorDetails = errorData;
-          } catch (e) {
-            console.error('Xəta məlumatlarını oxuyarkən problem:', e);
-          }
-          
-          // RLS xətası olub-olmadığını yoxlayırıq
-          if (errorMessage.includes('row-level security policy') && errorMessage.includes('notifications')) {
-            console.warn('RLS siyasəti xətası aşkarlandı, manual bildiriş yaratmağa çalışırıq...');
-            
-            try {
-              // Manual olaraq bildiriş yaratmağa çalışırıq
-              const { error: insertError } = await supabase
-                .from('notifications')
-                .insert({
-                  user_id: user.id,
-                  type: 'category_submission',
-                  title: 'Kateqoriya təqdim edildi',
-                  message: `Məktəb ID: ${schoolId}, Kateqoriya ID: ${activeTab}`,
-                  related_entity_id: schoolId,
-                  related_entity_type: 'school',
-                  is_read: false,
-                  priority: 'normal'
-                });
-                
-              if (insertError) {
-                console.error('Manual bildiriş yaratma xətası:', insertError);
-              } else {
-                console.log('Manual bildiriş uğurla yaradıldı');
-              }
-            } catch (manualNotificationError) {
-              console.error('Manual bildiriş yaratma cəhdi zamanı xəta:', manualNotificationError);
-            }
-            
-            // Əsas məlumatlar saxlanılıb, bildiriş xətası kritik deyil, davam edirik
-            console.log('RLS xətasına baxmayaraq, əsas əməliyyat uğurlu sayılır');
-          } else {
-            // Digər xətalar üçün xətanı atırıq
-            throw new Error(`Edge Function xətası: ${errorMessage}`);
-          }
-        } else {
-          const responseData = await response.json();
-          console.log('Edge Function cavabı:', responseData);
-        }
-      } catch (edgeFunctionError: any) {
-        console.error('Edge Function çağırışı zamanı xəta:', edgeFunctionError);
-        // Əsas məlumatlar artıq saxlanılıb, bu xəta kritik deyil
-        toast.warning(t('submittedButEdgeFunctionError') || 'Məlumatlar saxlanıldı, lakin təsdiq prosesində xəta baş verdi');
+      } catch (notifError) {
+        console.error('Bildiriş yaradılarkən xəta:', notifError);
+        // Bildiriş yaratma xətası kritik deyil, davam edirik
       }
       
+      setSaveStatus(DataEntrySaveStatus.SAVED);
       setIsDataModified(false);
-      toast.success(t('dataSubmittedSuccessfully') || 'Məlumatlar uğurla təqdim edildi');
+      toast.success(t('dataSubmittedSuccessfully'));
       
       // Yenilə
       setTimeout(() => {
         refreshCategories();
       }, 1000);
     } catch (error: any) {
-      console.error('Məlumatları göndərərkən xəta:', error);
+      console.error('Məlumatları təqdim edərkən xəta:', error);
       toast.error(t('errorSubmittingData'));
       setSaveStatus(DataEntrySaveStatus.ERROR);
     } finally {
@@ -400,209 +310,152 @@ const DataEntryForm: React.FC = () => {
         setSaveStatus(DataEntrySaveStatus.IDLE);
       }, 3000);
     }
-  }, [schoolId, activeTab, categories, entries, user?.id, t, refreshCategories]);
+  }, [schoolId, activeTab, entries, user?.id, t, filteredCategories, refreshCategories]);
 
-  // Təsdiq dialoqlarını idarə edən funksiyalar
-  const handleConfirmSave = async () => {
-    await handleSave();
+  // Dialoq bağlandıqda
+  const handleCloseConfirmDialog = useCallback(() => {
     setConfirmDialog({ ...confirmDialog, open: false });
-  };
+  }, [confirmDialog]);
 
-  const handleConfirmSubmit = async () => {
-    await handleSubmitForApproval();
+  // Dialoq təsdiqləndiyi zaman
+  const handleConfirmAction = useCallback(async () => {
+    if (confirmDialog.action === 'save') {
+      await handleSave();
+    }
+    
     setConfirmDialog({ ...confirmDialog, open: false });
-  };
+  }, [confirmDialog, handleSave]);
 
-  // Yüklənmə zamanı göstəriləcək komponent
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-full mb-4" />
-        <div className="grid gap-4 grid-cols-3">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <Skeleton className="h-[400px] w-full" />
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-[500px] w-full" />
       </div>
     );
   }
 
-  // Xəta zamanı göstəriləcək komponent
   if (error) {
     return (
-      <Alert variant="destructive" className="mb-6">
-        <AlertTriangle className="h-4 w-4 mr-2" />
-        <AlertDescription>{error}</AlertDescription>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="ml-auto" 
-          onClick={() => refreshCategories()}
-        >
-          {t('tryAgain')}
-        </Button>
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          {t('errorLoadingCategories')}: {error.message}
+        </AlertDescription>
       </Alert>
     );
   }
 
-  // Kateqoriya tapılmadıqda göstəriləcək komponent
-  if (!filteredCategories || filteredCategories.length === 0) {
+  if (filteredCategories.length === 0) {
     return (
-      <Alert className="mb-6">
-        <AlertDescription>{t('noCategoriesAvailable')}</AlertDescription>
+      <Alert>
+        <AlertDescription>
+          {t('noCategoriesFound')}
+        </AlertDescription>
       </Alert>
     );
   }
 
   return (
     <div className="space-y-6">
-      {saveStatus === DataEntrySaveStatus.SAVED && (
-        <Alert className="mb-6 bg-green-50 border-green-200">
-          <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-          <AlertDescription className="text-green-600">
-            {t('dataSavedSuccessfully')}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {saveStatus === DataEntrySaveStatus.ERROR && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {t('errorSavingData')}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <div className="flex justify-between items-center">
-          <TabsList className="h-auto p-1 overflow-x-auto max-w-screen-lg">
-            {Array.isArray(filteredCategories) && filteredCategories.map((category) => {
-              // Status rənglərini təyin edirik
-              const statusClasses = {
-                draft: "bg-yellow-500",
-                pending: "bg-blue-500",
-                approved: "bg-green-500",
-                rejected: "bg-red-500",
-                partial: "bg-orange-500"
-              };
-              
-              const status = category.status || 'draft';
-              const statusClass = statusClasses[status as keyof typeof statusClasses] || "";
-              
-              // Tamamlanma faizini hesablayırıq
-              const completionPercentage = category.completionPercentage || 0;
-              
-              return (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="relative py-3 px-4"
-                >
-                  <span>{category.name}</span>
-                  
-                  {/* Status və tamamlanma faizi */}
-                  <div className="flex items-center gap-2 mt-1 text-xs">
-                    {status && (
-                      <Badge variant="outline" className={`${statusClass} text-white`}>
-                        {t(status)}
-                      </Badge>
-                    )}
-                    
-                    {category.deadline && (
-                      <Badge variant="outline" className="text-xs">
-                        {new Date(category.deadline).toLocaleDateString()}
-                      </Badge>
-                    )}
-                    
-                    <Badge variant="outline" className="text-xs">
-                      {completionPercentage}%
-                    </Badge>
-                  </div>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </div>
-
-        {Array.isArray(filteredCategories) && filteredCategories.map((category) => (
-          <TabsContent key={category.id} value={category.id} className="space-y-4">
-            <CategoryForm
-              category={category as CategoryWithColumns}
-              isSaving={saveStatus === DataEntrySaveStatus.SAVING}
-              isSubmitting={isSubmitting}
-              isModified={isDataModified}
-              onSave={handleSave}
-              onSubmit={() => setConfirmDialog({ open: true, action: 'submit' })}
-            />
-            
-            <Card className="border rounded-lg p-6 space-y-8">
-              <FormFields
-                category={category as CategoryWithColumns}
-                entries={entries}
-                onChange={handleEntriesChange}
-                disabled={saveStatus === DataEntrySaveStatus.SAVING}
-                loading={saveStatus === DataEntrySaveStatus.SAVING}
-              />
-              
-              <div className="flex justify-end gap-4 pt-4 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSave}
-                  disabled={saveStatus === DataEntrySaveStatus.SAVING || !isDataModified}
-                  className="w-32"
-                >
-                  {saveStatus === DataEntrySaveStatus.SAVING ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('saving')}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      {t('saveDraft')}
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  type="button"
-                  onClick={() => setConfirmDialog({ open: true, action: 'submit' })}
-                  disabled={saveStatus === DataEntrySaveStatus.SAVING || isSubmitting}
-                  className="w-32"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('submitting')}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      {t('submit')}
-                    </>
-                  )}
-                </Button>
+      {/* Kateqoriya tabları */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">{t('dataEntry')}</h2>
+          
+          <div className="flex items-center gap-2">
+            {saveStatus === DataEntrySaveStatus.SAVING && (
+              <div className="flex items-center text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('saving')}
               </div>
+            )}
+            
+            {saveStatus === DataEntrySaveStatus.SAVED && (
+              <div className="flex items-center text-green-600">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                {t('saved')}
+              </div>
+            )}
+            
+            {saveStatus === DataEntrySaveStatus.ERROR && (
+              <div className="flex items-center text-red-600">
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                {t('error')}
+              </div>
+            )}
+            
+            <Button 
+              variant="outline" 
+              onClick={handleSave}
+              disabled={!isDataModified || isSubmitting}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {t('save')}
+            </Button>
+            
+            <Button 
+              onClick={handleSubmitForApproval}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              {t('submitForApproval')}
+            </Button>
+          </div>
+        </div>
+        
+        <TabsList className="mb-4 w-full h-auto flex flex-wrap">
+          {filteredCategories.map((category) => (
+            <TabsTrigger 
+              key={category.id} 
+              value={category.id}
+              className="py-2 px-4 flex items-center gap-2"
+            >
+              {category.name}
+              {category.assignment === 'sectors' && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {t('sectorOnly')}
+                </Badge>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
+        {filteredCategories.map((category) => (
+          <TabsContent key={category.id} value={category.id} className="pt-4">
+            <Card className="p-6">
+              {category.columns.length > 0 ? (
+                <FormFields 
+                  category={category}
+                  entries={entries}
+                  onChange={handleEntriesChange}
+                  disabled={isSubmitting}
+                />
+              ) : (
+                <Alert>
+                  <AlertDescription>
+                    {t('noColumnsInCategory')}
+                  </AlertDescription>
+                </Alert>
+              )}
             </Card>
           </TabsContent>
         ))}
       </Tabs>
-
-      <CategoryConfirmationDialog
+      
+      {/* Təsdiq dialoqu */}
+      <CategoryConfirmationDialog 
         isOpen={confirmDialog.open}
-        onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
-        onConfirm={confirmDialog.action === 'save' ? handleConfirmSave : handleConfirmSubmit}
-        title={confirmDialog.action === 'save' ? t('saveChanges') : t('submitForApproval')}
-        description={
-          confirmDialog.action === 'save'
-            ? t('saveChangesDescription')
-            : t('submitForApprovalDescription')
-        }
-        confirmText={confirmDialog.action === 'save' ? t('save') : t('submit')}
-        isLoading={saveStatus === DataEntrySaveStatus.SAVING}
+        onClose={handleCloseConfirmDialog}
+        onConfirm={handleConfirmAction}
+        title={t('unsavedChanges')}
+        description={t('unsavedChangesDescription')}
+        confirmText={t('save')}
+        cancelText={t('discard')}
       />
     </div>
   );

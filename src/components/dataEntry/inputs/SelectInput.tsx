@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -9,6 +9,10 @@ import {
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
 import { Column, ColumnOption } from '@/types/column';
+import { AlertCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLanguage } from '@/context/LanguageContext';
+import { toast } from 'sonner';
 
 interface SelectInputProps {
   column: Column;
@@ -16,24 +20,23 @@ interface SelectInputProps {
   disabled?: boolean;
 }
 
-const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = false }) => {
-  // Sütun seçənəklərini dönüşdür - tam təkmilləşdirilmiş versiya
-  const options = React.useMemo(() => {
-    // Debug üçün orijinal options-ı log edirik
-    console.log(`Processing options for column ${column.id} (${column.name}):`, column.options);
-    
+/**
+ * Müxtəlif formatlarda olan options sahəsini standart formata çevirir
+ * @param options - İşlənəcək options sahəsi
+ * @param columnId - Xəta mesajları üçün sütun ID-si
+ * @param columnName - Xəta mesajları üçün sütun adı
+ * @returns Standartlaşdırılmış options massivi
+ */
+const processOptions = (options: any, columnId: string, columnName: string): ColumnOption[] => {
+  try {
     // Əgər options yoxdursa, boş massiv qaytarırıq
-    if (!column.options) {
-      console.log(`No options for column ${column.id}`);
+    if (!options) {
       return [];
     }
     
     // Əgər options artıq array formatındadırsa və içində obyektlər varsa
-    if (Array.isArray(column.options) && column.options.length > 0) {
-      console.log(`Column ${column.id} has array options:`, column.options);
-      
-      // Array içindəki hər bir elementi ColumnOption formatına çeviririk
-      return column.options.map((opt: any) => {
+    if (Array.isArray(options)) {
+      return options.map((opt: any) => {
         if (typeof opt === 'string') {
           return { label: opt, value: opt };
         } else if (opt && typeof opt === 'object') {
@@ -46,9 +49,8 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
     }
     
     // Əgər options string formatındadırsa
-    if (typeof column.options === 'string') {
-      const optionsStr = column.options.trim();
-      console.log(`Column ${column.id} has string options:`, optionsStr);
+    if (typeof options === 'string') {
+      const optionsStr = options.trim();
       
       // Boş string-dirsə, boş massiv qaytarırıq
       if (!optionsStr) {
@@ -56,7 +58,6 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
       }
       
       // 1. Xüsusi format: {"label":"X","value":"x"},{"label":"Y","value":"y"}
-      // Bu format Supabase-də jsonb sahəsində tez-tez rast gəlinir
       if (optionsStr.includes('},{')) {
         try {
           // Əgər string [ ilə başlamırsa, onu array-ə çeviririk
@@ -66,55 +67,45 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
           }
           
           // JSON parse etməyə çalışırıq
-          try {
-            const parsedArray = JSON.parse(jsonStr);
-            if (Array.isArray(parsedArray) && parsedArray.length > 0) {
-              console.log(`Successfully parsed special format for column ${column.id}:`, parsedArray);
-              return parsedArray.map(item => ({
-                label: String(item.label || ''),
-                value: String(item.value || '')
-              }));
-            }
-          } catch (jsonError) {
-            console.warn(`JSON parse error for column ${column.id}:`, jsonError);
-            
-            // Əgər JSON parse işləmirsə, manual olaraq parçalayırıq
-            const items = optionsStr.split('},{').map(item => {
-              // İlk və son elementlər üçün xüsusi işləmə
-              let cleanItem = item;
-              if (item.startsWith('{') && !item.endsWith('}')) {
-                cleanItem = item + '}';
-              } else if (!item.startsWith('{') && item.endsWith('}')) {
-                cleanItem = '{' + item;
-              } else if (!item.startsWith('{') && !item.endsWith('}')) {
-                cleanItem = '{' + item + '}';
-              }
-              
-              try {
-                return JSON.parse(cleanItem);
-              } catch (e) {
-                console.warn(`Failed to parse item "${cleanItem}" for column ${column.id}:`, e);
-                return null;
-              }
-            }).filter(Boolean);
-            
-            if (items.length > 0) {
-              console.log(`Manually parsed ${items.length} items for column ${column.id}`);
-              return items.map(item => ({
-                label: String(item.label || ''),
-                value: String(item.value || '')
-              }));
-            }
+          const parsedArray = JSON.parse(jsonStr);
+          if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+            return parsedArray.map(item => ({
+              label: String(item.label || ''),
+              value: String(item.value || '')
+            }));
           }
-        } catch (e) {
-          console.error(`Failed to process special format for column ${column.id}:`, e);
+        } catch (jsonError) {
+          // Əgər JSON parse işləmirsə, manual olaraq parçalayırıq
+          const items = optionsStr.split('},{').map(item => {
+            // İlk və son elementlər üçün xüsusi işləmə
+            let cleanItem = item;
+            if (item.startsWith('{') && !item.endsWith('}')) {
+              cleanItem = item + '}';
+            } else if (!item.startsWith('{') && item.endsWith('}')) {
+              cleanItem = '{' + item;
+            } else if (!item.startsWith('{') && !item.endsWith('}')) {
+              cleanItem = '{' + item + '}';
+            }
+            
+            try {
+              return JSON.parse(cleanItem);
+            } catch (e) {
+              return null;
+            }
+          }).filter(Boolean);
+          
+          if (items.length > 0) {
+            return items.map(item => ({
+              label: String(item.label || ''),
+              value: String(item.value || '')
+            }));
+          }
         }
       }
       
       // 2. Normal JSON parse
       try {
         const parsedOptions = JSON.parse(optionsStr);
-        console.log(`Standard JSON parse result for column ${column.id}:`, parsedOptions);
         
         // Əgər array-dirsə
         if (Array.isArray(parsedOptions)) {
@@ -138,51 +129,102 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
           }));
         }
       } catch (e) {
-        console.warn(`Standard JSON parse failed for column ${column.id}:`, e);
+        // Əgər JSON parse alınmırsa, vergüllə ayrılmış siyahı kimi qəbul edirik
+        const commaOptions = optionsStr.split(',')
+          .map(opt => opt.trim())
+          .filter(opt => opt)
+          .map(opt => ({ label: opt, value: opt }));
+          
+        if (commaOptions.length > 0) {
+          return commaOptions;
+        }
       }
       
-      // 3. Əgər heç bir parse işləmirsə, string-i birbaşa istifadə edirik
+      // Əgər heç bir parse işləmirsə, string-i birbaşa istifadə edirik
       return [{ label: optionsStr, value: optionsStr }];
     }
     
     // Əgər options obyekt formatındadırsa (amma array deyilsə)
-    if (column.options && typeof column.options === 'object' && !Array.isArray(column.options)) {
-      console.log(`Column ${column.id} has object options:`, column.options);
-      
+    if (options && typeof options === 'object' && !Array.isArray(options)) {
       try {
-        return Object.entries(column.options).map(([key, value]) => ({
+        return Object.entries(options).map(([key, value]) => ({
           label: String(value),
           value: key
         }));
       } catch (e) {
-        console.warn(`Failed to process object options for column ${column.id}:`, e);
+        // Xəta halında boş massiv qaytarırıq
+        return [];
       }
     }
     
-    // Əgər heç bir format uyğun gəlmirsə, default options yaradaq
-    if (column.type === 'select') {
-      console.warn(`Using default options for column ${column.id} (${column.name})`);
+    // Xəta halında və ya digər hallarda boş massiv qaytarırıq
+    return [];
+  } catch (error) {
+    console.error(`Error processing options for column ${columnId} (${columnName}):`, error);
+    return [];
+  }
+};
+
+const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = false }) => {
+  const { t } = useLanguage();
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+  
+  // Sütun seçənəklərini dönüşdür
+  const options = React.useMemo(() => {
+    try {
+      // Əvvəlki xətaları təmizləyirik
+      setOptionsError(null);
+      
+      // Options sahəsini işləyirik
+      const processedOptions = processOptions(column.options, column.id, column.name);
+      
+      // Əgər options boşdursa və sütun tipi select-dirsə, xəta qeyd edirik
+      if (processedOptions.length === 0 && column.type === 'select') {
+        const errorMessage = `${column.name || column.id} sütunu üçün seçimlər tapılmadı`;
+        setOptionsError(errorMessage);
+        console.warn(errorMessage, {
+          columnId: column.id,
+          columnName: column.name,
+          options: column.options
+        });
+        
+        // Default seçimlər qaytarırıq
+        return [
+          { label: 'Seçim 1', value: 'option1' },
+          { label: 'Seçim 2', value: 'option2' },
+          { label: 'Seçim 3', value: 'option3' }
+        ];
+      }
+      
+      return processedOptions;
+    } catch (error) {
+      // Xəta halında xəta mesajını qeyd edirik
+      const errorMessage = `${column.name || column.id} sütunu üçün seçimləri işləyərkən xəta`;
+      setOptionsError(errorMessage);
+      console.error(errorMessage, error);
+      
+      // Default seçimlər qaytarırıq
       return [
         { label: 'Seçim 1', value: 'option1' },
         { label: 'Seçim 2', value: 'option2' },
         { label: 'Seçim 3', value: 'option3' }
       ];
     }
-    
-    // Xəta halında və ya digər hallarda boş massiv qaytarırıq
-    return [];
   }, [column.options, column.type, column.id, column.name]);
 
-  // Debug məqsədilə options-ları konsola yazdırırıq
-  React.useEffect(() => {
-    console.log(`Final options for column ${column.id} (${column.name}):`, {
-      original: column.options,
-      originalType: typeof column.options,
-      isArray: Array.isArray(column.options),
-      processed: options,
-      processedCount: options.length
-    });
-  }, [column.id, column.name, column.options, options]);
+  // Xəta halında istifadəçini məlumatlandırırıq
+  useEffect(() => {
+    if (optionsError) {
+      toast.error(t('optionsError'), {
+        description: optionsError,
+        duration: 5000,
+        id: `options-error-${column.id}`
+      });
+    }
+  }, [optionsError, column.id, t]);
+
+  const hasOptions = options.length > 0;
+  const hasError = !!optionsError;
 
   return (
     <FormField
@@ -190,37 +232,51 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
       name={`fields.${column.id}`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>
-            {column.name}
-            {column.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value ? String(field.value) : undefined}
-            disabled={disabled || options.length === 0}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={column.placeholder || 'Seçin...'} />
+          <div className="flex items-center gap-2">
+            <FormLabel>
+              {column.name}
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            {hasError && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{optionsError || t('optionsLoadError')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+          <FormControl>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value ? String(field.value) : undefined}
+              disabled={disabled}
+            >
+              <SelectTrigger className={hasError ? "border-amber-300" : ""}>
+                <SelectValue placeholder={column.placeholder || t('selectPlaceholder')} />
               </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {options.length > 0 ? (
-                options.map((option, index) => (
-                  <SelectItem 
-                    key={`${option.value}-${index}`} 
-                    value={String(option.value || `option-${index}`)}
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no_options" disabled>
-                  Seçim variantları mövcud deyil
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                {hasOptions ? (
+                  options.map((option, index) => (
+                    <SelectItem key={`${option.value}-${index}`} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))
+                ) : (
+                  // Əgər seçimlər yoxdursa, default seçimlər göstəririk
+                  <>
+                    <SelectItem value="option1">Seçim 1</SelectItem>
+                    <SelectItem value="option2">Seçim 2</SelectItem>
+                    <SelectItem value="option3">Seçim 3</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </FormControl>
           {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
           <FormMessage />
         </FormItem>

@@ -1,10 +1,42 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, createRealTimeChannel } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth/useAuth';
+
+// JSON sahələrini parse etmək üçün köməkçi funksiya
+const parseJsonField = (value: any): any => {
+  if (!value) return null;
+  
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      // Xüsusi format: {"label":"X","value":"x"},{"label":"Y","value":"y"}
+      if (value.includes('},{')) {
+        try {
+          const jsonStr = value.startsWith('[') ? value : `[${value}]`;
+          return JSON.parse(jsonStr);
+        } catch (err) {
+          console.warn('Xüsusi formatı parse etmək alınmadı');
+        }
+      }
+      
+      // Vergüllə ayrılmış siyahı
+      if (value.includes(',')) {
+        return value.split(',')
+          .map(item => item.trim())
+          .filter(Boolean)
+          .map(item => ({ label: item, value: item }));
+      }
+      
+      return value;
+    }
+  }
+  
+  return value;
+};
 
 export const useCategoryData = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
@@ -54,11 +86,21 @@ export const useCategoryData = (schoolId?: string) => {
 
       console.log(`${columnsData?.length || 0} sütun tapıldı`);
 
+      // Sütunları işləyirik - options və validation sahələrini parse edirik
+      const processedColumnsData = columnsData?.map(column => {
+        // Options və validation sahələrini parse edirik
+        return {
+          ...column,
+          options: parseJsonField(column.options),
+          validation: parseJsonField(column.validation)
+        };
+      }) || [];
+
       // Kateqoriyaları və sütunları birləşdiririk
       const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         return {
           ...category,
-          columns: columnsData?.filter(column => column.category_id === category.id) || []
+          columns: processedColumnsData?.filter(column => column.category_id === category.id) || []
         };
       });
 
@@ -200,7 +242,7 @@ export const useCategoryData = (schoolId?: string) => {
     categories,
     loading,
     error,
-    getCategoryById,
-    refreshCategories
+    refreshCategories,
+    getCategoryById
   };
 };
