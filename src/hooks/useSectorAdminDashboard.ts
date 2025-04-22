@@ -57,24 +57,19 @@ export const useSectorAdminDashboard = () => {
     try {
       setDashboardData(prev => ({ ...prev, isLoading: true, error: null }));
       
-      // Cari sessiya məlumatlarını alırıq
       const { data: sessionData } = await supabase.auth.getSession();
-      console.log('Session data:', sessionData);
-      console.log('Access token:', sessionData?.session?.access_token);
+      
       if (!sessionData?.session?.access_token) {
-          console.error('No access token available');
         throw new Error('Authentication token is missing');
       }
 
       const { data, error } = await supabase.functions.invoke('get-sector-dashboard-data', {
         headers: {
-          Authorization: `Bearer ${sessionData?.session?.access_token}`
+          Authorization: `Bearer ${sessionData.session.access_token}`
         }
       });
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       if (data) {
         setDashboardData({
@@ -93,7 +88,7 @@ export const useSectorAdminDashboard = () => {
       setDashboardData(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Dashboard məlumatları alınarkən xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.'
+        error: 'Dashboard məlumatları alınarkən xəta baş verdi'
       }));
       
       toast({
@@ -103,7 +98,7 @@ export const useSectorAdminDashboard = () => {
       });
     }
   }, [user, t, toast]);
-  
+
   const approveEntries = async (schoolId: string, categoryId: string, entryIds: string[]) => {
     try {
       const { data, error } = await supabase.functions.invoke('bulk-approve-entries', {
@@ -221,7 +216,7 @@ export const useSectorAdminDashboard = () => {
       fetchDashboardData();
     }
   }, [user, fetchDashboardData]);
-  
+
   // Real-time yeniləmələri dinləyirik
   useEffect(() => {
     if (!user) return;

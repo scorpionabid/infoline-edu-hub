@@ -4,7 +4,6 @@ import { ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 
-// Test wrapper funksiyası
 const renderWithProviders = (ui: ReactElement) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -23,7 +22,6 @@ const renderWithProviders = (ui: ReactElement) => {
   );
 };
 
-// Supabase Integration Tests üçün boş test blokları
 describe('Supabase Integration Tests', () => {
   it('should handle authentication correctly', () => {
     // Test implementations will go here
