@@ -1,22 +1,12 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { AlertCircle, CalendarIcon, CheckCircle2, Clock, Save, SendHorizonal, XCircle } from 'lucide-react';
 import { CategoryWithColumns } from '@/types/column';
+import { CalendarIcon, CheckCircle2, Circle, Clock, Loader2, Save, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { format } from 'date-fns';
+import { useLanguage } from '@/context/LanguageContext';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
@@ -25,10 +15,6 @@ interface CategoryFormProps {
   isModified: boolean;
   onSave: () => void;
   onSubmit: () => void;
-  completionPercentage?: number;
-  status?: string;
-  lastUpdated?: string;
-  rejectionReason?: string;
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({
@@ -37,181 +23,177 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   isSubmitting,
   isModified,
   onSave,
-  onSubmit,
-  completionPercentage = 0,
-  status = 'draft',
-  lastUpdated,
-  rejectionReason
+  onSubmit
 }) => {
   const { t } = useLanguage();
-
+  
+  // Kateqoriya statusunu hesablayır
   const getStatusBadge = () => {
-    switch(status) {
-      case 'approved':
-        return (
-          <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
-            <CheckCircle2 className="w-3 h-3 mr-1" />
-            {t('approved')}
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
-            <Clock className="w-3 h-3 mr-1" />
-            {t('pendingApproval')}
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge variant="outline" className="ml-2 bg-red-50 text-red-700 border-red-200">
-            <XCircle className="w-3 h-3 mr-1" />
-            {t('rejected')}
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="ml-2 bg-gray-50 text-gray-700 border-gray-200">
-            {t('draft')}
-          </Badge>
-        );
-    }
+    const status = category.status || 'draft';
+    
+    const colors = {
+      draft: "bg-yellow-500 text-white",
+      pending: "bg-blue-500 text-white",
+      approved: "bg-green-500 text-white",
+      rejected: "bg-red-500 text-white",
+      partial: "bg-orange-500 text-white"
+    };
+    
+    const icons = {
+      draft: <Circle className="h-3 w-3 mr-1" />,
+      pending: <Clock className="h-3 w-3 mr-1" />,
+      approved: <CheckCircle2 className="h-3 w-3 mr-1" />,
+      rejected: <Circle className="h-3 w-3 mr-1" />,
+      partial: <Circle className="h-3 w-3 mr-1" />
+    };
+    
+    const colorClass = colors[status as keyof typeof colors] || colors.draft;
+    const icon = icons[status as keyof typeof icons] || icons.draft;
+    
+    return (
+      <Badge className={`${colorClass} flex items-center`}>
+        {icon}
+        {t(status)}
+      </Badge>
+    );
   };
-
-  const getDeadlineStatus = () => {
+  
+  // Təyin edilmiş son tarixi göstərir
+  const getDeadlineBadge = () => {
     if (!category.deadline) return null;
     
-    const deadlineDate = new Date(category.deadline);
-    const today = new Date();
-    const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const deadline = new Date(category.deadline);
+    const now = new Date();
+    const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (daysLeft < 0) {
-      return (
-        <Alert className="bg-red-50 border-red-200">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-700">
-            {t('deadlinePassed')}: {format(deadlineDate, 'dd.MM.yyyy')}
-          </AlertDescription>
-        </Alert>
-      );
-    } else if (daysLeft <= 3) {
-      return (
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-700">
-            {t('deadlineApproaching')}: {format(deadlineDate, 'dd.MM.yyyy')} ({daysLeft} {t('daysLeft')})
-          </AlertDescription>
-        </Alert>
-      );
-    } else {
-      return (
-        <Alert className="bg-blue-50 border-blue-200">
-          <CalendarIcon className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
-            {t('deadline')}: {format(deadlineDate, 'dd.MM.yyyy')} ({daysLeft} {t('daysLeft')})
-          </AlertDescription>
-        </Alert>
-      );
+    let colorClass = "bg-green-100 text-green-800";
+    if (diffDays < 0) {
+      colorClass = "bg-red-100 text-red-800";
+    } else if (diffDays < 3) {
+      colorClass = "bg-yellow-100 text-yellow-800";
     }
+    
+    return (
+      <Badge variant="outline" className={`flex items-center ${colorClass}`}>
+        <CalendarIcon className="h-3 w-3 mr-1" />
+        {deadline.toLocaleDateString()} 
+        {diffDays < 0 
+          ? ` (${t('overdue')})` 
+          : diffDays < 3 
+            ? ` (${diffDays} ${t('daysLeft')})` 
+            : ''
+        }
+      </Badge>
+    );
   };
 
+  // Düymələrin əlçatan olub-olmadığını müəyyən edir
+  const canSubmit = !isSaving && !isSubmitting;
+  const canSave = !isSaving && !isSubmitting && isModified;
+  
+  // Düymələr üçün tooltip mesajlarını müəyyən edir
+  const getSubmitTooltip = () => {
+    if (isSubmitting) return t('submitting');
+    if (category.status === 'approved') return t('alreadyApproved');
+    if (category.status === 'pending') return t('alreadySubmitted');
+    return '';
+  };
+  
+  const getSaveTooltip = () => {
+    if (isSaving) return t('saving');
+    if (!isModified) return t('noChangesToSave');
+    return '';
+  };
+
+  // Tamamlanma faizini hesablayır
+  const completionPercentage = category.completionPercentage || 0;
+
   return (
-    <Card className="border-t-4 border-t-primary">
+    <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-xl font-semibold flex items-center">
-              {category.name}
-              {getStatusBadge()}
-            </CardTitle>
+            <CardTitle className="text-xl font-bold">{category.name}</CardTitle>
             {category.description && (
-              <CardDescription className="mt-1">
-                {category.description}
-              </CardDescription>
+              <CardDescription className="mt-1">{category.description}</CardDescription>
             )}
+          </div>
+          <div className="flex items-center gap-2">
+            {getStatusBadge()}
+            {getDeadlineBadge()}
           </div>
         </div>
       </CardHeader>
       
-      <CardContent>
-        <div className="space-y-4">
-          {getDeadlineStatus()}
-          
-          {status === 'rejected' && rejectionReason && (
-            <Alert className="bg-red-50 border-red-200">
-              <XCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-700">
-                <strong>{t('rejectionReason')}:</strong> {rejectionReason}
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="flex flex-col space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">{t('completionRate')}</span>
-              <span className="text-sm font-medium">{completionPercentage}%</span>
-            </div>
-            <Progress value={completionPercentage} className="h-2" />
+      <CardContent className="pb-2">
+        <div className="flex flex-col space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">
+              {t('categoryCompletion')}: {completionPercentage}%
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {category.columns.length} {t('columns')}
+            </span>
           </div>
-          
-          {lastUpdated && (
-            <div className="text-xs text-muted-foreground">
-              {t('lastUpdated')}: {lastUpdated}
-            </div>
-          )}
+          <Progress value={completionPercentage} className="h-2" />
         </div>
       </CardContent>
       
-      <CardFooter className="border-t pt-4 flex justify-between">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onSave}
-                  disabled={isSaving || isSubmitting || !isModified || status === 'approved'}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSaving ? t('saving') : t('saveDraft')}
-                </Button>
-              </div>
-            </TooltipTrigger>
-            {status === 'approved' && (
-              <TooltipContent>
-                <p>{t('cannotEditApprovedData')}</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+      <CardFooter className="flex justify-between pt-4">
+        <div className="text-sm text-muted-foreground">
+          {category.status === 'pending' && (
+            <span>{t('pendingApproval')}</span>
+          )}
+          {category.status === 'approved' && (
+            <span>{t('approved')}</span>
+          )}
+          {category.status === 'rejected' && (
+            <span>{t('rejected')}</span>
+          )}
+        </div>
         
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={onSubmit}
-                  disabled={isSaving || isSubmitting || completionPercentage < 100 || status === 'approved' || status === 'pending'}
-                >
-                  <SendHorizonal className="mr-2 h-4 w-4" />
-                  {isSubmitting ? t('submitting') : t('submitForApproval')}
-                </Button>
-              </div>
-            </TooltipTrigger>
-            {completionPercentage < 100 && (
-              <TooltipContent>
-                <p>{t('completeAllFieldsFirst')}</p>
-              </TooltipContent>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSave}
+            disabled={!canSave}
+            title={getSaveTooltip()}
+            className="w-24"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                {t('saving')}
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-3 w-3" />
+                {t('saveDraft')}
+              </>
             )}
-            {(status === 'approved' || status === 'pending') && (
-              <TooltipContent>
-                <p>{status === 'approved' ? t('alreadyApproved') : t('alreadySubmitted')}</p>
-              </TooltipContent>
+          </Button>
+          
+          <Button
+            size="sm"
+            onClick={onSubmit}
+            disabled={!canSubmit || category.status === 'approved' || category.status === 'pending'}
+            title={getSubmitTooltip()}
+            className="w-24"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                {t('submitting')}
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-3 w-3" />
+                {t('submit')}
+              </>
             )}
-          </Tooltip>
-        </TooltipProvider>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

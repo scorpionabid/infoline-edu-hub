@@ -1,57 +1,55 @@
 
-import { CategoryWithColumns } from './category';
+export interface DataEntry {
+  id?: string;
+  category_id: string;
+  column_id: string;
+  school_id: string;
+  value: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejected_at?: string;
+  rejection_reason?: string;
+}
+
+export interface EntryValue {
+  column_id: string;
+  value: string;
+}
+
+export interface Errors {
+  [key: string]: string;
+}
 
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
   SAVING = 'saving',
   SAVED = 'saved',
-  ERROR = 'error',
-  SUBMITTING = 'submitting',
-  SUBMITTED = 'submitted'
+  ERROR = 'error'
 }
 
-export interface DataEntry {
-  id?: string;
-  column_id: string;
-  category_id: string;
-  school_id: string;
-  value: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  approved_at?: string;
-  approved_by?: string;
-  rejected_at?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
-}
-
-export interface DataEntryForm {
+export interface GetDataEntriesResponse {
   entries: DataEntry[];
-  isModified: boolean;
-  saveStatus: DataEntrySaveStatus;
+  loading: boolean;
   error: string | null;
-  schoolId?: string;
-  categoryId?: string;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected';
-  submittedAt?: string;
-  lastSaved?: string;
-  completionPercentage?: number;
 }
 
-export interface CategoryEntryData {
-  category: CategoryWithColumns;
+export interface DataEntryFormData {
+  schoolId: string;
+  categoryId: string;
   entries: DataEntry[];
-  completionPercentage?: number;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
 }
 
-export interface EntryValue {
-  [columnId: string]: string | number | boolean | string[] | null;
-}
-
-export interface ColumnValidationError {
-  columnId: string;
-  message: string;
-  columnName?: string;
+export interface DataEntryStats {
+  total: number;
+  draft: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  completion_percentage: number;
 }

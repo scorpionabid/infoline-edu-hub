@@ -162,11 +162,16 @@ export default {
   // Statistika
   tryAgain: 'Yenidən cəhd edin',
   error: 'Xəta',
+  errorLoadingData: 'Məlumatları yükləyərkən xəta baş verdi',
+  columns: 'Sütunlar',
+  noChangesToSave: 'Saxlanılacaq dəyişiklik yoxdur',
+  
+  // İstifadəçi rolları
+  unknownUserRole: 'Naməlum istifadəçi rolu',
   
   // Ümumi şablonlar
   submittedBy: '{name} tərəfindən təqdim edilib',
   lastUpdated: 'Son yenilənmə: {date}',
   itemsCount: '{count} element',
-  percentComplete: '{percent}% tamamlanıb',
-  daysLeft: '{days} gün qalıb'
+  percentComplete: '{percent}% tamamlanıb'
 };

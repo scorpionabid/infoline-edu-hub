@@ -4,7 +4,7 @@ import { DataEntry } from './dataEntry';
 export interface Column {
   id: string;
   name: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'date' | 'checkbox' | 'radio' | 'file' | 'image' | 'email' | 'url' | 'phone' | 'range' | 'color' | 'password' | 'time' | 'datetime' | 'richtext';
+  type: ColumnType;
   category_id: string;
   is_required: boolean;
   order_index: number;

@@ -75,23 +75,26 @@ describe('Supabase Integration', () => {
     expect(response).toEqual(mockResponse);
   });
 
-  // Test data operations
+  // Test data operations - moc data üçün moc cədvəl adı üçün xüsusi test
   it('should insert data', async () => {
     const mockData = { id: '123', name: 'Test' };
     const mockResponse = { data: mockData, error: null };
     
+    // from metodu üçün xüsusi mock
     (supabase.from as any).mockReturnValue({
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue(mockResponse)
       })
     });
     
+    // Bu test üçün faktiki Supabase sorğusunu simulyasiya edirik
+    // data_entries cədvəlindən istifadə edirik
     const response = await supabase
-      .from('test_table')
+      .from('data_entries')
       .insert(mockData)
       .select();
     
-    expect(supabase.from).toHaveBeenCalledWith('test_table');
+    expect(supabase.from).toHaveBeenCalledWith('data_entries');
     expect(response).toEqual(mockResponse);
   });
 });

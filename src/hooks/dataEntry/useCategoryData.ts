@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, createRealTimeChannel } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -17,6 +17,7 @@ export const useCategoryData = (schoolId?: string) => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Kateqoriyalar yüklənir...');
 
       // Kateqoriyaları əldə edirik
       const { data: categoriesData, error: categoriesError } = await supabase
@@ -25,7 +26,18 @@ export const useCategoryData = (schoolId?: string) => {
         .eq('status', 'active')
         .order('priority', { ascending: true });
 
-      if (categoriesError) throw categoriesError;
+      if (categoriesError) {
+        console.error('Kateqoriyaları əldə edərkən xəta:', categoriesError);
+        throw categoriesError;
+      }
+
+      console.log(`${categoriesData?.length || 0} kateqoriya tapıldı`);
+
+      if (!categoriesData || categoriesData.length === 0) {
+        setCategories([]);
+        setLoading(false);
+        return;
+      }
 
       // Kateqoriyalar üçün sütunları əldə edirik
       const { data: columnsData, error: columnsError } = await supabase
@@ -35,13 +47,18 @@ export const useCategoryData = (schoolId?: string) => {
         .eq('status', 'active')
         .order('order_index', { ascending: true });
 
-      if (columnsError) throw columnsError;
+      if (columnsError) {
+        console.error('Sütunları əldə edərkən xəta:', columnsError);
+        throw columnsError;
+      }
+
+      console.log(`${columnsData?.length || 0} sütun tapıldı`);
 
       // Kateqoriyaları və sütunları birləşdiririk
       const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         return {
           ...category,
-          columns: columnsData.filter(column => column.category_id === category.id) || []
+          columns: columnsData?.filter(column => column.category_id === category.id) || []
         };
       });
 
@@ -64,6 +81,8 @@ export const useCategoryData = (schoolId?: string) => {
 
   const fetchDataEntries = async (schoolId: string, categoriesWithColumns: CategoryWithColumns[]) => {
     try {
+      console.log(`${schoolId} üçün məlumatlar yüklənir...`);
+      
       // Verilmiş məktəb üçün bütün data entries-ləri əldə edirik
       const { data: entriesData, error: entriesError } = await supabase
         .from('data_entries')
@@ -71,12 +90,20 @@ export const useCategoryData = (schoolId?: string) => {
         .eq('school_id', schoolId)
         .is('deleted_at', null);
 
-      if (entriesError) throw entriesError;
+      if (entriesError) {
+        console.error('Məlumatları əldə edərkən xəta:', entriesError);
+        throw entriesError;
+      }
+
+      console.log(`${entriesData?.length || 0} məlumat tapıldı`);
 
       // Məlumatları kateqoriyalara əlavə edirik
       const updatedCategories = categoriesWithColumns.map(category => {
-        const categoryEntries = entriesData.filter(entry => entry.category_id === category.id);
-        const completionCount = categoryEntries.length;
+        const categoryEntries = entriesData?.filter(entry => entry.category_id === category.id) || [];
+        const completionCount = category.columns.filter(col => 
+          categoryEntries.some(entry => entry.column_id === col.id)
+        ).length;
+        
         const totalFields = category.columns.length;
         const completionPercentage = totalFields > 0 ? Math.round((completionCount / totalFields) * 100) : 0;
 
@@ -115,56 +142,48 @@ export const useCategoryData = (schoolId?: string) => {
 
   // Real-time yeniləmələri dinləyirik
   useEffect(() => {
+    console.log('Real-time kanalları abunə olunur...');
     fetchCategories();
 
     // Real-time subscriptions
-    const categoriesSubscription = supabase
-      .channel('categories-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'categories'
-      }, () => {
-        console.log('Kateqoriyalar yeniləndi');
-        fetchCategories();
-      })
-      .subscribe();
+    const categoriesChannel = createRealTimeChannel(
+      'categories-changes',
+      'categories',
+      '*'
+    ).subscribe((payload) => {
+      console.log('Kateqoriyalar yeniləndi:', payload);
+      fetchCategories();
+    });
 
-    const columnsSubscription = supabase
-      .channel('columns-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'columns'
-      }, () => {
-        console.log('Sütunlar yeniləndi');
-        fetchCategories();
-      })
-      .subscribe();
+    const columnsChannel = createRealTimeChannel(
+      'columns-changes',
+      'columns',
+      '*'
+    ).subscribe((payload) => {
+      console.log('Sütunlar yeniləndi:', payload);
+      fetchCategories();
+    });
 
     // Əgər məktəb ID-si varsa, məlumat dəyişikliklərini də dinləyirik
-    let entriesSubscription: any;
+    let entriesChannel: any;
     if (schoolId) {
-      entriesSubscription = supabase
-        .channel('entries-changes')
-        .on('postgres_changes', { 
-          event: '*', 
-          schema: 'public', 
-          table: 'data_entries',
-          filter: `school_id=eq.${schoolId}`
-        }, () => {
-          console.log('Məlumatlar yeniləndi');
-          fetchCategories();
-        })
-        .subscribe();
+      entriesChannel = createRealTimeChannel(
+        'entries-changes',
+        'data_entries',
+        '*',
+        `school_id=eq.${schoolId}`
+      ).subscribe((payload) => {
+        console.log('Məlumatlar yeniləndi:', payload);
+        fetchCategories();
+      });
     }
 
     // Cleanup function
     return () => {
-      categoriesSubscription.unsubscribe();
-      columnsSubscription.unsubscribe();
-      if (entriesSubscription) {
-        entriesSubscription.unsubscribe();
+      supabase.removeChannel(categoriesChannel);
+      supabase.removeChannel(columnsChannel);
+      if (entriesChannel) {
+        supabase.removeChannel(entriesChannel);
       }
     };
   }, [fetchCategories, schoolId, user?.id]);
