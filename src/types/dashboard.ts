@@ -146,6 +146,7 @@ export interface SuperAdminDashboardData {
   pendingApprovals: PendingItem[];
   regions: RegionStats[];
   notifications: DashboardNotification[];
+  categories?: CategoryStat[];
   users?: number;
   schools?: number;
 }

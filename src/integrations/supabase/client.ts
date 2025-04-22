@@ -5,7 +5,26 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://olbfnauhzpdskqnxtwav.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4";
 
+// Supabase service role key - yalnız server-side istifadə üçündür!
+// Bu açar client-side kodda istifadə edilməməlidir!
+// Təhlükəsizlik üçün bu açarı environment variable kimi saxlamaq lazımdır
+// Browser-də process.env mövcud olmadığı üçün boş string istifadə edirik
+// Həqiqi layihədə bu açar server-side kodda təyin edilməlidir
+// const SUPABASE_SERVICE_ROLE_KEY = typeof window === 'undefined' && typeof process !== 'undefined' 
+//   ? (process.env.SUPABASE_SERVICE_ROLE_KEY || "") 
+//   : "";
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Normal client (anonim açar ilə)
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Admin client (service role key ilə) - yalnız server-side istifadə üçün
+// Bu client-i yalnız Edge Functions və ya server-side kodda istifadə edin
+// export const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: {
+//     autoRefreshToken: false,
+//     persistSession: false
+//   }
+// });

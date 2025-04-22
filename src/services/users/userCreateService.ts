@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CreateUserData, FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
@@ -11,71 +10,116 @@ export const createUser = async (userData: CreateUserData): Promise<FullUserData
     // Əvvəlki məlumatları saxlayaq audit üçün
     const oldData = null;
     
-    // Supabase admin funksiyasını simulyasiya edirik
-    // Həqiqi layihədə bu Edge Function vasitəsilə yerinə yetirilməlidir
-    const mockUserId = `${Math.random().toString(36).substring(2, 15)}`;
+    // Cari istifadəçinin JWT token-ini əldə edirik
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    // İstifadəçi yaratdıqdan sonra profil və rol dataları avtomatik trigger ilə yaradılacaq
-    // Bu yalnız demo məqsədilə profil və rolu manual yaratmaq üçündür
+    if (sessionError) {
+      console.error('Sessiya əldə edilərkən xəta:', sessionError);
+      throw new Error(`İstifadəçi yaradıla bilmədi: ${sessionError.message}`);
+    }
     
-    // Profil yarat
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: mockUserId,
+    if (!session) {
+      throw new Error('İstifadəçi yaradıla bilmədi: Sessiya tapılmadı');
+    }
+    
+    // Supabase client vasitəsilə birbaşa istifadəçi yaradırıq
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password,
+      email_confirm: true,
+      user_metadata: {
         full_name: userData.full_name,
         phone: userData.phone,
         position: userData.position,
         language: userData.language || 'az',
-        avatar: userData.avatar,
+        role: userData.role,
+        status: userData.status || 'active'
+      }
+    });
+    
+    if (authError) {
+      console.error('İstifadəçi yaradılarkən xəta:', authError);
+      throw new Error(`İstifadəçi yaradıla bilmədi: ${authError.message}`);
+    }
+    
+    if (!authData || !authData.user) {
+      throw new Error('İstifadəçi yaradıla bilmədi: Serverdən cavab alınmadı');
+    }
+    
+    const userId = authData.user.id;
+    
+    // Profil məlumatlarını əlavə edirik
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        full_name: userData.full_name,
+        phone: userData.phone,
+        position: userData.position,
+        language: userData.language || 'az',
         status: (userData.status || 'active') as 'active' | 'inactive' | 'blocked'
       });
     
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Profil yaradılarkən xəta:', profileError);
+      // Profil yaradılmasa da, istifadəçi yaradıldığı üçün xəta atılmır
+      // sadəcə log edilir
+    }
     
-    // Rol yarat - rolu any kimi cast edirik ki, tipi dəyişdirilə bilsin
+    // Rol məlumatlarını əlavə edirik
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
-        user_id: mockUserId,
+        user_id: userId,
         role: userData.role as any,
         region_id: userData.region_id,
         sector_id: userData.sector_id,
         school_id: userData.school_id
       });
     
-    if (roleError) throw roleError;
+    if (roleError) {
+      console.error('Rol yaradılarkən xəta:', roleError);
+      // Rol yaradılmasa da, istifadəçi yaradıldığı üçün xəta atılmır
+      // sadəcə log edilir
+    }
+    
+    // Region admin təyin etmək (əgər regionadmin rolu seçilibsə)
+    if (userData.role === 'regionadmin' && userData.region_id) {
+      const { error: regionUpdateError } = await supabase
+        .from('regions')
+        .update({ admin_id: userId })
+        .eq('id', userData.region_id);
+        
+      if (regionUpdateError) {
+        console.error('Region admin təyin edilərkən xəta:', regionUpdateError);
+        // Bu xəta istifadəçi yaratmağa mane olmamalıdır, sadəcə log edilir
+      }
+    }
     
     // Yeni yaradılmış istifadəçini əldə et
-    const newUser = await getUser(mockUserId);
+    const newUser = await getUser(userId);
+    
+    if (!newUser) {
+      throw new Error('İstifadəçi yaradıldı, lakin məlumatları əldə edilə bilmədi');
+    }
     
     // Audit log əlavə et
     await addAuditLog(
       'create',
       'user',
-      mockUserId,
+      newUser.id,
       oldData,
-      {
-        full_name: userData.full_name,
-        role: userData.role,
-        region_id: userData.region_id,
-        sector_id: userData.sector_id,
-        school_id: userData.school_id
-      }
+      newUser
     );
     
     toast.success('İstifadəçi uğurla yaradıldı', {
-      description: `${userData.full_name} adlı istifadəçi yaradıldı`
+      description: `${userData.full_name} (${userData.email}) istifadəçisi yaradıldı`
     });
     
     return newUser;
   } catch (error: any) {
-    console.error('İstifadəçi yaradarkən xəta baş verdi:', error);
-    
-    toast.error('İstifadəçi yaradılarkən xəta baş verdi', {
-      description: error.message
-    });
-    
+    console.error('İstifadəçi yaradılarkən xəta:', error);
+    toast.error(`İstifadəçi yaradıla bilmədi: ${error.message}`);
     return null;
   }
 };

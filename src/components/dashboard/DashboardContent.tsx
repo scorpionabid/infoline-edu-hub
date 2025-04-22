@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -55,7 +54,13 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     try {
       switch (normalizedRole) {
         case 'superadmin':
-          return <SuperAdminDashboard data={dashboardData || {}} />;
+          return <SuperAdminDashboard 
+            data={dashboardData || null} 
+            onRefresh={() => {
+              toast.info(t('refreshingDashboard'));
+              window.location.reload();
+            }}
+          />;
         case 'regionadmin':
           return <RegionAdminDashboard data={dashboardData || {}} />;
         case 'sectoradmin':
