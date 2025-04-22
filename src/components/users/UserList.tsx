@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { MoreHorizontal, Search, Filter } from 'lucide-react';
+import { MoreHorizontal, Search, Filter, X } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserRole } from '@/types/supabase';
 import { User, FullUserData } from '@/types/user';
@@ -154,55 +154,35 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
+  // Axtarışı təmizlə
+  const clearSearch = () => {
+    setSearchQuery('');
+    updateFilter({ ...filter, search: '' });
+  };
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>{t('usersList')}</CardTitle>
-          <CardDescription>{t('manageUsers')}</CardDescription>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('searchUsers')}
-              className="pl-8 w-[250px]"
-              value={searchQuery}
-              onChange={handleSearchChange}
+      <div className="px-4 pt-4">
+        {showFilters && (
+          <div className="pb-2">
+            <UserFilters 
+              currentFilters={filter} 
+              onApplyFilters={handleApplyFilters} 
+              onResetFilters={handleResetFilters}
             />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            {t('filter')}
-          </Button>
-        </div>
-      </CardHeader>
+        )}
       
-      {showFilters && (
-        <CardContent>
-          <UserFilters 
-            currentFilters={filter} 
-            onApplyFilters={handleApplyFilters} 
-            onResetFilters={handleResetFilters}
-          />
-        </CardContent>
-      )}
-      
-      <CardContent>
         {loading ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-5">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-red-500">
+          <div className="text-center py-5 text-red-500">
             {error}
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-5 text-muted-foreground">
             {t('noUsersFound')}
           </div>
         ) : (
@@ -265,31 +245,38 @@ const UserList: React.FC<UserListProps> = ({
             </Table>
           </div>
         )}
-        
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
-        )}
-      </CardContent>
+      </div>
       
-      <DeleteUserDialog 
+      {!loading && users.length > 0 && (
+        <CardFooter className="py-4 flex justify-between items-center">
+          <div className="text-sm text-muted-foreground">
+            {t('showingResults', { from: (currentPage - 1) * 10 + 1, to: Math.min(currentPage * 10, totalCount), total: totalCount })}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </CardFooter>
+      )}
+
+      {/* İstifadəçi silmə dialoqu */}
+      <DeleteUserDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteUser}
         userName={selectedUser?.fullName || selectedUser?.email || ''}
       />
-      
-      <EditUserDialog 
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        onComplete={handleEditComplete}
-        user={selectedUser}
-      />
+
+      {/* İstifadəçi redaktə dialoqu */}
+      {selectedUser && (
+        <EditUserDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          onComplete={handleEditComplete}
+          user={selectedUser}
+        />
+      )}
     </Card>
   );
 };
