@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EnhancedApprovalDialog } from '@/components/ui/enhanced-approval-dialog';
 
 const SectorAdminDashboard: React.FC = () => {
   const { t } = useLanguage();
@@ -295,70 +296,42 @@ const SectorAdminDashboard: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>
-              {entryDetails?.category?.name} - {entryDetails?.school?.name}
-            </DialogTitle>
-            <DialogDescription>
-              {t('approvalDetailsDescription')}
-            </DialogDescription>
-          </DialogHeader>
-
-          {isEntryDetailsLoading ? (
-            <div className="py-4">
-              <Skeleton className="h-8 w-full mb-2" />
-              <Skeleton className="h-8 w-full mb-2" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ) : (
-            <ScrollArea className="max-h-[60vh]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('field')}</TableHead>
-                    <TableHead>{t('value')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {entryDetails?.entries?.map((entry: any) => (
-                    <TableRow key={entry.columnId}>
-                      <TableCell className="font-medium">{entry.columnName}</TableCell>
-                      <TableCell>{entry.value || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          )}
-
-          <DialogFooter className="flex space-x-2">
-            <div className="flex-1">
-              {selectedApproval && (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    placeholder={t('rejectionReason')}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                  />
-                  <Button variant="destructive" onClick={handleReject} disabled={!rejectionReason}>
-                    {t('reject')}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleApprove}>
-              {t('approve')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedApproval && entryDetails && (
+        <EnhancedApprovalDialog
+          open={isDetailsOpen}
+          onOpenChange={setIsDetailsOpen}
+          schoolName={selectedApproval.schoolName}
+          categoryName={selectedApproval.categoryName}
+          data={entryDetails.entries || []}
+          isProcessing={isEntryDetailsLoading}
+          currentStatus={selectedApproval.status}
+          onApprove={async () => {
+            const result = await approveEntries(
+              selectedApproval.schoolId,
+              selectedApproval.categoryId,
+              [selectedApproval.id]
+            );
+            if (result.success) {
+              setIsDetailsOpen(false);
+              setSelectedApproval(null);
+              refreshData();
+            }
+          }}
+          onReject={async (reason) => {
+            const result = await rejectEntries(
+              selectedApproval.schoolId,
+              selectedApproval.categoryId,
+              [selectedApproval.id],
+              reason
+            );
+            if (result.success) {
+              setIsDetailsOpen(false);
+              setSelectedApproval(null);
+              refreshData();
+            }
+          }}
+        />
+      )}
     </>
   );
 };
