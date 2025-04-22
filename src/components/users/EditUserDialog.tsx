@@ -53,30 +53,83 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
 
   // İstifadəçini yenilə
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || !user.id) {
+      console.error('User ID is missing');
+      toast.error(t('errorUpdatingUser'));
+      return;
+    }
+    
+    console.log('Updating user with ID:', user.id);
     
     setLoading(true);
     try {
-      // İstifadəçi məlumatlarını yenilə
-      const { error } = await supabase
-        .from('users')
+      // 1. Profil məlumatlarını yenilə
+      const { error: profileError } = await supabase
+        .from('profiles')
         .update({
           full_name: formData.fullName,
-          email: formData.email,
-          role: formData.role,
-          region_id: formData.regionId,
-          sector_id: formData.sectorId,
-          school_id: formData.schoolId,
-          status: formData.status,
-          phone: formData.phone,
-          position: formData.position,
-          language: formData.language,
-          updated_at: new Date().toISOString()
+          phone: formData.phone || null,
+          // Yalnız profiles cədvəlində olan sütunlar
         })
         .eq('id', user.id);
+    
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        throw profileError;
+      }
       
-      if (error) throw error;
+      console.log('Profile updated successfully');
+    
+      // 2. Əvvəlcə user_roles cədvəlində istifadəçinin olub-olmadığını yoxla
+      const { data: existingRole, error: checkError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
       
+      console.log('Existing role check:', existingRole, checkError);
+
+      if (checkError || !existingRole) {
+        // İstifadəçi user_roles cədvəlində yoxdursa, yeni yazı əlavə et
+        console.log('User role not found, inserting new role');
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: user.id,
+            role: formData.role,
+            region_id: formData.regionId || null,
+            sector_id: formData.sectorId || null,
+            school_id: formData.schoolId || null,
+            status: 'active'
+          });
+          
+        if (insertError) {
+          console.error('Error inserting user role:', insertError);
+          throw insertError;
+        }
+        
+        console.log('User role inserted successfully');
+      } else {
+        // İstifadəçi varsa, məlumatları yenilə
+        console.log('User role found, updating existing role');
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({
+            role: formData.role,
+            region_id: formData.regionId || null,
+            sector_id: formData.sectorId || null,
+            school_id: formData.schoolId || null,
+          })
+          .eq('user_id', user.id);
+          
+        if (roleError) {
+          console.error('Error updating user role:', roleError);
+          throw roleError;
+        }
+        
+        console.log('User role updated successfully');
+      }
+    
       toast.success(t('userUpdatedSuccessfully'));
       onComplete();
     } catch (error: any) {
