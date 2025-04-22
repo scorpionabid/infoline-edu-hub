@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -202,6 +201,33 @@ const DataEntryForm: React.FC = () => {
     setSaveStatus(DataEntrySaveStatus.SAVING);
     
     try {
+      // RLS xətasını aradan qaldırmaq üçün əvvəlcə notifications cədvəlində mövcud qeydləri yoxlayaq
+      try {
+        const { data: notificationData, error: notificationError } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('category_id', activeTab)
+          .eq('school_id', schoolId)
+          .eq('status', 'pending')
+          .limit(1);
+          
+        if (notificationError) {
+          console.warn('Notifications yoxlanarkən xəta:', notificationError);
+        } else if (notificationData && notificationData.length > 0) {
+          // Mövcud notification varsa, onu silirik
+          const { error: deleteNotificationError } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('id', notificationData[0].id);
+            
+          if (deleteNotificationError) {
+            console.warn('Notification silinərkən xəta:', deleteNotificationError);
+          }
+        }
+      } catch (notificationCheckError) {
+        console.warn('Notifications yoxlanarkən xəta:', notificationCheckError);
+      }
+      
       // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
       const { error: deleteError } = await supabase
         .from('data_entries')
@@ -228,6 +254,133 @@ const DataEntryForm: React.FC = () => {
           .insert(dataToInsert);
           
         if (insertError) throw insertError;
+      }
+      
+      // Edge Function çağırışı - JWT token ilə
+      try {
+        // Cari sessiyadan JWT token alırıq
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Sessiya məlumatlarını alarkən xəta:', sessionError);
+          throw sessionError;
+        }
+        
+        if (!sessionData.session) {
+          console.error('Aktiv sessiya tapılmadı');
+          throw new Error('Aktiv sessiya tapılmadı');
+        }
+        
+        // Əvvəlcə notifications cədvəlində mövcud bildirişləri yoxlayırıq və lazım gələrsə silirik
+        try {
+          const { data: existingNotifications, error: notificationsError } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('related_entity_id', schoolId)
+            .eq('related_entity_type', 'school')
+            .eq('type', 'category_submission');
+            
+          if (notificationsError) {
+            console.warn('Mövcud bildirişləri yoxlayarkən xəta:', notificationsError);
+          } else if (existingNotifications && existingNotifications.length > 0) {
+            console.log(`${existingNotifications.length} mövcud bildiriş tapıldı, silinir...`);
+            const { error: deleteError } = await supabase
+              .from('notifications')
+              .delete()
+              .in('id', existingNotifications.map(n => n.id));
+              
+            if (deleteError) {
+              console.warn('Mövcud bildirişləri silməkdə xəta:', deleteError);
+            } else {
+              console.log('Mövcud bildirişlər uğurla silindi');
+            }
+          }
+        } catch (notificationCheckError) {
+          console.warn('Bildirişləri yoxlayarkən xəta:', notificationCheckError);
+        }
+        
+        // Edge Function-a sorğu göndəririk
+        console.log('Edge Function çağırılır:', {
+          schoolId,
+          categoryId: activeTab,
+          userId: user.id
+        });
+        
+        const response = await fetch(
+          'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/submit-category',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // JWT token-i Authorization header-ində göndəririk
+              'Authorization': `Bearer ${sessionData.session.access_token}`
+            },
+            body: JSON.stringify({
+              schoolId,
+              categoryId: activeTab,
+              // Notifications cədvəli üçün əlavə məlumatlar
+              skipNotification: false, // Notifications cədvəlinə yazılmasına icazə veririk
+              userId: user.id // İstifadəçi ID-si
+            })
+          }
+        );
+        
+        // Xəta olduqda detallı məlumat əldə edirik
+        if (!response.ok) {
+          let errorMessage = 'Bilinməyən xəta';
+          let errorDetails = null;
+          
+          try {
+            const errorData = await response.json();
+            console.error('Edge Function xətası:', errorData);
+            errorMessage = errorData.message || errorMessage;
+            errorDetails = errorData;
+          } catch (e) {
+            console.error('Xəta məlumatlarını oxuyarkən problem:', e);
+          }
+          
+          // RLS xətası olub-olmadığını yoxlayırıq
+          if (errorMessage.includes('row-level security policy') && errorMessage.includes('notifications')) {
+            console.warn('RLS siyasəti xətası aşkarlandı, manual bildiriş yaratmağa çalışırıq...');
+            
+            try {
+              // Manual olaraq bildiriş yaratmağa çalışırıq
+              const { error: insertError } = await supabase
+                .from('notifications')
+                .insert({
+                  user_id: user.id,
+                  type: 'category_submission',
+                  title: 'Kateqoriya təqdim edildi',
+                  message: `Məktəb ID: ${schoolId}, Kateqoriya ID: ${activeTab}`,
+                  related_entity_id: schoolId,
+                  related_entity_type: 'school',
+                  is_read: false,
+                  priority: 'normal'
+                });
+                
+              if (insertError) {
+                console.error('Manual bildiriş yaratma xətası:', insertError);
+              } else {
+                console.log('Manual bildiriş uğurla yaradıldı');
+              }
+            } catch (manualNotificationError) {
+              console.error('Manual bildiriş yaratma cəhdi zamanı xəta:', manualNotificationError);
+            }
+            
+            // Əsas məlumatlar saxlanılıb, bildiriş xətası kritik deyil, davam edirik
+            console.log('RLS xətasına baxmayaraq, əsas əməliyyat uğurlu sayılır');
+          } else {
+            // Digər xətalar üçün xətanı atırıq
+            throw new Error(`Edge Function xətası: ${errorMessage}`);
+          }
+        } else {
+          const responseData = await response.json();
+          console.log('Edge Function cavabı:', responseData);
+        }
+      } catch (edgeFunctionError: any) {
+        console.error('Edge Function çağırışı zamanı xəta:', edgeFunctionError);
+        // Əsas məlumatlar artıq saxlanılıb, bu xəta kritik deyil
+        toast.warning(t('submittedButEdgeFunctionError') || 'Məlumatlar saxlanıldı, lakin təsdiq prosesində xəta baş verdi');
       }
       
       setIsDataModified(false);

@@ -1,4 +1,3 @@
-
 import { Column, ColumnType, ColumnOption, ColumnValidation } from '@/types/column';
 import { Json } from '@/types/json';
 
@@ -46,7 +45,23 @@ export const columnAdapter = {
     }
     
     if (formData.options) {
-      column.options = formData.options;
+      // Options-ları düzgün formatda saxlamaq üçün əmin oluruq ki, hər bir element düzgün formatdadır
+      if (Array.isArray(formData.options)) {
+        column.options = formData.options.map((opt: any) => {
+          if (typeof opt === 'string') {
+            return { label: opt, value: opt };
+          } else if (typeof opt === 'object' && opt !== null) {
+            return {
+              label: opt.label || String(opt),
+              value: opt.value || opt.label || String(opt)
+            };
+          }
+          return { label: String(opt), value: String(opt) };
+        });
+      } else {
+        console.warn('Options array formatında deyil:', formData.options);
+        column.options = [];
+      }
     }
     
     return column;
@@ -85,37 +100,145 @@ export const columnAdapter = {
       }
     }
     
-    // Seçenekleri parse et
+    // Seçenekleri parse et - tam təkmilləşdirilmiş versiya
     if (dbColumn.options) {
       try {
         let parsedOptions;
         
+        // Debug üçün orijinal options-ı log edirik
+        console.log(`Processing options for column ${dbColumn.id} (${dbColumn.name}):`, {
+          originalOptions: dbColumn.options,
+          type: typeof dbColumn.options
+        });
+        
+        // String formatından JSON-a çevirmə
         if (typeof dbColumn.options === 'string') {
-          parsedOptions = JSON.parse(dbColumn.options);
+          const optionsStr = dbColumn.options.trim();
+          
+          // Boş string-dirsə, boş massiv qaytarırıq
+          if (!optionsStr) {
+            column.options = [];
+            return column;
+          }
+          
+          // 1. Xüsusi format: {"label":"X","value":"x"},{"label":"Y","value":"y"}
+          if (optionsStr.includes('},{')) {
+            try {
+              // Əgər string [ ilə başlamırsa, onu array-ə çeviririk
+              let jsonStr = optionsStr;
+              if (!jsonStr.startsWith('[')) {
+                jsonStr = `[${jsonStr}]`;
+              }
+              
+              // JSON parse etməyə çalışırıq
+              try {
+                parsedOptions = JSON.parse(jsonStr);
+                console.log(`Successfully parsed special format for column ${dbColumn.id}:`, parsedOptions);
+              } catch (jsonError) {
+                console.warn(`JSON parse error for column ${dbColumn.id}:`, jsonError);
+                
+                // Əgər JSON parse işləmirsə, manual olaraq parçalayırıq
+                const items = optionsStr.split('},{').map(item => {
+                  // İlk və son elementlər üçün xüsusi işləmə
+                  let cleanItem = item;
+                  if (item.startsWith('{') && !item.endsWith('}')) {
+                    cleanItem = item + '}';
+                  } else if (!item.startsWith('{') && item.endsWith('}')) {
+                    cleanItem = '{' + item;
+                  } else if (!item.startsWith('{') && !item.endsWith('}')) {
+                    cleanItem = '{' + item + '}';
+                  }
+                  
+                  try {
+                    return JSON.parse(cleanItem);
+                  } catch (e) {
+                    console.warn(`Failed to parse item "${cleanItem}" for column ${dbColumn.id}:`, e);
+                    return null;
+                  }
+                }).filter(Boolean);
+                
+                if (items.length > 0) {
+                  console.log(`Manually parsed ${items.length} items for column ${dbColumn.id}`);
+                  parsedOptions = items;
+                } else {
+                  // Əgər heç bir element parse edilə bilmirsə, string-i birbaşa istifadə edirik
+                  parsedOptions = [{ label: optionsStr, value: optionsStr }];
+                }
+              }
+            } catch (e) {
+              console.error(`Failed to process special format for column ${dbColumn.id}:`, e);
+              parsedOptions = [{ label: optionsStr, value: optionsStr }];
+            }
+          } else {
+            // 2. Normal JSON parse
+            try {
+              parsedOptions = JSON.parse(optionsStr);
+              console.log(`Standard JSON parse result for column ${dbColumn.id}:`, parsedOptions);
+            } catch (parseError) {
+              console.warn(`Options JSON kimi parse edilə bilmədi for column ${dbColumn.id}:`, parseError);
+              // Əgər JSON kimi parse edilə bilmirsə, string-i birbaşa istifadə edirik
+              parsedOptions = [{ label: optionsStr, value: optionsStr }];
+            }
+          }
         } else {
           parsedOptions = dbColumn.options;
         }
         
-        // Eğer options array değilse veya geçersizse, boş array ata
-        if (!Array.isArray(parsedOptions)) {
-          console.warn('Invalid options format, using empty array instead');
-          column.options = [];
-        } else {
-          // Ensure all options have the correct format
+        // Massiv olub-olmadığını yoxlayırıq
+        if (Array.isArray(parsedOptions)) {
+          // Hər bir element üçün düzgün format təmin edirik
           column.options = parsedOptions.map((opt: any) => {
+            // String formatında olan options
             if (typeof opt === 'string') {
               return { label: opt, value: opt };
-            } else if (typeof opt === 'object' && opt !== null) {
-              return {
-                label: opt.label || opt.toString(),
-                value: opt.value || opt.label || opt.toString()
-              };
+            } 
+            // Obyekt formatında olan options
+            else if (typeof opt === 'object' && opt !== null) {
+              // label və value sahələri varsa
+              if ('label' in opt && 'value' in opt) {
+                return {
+                  label: String(opt.label),
+                  value: String(opt.value)
+                };
+              }
+              
+              // Əgər obyektdə label və value yoxdursa, amma başqa sahələr varsa
+              const keys = Object.keys(opt);
+              if (keys.length > 0) {
+                // İlk sahəni label və value kimi istifadə edirik
+                const firstKey = keys[0];
+                return {
+                  label: String(opt[firstKey]),
+                  value: String(firstKey)
+                };
+              }
             }
+            
+            // Digər hallar üçün
             return { label: String(opt), value: String(opt) };
           });
+        } 
+        // Əgər obyektdirsə və label/value cütlüyü formatındadırsa
+        else if (parsedOptions && typeof parsedOptions === 'object') {
+          column.options = Object.entries(parsedOptions).map(([key, value]) => ({
+            label: String(value),
+            value: key
+          }));
         }
+        // Digər hallar üçün boş massiv
+        else {
+          console.warn('Invalid options format, using empty array instead:', parsedOptions);
+          column.options = [];
+        }
+        
+        // Debug üçün son options-ı log edirik
+        console.log(`Final options for column ${dbColumn.id} (${dbColumn.name}):`, {
+          processedOptions: column.options,
+          count: column.options.length
+        });
+        
       } catch (e) {
-        console.error('Seçenekler parse hatası:', e);
+        console.error('Seçenekler parse hatası:', e, 'Original options:', dbColumn.options);
         column.options = [];
       }
     } else {
