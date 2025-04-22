@@ -11,16 +11,35 @@ export const useUserFetch = (
   currentPage: number,
   pageSize: number
 ) => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, session } = useAuth();
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin } = usePermissions();
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // JWT token əldə etmə funksiyası
+  const getAuthHeaders = useCallback(() => {
+    // Supabase API key həmişə olmalıdır
+    const headers: Record<string, string> = {
+      apikey: supabase.supabaseKey
+    };
+    
+    // Session varsa, token əlavə edirik
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    } else {
+      console.warn('No access token available, using only API key');
+    }
+    
+    return headers;
+  }, [session]);
+
   // Region, sektor və məktəb məlumatlarını əldə etmək üçün köməkçi funksiya
   const fetchEntityNames = async (userRoles: any[]) => {
     try {
+      const authHeaders = getAuthHeaders();
+      
       // Unikal region, sektor və məktəb ID-lərini toplayaq
       const regionIds = Array.from(new Set(userRoles.map(role => role.region_id).filter(Boolean)));
       const sectorIds = Array.from(new Set(userRoles.map(role => role.sector_id).filter(Boolean)));
@@ -35,7 +54,7 @@ export const useUserFetch = (
       if (regionIds.length > 0) {
         const { data: regionsData, error: regionsError } = await supabase
           .from('regions')
-          .select('id, name')
+          .select('id, name', { headers: authHeaders })
           .in('id', regionIds);
           
         if (!regionsError && regionsData) {
@@ -49,7 +68,7 @@ export const useUserFetch = (
       if (sectorIds.length > 0) {
         const { data: sectorsData, error: sectorsError } = await supabase
           .from('sectors')
-          .select('id, name')
+          .select('id, name', { headers: authHeaders })
           .in('id', sectorIds);
           
         if (!sectorsError && sectorsData) {
@@ -63,7 +82,7 @@ export const useUserFetch = (
       if (schoolIds.length > 0) {
         const { data: schoolsData, error: schoolsError } = await supabase
           .from('schools')
-          .select('id, name')
+          .select('id, name', { headers: authHeaders })
           .in('id', schoolIds);
           
         if (!schoolsError && schoolsData) {
@@ -85,53 +104,105 @@ export const useUserFetch = (
     setError(null);
     
     try {
+      // JWT token əldə et
+      const authHeaders = getAuthHeaders();
+      
       console.log('Fetching users with filter:', filter);
       let query = supabase
         .from('user_roles')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact', headers: authHeaders });
       
-      if (filter.role) {
-        query = query.eq('role', filter.role as any);
+      // Rol filteri - enum tipləri ilə işləmək üçün düzgün format
+      if (filter.role && Array.isArray(filter.role) && filter.role.length > 0) {
+        // Enum tipləri ilə işləmək üçün in operatorunu istifadə edirik
+        // Hər bir dəyəri ayrıca şəkildə əlavə edirik
+        const roleConditions = filter.role.map(r => `role.eq.${r}`).join(',');
+        query = query.or(roleConditions);
       }
       
-      // Regionadmin üçün filtrlənmə
+      // İstifadəçi tipinə görə filtrlənmə
       if (isRegionAdmin && currentUser?.regionId) {
+        // Regionadmin yalnız öz regionundakı istifadəçiləri görə bilər
         query = query.eq('region_id', currentUser.regionId);
       } 
-      // Sektoradmin üçün filtrlənmə
       else if (isSectorAdmin && currentUser?.sectorId) {
+        // Sektoradmin yalnız öz sektorundakı istifadəçiləri görə bilər
         query = query.eq('sector_id', currentUser.sectorId);
       }
-      // Filter parametrləri ilə filtrlənmə
+      // Digər filter parametrləri ilə filtrlənmə
       else {
-        if (filter.region) {
-          query = query.eq('region_id', filter.region);
+        if (filter.region && Array.isArray(filter.region) && filter.region.length > 0) {
+          // Çoxlu region seçimi üçün
+          const regionConditions = filter.region.map(r => `region_id.eq.${r}`).join(',');
+          query = query.or(regionConditions);
         }
         
-        if (filter.sector) {
-          query = query.eq('sector_id', filter.sector);
+        if (filter.sector && Array.isArray(filter.sector) && filter.sector.length > 0) {
+          // Çoxlu sektor seçimi üçün
+          const sectorConditions = filter.sector.map(s => `sector_id.eq.${s}`).join(',');
+          query = query.or(sectorConditions);
         }
       }
       
-      if (filter.school) {
-        query = query.eq('school_id', filter.school);
+      if (filter.school && Array.isArray(filter.school) && filter.school.length > 0) {
+        // Çoxlu məktəb seçimi üçün
+        const schoolConditions = filter.school.map(s => `school_id.eq.${s}`).join(',');
+        query = query.or(schoolConditions);
       }
       
-      if (filter.status) {
-        query = query.eq('status', filter.status);
+      // Status filteri - enum tipləri ilə işləmək üçün düzgün format
+      if (filter.status && Array.isArray(filter.status) && filter.status.length > 0) {
+        // Enum tipləri ilə işləmək üçün in operatorunu istifadə edirik
+        // Hər bir dəyəri ayrıca şəkildə əlavə edirik
+        const statusConditions = filter.status.map(s => `status.eq.${s}`).join(',');
+        query = query.or(statusConditions);
       }
       
-      if (filter.search) {
-        query = query.ilike('full_name', `%${filter.search}%`);
+      // Axtarış funksionallığı - email üzrə axtarış
+      // "users" cədvəli mövcud olmadığı üçün RPC funksiyasını istifadə edirik
+      if (filter.search && filter.search.trim() !== '') {
+        try {
+          // Əvvəlcə bütün istifadəçi e-poçtlarını əldə edirik
+          const { data: emailsData, error: emailsError } = await supabase
+            .rpc('get_user_emails_by_ids', { user_ids: [] }, { headers: authHeaders });
+            
+          if (emailsError) {
+            console.error('Error fetching emails for search:', emailsError);
+            // Xəta olsa da davam edirik
+          } else if (emailsData && emailsData.length > 0) {
+            // Axtarış şərtinə uyğun e-poçtları filtrlə
+            const searchTerm = filter.search.toLowerCase();
+            const matchingUsers = emailsData.filter(user => 
+              user.email && user.email.toLowerCase().includes(searchTerm)
+            );
+            
+            if (matchingUsers.length > 0) {
+              const userIds = matchingUsers.map(u => u.id);
+              query = query.in('user_id', userIds);
+            } else {
+              // Axtarış nəticəsi boşdursa, boş nəticə qaytaraq
+              setUsers([]);
+              setTotalCount(0);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (searchErr) {
+          console.error('Error during search:', searchErr);
+          // Axtarışda xəta olsa da davam edirik
+        }
       }
       
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
       query = query.range(from, to);
       
+      console.log('Final query:', query);
+      
       const { data: rolesData, error: rolesError, count } = await query;
       
       if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
         throw rolesError;
       }
       
@@ -144,13 +215,15 @@ export const useUserFetch = (
       
       const userIds = rolesData.map(item => item.user_id);
       
+      // Profil məlumatlarını əldə edirik
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*', { headers: authHeaders })
         .in('id', userIds);
       
       if (profilesError) {
-        throw profilesError;
+        console.error('Error fetching profiles:', profilesError);
+        // Xəta olsa da davam edirik
       }
       
       const profilesMap: Record<string, any> = {};
@@ -161,10 +234,11 @@ export const useUserFetch = (
       }
       
       // User e-poçtlarını əldə edirik
-      const { data: emailsData, error: emailsError } = await supabase.rpc('get_user_emails_by_ids', { user_ids: userIds });
+      const { data: emailsData, error: emailsError } = await supabase
+        .rpc('get_user_emails_by_ids', { user_ids: userIds }, { headers: authHeaders });
       
       if (emailsError) {
-        console.log('Warning: Could not fetch user emails:', emailsError);
+        console.error('Warning: Could not fetch user emails:', emailsError);
         // İdeal halda xəta atmamalıyıq, əməliyyata davam edə bilərik
       }
       
@@ -183,9 +257,12 @@ export const useUserFetch = (
         const profile = profilesMap[role.user_id] || {};
         const email = emailMap[role.user_id] || '';
         
+        // fullName sahəsi üçün alternativ dəyərlər
+        const fullName = profile.full_name || role.full_name || email.split('@')[0] || '';
+        
         return {
           id: role.user_id,
-          fullName: profile.full_name || role.full_name || '',
+          fullName: fullName,
           email: email,
           role: role.role,
           status: role.status || 'active',
@@ -195,6 +272,9 @@ export const useUserFetch = (
           regionName: role.region_id ? regionNames[role.region_id] || '' : '',
           sectorName: role.sector_id ? sectorNames[role.sector_id] || '' : '',
           schoolName: role.school_id ? schoolNames[role.school_id] || '' : '',
+          entityName: role.school_id ? schoolNames[role.school_id] : 
+                     role.sector_id ? sectorNames[role.sector_id] : 
+                     role.region_id ? regionNames[role.region_id] : '',
           phone: profile.phone || '',
           position: profile.position || '',
           language: profile.language || 'az',
@@ -205,14 +285,14 @@ export const useUserFetch = (
       
       setUsers(fullUsers);
       setTotalCount(count || fullUsers.length);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error in fetchUsers:', error);
-      setError(error);
-      toast.error(`Error fetching users: ${error.message}`);
+      setError(error as Error);
+      toast.error(`İstifadəçi məlumatları əldə edilərkən xəta baş verdi: ${(error as Error).message}`);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, filter, currentPage, pageSize, isSuperAdmin, isRegionAdmin, isSectorAdmin]);
+  }, [currentUser, filter, currentPage, pageSize, isSuperAdmin, isRegionAdmin, isSectorAdmin, getAuthHeaders]);
 
   return {
     users,

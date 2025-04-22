@@ -140,7 +140,7 @@ const UserList: React.FC<UserListProps> = ({
           </div>
         ) : error ? (
           <div className="text-center py-5 text-red-500">
-            {error}
+            {error.message || "Xəta baş verdi"}
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-5 text-muted-foreground">
