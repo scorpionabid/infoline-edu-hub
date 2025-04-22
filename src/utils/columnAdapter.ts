@@ -1,5 +1,7 @@
 import { Column, ColumnType, ColumnOption, ColumnValidation } from '@/types/column';
 import { Json } from '@/types/json';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const columnAdapter = {
   adaptColumnToForm: (column: Column) => {
@@ -85,7 +87,8 @@ export const columnAdapter = {
       order_index: dbColumn.order_index || 0,
       status: dbColumn.status || 'active',
       created_at: dbColumn.created_at,
-      updated_at: dbColumn.updated_at
+      updated_at: dbColumn.updated_at,
+      version: dbColumn.version || 1 // Versiya məlumatını əlavə edirik
     };
     
     // Validasyon kurallarını parse et
@@ -256,5 +259,199 @@ export const columnAdapter = {
     }
     
     return column;
+  },
+  
+  checkForConflicts: async (columnId: string, formData: Partial<Column>): Promise<{
+    hasConflict: boolean;
+    conflictDetails?: {
+      field: string;
+      localValue: any;
+      dbValue: any;
+    }[];
+    dbColumn?: Column;
+  }> => {
+    try {
+      // DB-dən cari column məlumatlarını əldə edirik
+      const { data: dbColumn, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('id', columnId)
+        .single();
+      
+      if (error) {
+        console.error('Column məlumatlarını əldə etmə xətası:', error);
+        return { hasConflict: false };
+      }
+      
+      if (!dbColumn) {
+        console.warn(`ID: ${columnId} ilə column tapılmadı`);
+        return { hasConflict: false };
+      }
+      
+      // DB-dəki column-u adaptasiya edirik
+      const adaptedDbColumn = columnAdapter.adaptSupabaseToColumn(dbColumn);
+      
+      // Toqquşmaları aşkar edirik
+      const conflicts: {
+        field: string;
+        localValue: any;
+        dbValue: any;
+      }[] = [];
+      
+      // Yoxlanılacaq sahələr
+      const fieldsToCheck = [
+        'name', 'type', 'is_required', 'placeholder', 'help_text', 
+        'order_index', 'status', 'validation', 'options'
+      ];
+      
+      for (const field of fieldsToCheck) {
+        if (field in formData && JSON.stringify(formData[field]) !== JSON.stringify(adaptedDbColumn[field])) {
+          // Xüsusi hallar üçün əlavə yoxlamalar
+          if (field === 'options') {
+            // Options massivlərini daha dəqiq müqayisə edirik
+            const formOptions = formData.options || [];
+            const dbOptions = adaptedDbColumn.options || [];
+            
+            // Əgər uzunluqlar fərqlidirsə, toqquşma var
+            if (formOptions.length !== dbOptions.length) {
+              conflicts.push({
+                field,
+                localValue: formOptions,
+                dbValue: dbOptions
+              });
+              continue;
+            }
+            
+            // Hər bir elementin dəyərlərini müqayisə edirik
+            let optionsConflict = false;
+            for (let i = 0; i < formOptions.length; i++) {
+              if (formOptions[i].value !== dbOptions[i].value || 
+                  formOptions[i].label !== dbOptions[i].label) {
+                optionsConflict = true;
+                break;
+              }
+            }
+            
+            if (optionsConflict) {
+              conflicts.push({
+                field,
+                localValue: formOptions,
+                dbValue: dbOptions
+              });
+            }
+          } else {
+            // Digər sahələr üçün standart müqayisə
+            conflicts.push({
+              field,
+              localValue: formData[field],
+              dbValue: adaptedDbColumn[field]
+            });
+          }
+        }
+      }
+      
+      return {
+        hasConflict: conflicts.length > 0,
+        conflictDetails: conflicts.length > 0 ? conflicts : undefined,
+        dbColumn: adaptedDbColumn
+      };
+    } catch (error) {
+      console.error('Toqquşma yoxlaması zamanı xəta:', error);
+      return { hasConflict: false };
+    }
+  },
+  
+  resolveConflicts: (formData: Partial<Column>, dbColumn: Column, fieldsToKeep: string[]): Partial<Column> => {
+    const resolvedData = { ...formData };
+    
+    // Seçilmiş sahələr üçün DB dəyərlərini istifadə edirik
+    for (const field of fieldsToKeep) {
+      if (field in dbColumn) {
+        resolvedData[field] = dbColumn[field];
+      }
+    }
+    
+    return resolvedData;
+  },
+  
+  updateColumnWithVersionCheck: async (
+    columnId: string, 
+    updates: Partial<Column>, 
+    expectedVersion: number
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    newVersion?: number;
+    column?: Column;
+  }> => {
+    try {
+      // Əvvəlcə cari versiyanı yoxlayırıq
+      const { data: currentColumn, error: fetchError } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('id', columnId)
+        .single();
+      
+      if (fetchError) {
+        return { 
+          success: false, 
+          error: `Column məlumatlarını əldə etmə xətası: ${fetchError.message}` 
+        };
+      }
+      
+      if (!currentColumn) {
+        return { 
+          success: false, 
+          error: `ID: ${columnId} ilə column tapılmadı` 
+        };
+      }
+      
+      const currentVersion = currentColumn.version || 1;
+      
+      // Versiya yoxlaması
+      if (currentVersion !== expectedVersion) {
+        // Toqquşma aşkar edildi
+        return {
+          success: false,
+          error: `Versiya toqquşması: Gözlənilən versiya ${expectedVersion}, DB-də olan versiya ${currentVersion}`,
+          column: columnAdapter.adaptSupabaseToColumn(currentColumn)
+        };
+      }
+      
+      // Yeni versiya təyin edirik
+      const newVersion = currentVersion + 1;
+      const updatesWithVersion = {
+        ...updates,
+        version: newVersion,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Column-u yeniləyirik
+      const { data: updatedColumn, error: updateError } = await supabase
+        .from('columns')
+        .update(updatesWithVersion)
+        .eq('id', columnId)
+        .select('*')
+        .single();
+      
+      if (updateError) {
+        return { 
+          success: false, 
+          error: `Column yeniləmə xətası: ${updateError.message}` 
+        };
+      }
+      
+      return {
+        success: true,
+        newVersion,
+        column: columnAdapter.adaptSupabaseToColumn(updatedColumn)
+      };
+    } catch (error) {
+      console.error('Column yeniləmə zamanı xəta:', error);
+      return { 
+        success: false, 
+        error: `Gözlənilməyən xəta: ${error.message}` 
+      };
+    }
   }
 };

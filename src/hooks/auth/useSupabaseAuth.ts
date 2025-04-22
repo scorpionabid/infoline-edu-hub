@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, Profile } from '@/types/supabase';
 import { AuthState, AuthActions, UseSupabaseAuthReturn } from './types';
 import { signIn, signOut, signUp, resetPassword, updateProfile, updatePassword } from './authActions';
-import { fetchUserData } from './userDataService';
 
 export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   const [state, setState] = useState<AuthState>({
@@ -76,7 +75,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
               setLoading(true);
               
               // İstifadəçi məlumatlarını əldə edək
-              const userData = await fetchUserData(newSession.user.id);
+              const userData = await fetchUserDetails(newSession.user.id, newSession.user.email);
               console.log('İstifadəçi məlumatları əldə edildi:', userData ? 'Uğurlu' : 'Uğursuz');
               
               if (mounted) {
@@ -125,7 +124,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         if (currentSession?.user && mounted) {
           try {
             console.log(`İlkin sessiya üçün istifadəçi məlumatları əldə edilir, ID: ${currentSession.user.id}`);
-            const userData = await fetchUserData(currentSession.user.id);
+            const userData = await fetchUserDetails(currentSession.user.id, currentSession.user.email);
             
             if (mounted) {
               console.log('İlkin sessiya üçün istifadəçi məlumatları təyin edilir');
@@ -181,9 +180,137 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     };
   }, [setLoading, setSession, setUser]);
   
-  // fetchUserData-nın bağlı variantını yaradaq
-  const handleFetchUserData = useCallback(async (userId: string) => {
-    return await fetchUserData(userId);
+  // İstifadəçi məlumatlarını əldə etmək
+  const fetchUserDetails = useCallback(async (userId: string, userEmail: string) => {
+    try {
+      console.log(`İstifadəçi məlumatları əldə edilir (ID: ${userId}, Email: ${userEmail})`);
+      
+      // İstifadəçi profili əldə etmək
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (profileError) {
+        console.error('Profil məlumatlarını əldə etmə xətası:', profileError);
+        throw new Error('İstifadəçi profili tapılmadı');
+      }
+      
+      if (!profileData) {
+        console.error('Profil məlumatları boşdur');
+        throw new Error('İstifadəçi profili tapılmadı');
+      }
+      
+      console.log('Profil məlumatları əldə edildi:', profileData);
+      
+      // İstifadəçi rolunu əldə etmək - birbaşa SQL sorğusu ilə
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id, school_id')
+        .eq('user_id', userId)
+        .single();
+        
+      if (roleError) {
+        console.error('Rol məlumatlarını əldə etmə xətası:', roleError);
+        
+        // Edge Function ilə rol məlumatlarını əldə etməyə çalışaq
+        try {
+          console.log('Edge Function ilə rol məlumatları əldə edilir...');
+          
+          // Cari sessiyadan JWT token alırıq
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error('Sessiya məlumatlarını alarkən xəta:', sessionError);
+            throw sessionError;
+          }
+          
+          if (!sessionData.session) {
+            console.error('Aktiv sessiya tapılmadı');
+            throw new Error('Aktiv sessiya tapılmadı');
+          }
+          
+          // Edge Function-a sorğu göndəririk
+          const response = await fetch(
+            'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/get-user-role',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionData.session.access_token}`
+              },
+              body: JSON.stringify({
+                userId,
+                userEmail
+              })
+            }
+          );
+          
+          if (!response.ok) {
+            let errorMessage = 'Bilinməyən xəta';
+            try {
+              const errorData = await response.json();
+              console.error('Edge Function xətası:', errorData);
+              errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+              console.error('Xəta məlumatlarını oxuyarkən problem:', e);
+            }
+            throw new Error(`Edge Function xətası: ${errorMessage}`);
+          }
+          
+          const edgeFunctionData = await response.json();
+          console.log('Edge Function cavabı:', edgeFunctionData);
+          
+          if (!edgeFunctionData.role) {
+            throw new Error('İstifadəçi üçün rol təyin edilməyib');
+          }
+          
+          // Edge Function-dan gələn rol məlumatlarını istifadə edək
+          const fullUserData: FullUserData = {
+            ...profileData,
+            id: userId,
+            email: userEmail,
+            role: edgeFunctionData.role,
+            region_id: edgeFunctionData.region_id,
+            sector_id: edgeFunctionData.sector_id,
+            school_id: edgeFunctionData.school_id
+          };
+          
+          console.log('Tam istifadəçi məlumatları (Edge Function ilə):', fullUserData);
+          return fullUserData;
+          
+        } catch (edgeFunctionError: any) {
+          console.error('Edge Function çağırışı zamanı xəta:', edgeFunctionError);
+          throw new Error('İstifadəçi rolu əldə edilə bilmədi');
+        }
+      }
+      
+      if (!roleData) {
+        console.error('Rol məlumatları boşdur');
+        throw new Error('İstifadəçi üçün rol təyin edilməyib');
+      }
+      
+      console.log('Rol məlumatları əldə edildi:', roleData);
+      
+      // Tam istifadəçi məlumatlarını birləşdirək
+      const fullUserData: FullUserData = {
+        ...profileData,
+        id: userId,
+        email: userEmail,
+        role: roleData.role,
+        region_id: roleData.region_id,
+        sector_id: roleData.sector_id,
+        school_id: roleData.school_id
+      };
+      
+      console.log('Tam istifadəçi məlumatları:', fullUserData);
+      return fullUserData;
+      
+    } catch (error: any) {
+      console.error('İstifadəçi məlumatlarını əldə etmə xətası:', error);
+      throw error;
+    }
   }, []);
   
   // signIn-in bağlı variantını yaradaq
@@ -197,7 +324,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       if (result && result.user) {
         console.log(`Giriş uğurlu oldu, istifadəçi məlumatları yenilənir, ID: ${result.user.id}`);
         try {
-          const userData = await fetchUserData(result.user.id);
+          const userData = await fetchUserDetails(result.user.id, result.user.email);
           setUser(userData);
           console.log('İstifadəçi məlumatları uğurla yeniləndi');
           
@@ -245,8 +372,8 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   // updateProfile-ın bağlı variantını yaradaq
   const handleUpdateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!state.user) return false;
-    return await updateProfile(updates, state.user.id, handleFetchUserData, setUser);
-  }, [state.user, handleFetchUserData, setUser]);
+    return await updateProfile(updates, state.user.id, fetchUserDetails, setUser);
+  }, [state.user, fetchUserDetails, setUser]);
   
   // updatePassword-in bağlı variantını yaradaq
   const handleUpdatePassword = useCallback(async (password: string) => {
@@ -262,6 +389,6 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     resetPassword: handleResetPassword,
     updateProfile: handleUpdateProfile,
     updatePassword: handleUpdatePassword,
-    fetchUserData: handleFetchUserData
+    fetchUserDetails: fetchUserDetails
   };
 };

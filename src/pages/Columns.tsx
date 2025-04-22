@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -90,6 +89,7 @@ const Columns: React.FC = () => {
     }) || [];
   }, [columns, searchQuery, categoryFilter, typeFilter, statusFilter]);
 
+  // Sütun əlavə etmə düyməsinin hadisə işləyicisi
   const handleOpenAddColumnDialog = () => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
@@ -97,29 +97,81 @@ const Columns: React.FC = () => {
       });
       return;
     }
+    
+    // Əvvəlcə seçilmiş sütunu təmizləyirik
+    setSelectedColumn(null);
+    
+    // Dialoqu açırıq
+    console.log('Sütun əlavə et dialoqu açılır...');
     setAddColumnDialogOpen(true);
   };
 
-  const handleCloseAddColumnDialog = () => {
-    setAddColumnDialogOpen(false);
+  // Sütun əlavə etmə
+  const handleAddColumn = async (newColumn: Omit<Column, "id">) => {
+    try {
+      setIsSubmitting(true);
+      console.log('Yeni sütun əlavə edilir:', newColumn);
+      
+      const result = await createColumn(newColumn);
+      
+      if (result.success) {
+        toast.success(t('columnAdded'), {
+          description: t('columnAddedDescription')
+        });
+        setAddColumnDialogOpen(false);
+        refetch();
+      } else {
+        toast.error(t('columnAddFailed'), {
+          description: result.error || t('unknownError')
+        });
+      }
+    } catch (error) {
+      console.error('Sütun əlavə etmə xətası:', error);
+      toast.error(t('columnAddFailed'), {
+        description: t('unknownError')
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleOpenEditColumnDialog = (column: Column) => {
-    if (!canManageColumns) {
-      toast.error(t('noPermission'), {
-        description: t('adminPermissionRequired')
-      });
-      return;
-    }
+  // Sütun redaktə etmə
+  const handleEditColumn = (column: Column) => {
+    console.log('Redaktə ediləcək sütun:', column);
     setSelectedColumn(column);
     setEditColumnDialogOpen(true);
   };
 
-  const handleCloseEditColumnDialog = () => {
-    setEditColumnDialogOpen(false);
-    setSelectedColumn(null);
+  // Sütun yeniləmə
+  const handleUpdateColumn = async (updatedColumn: Column) => {
+    try {
+      setIsSubmitting(true);
+      console.log('Sütun yenilənir:', updatedColumn);
+      
+      const result = await updateColumn(updatedColumn);
+      
+      if (result.success) {
+        toast.success(t('columnUpdated'), {
+          description: t('columnUpdatedDescription')
+        });
+        setEditColumnDialogOpen(false);
+        refetch();
+      } else {
+        toast.error(t('columnUpdateFailed'), {
+          description: result.error || t('unknownError')
+        });
+      }
+    } catch (error) {
+      console.error('Sütun yeniləmə xətası:', error);
+      toast.error(t('columnUpdateFailed'), {
+        description: t('unknownError')
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Sütun silmə dialoqu
   const handleOpenDeleteDialog = (columnId: string, columnName: string, categoryId: string) => {
     if (!canManageColumns) {
       toast.error(t('noPermission'), {
@@ -127,6 +179,7 @@ const Columns: React.FC = () => {
       });
       return;
     }
+    
     setDeleteDialog({
       isOpen: true,
       column: columnId,
@@ -135,159 +188,29 @@ const Columns: React.FC = () => {
     });
   };
 
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialog({
-      isOpen: false,
-      column: '',
-      columnName: '',
-      categoryId: ''
-    });
-  };
-
-  const handleAddColumn = async (newColumn: Omit<Column, "id">): Promise<boolean> => {
-    if (!canManageColumns) {
-      toast.error(t('noPermission'));
-      return false;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      console.log("handleAddColumn called with:", newColumn);
-      const result = await createColumn(newColumn);
-      
-      if (result.success) {
-        console.log("Column created successfully:", result.data);
-        // Refresh data
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        await queryClient.invalidateQueries({ queryKey: ['categories'] });
-        await refetch();
-        return true;
-      } else {
-        console.error("Error creating column:", result.error);
-        toast.error(t('columnCreationFailed'), {
-          description: result.error
-        });
-        return false;
-      }
-    } catch (error: any) {
-      console.error("Column creation error:", error);
-      toast.error(t('columnCreationFailed'), {
-        description: error.message
-      });
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditColumn = async (columnData: Partial<Column>): Promise<boolean> => {
-    if (!canManageColumns) {
-      toast.error(t('noPermission'));
-      return false;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      if (!columnData.id) {
-        toast.error(t('columnIdRequired'));
-        return false;
-      }
-      
-      const result = await updateColumn(columnData);
-      
-      if (result.success) {
-        // Refresh data
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        await refetch();
-        return true;
-      } else {
-        toast.error(t('columnUpdateFailed'), {
-          description: result.error
-        });
-        return false;
-      }
-    } catch (error: any) {
-      console.error("Column update error:", error);
-      toast.error(t('columnUpdateFailed'), {
-        description: error.message
-      });
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onDeleteColumn = async (columnId: string): Promise<boolean> => {
-    if (!canManageColumns) {
-      toast.error(t('noPermission'));
-      return false;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      const categoryId = deleteDialog.categoryId || 
-        columns?.find(c => c.id === columnId)?.category_id || '';
-      
-      const result = await deleteColumn(columnId, categoryId);
-      
-      if (result.success) {
-        // Refresh data
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        await queryClient.invalidateQueries({ queryKey: ['categories'] });
-        await refetch();
-        handleCloseDeleteDialog();
-        return true;
-      } else {
-        toast.error(t('columnDeletionFailed'), {
-          description: result.error
-        });
-        return false;
-      }
-    } catch (error: any) {
-      console.error("Column deletion error:", error);
-      toast.error(t('columnDeletionFailed'), {
-        description: error.message
-      });
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdateColumnStatus = async (id: string, status: 'active' | 'inactive') => {
-    if (!canManageColumns) {
-      toast.error(t('noPermission'));
-      return;
-    }
-    
+  // Sütun silmə
+  const handleDeleteColumn = async () => {
     try {
       setIsSubmitting(true);
-      const column = columns?.find(c => c.id === id);
+      console.log('Sütun silinir:', deleteDialog.column);
       
-      if (!column) {
-        toast.error(t('columnNotFound'));
-        return;
-      }
-      
-      const result = await updateColumn({
-        ...column,
-        status
-      });
+      const result = await deleteColumn(deleteDialog.column);
       
       if (result.success) {
-        toast.success(t('columnStatusUpdated'));
-        // Refresh data
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        await refetch();
+        toast.success(t('columnDeleted'), {
+          description: t('columnDeletedDescription')
+        });
+        setDeleteDialog({ ...deleteDialog, isOpen: false });
+        refetch();
       } else {
-        toast.error(t('columnStatusUpdateFailed'), {
-          description: result.error
+        toast.error(t('columnDeleteFailed'), {
+          description: result.error || t('unknownError')
         });
       }
-    } catch (error: any) {
-      console.error("Column status update error:", error);
-      toast.error(t('columnStatusUpdateFailed'), {
-        description: error.message
+    } catch (error) {
+      console.error('Sütun silmə xətası:', error);
+      toast.error(t('columnDeleteFailed'), {
+        description: t('unknownError')
       });
     } finally {
       setIsSubmitting(false);
@@ -394,13 +317,13 @@ const Columns: React.FC = () => {
           categories={categories || []}
           isLoading={isLoading || categoriesLoading}
           isError={!!error}
-          onEditColumn={handleOpenEditColumnDialog}
+          onEditColumn={handleEditColumn}
           onDeleteColumn={(id, name) => handleOpenDeleteDialog(
             id, 
             name, 
             columns?.find(c => c.id === id)?.category_id || ''
           )}
-          onUpdateStatus={handleUpdateColumnStatus}
+          onUpdateStatus={(id, status) => console.log('Update status:', id, status)}
           canManageColumns={canManageColumns}
         />
       )}
@@ -408,7 +331,7 @@ const Columns: React.FC = () => {
       {addColumnDialogOpen && (
         <AddColumnDialog
           isOpen={addColumnDialogOpen}
-          onClose={handleCloseAddColumnDialog}
+          onClose={() => setAddColumnDialogOpen(false)}
           onAddColumn={handleAddColumn}
           categories={categories || []}
           columns={columns || []}
@@ -418,8 +341,8 @@ const Columns: React.FC = () => {
       {editColumnDialogOpen && selectedColumn && (
         <EditColumnDialog
           isOpen={editColumnDialogOpen}
-          onClose={handleCloseEditColumnDialog}
-          onEditColumn={handleEditColumn}
+          onClose={() => setEditColumnDialogOpen(false)}
+          onEditColumn={handleUpdateColumn}
           column={selectedColumn}
           isSubmitting={isSubmitting}
           categories={categories || []}
@@ -429,8 +352,8 @@ const Columns: React.FC = () => {
       {deleteDialog.isOpen && (
         <DeleteColumnDialog
           isOpen={deleteDialog.isOpen}
-          onClose={handleCloseDeleteDialog}
-          onConfirm={() => onDeleteColumn(deleteDialog.column)}
+          onClose={() => setDeleteDialog({ ...deleteDialog, isOpen: false })}
+          onConfirm={handleDeleteColumn}
           column={deleteDialog.column}
           columnName={deleteDialog.columnName}
           isSubmitting={isSubmitting}

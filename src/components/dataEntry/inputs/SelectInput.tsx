@@ -196,35 +196,32 @@ const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = fals
           </FormLabel>
           <Select
             onValueChange={field.onChange}
-            value={String(field.value || '')}
+            value={field.value ? String(field.value) : undefined}
             disabled={disabled || options.length === 0}
           >
             <FormControl>
-              <SelectTrigger
-                disabled={disabled || options.length === 0}
-                aria-label={column.name}
-                id={`field-${column.id}`}
-              >
-                <SelectValue placeholder={column.placeholder || 'Seçim edin'} />
+              <SelectTrigger>
+                <SelectValue placeholder={column.placeholder || 'Seçin...'} />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
               {options.length > 0 ? (
-                options.map((option: ColumnOption, index) => (
-                  <SelectItem key={index} value={String(option.value)}>
+                options.map((option, index) => (
+                  <SelectItem 
+                    key={`${option.value}-${index}`} 
+                    value={String(option.value || `option-${index}`)}
+                  >
                     {option.label}
                   </SelectItem>
                 ))
               ) : (
-                <div className="px-2 py-1 text-sm text-muted-foreground">
+                <SelectItem value="no_options" disabled>
                   Seçim variantları mövcud deyil
-                </div>
+                </SelectItem>
               )}
             </SelectContent>
           </Select>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
+          {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
           <FormMessage />
         </FormItem>
       )}
