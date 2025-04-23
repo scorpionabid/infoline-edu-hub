@@ -29,6 +29,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const { user: currentUser } = useAuth();
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin } = usePermissions();
   const [loading, setLoading] = useState(false);
+  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
+  const [step, setStep] = useState<'create' | 'assign'>('create');
   
   // İlkin form məlumatları
   const [formData, setFormData] = useState({
@@ -65,10 +67,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       position: '',
       language: 'az'
     });
+    setCreatedUserId(null);
+    setStep('create');
   };
 
-  // İstifadəçi əlavə et
-  const handleAddUser = async () => {
+  // ADDIM 1: İstifadəçi yarat (Supabase Auth)
+  const handleCreateUser = async () => {
     // Vacib sahələri yoxla
     if (!formData.fullName || !formData.email || !formData.password) {
       toast.error(t('pleaseCompleteRequiredFields'));
@@ -83,7 +87,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
         role: formData.role
       });
       
-      // ADDIM 1: Supabase Auth ilə istifadəçi yarat
+      // Supabase Auth ilə istifadəçi yarat
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -91,7 +95,9 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
           data: {
             full_name: formData.fullName,
             role: formData.role
-          }
+          },
+          emailRedirectTo: window.location.origin + '/users',
+          shouldCreateSession: false // Avtomatik sessiya yaratma
         }
       });
 
@@ -106,58 +112,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
         throw new Error('User ID is missing from auth response');
       }
       
-      // ADDIM 2: Edge Function vasitəsilə email təsdiqləmə
-      try {
-        const { data: confirmData, error: confirmError } = await supabase.functions.invoke('confirm-user-email', {
-          body: { user_id: authData.user.id }
-        });
-        
-        if (confirmError) {
-          console.warn('Could not auto-confirm email via Edge Function:', confirmError);
-        } else {
-          console.log('User email auto-confirmed successfully via Edge Function');
-        }
-      } catch (confirmErr) {
-        // Email təsdiqini bypass edə bilmədik, amma istifadəçi yaradıldı
-        console.warn('Error during email confirmation via Edge Function:', confirmErr);
-      }
+      // İstifadəçi uğurla yaradıldı
+      setCreatedUserId(authData.user.id);
       
-      // ADDIM 3: İstifadəçiyə region təyin etmək (əgər regionId varsa)
-      if (formData.regionId) {
-        try {
-          const { data: roleData, error: roleError } = await supabase.functions.invoke('assign-region-admin', {
-            body: { 
-              user_id: authData.user.id, 
-              region_id: formData.regionId,
-              role: formData.role || 'region_admin'
-            }
-          });
-          
-          if (roleError) {
-            console.warn('Could not assign region to user:', roleError);
-          } else {
-            console.log('User assigned to region successfully');
-          }
-        } catch (roleErr) {
-          console.warn('Error during region assignment:', roleErr);
-        }
-      }
-      
-      // İstifadəçi uğurla yaradıldı, indi istifadəçi siyahısını yeniləyirik
-      toast.success(t('userAddedSuccessfully'));
-      resetForm();
-      onComplete();
-      
-      // İstifadəçiyə bildiriş göstər
-      if (!formData.regionId) {
-        toast.info(t('userCreatedAssignRegionLater'), {
-          duration: 5000,
-          description: t('userCreatedAssignRegionLaterDescription')
-        });
-      }
+      // İstifadəçi yaradıldıqdan sonra rol təyin etmə addımına keç
+      setStep('assign');
+      toast.success(t('userCreatedSuccessfully'));
       
     } catch (error: any) {
-      console.error('Error adding user:', error);
+      console.error('Error creating user:', error);
       
       // Auth məhdudiyyəti xətası
       if (error.message && error.message.includes('security purposes')) {
@@ -177,49 +140,136 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       }
       // Digər xətalar
       else {
-        toast.error(error.message || t('errorAddingUser'));
+        toast.error(error.message || t('errorCreatingUser'));
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // ADDIM 2: İstifadəçini təyin et (manual)
+  const handleAssignUserRole = async () => {
+    if (!createdUserId) {
+      console.error('No user ID available for role assignment');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('Assigning role to user manually:', {
+        userId: createdUserId,
+        role: formData.role
+      });
+      
+      // İstifadəçi rolunu user_roles cədvəlinə əlavə et
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: createdUserId,
+          role: formData.role,
+          region_id: formData.regionId || null,
+          sector_id: formData.sectorId || null,
+          school_id: formData.schoolId || null
+        });
+      
+      if (roleError) {
+        console.error('Error assigning role to user:', roleError);
+        throw roleError;
+      }
+      
+      console.log('User role assigned successfully');
+      
+      // İstifadəçi uğurla təyin edildi
+      toast.success(t('userRoleAssignedSuccessfully'));
+      resetForm();
+      onComplete();
+      
+    } catch (error: any) {
+      console.error('Error assigning role to user:', error);
+      toast.error(error.message || t('errorAssigningUserRole'));
+      
+      // Xəta olsa da istifadəçi yaradılıb, ona görə bildiriş göstəririk
+      toast.info(t('userCreatedButRoleNotAssigned'), {
+        duration: 5000,
+        description: t('userCreatedButRoleNotAssignedDescription')
+      });
+      
+      // Xəta olsa da prosesi tamamlayırıq
+      resetForm();
+      onComplete();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // İstifadəçi əlavə et (ümumi handler)
+  const handleAddUser = async () => {
+    if (step === 'create') {
+      await handleCreateUser();
+    } else {
+      await handleAssignUserRole();
+    }
+  };
+
+  // Dialoqu bağla və formu sıfırla
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  // Addımı keç
+  const handleSkipAssignment = () => {
+    toast.info(t('userCreatedRoleNotAssigned'), {
+      duration: 5000,
+      description: t('userCreatedRoleNotAssignedDescription')
+    });
+    resetForm();
+    onComplete();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
-        resetForm();
-        onClose();
+        handleClose();
       }
     }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('addNewUser')}</DialogTitle>
+          <DialogTitle>
+            {step === 'create' ? t('addNewUser') : t('assignUserRole')}
+          </DialogTitle>
           <DialogDescription>
-            {t('addUserDescription')}
+            {step === 'create' ? t('addUserDescription') : t('assignUserRoleDescription')}
           </DialogDescription>
         </DialogHeader>
         
         <UserForm 
-          initialData={formData}
+          formData={formData} 
           onChange={handleFormChange}
-          isEditMode={false}
+          disableFields={step === 'assign' ? ['fullName', 'email', 'password', 'phone', 'position', 'language'] : []}
+          requiredFields={step === 'create' ? ['fullName', 'email', 'password'] : ['role']}
         />
         
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            {t('cancel')}
-          </Button>
-          
-          <Button
-            onClick={handleAddUser}
-            disabled={loading}
-          >
-            {loading ? t('adding') : t('addUser')}
-          </Button>
+        <DialogFooter className="flex justify-between">
+          {step === 'assign' ? (
+            <>
+              <Button variant="outline" onClick={handleSkipAssignment}>
+                {t('skipAssignment')}
+              </Button>
+              <Button onClick={handleAddUser} disabled={loading}>
+                {loading ? t('loading') : t('assignRole')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleClose} disabled={loading}>
+                {t('cancel')}
+              </Button>
+              <Button onClick={handleAddUser} disabled={loading}>
+                {loading ? t('loading') : t('createUser')}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

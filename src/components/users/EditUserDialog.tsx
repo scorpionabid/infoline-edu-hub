@@ -226,9 +226,11 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         
         {user && (
           <UserForm 
-            initialData={formData}
+            formData={formData}
             onChange={handleFormChange}
             isEditMode={true}
+            disableFields={['email']}
+            requiredFields={['fullName', 'role']}
           />
         )}
         

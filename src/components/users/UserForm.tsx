@@ -8,15 +8,19 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UserFormProps {
-  initialData: any;
+  formData: any;
   onChange: (data: any) => void;
   isEditMode?: boolean;
+  disableFields?: string[];
+  requiredFields?: string[];
 }
 
 const UserForm: React.FC<UserFormProps> = ({
-  initialData,
+  formData,
   onChange,
-  isEditMode = false
+  isEditMode = false,
+  disableFields = [],
+  requiredFields = ['fullName', 'email', 'password', 'role']
 }) => {
   const { t } = useLanguage();
   const { isSuperAdmin, isRegionAdmin } = usePermissions();
@@ -32,9 +36,19 @@ const UserForm: React.FC<UserFormProps> = ({
   // Form məlumatlarını yeniləyək
   const handleChange = (field: string, value: any) => {
     onChange({
-      ...initialData,
+      ...formData,
       [field]: value
     });
+  };
+
+  // Sahənin disabled olub-olmadığını yoxlayaq
+  const isFieldDisabled = (fieldName: string): boolean => {
+    return disableFields.includes(fieldName);
+  };
+
+  // Sahənin required olub-olmadığını yoxlayaq
+  const isFieldRequired = (fieldName: string): boolean => {
+    return requiredFields.includes(fieldName);
   };
 
   // Regionları yükləyək
@@ -50,204 +64,207 @@ const UserForm: React.FC<UserFormProps> = ({
           
         if (error) throw error;
         setRegions(data || []);
-      } catch (error) {
-        console.error('Error fetching regions:', error);
+      } catch (err) {
+        console.error('Error fetching regions:', err);
       } finally {
         setLoading(prev => ({ ...prev, regions: false }));
       }
     };
-    
-    if (isSuperAdmin || isRegionAdmin) {
-      fetchRegions();
-    }
-  }, [isSuperAdmin, isRegionAdmin]);
 
-  // Sektorları yükləyək
+    fetchRegions();
+  }, []);
+
+  // Regionu dəyişdikdə sektorları yükləyək
   useEffect(() => {
+    if (!formData.regionId) {
+      setSectors([]);
+      return;
+    }
+
     const fetchSectors = async () => {
-      if (!initialData.regionId) {
-        setSectors([]);
-        return;
-      }
-      
       setLoading(prev => ({ ...prev, sectors: true }));
       try {
         const { data, error } = await supabase
           .from('sectors')
           .select('id, name')
-          .eq('region_id', initialData.regionId)
+          .eq('region_id', formData.regionId)
           .eq('status', 'active')
           .order('name');
           
         if (error) throw error;
         setSectors(data || []);
-      } catch (error) {
-        console.error('Error fetching sectors:', error);
+      } catch (err) {
+        console.error('Error fetching sectors:', err);
       } finally {
         setLoading(prev => ({ ...prev, sectors: false }));
       }
     };
-    
-    fetchSectors();
-  }, [initialData.regionId]);
 
-  // Məktəbləri yükləyək
+    fetchSectors();
+  }, [formData.regionId]);
+
+  // Sektoru dəyişdikdə məktəbləri yükləyək
   useEffect(() => {
+    if (!formData.sectorId) {
+      setSchools([]);
+      return;
+    }
+
     const fetchSchools = async () => {
-      if (!initialData.sectorId) {
-        setSchools([]);
-        return;
-      }
-      
       setLoading(prev => ({ ...prev, schools: true }));
       try {
         const { data, error } = await supabase
           .from('schools')
           .select('id, name')
-          .eq('sector_id', initialData.sectorId)
+          .eq('sector_id', formData.sectorId)
           .eq('status', 'active')
           .order('name');
           
         if (error) throw error;
         setSchools(data || []);
-      } catch (error) {
-        console.error('Error fetching schools:', error);
+      } catch (err) {
+        console.error('Error fetching schools:', err);
       } finally {
         setLoading(prev => ({ ...prev, schools: false }));
       }
     };
-    
+
     fetchSchools();
-  }, [initialData.sectorId]);
-
-  // Region dəyişdikdə sektorId və schoolId sıfırlayaq
-  useEffect(() => {
-    if (initialData.regionId && !sectors.find(s => s.id === initialData.sectorId)) {
-      onChange({
-        ...initialData,
-        sectorId: '',
-        schoolId: ''
-      });
-    }
-  }, [initialData.regionId, sectors, initialData.sectorId]);
-
-  // Sektor dəyişdikdə schoolId sıfırlayaq
-  useEffect(() => {
-    if (initialData.sectorId && !schools.find(s => s.id === initialData.schoolId)) {
-      onChange({
-        ...initialData,
-        schoolId: ''
-      });
-    }
-  }, [initialData.sectorId, schools, initialData.schoolId]);
+  }, [formData.sectorId]);
 
   return (
-    <div className="space-y-6 py-4">
-      {/* Əsas məlumatlar */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="fullName">{t('fullName')} *</Label>
+    <div className="grid gap-4 py-4">
+      {/* Ad Soyad */}
+      {!isFieldDisabled('fullName') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="fullName" className="text-right">
+            {t('fullName')} {isFieldRequired('fullName') && <span className="text-red-500">*</span>}
+          </Label>
           <Input
             id="fullName"
-            value={initialData.fullName || ''}
+            value={formData.fullName}
             onChange={(e) => handleChange('fullName', e.target.value)}
-            placeholder={t('enterFullName')}
-            required
+            className="col-span-3"
+            disabled={isFieldDisabled('fullName')}
+            required={isFieldRequired('fullName')}
           />
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="email">{t('email')} *</Label>
+      )}
+
+      {/* E-poçt */}
+      {!isFieldDisabled('email') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="email" className="text-right">
+            {t('email')} {isFieldRequired('email') && <span className="text-red-500">*</span>}
+          </Label>
           <Input
             id="email"
             type="email"
-            value={initialData.email || ''}
+            value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
-            placeholder={t('enterEmail')}
-            required
-            disabled={isEditMode} // Redaktə zamanı e-poçt dəyişdirilə bilməz
+            className="col-span-3"
+            disabled={isFieldDisabled('email') || isEditMode}
+            required={isFieldRequired('email')}
           />
         </div>
-        
-        {!isEditMode && (
-          <div className="space-y-2">
-            <Label htmlFor="password">{t('password')} *</Label>
-            <Input
-              id="password"
-              type="password"
-              value={initialData.password || ''}
-              onChange={(e) => handleChange('password', e.target.value)}
-              placeholder={t('enterPassword')}
-              required
-            />
-          </div>
-        )}
-        
-        <div className="space-y-2">
-          <Label htmlFor="phone">{t('phone')}</Label>
+      )}
+
+      {/* Şifrə */}
+      {!isFieldDisabled('password') && !isEditMode && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="password" className="text-right">
+            {t('password')} {isFieldRequired('password') && <span className="text-red-500">*</span>}
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => handleChange('password', e.target.value)}
+            className="col-span-3"
+            disabled={isFieldDisabled('password')}
+            required={isFieldRequired('password')}
+          />
+        </div>
+      )}
+
+      {/* Telefon */}
+      {!isFieldDisabled('phone') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="phone" className="text-right">
+            {t('phone')}
+          </Label>
           <Input
             id="phone"
-            value={initialData.phone || ''}
+            value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            placeholder={t('enterPhone')}
+            className="col-span-3"
+            disabled={isFieldDisabled('phone')}
           />
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="position">{t('position')}</Label>
+      )}
+
+      {/* Vəzifə */}
+      {!isFieldDisabled('position') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="position" className="text-right">
+            {t('position')}
+          </Label>
           <Input
             id="position"
-            value={initialData.position || ''}
+            value={formData.position}
             onChange={(e) => handleChange('position', e.target.value)}
-            placeholder={t('enterPosition')}
+            className="col-span-3"
+            disabled={isFieldDisabled('position')}
           />
         </div>
-      </div>
-      
-      {/* Rol seçimi */}
-      <div className="space-y-2">
-        <Label>{t('role')} *</Label>
-        <RadioGroup
-          value={initialData.role || ''}
-          onValueChange={(value) => handleChange('role', value)}
-          className="flex flex-col space-y-1"
-        >
-          {isSuperAdmin && (
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="superadmin" id="superadmin" />
-              <Label htmlFor="superadmin">{t('superadmin')}</Label>
-            </div>
-          )}
-          
-          {(isSuperAdmin || isRegionAdmin) && (
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="regionadmin" id="regionadmin" />
-              <Label htmlFor="regionadmin">{t('regionadmin')}</Label>
-            </div>
-          )}
-          
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="sectoradmin" id="sectoradmin" />
-            <Label htmlFor="sectoradmin">{t('sectoradmin')}</Label>
+      )}
+
+      {/* Rol */}
+      {!isFieldDisabled('role') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">
+            {t('role')} {isFieldRequired('role') && <span className="text-red-500">*</span>}
+          </Label>
+          <div className="col-span-3">
+            <RadioGroup
+              value={formData.role}
+              onValueChange={(value) => handleChange('role', value)}
+              className="flex flex-col space-y-1"
+              disabled={isFieldDisabled('role')}
+            >
+              {isSuperAdmin && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="regionadmin" id="regionadmin" />
+                  <Label htmlFor="regionadmin">{t('regionadmin')}</Label>
+                </div>
+              )}
+              {(isSuperAdmin || isRegionAdmin) && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="sectoradmin" id="sectoradmin" />
+                  <Label htmlFor="sectoradmin">{t('sectoradmin')}</Label>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="schooladmin" id="schooladmin" />
+                <Label htmlFor="schooladmin">{t('schooladmin')}</Label>
+              </div>
+            </RadioGroup>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="schooladmin" id="schooladmin" />
-            <Label htmlFor="schooladmin">{t('schooladmin')}</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      
-      {/* Region seçimi */}
-      {(initialData.role === 'regionadmin' || initialData.role === 'sectoradmin' || initialData.role === 'schooladmin') && (
-        <div className="space-y-2">
-          <Label htmlFor="regionId">{t('region')} *</Label>
+        </div>
+      )}
+
+      {/* Region */}
+      {!isFieldDisabled('regionId') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="regionId" className="text-right">
+            {t('region')} {isFieldRequired('regionId') && <span className="text-red-500">*</span>}
+          </Label>
           <Select
-            value={initialData.regionId || ''}
+            value={formData.regionId}
             onValueChange={(value) => handleChange('regionId', value)}
-            disabled={loading.regions || !isSuperAdmin}
+            disabled={isFieldDisabled('regionId') || !isSuperAdmin || loading.regions}
           >
-            <SelectTrigger id="regionId">
+            <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectRegion')} />
             </SelectTrigger>
             <SelectContent>
@@ -260,17 +277,19 @@ const UserForm: React.FC<UserFormProps> = ({
           </Select>
         </div>
       )}
-      
-      {/* Sektor seçimi */}
-      {(initialData.role === 'sectoradmin' || initialData.role === 'schooladmin') && initialData.regionId && (
-        <div className="space-y-2">
-          <Label htmlFor="sectorId">{t('sector')} *</Label>
+
+      {/* Sektor */}
+      {!isFieldDisabled('sectorId') && formData.role !== 'regionadmin' && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="sectorId" className="text-right">
+            {t('sector')} {isFieldRequired('sectorId') && <span className="text-red-500">*</span>}
+          </Label>
           <Select
-            value={initialData.sectorId || ''}
+            value={formData.sectorId}
             onValueChange={(value) => handleChange('sectorId', value)}
-            disabled={loading.sectors || !initialData.regionId}
+            disabled={isFieldDisabled('sectorId') || !formData.regionId || loading.sectors}
           >
-            <SelectTrigger id="sectorId">
+            <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectSector')} />
             </SelectTrigger>
             <SelectContent>
@@ -283,17 +302,19 @@ const UserForm: React.FC<UserFormProps> = ({
           </Select>
         </div>
       )}
-      
-      {/* Məktəb seçimi */}
-      {initialData.role === 'schooladmin' && initialData.sectorId && (
-        <div className="space-y-2">
-          <Label htmlFor="schoolId">{t('school')} *</Label>
+
+      {/* Məktəb */}
+      {!isFieldDisabled('schoolId') && formData.role === 'schooladmin' && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="schoolId" className="text-right">
+            {t('school')} {isFieldRequired('schoolId') && <span className="text-red-500">*</span>}
+          </Label>
           <Select
-            value={initialData.schoolId || ''}
+            value={formData.schoolId}
             onValueChange={(value) => handleChange('schoolId', value)}
-            disabled={loading.schools || !initialData.sectorId}
+            disabled={isFieldDisabled('schoolId') || !formData.sectorId || loading.schools}
           >
-            <SelectTrigger id="schoolId">
+            <SelectTrigger className="col-span-3">
               <SelectValue placeholder={t('selectSchool')} />
             </SelectTrigger>
             <SelectContent>
@@ -306,39 +327,24 @@ const UserForm: React.FC<UserFormProps> = ({
           </Select>
         </div>
       )}
-      
-      {/* Dil seçimi */}
-      <div className="space-y-2">
-        <Label htmlFor="language">{t('language')}</Label>
-        <Select
-          value={initialData.language || 'az'}
-          onValueChange={(value) => handleChange('language', value)}
-        >
-          <SelectTrigger id="language">
-            <SelectValue placeholder={t('selectLanguage')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="az">{t('azerbaijani')}</SelectItem>
-            <SelectItem value="en">{t('english')}</SelectItem>
-            <SelectItem value="ru">{t('russian')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {/* Status seçimi (yalnız redaktə zamanı) */}
-      {isEditMode && (
-        <div className="space-y-2">
-          <Label htmlFor="status">{t('status')}</Label>
+
+      {/* Dil */}
+      {!isFieldDisabled('language') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="language" className="text-right">
+            {t('language')}
+          </Label>
           <Select
-            value={initialData.status || 'active'}
-            onValueChange={(value) => handleChange('status', value)}
+            value={formData.language}
+            onValueChange={(value) => handleChange('language', value)}
+            disabled={isFieldDisabled('language')}
           >
-            <SelectTrigger id="status">
-              <SelectValue placeholder={t('selectStatus')} />
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder={t('selectLanguage')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
+              <SelectItem value="az">{t('azerbaijani')}</SelectItem>
+              <SelectItem value="en">{t('english')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
