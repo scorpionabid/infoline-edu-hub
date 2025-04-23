@@ -1,3 +1,4 @@
+
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 export interface Profile {

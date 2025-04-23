@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
 import { UserRole } from '@/types/supabase';
@@ -75,22 +76,25 @@ export const usePermissions = (): UsePermissionsReturn => {
     
     const canAccessRegion = (regionId: string) => {
       if (isSuperAdmin) return true;
-      if (isRegionAdmin) return user.regionId === regionId;
+      if (isRegionAdmin) return user.region_id === regionId || user.regionId === regionId;
       return false;
     };
     
     const canAccessSector = (sectorId: string) => {
       if (isSuperAdmin) return true;
-      if (isRegionAdmin) return user.regionId === regionId;
-      if (isSectorAdmin) return user.sectorId === sectorId;
+      if (isRegionAdmin) {
+        // Region ID-lər ilə əlaqəli sektorlara giriş etmək üçün əlavə məntiq lazım ola bilər
+        return true;
+      }
+      if (isSectorAdmin) return user.sector_id === sectorId || user.sectorId === sectorId;
       return false;
     };
     
     const canAccessSchool = (schoolId: string) => {
       if (isSuperAdmin) return true;
-      if (isRegionAdmin) return user.regionId === regionId;
-      if (isSectorAdmin) return user.sectorId === sectorId;
-      if (isSchoolAdmin) return user.schoolId === schoolId;
+      if (isRegionAdmin) return true; // region adminləri bütün məktəblərə giriş edə bilər
+      if (isSectorAdmin) return true; // sektor adminləri öz sektorlarının bütün məktəblərinə giriş edə bilər
+      if (isSchoolAdmin) return user.school_id === schoolId || user.schoolId === schoolId;
       return false;
     };
     
@@ -108,9 +112,9 @@ export const usePermissions = (): UsePermissionsReturn => {
       isRegionAdmin,
       isSectorAdmin,
       isSchoolAdmin,
-      regionId: user?.regionId || null,
-      sectorId: user?.sectorId || null,
-      schoolId: user?.schoolId || null,
+      regionId: user?.region_id || user?.regionId || null,
+      sectorId: user?.sector_id || user?.sectorId || null,
+      schoolId: user?.school_id || user?.schoolId || null,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
       canViewSchoolCategories,

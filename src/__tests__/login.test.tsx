@@ -1,3 +1,4 @@
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Login from '../pages/Login';
@@ -56,7 +57,7 @@ const mockTranslations = {
 // Mock language context with correct types
 const mockLanguageContext = () => {
   vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
-    t: (key: string) => mockTranslations[key] || key,
+    t: (key: string) => mockTranslations[key as keyof typeof mockTranslations] || key,
     setLanguage: vi.fn(),
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
@@ -261,9 +262,9 @@ describe('Login Page', () => {
   it('sektoradmin istifadəçisini dashboard-a yönləndirir', async () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { ...mockUser, role: 'sektoradmin' }
+      user: { ...mockUser, role: 'sectoradmin' }
     });
-    mockPermissionsHook('sektoradmin');
+    mockPermissionsHook('sectoradmin');
     
     render(
       <MemoryRouter>
@@ -276,12 +277,12 @@ describe('Login Page', () => {
     });
   });
 
-  it('mektebadmin istifadəçisini dashboard-a yönləndirir', async () => {
+  it('schooladmin istifadəçisini dashboard-a yönləndirir', async () => {
     mockUseAuth({ 
       isAuthenticated: true, 
-      user: { ...mockUser, role: 'mektebadmin' }
+      user: { ...mockUser, role: 'schooladmin' }
     });
-    mockPermissionsHook('mektebadmin');
+    mockPermissionsHook('schooladmin');
     
     render(
       <MemoryRouter>

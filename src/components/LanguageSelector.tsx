@@ -1,59 +1,35 @@
 
-import React, { useState } from 'react';
-import { Globe } from 'lucide-react';
-import { useLanguageSafe, Language } from '@/context/LanguageContext';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { useLanguage, Language } from '@/context/LanguageContext';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-interface LanguageInfo {
-  flag: string;
-  nativeName: string;
-}
+import { Globe } from 'lucide-react';
 
 const LanguageSelector: React.FC = () => {
-  const { currentLanguage, setLanguage, availableLanguages, t } = useLanguageSafe();
-  const [open, setOpen] = useState(false);
-
-  const handleSelectLanguage = (lang: Language) => {
-    setLanguage(lang);
-    setOpen(false);
-  };
-
-  // Əgər availableLanguages undefined olarsa, əlavə yoxlama edirik
-  const languages = availableLanguages || {
-    az: { flag: '🇦🇿', nativeName: 'Azərbaycan' },
-    en: { flag: '🇬🇧', nativeName: 'English' },
-    ru: { flag: '🇷🇺', nativeName: 'Русский' },
-    tr: { flag: '🇹🇷', nativeName: 'Türkçe' }
-  };
+  const { t, languages, currentLanguage, setLanguage, availableLanguages } = useLanguage();
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('language')}
-          title={t('language')}
-          className="bg-transparent border-none p-0 m-0"
-        >
-          <Globe className="h-5 w-5 text-muted-foreground" />
-        </button>
+        <Button variant="ghost" size="icon" aria-label={t('language')}>
+          <Globe className="h-4 w-4" />
+          <span className="ml-2 hidden md:inline">{languages[currentLanguage].nativeName}</span>
+        </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        {Object.entries(languages).map(([code, langInfo]) => (
+      <DropdownMenuContent align="end">
+        {availableLanguages.map((lang) => (
           <DropdownMenuItem
-            key={code}
-            className={`flex items-center justify-between ${
-              currentLanguage === code ? 'font-semibold bg-accent/50' : ''
-            }`}
-            onClick={() => handleSelectLanguage(code as Language)}
+            key={lang}
+            onClick={() => setLanguage(lang)}
+            className="flex items-center gap-2 cursor-pointer"
           >
-            <span className="mr-2">{(langInfo as LanguageInfo).flag}</span>
-            <span>{(langInfo as LanguageInfo).nativeName}</span>
+            <span>{languages[lang].flag}</span>
+            <span>{languages[lang].nativeName}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
