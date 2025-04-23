@@ -1,12 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from '@/types/column';
+import { Column } from '@/types/category';
 import { useQuery } from '@tanstack/react-query';
-import { columnAdapter } from '@/utils/columnAdapter';
-import { useAuth } from '@/context/auth';
-import { usePermissions } from '@/hooks/auth/usePermissions';
+import { useDataAccessControl } from '@/hooks/auth/useDataAccessControl';
 
-// Sütunları çəkmək üçün sorğu funksiyası
 const fetchColumns = async (
   categoryId?: string,
   userRole?: string,
@@ -20,10 +17,7 @@ const fetchColumns = async (
     query = query.eq('category_id', categoryId);
   }
 
-  // İstifadəçi hüquqlarına görə nəticələri filtrlə
-  // SuperAdmin bütün məlumatları görə bilər, digər adminlər öz bölgələri üçün
-  // Bu filtrləmə əlavə olaraq RLS-də də tətbiq olunmalıdır DB səviyyəsində
-  
+  // RLS will handle the filtering based on user role and permissions
   const { data, error } = await query.order('order_index', { ascending: true });
 
   if (error) {
@@ -31,22 +25,28 @@ const fetchColumns = async (
     throw new Error(`Column fetch error: ${error.message}`);
   }
 
-  // Sütunları adaptasiya et
-  return data.map(columnAdapter.adaptSupabaseToColumn);
+  return data;
 };
 
 export const useColumnsQuery = (categoryId?: string) => {
-  const { user } = useAuth();
-  const { userRole, regionId, sectorId } = usePermissions();
+  const { 
+    isSuperAdmin, 
+    isRegionAdmin, 
+    isSectorAdmin, 
+    isSchoolAdmin,
+    regionId,
+    sectorId,
+    schoolId
+  } = useDataAccessControl();
   
   return useQuery({
-    queryKey: ['columns', categoryId, userRole, regionId, sectorId],
+    queryKey: ['columns', categoryId, { isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin, regionId, sectorId, schoolId }],
     queryFn: () => fetchColumns(
-      categoryId, 
-      userRole, 
-      regionId, 
-      sectorId, 
-      user?.schoolId
+      categoryId,
+      isSuperAdmin ? 'superadmin' : isRegionAdmin ? 'regionadmin' : isSectorAdmin ? 'sectoradmin' : 'schooladmin',
+      regionId || undefined,
+      sectorId || undefined,
+      schoolId || undefined
     ),
     staleTime: 1000 * 60 * 5, // 5 dəqiqə
   });
