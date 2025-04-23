@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { PermissionLevel, PermissionCheckResult } from './permissionTypes';
 import { UserRole } from '@/types/supabase';

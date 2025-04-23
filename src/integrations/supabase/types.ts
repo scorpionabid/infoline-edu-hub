@@ -748,6 +748,14 @@ export type Database = {
         Args: { sector_id_param: string }
         Returns: number
       }
+      can_access_category: {
+        Args: { user_id_param: string; category_id_param: string }
+        Returns: boolean
+      }
+      can_access_data_entry: {
+        Args: { user_id_param: string; entry_id_param: string }
+        Returns: boolean
+      }
       create_audit_log: {
         Args: {
           p_user_id: string
@@ -762,6 +770,18 @@ export type Database = {
       delete_user_roles: {
         Args: { user_id: string }
         Returns: undefined
+      }
+      get_accessible_regions: {
+        Args: { user_id_param: string }
+        Returns: string[]
+      }
+      get_accessible_schools: {
+        Args: { user_id_param: string }
+        Returns: string[]
+      }
+      get_accessible_sectors: {
+        Args: { user_id_param: string }
+        Returns: string[]
       }
       get_auth_user_role: {
         Args: Record<PropertyKey, never>
@@ -876,6 +896,10 @@ export type Database = {
         Args: { region_id_param: string }
         Returns: boolean
       }
+      has_region_access_by_role: {
+        Args: { user_id_param: string; region_id_param: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -891,8 +915,16 @@ export type Database = {
         Args: { school_id_param: string }
         Returns: boolean
       }
+      has_school_access_by_role: {
+        Args: { user_id_param: string; school_id_param: string }
+        Returns: boolean
+      }
       has_sector_access: {
         Args: { sector_id_param: string }
+        Returns: boolean
+      }
+      has_sector_access_by_role: {
+        Args: { user_id_param: string; sector_id_param: string }
         Returns: boolean
       }
       is_admin_of_entity: {

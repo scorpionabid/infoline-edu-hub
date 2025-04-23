@@ -1,8 +1,7 @@
 
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+import { UserRole } from '@/types/supabase';
 
 interface UsePermissionsReturn {
   userRole: UserRole;
@@ -16,6 +15,7 @@ interface UsePermissionsReturn {
   schoolId: string | null;
   canRegionAdminManageCategoriesColumns: boolean;
   canViewSectorCategories: boolean;
+  canViewSchoolCategories: boolean;
   regionName: string | null;
   sectorName: string | null;
   schoolName: string | null;
@@ -38,6 +38,7 @@ export const usePermissions = (): UsePermissionsReturn => {
         schoolId: null,
         canRegionAdminManageCategoriesColumns: false,
         canViewSectorCategories: false,
+        canViewSchoolCategories: false,
         regionName: null,
         sectorName: null,
         schoolName: null
@@ -53,6 +54,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     
     const canRegionAdminManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
     const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+    const canViewSchoolCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
     
     // Müəssisə adları əldə edilir
     const regionName = user.regionName || null;
@@ -71,6 +73,7 @@ export const usePermissions = (): UsePermissionsReturn => {
       schoolId: user.schoolId || null,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
+      canViewSchoolCategories,
       regionName,
       sectorName,
       schoolName

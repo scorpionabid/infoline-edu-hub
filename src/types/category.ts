@@ -1,55 +1,42 @@
 
-import { Column, ColumnType, ColumnOption, CategoryStatus } from './column';
-import { Json } from './json';
+import { CategoryStatus, ColumnType } from './schema';
 
 export interface Category {
   id: string;
   name: string;
+  status: CategoryStatus;
+  assignment: 'all' | 'sectors' | 'schools';
   description?: string;
-  assignment?: 'all' | 'sectors';
-  deadline?: string;
-  status?: CategoryStatus;
   priority?: number;
+  deadline?: string;
+  archived?: boolean;
   created_at?: string;
   updated_at?: string;
-  archived?: boolean;
-  column_count?: number;
 }
 
 export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  completionPercentage?: number;
+  columns?: Column[];
 }
 
-export interface CategoryFilter {
-  status: 'all' | 'active' | 'inactive' | 'archived';
-  assignment: 'all' | 'sectors';
-  deadline: 'all' | 'upcoming' | 'passed' | 'none';
-}
-
-export interface CategoryFormData {
+export interface Column {
+  id: string;
   name: string;
-  description?: string;
-  assignment: 'all' | 'sectors';
-  deadline?: string;
-  status: CategoryStatus;
-  priority?: number;
+  type: ColumnType;
+  category_id: string;
+  is_required?: boolean;
+  validation?: ColumnValidation;
+  options?: any[];
+  help_text?: string;
+  placeholder?: string;
+  order_index?: number;
+  status?: 'active' | 'inactive';
 }
 
-export type FormStatus = 'completed' | 'pending' | 'rejected' | 'dueSoon' | 'overdue' | 'approved' | 'draft';
-
-export const adaptSupabaseCategory = (data: any): Category => {
-  return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    assignment: data.assignment || 'all',
-    deadline: data.deadline,
-    status: data.status || 'active',
-    priority: data.priority || 0,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    archived: data.archived || false,
-    column_count: data.column_count || 0
-  };
-};
+export interface ColumnValidation {
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  required?: boolean;
+}
