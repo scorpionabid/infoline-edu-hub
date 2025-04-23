@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData } from '@/types/supabase';
@@ -76,6 +75,7 @@ export const useUserOperations = (onComplete: () => void) => {
     
     try {
       console.log('Deleting user:', selectedUser.id);
+      let isPartiallyDeleted = false;
       
       // İlk olaraq user_roles cədvəlindən silirik
       const { error: roleError } = await supabase
@@ -83,7 +83,13 @@ export const useUserOperations = (onComplete: () => void) => {
         .delete()
         .eq('user_id', selectedUser.id);
       
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error('Error deleting from user_roles:', roleError);
+        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
+      } else {
+        console.log('Successfully deleted from user_roles');
+        isPartiallyDeleted = true;
+      }
       
       // Sonra profiles cədvəlindən silirik
       const { error: profileError } = await supabase
@@ -91,18 +97,53 @@ export const useUserOperations = (onComplete: () => void) => {
         .delete()
         .eq('id', selectedUser.id);
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error deleting from profiles:', profileError);
+        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
+      } else {
+        console.log('Successfully deleted from profiles');
+        isPartiallyDeleted = true;
+      }
       
-      toast.success(t('userDeleted'));
-      setIsDeleteDialogOpen(false);
-      onComplete();
+      // Edge Function vasitəsilə Supabase Auth-dan istifadəçini silirik
+      let authDeleteSuccess = false;
+      try {
+        console.log('Attempting to delete user from auth via Edge Function...');
+        const { data, error: authError } = await supabase.functions.invoke('delete-user', {
+          body: { user_id: selectedUser.id }
+        });
+        
+        if (authError) {
+          console.error('Error deleting from auth via Edge Function:', authError);
+        } else {
+          console.log('Successfully deleted from auth via Edge Function');
+          authDeleteSuccess = true;
+        }
+      } catch (authErr) {
+        console.error('Exception during auth deletion via Edge Function:', authErr);
+        // Edge Function xətası olsa da davam edirik
+      }
+      
+      if (isPartiallyDeleted) {
+        if (authDeleteSuccess) {
+          toast.success(t('userDeletedCompletely'));
+        } else {
+          toast.success(t('userDeletedPartially'), {
+            description: t('userDeletedPartiallyDesc')
+          });
+        }
+        setIsDeleteDialogOpen(false);
+        onComplete();
+      } else {
+        toast.error(t('errorDeletingUser'));
+      }
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast.error(t('errorDeletingUser'), {
         description: error.message
       });
     }
-  }, [selectedUser, t, onComplete]);
+  }, [selectedUser, t, onComplete, supabase, setIsDeleteDialogOpen]);
 
   return {
     selectedUser,

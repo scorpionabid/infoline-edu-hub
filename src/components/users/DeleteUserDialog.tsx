@@ -12,6 +12,7 @@ import {
 import { useLanguage } from '@/context/LanguageContext';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface DeleteUserDialogProps {
   open: boolean;
@@ -29,29 +30,60 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   const { t } = useLanguage();
   const [loading, setLoading] = React.useState(false);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!user) return; // Əgər user undefined olsa, əməliyyatı dayandır
     
     setLoading(true);
     
-    // API çağırışını simulyasiya et
-    setTimeout(() => {
-      try {
-        // Gerçək tətbiqdə, burada istifadəçinin silinməsi üçün API çağırışı olacaq
-        onDelete(user.id);
-        setLoading(false);
-        onOpenChange(false);
-        
-        toast.success(t('userDeleted'), {
-          description: t('userDeletedDesc')
-        });
-      } catch (error) {
-        setLoading(false);
-        toast.error(t('deleteError'), {
-          description: t('deleteErrorDesc')
-        });
+    try {
+      // 1. İlk olaraq user_roles cədvəlindən silirik
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (roleError) {
+        console.error('Error deleting from user_roles:', roleError);
+        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
       }
-    }, 1000);
+      
+      // 2. Sonra profiles cədvəlindən silirik
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+      
+      if (profileError) {
+        console.error('Error deleting from profiles:', profileError);
+        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
+      }
+      
+      // 3. Edge Function vasitəsilə Supabase Auth-dan istifadəçini silirik
+      const { error: authError } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: user.id }
+      });
+      
+      if (authError) {
+        console.error('Error deleting from auth:', authError);
+        // Xəta olsa da davam edirik, çünki əsas cədvəllərdən artıq silmişik
+      }
+      
+      // İstifadəçi uğurla silindi
+      onDelete(user.id);
+      onOpenChange(false);
+      
+      toast.success(t('userDeleted'), {
+        description: t('userDeletedDesc')
+      });
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      
+      toast.error(t('deleteError'), {
+        description: error.message || t('deleteErrorDesc')
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Əgər user undefined olsa, dialoqu göstərmə

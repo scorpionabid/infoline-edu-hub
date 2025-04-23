@@ -26,6 +26,7 @@ import { useUserList } from '@/hooks/useUserList';
 import { Pagination } from '@/components/ui/pagination';
 import DeleteUserDialog from './DeleteUserDialog';
 import EditUserDialog from './EditUserDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserListProps {
   refreshTrigger?: number;
@@ -51,7 +52,6 @@ const UserList: React.FC<UserListProps> = ({
     totalPages,
     currentPage,
     setCurrentPage,
-    deleteUser,
     fetchUsers
   } = useUserList();
 
@@ -75,12 +75,67 @@ const UserList: React.FC<UserListProps> = ({
   }, [refreshTrigger]);
 
   // İstifadəçi silmə əməliyyatı
-  const handleDeleteUser = async () => {
-    if (!selectedUser) return;
+  const handleDeleteUser = async (userId: string) => {
+    if (!userId) return;
     
     try {
-      await deleteUser(selectedUser.id);
-      toast.success(t('userDeletedSuccessfully'));
+      console.log('Deleting user with ID:', userId);
+      let isPartiallyDeleted = false;
+      
+      // İlk olaraq user_roles cədvəlindən silirik
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (roleError) {
+        console.error('Error deleting from user_roles:', roleError);
+        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
+      } else {
+        console.log('Successfully deleted from user_roles');
+        isPartiallyDeleted = true;
+      }
+      
+      // Sonra profiles cədvəlindən silirik
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profileError) {
+        console.error('Error deleting from profiles:', profileError);
+        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
+      } else {
+        console.log('Successfully deleted from profiles');
+        isPartiallyDeleted = true;
+      }
+      
+      // Edge Function vasitəsilə Supabase Auth-dan istifadəçini silirik
+      try {
+        console.log('Attempting to delete user from auth via Edge Function...');
+        const { data, error: authError } = await supabase.functions.invoke('delete-user', {
+          body: { user_id: userId }
+        });
+        
+        if (authError) {
+          console.error('Error deleting from auth via Edge Function:', authError);
+        } else {
+          console.log('Successfully deleted from auth via Edge Function');
+        }
+      } catch (authErr) {
+        console.error('Exception during auth deletion via Edge Function:', authErr);
+        // Edge Function xətası olsa da davam edirik
+      }
+      
+      // Siyahını yeniləyirik
+      fetchUsers();
+      
+      if (isPartiallyDeleted) {
+        toast.success(t('userDeletedSuccessfully'));
+      } else {
+        toast.error(t('errorDeletingUser'));
+      }
+      
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -223,10 +278,10 @@ const UserList: React.FC<UserListProps> = ({
 
       {/* İstifadəçi silmə dialoqu */}
       <DeleteUserDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeleteUser}
-        userName={selectedUser?.fullName || selectedUser?.email || ''}
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        user={selectedUser || { id: '', email: '', name: '' }}
+        onDelete={() => handleDeleteUser(selectedUser?.id || '')}
       />
 
       {/* İstifadəçi redaktə dialoqu */}
