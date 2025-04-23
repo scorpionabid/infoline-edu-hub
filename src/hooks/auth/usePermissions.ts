@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/context/auth';
 import { useMemo } from 'react';
 import { UserRole } from '@/types/supabase';
@@ -74,14 +73,12 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canManageData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
     const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
-    // Region admins can only access their own region
     const canAccessRegion = (regionId: string) => {
       if (isSuperAdmin) return true;
       if (isRegionAdmin) return user.regionId === regionId;
       return false;
     };
     
-    // Sector admins can only access sectors in their region
     const canAccessSector = (sectorId: string) => {
       if (isSuperAdmin) return true;
       if (isRegionAdmin) return user.regionId === regionId;
@@ -89,7 +86,6 @@ export const usePermissions = (): UsePermissionsReturn => {
       return false;
     };
     
-    // School admins can only access their own school
     const canAccessSchool = (schoolId: string) => {
       if (isSuperAdmin) return true;
       if (isRegionAdmin) return user.regionId === regionId;
@@ -98,7 +94,6 @@ export const usePermissions = (): UsePermissionsReturn => {
       return false;
     };
     
-    // Category access based on assignment type and user role
     const canAccessCategory = (categoryId: string, assignment: 'all' | 'sectors' | 'schools') => {
       if (isSuperAdmin || isRegionAdmin) return true;
       if (isSectorAdmin) return assignment === 'all' || assignment === 'sectors';
@@ -113,15 +108,15 @@ export const usePermissions = (): UsePermissionsReturn => {
       isRegionAdmin,
       isSectorAdmin,
       isSchoolAdmin,
-      regionId: user.regionId || null,
-      sectorId: user.sectorId || null,
-      schoolId: user.schoolId || null,
+      regionId: user?.regionId || null,
+      sectorId: user?.sectorId || null,
+      schoolId: user?.schoolId || null,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
       canViewSchoolCategories,
-      regionName: user.regionName || null,
-      sectorName: user.sectorName || null,
-      schoolName: user.schoolName || null,
+      regionName: user?.regionName || null,
+      sectorName: user?.sectorName || null,
+      schoolName: user?.schoolName || null,
       canAccessRegion,
       canAccessSector,
       canAccessSchool,

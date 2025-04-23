@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Language = 'az' | 'en' | 'tr' | 'ru';
+import React, { createContext, useContext, useState } from 'react';
 
-interface LanguageInfo {
+export type Language = 'az' | 'en' | 'tr' | 'ru';
+
+export interface LanguageConfig {
   nativeName: string;
   flag: string;
 }
@@ -10,105 +11,39 @@ interface LanguageInfo {
 export interface LanguageContextType {
   t: (key: string) => string;
   setLanguage: (lang: Language) => void;
-  languages: Record<Language, LanguageInfo>;
+  languages: Record<Language, LanguageConfig>;
   currentLanguage: Language;
+  availableLanguages: Language[];
 }
 
-const defaultLanguages: Record<Language, LanguageInfo> = {
+const languages: Record<Language, LanguageConfig> = {
   az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
   en: { nativeName: 'English', flag: '🇬🇧' },
   tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
   ru: { nativeName: 'Русский', flag: '🇷🇺' }
 };
 
-// Context yaradılır
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-// Tərcümələr
-type Translations = Record<string, Record<Language, string>>;
-
-// Varsayılan tərcümələr (burada test üçün əsas olanları qeyd edirəm)
-const translations: Translations = {
-  login: {
-    az: 'Daxil ol',
-    en: 'Login',
-    tr: 'Giriş',
-    ru: 'Вход'
-  },
-  email: {
-    az: 'E-poçt',
-    en: 'Email',
-    tr: 'E-posta',
-    ru: 'Эл. почта'
-  },
-  password: {
-    az: 'Şifrə',
-    en: 'Password',
-    tr: 'Şifre',
-    ru: 'Пароль'
-  },
-  saveChanges: {
-    az: 'Dəyişiklikləri yadda saxla',
-    en: 'Save changes',
-    tr: 'Değişiklikleri kaydet',
-    ru: 'Сохранить изменения'
-  },
-  saveChangesDescription: {
-    az: 'Dəyişiklikləri yadda saxlamaq istədiyinizə əminsiniz?',
-    en: 'Are you sure you want to save changes?',
-    tr: 'Değişiklikleri kaydetmek istediğinizden emin misiniz?',
-    ru: 'Вы уверены, что хотите сохранить изменения?'
-  },
-  save: {
-    az: 'Yadda saxla',
-    en: 'Save',
-    tr: 'Kaydet',
-    ru: 'Сохранить'
-  },
-  cancel: {
-    az: 'Ləğv et',
-    en: 'Cancel',
-    tr: 'İptal',
-    ru: 'Отмена'
-  },
-  // ... digər tərcümələr əlavə edilə bilər
-};
+export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState<Language>('az');
 
-  useEffect(() => {
-    // Əgər lokalstorajda dil saxlanılıbsa, onu istifadə et
-    const savedLanguage = localStorage.getItem('language') as Language;
-    if (savedLanguage && Object.keys(defaultLanguages).includes(savedLanguage)) {
-      setCurrentLanguage(savedLanguage);
-    }
-  }, []);
-
-  const changeLanguage = (language: Language) => {
-    setCurrentLanguage(language);
-    localStorage.setItem('language', language);
+  const setLanguage = (lang: Language) => {
+    setCurrentLanguage(lang);
+    // Burada dil dəyişikliyi ilə əlaqədar əlavə işlər görülə bilər
   };
 
-  const translate = (key: string): string => {
-    if (!translations[key]) {
-      console.warn(`Translation key '${key}' not found.`);
-      return key;
-    }
-
-    if (!translations[key][currentLanguage]) {
-      console.warn(`Translation for '${key}' in language '${currentLanguage}' not found.`);
-      return key;
-    }
-
-    return translations[key][currentLanguage];
+  const t = (key: string): string => {
+    // Tərcümə funksiyası - daha sonra i18n kitabxanası ilə əvəz edilə bilər
+    return key;
   };
 
-  const value = {
-    t: translate,
-    setLanguage: changeLanguage,
-    languages: defaultLanguages,
-    currentLanguage
+  const value: LanguageContextType = {
+    t,
+    setLanguage,
+    languages,
+    currentLanguage,
+    availableLanguages: Object.keys(languages) as Language[]
   };
 
   return (
@@ -118,24 +53,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
-export const useLanguage = () => {
+export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
     throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-};
-
-// Təhlükəsiz istifadə üçün əlavə bir hook (kontekst mövcud olmasa belə xəta atmaz)
-export const useLanguageSafe = () => {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    return {
-      t: (key: string) => key,
-      setLanguage: () => {},
-      languages: defaultLanguages,
-      currentLanguage: 'az' as Language
-    };
   }
   return context;
 };

@@ -43,7 +43,7 @@ vi.mock('../components/auth/LoadingScreen', () => ({
   default: () => <div data-testid="loading-screen" role="status" className="animate-spin">Loading...</div>
 }));
 
-// Translations mock
+// Mock translations
 const mockTranslations = {
   loginTitle: 'Daxil ol',
   loginButton: 'Daxil ol',
@@ -53,10 +53,10 @@ const mockTranslations = {
   loginDescription: 'Hesabınıza daxil olun',
 };
 
-// Mock language context
+// Mock language context with correct types
 const mockLanguageContext = () => {
   vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
-    t: (key) => mockTranslations[key] || key,
+    t: (key: string) => mockTranslations[key] || key,
     setLanguage: vi.fn(),
     languages: {
       az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
@@ -64,27 +64,36 @@ const mockLanguageContext = () => {
       tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
       ru: { nativeName: 'Русский', flag: '🇷🇺' }
     },
-    currentLanguage: 'az'
+    currentLanguage: 'az',
+    availableLanguages: ['az', 'en', 'tr', 'ru']
   });
 };
 
-// Mock permissions hook
+// Mock permissions hook with correct return type
 const mockPermissionsHook = (role: UserRole = 'superadmin') => {
   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
     userRole: role,
-    sectorId: null,
-    regionId: null,
-    canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
-    hasRole: vi.fn().mockResolvedValue(true),
-    hasRegionAccess: vi.fn().mockResolvedValue(true),
-    hasSectorAccess: vi.fn().mockResolvedValue(true),
-    hasSchoolAccess: vi.fn().mockResolvedValue(true),
     isAdmin: true,
     isSuperAdmin: role === 'superadmin',
     isRegionAdmin: role === 'regionadmin',
     isSectorAdmin: role === 'sectoradmin',
     isSchoolAdmin: role === 'schooladmin',
-    schoolId: null
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
+    canViewSectorCategories: true,
+    canViewSchoolCategories: true,
+    regionName: null,
+    sectorName: null,
+    schoolName: null,
+    canAccessRegion: () => true,
+    canAccessSector: () => true,
+    canAccessSchool: () => true,
+    canAccessCategory: () => true,
+    canManageUsers: true,
+    canManageData: true,
+    canApproveData: true
   });
 };
 

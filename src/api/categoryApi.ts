@@ -1,6 +1,34 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { Category, adaptSupabaseCategory, adaptCategoryToSupabase } from '@/types/category';
+import { Category } from '@/types/category';
+
+export const adaptSupabaseCategory = (data: any): Category => {
+  return {
+    id: data.id,
+    name: data.name,
+    status: data.status,
+    assignment: data.assignment,
+    description: data.description,
+    priority: data.priority,
+    deadline: data.deadline,
+    archived: data.archived,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    column_count: data.column_count
+  };
+};
+
+export const adaptCategoryToSupabase = (category: Partial<Category> & { name: string }): any => {
+  return {
+    name: category.name,
+    status: category.status,
+    assignment: category.assignment,
+    description: category.description,
+    priority: category.priority,
+    deadline: category.deadline,
+    archived: category.archived,
+    column_count: category.column_count
+  };
+};
 
 // Bütün kateqoriyaları əldə etmək üçün API funksiyası
 export const fetchCategories = async (): Promise<Category[]> => {
