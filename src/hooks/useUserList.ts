@@ -1,7 +1,17 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { FullUserData } from '@/types/user';
+
+export interface UserFilter {
+  role: string[] | string;
+  region?: string[] | string;
+  sector?: string[] | string;
+  school?: string[] | string;
+  search?: string;
+  status?: string[] | string;
+}
 
 export const useUserList = () => {
   const [users, setUsers] = useState<FullUserData[]>([]);
@@ -9,99 +19,185 @@ export const useUserList = () => {
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<UserFilter>({
     role: '',
-    sectorId: '',
-    regionId: '',
-    search: ''
   });
 
-  const { isSectorAdmin, sectorId } = usePermissions();
+  const { isSectorAdmin, isRegionAdmin, sectorId, regionId } = usePermissions();
 
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('useUserList hook: fetchUsers çağırıldı');
+      
+      // RLS-ə əsaslanan simple query yaradaq
       let query = supabase
         .from('user_roles')
         .select(`
           *,
-          profiles!inner(*)
+          profiles:profiles!inner(*)
         `, { count: 'exact' });
-
-      // Sektoradmin üçün filtirləmə
+      
+      // Filtirləri tətbiq edək
+      if (filter.role && filter.role !== '') {
+        if (Array.isArray(filter.role)) {
+          if (filter.role.length > 0) {
+            query = query.in('role', filter.role);
+          }
+        } else {
+          query = query.eq('role', filter.role);
+        }
+      }
+      
+      if (filter.region && filter.region !== '') {
+        if (Array.isArray(filter.region)) {
+          if (filter.region.length > 0) {
+            query = query.in('region_id', filter.region);
+          }
+        } else {
+          query = query.eq('region_id', filter.region);
+        }
+      }
+      
+      if (filter.sector && filter.sector !== '') {
+        if (Array.isArray(filter.sector)) {
+          if (filter.sector.length > 0) {
+            query = query.in('sector_id', filter.sector);
+          }
+        } else {
+          query = query.eq('sector_id', filter.sector);
+        }
+      }
+      
+      if (filter.school && filter.school !== '') {
+        if (Array.isArray(filter.school)) {
+          if (filter.school.length > 0) {
+            query = query.in('school_id', filter.school);
+          }
+        } else {
+          query = query.eq('school_id', filter.school);
+        }
+      }
+      
+      if (filter.status && filter.status !== '') {
+        if (Array.isArray(filter.status)) {
+          if (filter.status.length > 0) {
+            query = query.in('status', filter.status);
+          }
+        } else {
+          query = query.eq('status', filter.status);
+        }
+      }
+      
+      // SectorAdmin üçün - onun sektorunda olan məktəb adminlərini filtirlə
       if (isSectorAdmin && sectorId) {
+        console.log('SectorAdmin üçün filterləmə: Sector ID =', sectorId);
         query = query
           .eq('sector_id', sectorId)
           .eq('role', 'schooladmin');
-      } 
-      // Digər filtirlər
-      else {
-        if (filter.role) query = query.eq('role', filter.role);
-        if (filter.sectorId) query = query.eq('sector_id', filter.sectorId);
-        if (filter.regionId) query = query.eq('region_id', filter.regionId);
       }
 
+      // RegionAdmin üçün - onun regionunda olan istifadəçiləri filtirlə
+      else if (isRegionAdmin && regionId) {
+        console.log('RegionAdmin üçün filterləmə: Region ID =', regionId);
+        query = query.eq('region_id', regionId);
+      }
+      
+      console.log('Sorğu hazırlanır...');
       const { data, error: fetchError, count } = await query;
+      
+      if (fetchError) {
+        console.error('Sorğu xətası:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log('Əldə edilmiş data sayı:', data?.length || 0);
+      
+      if (!data || data.length === 0) {
+        setUsers([]);
+        setTotalCount(0);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+      
+      // İstifadəçi məlumatlarını format edək
+      const formattedUsers = data?.map(item => {
+        const profile = item.profiles || {};
+        
+        return {
+          id: item.user_id,
+          email: profile.email || '',
+          full_name: profile.full_name || '',
+          name: profile.full_name || '',
+          role: item.role,
+          region_id: item.region_id,
+          sector_id: item.sector_id,
+          school_id: item.school_id,
+          regionId: item.region_id,
+          sectorId: item.sector_id,
+          schoolId: item.school_id,
+          status: profile.status || 'active',
+          phone: profile.phone || '',
+          position: profile.position || '',
+          language: profile.language || 'az',
+          avatar: profile.avatar || '',
+          last_login: profile.last_login || '',
+          lastLogin: profile.last_login || '',
+          created_at: profile.created_at || '',
+          updated_at: profile.updated_at || '',
+          createdAt: profile.created_at || '',
+          updatedAt: profile.updated_at || '',
+          notificationSettings: {
+            email: true,
+            system: true
+          },
+          twoFactorEnabled: false
+        };
+      }) || [];
 
-      if (fetchError) throw fetchError;
+      // Client tərəfdə axtarış filtrini tətbiq edək
+      let filteredUsers = formattedUsers;
+      
+      if (filter.search && filter.search.trim() !== '') {
+        const searchTerm = filter.search.trim().toLowerCase();
+        console.log('Axtarış üçün filtirlənir:', searchTerm);
+        
+        filteredUsers = formattedUsers.filter(user => 
+          (user.full_name?.toLowerCase().includes(searchTerm)) ||
+          (user.email?.toLowerCase().includes(searchTerm)) ||
+          (user.phone?.toLowerCase().includes(searchTerm)) ||
+          (user.position?.toLowerCase().includes(searchTerm))
+        );
+        
+        console.log('Axtarışdan sonra istifadəçi sayı:', filteredUsers.length);
+      }
 
-      const formattedUsers = data?.map(item => ({
-        id: item.id,
-        email: item.profiles?.email || '',
-        full_name: item.profiles?.full_name || '',
-        role: item.role,
-        region_id: item.region_id,
-        sector_id: item.sector_id,
-        school_id: item.school_id,
-        status: item.profiles?.status || 'active',
-        phone: item.profiles?.phone || '',
-        position: item.profiles?.position || '',
-        language: item.profiles?.language || 'az',
-        avatar: item.profiles?.avatar || '',
-        last_login: item.profiles?.last_login || '',
-        created_at: item.profiles?.created_at || '',
-        updated_at: item.profiles?.updated_at || '',
-        name: item.profiles?.full_name || '',
-        regionId: item.region_id,
-        sectorId: item.sector_id,
-        schoolId: item.school_id,
-        lastLogin: item.profiles?.last_login || '',
-        createdAt: item.profiles?.created_at || '',
-        updatedAt: item.profiles?.updated_at || '',
-        twoFactorEnabled: false,
-        notificationSettings: {
-          email: true,
-          system: true
-        }
-      })) || [];
-
-      setUsers(formattedUsers);
-      setTotalCount(count || 0);
+      setUsers(filteredUsers);
+      setTotalCount(count || filteredUsers.length);
       setError(null);
     } catch (err) {
-      console.error('Error fetching users:', err);
+      console.error('Istifadəçilər əldə edilərkən xəta:', err);
       setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [filter, isSectorAdmin, sectorId]);
+  }, [filter, isSectorAdmin, isRegionAdmin, sectorId, regionId]);
 
-  const updateFilter = useCallback((newFilter: typeof filter) => {
-    setFilter(newFilter);
+  const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
+    setFilter(prev => ({...prev, ...newFilter}));
     setCurrentPage(1);
   }, []);
 
   const resetFilter = useCallback(() => {
     setFilter({
       role: '',
-      sectorId: '',
-      regionId: '',
-      search: ''
     });
     setCurrentPage(1);
   }, []);
 
   useEffect(() => {
+    console.log('useUserList hook: useEffect çağırıldı. CurrentPage:', currentPage);
     fetchUsers();
   }, [fetchUsers, currentPage]);
 

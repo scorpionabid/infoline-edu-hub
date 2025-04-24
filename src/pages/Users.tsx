@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import UserList from '@/components/users/UserList';
@@ -10,7 +11,7 @@ import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Users = () => {
   const { t } = useLanguage();
-  const { isRegionAdmin, isSuperAdmin, isSectorAdmin, sectorId } = usePermissions();
+  const { isRegionAdmin, isSuperAdmin, isSectorAdmin, sectorId, regionId } = usePermissions();
   const isAuthorized = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,8 +43,16 @@ const Users = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // Sektoradmin üçün filter parametrləri
-  const filterParams = isSectorAdmin && sectorId ? { sectorId } : undefined;
+  // Sector ve Region admin üçün filter parametrləri
+  const filterParams = (() => {
+    if (isSectorAdmin && sectorId) {
+      return { sectorId, role: ['schooladmin'] };
+    }
+    if (isRegionAdmin && regionId) {
+      return { regionId };
+    }
+    return undefined;
+  })();
 
   return (
     <SidebarLayout>
