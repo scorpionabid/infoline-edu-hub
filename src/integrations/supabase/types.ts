@@ -947,12 +947,24 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      is_in_same_sector: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
+      is_in_same_sector_and_not_regionadmin: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       is_regionadmin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_regionadmin_for_region: {
         Args: { region_id_param: string }
+        Returns: boolean
+      }
+      is_school_in_sector: {
+        Args: { school_id_param: string }
         Returns: boolean
       }
       is_schooladmin: {
@@ -1008,6 +1020,10 @@ export type Database = {
       safe_get_user_by_id: {
         Args: { user_id: string }
         Returns: Json
+      }
+      sectoradmin_can_see_school_user: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
       update_admin_emails: {
         Args: Record<PropertyKey, never>

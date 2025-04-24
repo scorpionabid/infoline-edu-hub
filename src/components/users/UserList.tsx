@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
-  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
@@ -27,6 +26,7 @@ import { Pagination } from '@/components/ui/pagination';
 import DeleteUserDialog from './DeleteUserDialog';
 import EditUserDialog from './EditUserDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface UserListProps {
   refreshTrigger?: number;
@@ -55,11 +55,12 @@ const UserList: React.FC<UserListProps> = ({
     fetchUsers
   } = useUserList();
 
+  const { isSectorAdmin, sectorId } = usePermissions();
+
   const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Filteri yeniləyək
   useEffect(() => {
     if (filterParams) {
       updateFilter({
@@ -69,12 +70,20 @@ const UserList: React.FC<UserListProps> = ({
     }
   }, [filterParams]);
 
-  // refreshTrigger dəyişdikdə istifadəçiləri yenidən yükləyək
+  useEffect(() => {
+    if (isSectorAdmin && sectorId) {
+      updateFilter({
+        ...filter,
+        sectorId: sectorId,
+        role: 'schooladmin'
+      });
+    }
+  }, [isSectorAdmin, sectorId]);
+
   useEffect(() => {
     fetchUsers();
   }, [refreshTrigger]);
 
-  // İstifadəçi silmə əməliyyatı
   const handleDeleteUser = async (userId: string) => {
     if (!userId) return;
     
@@ -82,7 +91,6 @@ const UserList: React.FC<UserListProps> = ({
       console.log('Deleting user with ID:', userId);
       let isPartiallyDeleted = false;
       
-      // İlk olaraq user_roles cədvəlindən silirik
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
@@ -90,13 +98,11 @@ const UserList: React.FC<UserListProps> = ({
       
       if (roleError) {
         console.error('Error deleting from user_roles:', roleError);
-        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
       } else {
         console.log('Successfully deleted from user_roles');
         isPartiallyDeleted = true;
       }
       
-      // Sonra profiles cədvəlindən silirik
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -104,13 +110,11 @@ const UserList: React.FC<UserListProps> = ({
       
       if (profileError) {
         console.error('Error deleting from profiles:', profileError);
-        // Xəta olsa da davam edirik, çünki istifadəçi cədvəldə olmaya bilər
       } else {
         console.log('Successfully deleted from profiles');
         isPartiallyDeleted = true;
       }
       
-      // Edge Function vasitəsilə Supabase Auth-dan istifadəçini silirik
       try {
         console.log('Attempting to delete user from auth via Edge Function...');
         const { data, error: authError } = await supabase.functions.invoke('delete-user', {
@@ -124,10 +128,8 @@ const UserList: React.FC<UserListProps> = ({
         }
       } catch (authErr) {
         console.error('Exception during auth deletion via Edge Function:', authErr);
-        // Edge Function xətası olsa da davam edirik
       }
       
-      // Siyahını yeniləyirik
       fetchUsers();
       
       if (isPartiallyDeleted) {
@@ -143,18 +145,15 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
-  // İstifadəçi redaktə əməliyyatı tamamlandıqda
   const handleEditComplete = () => {
     setIsEditDialogOpen(false);
     fetchUsers();
   };
 
-  // Səhifələmə
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  // İstifadəçi rolunu formatla
   const formatRole = (role: string) => {
     switch (role) {
       case 'superadmin':
@@ -170,7 +169,6 @@ const UserList: React.FC<UserListProps> = ({
     }
   };
 
-  // Rola görə badge rəngi
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'superadmin':
@@ -276,7 +274,6 @@ const UserList: React.FC<UserListProps> = ({
         </div>
       )}
 
-      {/* İstifadəçi silmə dialoqu */}
       <DeleteUserDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -284,7 +281,6 @@ const UserList: React.FC<UserListProps> = ({
         onDelete={() => handleDeleteUser(selectedUser?.id || '')}
       />
 
-      {/* İstifadəçi redaktə dialoqu */}
       {selectedUser && (
         <EditUserDialog
           isOpen={isEditDialogOpen}
