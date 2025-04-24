@@ -49,13 +49,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
     if (error) {
       clearError();
     }
-  }, []);
+  }, [error, clearError]);
 
   const onSubmit = async (data: FormValues) => {
     try {
       clearError(); // Əvvəlki xətaları təmizləyək
       setLoginInProgress(true);
-      console.log('Giriş cəhdi edilir...');
+      console.log('Giriş cəhdi edilir...', data.email);
       
       const success = await login(data.email, data.password);
       

@@ -17,13 +17,13 @@ serve(async (req) => {
     console.log("Direct-login funksiyası çağırıldı")
     
     // URL və key almaq
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://olbfnauhzpdskqnxtwav.supabase.co'
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY tapılmadı")
       return new Response(
-        JSON.stringify({ error: 'Server konfiqurasiyonu səhvdir' }),
+        JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

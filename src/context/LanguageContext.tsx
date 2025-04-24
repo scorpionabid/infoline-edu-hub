@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Language = 'az' | 'en' | 'tr' | 'ru';
 
@@ -106,6 +107,14 @@ export const LanguageContext = createContext<LanguageContextType | undefined>(un
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState<Language>('az');
+
+  useEffect(() => {
+    // localStorage-dan dil seçimini yüklə
+    const savedLanguage = localStorage.getItem('preferredLanguage');
+    if (savedLanguage && (savedLanguage === 'az' || savedLanguage === 'en' || savedLanguage === 'tr' || savedLanguage === 'ru')) {
+      setCurrentLanguage(savedLanguage);
+    }
+  }, []);
 
   const setLanguage = (lang: Language) => {
     setCurrentLanguage(lang);

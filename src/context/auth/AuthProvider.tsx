@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth';
 import { AuthContext } from './context';

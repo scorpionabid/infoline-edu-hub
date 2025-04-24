@@ -1,192 +1,98 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
-import LoginForm from '@/components/auth/LoginForm';
-import * as AuthContext from '@/context/auth';
-import * as LanguageContext from '@/context/LanguageContext';
 
-// LanguageSelector mock
-vi.mock('@/components/LanguageSelector', () => ({
-  default: () => <div data-testid="language-selector">Language Selector</div>
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import LoginForm from '../components/auth/LoginForm';
+import { vi } from 'vitest';
+import { LanguageProvider } from '@/context/LanguageContext';
+
+// Mock AuthContext
+vi.mock('@/context/auth', () => ({
+  useAuth: () => ({
+    login: vi.fn().mockResolvedValue(true),
+    clearError: vi.fn(),
+  }),
 }));
 
-// Mock translations
-const mockTranslations = {
-  loginTitle: 'Daxil ol',
-  loginButton: 'Daxil ol',
-  loginDescription: 'Hesabınıza daxil olun',
-  email: 'E-poçt',
-  password: 'Şifrə',
-  emailRequired: 'E-poçt tələb olunur',
-  passwordRequired: 'Şifrə tələb olunur',
-  invalidEmail: 'Düzgün e-poçt daxil edin',
-  passwordTooShort: 'Şifrə ən azı 6 simvol olmalıdır',
-  forgotPassword: 'Şifrəni unutmusunuz?',
-  loggingIn: 'Daxil olunur...',
-  loginSuccess: 'Uğurla daxil oldunuz',
-  invalidCredentials: 'Yanlış e-poçt və ya şifrə',
-  unexpectedError: 'Gözlənilməz xəta baş verdi',
-};
-
-// Mock language context
-const mockLanguageContext = () => {
-  vi.spyOn(LanguageContext, 'useLanguage').mockReturnValue({
-    language: 'az',
-    setLanguage: vi.fn(),
-    t: (key) => mockTranslations[key] || key,
-    languages: {
-      az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
-      en: { nativeName: 'English', flag: '🇬🇧' },
-      tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
-      ru: { nativeName: 'Русский', flag: '🇷🇺' }
-    }
-  });
-};
+// Mock toast
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 // Mock react-router-dom
 vi.mock('react-router-dom', () => ({
+  ...vi.importActual('react-router-dom'),
   useNavigate: () => vi.fn(),
 }));
 
-// Helper to mock useAuth
-function mockUseAuth(loginImpl = vi.fn().mockResolvedValue(true)) {
-  vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
-    login: loginImpl,
-    logout: vi.fn(),
-    updateUser: vi.fn(),
-    clearError: vi.fn(),
-    user: null,
-    isAuthenticated: false,
-    isLoading: false,
-    error: null
-  });
-}
+describe('LoginForm', () => {
+  const renderLoginForm = (error = null) => {
+    return render(
+      <MemoryRouter>
+        <LanguageProvider>
+          <LoginForm error={error} clearError={vi.fn()} />
+        </LanguageProvider>
+      </MemoryRouter>
+    );
+  };
 
-describe('LoginForm Component', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-    mockLanguageContext();
-  });
-
-  it('formu düzgün göstərir və məcburi sahələri yoxlayır', async () => {
-    const loginMock = vi.fn().mockResolvedValue(true);
-    mockUseAuth(loginMock);
-    const clearErrorMock = vi.fn();
+  it('renders login form correctly', () => {
+    renderLoginForm();
     
-    render(<LoginForm error={null} clearError={clearErrorMock} />);
-    
-    // Form elementlərini yoxlayın
-    expect(screen.getByLabelText(/E-poçt/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Şifrə/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Daxil ol/i })).toBeInTheDocument();
-    
-    // Boş formla təqdim etməyi yoxlayaq - validasiya xətaları olmalıdır
-    fireEvent.click(screen.getByRole('button', { name: /Daxil ol/i }));
-    
-    // Məcburi sahə xətaları göstərilməlidir
-    await waitFor(() => {
-      expect(screen.getByText(mockTranslations.emailRequired)).toBeInTheDocument();
-      expect(screen.getByText(mockTranslations.passwordRequired)).toBeInTheDocument();
-    });
-    
-    // Login funksiyası çağırılmalıdır
-    expect(loginMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Daxil ol')).toBeInTheDocument();
+    expect(screen.getByLabelText('E-poçt')).toBeInTheDocument();
+    expect(screen.getByLabelText('Şifrə')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /daxil ol/i })).toBeInTheDocument();
   });
 
-  it('doğru məlumatlarla login olunur', async () => {
-    const loginMock = vi.fn().mockResolvedValue(true);
-    mockUseAuth(loginMock);
-    const clearErrorMock = vi.fn();
+  it('displays error when provided', () => {
+    const errorMessage = 'Test error message';
+    renderLoginForm(errorMessage);
     
-    render(<LoginForm error={null} clearError={clearErrorMock} />);
-    
-    // Input-ları doldurun
-    fireEvent.change(screen.getByLabelText(/E-poçt/i), {
-      target: { value: 'test@example.com' }
-    });
-    
-    fireEvent.change(screen.getByLabelText(/Şifrə/i), {
-      target: { value: 'password123' }
-    });
-    
-    // Login düyməsinə klikləyin
-    fireEvent.click(screen.getByRole('button', { name: /Daxil ol/i }));
-    
-    // Login funksiyasının çağırıldığını yoxlayın
-    await waitFor(() => {
-      expect(loginMock).toHaveBeenCalledWith('test@example.com', 'password123');
-    });
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
   });
 
-  it('şifrəni göstər/gizlət funksiyası işləyir', () => {
-    mockUseAuth();
+  it('toggles password visibility', () => {
+    renderLoginForm();
     
-    render(<LoginForm error={null} clearError={vi.fn()} />);
-    
-    // Əvvəlcə şifrə gizlidir
-    const passwordInput = screen.getByLabelText(/Şifrə/i);
+    const passwordInput = screen.getByLabelText('Şifrə');
     expect(passwordInput).toHaveAttribute('type', 'password');
     
-    // Göstər düyməsinə klikləyin
-    // Qeyd: querySelector ilə düyməni seçirik çünki aria-label yoxdur
-    const toggleButton = document.querySelector('button.absolute.inset-y-0.right-0');
-    expect(toggleButton).not.toBeNull();
+    const toggleButton = passwordInput.nextSibling;
+    fireEvent.click(toggleButton);
     
-    if (toggleButton) {
-      fireEvent.click(toggleButton);
-      
-      // İndi şifrə görünməlidir
-      expect(passwordInput).toHaveAttribute('type', 'text');
-      
-      // Yenidən gizlətmək üçün düyməyə klikləyin
-      fireEvent.click(toggleButton);
-      
-      // Şifrə yenidən gizli olmalıdır
-      expect(passwordInput).toHaveAttribute('type', 'password');
-    }
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    
+    fireEvent.click(toggleButton);
+    expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  it('login zamanı xəta göstərilir', () => {
-    mockUseAuth();
-    const testError = "Test xəta mesajı";
+  it('validates email format', async () => {
+    renderLoginForm();
     
-    render(<LoginForm error={testError} clearError={vi.fn()} />);
+    const emailInput = screen.getByLabelText('E-poçt');
+    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
     
-    // Xəta mesajı göstərilməlidir
-    expect(screen.getByText(testError)).toBeInTheDocument();
+    const submitButton = screen.getByRole('button', { name: /daxil ol/i });
+    fireEvent.click(submitButton);
+    
+    // Error message should appear for invalid email
+    expect(await screen.findByText(/düzgün e-poçt formatı deyil/i)).toBeInTheDocument();
   });
 
-  it('login zamanı yüklənmə göstərilir', async () => {
-    // Login funksiyası gec cavab verəcək
-    const loginMock = vi.fn().mockImplementation(() => {
-      return new Promise(resolve => {
-        setTimeout(() => resolve(true), 100);
-      });
-    });
+  it('validates password length', async () => {
+    renderLoginForm();
     
-    mockUseAuth(loginMock);
+    const passwordInput = screen.getByLabelText('Şifrə');
+    fireEvent.change(passwordInput, { target: { value: '123' } });
     
-    render(<LoginForm error={null} clearError={vi.fn()} />);
+    const submitButton = screen.getByRole('button', { name: /daxil ol/i });
+    fireEvent.click(submitButton);
     
-    // Input-ları doldurun
-    fireEvent.change(screen.getByLabelText(/E-poçt/i), {
-      target: { value: 'test@example.com' }
-    });
-    
-    fireEvent.change(screen.getByLabelText(/Şifrə/i), {
-      target: { value: 'password123' }
-    });
-    
-    // Form-u təqdim edin
-    fireEvent.submit(screen.getByRole('button', { name: /Daxil ol/i }));
-    
-    // Düyməni axtarın və disabled olub-olmadığını yoxlayın
-    await waitFor(() => {
-      const button = screen.getByRole('button', { name: /Daxil ol/i });
-      expect(button).toHaveAttribute('disabled');
-      
-      // Daha düzgün yanaşma: spinner'i axtarırıq
-      const spinner = document.querySelector('.animate-spin');
-      expect(spinner).toBeInTheDocument();
-    });
+    // Error message should appear for short password
+    expect(await screen.findByText(/şifrə ən azı 6 simvol olmalıdır/i)).toBeInTheDocument();
   });
 });

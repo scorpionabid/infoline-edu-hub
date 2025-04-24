@@ -1,14 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, supabaseAdmin } from '@/integrations/supabase/client';
-import { FullUserData, Profile } from '@/types/supabase';
-import { AuthState, UseSupabaseAuthReturn } from './types';
-import { signIn, signOut, signUp, resetPassword, updateProfile, updatePassword } from './authActions';
 
-export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
-  const [state, setState] = useState<AuthState>({
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { FullUserData, Profile } from '@/types/supabase';
+import { UseSupabaseAuthReturn } from './types';
+
+export const useSupabaseAuth = (supabaseClient: any = supabase, initialSession = null): UseSupabaseAuthReturn => {
+  const [state, setState] = useState<{
+    loading: boolean;
+    user: FullUserData | null;
+    session: any | null;
+  }>({
     loading: true,
     user: null,
-    session: null
+    session: initialSession
   });
   
   // İstifadəçi məlumatlarını yeniləmək üçün helper function
@@ -185,77 +189,17 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     console.log(`fetchUserDetails çağırıldı: userId=${userId}`);
     
     try {
-      // Əvvəlcə istifadəçinin rolunu yoxlayaq
-      console.log('İstifadəçi rolu yoxlanılır...');
-      let isAdmin = false;
-      
-      try {
-        // İstifadəçinin superadmin olub-olmadığını yoxlayaq
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        if (!roleError && roleData?.role === 'superadmin') {
-          console.log('İstifadəçi superadmin-dir');
-          isAdmin = true;
-        }
-      } catch (roleCheckError) {
-        console.warn('Rol yoxlama xətası:', roleCheckError);
-      }
-      
       // Profil məlumatlarını əldə edək
       console.log('Profil məlumatları sorğulanır...');
-      let profileData: any = null;
-      let profileError: any = null;
-      
-      if (isAdmin) {
-        // Superadmin üçün supabaseAdmin klientindən istifadə edək
-        console.log('Superadmin üçün supabaseAdmin klienti istifadə edilir...');
-        const { data, error } = await supabaseAdmin
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        profileData = data;
-        profileError = error;
-      } else {
-        // Normal istifadəçilər üçün standart klient
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        profileData = data;
-        profileError = error;
-      }
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
       
       if (profileError) {
         console.error('Profil məlumatları əldə etmə xətası:', profileError);
-        
-        // RLS xətası olub-olmadığını yoxlayaq
-        if (profileError.message?.includes('row level security') || profileError.message?.includes('infinite recursion')) {
-          console.warn('RLS xətası baş verdi. Supabase Admin klienti ilə yenidən cəhd edilir...');
-          
-          // RLS xətası halında supabaseAdmin klientindən istifadə edək
-          const { data: adminData, error: adminError } = await supabaseAdmin
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-          
-          if (adminError) {
-            console.error('Admin klienti ilə profil məlumatları əldə etmə xətası:', adminError);
-            throw new Error(`Profil məlumatlarını əldə etmə xətası: ${adminError.message}`);
-          }
-          
-          profileData = adminData;
-        } else {
-          throw new Error(`Profil məlumatlarını əldə etmə xətası: ${profileError.message}`);
-        }
+        throw new Error(`Profil məlumatlarını əldə etmə xətası: ${profileError.message}`);
       }
       
       if (!profileData) {
@@ -267,54 +211,15 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       
       // İstifadəçi rolunu əldə edək
       console.log('İstifadəçi rolu sorğulanır...');
-      let roleData: any = null;
-      let roleError: any = null;
-      
-      if (isAdmin) {
-        // Superadmin üçün supabaseAdmin klientindən istifadə edək
-        const { data, error } = await supabaseAdmin
-          .from('user_roles')
-          .select('role, region_id, sector_id, school_id')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        roleData = data;
-        roleError = error;
-      } else {
-        // Normal istifadəçilər üçün standart klient
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role, region_id, sector_id, school_id')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        roleData = data;
-        roleError = error;
-      }
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id, school_id')
+        .eq('user_id', userId)
+        .maybeSingle();
       
       if (roleError) {
         console.error('Rol məlumatları əldə etmə xətası:', roleError);
-        
-        // RLS xətası olub-olmadığını yoxlayaq
-        if (roleError.message?.includes('row level security') || roleError.message?.includes('infinite recursion')) {
-          console.warn('RLS xətası baş verdi. Supabase Admin klienti ilə yenidən cəhd edilir...');
-          
-          // RLS xətası halında supabaseAdmin klientindən istifadə edək
-          const { data: adminRoleData, error: adminRoleError } = await supabaseAdmin
-            .from('user_roles')
-            .select('role, region_id, sector_id, school_id')
-            .eq('user_id', userId)
-            .maybeSingle();
-          
-          if (adminRoleError) {
-            console.error('Admin klienti ilə rol məlumatları əldə etmə xətası:', adminRoleError);
-            throw new Error(`İstifadəçi rolunu əldə etmə xətası: ${adminRoleError.message}`);
-          }
-          
-          roleData = adminRoleData;
-        } else {
-          throw new Error(`İstifadəçi rolunu əldə etmə xətası: ${roleError.message}`);
-        }
+        throw new Error(`İstifadəçi rolunu əldə etmə xətası: ${roleError.message}`);
       }
       
       if (!roleData) {
@@ -324,20 +229,46 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       
       console.log('Rol məlumatları əldə edildi:', roleData);
       
+      // İstifadəçi e-poçtunu əldə edək
+      let userEmail = profileData.email;
+      
+      if (!userEmail) {
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          userEmail = userData?.user?.email || '';
+        } catch (emailError) {
+          console.warn('E-poçt məlumatını əldə etmək mümkün olmadı:', emailError);
+        }
+      }
+      
       // Tam istifadəçi məlumatlarını birləşdirək
       const fullUserData: FullUserData = {
         id: userId,
-        email: profileData.email,
+        email: userEmail || profileData.email || '',
+        name: profileData.full_name,
         full_name: profileData.full_name,
         phone: profileData.phone,
         position: profileData.position,
-        language: profileData.language,
+        language: profileData.language || 'az',
         avatar: profileData.avatar,
-        status: profileData.status,
+        status: profileData.status || 'active',
         role: roleData.role,
         region_id: roleData.region_id,
         sector_id: roleData.sector_id,
         school_id: roleData.school_id,
+        regionId: roleData.region_id,
+        sectorId: roleData.sector_id,
+        schoolId: roleData.school_id,
+        last_login: profileData.last_login,
+        lastLogin: profileData.last_login,
+        created_at: profileData.created_at,
+        updated_at: profileData.updated_at,
+        createdAt: profileData.created_at,
+        updatedAt: profileData.updated_at,
+        notificationSettings: {
+          email: true,
+          system: true
+        }
       };
       
       console.log('Tam istifadəçi məlumatları:', fullUserData);
@@ -348,82 +279,90 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
     }
   }, []);
 
-  // signIn-in bağlı variantını yaradaq
+  // signIn metodu
   const handleSignIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
       console.log(`useSupabaseAuth: ${email} ilə giriş edilir...`);
-      const result = await signIn(email, password, setLoading);
       
-      // Giriş uğurlu olduqda, istifadəçi məlumatlarını yenidən əldə edək
-      if (result && result.user) {
-        console.log(`Giriş uğurlu oldu, istifadəçi məlumatları yenilənir, ID: ${result.user.id}`);
-        try {
-          const userData = await fetchUserDetails(result.user.id);
-          setUser(userData);
-          console.log('İstifadəçi məlumatları uğurla yeniləndi');
-          
-          // İstifadəçi son giriş tarixini yeniləyək
-          if (userData?.id) {
-            try {
-              await supabase
-                .from('profiles')
-                .update({ last_login: new Date().toISOString() })
-                .eq('id', userData.id);
-              console.log('Son giriş tarixi yeniləndi');
-            } catch (updateError) {
-              console.error('Son giriş tarixi yenilənərkən xəta:', updateError);
-            }
-          }
-        } catch (userError) {
-          console.error('Giriş sonrası istifadəçi məlumatlarını əldə edərkən xəta:', userError);
-        }
+      // Auth əməliyyatını icra edək
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      if (!data || !data.user) {
+        throw new Error('Giriş məlumatları əldə edilə bilmədi');
       }
       
-      return result;
+      console.log('Giriş uğurlu oldu, istifadəçi məlumatları:', data.user.id);
+      
+      // İstifadəçi məlumatlarını əldə edək
+      const userData = await fetchUserDetails(data.user.id);
+      setUser(userData);
+      
+      return { data, error: null };
     } catch (error) {
-      console.error('useSupabaseAuth signIn xətası:', error);
-      throw error;
+      console.error('Giriş zamanı xəta:', error);
+      return { data: null, error };
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setUser]);
+  }, [fetchUserDetails, setLoading, setUser]);
   
-  // signOut-un bağlı variantını yaradaq
+  // signOut metodu
   const handleSignOut = useCallback(async () => {
-    await signOut(setLoading, setUser, setSession);
-  }, [setLoading, setUser, setSession]);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setSession(null);
+      return { error: null };
+    } catch (error) {
+      console.error('Çıxış zamanı xəta:', error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setSession, setUser]);
   
-  // signUp-ın bağlı variantını yaradaq
-  const handleSignUp = useCallback(async (email: string, password: string, userData: Partial<Profile>) => {
-    return await signUp(email, password, userData, setLoading);
-  }, [setLoading]);
-  
-  // resetPassword-in bağlı variantını yaradaq
-  const handleResetPassword = useCallback(async (email: string) => {
-    return await resetPassword(email, setLoading);
-  }, [setLoading]);
-  
-  // updateProfile-ın bağlı variantını yaradaq
+  // updateProfile metodu
   const handleUpdateProfile = useCallback(async (updates: Partial<Profile>) => {
-    if (!state.user) return false;
-    return await updateProfile(updates, state.user.id, fetchUserDetails, setUser);
-  }, [state.user, fetchUserDetails, setUser]);
-  
-  // updatePassword-in bağlı variantını yaradaq
-  const handleUpdatePassword = useCallback(async (password: string) => {
-    return await updatePassword(password);
-  }, []);
+    try {
+      const userId = state.user?.id;
+      if (!userId) return false;
+      
+      // Profili yenilə
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      // Yenilənmiş istifadəçi məlumatlarını əldə et
+      const updatedUser = await fetchUserDetails(userId);
+      setUser(updatedUser);
+      
+      return true;
+    } catch (error) {
+      console.error('Profil yeniləmə zamanı xəta:', error);
+      return false;
+    }
+  }, [fetchUserDetails, setUser, state.user?.id]);
 
-  // Hook return
   return {
     ...state,
     signIn: handleSignIn,
     signOut: handleSignOut,
-    signUp: handleSignUp,
-    resetPassword: handleResetPassword,
     updateProfile: handleUpdateProfile,
-    updatePassword: handleUpdatePassword,
-    fetchUserDetails: fetchUserDetails
+    fetchUserDetails,
+    signUp: async () => ({ data: null, error: new Error('Not implemented') }),
+    resetPassword: async () => false,
+    updatePassword: async () => false
   };
 };

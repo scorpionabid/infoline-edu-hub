@@ -8,13 +8,19 @@ export interface AuthState {
 }
 
 export interface AuthActions {
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, userData: Partial<Profile>) => Promise<any>;
-  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{
+    data: any;
+    error: any;
+  }>;
+  signUp: (email: string, password: string, userData?: Partial<Profile>) => Promise<{
+    data: any;
+    error: any;
+  }>;
+  signOut: () => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<boolean>;
   updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
   updatePassword: (password: string) => Promise<boolean>;
-  fetchUserData: (userId: string) => Promise<FullUserData>;
+  fetchUserDetails: (userId: string) => Promise<FullUserData | null>;
 }
 
 export type UseSupabaseAuthReturn = AuthState & AuthActions;

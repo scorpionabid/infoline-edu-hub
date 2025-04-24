@@ -1,7 +1,7 @@
-import { supabase, supabaseAdmin } from '@/integrations/supabase/client';
+
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Profile, FullUserData, UserRole } from '@/types/supabase';
-import { createClient } from '@supabase/supabase-js';
 
 // Giriş funksiyası
 export const signIn = async (email: string, password: string, setLoading: (loading: boolean) => void) => {
@@ -16,30 +16,8 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     // Qısa bir gözləmə əlavə edək ki, əvvəlki sessiya tam təmizlənsin
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Supabase URL və API açarını birbaşa hardcode edək
-    const supabaseUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTc1MzMzMTcsImV4cCI6MjAxMzEwOTMxN30.Tz-0XJdDFQrWQyXAFhJeUPtX8PRiMxuGY-XqgIvwfww';
-    
-    console.log('API açarı:', supabaseKey);
-    
-    // Yeni bir Supabase klienti yaradaq
-    const tempClient = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      },
-      global: {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    });
-    
-    // Yeni klient ilə login cəhdi edək
-    const { data, error } = await tempClient.auth.signInWithPassword({
+    // Supabase auth ilə daxil olma
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -53,83 +31,6 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     
     if (!data || !data.user) {
       throw new Error('İstifadəçi məlumatları əldə edilmədi');
-    }
-    
-    // Əsas Supabase klientinə sessiya məlumatlarını təyin edək
-    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-      access_token: data.session?.access_token || '',
-      refresh_token: data.session?.refresh_token || ''
-    });
-    
-    if (sessionError) {
-      console.error('Sessiya təyin etmə xətası:', sessionError);
-      throw sessionError;
-    }
-    
-    console.log('Aktiv sessiya:', sessionData.session ? 'Var' : 'Yoxdur');
-    
-    if (sessionData.session) {
-      console.log('JWT token mövcuddur:', sessionData.session.access_token ? 'Bəli' : 'Xeyr');
-      
-      // Token-in saxlanma yerini yoxlayaq və əmin olaq ki, localStorage-də var
-      try {
-        // localStorage-də token-i yoxlayaq
-        const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`;
-        console.log(`LocalStorage açarı: ${storageKey}`);
-        
-        const storedSession = localStorage.getItem(storageKey);
-        console.log(`LocalStorage yoxlanılır (${storageKey}):`, storedSession ? 'Token var' : 'Token yoxdur');
-        
-        if (!storedSession) {
-          // Əgər token yoxdursa, manual olaraq əlavə edək
-          console.log('Token manual olaraq əlavə edilir...');
-          const sessionObject = {
-            access_token: sessionData.session.access_token,
-            refresh_token: sessionData.session.refresh_token,
-            expires_at: Math.floor(Date.now() / 1000) + 3600
-          };
-          
-          localStorage.setItem(storageKey, JSON.stringify(sessionObject));
-          console.log('Token manual olaraq əlavə edildi');
-        }
-      } catch (storageError) {
-        console.warn('Token saxlama xətası:', storageError);
-      }
-      
-      // Test sorğusu edək ki, token düzgün işləyir
-      try {
-        console.log('Test sorğusu edilir...');
-        const { data: testData, error: testError } = await supabase
-          .from('profiles')
-          .select('id')
-          .limit(1);
-          
-        if (testError) {
-          console.warn('Test sorğusu xətası:', testError);
-        } else {
-          console.log('Test sorğusu uğurlu oldu:', testData);
-        }
-      } catch (testError) {
-        console.warn('Test sorğusu zamanı xəta:', testError);
-      }
-    }
-    
-    // Profil məlumatlarını əldə etməyə çalışaq
-    try {
-      console.log('Profil məlumatları əldə edilir...');
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .maybeSingle();
-        
-      if (profileError) {
-        console.warn('Profil məlumatlarını əldə etmə xətası:', profileError);
-      } else {
-        console.log('Profil məlumatları:', profileData);
-      }
-    } catch (profileCheckError) {
-      console.warn('Profil yoxlama xətası:', profileCheckError);
     }
     
     return data;
@@ -186,7 +87,7 @@ export const signOut = async (setLoading: (loading: boolean) => void, setUser: (
 };
 
 // Qeydiyyat funksiyası
-export const signUp = async (email: string, password: string, userData: Partial<Profile>, setLoading: (loading: boolean) => void) => {
+export const signUp = async (email: string, password: string, userData: Partial<Profile> = {}, setLoading: (loading: boolean) => void) => {
   try {
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
@@ -194,7 +95,7 @@ export const signUp = async (email: string, password: string, userData: Partial<
       password,
       options: {
         data: {
-          full_name: userData.full_name,
+          full_name: userData.full_name || email.split('@')[0],
           role: 'schooladmin' as UserRole, // Default olaraq schooladmin
         }
       }
