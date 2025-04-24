@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, ReactNode } from 'react';
 import { useSupabaseAuth } from '@/hooks/auth';
 import { AuthContext } from './context';
 import { FullUserData } from '@/types/supabase';
 import { toast } from 'sonner';
 import { AuthState } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -42,6 +42,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     try {
       setError(null);
       console.log(`AuthContext: ${email} ilə giriş edilir...`);
+      
+      // Əvvəlcə çıxış edək ki, təmiz sessiya ilə başlayaq
+      await supabase.auth.signOut();
+      console.log('Əvvəlki sessiya təmizləndi');
+      
+      // Qısa bir gözləmə əlavə edək
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Login cəhdi edək
       const { data, error } = await signIn(email, password);
       
       if (error) {
@@ -55,7 +64,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         return false;
       }
       
-      console.log('AuthContext: Giriş uğurlu oldu');
+      console.log('AuthContext: Giriş uğurlu oldu, istifadəçi ID:', data.user.id);
+      
+      // Sessiya məlumatlarını yoxlayaq
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.error('AuthContext: Sessiya yaradıla bilmədi');
+        setError('Sessiya yaradıla bilmədi. Zəhmət olmasa yenidən cəhd edin.');
+        return false;
+      }
+      
+      console.log('AuthContext: Sessiya yaradıldı, token mövcuddur');
+      
+      // Profil məlumatlarını əldə etməyə çalışaq
+      try {
+        console.log('Profil məlumatları əldə edilir...');
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+          
+        if (profileError) {
+          console.warn('Profil məlumatlarını əldə etmə xətası:', profileError);
+          
+          // Xətanı göstərək, lakin login prosesini dayandırmayaq
+          toast.warning('Profil məlumatları əldə edilə bilmədi', {
+            description: 'Giriş uğurlu oldu, lakin profil məlumatları əldə edilə bilmədi. Bəzi funksiyalar məhdud ola bilər.'
+          });
+        } else {
+          console.log('Profil məlumatları əldə edildi:', profileData);
+        }
+      } catch (profileCheckError) {
+        console.warn('Profil yoxlama xətası:', profileCheckError);
+      }
+      
       return true;
     } catch (error: any) {
       console.error('AuthContext: Login error:', error);
@@ -73,9 +116,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setError('Bu hesab üçün profil tapılmadı, zəhmət olmasa adminə müraciət edin');
       } else if (error.message?.includes('rol təyin edilməyib')) {
         setError('Bu hesab üçün rol təyin edilməyib, zəhmət olmasa adminə müraciət edin');
+      } else if (error.message === 'Failed to fetch') {
+        setError('Server ilə əlaqə qurula bilmədi. İnternet bağlantınızı yoxlayın.');
+      } else if (error.message?.includes('Invalid API key')) {
+        setError('API açarı xətası. Zəhmət olmasa administratora müraciət edin.');
       } else {
         setError(error.message || 'Bilinməyən giriş xətası');
       }
+      
+      toast.error('Giriş uğursuz oldu', {
+        description: error.message || 'Bilinməyən giriş xətası'
+      });
       
       return false;
     }
@@ -144,6 +195,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       } : null,
       error
     });
+    
+    // İstifadəçi məlumatları dəyişdikdə əlavə yoxlama
+    if (user && user.id && user.email && user.role) {
+      console.log('İstifadəçi məlumatları tam əldə edildi:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        full_name: user.full_name,
+        region_id: user.region_id,
+        sector_id: user.sector_id,
+        school_id: user.school_id
+      });
+      
+      // Superadmin hesabı üçün əlavə loq
+      if (user.role === 'superadmin') {
+        console.log('Superadmin hesabı ilə giriş edildi');
+      }
+    }
   }, [user, loading, error]);
 
   return (

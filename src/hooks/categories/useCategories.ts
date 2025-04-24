@@ -1,7 +1,7 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Category, adaptSupabaseCategory } from '@/types/category';
+import { Category } from '@/types/category';
+import { adaptSupabaseCategory } from '@/api/categoryApi';
 import { toast } from 'sonner';
 
 

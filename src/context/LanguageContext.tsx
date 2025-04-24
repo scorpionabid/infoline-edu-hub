@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 
 export type Language = 'az' | 'en' | 'tr' | 'ru';
@@ -138,6 +137,23 @@ export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (context === undefined) {
     throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
+
+// useLanguageSafe - təhlükəsiz dil hook-u
+// useLanguage-dən fərqli olaraq, kontekst olmadıqda xəta atmır
+export const useLanguageSafe = (): LanguageContextType => {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    // Xəta atmaq əvəzinə default dəyərlər qaytarırıq
+    return {
+      t: (key: string) => key, // Açarı olduğu kimi qaytarırıq
+      setLanguage: () => {}, // Boş funksiya
+      languages,
+      currentLanguage: 'az', // Default dil
+      availableLanguages: Object.keys(languages) as Language[]
+    };
   }
   return context;
 };

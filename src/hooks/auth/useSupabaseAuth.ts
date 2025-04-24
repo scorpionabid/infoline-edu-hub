@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAdmin } from '@/integrations/supabase/client';
 import { FullUserData, Profile } from '@/types/supabase';
 import { AuthState, UseSupabaseAuthReturn } from './types';
 import { signIn, signOut, signUp, resetPassword, updateProfile, updatePassword } from './authActions';
@@ -75,7 +75,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
               setLoading(true);
               
               // İstifadəçi məlumatlarını əldə edək
-              const userData = await fetchUserDetails(newSession.user.id, newSession.user.email);
+              const userData = await fetchUserDetails(newSession.user.id);
               console.log('İstifadəçi məlumatları əldə edildi:', userData ? 'Uğurlu' : 'Uğursuz');
               
               if (mounted) {
@@ -124,7 +124,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
         if (currentSession?.user && mounted) {
           try {
             console.log(`İlkin sessiya üçün istifadəçi məlumatları əldə edilir, ID: ${currentSession.user.id}`);
-            const userData = await fetchUserDetails(currentSession.user.id, currentSession.user.email);
+            const userData = await fetchUserDetails(currentSession.user.id);
             
             if (mounted) {
               console.log('İlkin sessiya üçün istifadəçi məlumatları təyin edilir');
@@ -181,113 +181,144 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
   }, [setLoading, setSession, setUser]);
   
   // İstifadəçi məlumatlarını əldə etmək
-  const fetchUserDetails = useCallback(async (userId: string, userEmail: string) => {
+  const fetchUserDetails = useCallback(async (userId: string): Promise<FullUserData | null> => {
+    console.log(`fetchUserDetails çağırıldı: userId=${userId}`);
+    
     try {
-      console.log(`İstifadəçi məlumatları əldə edilir (ID: ${userId}, Email: ${userEmail})`);
+      // Əvvəlcə istifadəçinin rolunu yoxlayaq
+      console.log('İstifadəçi rolu yoxlanılır...');
+      let isAdmin = false;
       
-      // İstifadəçi profili əldə etmək
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      try {
+        // İstifadəçinin superadmin olub-olmadığını yoxlayaq
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
         
+        if (!roleError && roleData?.role === 'superadmin') {
+          console.log('İstifadəçi superadmin-dir');
+          isAdmin = true;
+        }
+      } catch (roleCheckError) {
+        console.warn('Rol yoxlama xətası:', roleCheckError);
+      }
+      
+      // Profil məlumatlarını əldə edək
+      console.log('Profil məlumatları sorğulanır...');
+      let profileData: any = null;
+      let profileError: any = null;
+      
+      if (isAdmin) {
+        // Superadmin üçün supabaseAdmin klientindən istifadə edək
+        console.log('Superadmin üçün supabaseAdmin klienti istifadə edilir...');
+        const { data, error } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        profileData = data;
+        profileError = error;
+      } else {
+        // Normal istifadəçilər üçün standart klient
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        profileData = data;
+        profileError = error;
+      }
+      
       if (profileError) {
-        console.error('Profil məlumatlarını əldə etmə xətası:', profileError);
-        throw new Error('İstifadəçi profili tapılmadı');
+        console.error('Profil məlumatları əldə etmə xətası:', profileError);
+        
+        // RLS xətası olub-olmadığını yoxlayaq
+        if (profileError.message?.includes('row level security') || profileError.message?.includes('infinite recursion')) {
+          console.warn('RLS xətası baş verdi. Supabase Admin klienti ilə yenidən cəhd edilir...');
+          
+          // RLS xətası halında supabaseAdmin klientindən istifadə edək
+          const { data: adminData, error: adminError } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          
+          if (adminError) {
+            console.error('Admin klienti ilə profil məlumatları əldə etmə xətası:', adminError);
+            throw new Error(`Profil məlumatlarını əldə etmə xətası: ${adminError.message}`);
+          }
+          
+          profileData = adminData;
+        } else {
+          throw new Error(`Profil məlumatlarını əldə etmə xətası: ${profileError.message}`);
+        }
       }
       
       if (!profileData) {
-        console.error('Profil məlumatları boşdur');
+        console.error('Profil məlumatları tapılmadı');
         throw new Error('İstifadəçi profili tapılmadı');
       }
       
       console.log('Profil məlumatları əldə edildi:', profileData);
       
-      // İstifadəçi rolunu əldə etmək - birbaşa SQL sorğusu ilə
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role, region_id, sector_id, school_id')
-        .eq('user_id', userId)
-        .single();
+      // İstifadəçi rolunu əldə edək
+      console.log('İstifadəçi rolu sorğulanır...');
+      let roleData: any = null;
+      let roleError: any = null;
+      
+      if (isAdmin) {
+        // Superadmin üçün supabaseAdmin klientindən istifadə edək
+        const { data, error } = await supabaseAdmin
+          .from('user_roles')
+          .select('role, region_id, sector_id, school_id')
+          .eq('user_id', userId)
+          .maybeSingle();
         
+        roleData = data;
+        roleError = error;
+      } else {
+        // Normal istifadəçilər üçün standart klient
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role, region_id, sector_id, school_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        roleData = data;
+        roleError = error;
+      }
+      
       if (roleError) {
-        console.error('Rol məlumatlarını əldə etmə xətası:', roleError);
+        console.error('Rol məlumatları əldə etmə xətası:', roleError);
         
-        // Edge Function ilə rol məlumatlarını əldə etməyə çalışaq
-        try {
-          console.log('Edge Function ilə rol məlumatları əldə edilir...');
+        // RLS xətası olub-olmadığını yoxlayaq
+        if (roleError.message?.includes('row level security') || roleError.message?.includes('infinite recursion')) {
+          console.warn('RLS xətası baş verdi. Supabase Admin klienti ilə yenidən cəhd edilir...');
           
-          // Cari sessiyadan JWT token alırıq
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          // RLS xətası halında supabaseAdmin klientindən istifadə edək
+          const { data: adminRoleData, error: adminRoleError } = await supabaseAdmin
+            .from('user_roles')
+            .select('role, region_id, sector_id, school_id')
+            .eq('user_id', userId)
+            .maybeSingle();
           
-          if (sessionError) {
-            console.error('Sessiya məlumatlarını alarkən xəta:', sessionError);
-            throw sessionError;
+          if (adminRoleError) {
+            console.error('Admin klienti ilə rol məlumatları əldə etmə xətası:', adminRoleError);
+            throw new Error(`İstifadəçi rolunu əldə etmə xətası: ${adminRoleError.message}`);
           }
           
-          if (!sessionData.session) {
-            console.error('Aktiv sessiya tapılmadı');
-            throw new Error('Aktiv sessiya tapılmadı');
-          }
-          
-          // Edge Function-a sorğu göndəririk
-          const response = await fetch(
-            'https://olbfnauhzpdskqnxtwav.supabase.co/functions/v1/get-user-role',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${sessionData.session.access_token}`
-              },
-              body: JSON.stringify({
-                userId,
-                userEmail
-              })
-            }
-          );
-          
-          if (!response.ok) {
-            let errorMessage = 'Bilinməyən xəta';
-            try {
-              const errorData = await response.json();
-              console.error('Edge Function xətası:', errorData);
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              console.error('Xəta məlumatlarını oxuyarkən problem:', e);
-            }
-            throw new Error(`Edge Function xətası: ${errorMessage}`);
-          }
-          
-          const edgeFunctionData = await response.json();
-          console.log('Edge Function cavabı:', edgeFunctionData);
-          
-          if (!edgeFunctionData.role) {
-            throw new Error('İstifadəçi üçün rol təyin edilməyib');
-          }
-          
-          // Edge Function-dan gələn rol məlumatlarını istifadə edək
-          const fullUserData: FullUserData = {
-            ...profileData,
-            id: userId,
-            email: userEmail,
-            role: edgeFunctionData.role,
-            region_id: edgeFunctionData.region_id,
-            sector_id: edgeFunctionData.sector_id,
-            school_id: edgeFunctionData.school_id
-          };
-          
-          console.log('Tam istifadəçi məlumatları (Edge Function ilə):', fullUserData);
-          return fullUserData;
-          
-        } catch (edgeFunctionError: any) {
-          console.error('Edge Function çağırışı zamanı xəta:', edgeFunctionError);
-          throw new Error('İstifadəçi rolu əldə edilə bilmədi');
+          roleData = adminRoleData;
+        } else {
+          throw new Error(`İstifadəçi rolunu əldə etmə xətası: ${roleError.message}`);
         }
       }
       
       if (!roleData) {
-        console.error('Rol məlumatları boşdur');
+        console.error('Rol məlumatları tapılmadı');
         throw new Error('İstifadəçi üçün rol təyin edilməyib');
       }
       
@@ -295,24 +326,28 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       
       // Tam istifadəçi məlumatlarını birləşdirək
       const fullUserData: FullUserData = {
-        ...profileData,
         id: userId,
-        email: userEmail,
+        email: profileData.email,
+        full_name: profileData.full_name,
+        phone: profileData.phone,
+        position: profileData.position,
+        language: profileData.language,
+        avatar: profileData.avatar,
+        status: profileData.status,
         role: roleData.role,
         region_id: roleData.region_id,
         sector_id: roleData.sector_id,
-        school_id: roleData.school_id
+        school_id: roleData.school_id,
       };
       
       console.log('Tam istifadəçi məlumatları:', fullUserData);
       return fullUserData;
-      
     } catch (error: any) {
-      console.error('İstifadəçi məlumatlarını əldə etmə xətası:', error);
+      console.error('fetchUserDetails xətası:', error);
       throw error;
     }
   }, []);
-  
+
   // signIn-in bağlı variantını yaradaq
   const handleSignIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
@@ -324,7 +359,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthReturn => {
       if (result && result.user) {
         console.log(`Giriş uğurlu oldu, istifadəçi məlumatları yenilənir, ID: ${result.user.id}`);
         try {
-          const userData = await fetchUserDetails(result.user.id, result.user.email);
+          const userData = await fetchUserDetails(result.user.id);
           setUser(userData);
           console.log('İstifadəçi məlumatları uğurla yeniləndi');
           

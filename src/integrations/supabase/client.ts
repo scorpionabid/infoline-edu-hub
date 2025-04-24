@@ -1,11 +1,15 @@
-
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './types';
+import { Database } from '@/types/supabase-types';
 
-const supabaseUrl = "https://olbfnauhzpdskqnxtwav.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4";
+// Supabase konfiqurasiyası
+const supabaseUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co';
+// Anon key - istifadəçi autentifikasiyası üçün (Supabase dashboard-dan əldə edilən)
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTc1MzMzMTcsImV4cCI6MjAxMzEwOTMxN30.Tz-0XJdDFQrWQyXAFhJeUPtX8PRiMxuGY-XqgIvwfww';
+// Service role key - RLS qaydalarını bypass etmək üçün (Supabase dashboard-dan əldə edilən)
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NzUzMzMxNywiZXhwIjoyMDEzMTA5MzE3fQ.mIHF-BO2JQpwXOVvUDGwNH8o_E1JbdSjsYNi-Qrz_7w';
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+// Normal istifadəçilər üçün Supabase klienti
+const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -13,9 +17,37 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'apikey': supabaseAnonKey
+      'apikey': supabaseAnonKey,
+      'Content-Type': 'application/json'
     }
   }
+});
+
+// API açarını əldə etmək üçün klientə xüsusiyyət əlavə edək
+export const supabase = Object.assign(supabaseClient, {
+  supabaseUrl,
+  supabaseKey: supabaseAnonKey
+});
+
+// Admin əməliyyatları üçün service_role ilə Supabase klienti
+// Bu klient RLS qaydalarını bypass edir
+const supabaseAdminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  },
+  global: {
+    headers: {
+      'apikey': supabaseServiceKey,
+      'Content-Type': 'application/json'
+    }
+  }
+});
+
+// Admin klientinə də API açarını əlavə edək
+export const supabaseAdmin = Object.assign(supabaseAdminClient, {
+  supabaseUrl,
+  supabaseKey: supabaseServiceKey
 });
 
 // Real-time kanal yaratma funksiyası
