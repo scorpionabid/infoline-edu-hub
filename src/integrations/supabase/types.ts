@@ -787,6 +787,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_region_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_full_user_data: {
         Args: { user_id_param: string }
         Returns: Json
@@ -935,8 +939,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_authenticated: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       is_regionadmin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_regionadmin_for_region: {
+        Args: { region_id_param: string }
         Returns: boolean
       }
       is_schooladmin: {
