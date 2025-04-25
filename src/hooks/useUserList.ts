@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -29,6 +28,17 @@ export const useUserList = () => {
     try {
       setLoading(true);
       console.log('useUserList hook: fetchUsers çağırıldı');
+      
+      // Əvvəlcə cari sessiyanı yoxlayaq
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.error('Aktiv sessiya tapılmadı');
+        setError(new Error('Aktiv sessiya tapılmadı. Zəhmət olmasa yenidən daxil olun.'));
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Aktiv sessiya tapıldı, token mövcuddur');
       
       // RLS-ə əsaslanan simple query yaradaq
       let query = supabase

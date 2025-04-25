@@ -1,6 +1,5 @@
-
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase-types';
+import type { FullUserData } from '@/types/supabase';
 
 // Supabase konfiqurasiyası
 const supabaseUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co';
@@ -10,7 +9,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NzUzMzMxNywiZXhwIjoyMDEzMTA5MzE3fQ.mIHF-BO2JQpwXOVvUDGwNH8o_E1JbdSjsYNi-Qrz_7w';
 
 // Normal istifadəçilər üçün Supabase klienti
-const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -24,6 +23,14 @@ const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Supabase klientinə auth dəyişikliklərinə abunə olaq
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    // Session mövcuddursa, Authorization header-ini əlavə edək
+    supabaseClient.functions.setAuth(session.access_token);
+  }
+});
+
 // API açarını əldə etmək üçün klientə xüsusiyyət əlavə edək
 export const supabase = Object.assign(supabaseClient, {
   supabaseUrl,
@@ -32,7 +39,7 @@ export const supabase = Object.assign(supabaseClient, {
 
 // Admin əməliyyatları üçün service_role ilə Supabase klienti
 // Bu klient RLS qaydalarını bypass edir
-const supabaseAdminClient = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+const supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     persistSession: false,
     autoRefreshToken: false
@@ -55,15 +62,19 @@ export const supabaseAdmin = Object.assign(supabaseAdminClient, {
 export const createRealTimeChannel = (channelName: string, table: string, event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*', filter?: string) => {
   return supabase
     .channel(channelName)
-    .on('postgres_changes', {
-      event,
-      schema: 'public',
-      table,
-      filter
-    }, (payload) => {
-      console.log('Real-time dəyişiklik:', payload);
-      return payload;
-    });
+    .on(
+      'postgres_changes' as any,
+      {
+        event,
+        schema: 'public',
+        table,
+        filter
+      }, 
+      (payload) => {
+        console.log('Real-time dəyişiklik:', payload);
+        return payload;
+      }
+    );
 };
 
 // Data yükləmə üçün yardımçı funksiya
