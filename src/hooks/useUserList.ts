@@ -32,10 +32,10 @@ export const useUserList = () => {
       
       // RLS-ə əsaslanan simple query yaradaq
       let query = supabase
-        .from('user_roles')
+        .from('profiles')
         .select(`
           *,
-          profiles:profiles!inner(*)
+          user_roles(*)
         `, { count: 'exact' });
       
       // Filtirləri tətbiq edək
