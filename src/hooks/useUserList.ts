@@ -40,12 +40,12 @@ export const useUserList = () => {
       
       console.log('Aktiv sessiya tapıldı, token mövcuddur');
       
-      // RLS-ə əsaslanan simple query yaradaq
+      // Sorğunu user_roles cədvəlindən başlayaq, çünki region_id, sector_id və school_id sütunları buradadır
       let query = supabase
-        .from('profiles')
+        .from('user_roles')
         .select(`
           *,
-          user_roles(*)
+          profiles(*)
         `, { count: 'exact' });
       
       // Filtirləri tətbiq edək
@@ -92,10 +92,10 @@ export const useUserList = () => {
       if (filter.status && filter.status !== '') {
         if (Array.isArray(filter.status)) {
           if (filter.status.length > 0) {
-            query = query.in('status', filter.status);
+            query = query.in('profiles.status', filter.status);
           }
         } else {
-          query = query.eq('status', filter.status);
+          query = query.eq('profiles.status', filter.status);
         }
       }
       
@@ -122,6 +122,7 @@ export const useUserList = () => {
       }
       
       console.log('Əldə edilmiş data sayı:', data?.length || 0);
+      console.log('İlk nəticə nümunəsi:', data && data.length > 0 ? JSON.stringify(data[0]).slice(0, 200) + '...' : 'Boş');
       
       if (!data || data.length === 0) {
         setUsers([]);
@@ -133,7 +134,14 @@ export const useUserList = () => {
       
       // İstifadəçi məlumatlarını format edək
       const formattedUsers = data?.map(item => {
-        const profile = item.profiles || {};
+        // profiles artıq bir obyekt olacaq, array deyil
+        if (!item.profiles) {
+          console.error('Profile məlumatları tapılmadı:', item);
+          return null;
+        }
+        
+        const profile = item.profiles;
+        console.log('Profile məlumatları:', profile);
         
         return {
           id: item.user_id,
@@ -164,7 +172,7 @@ export const useUserList = () => {
           },
           twoFactorEnabled: false
         };
-      }) || [];
+      }).filter(Boolean) || [];
 
       // Client tərəfdə axtarış filtrini tətbiq edək
       let filteredUsers = formattedUsers;
