@@ -763,6 +763,18 @@ export type Database = {
         Args: { user_id_param: string; entry_id_param: string }
         Returns: boolean
       }
+      can_regionadmin_view_role: {
+        Args: { role_user_id: string }
+        Returns: boolean
+      }
+      can_sectoradmin_view_role: {
+        Args: { role_user_id: string }
+        Returns: boolean
+      }
+      can_view_own_role: {
+        Args: { role_user_id: string }
+        Returns: boolean
+      }
       create_audit_log: {
         Args: {
           p_user_id: string
@@ -789,6 +801,10 @@ export type Database = {
       get_accessible_sectors: {
         Args: { user_id_param: string }
         Returns: string[]
+      }
+      get_auth_user_info: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_auth_user_role: {
         Args: Record<PropertyKey, never>
@@ -983,6 +999,10 @@ export type Database = {
         Returns: boolean
       }
       is_superadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_superadmin_secure: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
