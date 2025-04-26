@@ -15,20 +15,22 @@ import { Separator } from "@/components/ui/separator";
 import { ColumnType, COLUMN_TYPE_DEFINITIONS } from "@/types/column";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Control } from "react-hook-form";
 
-interface ValidationFieldsProps {
-  form: any;
-  selectedType: ColumnType;
-  t: (key: string) => string; // Dil tərcüməsi üçün funksiya
+export interface ValidationFieldsProps {
+  control: Control<any>; // form control
+  type: ColumnType;
+  t?: (key: string) => string; // Opsiyonal dil tərcüməsi funksiyası
 }
 
-const ValidationFields: React.FC<ValidationFieldsProps> = ({
-  form,
-  selectedType,
-  t,
-}) => {
+const ValidationFields = ({ control, type, t: propT }: ValidationFieldsProps) => {
+  const { t: contextT } = useLanguage();
+  
+  // İstifadə edəcəyimiz tərcümə funksiyası (prop və ya context-dən)
+  const t = propT || contextT;
+  
   // Seçilmiş tip üçün mümkün validasiyaları müəyyən et
-  const availableValidations = COLUMN_TYPE_DEFINITIONS[selectedType]?.validations || [];
+  const availableValidations = COLUMN_TYPE_DEFINITIONS[type]?.validations || [];
   
   // Validasiya formunu uyğun şəkildə hazırla
   const renderValidationFields = () => {
@@ -36,7 +38,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
       <div className="space-y-4">
         {availableValidations.includes('minLength') && (
           <FormField
-            control={form.control}
+            control={control}
             name="validation.minLength"
             render={({ field }) => (
               <FormItem>
@@ -61,7 +63,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
 
         {availableValidations.includes('maxLength') && (
           <FormField
-            control={form.control}
+            control={control}
             name="validation.maxLength"
             render={({ field }) => (
               <FormItem>
@@ -86,7 +88,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
 
         {availableValidations.includes('minValue') && (
           <FormField
-            control={form.control}
+            control={control}
             name="validation.minValue"
             render={({ field }) => (
               <FormItem>
@@ -111,7 +113,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
 
         {availableValidations.includes('maxValue') && (
           <FormField
-            control={form.control}
+            control={control}
             name="validation.maxValue"
             render={({ field }) => (
               <FormItem>
@@ -136,7 +138,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
 
         {availableValidations.includes('pattern') && (
           <FormField
-            control={form.control}
+            control={control}
             name="validation.pattern"
             render={({ field }) => (
               <FormItem>
@@ -155,25 +157,51 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
         )}
         
         {/* Əlavə validasiyalar */}
-        {(selectedType === 'email' || selectedType === 'url') && (
+        {(type === 'email' || availableValidations.includes('email')) && (
           <FormField
-            control={form.control}
-            name={`validation.${selectedType}`}
+            control={control}
+            name="validation.email"
             render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    id={`validate-${selectedType}`}
+                    id="validate-email"
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <Label htmlFor={`validate-${selectedType}`}>
-                    {t(`validate${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}`)}
+                  <Label htmlFor="validate-email">
+                    {t("validateEmail")}
                   </Label>
                   <FormDescription>
-                    {t(`validate${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}Description`)}
+                    {t("validateEmailDescription")}
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
+        
+        {(type === 'url' || availableValidations.includes('url')) && (
+          <FormField
+            control={control}
+            name="validation.url"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    id="validate-url"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <Label htmlFor="validate-url">
+                    {t("validateUrl")}
+                  </Label>
+                  <FormDescription>
+                    {t("validateUrlDescription")}
                   </FormDescription>
                 </div>
               </FormItem>
@@ -183,7 +211,7 @@ const ValidationFields: React.FC<ValidationFieldsProps> = ({
 
         {/* Xüsusi xəta mesajı sahəsi - bütün validasiyalar üçün */}
         <FormField
-          control={form.control}
+          control={control}
           name="validation.customMessage"
           render={({ field }) => (
             <FormItem>
