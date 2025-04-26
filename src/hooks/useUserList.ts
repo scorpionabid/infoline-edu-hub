@@ -21,17 +21,21 @@ export const useUserList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState<UserFilter>({});
 
-  const { isSectorAdmin, isRegionAdmin, sectorId, regionId } = usePermissions();
+  const { isSectorAdmin, isRegionAdmin, isSuperAdmin, sectorId, regionId } = usePermissions();
 
+  // Userləri çəkmək üçün optimizə edilmiş funksiya
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Fetching users with filters:', filter);
       
+      // İstifadəçi roluna əsasən sorğu yaradılması
       let query = supabase
         .from('profiles')
         .select(`
           *,
           user_roles (
+            id,
             role,
             region_id,
             sector_id,
@@ -39,8 +43,33 @@ export const useUserList = () => {
           )
         `, { count: 'exact' });
 
-      // Filter tətbiq et
-      if (filter.role) {
+      // SuperAdmin üçün hər hansı bir əlavə filter yoxdur
+      if (isSuperAdmin) {
+        console.log('Querying as SuperAdmin');
+      } 
+      // RegionAdmin öz regionunda olan istifadəçiləri görə bilər
+      else if (isRegionAdmin && regionId) {
+        console.log('Querying as RegionAdmin for region:', regionId);
+        query = query.eq('user_roles.region_id', regionId);
+      } 
+      // SectorAdmin öz sektorunda olan məktəblərin adminlərini görə bilər
+      else if (isSectorAdmin && sectorId) {
+        console.log('Querying as SectorAdmin for sector:', sectorId);
+        query = query.eq('user_roles.sector_id', sectorId)
+                     .eq('user_roles.role', 'schooladmin');
+      } 
+      // Digər istifadəçilər yalnız özlərini görə bilərlər
+      else {
+        console.log('Querying as regular user');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('İstifadəçi tapılmadı');
+        }
+        query = query.eq('id', user.id);
+      }
+
+      // Əlavə filterlər tətbiq et
+      if (filter.role && filter.role.length > 0) {
         if (Array.isArray(filter.role)) {
           query = query.in('user_roles.role', filter.role);
         } else {
@@ -48,8 +77,7 @@ export const useUserList = () => {
         }
       }
 
-      // Region filterləməsi
-      if (filter.region) {
+      if (filter.region && filter.region.length > 0) {
         if (Array.isArray(filter.region)) {
           query = query.in('user_roles.region_id', filter.region);
         } else {
@@ -57,8 +85,7 @@ export const useUserList = () => {
         }
       }
 
-      // Sektor filterləməsi
-      if (filter.sector) {
+      if (filter.sector && filter.sector.length > 0) {
         if (Array.isArray(filter.sector)) {
           query = query.in('user_roles.sector_id', filter.sector);
         } else {
@@ -66,20 +93,34 @@ export const useUserList = () => {
         }
       }
 
-      // İxtisaslaşmış filterlər tətbiq et
-      if (isSectorAdmin && sectorId) {
-        query = query
-          .eq('user_roles.sector_id', sectorId)
-          .eq('user_roles.role', 'schooladmin');
-      } else if (isRegionAdmin && regionId) {
-        query = query.eq('user_roles.region_id', regionId);
+      if (filter.school && filter.school.length > 0) {
+        if (Array.isArray(filter.school)) {
+          query = query.in('user_roles.school_id', filter.school);
+        } else {
+          query = query.eq('user_roles.school_id', filter.school);
+        }
       }
 
+      if (filter.status && filter.status.length > 0) {
+        if (Array.isArray(filter.status)) {
+          query = query.in('status', filter.status);
+        } else {
+          query = query.eq('status', filter.status);
+        }
+      }
+
+      // Sorğunu icra et
+      console.log('Executing user query...');
       const { data, error: fetchError, count } = await query;
+      
+      if (fetchError) {
+        console.error('Error fetching users:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log(`Found ${data?.length || 0} users`);
 
-      if (fetchError) throw fetchError;
-
-      // Format data
+      // Məlumatları formatla
       const formattedUsers = data?.map(profile => {
         const userRole = profile.user_roles?.[0];
         return {
@@ -114,7 +155,7 @@ export const useUserList = () => {
 
       // Client-side search
       let filteredUsers = formattedUsers;
-      if (filter.search) {
+      if (filter.search && filter.search.trim() !== '') {
         const searchTerm = filter.search.toLowerCase();
         filteredUsers = formattedUsers.filter(user => 
           user.full_name?.toLowerCase().includes(searchTerm) ||
@@ -129,10 +170,11 @@ export const useUserList = () => {
     } catch (err) {
       console.error('Error fetching users:', err);
       setError(err as Error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [filter, isSectorAdmin, isRegionAdmin, sectorId, regionId]);
+  }, [filter, isSectorAdmin, isRegionAdmin, isSuperAdmin, sectorId, regionId]);
 
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
     setFilter(prev => ({...prev, ...newFilter}));

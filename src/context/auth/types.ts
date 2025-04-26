@@ -1,5 +1,6 @@
 
 import { FullUserData, UserRole } from '@/types/supabase';
+import { Session } from '@supabase/supabase-js';
 
 // İstifadəçi rolları
 export type Role = UserRole;
@@ -10,6 +11,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  session: Session | null; // session əlavə edək
 }
 
 // Auth kontext interfeysi

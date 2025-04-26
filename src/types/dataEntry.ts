@@ -4,10 +4,14 @@ export interface ColumnValidationError {
   columnId: string;
   message: string;
   type: 'required' | 'minValue' | 'maxValue' | 'minLength' | 'maxLength' | 'pattern' | 'custom';
+  columnName?: string; // Əlavə edildi
 }
 
 // Data Entry statusu
 export type DataEntryStatus = 'pending' | 'approved' | 'rejected';
+
+// Data enrty save statusu
+export type DataEntrySaveStatus = 'saving' | 'saved' | 'error' | 'idle';
 
 // Data Entry
 export interface DataEntry {

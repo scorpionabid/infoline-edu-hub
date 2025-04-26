@@ -13,6 +13,7 @@ interface UsePermissionsReturn {
   regionId: string | null;
   sectorId: string | null;
   schoolId: string | null;
+  currentUser: any; // İstifadəçi məlumatlarını tam əlavə edək
   canRegionAdminManageCategoriesColumns: boolean;
   canViewSectorCategories: boolean;
   canViewSchoolCategories: boolean;
@@ -43,6 +44,7 @@ export const usePermissions = (): UsePermissionsReturn => {
         regionId: null,
         sectorId: null,
         schoolId: null,
+        currentUser: null,
         canRegionAdminManageCategoriesColumns: false,
         canViewSectorCategories: false,
         canViewSchoolCategories: false,
@@ -101,7 +103,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canAccessCategory = (categoryId: string, assignment: 'all' | 'sectors' | 'schools') => {
       if (isSuperAdmin || isRegionAdmin) return true;
       if (isSectorAdmin) return assignment === 'all' || assignment === 'sectors';
-      if (isSchoolAdmin) return assignment === 'all';
+      if (isSchoolAdmin) return assignment === 'all' || assignment === 'schools';
       return false;
     };
     
@@ -115,12 +117,13 @@ export const usePermissions = (): UsePermissionsReturn => {
       regionId: user?.region_id || user?.regionId || null,
       sectorId: user?.sector_id || user?.sectorId || null,
       schoolId: user?.school_id || user?.schoolId || null,
+      currentUser: user,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
       canViewSchoolCategories,
-      regionName: user?.regionName || null,
-      sectorName: user?.sectorName || null,
-      schoolName: user?.schoolName || null,
+      regionName: user?.adminEntity?.regionName || null,
+      sectorName: user?.adminEntity?.sectorName || null,
+      schoolName: user?.adminEntity?.name || null,
       canAccessRegion,
       canAccessSector,
       canAccessSchool,

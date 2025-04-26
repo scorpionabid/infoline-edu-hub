@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 }) => {
   const {
     user,
+    session,
     loading,
     signIn,
     signOut,
@@ -33,6 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // Derive auth state from Supabase user or initialState if provided
   const authState: AuthState = initialState || {
     user,
+    session,
     isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
     isLoading: loading,
     error,
@@ -105,7 +107,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       console.error('AuthContext: Login error:', error);
       
       // Daha detallı xəta mesajlarını təyin edək
-      if (error.status === 500) {
+      if (error.message?.includes('infinite recursion detected in policy')) {
+        setError('Verilənlər bazasında RLS siyasəti problemi mövcuddur. Zəhmət olmasa administrator ilə əlaqə saxlayın.');
+      } else if (error.status === 500) {
         setError('Server xətası: verilənlər bazasında problem var');
       } else if (error.status === 401) {
         setError('Giriş icazəsi yoxdur: yanlış e-poçt və ya şifrə');
