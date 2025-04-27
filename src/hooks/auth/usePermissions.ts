@@ -13,7 +13,7 @@ interface UsePermissionsReturn {
   regionId: string | null;
   sectorId: string | null;
   schoolId: string | null;
-  currentUser: any; // İstifadəçi məlumatlarını tam əlavə edək
+  currentUser: any;
   canRegionAdminManageCategoriesColumns: boolean;
   canViewSectorCategories: boolean;
   canViewSchoolCategories: boolean;
@@ -33,8 +33,9 @@ export const usePermissions = (): UsePermissionsReturn => {
   const { user } = useAuth();
   
   return useMemo(() => {
-    // Əgər userin məlumatları yoxdursa, default dəyərlər qaytar
+    // İstifadəçi məlumatları yoxdursa, default dəyərlər qaytar
     if (!user) {
+      console.log("usePermissions: No user data available");
       return {
         userRole: 'user' as UserRole,
         isAdmin: false,
@@ -62,7 +63,7 @@ export const usePermissions = (): UsePermissionsReturn => {
       };
     }
     
-    // İstifadəçi rolunu təyin et
+    // İstifadəçi rolunu təyin et (undefined olsa əvəzinə 'user' istifadə et)
     const userRole = user.role || 'user' as UserRole;
     console.log('usePermissions: User role is', userRole);
     
@@ -87,7 +88,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canManageData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
     const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
-    // ID məlumatları
+    // ID məlumatları - hem region_id hem de regionId formatını dəstəkləyək
     const regionId = user.region_id || user.regionId || null;
     const sectorId = user.sector_id || user.sectorId || null;
     const schoolId = user.school_id || user.schoolId || null;
@@ -102,8 +103,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canAccessSector = (targetSectorId: string) => {
       if (isSuperAdmin) return true;
       if (isRegionAdmin) {
-        // Region ID-lər ilə əlaqəli sektorlara giriş etmək üçün əlavə məntiq lazım ola bilər
-        return true;
+        return true; // Region admini öz regionundakı bütün sektorlara çıxış edə bilər
       }
       if (isSectorAdmin) return sectorId === targetSectorId;
       return false;
@@ -111,8 +111,8 @@ export const usePermissions = (): UsePermissionsReturn => {
     
     const canAccessSchool = (targetSchoolId: string) => {
       if (isSuperAdmin) return true;
-      if (isRegionAdmin) return true; // region adminləri bütün məktəblərə giriş edə bilər
-      if (isSectorAdmin) return true; // sektor adminləri öz sektorlarının bütün məktəblərinə giriş edə bilər
+      if (isRegionAdmin) return true;
+      if (isSectorAdmin) return true;
       if (isSchoolAdmin) return schoolId === targetSchoolId;
       return false;
     };

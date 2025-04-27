@@ -33,9 +33,8 @@ export const useSupabaseAuth = (
       const userId = sessionData.user.id;
       console.log('Fetching user profile for:', userId);
 
-      // Mümkün JSON web token xətasını korrigirovka etmək üçün
+      // Token-u yoxla və set et
       try {
-        // Düzgün authToken olduğunu yoxla
         if (sessionData?.access_token) {
           client.auth.setSession({
             access_token: sessionData.access_token,
@@ -46,66 +45,76 @@ export const useSupabaseAuth = (
         console.warn('Error setting session token:', tokenErr);
       }
 
-      // İlk profil və rol məlumatlarını əldə edək
-      const [profileResult, roleResult] = await Promise.allSettled([
-        // İstifadəçi profilini əldə et
-        client.from('profiles').select('*').eq('id', userId).single(),
-        // Rol məlumatını get_user_role_safe RPC üsulu ilə əldə et
-        client.rpc('get_user_role_safe')
-      ]);
+      // İstifadəçi rolunu əldə etmək üçün bir neçə metod sınayaq
+      let userRole: UserRole = 'user';
+      let region_id = null;
+      let sector_id = null; 
+      let school_id = null;
       
-      let profile: any = null;
-      if (profileResult.status === 'fulfilled' && profileResult.value?.data) {
-        profile = profileResult.value.data;
-      } else {
-        console.warn('Profile fetch error:', 
-          profileResult.status === 'rejected' ? profileResult.reason : profileResult.value?.error
-        );
+      // Metod 1: get_user_role_safe RPC funksiyasını çağır
+      try {
+        const { data: roleData, error: roleError } = await client.rpc('get_user_role_safe');
+        
+        if (!roleError && roleData) {
+          userRole = roleData as UserRole;
+          console.log('Role fetched via RPC:', userRole);
+        } else {
+          console.warn('RPC role fetch error:', roleError);
+        }
+      } catch (rpcErr) {
+        console.warn('RPC error catch:', rpcErr);
       }
       
-      let userRole: UserRole = 'user';
-      if (roleResult.status === 'fulfilled' && roleResult.value?.data) {
-        userRole = roleResult.value.data as UserRole;
-      } else {
-        console.warn('Role fetch error:', 
-          roleResult.status === 'rejected' ? roleResult.reason : roleResult.value?.error
-        );
-        
-        // Alternativ üsul: birbaşa user_roles cədvəlinə sorğu göndər
+      // Metod 2: Əgər RPC işləməzsə, birbaşa user_roles cədvəlini sorğulayırıq
+      if (userRole === 'user') {
         try {
-          const { data: roleData } = await client
+          const { data: roleData, error: roleError } = await client
             .from('user_roles')
-            .select('role')
+            .select('role, region_id, sector_id, school_id')
             .eq('user_id', userId)
-            .single();
-            
-          if (roleData?.role) {
+            .maybeSingle();
+          
+          if (!roleError && roleData) {
             userRole = roleData.role as UserRole;
+            region_id = roleData.region_id;
+            sector_id = roleData.sector_id;
+            school_id = roleData.school_id;
+            console.log('Role fetched via direct query:', userRole);
+          } else {
+            console.warn('Direct role query error:', roleError);
           }
-        } catch (fallbackErr) {
-          console.warn('Fallback role fetch error:', fallbackErr);
+        } catch (directErr) {
+          console.warn('Direct query error catch:', directErr);
         }
       }
 
-      // RPC işləməsə xüsusi RLS qaydaları ilə user_roles cədvəlinə sorğu göndər
-      let region_id = null;
-      let sector_id = null;
-      let school_id = null;
-      
+      // Metod 3: Profil məlumatlarını əldə etməyə çalışaq
+      let profile: any = null;
       try {
-        const { data: roleEntityData } = await client
-          .from('user_roles')
-          .select('region_id, sector_id, school_id')
-          .eq('user_id', userId)
-          .single();
+        const { data: profileData, error: profileError } = await client
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
         
-        if (roleEntityData) {
-          region_id = roleEntityData.region_id;
-          sector_id = roleEntityData.sector_id; 
-          school_id = roleEntityData.school_id;
+        if (!profileError && profileData) {
+          profile = profileData;
+        } else {
+          console.warn('Profile fetch error:', profileError);
         }
-      } catch (entitiesError) {
-        console.warn('Error fetching user entities:', entitiesError);
+      } catch (profileErr) {
+        console.warn('Profile fetch error catch:', profileErr);
+      }
+      
+      // Uğursuz olduqda mock data istifadə edək
+      if (!profile) {
+        profile = {
+          full_name: sessionData.user.email?.split('@')[0] || 'İstifadəçi',
+          language: 'az',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
       }
 
       // İstifadəçi məlumatlarını birləşdir
@@ -151,7 +160,6 @@ export const useSupabaseAuth = (
       setLoading(false);
     } catch (error) {
       console.error('Error in fetchUserData:', error);
-      setUser(null);
       setLoading(false);
     }
   }, [client]);
@@ -161,7 +169,25 @@ export const useSupabaseAuth = (
     setLoading(true);
     console.log('Setting up auth state listener and checking session');
 
-    // İlk sessiya yoxlaması
+    // Əvvəlcə listener-i quraşdır
+    const { data: { subscription } } = client.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log('Auth state changed:', event);
+        setSession(currentSession);
+        
+        // Əlavə sorğular üçün setTimeout istifadə et - async olaraq çağırma!
+        if (currentSession) {
+          setTimeout(() => {
+            fetchUserData(currentSession);
+          }, 0);
+        } else {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    // Sonra cari sessiyanı yoxla
     const checkSession = async () => {
       try {
         const { data, error } = await client.auth.getSession();
@@ -178,7 +204,7 @@ export const useSupabaseAuth = (
         setSession(data.session);
         
         if (data.session) {
-          // setTimeout istifadə edək ki, Supabase auth daxili dövrümüz olmasın
+          // Ayrı thread-də işləsin deyə setTimeout istifadə et
           setTimeout(() => {
             fetchUserData(data.session);
           }, 0);
@@ -192,29 +218,8 @@ export const useSupabaseAuth = (
       }
     };
 
-    // Auth sessiyasındakı dəyişiklikləri dinləyək
-    const { data: { subscription } } = client.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log('Auth state changed:', event);
-        setSession(currentSession);
-        
-        // AuthStateChange callback-i sinxron işləməlidir
-        // Əlavə Supabase sorğuları üçün setTimeout istifadə edirik
-        if (currentSession) {
-          setTimeout(() => {
-            fetchUserData(currentSession);
-          }, 0);
-        } else {
-          setUser(null);
-          setLoading(false);
-        }
-      }
-    );
-
-    // İlk sessiya məlumatlarını yükləyək
     checkSession();
 
-    // Komponentin dağılması zamanı əbunəliyi ləğv edək
     return () => {
       subscription.unsubscribe();
     };
@@ -226,20 +231,16 @@ export const useSupabaseAuth = (
       console.log('Attempting to sign in with:', email);
       setLoading(true);
       
-      // Login
       const result = await client.auth.signInWithPassword({
         email,
         password
       });
 
       console.log('Sign in result:', result.error ? `Error: ${result.error.message}` : 'Success');
-      
       return result;
     } catch (error: any) {
       console.error('Sign in error:', error);
       throw error;
-    } finally {
-      // Yüklənmə vəziyyətini dəyişmirik, çünki fetchUserData funksiyası loading state-ni dəyişəcək
     }
   };
 

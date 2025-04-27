@@ -1,80 +1,49 @@
 
 import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import LoginForm from '@/components/auth/LoginForm';
-import LoadingScreen from '@/components/auth/LoadingScreen';
 import LoginContainer from '@/components/auth/LoginContainer';
 import LoginHeader from '@/components/auth/LoginHeader';
+import LoadingScreen from '@/components/auth/LoadingScreen';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { toast } from 'sonner';
 
 const Login = () => {
   const { isAuthenticated, isLoading, error, clearError, user } = useAuth();
-  const { userRole } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
+  const from = location.state?.from?.pathname || '/dashboard';
+  const { userRole } = usePermissions();
   
-  // Daxil olmuş istifadəçini rol əsasında yönləndirmə
   useEffect(() => {
-    if (isAuthenticated && !isLoading && user) {
-      try {
-        // Sonuncu ziyarət edilmiş səhifə və ya rol əsasında yönləndirmə
-        const from = location.state?.from?.pathname || '/dashboard';
-        console.log(`İstifadəçi auth olundu, "${from}" səhifəsinə yönləndirilir`);
-        console.log(`İstifadəçi məlumatları:`, {
-          id: user.id,
-          email: user.email,
-          role: user.role || 'role yoxdur',
-          isLoading: isLoading
-        });
-        
-        // Rol əsasında yönləndirmə
-        let targetPath = '/dashboard';
-        
-        // Əgər redirektin saxlanması istənilirsə, from istifadə et
-        if (from !== '/login') {
-          targetPath = from;
-        } 
-        // Əks halda, rol əsasında redirekt
-        else if (user.role) {
-          switch(user.role) {
-            case 'superadmin':
-              targetPath = '/dashboard';
-              break;
-            case 'regionadmin':
-              targetPath = '/region-dashboard';
-              break;
-            case 'sectoradmin':
-              targetPath = '/sector-dashboard';
-              break;
-            case 'schooladmin':
-              targetPath = '/school-dashboard';
-              break;
-            default:
-              console.warn(`Naməlum rol tipi: ${user.role}, default dashboard-a yönləndirilir`);
-              targetPath = '/dashboard';
-          }
-          
-          console.log(`Rol əsasında redirekt: ${user.role} -> ${targetPath}`);
-        } else {
-          console.warn('İstifadəçinin rolu yoxdur, default dashboard-a yönləndirilir');
-        }
-        
-        // İstifadəçini yönləndir
-        navigate(targetPath, { replace: true });
-        
-        // Xoş gəldin bildirişi
-        toast.success(`${user.full_name || user.email}, xoş gəlmisiniz!`, {
-          duration: 3000,
-        });
-      } catch (err) {
-        console.error('Yönləndirmə xətası:', err);
-      }
-    }
-  }, [isAuthenticated, isLoading, navigate, location, user]);
+    console.log('Login page state:', {
+      isAuthenticated,
+      isLoading,
+      userRole,
+      error,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        role: user.role || 'unknown'
+      } : null
+    });
+    
+    // Autentifikasiya olunmuş istifadəçiləri dashboard-a yönləndirmək
+    if (isAuthenticated && user && !isLoading) {
+      console.log(`Redirecting authenticated user to ${from}`, {
+        role: userRole || user.role || 'unknown'
+      });
+      
+      // Yönləndirmə vaxtını 100ms gecikdirək - bu sessiya məlumatlarının tam yüklənməsi üçündür
+      const redirectTimer = setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 100);
 
-  // Yüklənmə zamanı göstəriləcək
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isAuthenticated, isLoading, navigate, from, user, userRole]);
+
+  // Loading vəziyyətində yüklənmə göstəricisi
   if (isLoading) {
     return <LoadingScreen />;
   }
