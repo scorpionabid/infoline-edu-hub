@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     
     // Rolu olmayan istifadəçilər üçün xəbərdarlıq
     if (user && !user.role) {
-      console.warn('User has no role assigned!', user);
+      console.warn('User has no role assigned:', user);
     }
   }, [user, loading]);
 
@@ -77,6 +77,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       }
       
       console.log('AuthContext: Giriş uğurlu oldu, istifadəçi ID:', data.user.id);
+      
+      // Rolu yoxlayaq
+      try {
+        const { data: roleData } = await supabase.rpc('get_user_role_safe');
+        console.log('AuthContext: İstifadəçi rolu:', roleData);
+      } catch (roleError) {
+        console.warn('Role check error:', roleError);
+      }
+      
       return true;
     } catch (error: any) {
       console.error('AuthContext: Login error:', error);

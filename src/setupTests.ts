@@ -1,55 +1,21 @@
 
-import { vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '@/context/auth/AuthProvider';
-import { LanguageProvider } from '@/context/LanguageContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+// jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom/extend-expect';
 
-// ReactNode tipindəki children-ləri test üçün render etmək
-export const createTestWrapper = (children: React.ReactNode) => {
-  return render(
-    <BrowserRouter>
-      <LanguageProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
-      </LanguageProvider>
-    </BrowserRouter>
-  );
-};
-
-// Global mocks
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
-      signInWithPassword: vi.fn(),
-      signOut: vi.fn()
-    },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      range: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-      update: vi.fn().mockResolvedValue({ data: null, error: null }),
-      delete: vi.fn().mockResolvedValue({ data: null, error: null })
-    }),
-    storage: {
-      from: vi.fn().mockReturnValue({
-        upload: vi.fn().mockResolvedValue({ data: null, error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'test-url' } })
-      })
-    }
-  }
-}));
-
-// Digər test dosyalarındakı çakışmaları önlemek için export edilmiş mockları yeniden export edelim
-export { render, screen, fireEvent, vi };
+// Mock matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});

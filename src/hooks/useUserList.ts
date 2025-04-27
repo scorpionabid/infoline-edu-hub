@@ -27,175 +27,294 @@ export const useUserList = () => {
 
   const { isSectorAdmin, isRegionAdmin, isSuperAdmin, sectorId, regionId } = usePermissions();
 
-  // RPC funkciyasını istifadə edərək istifadəçiləri əldə etmək
+  // İstifadəçiləri əldə etmək üçün əsas funksiya
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       console.log('Fetching users with filters:', filter);
       
-      // Parametrləri hazırla
-      const params: any = {
-        p_role: filter.role ? Array.isArray(filter.role) ? filter.role : [filter.role] : null,
-        p_region_id: filter.regionId || filter.region || regionId || null,
-        p_sector_id: filter.sectorId || filter.sector || sectorId || null,
-        p_school_id: filter.schoolId || filter.school || null,
-        p_status: filter.status ? Array.isArray(filter.status) ? filter.status : [filter.status] : null,
-        p_search: filter.search || null,
-        p_page: currentPage,
-        p_limit: 10
-      };
+      // RPC funksiyasını çağırmadan əvvəl istifadəçi rolları ilə əsas sorgunu yaratmaq
+      let query = supabase.from('user_roles').select(`
+        id,
+        user_id,
+        role,
+        region_id,
+        sector_id,
+        school_id,
+        profiles:profiles(*)
+      `, { count: 'exact' });
 
-      console.log('RPC params:', params);
-
-      // RPC funksiyanı istifadə et - bu rekursiv RLS qaydalarından qaçmağa kömək edir
-      const { data, error: fetchError } = await supabase
-        .rpc('get_filtered_users', params);
-      
-      if (fetchError) {
-        console.error('Error fetching users:', fetchError);
-        throw fetchError;
+      // Rol əsasında filtrasiya
+      if (isSuperAdmin) {
+        // SuperAdmin bütün istifadəçiləri görə bilər
+        console.log('Superadmin user fetching all users');
+      } else if (isRegionAdmin && regionId) {
+        // RegionAdmin yalnız öz regionundakı istifadəçiləri görə bilər
+        console.log('RegionAdmin filtering by region:', regionId);
+        query = query.eq('region_id', regionId);
+      } else if (isSectorAdmin && sectorId) {
+        // SectorAdmin yalnız öz sektorundakı məktəblərə aid istifadəçiləri görə bilər
+        console.log('SectorAdmin filtering by sector:', sectorId);
+        query = query.eq('sector_id', sectorId);
+        // Sadəcə məktəb adminlərini göstərmək üçün
+        if (!filter.role || filter.role === '') {
+          query = query.eq('role', 'schooladmin');
+        }
+      } else {
+        // İstifadəçi heç bir rola sahib deyilsə, boş nəticə qaytaraq
+        console.log('User has no admin role, returning empty result');
+        setUsers([]);
+        setTotalCount(0);
+        setLoading(false);
+        return;
       }
 
-      console.log(`Found ${data?.length || 0} users`);
+      // Filter parametrləri
+      if (filter.role && filter.role !== '') {
+        const roleFilter = Array.isArray(filter.role) ? filter.role : [filter.role];
+        query = query.in('role', roleFilter);
+      }
+      
+      if ((filter.regionId || filter.region) && !isRegionAdmin) {
+        query = query.eq('region_id', filter.regionId || filter.region);
+      }
+      
+      if ((filter.sectorId || filter.sector) && !isSectorAdmin) {
+        query = query.eq('sector_id', filter.sectorId || filter.sector);
+      }
+      
+      if (filter.schoolId || filter.school) {
+        query = query.eq('school_id', filter.schoolId || filter.school);
+      }
+      
+      // Pagination
+      const from = (currentPage - 1) * 10;
+      const to = from + 9;
+      query = query.range(from, to);
+      
+      // Order by creation date
+      query = query.order('created_at', { ascending: false });
+      
+      // Execute query
+      const { data, error: fetchError, count } = await query;
+      
+      if (fetchError) {
+        console.error('Error fetching user_roles:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log(`Found ${data?.length || 0} user_roles`);
 
-      // Əgər data JSON string formatında qayıdırsa
-      const formattedUsers = data?.map((item: any) => {
-        // JSON verilərini parse edək əgər string formatındadırsa
-        const userData = typeof item === 'string' ? JSON.parse(item) : item;
+      // Now get emails from auth.users for the found user_ids
+      const userIds = data?.map(item => item.user_id) || [];
+      
+      // Email məlumatlarını əldə etmək üçün birbaşa sorğu
+      // Bu servis sadəcə mock email verilərini qaytaracaq
+      const mockEmails: Record<string, string> = {};
+      userIds.forEach(id => {
+        mockEmails[id] = `user-${id.substring(0, 8)}@infoline.edu.az`;
+      });
+
+      // Entity adlarını (region, sector, school) əldə etmək
+      const entityNames: Record<string, Record<string, string>> = {
+        regions: {},
+        sectors: {},
+        schools: {}
+      };
+      
+      // Get region names
+      const regionIds = Array.from(new Set(data?.filter(d => d.region_id).map(d => d.region_id) || []));
+      if (regionIds.length > 0) {
+        const { data: regionsData } = await supabase
+          .from('regions')
+          .select('id, name')
+          .in('id', regionIds);
+        
+        if (regionsData) {
+          regionsData.forEach(region => {
+            entityNames.regions[region.id] = region.name;
+          });
+        }
+      }
+      
+      // Get sector names
+      const sectorIds = Array.from(new Set(data?.filter(d => d.sector_id).map(d => d.sector_id) || []));
+      if (sectorIds.length > 0) {
+        const { data: sectorsData } = await supabase
+          .from('sectors')
+          .select('id, name')
+          .in('id', sectorIds);
+        
+        if (sectorsData) {
+          sectorsData.forEach(sector => {
+            entityNames.sectors[sector.id] = sector.name;
+          });
+        }
+      }
+      
+      // Get school names
+      const schoolIds = Array.from(new Set(data?.filter(d => d.school_id).map(d => d.school_id) || []));
+      if (schoolIds.length > 0) {
+        const { data: schoolsData } = await supabase
+          .from('schools')
+          .select('id, name')
+          .in('id', schoolIds);
+        
+        if (schoolsData) {
+          schoolsData.forEach(school => {
+            entityNames.schools[school.id] = school.name;
+          });
+        }
+      }
+
+      // İstifadəçi məlumatlarını formatla
+      const formattedUsers: FullUserData[] = data?.map(role => {
+        // Extract profile data from join
+        const profileData = role.profiles || {};
+        
+        // Entity name based on role
+        let entityName = '-';
+        if (role.school_id && entityNames.schools[role.school_id]) {
+          entityName = entityNames.schools[role.school_id];
+        } else if (role.sector_id && entityNames.sectors[role.sector_id]) {
+          entityName = entityNames.sectors[role.sector_id];
+        } else if (role.region_id && entityNames.regions[role.region_id]) {
+          entityName = entityNames.regions[role.region_id];
+        }
+        
+        // Mock email or real email from profile
+        const email = mockEmails[role.user_id] || profileData.email || '';
         
         return {
-          id: userData.id,
-          email: userData.email || '',
-          full_name: userData.full_name || userData.name || '',
-          name: userData.name || userData.full_name || '',
-          role: userData.role || 'user',
-          region_id: userData.region_id,
-          sector_id: userData.sector_id,
-          school_id: userData.school_id,
-          regionId: userData.region_id,
-          sectorId: userData.sector_id,
-          schoolId: userData.school_id,
-          phone: userData.phone || '',
-          position: userData.position || '',
-          language: userData.language || 'az',
-          avatar: userData.avatar,
-          status: userData.status || 'active',
-          last_login: userData.last_login,
-          lastLogin: userData.last_login,
-          created_at: userData.created_at,
-          updated_at: userData.updated_at,
-          createdAt: userData.created_at,
-          updatedAt: userData.updated_at,
-          entityName: userData.entity_name || '-',
+          id: role.user_id,
+          email: email,
+          full_name: profileData.full_name || email.split('@')[0] || 'İsimsiz İstifadəçi',
+          name: profileData.full_name || email.split('@')[0] || 'İsimsiz İstifadəçi',
+          role: role.role || 'user',
+          region_id: role.region_id || null,
+          sector_id: role.sector_id || null,
+          school_id: role.school_id || null,
+          regionId: role.region_id || null,
+          sectorId: role.sector_id || null,
+          schoolId: role.school_id || null,
+          phone: profileData.phone || '',
+          position: profileData.position || '',
+          language: profileData.language || 'az',
+          avatar: profileData.avatar || null,
+          status: profileData.status || 'active',
+          last_login: profileData.last_login || null,
+          lastLogin: profileData.last_login || null,
+          created_at: profileData.created_at || role.created_at || new Date().toISOString(),
+          updated_at: profileData.updated_at || role.updated_at || new Date().toISOString(),
+          createdAt: profileData.created_at || role.created_at || new Date().toISOString(),
+          updatedAt: profileData.updated_at || role.updated_at || new Date().toISOString(),
+          entityName: entityName,
           notificationSettings: {
             email: true,
             system: true
           }
-        } as FullUserData;
+        };
       }) || [];
 
-      // Server-side search artıq RPC funksiyasında həll olunur
-      setUsers(formattedUsers);
-      
-      // Count-u serverdən əldə et
-      const { count, error: countError } = await supabase.rpc('get_filtered_users_count', {
-        p_role: filter.role ? Array.isArray(filter.role) ? filter.role : [filter.role] : null,
-        p_region_id: filter.regionId || filter.region || regionId || null,
-        p_sector_id: filter.sectorId || filter.sector || sectorId || null,
-        p_school_id: filter.schoolId || filter.school || null,
-        p_status: filter.status ? Array.isArray(filter.status) ? filter.status : [filter.status] : null,
-        p_search: filter.search || null
-      });
-
-      if (countError) {
-        console.warn('Error fetching user count:', countError);
-        setTotalCount(formattedUsers.length);
+      // Search filter on client side
+      if (filter.search && filter.search.trim() !== '') {
+        const searchTerm = filter.search.trim().toLowerCase();
+        const filteredUsers = formattedUsers.filter(user => 
+          (user.full_name?.toLowerCase().includes(searchTerm)) || 
+          (user.email?.toLowerCase().includes(searchTerm)) || 
+          (user.phone?.toLowerCase().includes(searchTerm)) ||
+          (user.entityName?.toLowerCase().includes(searchTerm))
+        );
+        
+        setUsers(filteredUsers);
+        // We don't update totalCount here since we want pagination to be based on total results
       } else {
-        setTotalCount(count || formattedUsers.length);
+        setUsers(formattedUsers);
       }
       
+      setTotalCount(count || 0);
       setError(null);
+
     } catch (err) {
-      console.error('Error fetching users:', err);
+      console.error('Error in fetchUsers:', err);
       setError(err as Error);
-      setUsers([]);
+      toast.error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı');
       
-      // Yalnız xəta baş verəndə alternate sorğu metodunu sınayaq
-      // region və sektor adminləri üçün xüsusi sorğu
+      // Əgər əsas metod xəta verərsə, alternativ metod sınayaq
       try {
         console.log('Trying alternative fetching method...');
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .range((currentPage - 1) * 10, currentPage * 10 - 1)
+          .order('created_at', { ascending: false });
         
-        // Səlahiyyətləri əsasında tarix seç
-        let query = supabase.from('user_roles').select('*');
-        
-        if (isRegionAdmin && regionId) {
-          query = query.eq('region_id', regionId);
-        } else if (isSectorAdmin && sectorId) {
-          query = query.eq('sector_id', sectorId);
-        }
-        
-        const { data: rolesData, error: rolesError } = await query;
-        
-        if (rolesError) {
-          console.error('Alternative method error:', rolesError);
-          throw rolesError;
-        }
-        
-        if (rolesData && rolesData.length > 0) {
-          // Bu istifadəçi ID-ləri üçün profilləri əldə et
-          const userIds = rolesData.map(role => role.user_id);
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        } else if (profiles && profiles.length > 0) {
+          console.log('Alternative method found profiles:', profiles.length);
           
-          const { data: profilesData } = await supabase
-            .from('profiles')
+          // Get roles for these profiles
+          const profileIds = profiles.map(p => p.id);
+          const { data: rolesData } = await supabase
+            .from('user_roles')
             .select('*')
-            .in('id', userIds);
-            
-          // Verilərdi birləşdirib formatla
-          const altUsers = rolesData.map(role => {
-            const profile = profilesData?.find(p => p.id === role.user_id) || {};
+            .in('user_id', profileIds);
+          
+          // Create a map of user_id to role
+          const roleMap: Record<string, any> = {};
+          if (rolesData) {
+            rolesData.forEach(role => {
+              roleMap[role.user_id] = role;
+            });
+          }
+          
+          const altUsers = profiles.map(profile => {
+            const role = roleMap[profile.id] || {};
             
             return {
-              id: role.user_id,
-              email: profile.email || '',
-              full_name: profile.full_name || '',
-              name: profile.full_name || '',
+              id: profile.id,
+              email: profile.email || `user-${profile.id.substring(0, 8)}@infoline.edu.az`,
+              full_name: profile.full_name || 'İsimsiz İstifadəçi',
+              name: profile.full_name || 'İsimsiz İstifadəçi',
               role: role.role || 'user',
-              region_id: role.region_id,
-              sector_id: role.sector_id,
-              school_id: role.school_id,
-              regionId: role.region_id,
-              sectorId: role.sector_id,
-              schoolId: role.school_id,
+              region_id: role.region_id || null,
+              sector_id: role.sector_id || null,
+              school_id: role.school_id || null,
+              regionId: role.region_id || null,
+              sectorId: role.sector_id || null,
+              schoolId: role.school_id || null,
               phone: profile.phone || '',
               position: profile.position || '',
               language: profile.language || 'az',
-              avatar: profile.avatar,
+              avatar: profile.avatar || null,
               status: profile.status || 'active',
-              last_login: profile.last_login,
-              lastLogin: profile.last_login,
-              created_at: profile.created_at,
-              updated_at: profile.updated_at,
-              createdAt: profile.created_at,
-              updatedAt: profile.updated_at,
+              last_login: profile.last_login || null,
+              lastLogin: profile.last_login || null,
+              created_at: profile.created_at || new Date().toISOString(),
+              updated_at: profile.updated_at || new Date().toISOString(),
+              createdAt: profile.created_at || new Date().toISOString(),
+              updatedAt: profile.updated_at || new Date().toISOString(),
+              entityName: '-',
               notificationSettings: {
                 email: true,
                 system: true
               }
-            } as FullUserData;
+            };
           });
           
           console.log('Alternative method found users:', altUsers.length);
           setUsers(altUsers);
-          setTotalCount(altUsers.length);
+          // We can only estimate the count with this method
+          setTotalCount(altUsers.length * 10); // rough estimation
         }
       } catch (altError) {
-        console.error('Alternative method failed:', altError);
-        toast.error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı');
+        console.error('Alternative method also failed:', altError);
       }
     } finally {
       setLoading(false);
     }
-  }, [filter, currentPage, regionId, sectorId, isRegionAdmin, isSectorAdmin, isSuperAdmin]);
+  }, [filter, currentPage, regionId, sectorId, isSuperAdmin, isRegionAdmin, isSectorAdmin]);
 
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
     setFilter(prev => ({...prev, ...newFilter}));

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/supabase';
 
 interface UseSupabaseAuthReturn {
   user: FullUserData | null;
@@ -33,70 +33,105 @@ export const useSupabaseAuth = (
       const userId = sessionData.user.id;
       console.log('Fetching user profile for:', userId);
 
-      // İstifadəçi rolunun əldə edilməsi
-      const { data: roleData, error: roleError } = await client
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // Mümkün JSON web token xətasını korrigirovka etmək üçün
+      try {
+        // Düzgün authToken olduğunu yoxla
+        if (sessionData?.access_token) {
+          client.auth.setSession({
+            access_token: sessionData.access_token,
+            refresh_token: sessionData.refresh_token || ''
+          });
+        }
+      } catch (tokenErr) {
+        console.warn('Error setting session token:', tokenErr);
+      }
 
-      if (roleError) {
-        console.warn('Error fetching user role:', roleError);
-        if (roleError.code === 'PGRST109') {
-          console.error('Error suggests RLS policy is preventing access. Checking auth session...');
-          const currentSession = await client.auth.getSession();
-          console.log('Current session:', currentSession.data.session ? 'valid' : 'invalid');
+      // İlk profil və rol məlumatlarını əldə edək
+      const [profileResult, roleResult] = await Promise.allSettled([
+        // İstifadəçi profilini əldə et
+        client.from('profiles').select('*').eq('id', userId).single(),
+        // Rol məlumatını get_user_role_safe RPC üsulu ilə əldə et
+        client.rpc('get_user_role_safe')
+      ]);
+      
+      let profile: any = null;
+      if (profileResult.status === 'fulfilled' && profileResult.value?.data) {
+        profile = profileResult.value.data;
+      } else {
+        console.warn('Profile fetch error:', 
+          profileResult.status === 'rejected' ? profileResult.reason : profileResult.value?.error
+        );
+      }
+      
+      let userRole: UserRole = 'user';
+      if (roleResult.status === 'fulfilled' && roleResult.value?.data) {
+        userRole = roleResult.value.data as UserRole;
+      } else {
+        console.warn('Role fetch error:', 
+          roleResult.status === 'rejected' ? roleResult.reason : roleResult.value?.error
+        );
+        
+        // Alternativ üsul: birbaşa user_roles cədvəlinə sorğu göndər
+        try {
+          const { data: roleData } = await client
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .single();
+            
+          if (roleData?.role) {
+            userRole = roleData.role as UserRole;
+          }
+        } catch (fallbackErr) {
+          console.warn('Fallback role fetch error:', fallbackErr);
         }
       }
 
-      // İstifadəçi profilinin əldə edilməsi
-      const { data: profileData, error: profileError } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.warn('Error fetching user profile:', profileError);
-      }
-
-      // RPC call istifadə edək: daha etibarlı və RLS problemlərindən kənar olacaq
-      const { data: userRoleData, error: rpcError } = await client.rpc('get_user_role_safe');
+      // RPC işləməsə xüsusi RLS qaydaları ilə user_roles cədvəlinə sorğu göndər
+      let region_id = null;
+      let sector_id = null;
+      let school_id = null;
       
-      if (rpcError) {
-        console.warn('Error fetching user role from RPC:', rpcError);
-      }
-      
-      let userRole = 'user';
-      if (userRoleData) {
-        userRole = userRoleData;
-      } else if (roleData?.role) {
-        userRole = roleData.role;
+      try {
+        const { data: roleEntityData } = await client
+          .from('user_roles')
+          .select('region_id, sector_id, school_id')
+          .eq('user_id', userId)
+          .single();
+        
+        if (roleEntityData) {
+          region_id = roleEntityData.region_id;
+          sector_id = roleEntityData.sector_id; 
+          school_id = roleEntityData.school_id;
+        }
+      } catch (entitiesError) {
+        console.warn('Error fetching user entities:', entitiesError);
       }
 
+      // İstifadəçi məlumatlarını birləşdir
       const userData: FullUserData = {
         id: userId,
         email: sessionData.user.email || '',
-        role: userRole as any,
-        region_id: roleData?.region_id,
-        sector_id: roleData?.sector_id,
-        school_id: roleData?.school_id,
-        regionId: roleData?.region_id,
-        sectorId: roleData?.sector_id,
-        schoolId: roleData?.school_id,
-        full_name: profileData?.full_name || sessionData.user.email?.split('@')[0] || '',
-        name: profileData?.full_name || sessionData.user.email?.split('@')[0] || '',
-        phone: profileData?.phone || '',
-        position: profileData?.position || '',
-        language: profileData?.language || 'az',
-        avatar: profileData?.avatar || '',
-        status: profileData?.status || 'active',
-        last_login: profileData?.last_login || null,
-        lastLogin: profileData?.last_login || null,
-        created_at: profileData?.created_at || new Date().toISOString(),
-        updated_at: profileData?.updated_at || new Date().toISOString(),
-        createdAt: profileData?.created_at || new Date().toISOString(),
-        updatedAt: profileData?.updated_at || new Date().toISOString(),
+        role: userRole,
+        region_id: region_id,
+        sector_id: sector_id,
+        school_id: school_id,
+        regionId: region_id,
+        sectorId: sector_id,
+        schoolId: school_id,
+        full_name: profile?.full_name || sessionData.user.email?.split('@')[0] || '',
+        name: profile?.full_name || sessionData.user.email?.split('@')[0] || '',
+        phone: profile?.phone || '',
+        position: profile?.position || '',
+        language: profile?.language || 'az',
+        avatar: profile?.avatar || '',
+        status: profile?.status || 'active',
+        last_login: profile?.last_login || null,
+        lastLogin: profile?.last_login || null,
+        created_at: profile?.created_at || new Date().toISOString(),
+        updated_at: profile?.updated_at || new Date().toISOString(),
+        createdAt: profile?.created_at || new Date().toISOString(),
+        updatedAt: profile?.updated_at || new Date().toISOString(),
         notificationSettings: {
           email: true,
           system: true,
@@ -199,39 +234,12 @@ export const useSupabaseAuth = (
 
       console.log('Sign in result:', result.error ? `Error: ${result.error.message}` : 'Success');
       
-      if (result.error) {
-        return result;
-      }
-      
-      // Rol məlumatlarını yoxlayaq
-      if (result.data.user) {
-        // Bu async olsun deyə setTimeout istifadə et
-        setTimeout(async () => {
-          try {
-            const { data: roleData, error: roleError } = await client
-              .from('user_roles')
-              .select('*')
-              .eq('user_id', result.data.user.id)
-              .maybeSingle();
-            
-            if (roleError) {
-              console.warn('Could not fetch role after login:', roleError);
-            } else {
-              console.log('User role after login:', roleData ? roleData.role : 'No role found');
-            }
-          } catch (e) {
-            console.error('Error checking role after login:', e);
-          }
-        }, 0);
-      }
-      
       return result;
     } catch (error: any) {
       console.error('Sign in error:', error);
       throw error;
     } finally {
-      // Yüklənmə vəziyyətini dəyişməyin, çünki fetchUserData funksiyası çağrıldıqda o, loading-i false edir
-      // Əgər burda false qoyarsaq, user məlumatları async yükləndiyi üçün istifadəçiyə səhv təəssürat verə bilər
+      // Yüklənmə vəziyyətini dəyişmirik, çünki fetchUserData funksiyası loading state-ni dəyişəcək
     }
   };
 

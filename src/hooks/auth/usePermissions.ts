@@ -66,6 +66,11 @@ export const usePermissions = (): UsePermissionsReturn => {
     const userRole = user.role || 'user' as UserRole;
     console.log('usePermissions: User role is', userRole);
     
+    // Xəta yoxlaması: əgər rol düzgün deyilsə, xəbərdarlıq et
+    if (!['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'].includes(userRole)) {
+      console.warn(`Unknown user role: ${userRole}, defaulting to 'user'`);
+    }
+    
     // Ümumi səlahiyyətləri təyin et
     const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole);
     const isSuperAdmin = userRole === 'superadmin';

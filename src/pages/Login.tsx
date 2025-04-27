@@ -52,6 +52,7 @@ const Login = () => {
               targetPath = '/school-dashboard';
               break;
             default:
+              console.warn(`Naməlum rol tipi: ${user.role}, default dashboard-a yönləndirilir`);
               targetPath = '/dashboard';
           }
           
