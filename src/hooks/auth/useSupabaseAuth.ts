@@ -26,6 +26,7 @@ export const useSupabaseAuth = (
     try {
       if (!sessionData?.user) {
         setUser(null);
+        setLoading(false);
         return;
       }
 
@@ -41,6 +42,11 @@ export const useSupabaseAuth = (
 
       if (roleError) {
         console.warn('Error fetching user role:', roleError);
+        if (roleError.code === 'PGRST109') {
+          console.error('Error suggests RLS policy is preventing access. Checking auth session...');
+          const currentSession = await client.auth.getSession();
+          console.log('Current session:', currentSession.data.session ? 'valid' : 'invalid');
+        }
       }
 
       // İstifadəçi profilinin əldə edilməsi
@@ -54,14 +60,24 @@ export const useSupabaseAuth = (
         console.warn('Error fetching user profile:', profileError);
       }
 
-      if (!roleData) {
-        console.warn('No role data found for user:', userId);
+      // RPC call istifadə edək: daha etibarlı və RLS problemlərindən kənar olacaq
+      const { data: userRoleData, error: rpcError } = await client.rpc('get_user_role_safe');
+      
+      if (rpcError) {
+        console.warn('Error fetching user role from RPC:', rpcError);
+      }
+      
+      let userRole = 'user';
+      if (userRoleData) {
+        userRole = userRoleData;
+      } else if (roleData?.role) {
+        userRole = roleData.role;
       }
 
       const userData: FullUserData = {
         id: userId,
         email: sessionData.user.email || '',
-        role: roleData?.role || 'user',
+        role: userRole as any,
         region_id: roleData?.region_id,
         sector_id: roleData?.sector_id,
         school_id: roleData?.school_id,
@@ -87,17 +103,28 @@ export const useSupabaseAuth = (
         },
       };
 
-      console.log('User data fetched:', userData);
+      console.log('User data fetched successfully:', { 
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        region_id: userData.region_id,
+        sector_id: userData.sector_id,
+        school_id: userData.school_id 
+      });
+      
       setUser(userData);
+      setLoading(false);
     } catch (error) {
       console.error('Error in fetchUserData:', error);
       setUser(null);
+      setLoading(false);
     }
   }, [client]);
 
   // Auth state listener
   useEffect(() => {
     setLoading(true);
+    console.log('Setting up auth state listener and checking session');
 
     // İlk sessiya yoxlaması
     const checkSession = async () => {
@@ -108,9 +135,11 @@ export const useSupabaseAuth = (
           console.error('Error getting session:', error);
           setSession(null);
           setUser(null);
+          setLoading(false);
           return;
         }
         
+        console.log('Initial session check:', data.session ? 'Session exists' : 'No session');
         setSession(data.session);
         
         if (data.session) {
@@ -120,10 +149,10 @@ export const useSupabaseAuth = (
           }, 0);
         } else {
           setUser(null);
+          setLoading(false);
         }
       } catch (error) {
         console.error('Session check error:', error);
-      } finally {
         setLoading(false);
       }
     };
@@ -142,6 +171,7 @@ export const useSupabaseAuth = (
           }, 0);
         } else {
           setUser(null);
+          setLoading(false);
         }
       }
     );
@@ -161,23 +191,47 @@ export const useSupabaseAuth = (
       console.log('Attempting to sign in with:', email);
       setLoading(true);
       
-      // Təmiz başlanğıc üçün əvvəlcə çıxış edək
-      await client.auth.signOut();
-      
-      // Yeni giriş
+      // Login
       const result = await client.auth.signInWithPassword({
         email,
         password
       });
 
-      console.log('Sign in result:', result);
+      console.log('Sign in result:', result.error ? `Error: ${result.error.message}` : 'Success');
+      
+      if (result.error) {
+        return result;
+      }
+      
+      // Rol məlumatlarını yoxlayaq
+      if (result.data.user) {
+        // Bu async olsun deyə setTimeout istifadə et
+        setTimeout(async () => {
+          try {
+            const { data: roleData, error: roleError } = await client
+              .from('user_roles')
+              .select('*')
+              .eq('user_id', result.data.user.id)
+              .maybeSingle();
+            
+            if (roleError) {
+              console.warn('Could not fetch role after login:', roleError);
+            } else {
+              console.log('User role after login:', roleData ? roleData.role : 'No role found');
+            }
+          } catch (e) {
+            console.error('Error checking role after login:', e);
+          }
+        }, 0);
+      }
       
       return result;
     } catch (error: any) {
       console.error('Sign in error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      // Yüklənmə vəziyyətini dəyişməyin, çünki fetchUserData funksiyası çağrıldıqda o, loading-i false edir
+      // Əgər burda false qoyarsaq, user məlumatları async yükləndiyi üçün istifadəçiyə səhv təəssürat verə bilər
     }
   };
 

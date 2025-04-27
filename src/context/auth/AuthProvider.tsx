@@ -35,10 +35,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const authState: AuthState = initialState || {
     user,
     session,
-    isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
+    isAuthenticated: !!user && !!user.id && !!user.email,
     isLoading: loading,
     error,
   };
+
+  useEffect(() => {
+    console.log('AuthProvider state updated:', {
+      isAuthenticated: !!user && !!user.id && !!user.email,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      } : null,
+      isLoading: loading
+    });
+    
+    // Rolu olmayan istifadəçilər üçün xəbərdarlıq
+    if (user && !user.role) {
+      console.warn('User has no role assigned!', user);
+    }
+  }, [user, loading]);
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -115,22 +132,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const clearError = () => {
     setError(null);
   };
-
-  // Auth vəziyyəti dəyişdikdə log edək
-  useEffect(() => {
-    console.log('Auth vəziyyəti dəyişdi:', {
-      isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
-      isLoading: loading,
-      user: user ? { 
-        id: user.id, 
-        email: user.email, 
-        role: user.role,
-        full_name: user.full_name
-      } : null,
-      error
-    });
-    
-  }, [user, loading, error]);
 
   return (
     <AuthContext.Provider
