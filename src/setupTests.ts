@@ -51,6 +51,5 @@ vi.mock('@/integrations/supabase/client', () => ({
   }
 }));
 
-// Diğer test dosyalarındaki çakışmaları önlemek için export edilmiş mockları yeniden export edelim
-// eslint-disable-next-line react-refresh/only-export-components
+// Digər test dosyalarındakı çakışmaları önlemek için export edilmiş mockları yeniden export edelim
 export { render, screen, fireEvent, vi };

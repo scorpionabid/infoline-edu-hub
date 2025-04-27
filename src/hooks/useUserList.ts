@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
-import { User, FullUserData } from '@/types/user';
+import { FullUserData } from '@/types/user';
 
 export interface UserFilter {
   role?: string[] | string;
@@ -11,6 +11,9 @@ export interface UserFilter {
   school?: string[] | string;
   search?: string;
   status?: string[] | string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
 }
 
 export const useUserList = () => {
@@ -29,89 +32,18 @@ export const useUserList = () => {
       setLoading(true);
       console.log('Fetching users with filters:', filter);
       
-      // İstifadəçi roluna əsasən sorğu yaradılması
-      let query = supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles (
-            id,
-            role,
-            region_id,
-            sector_id,
-            school_id
-          )
-        `, { count: 'exact' });
-
-      // SuperAdmin üçün hər hansı bir əlavə filter yoxdur
-      if (isSuperAdmin) {
-        console.log('Querying as SuperAdmin');
-      } 
-      // RegionAdmin öz regionunda olan istifadəçiləri görə bilər
-      else if (isRegionAdmin && regionId) {
-        console.log('Querying as RegionAdmin for region:', regionId);
-        query = query.eq('user_roles.region_id', regionId);
-      } 
-      // SectorAdmin öz sektorunda olan məktəblərin adminlərini görə bilər
-      else if (isSectorAdmin && sectorId) {
-        console.log('Querying as SectorAdmin for sector:', sectorId);
-        query = query.eq('user_roles.sector_id', sectorId)
-                     .eq('user_roles.role', 'schooladmin');
-      } 
-      // Digər istifadəçilər yalnız özlərini görə bilərlər
-      else {
-        console.log('Querying as regular user');
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          throw new Error('İstifadəçi tapılmadı');
-        }
-        query = query.eq('id', user.id);
-      }
-
-      // Əlavə filterlər tətbiq et
-      if (filter.role && filter.role.length > 0) {
-        if (Array.isArray(filter.role)) {
-          query = query.in('user_roles.role', filter.role);
-        } else {
-          query = query.eq('user_roles.role', filter.role);
-        }
-      }
-
-      if (filter.region && filter.region.length > 0) {
-        if (Array.isArray(filter.region)) {
-          query = query.in('user_roles.region_id', filter.region);
-        } else {
-          query = query.eq('user_roles.region_id', filter.region);
-        }
-      }
-
-      if (filter.sector && filter.sector.length > 0) {
-        if (Array.isArray(filter.sector)) {
-          query = query.in('user_roles.sector_id', filter.sector);
-        } else {
-          query = query.eq('user_roles.sector_id', filter.sector);
-        }
-      }
-
-      if (filter.school && filter.school.length > 0) {
-        if (Array.isArray(filter.school)) {
-          query = query.in('user_roles.school_id', filter.school);
-        } else {
-          query = query.eq('user_roles.school_id', filter.school);
-        }
-      }
-
-      if (filter.status && filter.status.length > 0) {
-        if (Array.isArray(filter.status)) {
-          query = query.in('status', filter.status);
-        } else {
-          query = query.eq('status', filter.status);
-        }
-      }
-
-      // Sorğunu icra et
-      console.log('Executing user query...');
-      const { data, error: fetchError, count } = await query;
+      // İstifadəçiləri JSONb formatında almaq üçün funksiyanı çağırmaq
+      const { data, error: fetchError } = await supabase
+        .rpc('get_filtered_users', {
+          p_role: filter.role ? Array.isArray(filter.role) ? filter.role : [filter.role] : null,
+          p_region_id: filter.regionId || filter.region || regionId || null,
+          p_sector_id: filter.sectorId || filter.sector || sectorId || null,
+          p_school_id: filter.schoolId || filter.school || null,
+          p_status: filter.status ? Array.isArray(filter.status) ? filter.status : [filter.status] : null,
+          p_search: filter.search || null,
+          p_page: currentPage,
+          p_limit: 10
+        });
       
       if (fetchError) {
         console.error('Error fetching users:', fetchError);
@@ -121,31 +53,34 @@ export const useUserList = () => {
       console.log(`Found ${data?.length || 0} users`);
 
       // Məlumatları formatla
-      const formattedUsers = data?.map(profile => {
-        const userRole = profile.user_roles?.[0];
+      const formattedUsers = data?.map((item: any) => {
+        // JSON verilərini parse edək
+        const userData = typeof item === 'string' ? JSON.parse(item) : item;
+        
         return {
-          id: profile.id,
-          email: profile.email || '',
-          full_name: profile.full_name,
-          name: profile.full_name,
-          role: userRole?.role || 'user',
-          region_id: userRole?.region_id,
-          sector_id: userRole?.sector_id,
-          school_id: userRole?.school_id,
-          regionId: userRole?.region_id,
-          sectorId: userRole?.sector_id,
-          schoolId: userRole?.school_id,
-          phone: profile.phone || '',
-          position: profile.position || '',
-          language: profile.language || 'az',
-          avatar: profile.avatar,
-          status: profile.status || 'active',
-          last_login: profile.last_login,
-          lastLogin: profile.last_login,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-          createdAt: profile.created_at,
-          updatedAt: profile.updated_at,
+          id: userData.id,
+          email: userData.email || '',
+          full_name: userData.full_name || userData.name || '',
+          name: userData.name || userData.full_name || '',
+          role: userData.role || 'user',
+          region_id: userData.region_id,
+          sector_id: userData.sector_id,
+          school_id: userData.school_id,
+          regionId: userData.region_id,
+          sectorId: userData.sector_id,
+          schoolId: userData.school_id,
+          phone: userData.phone || '',
+          position: userData.position || '',
+          language: userData.language || 'az',
+          avatar: userData.avatar,
+          status: userData.status || 'active',
+          last_login: userData.last_login,
+          lastLogin: userData.last_login,
+          created_at: userData.created_at,
+          updated_at: userData.updated_at,
+          createdAt: userData.created_at,
+          updatedAt: userData.updated_at,
+          entityName: userData.entity_name || '-', // Entity adını əlavə edirik
           notificationSettings: {
             email: true,
             system: true
@@ -153,9 +88,9 @@ export const useUserList = () => {
         } as FullUserData;
       }) || [];
 
-      // Client-side search
+      // Client-side search əgər server-side axtarış işləmirsə
       let filteredUsers = formattedUsers;
-      if (filter.search && filter.search.trim() !== '') {
+      if (filter.search && filter.search.trim() !== '' && formattedUsers.length > 0) {
         const searchTerm = filter.search.toLowerCase();
         filteredUsers = formattedUsers.filter(user => 
           user.full_name?.toLowerCase().includes(searchTerm) ||
@@ -165,6 +100,17 @@ export const useUserList = () => {
       }
 
       setUsers(filteredUsers);
+      
+      // Count-u serverdən əldə et
+      const { count } = await supabase.rpc('get_filtered_users_count', {
+        p_role: filter.role ? Array.isArray(filter.role) ? filter.role : [filter.role] : null,
+        p_region_id: filter.regionId || filter.region || regionId || null,
+        p_sector_id: filter.sectorId || filter.sector || sectorId || null,
+        p_school_id: filter.schoolId || filter.school || null,
+        p_status: filter.status ? Array.isArray(filter.status) ? filter.status : [filter.status] : null,
+        p_search: filter.search || null
+      });
+      
       setTotalCount(count || filteredUsers.length);
       setError(null);
     } catch (err) {
@@ -174,7 +120,7 @@ export const useUserList = () => {
     } finally {
       setLoading(false);
     }
-  }, [filter, isSectorAdmin, isRegionAdmin, isSuperAdmin, sectorId, regionId]);
+  }, [filter, currentPage, isSectorAdmin, isRegionAdmin, isSuperAdmin, sectorId, regionId]);
 
   const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
     setFilter(prev => ({...prev, ...newFilter}));
@@ -188,7 +134,7 @@ export const useUserList = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers, currentPage]);
+  }, [fetchUsers]);
 
   return {
     users,

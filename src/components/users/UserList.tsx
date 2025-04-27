@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Table, 
@@ -52,7 +53,7 @@ const UserList: React.FC<UserListProps> = ({
     totalPages,
     currentPage,
     setCurrentPage,
-    fetchUsers
+    refetch
   } = useUserList();
 
   const { isSectorAdmin, sectorId } = usePermissions();
@@ -81,7 +82,7 @@ const UserList: React.FC<UserListProps> = ({
   }, [isSectorAdmin, sectorId]);
 
   useEffect(() => {
-    fetchUsers();
+    refetch();
   }, [refreshTrigger]);
 
   const handleDeleteUser = async (userId: string) => {
@@ -130,7 +131,7 @@ const UserList: React.FC<UserListProps> = ({
         console.error('Exception during auth deletion via Edge Function:', authErr);
       }
       
-      fetchUsers();
+      refetch();
       
       if (isPartiallyDeleted) {
         toast.success(t('userDeletedSuccessfully'));
@@ -147,7 +148,7 @@ const UserList: React.FC<UserListProps> = ({
 
   const handleEditComplete = () => {
     setIsEditDialogOpen(false);
-    fetchUsers();
+    refetch();
   };
 
   const handlePageChange = (page: number) => {
@@ -215,7 +216,7 @@ const UserList: React.FC<UserListProps> = ({
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.fullName || user.email.split('@')[0]}</TableCell>
+                    <TableCell className="font-medium">{user.full_name || user.name || user.email?.split('@')[0]}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getRoleBadgeColor(user.role)}>

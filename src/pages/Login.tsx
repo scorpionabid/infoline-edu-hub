@@ -27,25 +27,29 @@ const Login = () => {
         // Rol əsasında yönləndirmə
         let targetPath = '/dashboard';
         
-        switch(userRole) {
-          case 'superadmin':
-            targetPath = '/dashboard';
-            break;
-          case 'regionadmin':
-            targetPath = '/region-dashboard';
-            break;
-          case 'sectoradmin':
-            targetPath = '/sector-dashboard';
-            break;
-          case 'schooladmin':
-            targetPath = '/school-dashboard';
-            break;
-          default:
-            targetPath = '/dashboard';
+        if (from !== '/login') {
+          targetPath = from;
+        } else {
+          switch(userRole) {
+            case 'superadmin':
+              targetPath = '/dashboard';
+              break;
+            case 'regionadmin':
+              targetPath = '/region-dashboard';
+              break;
+            case 'sectoradmin':
+              targetPath = '/sector-dashboard';
+              break;
+            case 'schooladmin':
+              targetPath = '/school-dashboard';
+              break;
+            default:
+              targetPath = '/dashboard';
+          }
         }
         
         // İstifadəçini yönləndir
-        navigate(from !== '/login' ? from : targetPath, { replace: true });
+        navigate(targetPath, { replace: true });
         
         // Xoş gəldin bildirişi
         toast.success(`${user.full_name || userRole}, xoş gəlmisiniz!`, {

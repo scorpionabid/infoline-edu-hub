@@ -171,3 +171,5 @@ export interface FormValidation {
   isValid: boolean;
   errors: Record<string, string>;
 }
+
+export { COLUMN_TYPE_DEFINITIONS };

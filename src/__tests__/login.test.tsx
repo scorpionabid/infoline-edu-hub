@@ -82,6 +82,7 @@ const mockPermissionsHook = (role: UserRole = 'superadmin') => {
     regionId: null,
     sectorId: null,
     schoolId: null,
+    currentUser: null,
     canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
     canViewSectorCategories: true,
     canViewSchoolCategories: true,
@@ -116,6 +117,7 @@ function mockUseAuth({
     logout: vi.fn(),
     updateUser: vi.fn(),
     user,
+    session: null,
   });
 }
 
@@ -124,11 +126,18 @@ const mockUser = {
   id: 'user-1',
   email: 'test@example.com',
   full_name: 'Test User',
+  name: 'Test User',
   role: 'superadmin',
   language: 'az',
   status: 'active',
   created_at: '',
   updated_at: '',
+  createdAt: '',
+  updatedAt: '',
+  notificationSettings: {
+    email: true,
+    system: true
+  }
 };
 
 // Mock navigate

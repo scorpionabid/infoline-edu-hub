@@ -46,19 +46,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setError(null);
       console.log(`AuthContext: ${email} ilə giriş edilir...`);
       
-      // Əvvəlcə çıxış edək ki, təmiz sessiya ilə başlayaq
-      await supabase.auth.signOut();
-      console.log('Əvvəlki sessiya təmizləndi');
-      
-      // Qısa bir gözləmə əlavə edək
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Login cəhdi edək
       const { data, error } = await signIn(email, password);
       
       if (error) {
         console.error('AuthContext: Giriş uğursuz oldu:', error);
-        throw error; // Xətanı irəli ötürək
+        throw error;
       }
       
       if (!data || !data.user) {
@@ -68,63 +60,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       }
       
       console.log('AuthContext: Giriş uğurlu oldu, istifadəçi ID:', data.user.id);
-      
-      // Sessiya məlumatlarını yoxlayaq
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        console.error('AuthContext: Sessiya yaradıla bilmədi');
-        setError('Sessiya yaradıla bilmədi. Zəhmət olmasa yenidən cəhd edin.');
-        return false;
-      }
-      
-      console.log('AuthContext: Sessiya yaradıldı, token mövcuddur');
-      
-      // Profil məlumatlarını əldə etməyə çalışaq
-      try {
-        console.log('Profil məlumatları əldə edilir...');
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle();
-          
-        if (profileError) {
-          console.warn('Profil məlumatlarını əldə etmə xətası:', profileError);
-          
-          // Xətanı göstərək, lakin login prosesini dayandırmayaq
-          toast.warning('Profil məlumatları əldə edilə bilmədi', {
-            description: 'Giriş uğurlu oldu, lakin profil məlumatları əldə edilə bilmədi. Bəzi funksiyalar məhdud ola bilər.'
-          });
-        } else {
-          console.log('Profil məlumatları əldə edildi:', profileData);
-        }
-      } catch (profileCheckError) {
-        console.warn('Profil yoxlama xətası:', profileCheckError);
-      }
-      
       return true;
     } catch (error: any) {
       console.error('AuthContext: Login error:', error);
       
       // Daha detallı xəta mesajlarını təyin edək
-      if (error.message?.includes('infinite recursion detected in policy')) {
-        setError('Verilənlər bazasında RLS siyasəti problemi mövcuddur. Zəhmət olmasa administrator ilə əlaqə saxlayın.');
-      } else if (error.status === 500) {
-        setError('Server xətası: verilənlər bazasında problem var');
-      } else if (error.status === 401) {
-        setError('Giriş icazəsi yoxdur: yanlış e-poçt və ya şifrə');
-      } else if (error.message?.includes('Invalid login credentials')) {
+      if (error.message?.includes('Invalid login credentials')) {
         setError('Yanlış giriş məlumatları: e-poçt və ya şifrə səhvdir');
       } else if (error.message?.includes('Email not confirmed')) {
         setError('E-poçt təsdiqlənməyib');
-      } else if (error.message?.includes('İstifadəçi profili tapılmadı')) {
-        setError('Bu hesab üçün profil tapılmadı, zəhmət olmasa adminə müraciət edin');
-      } else if (error.message?.includes('rol təyin edilməyib')) {
-        setError('Bu hesab üçün rol təyin edilməyib, zəhmət olmasa adminə müraciət edin');
       } else if (error.message === 'Failed to fetch') {
         setError('Server ilə əlaqə qurula bilmədi. İnternet bağlantınızı yoxlayın.');
-      } else if (error.message?.includes('Invalid API key')) {
-        setError('API açarı xətası. Zəhmət olmasa administratora müraciət edin.');
       } else {
         setError(error.message || 'Bilinməyən giriş xətası');
       }
@@ -137,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   };
 
-  // Logout function
+  // Çıxış funksiyası
   const logout = async () => {
     try {
       setError(null);
@@ -150,30 +96,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   };
 
-  // Update user function
+  // İstifadəçi məlumatlarını yeniləmək funksiyası
   const updateUser = async (userData: Partial<FullUserData>): Promise<boolean> => {
     if (!user) return false;
     
     try {
       setError(null);
-      // Convert FullUserData to Profile format
-      const profileUpdates = {
-        full_name: userData.full_name,
-        phone: userData.phone,
-        position: userData.position,
-        language: userData.language,
-        avatar: userData.avatar,
-        status: userData.status,
-      };
-      
-      // Remove undefined values
-      Object.keys(profileUpdates).forEach(key => {
-        if (profileUpdates[key as keyof typeof profileUpdates] === undefined) {
-          delete profileUpdates[key as keyof typeof profileUpdates];
-        }
-      });
-      
-      const success = await updateProfile(profileUpdates);
+      const success = await updateProfile(userData);
       return success;
     } catch (error: any) {
       console.error('Update user error:', error);
@@ -187,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setError(null);
   };
 
-  // Hər dəfə auth vəziyyəti dəyişdikdə log edək
+  // Auth vəziyyəti dəyişdikdə log edək
   useEffect(() => {
     console.log('Auth vəziyyəti dəyişdi:', {
       isAuthenticated: !!user && !!user.id && !!user.email && !!user.role,
@@ -201,23 +130,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       error
     });
     
-    // İstifadəçi məlumatları dəyişdikdə əlavə yoxlama
-    if (user && user.id && user.email && user.role) {
-      console.log('İstifadəçi məlumatları tam əldə edildi:', {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        full_name: user.full_name,
-        region_id: user.region_id,
-        sector_id: user.sector_id,
-        school_id: user.school_id
-      });
-      
-      // Superadmin hesabı üçün əlavə loq
-      if (user.role === 'superadmin') {
-        console.log('Superadmin hesabı ilə giriş edildi');
-      }
-    }
   }, [user, loading, error]);
 
   return (
