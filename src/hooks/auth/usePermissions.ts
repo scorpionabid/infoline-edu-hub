@@ -33,6 +33,7 @@ export const usePermissions = (): UsePermissionsReturn => {
   const { user } = useAuth();
   
   return useMemo(() => {
+    // Əgər userin məlumatları yoxdursa, default dəyərlər qaytar
     if (!user) {
       return {
         userRole: 'user' as UserRole,
@@ -61,13 +62,23 @@ export const usePermissions = (): UsePermissionsReturn => {
       };
     }
     
-    const userRole = user.role as UserRole;
+    // İstifadəçi rolunu təyin et
+    const userRole = user.role || 'user' as UserRole;
+    console.log('usePermissions: User role is', userRole);
+    
+    // Xəta yoxlaması: əgər rol düzgün deyilsə, xəbərdarlıq et
+    if (!['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'].includes(userRole)) {
+      console.warn(`Unknown user role: ${userRole}, defaulting to 'user'`);
+    }
+    
+    // Ümumi səlahiyyətləri təyin et
     const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole);
     const isSuperAdmin = userRole === 'superadmin';
     const isRegionAdmin = userRole === 'regionadmin';
     const isSectorAdmin = userRole === 'sectoradmin';
     const isSchoolAdmin = userRole === 'schooladmin';
     
+    // Xüsusi səlahiyyətlər
     const canRegionAdminManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
     const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     const canViewSchoolCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
@@ -76,27 +87,33 @@ export const usePermissions = (): UsePermissionsReturn => {
     const canManageData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
     const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
     
-    const canAccessRegion = (regionId: string) => {
+    // ID məlumatları
+    const regionId = user.region_id || user.regionId || null;
+    const sectorId = user.sector_id || user.sectorId || null;
+    const schoolId = user.school_id || user.schoolId || null;
+    
+    // Xüsusi entity-lərə giriş hüquqlarını yoxla
+    const canAccessRegion = (targetRegionId: string) => {
       if (isSuperAdmin) return true;
-      if (isRegionAdmin) return user.region_id === regionId || user.regionId === regionId;
+      if (isRegionAdmin) return regionId === targetRegionId;
       return false;
     };
     
-    const canAccessSector = (sectorId: string) => {
+    const canAccessSector = (targetSectorId: string) => {
       if (isSuperAdmin) return true;
       if (isRegionAdmin) {
         // Region ID-lər ilə əlaqəli sektorlara giriş etmək üçün əlavə məntiq lazım ola bilər
         return true;
       }
-      if (isSectorAdmin) return user.sector_id === sectorId || user.sectorId === sectorId;
+      if (isSectorAdmin) return sectorId === targetSectorId;
       return false;
     };
     
-    const canAccessSchool = (schoolId: string) => {
+    const canAccessSchool = (targetSchoolId: string) => {
       if (isSuperAdmin) return true;
       if (isRegionAdmin) return true; // region adminləri bütün məktəblərə giriş edə bilər
       if (isSectorAdmin) return true; // sektor adminləri öz sektorlarının bütün məktəblərinə giriş edə bilər
-      if (isSchoolAdmin) return user.school_id === schoolId || user.schoolId === schoolId;
+      if (isSchoolAdmin) return schoolId === targetSchoolId;
       return false;
     };
     
@@ -107,6 +124,11 @@ export const usePermissions = (): UsePermissionsReturn => {
       return false;
     };
     
+    // Adlandırma məlumatları
+    const regionName = user?.adminEntity?.regionName || null;
+    const sectorName = user?.adminEntity?.sectorName || null;
+    const schoolName = user?.adminEntity?.name || null;
+    
     return {
       userRole,
       isAdmin,
@@ -114,16 +136,16 @@ export const usePermissions = (): UsePermissionsReturn => {
       isRegionAdmin,
       isSectorAdmin,
       isSchoolAdmin,
-      regionId: user?.region_id || user?.regionId || null,
-      sectorId: user?.sector_id || user?.sectorId || null,
-      schoolId: user?.school_id || user?.schoolId || null,
+      regionId,
+      sectorId,
+      schoolId,
       currentUser: user,
       canRegionAdminManageCategoriesColumns,
       canViewSectorCategories,
       canViewSchoolCategories,
-      regionName: user?.adminEntity?.regionName || null,
-      sectorName: user?.adminEntity?.sectorName || null,
-      schoolName: user?.adminEntity?.name || null,
+      regionName,
+      sectorName,
+      schoolName,
       canAccessRegion,
       canAccessSector,
       canAccessSchool,

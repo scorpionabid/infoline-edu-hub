@@ -70,66 +70,75 @@
 //   });
 // };
 
-// // Mock permissions hook with correct return type
-// const mockPermissionsHook = (role: UserRole = 'superadmin') => {
-//   vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
-//     userRole: role,
-//     isAdmin: true,
-//     isSuperAdmin: role === 'superadmin',
-//     isRegionAdmin: role === 'regionadmin',
-//     isSectorAdmin: role === 'sectoradmin',
-//     isSchoolAdmin: role === 'schooladmin',
-//     regionId: null,
-//     sectorId: null,
-//     schoolId: null,
-//     canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
-//     canViewSectorCategories: true,
-//     canViewSchoolCategories: true,
-//     regionName: null,
-//     sectorName: null,
-//     schoolName: null,
-//     canAccessRegion: () => true,
-//     canAccessSector: () => true,
-//     canAccessSchool: () => true,
-//     canAccessCategory: () => true,
-//     canManageUsers: true,
-//     canManageData: true,
-//     canApproveData: true
-//   });
-// };
+// Mock permissions hook with correct return type
+const mockPermissionsHook = (role: UserRole = 'superadmin') => {
+  vi.spyOn(PermissionsHook, 'usePermissions').mockReturnValue({
+    userRole: role,
+    isAdmin: true,
+    isSuperAdmin: role === 'superadmin',
+    isRegionAdmin: role === 'regionadmin',
+    isSectorAdmin: role === 'sectoradmin',
+    isSchoolAdmin: role === 'schooladmin',
+    regionId: null,
+    sectorId: null,
+    schoolId: null,
+    currentUser: null,
+    canRegionAdminManageCategoriesColumns: role === 'superadmin' || role === 'regionadmin',
+    canViewSectorCategories: true,
+    canViewSchoolCategories: true,
+    regionName: null,
+    sectorName: null,
+    schoolName: null,
+    canAccessRegion: () => true,
+    canAccessSector: () => true,
+    canAccessSchool: () => true,
+    canAccessCategory: () => true,
+    canManageUsers: true,
+    canManageData: true,
+    canApproveData: true
+  });
+};
 
-// // Helper to mock useAuth
-// function mockUseAuth({
-//   isAuthenticated = false,
-//   isLoading = false,
-//   error = null,
-//   user = null,
-//   loginImpl = vi.fn().mockResolvedValue(true),
-//   clearErrorImpl = vi.fn(),
-// } = {}) {
-//   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
-//     isAuthenticated,
-//     isLoading,
-//     error,
-//     login: loginImpl,
-//     clearError: clearErrorImpl,
-//     logout: vi.fn(),
-//     updateUser: vi.fn(),
-//     user,
-//   });
-// }
+// Helper to mock useAuth
+function mockUseAuth({
+  isAuthenticated = false,
+  isLoading = false,
+  error = null,
+  user = null,
+  loginImpl = vi.fn().mockResolvedValue(true),
+  clearErrorImpl = vi.fn(),
+} = {}) {
+  vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+    isAuthenticated,
+    isLoading,
+    error,
+    login: loginImpl,
+    clearError: clearErrorImpl,
+    logout: vi.fn(),
+    updateUser: vi.fn(),
+    user,
+    session: null,
+  });
+}
 
-// // Mock user data
-// const mockUser = {
-//   id: 'user-1',
-//   email: 'test@example.com',
-//   full_name: 'Test User',
-//   role: 'superadmin',
-//   language: 'az',
-//   status: 'active',
-//   created_at: '',
-//   updated_at: '',
-// };
+// Mock user data
+const mockUser = {
+  id: 'user-1',
+  email: 'test@example.com',
+  full_name: 'Test User',
+  name: 'Test User',
+  role: 'superadmin',
+  language: 'az',
+  status: 'active',
+  created_at: '',
+  updated_at: '',
+  createdAt: '',
+  updatedAt: '',
+  notificationSettings: {
+    email: true,
+    system: true
+  }
+};
 
 // // Mock navigate
 // const mockNavigate = vi.fn();

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // Sütun tiplərinin tərifləri

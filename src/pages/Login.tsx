@@ -22,40 +22,57 @@ const Login = () => {
         // Sonuncu ziyarət edilmiş səhifə və ya rol əsasında yönləndirmə
         const from = location.state?.from?.pathname || '/dashboard';
         console.log(`İstifadəçi auth olundu, "${from}" səhifəsinə yönləndirilir`);
-        console.log(`İstifadəçi rolu: ${userRole}`);
+        console.log(`İstifadəçi məlumatları:`, {
+          id: user.id,
+          email: user.email,
+          role: user.role || 'role yoxdur',
+          isLoading: isLoading
+        });
         
         // Rol əsasında yönləndirmə
         let targetPath = '/dashboard';
         
-        switch(userRole) {
-          case 'superadmin':
-            targetPath = '/dashboard';
-            break;
-          case 'regionadmin':
-            targetPath = '/region-dashboard';
-            break;
-          case 'sectoradmin':
-            targetPath = '/sector-dashboard';
-            break;
-          case 'schooladmin':
-            targetPath = '/school-dashboard';
-            break;
-          default:
-            targetPath = '/dashboard';
+        // Əgər redirektin saxlanması istənilirsə, from istifadə et
+        if (from !== '/login') {
+          targetPath = from;
+        } 
+        // Əks halda, rol əsasında redirekt
+        else if (user.role) {
+          switch(user.role) {
+            case 'superadmin':
+              targetPath = '/dashboard';
+              break;
+            case 'regionadmin':
+              targetPath = '/region-dashboard';
+              break;
+            case 'sectoradmin':
+              targetPath = '/sector-dashboard';
+              break;
+            case 'schooladmin':
+              targetPath = '/school-dashboard';
+              break;
+            default:
+              console.warn(`Naməlum rol tipi: ${user.role}, default dashboard-a yönləndirilir`);
+              targetPath = '/dashboard';
+          }
+          
+          console.log(`Rol əsasında redirekt: ${user.role} -> ${targetPath}`);
+        } else {
+          console.warn('İstifadəçinin rolu yoxdur, default dashboard-a yönləndirilir');
         }
         
         // İstifadəçini yönləndir
-        navigate(from !== '/login' ? from : targetPath, { replace: true });
+        navigate(targetPath, { replace: true });
         
         // Xoş gəldin bildirişi
-        toast.success(`${user.full_name || userRole}, xoş gəlmisiniz!`, {
+        toast.success(`${user.full_name || user.email}, xoş gəlmisiniz!`, {
           duration: 3000,
         });
       } catch (err) {
         console.error('Yönləndirmə xətası:', err);
       }
     }
-  }, [isAuthenticated, isLoading, navigate, location, user, userRole]);
+  }, [isAuthenticated, isLoading, navigate, location, user]);
 
   // Yüklənmə zamanı göstəriləcək
   if (isLoading) {
