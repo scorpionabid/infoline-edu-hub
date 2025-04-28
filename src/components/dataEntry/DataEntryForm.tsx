@@ -31,7 +31,8 @@ const DataEntryForm: React.FC = () => {
     action: 'save'
   });
 
-  // Kateqoriyalar və məlumatları yükləyirik
+  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
+
   const { 
     categories = [], 
     loading, 
@@ -39,24 +40,18 @@ const DataEntryForm: React.FC = () => {
     refreshCategories
   } = useCategoryData(schoolId);
 
-  // Local state
   const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
   const [isDataModified, setIsDataModified] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [processingCategories, setProcessingCategories] = useState<CategoryWithColumns[]>([]);
 
-  // Kateqoriyaları işləyirik və sütunları filtirləyirik
   useEffect(() => {
     if (categories && categories.length > 0) {
-      // Hər bir kateqoriya üçün sütunları filtirləyirik
       const processedCategories = categories.map(category => {
-        // Sütunları filtirləyirik - əgər sütun statusu active deyilsə, onu göstərmirik
         const filteredColumns = category.columns.filter(column => 
           column.status === 'active' || column.status === undefined
         );
         
-        // Sütunları sıralayırıq
         const sortedColumns = [...filteredColumns].sort((a, b) => 
           (a.order_index || 0) - (b.order_index || 0)
         );
@@ -71,36 +66,28 @@ const DataEntryForm: React.FC = () => {
     }
   }, [categories]);
 
-  // Filter categories based on assignment for school admin
   const filteredCategories = processingCategories.filter(category => {
-    // SuperAdmin və RegionAdmin bütün kateqoriyaları görə bilər
     if (isSuperAdmin || isRegionAdmin) {
       return true;
     }
     
-    // SectorAdmin yalnız "sectors" və "all" təyinatlı kateqoriyaları görə bilər
     if (isSectorAdmin) {
       return category.assignment === 'sectors' || category.assignment === 'all';
     }
     
-    // SchoolAdmin yalnız "all" təyinatlı kateqoriyaları görə bilər
     if (isSchoolAdmin) {
       return category.assignment === 'all';
     }
     
-    // Default olaraq "all" təyinatlı kateqoriyaları göstəririk
     return category.assignment === 'all';
   });
 
-  // Seçilmiş kateqoriyanı tapaq
   const selectedCategory = filteredCategories.find(c => c.id === activeTab);
 
-  // İlk yükləməde yoxlayırıq
   useEffect(() => {
     if (categoryId && categoryId !== activeTab) {
       setActiveTab(categoryId);
     } else if (!categoryId && filteredCategories.length > 0) {
-      // Əgər categoryId təyin edilməyibsə, ilk kateqoriyanı seçirik
       const firstCategoryId = filteredCategories[0].id;
       setActiveTab(firstCategoryId);
       
@@ -110,7 +97,6 @@ const DataEntryForm: React.FC = () => {
     }
   }, [categoryId, activeTab, filteredCategories, navigate, schoolId]);
 
-  // Mövcud məlumatları yükləyirik
   useEffect(() => {
     const loadEntries = async () => {
       if (!schoolId || !activeTab) return;
@@ -139,7 +125,6 @@ const DataEntryForm: React.FC = () => {
     loadEntries();
   }, [schoolId, activeTab, t]);
 
-  // Tab dəyişdikdə URL-i də yeniləyək
   const handleTabChange = useCallback((value: string) => {
     if (isDataModified) {
       setConfirmDialog({ open: true, action: 'save' });
@@ -150,13 +135,11 @@ const DataEntryForm: React.FC = () => {
     setActiveTab(value);
   }, [isDataModified, navigate, schoolId]);
 
-  // Məlumatlar dəyişildikdə işləyən funksiya
   const handleEntriesChange = useCallback((updatedEntries: DataEntry[]) => {
     setEntries(updatedEntries);
     setIsDataModified(true);
   }, []);
 
-  // Məlumatları saxlamaq üçün funksiya
   const handleSave = useCallback(async () => {
     if (!schoolId || !activeTab || !user?.id) {
       toast.error(t('missingRequiredFields'));
@@ -165,7 +148,6 @@ const DataEntryForm: React.FC = () => {
 
     setSaveStatus(DataEntrySaveStatus.SAVING);
     try {
-      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
       const { error: deleteError } = await supabase
         .from('data_entries')
         .delete()
@@ -177,7 +159,6 @@ const DataEntryForm: React.FC = () => {
         throw deleteError;
       }
       
-      // Yeni məlumatları əlavə edirik
       if (entries.length > 0) {
         const dataToInsert = entries.map(entry => ({
           school_id: schoolId,
@@ -203,13 +184,12 @@ const DataEntryForm: React.FC = () => {
       setIsDataModified(false);
       toast.success(t('dataSavedSuccessfully'));
       
-      // Yenilə
       setTimeout(() => {
         refreshCategories();
       }, 1000);
     } catch (error: any) {
       console.error('Məlumatları saxlayarkən xəta:', error);
-      toast.error(t('errorSavingData'));
+      toast.error(error?.message || t('errorSavingData'));
       setSaveStatus(DataEntrySaveStatus.ERROR);
     } finally {
       setTimeout(() => {
@@ -218,7 +198,6 @@ const DataEntryForm: React.FC = () => {
     }
   }, [schoolId, activeTab, entries, user?.id, t, refreshCategories]);
 
-  // Təsdiq üçün göndərmək funksiyası
   const handleSubmitForApproval = useCallback(async () => {
     if (!schoolId || !activeTab || !user?.id) {
       toast.error(t('missingRequiredFields'));
@@ -232,7 +211,6 @@ const DataEntryForm: React.FC = () => {
       return;
     }
     
-    // Bütün məcburi sahələrin doldurulduğunu yoxlayırıq
     const requiredColumns = selectedCat.columns.filter(col => col.is_required);
     const requiredFieldsWithValues = requiredColumns.filter(col => 
       entries.some(entry => entry.column_id === col.id && entry.value)
@@ -247,7 +225,6 @@ const DataEntryForm: React.FC = () => {
     setSaveStatus(DataEntrySaveStatus.SAVING);
     
     try {
-      // Əvvəlcə köhnə məlumatları silirik (əgər varsa)
       const { error: deleteError } = await supabase
         .from('data_entries')
         .delete()
@@ -256,14 +233,13 @@ const DataEntryForm: React.FC = () => {
         
       if (deleteError) throw deleteError;
       
-      // Yeni məlumatları əlavə edirik
       if (entries.length > 0) {
         const dataToInsert = entries.map(entry => ({
           school_id: schoolId,
           category_id: activeTab,
           column_id: entry.column_id,
           value: String(entry.value || ''),
-          status: 'pending', // Təsdiq gözləyən status
+          status: 'pending',
           created_by: user.id,
           updated_at: new Date().toISOString()
         }));
@@ -275,7 +251,6 @@ const DataEntryForm: React.FC = () => {
         if (insertError) throw insertError;
       }
       
-      // Bildiriş yaradaq
       try {
         await supabase.from('notifications').insert({
           user_id: user.id,
@@ -289,14 +264,12 @@ const DataEntryForm: React.FC = () => {
         });
       } catch (notifError) {
         console.error('Bildiriş yaradılarkən xəta:', notifError);
-        // Bildiriş yaratma xətası kritik deyil, davam edirik
       }
       
       setSaveStatus(DataEntrySaveStatus.SAVED);
       setIsDataModified(false);
       toast.success(t('dataSubmittedSuccessfully'));
       
-      // Yenilə
       setTimeout(() => {
         refreshCategories();
       }, 1000);
@@ -312,12 +285,10 @@ const DataEntryForm: React.FC = () => {
     }
   }, [schoolId, activeTab, entries, user?.id, t, filteredCategories, refreshCategories]);
 
-  // Dialoq bağlandıqda
   const handleCloseConfirmDialog = useCallback(() => {
     setConfirmDialog({ ...confirmDialog, open: false });
   }, [confirmDialog]);
 
-  // Dialoq təsdiqləndiyi zaman
   const handleConfirmAction = useCallback(async () => {
     if (confirmDialog.action === 'save') {
       await handleSave();
@@ -358,7 +329,6 @@ const DataEntryForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Kateqoriya tabları */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">{t('dataEntry')}</h2>
@@ -447,7 +417,6 @@ const DataEntryForm: React.FC = () => {
         ))}
       </Tabs>
       
-      {/* Təsdiq dialoqu */}
       <CategoryConfirmationDialog 
         isOpen={confirmDialog.open}
         onClose={handleCloseConfirmDialog}

@@ -1,5 +1,24 @@
-import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
+
+interface CategoryResponse {
+  id: string;
+  name: string;
+  description?: string;
+  assignment: 'sectors' | 'all';
+  status: 'active' | 'inactive';
+  deadline: string | null;
+  created_at: string;
+  updated_at: string;
+  archived: boolean;
+  priority: number;
+}
+
+export const transformCategory = (response: CategoryResponse): Category => ({
+  ...response,
+  deadline: response.deadline ? new Date(response.deadline) : undefined,
+  created_at: new Date(response.created_at),
+  updated_at: new Date(response.updated_at)
+});
 
 export const adaptSupabaseCategory = (data: any): Category => {
   return {
@@ -30,7 +49,6 @@ export const adaptCategoryToSupabase = (category: Partial<Category> & { name: st
   };
 };
 
-// Bütün kateqoriyaları əldə etmək üçün API funksiyası
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
     const { data, error } = await supabase
@@ -44,7 +62,6 @@ export const fetchCategories = async (): Promise<Category[]> => {
       throw error;
     }
     
-    // Supabase datalarını uyğunlaşdıraq
     return data?.length > 0 
       ? data.map(adaptSupabaseCategory)
       : [];
@@ -54,12 +71,10 @@ export const fetchCategories = async (): Promise<Category[]> => {
   }
 };
 
-// Kateqoriya əlavə etmək və ya yeniləmək üçün funksiya
 export const addCategory = async (categoryData: Partial<Category> & { name: string }): Promise<Category> => {
   try {
     const now = new Date().toISOString();
     
-    // Type compatibility üçün id öncədən təyin edək
     const categoryWithId: Category = {
       id: categoryData.id || '',
       name: categoryData.name,
@@ -76,7 +91,6 @@ export const addCategory = async (categoryData: Partial<Category> & { name: stri
     
     const supabaseData = adaptCategoryToSupabase(categoryWithId);
     
-    // Yeni kateqoriya yaratma və ya mövcud olanı yeniləmə
     if (categoryData.id) {
       const { data, error } = await supabase
         .from('categories')
@@ -118,10 +132,8 @@ export const addCategory = async (categoryData: Partial<Category> & { name: stri
   }
 };
 
-// Kateqoriyanı silmək üçün funksiya
 export const deleteCategory = async (id: string): Promise<void> => {
   try {
-    // Əslində silmək yerinə arxivləşdiririk
     const { error } = await supabase
       .from('categories')
       .update({ 
@@ -141,7 +153,6 @@ export const deleteCategory = async (id: string): Promise<void> => {
   }
 };
 
-// Kateqoriya statusunu yeniləmək üçün funksiya
 export const updateCategoryStatus = async (id: string, status: 'active' | 'inactive' | 'draft'): Promise<void> => {
   try {
     const { error } = await supabase
