@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -19,18 +18,18 @@ import { Control } from "react-hook-form";
 
 export interface ValidationFieldsProps {
   control: Control<any>; // form control
-  type: ColumnType;
+  columnType: ColumnType;
   t?: (key: string) => string; // Opsiyonal dil tərcüməsi funksiyası
 }
 
-const ValidationFields = ({ control, type, t: propT }: ValidationFieldsProps) => {
+const ValidationFields = ({ control, columnType, t: propT }: ValidationFieldsProps) => {
   const { t: contextT } = useLanguage();
   
   // İstifadə edəcəyimiz tərcümə funksiyası (prop və ya context-dən)
   const t = propT || contextT;
   
   // Seçilmiş tip üçün mümkün validasiyaları müəyyən et
-  const availableValidations = COLUMN_TYPE_DEFINITIONS[type]?.validations || [];
+  const availableValidations = COLUMN_TYPE_DEFINITIONS[columnType]?.validations || [];
   
   // Validasiya formunu uyğun şəkildə hazırla
   const renderValidationFields = () => {
@@ -157,7 +156,7 @@ const ValidationFields = ({ control, type, t: propT }: ValidationFieldsProps) =>
         )}
         
         {/* Əlavə validasiyalar */}
-        {(type === 'email' || availableValidations.includes('email')) && (
+        {(columnType === 'email' || availableValidations.includes('email')) && (
           <FormField
             control={control}
             name="validation.email"
@@ -183,27 +182,23 @@ const ValidationFields = ({ control, type, t: propT }: ValidationFieldsProps) =>
           />
         )}
         
-        {(type === 'url' || availableValidations.includes('url')) && (
+        {(columnType === 'url' || availableValidations.includes('url')) && (
           <FormField
             control={control}
-            name="validation.url"
+            name="validation.pattern"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem>
+                <FormLabel>{t('urlPattern')}</FormLabel>
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    id="validate-url"
+                  <Input
+                    placeholder={t('urlPatternPlaceholder')}
+                    {...field}
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
-                  <Label htmlFor="validate-url">
-                    {t("validateUrl")}
-                  </Label>
-                  <FormDescription>
-                    {t("validateUrlDescription")}
-                  </FormDescription>
-                </div>
+                <FormDescription>
+                  {t('urlPatternDescription')}
+                </FormDescription>
+                <FormMessage />
               </FormItem>
             )}
           />

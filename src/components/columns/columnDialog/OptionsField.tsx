@@ -1,325 +1,190 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ColumnOption } from "@/types/column";
-import { Control, useFieldArray } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useLanguage } from "@/context/LanguageContext";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Edit2, Save, X, Import } from "lucide-react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Trash2, GripVertical, X } from 'lucide-react';
+import { ColumnOption, ColumnType } from '@/types/column';
+import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/context/LanguageContext';
+import { twMerge } from 'tailwind-merge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 
 interface OptionsFieldProps {
-  control: Control<any>;
-  options: ColumnOption[];
-  newOption: string;
-  setNewOption: (value: string) => void;
-  addOption: (option: string) => void;
-  removeOption: (index: number) => void;
-  updateOption?: (oldOption: ColumnOption, newOption: ColumnOption) => boolean;
+  control: any;
+  name: string;
+  columnType: ColumnType;
 }
 
-const OptionsField: React.FC<OptionsFieldProps> = ({
-  control,
-  options,
-  newOption,
-  setNewOption,
-  addOption,
-  removeOption,
-  updateOption
-}) => {
-  const { t } = useLanguage();
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [jsonInput, setJsonInput] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("manual");
+// Create a simple random ID for drag and drop
+const createOptionId = () => Math.random().toString(36).substring(2, 10);
 
-  // useFieldArray hook-u ilə options sahəsini idarə edirik
-  const { fields, append, remove, update } = useFieldArray({
+export function OptionsField({ control, name, columnType }: OptionsFieldProps) {
+  const { t } = useLanguage();
+  const form = useFormContext();
+  const [showValueField, setShowValueField] = useState(false);
+  const [enableCustomColors, setEnableCustomColors] = useState(false);
+
+  // Get the current values of the field array with useFieldArray
+  const { fields, append, remove, move } = useFieldArray({
     control,
-    name: "options"
+    name
   });
 
-  // Options dəyişdikdə form sahəsini yeniləyirik
-  useEffect(() => {
-    console.log("Options changed in OptionsField:", options);
-  }, [options]);
+  // Function to update a specific field in the options array
+  const updateOptionField = useCallback((index: number, field: string, value: any) => {
+    const newFields = [...fields];
+    newFields[index] = { ...newFields[index], [field]: value };
+    form.setValue(name, newFields);
+  }, [fields, form, name]);
 
-  // Yeni option əlavə etmə funksiyası
-  const handleAddOption = () => {
-    if (newOption.trim()) {
-      addOption(newOption.trim());
-    }
-  };
-
-  // Option silmə funksiyası
-  const handleRemoveOption = (index: number) => {
-    removeOption(index);
-    remove(index);
-  };
-
-  // Option redaktə etmə funksiyası
-  const handleEditOption = (index: number) => {
-    setEditingIndex(index);
-    setEditValue(options[index]?.label || "");
-  };
-
-  // Option redaktəsini yadda saxlama funksiyası
-  const handleSaveEdit = (index: number) => {
-    if (editValue.trim()) {
-      const oldOption = options[index];
-      const newOption = { ...oldOption, label: editValue.trim(), value: editValue.trim() };
-      
-      // Əgər updateOption prop-u təmin edilibsə, onu çağırırıq
-      if (updateOption) {
-        const success = updateOption(oldOption, newOption);
-        if (success) {
-          update(index, newOption);
-          toast.success(t("optionUpdated"));
-        } else {
-          toast.error(t("failedToUpdateOption"));
-        }
-      } else {
-        // Əks halda birbaşa update edirik
-        update(index, newOption);
-      }
-      
-      setEditingIndex(null);
-      setEditValue("");
-    }
-  };
-
-  // Option redaktəsini ləğv etmə funksiyası
-  const handleCancelEdit = () => {
-    setEditingIndex(null);
-    setEditValue("");
-  };
-
-  // JSON formatını import etmə funksiyası
-  const handleImportJSON = () => {
-    if (!jsonInput.trim()) {
-      toast.error(t("emptyJSONInput"));
+  // Function to handle drag and drop
+  const onDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination) {
       return;
     }
 
-    try {
-      console.log("Importing JSON:", jsonInput);
-      
-      // Xüsusi simvolları düzəldirik
-      let cleanedInput = jsonInput
-        .replace(/\\"/g, '"') // Escape edilmiş dırnaqları düzəldirik
-        .replace(/(\w+):/g, '"$1":') // Dırnaqsız açarları dırnaqlı edirik
-        .replace(/'/g, '"'); // Tək dırnaqları cüt dırnaqlara çeviririk
-      
-      // Əgər array deyilsə, array-ə çeviririk
-      if (!cleanedInput.trim().startsWith('[')) {
-        cleanedInput = `[${cleanedInput}]`;
-      }
-      
-      // JSON kimi parse etməyə çalışırıq
-      let parsedOptions: any[] = [];
-      
-      try {
-        parsedOptions = JSON.parse(cleanedInput);
-        console.log("Successfully parsed JSON:", parsedOptions);
-      } catch (e) {
-        console.error("Failed to parse JSON directly:", e);
-        
-        // Alternativ parsing metodları
-        try {
-          // Əgər obyekt formatındadırsa
-          if (cleanedInput.trim().startsWith('{')) {
-            const obj = JSON.parse(cleanedInput);
-            parsedOptions = Object.entries(obj).map(([key, value]) => ({
-              label: String(value),
-              value: key
-            }));
-          } else {
-            // Vergüllə ayrılmış siyahı kimi qəbul edirik
-            parsedOptions = jsonInput.split(',')
-              .map(opt => opt.trim())
-              .filter(opt => opt)
-              .map(opt => ({ label: opt, value: opt }));
-          }
-          console.log("Parsed using alternative method:", parsedOptions);
-        } catch (e2) {
-          console.error("All parsing methods failed:", e2);
-          throw new Error("Invalid JSON format");
-        }
-      }
-      
-      // Hər bir option-u düzgün formata çeviririk
-      const formattedOptions = parsedOptions.map(option => {
-        if (typeof option === 'string') {
-          return { label: option, value: option };
-        }
-        
-        // Əgər obyektdirsə, label və value-nu təmin edirik
-        return {
-          label: option.label || option.name || String(option.value || option),
-          value: String(option.value !== undefined ? option.value : (option.id || option.label || option)),
-          description: option.description,
-          icon: option.icon,
-          disabled: option.disabled
-        };
-      });
-      
-      console.log("Formatted options:", formattedOptions);
-      
-      // Mövcud options-ları təmizləyirik
-      while (fields.length > 0) {
-        remove(0);
-      }
-      
-      // Yeni options-ları əlavə edirik
-      formattedOptions.forEach(opt => {
-        append(opt);
-        addOption(opt.label);
-      });
-      
-      // JSON input-u təmizləyirik və manual tab-a keçirik
-      setJsonInput("");
-      setActiveTab("manual");
-      
-      toast.success(t("optionsImported", { count: formattedOptions.length }));
-    } catch (error) {
-      console.error("Error importing JSON:", error);
-      toast.error(t("invalidJSONFormat"));
-    }
+    move(result.source.index, result.destination.index);
+  }, [move]);
+
+  // Add a new option
+  const handleAddOption = () => {
+    append({ value: '', label: '', color: '#' + Math.floor(Math.random() * 16777215).toString(16) });
   };
 
+  // Effect to initialize options if they are not already present
+  useEffect(() => {
+    if (!fields || fields.length === 0) {
+      append({ value: '', label: '', color: '#' + Math.floor(Math.random() * 16777215).toString(16) });
+    }
+  }, [append, fields]);
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t("options")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="manual">{t("manualEntry")}</TabsTrigger>
-            <TabsTrigger value="json">{t("jsonImport")}</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="manual" className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Input
-                placeholder={t("enterOption")}
-                value={newOption}
-                onChange={(e) => setNewOption(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddOption()}
-              />
-              <Button type="button" onClick={handleAddOption} size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                {t("add")}
-              </Button>
+    <FormField
+      control={control}
+      name={name}
+      render={() => (
+        <FormItem>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel>{t('options')}</FormLabel>
+              <div className="flex items-center gap-4">
+                {columnType !== 'checkbox' && columnType !== 'radio' && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="showValues" 
+                      checked={showValueField}
+                      onCheckedChange={(checked) => setShowValueField(!!checked)}
+                    />
+                    <Label htmlFor="showValues" className="text-sm font-normal">
+                      {t('showValueField')}
+                    </Label>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="enableColors" 
+                    checked={enableCustomColors}
+                    onCheckedChange={(checked) => setEnableCustomColors(!!checked)}
+                  />
+                  <Label htmlFor="enableColors" className="text-sm font-normal">
+                    {t('enableCustomColors')}
+                  </Label>
+                </div>
+              </div>
             </div>
             
-            <div className="space-y-2 mt-4">
-              <Label>{t("currentOptions")}</Label>
-              {options.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("noOptionsAdded")}</p>
-              ) : (
-                <div className="space-y-2">
-                  {options.map((option, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      {editingIndex === index ? (
-                        <>
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(index)}
-                            autoFocus
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleSaveEdit(index)}
-                          >
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={handleCancelEdit}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
+            <FormControl>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="options-list">
+                  {(provided) => (
+                    <div 
+                      {...provided.droppableProps} 
+                      ref={provided.innerRef}
+                      className="space-y-2"
+                    >
+                      {fields.length === 0 ? (
+                        <div className="text-sm text-gray-500 italic p-2 border border-dashed rounded-md text-center">
+                          {t('noOptionsAdded')}
+                        </div>
                       ) : (
-                        <>
-                          <div className="flex-1 p-2 border rounded-md">
-                            {option.label}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEditOption(index)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleRemoveOption(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
+                        fields.map((field, index) => (
+                          <Draggable key={field.id} draggableId={field.id} index={index}>
+                            {(provided) => (
+                              <div 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className="flex items-center gap-2 bg-background p-2 rounded-md border group"
+                              >
+                                <div 
+                                  {...provided.dragHandleProps} 
+                                  className="cursor-grab text-gray-400 hover:text-gray-600"
+                                >
+                                  <GripVertical size={16} />
+                                </div>
+                                
+                                {showValueField && (
+                                  <Input 
+                                    placeholder={t('value')}
+                                    className="flex-1"
+                                    value={field.value}
+                                    onChange={(e) => updateOptionField(index, 'value', e.target.value)}
+                                  />
+                                )}
+                                
+                                <Input 
+                                  placeholder={t('label')}
+                                  className="flex-1"
+                                  value={field.label}
+                                  onChange={(e) => updateOptionField(index, 'label', e.target.value)}
+                                />
+                                
+                                {enableCustomColors && (
+                                  <Input 
+                                    type="color" 
+                                    className="w-10 p-0 h-9 cursor-pointer border border-input"
+                                    value={field.color || '#000000'}
+                                    onChange={(e) => updateOptionField(index, 'color', e.target.value)}
+                                  />
+                                )}
+                                
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  type="button"
+                                  onClick={() => remove(index)} 
+                                  className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))
                       )}
+                      {provided.placeholder}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="json" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="jsonInput">{t("pasteJSONOptions")}</Label>
-              <Textarea
-                id="jsonInput"
-                placeholder={`[
-  {"label": "Option 1", "value": "option1"},
-  {"label": "Option 2", "value": "option2"}
-]`}
-                value={jsonInput}
-                onChange={(e) => setJsonInput(e.target.value)}
-                rows={6}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("jsonFormatHint")}
-              </p>
-            </div>
-            <Button type="button" onClick={handleImportJSON}>
-              <Import className="h-4 w-4 mr-1" />
-              {t("importJSON")}
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </FormControl>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleAddOption}
+              className="w-full"
+            >
+              <Plus size={16} className="mr-2" />
+              {t('addOption')}
             </Button>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      <CardFooter>
-        <FormField
-          control={control}
-          name="options"
-          render={() => (
-            <FormItem className="hidden">
-              <FormControl>
-                <Input type="hidden" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </CardFooter>
-    </Card>
+            
+            <FormMessage />
+          </div>
+        </FormItem>
+      )}
+    />
   );
-};
-
-export default OptionsField;
+}

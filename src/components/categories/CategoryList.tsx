@@ -1,297 +1,259 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, XCircle, AlertTriangle, MoreHorizontal, Edit, Trash2, CalendarClock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Category, CategoryStatus, FormStatus } from '@/types/category';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { az } from 'date-fns/locale';
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Category, CategoryFilter, FormStatus } from '@/types/category';
+import { Badge } from "../ui/badge";
+import { CalendarIcon, CheckCircle, Clock, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/date';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "../ui/dropdown-menu";
+import { useLanguage } from '@/context/LanguageContext';
+import EditCategoryDialog from './EditCategoryDialog';
+import DeleteCategoryDialog from './DeleteCategoryDialog';
+import { useToast } from '../ui/use-toast';
+import { Progress } from '../ui/progress';
+import { useNavigate } from 'react-router-dom';
 
-export interface CategoryListProps {
+interface CategoryListProps {
   categories: Category[];
-  isLoading: boolean;
-  onEdit?: (category: Category) => void;
-  onDelete?: (category: Category) => void;
-  handleStatusChange?: (id: string, status: CategoryStatus) => Promise<boolean>;
+  onUpdate: (category: Category) => void;
+  onDelete: (id: string) => void;
+  filter: CategoryFilter;
 }
 
-const CategoryList: React.FC<CategoryListProps> = ({ 
-  categories,
-  isLoading,
-  onEdit,
-  onDelete,
-  handleStatusChange
-}) => {
-  const navigate = useNavigate();
+interface CategoryCardProps {
+  category: Category;
+  onUpdate: (category: Category) => void;
+  onDelete: (id: string) => void;
+}
 
-  // Kategoriyaları prioritet və deadlineə görə sıralayaq
-  const sortedCategories = [...categories].sort((a, b) => {
-    // Əvvəlcə prioritet üzrə
-    if (a.priority !== b.priority) {
-      return (b.priority || 0) - (a.priority || 0);
-    }
-    
-    // Sonra deadline üzrə
-    if (a.deadline && b.deadline) {
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-    }
-    
-    // deadline olmayan kategoriyalar sonda olsun
-    if (a.deadline && !b.deadline) return -1;
-    if (!a.deadline && b.deadline) return 1;
-    
-    // son olaraq ad üzrə
-    return a.name.localeCompare(b.name);
-  });
-  
-  const handleEditClick = (category: Category) => {
-    if (onEdit) {
-      onEdit(category);
-    }
-  };
-  
-  const handleDeleteClick = (category: Category) => {
-    if (onDelete) {
-      onDelete(category);
-    }
-  };
-  
-  const handleStatusClick = async (categoryId: string, newStatus: CategoryStatus) => {
-    if (handleStatusChange) {
-      await handleStatusChange(categoryId, newStatus);
-    }
-  };
-  
-  // Deadline formatlaması
-  const formatDeadline = (deadline?: string) => {
-    if (!deadline) return '';
-    
-    try {
-      const date = new Date(deadline);
-      return format(date, 'd MMMM yyyy', { locale: az });
-    } catch (error) {
-      console.error('Tarix formatı xətası:', error);
-      return deadline;
-    }
-  };
-  
-  // Deadline statusunu hesablayaq (yaxınlaşan, keçmiş və s.)
-  const getDeadlineStatus = (deadline?: string): 'upcoming' | 'today' | 'past' | null => {
-    if (!deadline) return null;
-    
-    try {
-      const deadlineDate = new Date(deadline);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const deadlineOnly = new Date(deadlineDate);
-      deadlineOnly.setHours(0, 0, 0, 0);
-      
-      if (deadlineOnly.getTime() === today.getTime()) {
-        return 'today';
-      } else if (deadlineOnly > today) {
-        return 'upcoming';
-      } else {
-        return 'past';
-      }
-    } catch (error) {
-      console.error('Tarix hesablama xətası:', error);
-      return null;
-    }
-  };
+const getStatusInfo = (status: string, deadline?: Date, completionPercentage?: number) => {
+  const now = new Date();
+  let statusBadge: FormStatus = 'pending';
+  let statusColor = 'bg-gray-500'; // Default gray
+  let statusText = 'Pending';
 
-  // Status üçün badge komponentini qaytaraq
-  const renderStatusBadge = (status: CategoryStatus) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">Aktiv</Badge>;
-      case 'inactive':
-        return <Badge variant="secondary">Deaktiv</Badge>;
-      case 'draft':
-        return <Badge variant="outline">Qaralama</Badge>;
-      default:
-        return null;
+  // Check if deadline is valid
+  if (deadline && !isNaN(deadline.getTime())) {
+    // Calculate days until deadline
+    const diffTime = deadline.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      statusBadge = 'overdue';
+      statusColor = 'bg-red-500';
+      statusText = 'Overdue';
+    } else if (diffDays <= 3) {
+      statusBadge = 'dueSoon';
+      statusColor = 'bg-amber-500';
+      statusText = 'Due Soon';
     }
-  };
-  
-  // Form statusu üçün badge
-  const renderFormStatusBadge = (status: FormStatus) => {
-    switch (status) {
-      case 'completed':
-        return <Badge variant="success">Tamamlanıb</Badge>;
-      case 'pending':
-        return <Badge variant="secondary">Gözləmədə</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rədd edilib</Badge>;
-      case 'dueSoon':
-        return <Badge variant="warning">Tezliklə</Badge>;
-      case 'overdue':
-        return <Badge variant="destructive">Gecikib</Badge>;
-      case 'approved':
-        return <Badge variant="success">Təsdiqlənib</Badge>;
-      case 'draft':
-        return <Badge variant="outline">Qaralama</Badge>;
-      default:
-        return null;
+  }
+
+  // If we have completion data, override status based on it
+  if (typeof completionPercentage === 'number') {
+    if (completionPercentage === 100) {
+      statusBadge = 'completed';
+      statusColor = 'bg-green-500';
+      statusText = 'Completed';
     }
-  };
-  
-  // Assignment (təyinat) üçün badge
-  const renderAssignmentBadge = (assignment?: string) => {
-    switch (assignment) {
-      case 'sectors':
-        return <Badge variant="outline">Sektorlar</Badge>;
-      case 'all':
-      default:
-        return <Badge variant="outline">Hamısı</Badge>;
-    }
-  };
-  
-  // Deadline badge-i
-  const renderDeadlineBadge = (deadline?: string) => {
-    const status = getDeadlineStatus(deadline);
-    
-    if (!deadline || !status) return null;
-    
-    switch (status) {
-      case 'today':
-        return (
-          <Badge variant="warning" className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Bu gün
-          </Badge>
-        );
-      case 'upcoming':
-        return (
-          <Badge variant="outline" className="flex items-center gap-1">
-            <CalendarClock className="h-3 w-3" />
-            {formatDeadline(deadline)}
-          </Badge>
-        );
-      case 'past':
-        return (
-          <Badge variant="destructive" className="flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            {formatDeadline(deadline)}
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-  
-  // Kategoriya kartları
-  return (
-    <div className="space-y-3">
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      ) : sortedCategories.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">Kateqoriya tapılmadı</p>
-          </CardContent>
-        </Card>
-      ) : (
-        sortedCategories.map((category) => (
-          <Card key={category.id} className={cn(
-            "hover:bg-accent/5 transition-colors",
-            category.status === 'inactive' && "opacity-70"
-          )}>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row justify-between">
-                <div className="flex-1 space-y-1 mb-2 md:mb-0">
-                  <div className="flex items-center justify-between md:justify-start gap-2">
-                    <h3 className="text-lg font-semibold">{category.name}</h3>
-                    <div className="flex items-center gap-1">
-                      {renderStatusBadge(category.status)}
-                      {renderAssignmentBadge(category.assignment)}
-                    </div>
-                  </div>
-                  
-                  {category.description && (
-                    <p className="text-sm text-muted-foreground">{category.description}</p>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {renderDeadlineBadge(category.deadline)}
-                    {category.column_count !== undefined && (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        Sütunlar: {category.column_count}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate(`/columns?categoryId=${category.id}`)}
-                  >
-                    Sütunlar
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => handleEditClick(category)}
-                        className="flex items-center gap-2"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Redaktə et
-                      </DropdownMenuItem>
-                      
-                      {category.status === 'active' ? (
-                        <DropdownMenuItem 
-                          onClick={() => handleStatusClick(category.id, 'inactive')}
-                          className="flex items-center gap-2"
-                        >
-                          <XCircle className="h-4 w-4" />
-                          Deaktiv et
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem 
-                          onClick={() => handleStatusClick(category.id, 'active')}
-                          className="flex items-center gap-2"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          Aktiv et
-                        </DropdownMenuItem>
-                      )}
-                      
-                      <DropdownMenuItem 
-                        onClick={() => handleDeleteClick(category)}
-                        className="flex items-center gap-2 text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Sil
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))
-      )}
-    </div>
-  );
+  }
+
+  // Override with actual status if it's rejected or approved
+  if (status === 'rejected') {
+    statusBadge = 'rejected';
+    statusColor = 'bg-red-500';
+    statusText = 'Rejected';
+  } else if (status === 'approved') {
+    statusBadge = 'approved';
+    statusColor = 'bg-green-500';
+    statusText = 'Approved';
+  } else if (status === 'draft') {
+    statusBadge = 'draft';
+    statusColor = 'bg-slate-500';
+    statusText = 'Draft';
+  }
+
+  return { statusBadge, statusColor, statusText };
 };
 
-export default CategoryList;
+export function CategoryList({ categories, onUpdate, onDelete, filter }: CategoryListProps) {
+  const { t } = useLanguage();
+
+  if (!categories || categories.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardContent className="py-8 flex justify-center items-center">
+          {t('noCategoriesFound')}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {categories.map((category) => (
+        <CategoryCard
+          key={category.id}
+          category={category}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function CategoryCard({ category, onUpdate, onDelete }: CategoryCardProps) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const statusInfo = getStatusInfo(category.status, category.deadline, category.completionPercentage);
+
+  const handleEdit = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSaveCategory = async (updatedCategory: Category) => {
+    try {
+      await onUpdate(updatedCategory);
+      setIsEditDialogOpen(false);
+      toast({
+        title: t('categoryUpdated'),
+        description: t('categoryUpdatedSuccessfully'),
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: t('errorUpdatingCategory'),
+        description: error.message || t('unknownError'),
+      });
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    try {
+      await onDelete(category.id);
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: t('categoryDeleted'),
+        description: t('categoryDeletedSuccessfully'),
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: t('errorDeletingCategory'),
+        description: error.message || t('unknownError'),
+      });
+    }
+  };
+
+  // Format deadline if it exists
+  const deadlineDisplay = category.deadline ? formatDate(category.deadline as string) : '-';
+  
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="text-xl font-bold">{category.name}</CardTitle>
+          <CardDescription className="mt-1">{category.description || t('noDescription')}</CardDescription>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              <span>{t('edit')}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/categories/${category.id}/columns`)}>
+              <CheckCircle className="mr-2 h-4 w-4" />
+              <span>{t('manageCategoryColumns')}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>{t('delete')}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="mt-3 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{t('status')}:</span>
+            <Badge variant={statusInfo.statusBadge}>{t(statusInfo.statusBadge)}</Badge>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{t('deadline')}:</span>
+            <span className="flex items-center text-sm">
+              <CalendarIcon className="mr-1 h-3 w-3" />
+              {deadlineDisplay}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{t('assignment')}:</span>
+            <span className="text-sm">{t(category.assignment)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{t('columns')}:</span>
+            <span className="text-sm">{category.column_count || 0}</span>
+          </div>
+          
+          {typeof category.completionPercentage === 'number' && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">{t('completion')}:</span>
+                <span className="text-sm">{category.completionPercentage}%</span>
+              </div>
+              <Progress value={category.completionPercentage} className="h-2" />
+            </div>
+          )}
+        </div>
+      </CardContent>
+      <CardFooter className="pt-4 flex justify-between">
+        <div className="text-xs text-gray-500">{t('createdAt')}: {formatDate(category.created_at as string)}</div>
+      </CardFooter>
+      
+      {isEditDialogOpen && (
+        <EditCategoryDialog 
+          category={category} 
+          open={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen} 
+          onSave={handleSaveCategory} 
+        />
+      )}
+      
+      {isDeleteDialogOpen && (
+        <DeleteCategoryDialog 
+          category={category} 
+          open={isDeleteDialogOpen} 
+          onOpenChange={setIsDeleteDialogOpen} 
+          onDelete={handleDeleteCategory} 
+        />
+      )}
+    </Card>
+  );
+}

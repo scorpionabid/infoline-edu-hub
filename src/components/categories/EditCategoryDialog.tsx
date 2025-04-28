@@ -1,129 +1,96 @@
-
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Category, AssignmentType } from '@/types/category';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useLanguage } from '@/context/LanguageContext';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '../ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils/ui';
 import { format } from 'date-fns';
-import { az } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { Category } from '@/types/category';
-
-// Form validation schema
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Kateqoriya adı ən az 2 hərfdən ibarət olmalıdır",
-  }),
-  description: z.string().optional(),
-  assignment: z.enum(["all", "sectors"]),
-  deadline: z.date().optional().nullable(),
-  priority: z.coerce.number().min(0).default(0),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { DatePicker } from '../ui/date-picker';
 
 interface EditCategoryDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onEditCategory: (data: Category) => Promise<boolean>;
-  category: Category | null;
-  isSubmitting?: boolean;
+  category?: Category;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (category: Category) => void;
 }
 
-const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
-  isOpen,
-  onClose,
-  onEditCategory,
-  category,
-  isSubmitting = false,
-}) => {
+const categoryFormSchema = z.object({
+  name: z.string().min(2, {
+    message: "Category name must be at least 2 characters.",
+  }),
+  description: z.string().optional(),
+  assignment: z.enum(['all', 'sectors']),
+  status: z.enum(['active', 'inactive', 'draft']),
+  deadline: z.date().optional(),
+  priority: z.number().optional()
+});
+
+type CategoryFormValues = z.infer<typeof categoryFormSchema>
+
+export default function EditCategoryDialog({ 
+  category, 
+  open, 
+  onOpenChange, 
+  onSave 
+}: EditCategoryDialogProps) {
   const { t } = useLanguage();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categoryFormSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      assignment: 'all',
-      deadline: null,
-      priority: 0,
-    },
+      name: category?.name || '',
+      description: category?.description || '',
+      assignment: category?.assignment || 'all',
+      status: category?.status || 'active',
+      deadline: category?.deadline ? new Date(category.deadline) : undefined,
+      priority: category?.priority || 0
+    }
   });
   
-  // Kategoriya dəyişdikdə formu yeniləyək
-  useEffect(() => {
-    if (category) {
-      form.reset({
-        name: category.name,
-        description: category.description || '',
-        assignment: category.assignment || 'all',
-        deadline: category.deadline ? new Date(category.deadline) : null,
-        priority: category.priority || 0,
-      });
-    }
-  }, [category, form]);
-  
-  const onSubmit = async (data: FormValues) => {
-    if (!category) return;
-    
-    const updatedCategory: Category = {
-      ...category,
-      name: data.name,
-      description: data.description,
-      assignment: data.assignment,
-      deadline: data.deadline ? data.deadline.toISOString() : undefined,
-      priority: data.priority,
-      updated_at: new Date().toISOString(),
+  const onSubmit = (values: CategoryFormValues) => {
+    const categoryData: Category = {
+      id: category?.id || '',
+      name: values.name,
+      description: values.description,
+      assignment: values.assignment,
+      status: values.status,
+      deadline: values.deadline,
+      created_at: category?.created_at || new Date(),
+      updated_at: new Date(),
+      archived: category?.archived || false,
+      priority: values.priority || 0,
+      column_count: category?.column_count || 0
     };
     
-    const success = await onEditCategory(updatedCategory);
-    if (success) {
-      onClose();
-    }
+    onSave(categoryData);
+    onOpenChange(false);
   };
-  
-  if (!category) return null;
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('editCategory')}</DialogTitle>
+          <DialogTitle>{category ? t('editCategory') : t('createCategory')}</DialogTitle>
           <DialogDescription>
-            {t('editCategoryDescription')}
+            {t('editCategoryDetails')}
           </DialogDescription>
         </DialogHeader>
-        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -133,67 +100,80 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                 <FormItem>
                   <FormLabel>{t('categoryName')}</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder={t('categoryName')} 
-                      {...field} 
-                      disabled={isSubmitting}
-                    />
+                    <Input placeholder={t('categoryName')} {...field} />
                   </FormControl>
+                  <FormDescription>
+                    {t('categoryNameDescription')}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('categoryDescription')}</FormLabel>
+                  <FormLabel>{t('description')}</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder={t('categoryDescription')} 
-                      {...field} 
-                      value={field.value || ''}
-                      disabled={isSubmitting}
-                    />
+                    <Input placeholder={t('description')} {...field} />
                   </FormControl>
+                  <FormDescription>
+                    {t('categoryDescription')}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="assignment"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('assignment')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    disabled={isSubmitting}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t('selectAssignment')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="all">{t('allSchools')}</SelectItem>
-                      <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
+                      <SelectItem value="all">{t('allUsers')}</SelectItem>
+                      <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    {field.value === 'all' 
-                      ? t('allSchoolsDescription') 
-                      : t('onlySectorsDescription')}
+                    {t('assignmentDescription')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('status')}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('selectStatus')} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">{t('active')}</SelectItem>
+                      <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                      <SelectItem value="draft">{t('draft')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {t('statusDescription')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="deadline"
@@ -206,26 +186,25 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
+                            "w-[240px] pl-3 text-left font-normal",
                             !field.value && "text-muted-foreground"
                           )}
-                          disabled={isSubmitting}
                         >
                           {field.value ? (
-                            format(field.value, "PPP", { locale: az })
+                            format(field.value, "PPP")
                           ) : (
-                            <span>{t('selectDate')}</span>
+                            <span>{t("pickDate")}</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
+                      <DatePicker
                         mode="single"
-                        selected={field.value || undefined}
+                        selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date()}
+                        disabled={false}
                         initialFocus
                       />
                     </PopoverContent>
@@ -237,7 +216,6 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="priority"
@@ -247,9 +225,8 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                   <FormControl>
                     <Input
                       type="number"
-                      min="0"
+                      placeholder={t('priority')}
                       {...field}
-                      disabled={isSubmitting}
                     />
                   </FormControl>
                   <FormDescription>
@@ -259,25 +236,12 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                 </FormItem>
               )}
             />
-            
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('saving') : t('saveCategory')}
-              </Button>
+              <Button type="submit">{category ? t('updateCategory') : t('createCategory')}</Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default EditCategoryDialog;
+}

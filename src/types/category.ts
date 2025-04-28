@@ -1,14 +1,15 @@
 
-import { UserRole } from './supabase';
+import { Column } from './column';
 
 export type AssignmentType = 'sectors' | 'all';
 
-export type FormStatus = 'completed' | 'dueSoon' | 'overdue' | 'pending';
+export type FormStatus = 'completed' | 'dueSoon' | 'overdue' | 'pending' | 'draft' | 'approved' | 'rejected';
 
 export interface CategoryFilter {
   status?: FormStatus[];
   assignment?: AssignmentType;
   search?: string;
+  deadline?: Date;
 }
 
 export interface Category {
@@ -16,13 +17,14 @@ export interface Category {
   name: string;
   description?: string;
   assignment: AssignmentType;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'draft';
   deadline?: Date;
   created_at: Date;
   updated_at: Date;
   archived: boolean;
   priority: number;
   completionPercentage?: number;
+  column_count?: number;
 }
 
 export interface CategoryWithColumns extends Category {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryFilter } from '@/types/category';
@@ -10,18 +9,53 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useRouter, usePathname } from 'next/router';
 
 interface CategoryFilterCardProps {
   filter: CategoryFilter;
   onFilterChange: (newFilter: Partial<CategoryFilter>) => void;
 }
 
-const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
-  filter,
-  onFilterChange
-}) => {
+export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCardProps) {
   const { t } = useLanguage();
-  
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Filter options
+  const statusOptions = [
+    { value: "pending", label: t("pending"), icon: <AlertCircle className="mr-2 h-4 w-4" /> },
+    { value: "completed", label: t("completed"), icon: <CheckCircle className="mr-2 h-4 w-4" /> },
+    { value: "dueSoon", label: t("dueSoon"), icon: <Clock className="mr-2 h-4 w-4" /> },
+    { value: "overdue", label: t("overdue"), icon: <AlertTriangle className="mr-2 h-4 w-4" /> },
+    { value: "draft", label: t("draft"), icon: <FileEdit className="mr-2 h-4 w-4" /> },
+    { value: "approved", label: t("approved"), icon: <CheckCircle className="mr-2 h-4 w-4" /> },
+    { value: "rejected", label: t("rejected"), icon: <XCircle className="mr-2 h-4 w-4" /> }
+  ];
+
+  const assignmentOptions = [
+    { value: "all", label: t("allUsers") },
+    { value: "sectors", label: t("sectorsOnly") }
+  ];
+
+  // Handlers
+  const handleStatusFilter = (statuses: FormStatus[]) => {
+    onFilterChange({ ...filter, status: statuses });
+  };
+
+  const handleAssignmentFilter = (assignment: AssignmentType | null) => {
+    onFilterChange({ ...filter, assignment: assignment || undefined });
+  };
+
+  const handleSearchFilter = (search: string) => {
+    onFilterChange({ ...filter, search: search || undefined });
+  };
+
+  const handleResetFilter = () => {
+    onFilterChange({});
+    // Update the URL to remove query params
+    router.push(pathname);
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

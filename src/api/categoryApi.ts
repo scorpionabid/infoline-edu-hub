@@ -1,23 +1,27 @@
+
 import { Category } from '@/types/category';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CategoryResponse {
   id: string;
   name: string;
   description?: string;
   assignment: 'sectors' | 'all';
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'draft';
   deadline: string | null;
   created_at: string;
   updated_at: string;
   archived: boolean;
   priority: number;
+  column_count?: number;
 }
 
 export const transformCategory = (response: CategoryResponse): Category => ({
   ...response,
   deadline: response.deadline ? new Date(response.deadline) : undefined,
   created_at: new Date(response.created_at),
-  updated_at: new Date(response.updated_at)
+  updated_at: new Date(response.updated_at),
+  column_count: response.column_count || 0
 });
 
 export const adaptSupabaseCategory = (data: any): Category => {
@@ -27,12 +31,12 @@ export const adaptSupabaseCategory = (data: any): Category => {
     status: data.status,
     assignment: data.assignment,
     description: data.description,
-    priority: data.priority,
-    deadline: data.deadline,
-    archived: data.archived,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    column_count: data.column_count
+    priority: data.priority || 0,
+    deadline: data.deadline ? new Date(data.deadline) : undefined,
+    archived: data.archived || false,
+    created_at: new Date(data.created_at),
+    updated_at: new Date(data.updated_at),
+    column_count: data.column_count || 0
   };
 };
 
@@ -84,8 +88,8 @@ export const addCategory = async (categoryData: Partial<Category> & { name: stri
       deadline: categoryData.deadline,
       priority: categoryData.priority || 0,
       column_count: categoryData.column_count || 0,
-      created_at: categoryData.created_at || now,
-      updated_at: now,
+      created_at: categoryData.id ? (categoryData.created_at || new Date()) : new Date(),
+      updated_at: new Date(),
       archived: false
     };
     
