@@ -204,12 +204,22 @@ export const useUserList = () => {
       
       console.log(`Found ${data?.length || 0} user_roles`);
 
-      // Generate mock emails if needed
+      // Generate email addresses if needed
       const userIds = data?.map(item => item.user_id) || [];
-      const mockEmails: Record<string, string> = {};
-      userIds.forEach(id => {
-        mockEmails[id] = `user-${id.substring(0, 8)}@infoline.edu.az`;
-      });
+      const emails: Record<string, string> = {};
+      
+      // Get emails from profiles
+      for (const userId of userIds) {
+        if (!userId) continue;
+        
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .single();
+          
+        emails[userId] = profileData?.email || `user-${userId.substring(0, 8)}@infoline.edu.az`;
+      }
 
       // Entity adlarını əldə etmək (region, sector, school)
       const entityNames: Record<string, Record<string, string>> = {
@@ -218,16 +228,68 @@ export const useUserList = () => {
         schools: {}
       };
       
+      // Get region names
+      const regionIds = Array.from(new Set(data?.filter(d => d.region_id).map(d => d.region_id) || []));
+      if (regionIds.length > 0) {
+        const { data: regionsData } = await supabase
+          .from('regions')
+          .select('id, name')
+          .in('id', regionIds);
+        
+        if (regionsData) {
+          regionsData.forEach(region => {
+            entityNames.regions[region.id] = region.name;
+          });
+        }
+      }
+      
+      // Get sector names
+      const sectorIds = Array.from(new Set(data?.filter(d => d.sector_id).map(d => d.sector_id) || []));
+      if (sectorIds.length > 0) {
+        const { data: sectorsData } = await supabase
+          .from('sectors')
+          .select('id, name')
+          .in('id', sectorIds);
+        
+        if (sectorsData) {
+          sectorsData.forEach(sector => {
+            entityNames.sectors[sector.id] = sector.name;
+          });
+        }
+      }
+      
+      // Get school names
+      const schoolIds = Array.from(new Set(data?.filter(d => d.school_id).map(d => d.school_id) || []));
+      if (schoolIds.length > 0) {
+        const { data: schoolsData } = await supabase
+          .from('schools')
+          .select('id, name')
+          .in('id', schoolIds);
+        
+        if (schoolsData) {
+          schoolsData.forEach(school => {
+            entityNames.schools[school.id] = school.name;
+          });
+        }
+      }
+      
       // Format user data
       const formattedUsers: FullUserData[] = data?.map(role => {
         // Extract profile data
         const profileData = role.profiles || {};
         
-        // Entity name placeholder
+        // Entity name based on role
         let entityName = '-';
+        if (role.school_id && entityNames.schools[role.school_id]) {
+          entityName = entityNames.schools[role.school_id];
+        } else if (role.sector_id && entityNames.sectors[role.sector_id]) {
+          entityName = entityNames.sectors[role.sector_id];
+        } else if (role.region_id && entityNames.regions[role.region_id]) {
+          entityName = entityNames.regions[role.region_id];
+        }
         
-        // Mock email or real email
-        const email = mockEmails[role.user_id] || profileData.email || '';
+        // Email from profiles or generated
+        const email = emails[role.user_id] || profileData.email || '';
         
         // Normalize role
         const normalizedRole = normalizeRole(role.role);
@@ -285,7 +347,11 @@ export const useUserList = () => {
       console.error('Error in fetchUsersWithQuery:', err);
       setError(err as Error);
       
-      // Fallback to mock data if query fails
+      // Xəta halında boş siyahı göstər və xəta mesajı ver
+      setUsers([]);
+      setTotalCount(0);
+      toast.error(`İstifadəçi məlumatlarını əldə etmək mümkün olmadı: ${(err as Error).message}`);
+      
       return false;
     } finally {
       setLoading(false);
@@ -293,140 +359,6 @@ export const useUserList = () => {
     
     return true;
   }, [filter, currentPage, isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
-
-  // Fallback metod - mock data əsasında istifadəçilər yaradılır
-  const generateMockUsers = useCallback(() => {
-    console.log('Generating mock users as a fallback');
-    
-    try {
-      const mockUsers: FullUserData[] = [];
-      
-      // Superadmin üçün nümunə istifadəçilər
-      if (isSuperAdmin) {
-        mockUsers.push({
-          id: '1',
-          email: 'superadmin@example.com',
-          full_name: 'Super Admin',
-          name: 'Super Admin',
-          role: 'superadmin',
-          region_id: null,
-          sector_id: null,
-          school_id: null,
-          regionId: null,
-          sectorId: null,
-          schoolId: null,
-          status: 'active',
-          language: 'az',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          notificationSettings: {
-            email: true,
-            system: true
-          },
-          entityName: 'SuperAdmin'
-        });
-        
-        for (let i = 1; i <= 5; i++) {
-          mockUsers.push({
-            id: `region-${i}`,
-            email: `regionadmin${i}@example.com`,
-            full_name: `Region Admin ${i}`,
-            name: `Region Admin ${i}`,
-            role: 'regionadmin',
-            region_id: `region-${i}`,
-            sector_id: null,
-            school_id: null,
-            regionId: `region-${i}`,
-            sectorId: null,
-            schoolId: null,
-            status: 'active',
-            language: 'az',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            notificationSettings: {
-              email: true,
-              system: true
-            },
-            entityName: `Region ${i}`
-          });
-        }
-      }
-      
-      // RegionAdmin üçün nümunə istifadəçilər
-      if (isRegionAdmin) {
-        for (let i = 1; i <= 5; i++) {
-          mockUsers.push({
-            id: `sector-${i}`,
-            email: `sectoradmin${i}@example.com`,
-            full_name: `Sector Admin ${i}`,
-            name: `Sector Admin ${i}`,
-            role: 'sectoradmin',
-            region_id: regionId,
-            sector_id: `sector-${i}`,
-            school_id: null,
-            regionId: regionId,
-            sectorId: `sector-${i}`,
-            schoolId: null,
-            status: 'active',
-            language: 'az',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            notificationSettings: {
-              email: true,
-              system: true
-            },
-            entityName: `Sector ${i}`
-          });
-        }
-      }
-      
-      // SectorAdmin üçün nümunə istifadəçilər
-      if (isSectorAdmin) {
-        for (let i = 1; i <= 8; i++) {
-          mockUsers.push({
-            id: `school-${i}`,
-            email: `schooladmin${i}@example.com`,
-            full_name: `School Admin ${i}`,
-            name: `School Admin ${i}`,
-            role: 'schooladmin',
-            region_id: regionId,
-            sector_id: sectorId,
-            school_id: `school-${i}`,
-            regionId: regionId,
-            sectorId: sectorId,
-            schoolId: `school-${i}`,
-            status: 'active',
-            language: 'az',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            notificationSettings: {
-              email: true,
-              system: true
-            },
-            entityName: `School ${i}`
-          });
-        }
-      }
-
-      // Bütün state dəyişikliklərini birləşdiririk
-      setUsers(mockUsers);
-      setTotalCount(mockUsers.length);
-      setError(null);
-      
-      return true;
-    } catch (err) {
-      console.error('Error generating mock data:', err);
-      return false;
-    }
-  }, [isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
 
   // Məlumatları yeniləmək üçün
   const refetch = useCallback(async () => {
@@ -448,53 +380,25 @@ export const useUserList = () => {
         const querySuccess = await fetchUsersWithQuery();
         
         if (!querySuccess) {
-          // Son vasitə kimi mock data istifadə edirik
-          generateMockUsers();
+          // Hər iki metod uğursuz olduqda xəta göstər
+          toast.error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı. Zəhmət olmasa yenidən cəhd edin.');
+          setUsers([]);
+          setTotalCount(0);
         }
       }
     } catch (err) {
       console.error('Refetch error:', err);
       setError(err as Error);
-      toast.error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı');
+      toast.error(`İstifadəçi məlumatlarını əldə etmək mümkün olmadı: ${(err as Error).message}`);
       
-      // Hər halda mock data ilə dolduraq ki, UI-da heç olmasa nümunələr görünsün
-      generateMockUsers();
+      // Xəta halında boş siyahı göstər
+      setUsers([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
       isProcessing.current = false;
     }
-  }, [fetchUsersWithRPC, fetchUsersWithQuery, generateMockUsers]);
-
-  // İlk yükləmə və filter/page dəyişikliyi zamanı məlumatları yenidən əldə edirik
-  useEffect(() => {
-    // Əvvəlki timeout-u təmizlə
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    // İlk render zamanı sorğu göndərmə, yalnız currentUser varsa
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      if (currentUser) {
-        refetch();
-      }
-      return;
-    }
-    
-    // Sonrakı renderlər üçün debounce tətbiq et
-    if (currentUser) {
-      timeoutRef.current = setTimeout(() => {
-        refetch();
-      }, 300);
-      
-      // Cleanup function
-      return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      };
-    }
-  }, [currentUser, filter, currentPage, refetch]);
+  }, [fetchUsersWithRPC, fetchUsersWithQuery]);
 
   const updateFilter = useCallback((newFilter: UserFilter) => {
     // Rolları normallaşdır
