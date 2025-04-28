@@ -1,10 +1,41 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { FullUserData } from '@/types/user';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
+
+// Qlobal dəyişənlər
+const isProcessing = { current: false };
+
+// Rol adlarını normallaşdırmaq üçün funksiya
+const normalizeRole = (role: string | null | undefined): string => {
+  if (!role) return '';
+  
+  // Bütün rolları kiçik hərflərə çevir
+  const normalizedRole = role.toLowerCase().trim();
+  
+  // Standart rol adları
+  const standardRoles = {
+    'superadmin': 'superadmin',
+    'regionadmin': 'regionadmin',
+    'sectoradmin': 'sectoradmin',
+    'schooladmin': 'schooladmin',
+    'teacher': 'teacher',
+    'student': 'student',
+    'user': 'user'
+  };
+  
+  // Əgər rol standart rollardan birinə uyğundursa, standart formanı qaytar
+  return standardRoles[normalizedRole as keyof typeof standardRoles] || normalizedRole;
+};
+
+// Rol massivini normallaşdırmaq üçün funksiya
+const normalizeRoleArray = (roles: string[] | string | undefined): string[] => {
+  if (!roles) return [];
+  if (typeof roles === 'string') return [normalizeRole(roles)];
+  return roles.map(normalizeRole).filter(Boolean);
+};
 
 export interface UserFilter {
   role?: string[] | string;
@@ -19,14 +50,23 @@ export interface UserFilter {
 }
 
 export const useUserList = () => {
+  // State dəyişənləri
   const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState<UserFilter>({});
+  
+  // Ref-lər
+  const isFirstRender = useRef(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auth hook
   const { user: currentUser } = useAuth();
 
+  // usePermissions hook-unu useMemo ilə keşləyirik
+  const permissions = usePermissions();
   const { 
     isSectorAdmin, 
     isRegionAdmin, 
@@ -34,12 +74,15 @@ export const useUserList = () => {
     sectorId, 
     regionId, 
     userRole 
-  } = usePermissions();
+  } = useMemo(() => permissions, [permissions]);
 
   // İstifadəçiləri əldə etmək üçün RPC funksiyası
   const fetchUsersWithRPC = useCallback(async () => {
     try {
       console.log('Trying to fetch users with RPC function');
+      
+      // Rolları normallaşdır
+      const normalizedRole = filter.role ? normalizeRoleArray(filter.role) : undefined;
       
       // Edge funksiyası çağır
       const { data, error } = await supabase.functions.invoke('get-all-users-with-roles', {
@@ -48,7 +91,7 @@ export const useUserList = () => {
           pageSize: 10,
           filter: {
             ...filter,
-            role: filter.role || undefined,
+            role: normalizedRole,
             regionId: (isRegionAdmin && regionId) ? regionId : filter.regionId,
             sectorId: (isSectorAdmin && sectorId) ? sectorId : filter.sectorId
           }
@@ -57,8 +100,10 @@ export const useUserList = () => {
       
       if (error) throw error;
       
+      // Bütün state dəyişikliklərini birləşdiririk
       setUsers(data?.users || []);
       setTotalCount(data?.count || 0);
+      setError(null);
       
       return true;
     } catch (error) {
@@ -100,21 +145,34 @@ export const useUserList = () => {
         query = query.eq('sector_id', sectorId);
         // Sadəcə məktəb adminlərini göstərmək üçün
         if (!filter.role || filter.role === '') {
-          query = query.eq('role', 'schooladmin');
+          query = query.ilike('role', '%schooladmin%');
         }
       } else {
         // İstifadəçi heç bir rola sahib deyilsə, boş nəticə qaytaraq
         console.log('User has no admin role, returning empty result');
+        
+        // Bütün state dəyişikliklərini birləşdiririk
         setUsers([]);
         setTotalCount(0);
+        setError(null);
         setLoading(false);
-        return;
+        
+        return true;
       }
 
       // Filter parametrləri
       if (filter.role && filter.role !== '') {
-        const roleFilter = Array.isArray(filter.role) ? filter.role : [filter.role];
-        query = query.in('role', roleFilter);
+        const roleFilter = normalizeRoleArray(filter.role);
+        if (roleFilter.length > 0) {
+          // Case-insensitive axtarış üçün ilike istifadə et
+          if (roleFilter.length === 1) {
+            query = query.ilike('role', `%${roleFilter[0]}%`);
+          } else {
+            // Çoxlu rol üçün OR şərti
+            const orConditions = roleFilter.map(r => `role.ilike.%${r}%`).join(',');
+            query = query.or(orConditions);
+          }
+        }
       }
       
       if ((filter.regionId || filter.region) && !isRegionAdmin) {
@@ -131,7 +189,8 @@ export const useUserList = () => {
       
       // Pagination
       const from = (currentPage - 1) * 10;
-      query = query.range(from, from + 9);
+      const to = from + 9;
+      query = query.range(from, to);
       
       // Order by creation date
       query = query.order('created_at', { ascending: false });
@@ -170,12 +229,15 @@ export const useUserList = () => {
         // Mock email or real email
         const email = mockEmails[role.user_id] || profileData.email || '';
         
+        // Normalize role
+        const normalizedRole = normalizeRole(role.role);
+        
         return {
           id: role.user_id,
           email: email,
           full_name: profileData.full_name || email.split('@')[0] || 'İsimsiz İstifadəçi',
           name: profileData.full_name || email.split('@')[0] || 'İsimsiz İstifadəçi',
-          role: role.role || 'user',
+          role: normalizedRole,
           region_id: role.region_id || null,
           sector_id: role.sector_id || null,
           school_id: role.school_id || null,
@@ -202,20 +264,20 @@ export const useUserList = () => {
       }) || [];
 
       // Client-side search
+      let displayUsers = formattedUsers;
       if (filter.search && filter.search.trim() !== '') {
         const searchTerm = filter.search.trim().toLowerCase();
-        const filteredUsers = formattedUsers.filter(user => 
+        displayUsers = formattedUsers.filter(user => 
           (user.full_name?.toLowerCase().includes(searchTerm)) || 
           (user.email?.toLowerCase().includes(searchTerm)) || 
           (user.phone?.toLowerCase().includes(searchTerm)) ||
-          (user.entityName?.toLowerCase().includes(searchTerm))
+          (user.entityName?.toLowerCase().includes(searchTerm)) ||
+          (user.role?.toLowerCase().includes(searchTerm))
         );
-        
-        setUsers(filteredUsers);
-      } else {
-        setUsers(formattedUsers);
       }
       
+      // Bütün state dəyişikliklərini birləşdiririk
+      setUsers(displayUsers);
       setTotalCount(count || 0);
       setError(null);
 
@@ -354,9 +416,11 @@ export const useUserList = () => {
         }
       }
 
+      // Bütün state dəyişikliklərini birləşdiririk
       setUsers(mockUsers);
       setTotalCount(mockUsers.length);
       setError(null);
+      
       return true;
     } catch (err) {
       console.error('Error generating mock data:', err);
@@ -366,6 +430,13 @@ export const useUserList = () => {
 
   // Məlumatları yeniləmək üçün
   const refetch = useCallback(async () => {
+    // Əgər sorğu artıq göndərilibsə, yenisini göndərmə
+    if (isProcessing.current) {
+      console.log('Request already in progress, skipping');
+      return;
+    }
+    
+    isProcessing.current = true;
     setLoading(true);
     
     try {
@@ -390,31 +461,65 @@ export const useUserList = () => {
       generateMockUsers();
     } finally {
       setLoading(false);
+      isProcessing.current = false;
     }
   }, [fetchUsersWithRPC, fetchUsersWithQuery, generateMockUsers]);
 
   // İlk yükləmə və filter/page dəyişikliyi zamanı məlumatları yenidən əldə edirik
   useEffect(() => {
+    // Əvvəlki timeout-u təmizlə
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // İlk render zamanı sorğu göndərmə, yalnız currentUser varsa
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (currentUser) {
+        refetch();
+      }
+      return;
+    }
+    
+    // Sonrakı renderlər üçün debounce tətbiq et
     if (currentUser) {
-      refetch();
+      timeoutRef.current = setTimeout(() => {
+        refetch();
+      }, 300);
+      
+      // Cleanup function
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
     }
   }, [currentUser, filter, currentPage, refetch]);
 
-  const updateFilter = (newFilter: UserFilter) => {
+  const updateFilter = useCallback((newFilter: UserFilter) => {
+    // Rolları normallaşdır
+    let normalizedFilter = { ...newFilter };
+    if (newFilter.role) {
+      normalizedFilter.role = typeof newFilter.role === 'string' 
+        ? normalizeRole(newFilter.role) 
+        : newFilter.role.map(normalizeRole);
+    }
+    
     // Reset page when filter changes
     setCurrentPage(1);
-    setFilter(newFilter);
-  };
+    setFilter(normalizedFilter);
+  }, []);
 
-  const resetFilter = () => {
+  const resetFilter = useCallback(() => {
     setFilter({});
     setCurrentPage(1);
-  };
+  }, []);
 
   // Səhifələmə hesablaması
-  const totalPages = Math.max(1, Math.ceil(totalCount / 10));
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / 10)), [totalCount]);
 
-  return {
+  // Memoize edilmiş dəyərlər
+  return useMemo(() => ({
     users,
     loading,
     error,
@@ -426,5 +531,17 @@ export const useUserList = () => {
     currentPage,
     setCurrentPage,
     refetch
-  };
+  }), [
+    users, 
+    loading, 
+    error, 
+    filter, 
+    updateFilter, 
+    resetFilter, 
+    totalCount, 
+    totalPages, 
+    currentPage, 
+    setCurrentPage, 
+    refetch
+  ]);
 };
