@@ -810,6 +810,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_current_user_region_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1098,6 +1102,10 @@ export type Database = {
           p_sector_id?: string
         }
         Returns: undefined
+      }
+      user_has_role: {
+        Args: { role_param: string }
+        Returns: boolean
       }
       uuid_generate_v4: {
         Args: Record<PropertyKey, never>
