@@ -20,7 +20,7 @@ interface OptionsFieldProps {
 // Create a simple random ID for drag and drop
 const createOptionId = () => Math.random().toString(36).substring(2, 10);
 
-export function OptionsField({ control, name, columnType }: OptionsFieldProps) {
+export default function OptionsField({ control, name, columnType }: OptionsFieldProps) {
   const { t } = useLanguage();
   const form = useFormContext();
   const [showValueField, setShowValueField] = useState(false);
