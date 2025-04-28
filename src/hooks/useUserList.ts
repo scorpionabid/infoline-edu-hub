@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { FullUserData } from '@/types/user';
+import { UserRole } from '@/types/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
 
@@ -100,37 +101,31 @@ export const useUserList = () => {
       
       if (error) throw error;
       
-      // Bütün state dəyişikliklərini birləşdiririk
-      setUsers(data?.users || []);
-      setTotalCount(data?.count || 0);
-      setError(null);
+      if (data && Array.isArray(data.users)) {
+        // Bütün state dəyişikliklərini birləşdiririk
+        setUsers(data.users as FullUserData[]);
+        setTotalCount(data.totalCount || data.users.length);
+        setError(null);
+        return true;
+      }
       
-      return true;
-    } catch (error) {
-      console.error('RPC fetch method failed:', error);
+      return false;
+    } catch (err) {
+      console.error('Error in fetchUsersWithRPC:', err);
       return false;
     }
   }, [filter, currentPage, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
-  
-  // İlkin sorğu metodu
+
+  // İlkin sorğu metodu - optimallaşdırılmış versiya
   const fetchUsersWithQuery = useCallback(async () => {
     try {
-      setLoading(true);
-      console.log('Fetching users with direct query, filter:', filter);
+      console.log('Fetching users with direct query');
       
-      // Əsas sorğu
+      // user_roles cədvəlindən məlumatları əldə edirik
       let query = supabase
         .from('user_roles')
-        .select(`
-          id,
-          user_id,
-          role,
-          region_id,
-          sector_id,
-          school_id,
-          profiles:profiles(*)
-        `, { count: 'exact' });
-
+        .select('id, user_id, role, region_id, sector_id, school_id', { count: 'exact' });
+      
       // Rol əsasında filtrasiya
       if (isSuperAdmin) {
         // SuperAdmin bütün istifadəçiləri görə bilər
@@ -155,8 +150,6 @@ export const useUserList = () => {
         setUsers([]);
         setTotalCount(0);
         setError(null);
-        setLoading(false);
-        
         return true;
       }
 
@@ -193,90 +186,93 @@ export const useUserList = () => {
       query = query.range(from, to);
       
       // Order by creation date
-      query = query.order('created_at', { ascending: false });
+      query = query.order('id', { ascending: false });
       
       // Execute query
-      const { data, error: fetchError, count } = await query;
+      const { data: roleData, error: fetchError, count } = await query;
       
       if (fetchError) {
         throw fetchError;
       }
       
-      console.log(`Found ${data?.length || 0} user_roles`);
-
-      // Generate email addresses if needed
-      const userIds = data?.map(item => item.user_id) || [];
-      const emails: Record<string, string> = {};
+      console.log(`Found ${roleData?.length || 0} user_roles`);
       
-      // Get emails from profiles
-      for (const userId of userIds) {
-        if (!userId) continue;
-        
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', userId)
-          .single();
-          
-        emails[userId] = profileData?.email || `user-${userId.substring(0, 8)}@infoline.edu.az`;
+      if (!roleData || roleData.length === 0) {
+        setUsers([]);
+        setTotalCount(0);
+        return true;
       }
-
-      // Entity adlarını əldə etmək (region, sector, school)
+      
+      // Bütün istifadəçi ID-lərini bir dəfəyə əldə edirik
+      const userIds = roleData.map(item => item.user_id).filter(Boolean);
+      
+      // Bütün profil məlumatlarını bir sorğuda əldə edirik
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, phone, position, language, avatar, status, last_login, created_at, updated_at')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        throw profilesError;
+      }
+      
+      // Profil məlumatlarını ID-yə görə map edirik
+      const profilesMap: Record<string, any> = {};
+      profilesData?.forEach(profile => {
+        profilesMap[profile.id] = profile;
+      });
+      
+      // Region, sektor və məktəb adlarını əldə edirik
+      const regionIds = Array.from(new Set(roleData.filter(d => d.region_id).map(d => d.region_id)));
+      const sectorIds = Array.from(new Set(roleData.filter(d => d.sector_id).map(d => d.sector_id)));
+      const schoolIds = Array.from(new Set(roleData.filter(d => d.school_id).map(d => d.school_id)));
+      
+      // Entity adlarını saxlamaq üçün obyekt
       const entityNames: Record<string, Record<string, string>> = {
         regions: {},
         sectors: {},
         schools: {}
       };
       
-      // Get region names
-      const regionIds = Array.from(new Set(data?.filter(d => d.region_id).map(d => d.region_id) || []));
+      // Region adlarını bir sorğuda əldə edirik
       if (regionIds.length > 0) {
         const { data: regionsData } = await supabase
           .from('regions')
           .select('id, name')
           .in('id', regionIds);
         
-        if (regionsData) {
-          regionsData.forEach(region => {
-            entityNames.regions[region.id] = region.name;
-          });
-        }
+        regionsData?.forEach(region => {
+          entityNames.regions[region.id] = region.name;
+        });
       }
       
-      // Get sector names
-      const sectorIds = Array.from(new Set(data?.filter(d => d.sector_id).map(d => d.sector_id) || []));
+      // Sektor adlarını bir sorğuda əldə edirik
       if (sectorIds.length > 0) {
         const { data: sectorsData } = await supabase
           .from('sectors')
           .select('id, name')
           .in('id', sectorIds);
         
-        if (sectorsData) {
-          sectorsData.forEach(sector => {
-            entityNames.sectors[sector.id] = sector.name;
-          });
-        }
+        sectorsData?.forEach(sector => {
+          entityNames.sectors[sector.id] = sector.name;
+        });
       }
       
-      // Get school names
-      const schoolIds = Array.from(new Set(data?.filter(d => d.school_id).map(d => d.school_id) || []));
+      // Məktəb adlarını bir sorğuda əldə edirik
       if (schoolIds.length > 0) {
         const { data: schoolsData } = await supabase
           .from('schools')
           .select('id, name')
           .in('id', schoolIds);
         
-        if (schoolsData) {
-          schoolsData.forEach(school => {
-            entityNames.schools[school.id] = school.name;
-          });
-        }
+        schoolsData?.forEach(school => {
+          entityNames.schools[school.id] = school.name;
+        });
       }
       
-      // Format user data
-      const formattedUsers: FullUserData[] = data?.map(role => {
-        // Extract profile data
-        const profileData = role.profiles || {};
+      // İstifadəçi məlumatlarını birləşdiririk
+      const formattedUsers = roleData.map(role => {
+        const profile = profilesMap[role.user_id] || {};
         
         // Entity name based on role
         let entityName = '-';
@@ -288,42 +284,35 @@ export const useUserList = () => {
           entityName = entityNames.regions[role.region_id];
         }
         
-        // Email from profiles or generated
-        const email = emails[role.user_id] || profileData.email || '';
-        
-        // Normalize role
-        const normalizedRole = normalizeRole(role.role);
-        
         return {
           id: role.user_id,
-          email: email,
-          full_name: profileData.full_name || email.split('@')[0] || 'İsimsiz İstifadəçi',
-          name: profileData.full_name || email.split('@')[0] || 'İsimsiz İstifadəçi',
-          role: normalizedRole,
-          region_id: role.region_id || null,
-          sector_id: role.sector_id || null,
-          school_id: role.school_id || null,
-          regionId: role.region_id || null,
-          sectorId: role.sector_id || null,
-          schoolId: role.school_id || null,
-          phone: profileData.phone || '',
-          position: profileData.position || '',
-          language: profileData.language || 'az',
-          avatar: profileData.avatar || null,
-          status: profileData.status || 'active',
-          last_login: profileData.last_login || null,
-          lastLogin: profileData.last_login || null,
-          created_at: profileData.created_at || role.created_at || new Date().toISOString(),
-          updated_at: profileData.updated_at || role.updated_at || new Date().toISOString(),
-          createdAt: profileData.created_at || role.created_at || new Date().toISOString(),
-          updatedAt: profileData.updated_at || role.updated_at || new Date().toISOString(),
-          entityName: entityName,
+          email: profile.email || `user-${role.user_id.substring(0, 8)}@infoline.edu.az`,
+          full_name: profile.full_name || 'İsimsiz İstifadəçi',
+          name: profile.full_name || 'İsimsiz İstifadəçi',
+          role: role.role as UserRole,
+          region_id: role.region_id,
+          sector_id: role.sector_id,
+          school_id: role.school_id,
+          regionId: role.region_id,
+          sectorId: role.sector_id,
+          schoolId: role.school_id,
+          phone: profile.phone || '',
+          position: profile.position || '',
+          language: profile.language || 'az',
+          avatar: profile.avatar,
+          status: profile.status || 'active',
+          last_login: profile.last_login,
+          lastLogin: profile.last_login,
+          created_at: profile.created_at || new Date().toISOString(),
+          updated_at: profile.updated_at || new Date().toISOString(),
+          createdAt: profile.created_at || new Date().toISOString(),
+          updatedAt: profile.updated_at || new Date().toISOString(),
           notificationSettings: {
             email: true,
             system: true
           }
         };
-      }) || [];
+      });
 
       // Client-side search
       let displayUsers = formattedUsers;
@@ -333,41 +322,31 @@ export const useUserList = () => {
           (user.full_name?.toLowerCase().includes(searchTerm)) || 
           (user.email?.toLowerCase().includes(searchTerm)) || 
           (user.phone?.toLowerCase().includes(searchTerm)) ||
-          (user.entityName?.toLowerCase().includes(searchTerm)) ||
           (user.role?.toLowerCase().includes(searchTerm))
         );
       }
       
       // Bütün state dəyişikliklərini birləşdiririk
-      setUsers(displayUsers);
+      setUsers(displayUsers as FullUserData[]);
       setTotalCount(count || 0);
       setError(null);
-
+      
+      return true;
     } catch (err) {
       console.error('Error in fetchUsersWithQuery:', err);
       setError(err as Error);
       
-      // Xəta halında boş siyahı göstər və xəta mesajı ver
+      // Xəta halında boş siyahı göstər
       setUsers([]);
       setTotalCount(0);
       toast.error(`İstifadəçi məlumatlarını əldə etmək mümkün olmadı: ${(err as Error).message}`);
       
       return false;
-    } finally {
-      setLoading(false);
     }
-    
-    return true;
   }, [filter, currentPage, isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
-
-  // Məlumatları yeniləmək üçün
+      
+  // Yeniləmə metodu
   const refetch = useCallback(async () => {
-    // Əgər sorğu artıq göndərilibsə, yenisini göndərmə
-    if (isProcessing.current) {
-      console.log('Request already in progress, skipping');
-      return;
-    }
-    
     isProcessing.current = true;
     setLoading(true);
     
@@ -377,19 +356,12 @@ export const useUserList = () => {
       
       if (!rpcSuccess) {
         // RPC uğursuz olduqda, növbəti üsula keçirik
-        const querySuccess = await fetchUsersWithQuery();
-        
-        if (!querySuccess) {
-          // Hər iki metod uğursuz olduqda xəta göstər
-          toast.error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı. Zəhmət olmasa yenidən cəhd edin.');
-          setUsers([]);
-          setTotalCount(0);
-        }
+        await fetchUsersWithQuery();
       }
     } catch (err) {
       console.error('Refetch error:', err);
       setError(err as Error);
-      toast.error(`İstifadəçi məlumatlarını əldə etmək mümkün olmadı: ${(err as Error).message}`);
+      toast.error('İstifadəçi məlumatlarını əldə etmək mümkün olmadı');
       
       // Xəta halında boş siyahı göstər
       setUsers([]);
@@ -399,6 +371,47 @@ export const useUserList = () => {
       isProcessing.current = false;
     }
   }, [fetchUsersWithRPC, fetchUsersWithQuery]);
+
+  // İlk yükləmə və filter/page dəyişikliyi zamanı məlumatları yenidən əldə edirik
+  useEffect(() => {
+    // Əvvəlki timeout-u təmizlə
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Əgər sorğu artıq göndərilibsə, yenisini göndərmə
+    if (isProcessing.current) {
+      console.log('Request already in progress, skipping useEffect trigger');
+      return;
+    }
+    
+    // İlk render zamanı sorğu göndərmə, yalnız currentUser varsa
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (currentUser) {
+        // İlk yükləmədə dərhal sorğu göndərmək əvəzinə kiçik bir gecikmə əlavə edirik
+        // Bu, komponentlərin tam yüklənməsini təmin edir
+        setTimeout(() => {
+          refetch();
+        }, 100);
+      }
+      return;
+    }
+    
+    // Sonrakı renderlər üçün debounce tətbiq et
+    if (currentUser) {
+      timeoutRef.current = setTimeout(() => {
+        refetch();
+      }, 500); // Debounce müddətini 300ms-dən 500ms-ə artırırıq
+      
+      // Cleanup function
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }
+  }, [currentUser, filter, currentPage, refetch]);
 
   const updateFilter = useCallback((newFilter: UserFilter) => {
     // Rolları normallaşdır
