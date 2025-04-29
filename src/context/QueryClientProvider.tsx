@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { QueryClient, QueryClientProvider, QueryKey } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { invalidateCache, clearAllCaches } from '@/hooks/useCachedQuery';
 
 // Keş idarəsi üçün kontekst yaradaq
@@ -53,3 +53,7 @@ export const AppQueryClientProvider: React.FC<{ children: React.ReactNode }> = (
     </CacheContext.Provider>
   );
 };
+
+// AppQueryProvider-i AppQueryClientProvider-in alias-i kimi export edirik
+// Bu, main.tsx-dəki import-un işləməsini təmin edəcək
+export { AppQueryClientProvider as AppQueryProvider };
