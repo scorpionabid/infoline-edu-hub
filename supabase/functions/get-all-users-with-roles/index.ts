@@ -1,40 +1,11 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+
+import { handleCors } from '../_shared/middleware.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-interface Database {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string
-          full_name: string
-          email: string | null
-          status: string
-          created_at: string
-          updated_at: string
-          phone: string | null
-          position: string | null
-          language: string
-          avatar: string | null
-        }
-      }
-      user_roles: {
-        Row: {
-          id: string
-          user_id: string
-          role: string
-          region_id: string | null
-          sector_id: string | null
-          school_id: string | null
-        }
-      }
-    }
-  }
-}
-
-serve(async (req) => {
+Deno.serve((req) => handleCors(req, async (req) => {
   try {
-    const supabaseClient = createClient<Database>(
+    // Supabase klienti yaradırıq
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
@@ -132,4 +103,4 @@ serve(async (req) => {
       },
     )
   }
-})
+}));

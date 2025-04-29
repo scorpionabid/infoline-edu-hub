@@ -1,26 +1,17 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { handleCors } from '../_shared/middleware.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-serve(async (req) => {
-  // CORS sorğularına cavab
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
+Deno.serve((req) => handleCors(req, async (req) => {
   try {
     // Supabase klienti yaradırıq
+    const authHeader = req.headers.get('Authorization')!;
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
@@ -31,7 +22,7 @@ serve(async (req) => {
     if (!column || !column.category_id || !column.name || !column.type) {
       return new Response(
         JSON.stringify({ success: false, error: 'Missing required fields' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        { headers: { 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
@@ -45,7 +36,7 @@ serve(async (req) => {
     if (userRoleError) {
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to verify user role' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        { headers: { 'Content-Type': 'application/json' }, status: 403 }
       );
     }
 
@@ -53,7 +44,7 @@ serve(async (req) => {
     if (!['superadmin', 'regionadmin'].includes(userRoleData.role)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Insufficient permissions' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        { headers: { 'Content-Type': 'application/json' }, status: 403 }
       );
     }
 
@@ -67,7 +58,7 @@ serve(async (req) => {
     if (columnError) {
       return new Response(
         JSON.stringify({ success: false, error: columnError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        { headers: { 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
@@ -94,14 +85,14 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, data: createdColumn }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Server error:', error);
     
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
     );
   }
-});
+}));

@@ -1,28 +1,17 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { handleCors } from '../_shared/middleware.ts'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Content-Type': 'application/json'
-};
-
-serve(async (req) => {
-  // CORS üçün OPTIONS sorğusunu emal edirik
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
-  }
-  
+Deno.serve((req) => handleCors(req, async (req) => {
   try {
     // Supabase klienti yaradırıq
+    const authHeader = req.headers.get('Authorization')!;
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
@@ -34,7 +23,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'İstifadəçi təsdiqlənmədi' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 401 
         }
       );
@@ -47,7 +36,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'İstifadəçi rolu alınarkən xəta: ' + roleError.message }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 500 
         }
       );
@@ -58,7 +47,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Bu əməliyyat üçün icazəniz yoxdur' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 403 
         }
       );
@@ -71,7 +60,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Məktəb ID, Kateqoriya ID, əməliyyat və ya məlumat ID-ləri təqdim edilməyib' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 400 
         }
       );
@@ -82,7 +71,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Yanlış əməliyyat: ' + action + '. Yalnız "approve" və ya "reject" ola bilər' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 400 
         }
       );
@@ -93,7 +82,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Rədd etmək üçün səbəb göstərilməlidir' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 400 
         }
       );
@@ -110,7 +99,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Məktəb məlumatları alınarkən xəta: ' + schoolError.message }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 500 
         }
       );
@@ -125,7 +114,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ success: false, error: 'İstifadəçi sektor ID alınarkən xəta: ' + sectorError.message }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             status: 500 
           }
         );
@@ -136,7 +125,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ success: false, error: 'Bu məktəb üzərində əməliyyat aparmaq üçün icazəniz yoxdur' }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             status: 403 
           }
         );
@@ -152,7 +141,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ success: false, error: 'İstifadəçi region ID alınarkən xəta: ' + regionError.message }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             status: 500 
           }
         );
@@ -163,7 +152,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ success: false, error: 'Bu məktəb üzərində əməliyyat aparmaq üçün icazəniz yoxdur' }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             status: 403 
           }
         );
@@ -181,7 +170,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Kateqoriya məlumatları alınarkən xəta: ' + categoryError.message }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 500 
         }
       );
@@ -198,7 +187,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: 'Məktəb admini tapılarkən xəta: ' + schoolAdminError.message }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           status: 500 
         }
       );
@@ -221,7 +210,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ success: false, error: 'Məlumatların statusu yenilənərkən xəta: ' + updateError.message }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             status: 500 
           }
         );
@@ -282,7 +271,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ success: false, error: 'Məlumatların statusu yenilənərkən xəta: ' + updateError.message }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             status: 500 
           }
         );
@@ -334,7 +323,7 @@ serve(async (req) => {
         message: action === 'approve' ? 'Məlumatlar uğurla təsdiqləndi' : 'Məlumatlar uğurla rədd edildi' 
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 200 
       }
     );
@@ -344,9 +333,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 500 
       }
     );
   }
-});
+}));

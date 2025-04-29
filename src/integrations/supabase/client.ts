@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { FullUserData } from '@/types/supabase';
 
@@ -92,7 +93,6 @@ export const supabaseFetch = async <T>(
 };
 
 // Edge Functions üçün helper funksiya
-// Edge Functions üçün helper funksiya
 export const callEdgeFunction = async <T>(
   functionName: string,
   body: any = {},
@@ -100,10 +100,21 @@ export const callEdgeFunction = async <T>(
 ): Promise<T> => {
   try {
     // Supabase SDK vasitəsilə Edge Function-a sorğu göndər
-    // Custom header-lər əlavə etmədən
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      body
-    });
+    // Əlavə CORS başlıqlarını əlavə edək
+    const sessionResponse = await supabase.auth.getSession();
+    const accessToken = sessionResponse.data.session?.access_token;
+
+    // İstək parametrləri
+    const requestOptions: any = { 
+      body,
+    };
+
+    // Əgər access token varsa, authorization header-i əlavə et
+    if (accessToken) {
+      supabase.functions.setAuth(accessToken);
+    }
+    
+    const { data, error } = await supabase.functions.invoke(functionName, requestOptions);
     
     if (error) {
       console.error(`Edge function ${functionName} error:`, error);

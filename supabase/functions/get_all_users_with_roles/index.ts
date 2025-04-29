@@ -1,20 +1,8 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1"
+import { handleCors } from '../_shared/middleware.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
-// CORS başlıqları
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-}
-
-serve(async (req) => {
-  // CORS preflight sorğusuna cavab
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders, status: 204 });
-  }
-
+Deno.serve((req) => handleCors(req, async (req) => {
   try {
     // Headers-i daha detallı loqla
     const headersObj = Object.fromEntries(req.headers.entries());
@@ -31,7 +19,7 @@ serve(async (req) => {
           error: 'Authorization başlığı tələb olunur',
           users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        { headers: { 'Content-Type': 'application/json' }, status: 401 }
       );
     }
     
@@ -51,7 +39,7 @@ serve(async (req) => {
           error: 'Server konfiqurasiyası xətası',
           users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        { headers: { 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
@@ -76,7 +64,7 @@ serve(async (req) => {
             error: 'Avtorizasiya xətası - token doğrulanmadı',
             users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          { headers: { 'Content-Type': 'application/json' }, status: 401 }
         );
       }
       
@@ -96,7 +84,7 @@ serve(async (req) => {
             error: 'İstifadəçi rolu tapılmadı',
             users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+          { headers: { 'Content-Type': 'application/json' }, status: 403 }
         );
       }
 
@@ -112,7 +100,7 @@ serve(async (req) => {
             error: 'Bu əməliyyat üçün superadmin, regionadmin və ya sectoradmin səlahiyyətləri tələb olunur',
             users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+          { headers: { 'Content-Type': 'application/json' }, status: 403 }
         );
       }
     } catch (authError) {
@@ -122,7 +110,7 @@ serve(async (req) => {
           error: 'Avtorizasiya yoxlaması zamanı xəta',
           users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        { headers: { 'Content-Type': 'application/json' }, status: 401 }
       );
     }
 
@@ -141,7 +129,7 @@ serve(async (req) => {
             error: `İstifadəçilər əldə edilərkən xəta: ${authError.message}`,
             users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          { headers: { 'Content-Type': 'application/json' }, status: 500 }
         );
       }
 
@@ -149,7 +137,7 @@ serve(async (req) => {
         console.log('İstifadəçi tapılmadı');
         return new Response(
           JSON.stringify({ users: [] }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          { headers: { 'Content-Type': 'application/json' }, status: 200 }
         );
       }
 
@@ -265,7 +253,7 @@ serve(async (req) => {
       // Uğurlu cavab
       return new Response(
         JSON.stringify({ users: combinedUsers }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        { headers: { 'Content-Type': 'application/json' }, status: 200 }
       );
     } catch (dataErr) {
       console.error('Data əməliyyatı xətası:', dataErr);
@@ -275,7 +263,7 @@ serve(async (req) => {
           details: dataErr instanceof Error ? dataErr.message : String(dataErr),
           users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        { headers: { 'Content-Type': 'application/json' }, status: 500 }
       );
     }
   } catch (err) {
@@ -287,7 +275,7 @@ serve(async (req) => {
         details: err instanceof Error ? err.message : String(err),
         users: [] // Boş massiv qaytarırıq ki, client tərəfdə xəta yaranmasın
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
     );
   }
-});
+}));
