@@ -1,17 +1,30 @@
 
-export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'multiselect' | 'checkbox' | 'radio' | 'email' | 'phone' | 'file' | 'image' | 'url' | 'time' | 'password' | 'range' | 'datetime' | 'richtext' | 'color';
+import { AssignmentType } from './category';
 
-export interface ColumnOption {
-  value: string;
-  label: string;
-  color?: string;
-  disabled?: boolean;
-}
+export type ColumnType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'date' 
+  | 'select' 
+  | 'checkbox' 
+  | 'radio' 
+  | 'file' 
+  | 'image';
 
 export interface ColumnValidation {
-  type: string;
-  value: any;
-  message: string;
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  customError?: string;
+}
+
+export interface ColumnOption {
+  id: string;
+  label: string;
+  value: string;
 }
 
 export interface Column {
@@ -20,123 +33,34 @@ export interface Column {
   name: string;
   type: ColumnType;
   description?: string;
+  placeholder?: string;
+  default_value?: string;
   is_required: boolean;
-  order_index: number;
-  options?: string[] | ColumnOption[];
-  validation?: ColumnValidation[];
-  status: 'active' | 'inactive';
+  is_visible: boolean;
+  status: 'active' | 'inactive' | 'draft';
   created_at: Date;
   updated_at: Date;
-  placeholder?: string;
-  help_text?: string;
-  default_value?: string;
+  order_index: number;
+  validation?: ColumnValidation[];
+  options?: ColumnOption[];
   parent_column_id?: string;
-  dependencies?: string[];
-  visibility_conditions?: any;
+  conditional_display?: {
+    column_id: string;
+    operator: '=' | '!=' | '>' | '<' | '>=' | '<=';
+    value: string | number;
+  };
 }
 
-export interface ColumnValidationError {
-  columnId: string;
-  columnName: string;
-  type: string;
-  message: string;
+export interface CategoryWithColumns {
+  id: string;
+  name: string;
+  description?: string;
+  assignment: AssignmentType;
+  status: 'active' | 'inactive' | 'draft';
+  deadline?: Date;
+  created_at: Date;
+  updated_at: Date;
+  archived: boolean;
+  priority: number;
+  columns: Column[];
 }
-
-// Sütun tiplərinin təsviri
-export const COLUMN_TYPE_DEFINITIONS: Record<ColumnType, { icon: string; label: string; description: string; }> = {
-  text: {
-    icon: 'Type',
-    label: 'Mətn',
-    description: 'Qısa mətn sahəsi'
-  },
-  textarea: {
-    icon: 'PanelLeft',
-    label: 'Çoxsətirli mətn',
-    description: 'Uzun mətn sahəsi'
-  },
-  number: {
-    icon: 'Hash',
-    label: 'Rəqəm',
-    description: 'Rəqəm sahəsi'
-  },
-  date: {
-    icon: 'Calendar',
-    label: 'Tarix',
-    description: 'Tarix seçmək üçün'
-  },
-  select: {
-    icon: 'ListFilter',
-    label: 'Seçim',
-    description: 'Bir variant seçmək üçün'
-  },
-  multiselect: {
-    icon: 'CheckSquare',
-    label: 'Çoxlu seçim',
-    description: 'Bir neçə variant seçmək üçün'
-  },
-  checkbox: {
-    icon: 'CheckSquare',
-    label: 'İşarə qutusu',
-    description: 'Bəli/Xeyr seçimi'
-  },
-  radio: {
-    icon: 'Circle',
-    label: 'Radio düymələri',
-    description: 'Radio düymələri qrupu'
-  },
-  email: {
-    icon: 'Mail',
-    label: 'E-poçt',
-    description: 'E-poçt sahəsi'
-  },
-  phone: {
-    icon: 'Phone',
-    label: 'Telefon',
-    description: 'Telefon nömrəsi'
-  },
-  file: {
-    icon: 'File',
-    label: 'Fayl',
-    description: 'Fayl yükləmə sahəsi'
-  },
-  image: {
-    icon: 'Image',
-    label: 'Şəkil',
-    description: 'Şəkil yükləmə sahəsi'
-  },
-  url: {
-    icon: 'Link',
-    label: 'URL',
-    description: 'Web URL sahəsi'
-  },
-  time: {
-    icon: 'Clock',
-    label: 'Vaxt',
-    description: 'Vaxt seçmə sahəsi'
-  },
-  password: {
-    icon: 'Lock',
-    label: 'Şifrə',
-    description: 'Şifrə daxil etmə sahəsi'
-  },
-  range: {
-    icon: 'Sliders',
-    label: 'Aralıq',
-    description: 'Aralıq seçmək üçün slayder'
-  },
-  datetime: {
-    icon: 'CalendarClock',
-    label: 'Tarix və vaxt',
-    description: 'Tarix və vaxt seçimi'
-  },
-  richtext: {
-    icon: 'FileEdit',
-    label: 'Formatlaşdırılmış mətn',
-    description: 'Formatlaşdırma ilə mətn redaktoru'
-  },
-  color: {
-    icon: 'Palette',
-    label: 'Rəng',
-    description: 'Rəng seçimi'
-  }
-};

@@ -4,20 +4,31 @@ project_id = "olbfnauhzpdskqnxtwav"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "auth"]
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
-
-[realtime]
-enabled = true
 
 [studio]
 enabled = true
 port = 54323
-api_url = "http://127.0.0.1"
+api_url = "http://localhost"
 
-[functions.assign-existing-user-as-school-admin]
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+port = 54325
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+
+[edge_functions]
+[edge_functions.cached-query]
 verify_jwt = true

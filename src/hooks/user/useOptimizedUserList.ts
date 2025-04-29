@@ -1,189 +1,133 @@
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/auth/usePermissions';
+import { UserFilter } from '@/hooks/useUserList';
 import { FullUserData } from '@/types/user';
-import { UserRole } from '@/types/supabase';
-import { toast } from 'sonner';
-import { useAuth } from '@/context/auth';
+import { getCache, setCache } from '@/utils/cacheUtils';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { useQueryClient } from '@tanstack/react-query';
 
-// Qlobal olarak bir kez tanımla
-const USERS_CACHE_KEY = 'user_list';
-const USER_PAGE_SIZE = 10;
-
-export interface UserFilter {
-  role?: string[] | string;
-  region?: string[] | string;
-  sector?: string[] | string;
-  school?: string[] | string;
-  search?: string;
-  status?: string[] | string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-}
-
-// Normallaşdırma funksiyaları
+// Normal rol adlarını
 const normalizeRole = (role: string | null | undefined): string => {
   if (!role) return '';
   return role.toLowerCase().trim();
 };
 
+// Rol massivini normallaşdırmaq üçün funksiya
 const normalizeRoleArray = (roles: string[] | string | undefined): string[] => {
   if (!roles) return [];
   if (typeof roles === 'string') return [normalizeRole(roles)];
   return roles.map(normalizeRole).filter(Boolean);
 };
 
-export const useOptimizedUserList = () => {
-  const [filter, setFilter] = useState<UserFilter>({});
+export const useOptimizedUserList = (initialFilter: UserFilter = {}) => {
+  const [filter, setFilter] = useState<UserFilter>(initialFilter);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const { session, user: currentUser } = useAuth();
+  const { isSuperAdmin, isRegionAdmin, isSectorAdmin, regionId, sectorId } = usePermissions();
   const queryClient = useQueryClient();
   
-  const { isRegionAdmin, isSectorAdmin, regionId, sectorId } = usePermissions();
+  // Cache key yaradılması
+  const createCacheKey = useCallback(() => {
+    const parts = [
+      'users',
+      filter.role ? (typeof filter.role === 'string' ? filter.role : filter.role.join(',')) : '',
+      filter.search || '',
+      filter.region || filter.regionId || '',
+      filter.sector || filter.sectorId || '',
+      filter.school || filter.schoolId || '',
+      filter.status || '',
+      currentPage
+    ];
+    return parts.join('-');
+  }, [filter, currentPage]);
+  
+  // Istifadəçi filtrinə əsasən opt. sorğu parametrləri
+  const queryParams = useMemo(() => {
+    return {
+      role: filter.role ? normalizeRoleArray(filter.role) : undefined,
+      search: filter.search,
+      regionId: (isRegionAdmin && regionId) ? regionId : (filter.regionId || filter.region),
+      sectorId: (isSectorAdmin && sectorId) ? sectorId : (filter.sectorId || filter.sector),
+      schoolId: filter.schoolId || filter.school,
+      status: filter.status,
+      page: currentPage,
+      pageSize: 10
+    };
+  }, [filter, currentPage, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
 
-  // Rolları normallaşdır
-  const normalizedFilter = useMemo(() => {
-    const result = { ...filter };
-    if (filter.role) {
-      result.role = typeof filter.role === 'string' ? 
-        normalizeRole(filter.role) : 
-        normalizeRoleArray(filter.role);
-    }
+  // Edge funksiyası ilə sorğu
+  const fetchUsers = useCallback(async () => {
+    console.log('Fetching users with edge function...');
     
-    // Role-lara görə avtomatik filter əlavə et
-    if (isRegionAdmin && regionId) {
-      result.regionId = regionId;
-    }
-    if (isSectorAdmin && sectorId) {
-      result.sectorId = sectorId;
-      if (!result.role || result.role.length === 0) {
-        result.role = ['schooladmin'];
+    try {
+      const response = await supabase.functions.invoke('get-all-users-with-roles', {
+        body: { 
+          filter: queryParams 
+        }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
       }
+      
+      return {
+        users: response.data.users || [],
+        totalCount: response.data.totalCount || 0
+      };
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
     }
-    
-    return result;
-  }, [filter, isRegionAdmin, isSectorAdmin, regionId, sectorId]);
+  }, [queryParams]);
 
-  // Cache key-i hazırla
-  const cacheKey = useMemo(() => {
-    return `${USERS_CACHE_KEY}_${JSON.stringify(normalizedFilter)}_page_${currentPage}`;
-  }, [normalizedFilter, currentPage]);
-
-  // İstifadəçi listini almaq üçün keşlənmiş sorğu
+  // Keşlənmiş sorğu
   const {
-    data: usersData,
-    isLoading: loading,
+    data,
+    isLoading,
     error,
     refetch
-  } = useCachedQuery<{users: FullUserData[], totalCount: number}>({
-    queryKey: ['users', normalizedFilter, currentPage],
-    queryFn: async () => {
-      // Edge funksiya və ya birbaşa API sorğusu ilə verilənləri əldə et
-      try {
-        console.log('Fetching users with filter:', JSON.stringify(normalizedFilter));
-        
-        // Auth headers hazırla
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        
-        if (session?.access_token) {
-          headers.Authorization = `Bearer ${session.access_token}`;
-        }
-        
-        // Edge funksiyası ilə istifadəçiləri əldə et
-        const { data, error } = await supabase.functions.invoke('get-all-users-with-roles', {
-          body: {
-            filter: normalizedFilter,
-            page: currentPage,
-            pageSize: USER_PAGE_SIZE
-          }
-        });
-
-        if (error) throw error;
-        
-        if (!data || !Array.isArray(data.users)) {
-          throw new Error('Invalid response format');
-        }
-        
-        // Client-side axtarışı tətbiq et
-        let filteredUsers = data.users;
-        if (filter.search && filter.search.trim() !== '') {
-          const searchTerm = filter.search.trim().toLowerCase();
-          filteredUsers = filteredUsers.filter(user => 
-            (user.full_name?.toLowerCase().includes(searchTerm)) || 
-            (user.email?.toLowerCase().includes(searchTerm)) || 
-            (user.phone?.toLowerCase().includes(searchTerm)) ||
-            (user.role?.toLowerCase().includes(searchTerm))
-          );
-        }
-        
-        return { 
-          users: filteredUsers as FullUserData[],
-          totalCount: data.totalCount || filteredUsers.length
-        };
-      } catch (err) {
-        console.error('Error in fetchUsers:', err);
-        throw err;
-      }
+  } = useCachedQuery({
+    queryKey: ['users', queryParams],
+    queryFn: fetchUsers,
+    cacheConfig: {
+      expiryInMinutes: 5
     },
     queryOptions: {
       keepPreviousData: true,
-      staleTime: 1000 * 60 * 5, // 5 dəqiqə
-      retry: 1,
-      onError: (err: any) => {
-        toast.error(`İstifadəçi məlumatları əldə edilərkən xəta: ${err.message}`);
-      }
-    },
-    cacheConfig: {
-      expiryInMinutes: 5 // 5 dəqiqə keşləmə
+      refetchOnWindowFocus: false
     }
   });
-
-  // Toplam səhifə sayını hesabla
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil((usersData?.totalCount || 0) / USER_PAGE_SIZE));
-  }, [usersData?.totalCount]);
-
-  // Filtri yenilə
-  const updateFilter = useCallback((newFilter: Partial<UserFilter>) => {
-    setFilter(prev => ({ ...prev, ...newFilter }));
-    setCurrentPage(1); // Filtir dəyişdikdə 1-ci səhifəyə qayıt
+  
+  // Filter deyisdikde
+  const updateFilter = useCallback((newFilter: UserFilter) => {
+    // Normallaşdır və səhifəni sıfırla
+    const normalizedFilter = { ...newFilter };
+    if (newFilter.role) {
+      normalizedFilter.role = typeof newFilter.role === 'string' 
+        ? normalizeRole(newFilter.role) 
+        : newFilter.role.map(normalizeRole);
+    }
+    
+    setCurrentPage(1);
+    setFilter(normalizedFilter);
   }, []);
 
-  // Filtri sıfırla
+  // Filter sıfırlama
   const resetFilter = useCallback(() => {
     setFilter({});
     setCurrentPage(1);
   }, []);
 
-  // Sorğu nəticələrini əldə et
-  useEffect(() => {
-    if (usersData?.totalCount !== undefined) {
-      setTotalCount(usersData.totalCount);
-    }
-  }, [usersData]);
-
-  // İstifadəçi əlavə etmə/silmə/yeniləmə sonrası keşi təmizlə
-  const invalidateUsersCache = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['users'] });
-  }, [queryClient]);
-
-  // Keşi təmizlə və yenidən sorğu göndər
-  const refreshList = useCallback(() => {
-    invalidateUsersCache();
-    refetch();
-  }, [invalidateUsersCache, refetch]);
+  // Extract data
+  const users = useMemo(() => data?.users || [], [data]);
+  const totalCount = useMemo(() => data?.totalCount || 0, [data]);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / 10)), [totalCount]);
 
   return {
-    users: usersData?.users || [],
-    loading,
-    error: error as Error,
+    users,
+    loading: isLoading,
+    error,
     filter,
     updateFilter,
     resetFilter,
@@ -191,6 +135,6 @@ export const useOptimizedUserList = () => {
     totalPages,
     currentPage,
     setCurrentPage,
-    refetch: refreshList
+    refetch
   };
 };

@@ -9,7 +9,7 @@ type CacheConfig = {
 /**
  * LocalStorage-də obyekt saxlamaq
  */
-export const setCache = <T>(key: string, data: T, config: CacheConfig = {}) => {
+export const setCache = <T>(key: string, data: T, config: CacheConfig = {}): void => {
   try {
     const storageItem = {
       data,
@@ -90,7 +90,7 @@ export function useCachedQuery<TData = unknown, TError = unknown>({
 }
 
 // Keş üçün invalidasiya utiliti
-export const invalidateCache = (key: string) => {
+export const invalidateCache = (key: string): void => {
   try {
     localStorage.removeItem(`infoline_cache_${key}`);
   } catch (error) {
@@ -99,7 +99,7 @@ export const invalidateCache = (key: string) => {
 };
 
 // Bütün keşləri silmək üçün util funksiya
-export const clearAllCaches = () => {
+export const clearAllCaches = (): void => {
   try {
     const keys = Object.keys(localStorage);
     keys.forEach(key => {
@@ -110,4 +110,22 @@ export const clearAllCaches = () => {
   } catch (error) {
     console.error('Bütün keşləri silmə xətası:', error);
   }
+};
+
+// Keş invalidasyonu yaradıcısı (QueryClientProvider üçün)
+export const createCacheInvalidator = (queryClient: any) => {
+  return {
+    invalidateQueries: (key: string | string[]) => {
+      if (Array.isArray(key)) {
+        key.forEach(k => invalidateCache(k));
+      } else {
+        invalidateCache(key);
+      }
+      queryClient.invalidateQueries({ queryKey: key });
+    },
+    clearCache: () => {
+      clearAllCaches();
+      queryClient.clear();
+    }
+  };
 };

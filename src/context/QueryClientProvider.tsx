@@ -1,52 +1,55 @@
 
 import React, { createContext, useContext } from 'react';
 import { QueryClient, QueryClientProvider, QueryKey } from '@tanstack/react-query';
-import { createCacheInvalidator } from '@/hooks/useCachedQuery';
+import { invalidateCache, clearAllCaches } from '@/hooks/useCachedQuery';
 
 // Keş idarəsi üçün kontekst yaradaq
-type CacheContextType = {
-  invalidateQuery: (queryKey: QueryKey) => void;
-  invalidateAll: () => void;
-};
-
-const CacheContext = createContext<CacheContextType | null>(null);
-
-export function useCacheInvalidation() {
-  const context = useContext(CacheContext);
-  if (!context) {
-    throw new Error('useCacheInvalidation hook Context Provider olmadan istifadə edilib');
-  }
-  return context;
+interface CacheContextType {
+  invalidateQueries: (key: string | string[]) => void;
+  clearCache: () => void;
 }
 
-interface AppQueryProviderProps {
-  children: React.ReactNode;
-}
+const CacheContext = createContext<CacheContextType>({
+  invalidateQueries: () => {},
+  clearCache: () => {}
+});
 
-export function AppQueryProvider({ children }: AppQueryProviderProps) {
-  // React Query Client yaradaq
-  const queryClient = new QueryClient({
+export const useCacheInvalidation = () => useContext(CacheContext);
+
+export const AppQueryClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [queryClient] = React.useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        retry: 1,
-        retryDelay: 1000,
-        staleTime: 1000 * 60 * 5, // 5 dəqiqə
-        gcTime: 1000 * 60 * 30, // 30 dəqiqə (əvvəlki cacheTime əvəzinə)
         refetchOnWindowFocus: false,
         refetchOnMount: true,
-        refetchOnReconnect: true,
+        retry: 1,
+        staleTime: 5 * 60 * 1000, // 5 dəqiqə
+        cacheTime: 10 * 60 * 1000, // 10 dəqiqə
       },
     },
-  });
-  
-  // Keş invalidasiyası üçün utilit yaradaq
-  const cacheInvalidator = createCacheInvalidator(queryClient);
-  
+  }));
+
+  // Keş invalidasiya funksiyaları
+  const cacheContext = React.useMemo(() => ({
+    invalidateQueries: (key: string | string[]) => {
+      if (Array.isArray(key)) {
+        key.forEach(k => invalidateCache(k));
+      } else {
+        invalidateCache(key);
+      }
+      queryClient.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] });
+    },
+    clearCache: () => {
+      clearAllCaches();
+      queryClient.clear();
+    }
+  }), [queryClient]);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <CacheContext.Provider value={cacheInvalidator}>
+    <CacheContext.Provider value={cacheContext}>
+      <QueryClientProvider client={queryClient}>
         {children}
-      </CacheContext.Provider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </CacheContext.Provider>
   );
-}
+};
