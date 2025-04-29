@@ -1,12 +1,12 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, GripVertical, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { ColumnOption, ColumnType } from '@/types/column';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/LanguageContext';
-import { twMerge } from 'tailwind-merge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useFieldArray, useFormContext } from 'react-hook-form';
@@ -16,9 +16,6 @@ interface OptionsFieldProps {
   name: string;
   columnType: ColumnType;
 }
-
-// Create a simple random ID for drag and drop
-const createOptionId = () => Math.random().toString(36).substring(2, 10);
 
 export default function OptionsField({ control, name, columnType }: OptionsFieldProps) {
   const { t } = useLanguage();
@@ -50,13 +47,21 @@ export default function OptionsField({ control, name, columnType }: OptionsField
 
   // Add a new option
   const handleAddOption = () => {
-    append({ value: '', label: '', color: '#' + Math.floor(Math.random() * 16777215).toString(16) });
+    append({ 
+      value: '', 
+      label: '', 
+      color: '#' + Math.floor(Math.random() * 16777215).toString(16) 
+    } as ColumnOption);
   };
 
   // Effect to initialize options if they are not already present
   useEffect(() => {
     if (!fields || fields.length === 0) {
-      append({ value: '', label: '', color: '#' + Math.floor(Math.random() * 16777215).toString(16) });
+      append({ 
+        value: '', 
+        label: '', 
+        color: '#' + Math.floor(Math.random() * 16777215).toString(16) 
+      } as ColumnOption);
     }
   }, [append, fields]);
 
@@ -110,59 +115,62 @@ export default function OptionsField({ control, name, columnType }: OptionsField
                           {t('noOptionsAdded')}
                         </div>
                       ) : (
-                        fields.map((field, index) => (
-                          <Draggable key={field.id} draggableId={field.id} index={index}>
-                            {(provided) => (
-                              <div 
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className="flex items-center gap-2 bg-background p-2 rounded-md border group"
-                              >
+                        fields.map((field, index) => {
+                          const typedField = field as unknown as ColumnOption;
+                          return (
+                            <Draggable key={field.id} draggableId={field.id} index={index}>
+                              {(provided) => (
                                 <div 
-                                  {...provided.dragHandleProps} 
-                                  className="cursor-grab text-gray-400 hover:text-gray-600"
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className="flex items-center gap-2 bg-background p-2 rounded-md border group"
                                 >
-                                  <GripVertical size={16} />
-                                </div>
-                                
-                                {showValueField && (
+                                  <div 
+                                    {...provided.dragHandleProps} 
+                                    className="cursor-grab text-gray-400 hover:text-gray-600"
+                                  >
+                                    <GripVertical size={16} />
+                                  </div>
+                                  
+                                  {showValueField && (
+                                    <Input 
+                                      placeholder={t('value')}
+                                      className="flex-1"
+                                      value={typedField.value || ''}
+                                      onChange={(e) => updateOptionField(index, 'value', e.target.value)}
+                                    />
+                                  )}
+                                  
                                   <Input 
-                                    placeholder={t('value')}
+                                    placeholder={t('label')}
                                     className="flex-1"
-                                    value={field.value}
-                                    onChange={(e) => updateOptionField(index, 'value', e.target.value)}
+                                    value={typedField.label || ''}
+                                    onChange={(e) => updateOptionField(index, 'label', e.target.value)}
                                   />
-                                )}
-                                
-                                <Input 
-                                  placeholder={t('label')}
-                                  className="flex-1"
-                                  value={field.label}
-                                  onChange={(e) => updateOptionField(index, 'label', e.target.value)}
-                                />
-                                
-                                {enableCustomColors && (
-                                  <Input 
-                                    type="color" 
-                                    className="w-10 p-0 h-9 cursor-pointer border border-input"
-                                    value={field.color || '#000000'}
-                                    onChange={(e) => updateOptionField(index, 'color', e.target.value)}
-                                  />
-                                )}
-                                
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  type="button"
-                                  onClick={() => remove(index)} 
-                                  className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <Trash2 size={16} />
-                                </Button>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))
+                                  
+                                  {enableCustomColors && (
+                                    <Input 
+                                      type="color" 
+                                      className="w-10 p-0 h-9 cursor-pointer border border-input"
+                                      value={typedField.color || '#000000'}
+                                      onChange={(e) => updateOptionField(index, 'color', e.target.value)}
+                                    />
+                                  )}
+                                  
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    type="button"
+                                    onClick={() => remove(index)} 
+                                    className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })
                       )}
                       {provided.placeholder}
                     </div>

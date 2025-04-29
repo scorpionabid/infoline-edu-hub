@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryFilter } from '@/types/category';
+import { CategoryFilter, FormStatus, AssignmentType } from '@/types/category';
 import { 
   Select,
   SelectContent,
@@ -9,7 +10,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useRouter, usePathname } from 'next/router';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { AlertCircle, CheckCircle, Clock, AlertTriangle, FileEdit, XCircle } from 'lucide-react';
 
 interface CategoryFilterCardProps {
   filter: CategoryFilter;
@@ -18,8 +20,8 @@ interface CategoryFilterCardProps {
 
 export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCardProps) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Filter options
   const statusOptions = [
@@ -38,22 +40,34 @@ export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCar
   ];
 
   // Handlers
-  const handleStatusFilter = (statuses: FormStatus[]) => {
-    onFilterChange({ ...filter, status: statuses });
+  const handleStatusFilter = (status: string) => {
+    const formStatus = status === 'all' ? undefined : status as FormStatus | FormStatus[];
+    onFilterChange({ ...filter, status: formStatus });
   };
 
-  const handleAssignmentFilter = (assignment: AssignmentType | null) => {
-    onFilterChange({ ...filter, assignment: assignment || undefined });
+  const handleAssignmentFilter = (assignment: string) => {
+    const assignmentValue = assignment === 'all' ? undefined : assignment as AssignmentType;
+    onFilterChange({ ...filter, assignment: assignmentValue });
   };
 
-  const handleSearchFilter = (search: string) => {
-    onFilterChange({ ...filter, search: search || undefined });
+  const handleDeadlineFilter = (deadline: string) => {
+    let deadlineValue: Date | undefined = undefined;
+    
+    if (deadline === 'upcoming') {
+      deadlineValue = new Date();
+    } else if (deadline === 'past') {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+      deadlineValue = pastDate;
+    }
+    
+    onFilterChange({ ...filter, deadline: deadlineValue });
   };
 
   const handleResetFilter = () => {
     onFilterChange({});
     // Update the URL to remove query params
-    router.push(pathname);
+    navigate(location.pathname);
   };
 
   return (
@@ -62,8 +76,8 @@ export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCar
         <div className="space-y-2">
           <Label>{t('status')}</Label>
           <Select
-            value={filter.status || 'all'}
-            onValueChange={(value) => onFilterChange({ status: value as CategoryFilter['status'] })}
+            value={filter.status?.toString() || 'all'}
+            onValueChange={handleStatusFilter}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('allStatuses')} />
@@ -81,7 +95,7 @@ export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCar
           <Label>{t('assignment')}</Label>
           <Select
             value={filter.assignment || 'all'}
-            onValueChange={(value) => onFilterChange({ assignment: value as CategoryFilter['assignment'] })}
+            onValueChange={handleAssignmentFilter}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('allAssignments')} />
@@ -98,8 +112,8 @@ export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCar
         <div className="space-y-2">
           <Label>{t('deadline')}</Label>
           <Select
-            value={filter.deadline || 'all'}
-            onValueChange={(value) => onFilterChange({ deadline: value as CategoryFilter['deadline'] })}
+            value={filter.deadline ? (filter.deadline > new Date() ? 'upcoming' : 'past') : 'all'}
+            onValueChange={handleDeadlineFilter}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('allDeadlines')} />

@@ -1,6 +1,50 @@
 
-import { useQuery, QueryKey, UseQueryOptions, QueryClient } from '@tanstack/react-query';
-import { getCache, setCache, CacheConfig } from '@/utils/cacheUtils';
+import { useQuery, QueryKey, UseQueryOptions } from '@tanstack/react-query';
+
+type CacheConfig = {
+  expiryInMinutes?: number;
+  localOnly?: boolean;
+};
+
+/**
+ * LocalStorage-də obyekt saxlamaq
+ */
+export const setCache = <T>(key: string, data: T, config: CacheConfig = {}) => {
+  try {
+    const storageItem = {
+      data,
+      timestamp: Date.now(),
+      expiryInMinutes: config.expiryInMinutes || 5
+    };
+    localStorage.setItem(`infoline_cache_${key}`, JSON.stringify(storageItem));
+  } catch (error) {
+    console.error('Keş saxlama xətası:', error);
+  }
+};
+
+/**
+ * LocalStorage-dən obyekt almaq
+ */
+export const getCache = <T>(key: string): T | undefined => {
+  try {
+    const item = localStorage.getItem(`infoline_cache_${key}`);
+    if (!item) return undefined;
+
+    const storageItem = JSON.parse(item);
+    const now = Date.now();
+    const expiryTime = storageItem.timestamp + (storageItem.expiryInMinutes * 60 * 1000);
+
+    if (now > expiryTime) {
+      localStorage.removeItem(`infoline_cache_${key}`);
+      return undefined;
+    }
+
+    return storageItem.data as T;
+  } catch (error) {
+    console.error('Keş oxuma xətası:', error);
+    return undefined;
+  }
+};
 
 /**
  * Həm client-side, həm də server-side keşləməni birləşdirən hook
@@ -21,7 +65,7 @@ export function useCachedQuery<TData = unknown, TError = unknown>({
   const cachedData = getCache<TData>(cacheKey);
 
   // React Query istifadə edək
-  const query = useQuery<TData, TError, TData>({
+  const query = useQuery<TData, TError>({
     queryKey,
     queryFn: async () => {
       try {
@@ -45,41 +89,25 @@ export function useCachedQuery<TData = unknown, TError = unknown>({
   return query;
 }
 
-/**
- * Keş üçün invalidasiya utiliti yaradır
- */
-export function createCacheInvalidator(queryClient: QueryClient) {
-  return {
-    // Xüsusi bir sorğunu yeniləmək
-    invalidateQuery: (queryKey: QueryKey) => {
-      const cacheKey = Array.isArray(queryKey) ? queryKey.join('-') : String(queryKey);
-      // LocalStorage keşini silin
-      try {
-        localStorage.removeItem(`infoline_cache_${cacheKey}`);
-      } catch (error) {
-        console.error('LocalStorage keşini silmə xətası:', error);
+// Keş üçün invalidasiya utiliti
+export const invalidateCache = (key: string) => {
+  try {
+    localStorage.removeItem(`infoline_cache_${key}`);
+  } catch (error) {
+    console.error('Keş silmə xətası:', error);
+  }
+};
+
+// Bütün keşləri silmək üçün util funksiya
+export const clearAllCaches = () => {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('infoline_cache_')) {
+        localStorage.removeItem(key);
       }
-      
-      // React Query keşini yeniləyin
-      return queryClient.invalidateQueries({queryKey});
-    },
-    
-    // Bütün keşləri yeniləmək
-    invalidateAll: () => {
-      // Bütün LocalStorage keşlərini silin
-      try {
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-          if (key.startsWith('infoline_cache_')) {
-            localStorage.removeItem(key);
-          }
-        });
-      } catch (error) {
-        console.error('Bütün lokalStorage keşlərini silmə xətası:', error);
-      }
-      
-      // Bütün React Query keşlərini yeniləyin
-      return queryClient.invalidateQueries();
-    }
-  };
-}
+    });
+  } catch (error) {
+    console.error('Bütün keşləri silmə xətası:', error);
+  }
+};

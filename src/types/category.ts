@@ -3,10 +3,10 @@ import { Column } from './column';
 
 export type AssignmentType = 'sectors' | 'all';
 
-export type FormStatus = 'completed' | 'dueSoon' | 'overdue' | 'pending' | 'draft' | 'approved' | 'rejected';
+export type FormStatus = 'completed' | 'dueSoon' | 'overdue' | 'pending' | 'draft' | 'approved' | 'rejected' | 'active' | 'inactive';
 
 export interface CategoryFilter {
-  status?: FormStatus[];
+  status?: FormStatus | FormStatus[];
   assignment?: AssignmentType;
   search?: string;
   deadline?: Date;
