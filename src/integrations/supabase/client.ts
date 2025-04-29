@@ -10,6 +10,13 @@ const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 let isRefreshing = false;
 let refreshPromise: Promise<any> | null = null;
 
+// Təkrar cəhdlər üçün konfiqurasiya
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 saniyə
+
+// Gözləmə funksiyası
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Normal istifadəçilər üçün Supabase klienti
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -53,12 +60,20 @@ export const refreshToken = async () => {
 
 // Supabase sorğuları üçün wrapper funksiya
 export const supabaseFetch = async <T>(
-  operation: () => Promise<T>
+  operation: () => Promise<T>,
+  retries = MAX_RETRIES
 ): Promise<T> => {
   try {
     // Sorğunu göndər
     return await operation();
   } catch (error: any) {
+    // Şəbəkə xətası və ya 429 (Too Many Requests) xətası halında təkrar cəhd et
+    if ((error?.message === 'Failed to fetch' || error?.status === 429) && retries > 0) {
+      console.warn(`Network error, retrying (${retries} attempts left)...`);
+      await wait(RETRY_DELAY * (MAX_RETRIES - retries + 1)); // Eksponensial gözləmə
+      return supabaseFetch(operation, retries - 1);
+    }
+    
     // 401 xətası alındıqda token yenilənməsini sına
     if (error?.status === 401 && !isRefreshing) {
       try {
@@ -79,7 +94,8 @@ export const supabaseFetch = async <T>(
 // Edge Functions üçün helper funksiya
 export const callEdgeFunction = async <T>(
   functionName: string,
-  body: any = {}
+  body: any = {},
+  retries = MAX_RETRIES
 ): Promise<T> => {
   try {
     const { data, error } = await supabase.functions.invoke(functionName, {
@@ -93,12 +109,19 @@ export const callEdgeFunction = async <T>(
     
     return data as T;
   } catch (error: any) {
+    // Şəbəkə xətası və ya 429 (Too Many Requests) xətası halında təkrar cəhd et
+    if ((error?.message === 'Failed to fetch' || error?.status === 429) && retries > 0) {
+      console.warn(`Edge function network error, retrying (${retries} attempts left)...`);
+      await wait(RETRY_DELAY * (MAX_RETRIES - retries + 1)); // Eksponensial gözləmə
+      return callEdgeFunction(functionName, body, retries - 1);
+    }
+    
     // 401 xətası alındıqda token yenilənməsini sına
     if (error?.status === 401 && !isRefreshing) {
       try {
         await refreshToken();
         // Yenilənmiş token ilə sorğunu təkrarla
-        return await callEdgeFunction(functionName, body);
+        return await callEdgeFunction(functionName, body, retries);
       } catch (refreshError) {
         console.error('Token refresh and retry failed:', refreshError);
         throw refreshError;

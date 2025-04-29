@@ -24,21 +24,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
 
+    // Xəta yoxlaması - istifadəçi var, lakin rolu yoxdursa
+    if (user && !user.role) {
+      console.warn('User has no role assigned:', user.id);
+      setError('İstifadəçi rolu təyin edilməyib. Sistem administratoru ilə əlaqə saxlayın.');
+    } else {
+      // Əgər əvvəl rol ilə bağlı xəta var idisə, təmizlə
+      if (error && error.includes('İstifadəçi rolu təyin edilməyib')) {
+        setError(null);
+      }
+    }
+
     setAuthState({
       isAuthenticated: !!user,
       isLoading: loading
     });
-  }, [user, loading]);
+  }, [user, loading, error]);
 
   // Login funksiyası - mövcud interfeysi saxlamaq üçün boolean qaytarır
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       setError(null);
+      
+      // Boş email və ya şifrə yoxlaması
+      if (!email.trim() || !password.trim()) {
+        setError('Email və şifrə daxil edilməlidir');
+        return false;
+      }
+      
       const { data, error } = await signIn(email, password);
       
       if (error) {
         console.error('Login error:', error);
-        setError(error.message);
+        
+        // Daha spesifik xəta mesajları
+        if (error.message?.includes('Invalid login credentials')) {
+          setError('Yanlış email və ya şifrə');
+        } else if (error.message?.includes('Email not confirmed')) {
+          setError('Email təsdiqlənməyib');
+        } else if (error.message === 'Failed to fetch') {
+          setError('Server ilə əlaqə qurula bilmədi. İnternet bağlantınızı yoxlayın.');
+        } else {
+          setError(error.message || 'Giriş zamanı xəta baş verdi');
+        }
+        
         return false;
       }
       
