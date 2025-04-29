@@ -1,11 +1,19 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { Region } from '@/types/supabase';
-import { useRegions } from './useRegions';
-import { useSectors } from './useSectors';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
+
+// Region tipini birbaşa burada təyin edirik
+export interface Region {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export type SortConfig = {
   key: string | null;
@@ -23,8 +31,6 @@ export type EnhancedRegion = Region & {
 
 export const useRegionsStore = () => {
   const { t } = useLanguage();
-  const { regions, loading, fetchRegions, addRegion, updateRegion, deleteRegion } = useRegions();
-  const { sectors } = useSectors();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -34,11 +40,16 @@ export const useRegionsStore = () => {
   const [schoolCounts, setSchoolCounts] = useState<Record<string, number>>({});
   const [sectorCounts, setSectorCounts] = useState<Record<string, number>>({});
   const [completionRates, setCompletionRates] = useState<Record<string, number>>({});
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [regionsError, setRegionsError] = useState<string | null>(null);
   
   const itemsPerPage = 5;
 
   // Regionların xüsusi məlumatlarını əldə etmək
-  const fetchRegionStats = useCallback(async () => {
+  const fetchRegionStats = useCallback(async (data: Region[]) => {
     try {
       // Hər region üçün məktəb sayını əldə etmək
       const { data: schools, error: schoolError } = await supabase
@@ -58,6 +69,12 @@ export const useRegionsStore = () => {
       
       // Sektorları regionlara görə qruplaşdırmaq
       const sectorCountsMap: Record<string, number> = {};
+      const { data: sectors, error: sectorsError } = await supabase
+        .from('sectors')
+        .select('*');
+      
+      if (sectorsError) throw sectorsError;
+      
       sectors.forEach(sector => {
         if (sector.region_id) {
           sectorCountsMap[sector.region_id] = (sectorCountsMap[sector.region_id] || 0) + 1;
@@ -114,21 +131,117 @@ export const useRegionsStore = () => {
         description: t('couldNotLoadRegionStatistics')
       });
     }
-  }, [regions, sectors, t]);
+  }, [t]);
+
+  // Regionları yükləmək
+  const fetchRegions = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    setLoading(true);
+    setRegionsError(null);
+    
+    console.log('Fetching regions data in useRegionsStore...');
+    console.log('Auth state:', { isAuthenticated, userId: user?.id });
+    
+    try {
+      // Regions hook-unu çağır
+      const { data, error } = await supabase
+        .from('regions')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching regions in useRegionsStore:', error);
+        setRegionsError(error.message);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Regions data fetched in useRegionsStore:', data);
+      
+      if (data && data.length > 0) {
+        setRegions(data);
+        // Regionlar yükləndikdən sonra statistikaları yüklə
+        fetchRegionStats(data);
+      } else {
+        setRegions([]);
+        setLoading(false);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch regions in useRegionsStore:', error);
+      setRegionsError(error.message || 'Regionları yükləmək mümkün olmadı');
+      setLoading(false);
+    }
+  }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        // Yeni Supabase versiyası üçün getSession() metodunu istifadə edirik
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (sessionData?.session) {
+          const { data: userData, error } = await supabase.auth.getUser();
+          
+          if (error) {
+            console.error('Error fetching user in useRegionsStore:', error);
+            setUser(null);
+            setIsAuthenticated(false);
+            return;
+          }
+          
+          const user = userData?.user || null;
+          console.log('User fetched in useRegionsStore:', user);
+          setUser(user);
+          setIsAuthenticated(!!user);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user in useRegionsStore:', error);
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    };
+    
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    fetchRegions();
+  }, [fetchRegions]);
 
   useEffect(() => {
     if (regions.length > 0) {
-      fetchRegionStats();
+      fetchRegionStats(regions);
     }
   }, [regions, fetchRegionStats]);
 
   // Əməliyyatlar tamamlandıqda verilənlərin yenilənməsi
   useEffect(() => {
     if (isOperationComplete) {
+      const fetchRegions = async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('regions')
+            .select('*');
+          
+          if (error) throw error;
+          
+          setRegions(data);
+        } catch (error) {
+          console.error('Regions could not be fetched:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
       fetchRegions();
       setIsOperationComplete(false);
     }
-  }, [isOperationComplete, fetchRegions]);
+  }, [isOperationComplete]);
 
   // Axtarış və filtirləmə
   const filteredRegions = regions.filter(region => {
@@ -139,6 +252,9 @@ export const useRegionsStore = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  console.log('Original regions:', regions);
+  console.log('Filtered regions:', filteredRegions);
 
   // Sıralama
   const sortedRegions = [...filteredRegions].sort((a, b) => {
@@ -178,11 +294,26 @@ export const useRegionsStore = () => {
     return 0;
   });
 
+  console.log('Sorted regions:', sortedRegions);
+
   // Səhifələmə
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedRegions.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedRegions.length / itemsPerPage);
+
+  console.log('Current items (paginated):', currentItems);
+
+  // Regionlara aid statistika və admin məlumatlarını birləşdirmək
+  const enhancedRegions = currentItems.map(region => ({
+    ...region,
+    schoolCount: schoolCounts[region.id] || 0,
+    sectorCount: sectorCounts[region.id] || 0,
+    completionRate: completionRates[region.id] || 0,
+    adminId: region.admin_id,
+    adminEmail: region.admin_email
+  }));
+
+  console.log('Enhanced regions (final):', enhancedRegions);
 
   // İdarəetmə funksiyaları
   const handleSearch = useCallback((term: string) => {
@@ -217,46 +348,60 @@ export const useRegionsStore = () => {
   // Region əməliyyatları
   const handleAddRegion = useCallback(async (regionData: Omit<Region, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      await addRegion(regionData);
+      const { data, error } = await supabase
+        .from('regions')
+        .insert(regionData)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('Region added successfully:', data);
       setIsOperationComplete(true);
       return true;
     } catch (error) {
-      console.error('Region əlavə edilərkən xəta baş verdi:', error);
+      console.error('Error adding region:', error);
       return false;
     }
-  }, [addRegion]);
+  }, []);
 
   const handleUpdateRegion = useCallback(async (id: string, updates: Partial<Region>) => {
     try {
-      await updateRegion(id, updates);
+      const { data, error } = await supabase
+        .from('regions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('Region updated successfully:', data);
       setIsOperationComplete(true);
       return true;
     } catch (error) {
-      console.error('Region yenilənərkən xəta baş verdi:', error);
+      console.error('Error updating region:', error);
       return false;
     }
-  }, [updateRegion]);
+  }, []);
 
   const handleDeleteRegion = useCallback(async (id: string) => {
     try {
-      await deleteRegion(id);
+      const { error } = await supabase
+        .from('regions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      console.log('Region deleted successfully');
       setIsOperationComplete(true);
       return true;
     } catch (error) {
-      console.error('Region silinərkən xəta baş verdi:', error);
+      console.error('Error deleting region:', error);
       return false;
     }
-  }, [deleteRegion]);
-
-  // Regionlara aid statistika və admin məlumatlarını birləşdirmək
-  const enhancedRegions = currentItems.map(region => ({
-    ...region,
-    schoolCount: schoolCounts[region.id] || 0,
-    sectorCount: sectorCounts[region.id] || 0,
-    completionRate: completionRates[region.id] || 0,
-    adminId: region.admin_id,
-    adminEmail: region.admin_email
-  }));
+  }, []);
 
   return {
     regions: enhancedRegions,
@@ -266,7 +411,7 @@ export const useRegionsStore = () => {
     selectedStatus,
     sortConfig,
     currentPage,
-    totalPages,
+    totalPages: Math.ceil(sortedRegions.length / itemsPerPage),
     isOperationComplete,
     handleSearch,
     handleStatusFilter,
@@ -276,7 +421,6 @@ export const useRegionsStore = () => {
     handleAddRegion,
     handleUpdateRegion,
     handleDeleteRegion,
-    setIsOperationComplete,
-    fetchRegions
+    setIsOperationComplete
   };
 };

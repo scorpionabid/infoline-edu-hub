@@ -147,20 +147,24 @@ const Regions = () => {
         />
         
         {/* Köhnə admin təyin etmə dialoqu - yeni admin yaratmaq üçün */}
-        <RegionAdminDialog
-          open={openAdminDialog}
-          setOpen={setOpenAdminDialog}
-          region={createdRegion || selectedRegion}
-          onSuccess={handleAdminAssigned}
-        />
+        {openAdminDialog && (
+          <RegionAdminDialog
+            open={openAdminDialog}
+            setOpen={setOpenAdminDialog}
+            region={createdRegion || selectedRegion}
+            onSuccess={handleAdminAssigned}
+          />
+        )}
         
         {/* Mövcud istifadəçilərdən seçim üçün admin təyin etmə dialoqu */}
-        <ExistingUserAdminDialog
-          open={openExistingUserDialog}
-          setOpen={setOpenExistingUserDialog}
-          region={createdRegion || selectedRegion}
-          onSuccess={handleAdminAssigned}
-        />
+        {openExistingUserDialog && (
+          <ExistingUserAdminDialog
+            open={openExistingUserDialog}
+            setOpen={setOpenExistingUserDialog}
+            region={createdRegion || selectedRegion}
+            onSuccess={handleAdminAssigned}
+          />
+        )}
       </div>
     </SidebarLayout>
   );
