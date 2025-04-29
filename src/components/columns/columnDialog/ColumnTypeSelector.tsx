@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ColumnType, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
@@ -85,7 +86,7 @@ const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
   };
   
   // Seçilmiş tipin tərifini alırıq
-  const selectedTypeDefinition = COLUMN_TYPE_DEFINITIONS[actualType];
+  const selectedTypeDefinition = COLUMN_TYPE_DEFINITIONS[actualType as keyof typeof COLUMN_TYPE_DEFINITIONS];
   
   // Əgər control prop-u varsa, FormField istifadə edirik
   if (control) {
