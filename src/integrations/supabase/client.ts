@@ -3,57 +3,137 @@ import type { FullUserData } from '@/types/supabase';
 
 // Supabase konfiqurasiyası
 const supabaseUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co';
-// Anon key - istifadəçi autentifikasiyası üçün (Supabase dashboard-dan əldə edilən)
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
-// Service role key - RLS qaydalarını bypass etmək üçün (Supabase dashboard-dan əldə edilən)
 const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NzUzMzMxNywiZXhwIjoyMDEzMTA5MzE3fQ.mIHF-BO2JQpwXOVvUDGwNH8o_E1JbdSjsYNi-Qrz_7w';
 
+// Token yenilənməsini izləmək üçün dəyişənlər
+let isRefreshing = false;
+let refreshPromise: Promise<any> | null = null;
+
 // Normal istifadəçilər üçün Supabase klienti
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
     autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true
   },
   global: {
     headers: {
-      'apikey': supabaseAnonKey,
-      'Content-Type': 'application/json'
+      'x-application-name': 'infoline-edu-hub'
     }
   }
 });
 
-// Supabase klientinə auth dəyişikliklərinə abunə olaq
-supabaseClient.auth.onAuthStateChange((event, session) => {
-  if (session) {
-    // Session mövcuddursa, Authorization header-ini əlavə edək
-    supabaseClient.functions.setAuth(session.access_token);
-  }
-});
-
-// API açarını əldə etmək üçün klientə xüsusiyyət əlavə edək
-export const supabase = Object.assign(supabaseClient, {
+// Əlavə xüsusiyyətlər əlavə edək
+Object.assign(supabase, {
   supabaseUrl,
   supabaseKey: supabaseAnonKey
 });
 
+// Token yenilənməsi üçün helper funksiya
+export const refreshToken = async () => {
+  if (isRefreshing) {
+    return refreshPromise;
+  }
+  
+  isRefreshing = true;
+  
+  try {
+    refreshPromise = supabase.auth.refreshSession();
+    const result = await refreshPromise;
+    return result;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    throw error;
+  } finally {
+    isRefreshing = false;
+    refreshPromise = null;
+  }
+};
+
+// Supabase sorğuları üçün wrapper funksiya
+export const supabaseFetch = async <T>(
+  operation: () => Promise<T>
+): Promise<T> => {
+  try {
+    // Sorğunu göndər
+    return await operation();
+  } catch (error: any) {
+    // 401 xətası alındıqda token yenilənməsini sına
+    if (error?.status === 401 && !isRefreshing) {
+      try {
+        await refreshToken();
+        // Yenilənmiş token ilə sorğunu təkrarla
+        return await operation();
+      } catch (refreshError) {
+        console.error('Token refresh and retry failed:', refreshError);
+        throw refreshError;
+      }
+    }
+    
+    // Digər xətalar üçün xətanı yenidən at
+    throw error;
+  }
+};
+
+// Edge Functions üçün helper funksiya
+export const callEdgeFunction = async <T>(
+  functionName: string,
+  body: any = {}
+): Promise<T> => {
+  try {
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body
+    });
+    
+    if (error) {
+      console.error(`Edge function ${functionName} error:`, error);
+      throw error;
+    }
+    
+    return data as T;
+  } catch (error: any) {
+    // 401 xətası alındıqda token yenilənməsini sına
+    if (error?.status === 401 && !isRefreshing) {
+      try {
+        await refreshToken();
+        // Yenilənmiş token ilə sorğunu təkrarla
+        return await callEdgeFunction(functionName, body);
+      } catch (refreshError) {
+        console.error('Token refresh and retry failed:', refreshError);
+        throw refreshError;
+      }
+    }
+    
+    // Digər xətalar üçün xətanı yenidən at
+    throw error;
+  }
+};
+
+// Supabase klientinə auth dəyişikliklərinə abunə olaq
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', event);
+  if (session) {
+    // Session mövcuddursa, Authorization header-ini əlavə edək
+    supabase.functions.setAuth(session.access_token);
+  }
+});
+
 // Admin əməliyyatları üçün service_role ilə Supabase klienti
-// Bu klient RLS qaydalarını bypass edir
-const supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
-    persistSession: false,
-    autoRefreshToken: false
+    autoRefreshToken: false,
+    persistSession: false
   },
   global: {
     headers: {
-      'apikey': supabaseServiceKey,
-      'Content-Type': 'application/json'
+      'x-application-name': 'infoline-edu-hub-admin'
     }
   }
 });
 
 // Admin klientinə də API açarını əlavə edək
-export const supabaseAdmin = Object.assign(supabaseAdminClient, {
+Object.assign(supabaseAdmin, {
   supabaseUrl,
   supabaseKey: supabaseServiceKey
 });

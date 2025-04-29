@@ -1,5 +1,4 @@
-
-import { useAuth } from '@/context/auth';
+import { useAuth } from '@/context/auth/useAuth';
 import { useMemo } from 'react';
 import { UserRole } from '@/types/supabase';
 import { getCache, setCache } from '@/utils/cacheUtils';
