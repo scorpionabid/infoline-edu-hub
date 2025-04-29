@@ -92,18 +92,33 @@ export const supabaseFetch = async <T>(
 };
 
 // Edge Functions üçün helper funksiya
+// Edge Functions üçün helper funksiya
 export const callEdgeFunction = async <T>(
   functionName: string,
   body: any = {},
   retries = MAX_RETRIES
 ): Promise<T> => {
   try {
+    // Supabase SDK vasitəsilə Edge Function-a sorğu göndər
+    // Custom header-lər əlavə etmədən
     const { data, error } = await supabase.functions.invoke(functionName, {
       body
     });
     
     if (error) {
       console.error(`Edge function ${functionName} error:`, error);
+      
+      // Əgər CORS xətasıdırsa və təkrar cəhd sayı qalıbsa
+      if (retries > 0 && (
+        error.message?.includes('CORS') || 
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('NetworkError')
+      )) {
+        console.warn(`CORS or network error, retrying (${retries} attempts left)...`);
+        await wait(RETRY_DELAY * (MAX_RETRIES - retries + 1));
+        return callEdgeFunction(functionName, body, retries - 1);
+      }
+      
       throw error;
     }
     
