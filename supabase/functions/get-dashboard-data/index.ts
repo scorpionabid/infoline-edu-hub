@@ -1,314 +1,466 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// CORS başlıqları
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Content-Type': 'application/json'
 };
 
 serve(async (req) => {
-  // CORS üçün OPTIONS sorğusunu emal edirik
+  // CORS preflight sorğularına cavab ver
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
-  
+
   try {
-    // Supabase klienti yaradırıq
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+    // Supabase client yaratma
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    // İstifadəçi məlumatlarını alırıq
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    
-    if (userError || !user) {
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase konfiqurasiyası: URL və ya key tapılmadı');
       return new Response(
-        JSON.stringify({ success: false, error: 'İstifadəçi təsdiqlənmədi' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401 
-        }
+        JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
     
-    // İstifadəçi rolunu əldə edirik
-    const { data: roleData, error: roleError } = await supabaseClient.rpc('get_user_role_safe');
-    
-    if (roleError) {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Auth başlığını al
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Authorization başlığı təqdim edilməyib');
       return new Response(
-        JSON.stringify({ success: false, error: 'İstifadəçi rolu alınarkən xəta: ' + roleError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
+        JSON.stringify({ error: 'Authorization başlığı tələb olunur' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
     }
     
-    const role = roleData;
+    // JWT token-ini əldə et
+    const token = authHeader.replace('Bearer ', '');
     
-    // İstifadəçi roluna görə dashboard məlumatlarını əldə edirik
-    let dashboardData = {};
+    // İstifadəçi məlumatlarını al
+    const { data: user, error: userError } = await supabase.auth.getUser(token);
     
-    if (role === 'schooladmin') {
-      // Məktəb admin dashboard məlumatları
-      const schoolId = await supabaseClient.rpc('get_user_school_id');
-      
-      if (!schoolId.data) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Məktəb ID alınarkən xəta' }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500 
-          }
-        );
-      }
-
-      // Məktəb məlumatlarını əldə edək
-      const { data: schoolData, error: schoolError } = await supabaseClient
-        .from('schools')
-        .select('id, name, region_id, sector_id')
-        .eq('id', schoolId.data)
-        .single();
-
-      if (schoolError) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Məktəb məlumatları alınarkən xəta: ' + schoolError.message }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500 
-          }
-        );
-      }
-
-      // Aktiv kateqoriyaları əldə edək
-      const { data: categories, error: categoriesError } = await supabaseClient
-        .from('categories')
-        .select('id, name, description, deadline, status, priority')
-        .eq('status', 'active')
-        .is('archived', false)
-        .order('priority');
-        
-      if (categoriesError) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Kateqoriya məlumatları alınarkən xəta: ' + categoriesError.message }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500 
-          }
-        );
-      }
-
-      // Hər kateqoriya üçün sütunları və məlumat daxiletmələrini əldə edək
-      const categoriesWithStats = await Promise.all(categories.map(async (category) => {
-        // Kateqoriya üçün sütunları əldə edək
-        const { data: columns, error: columnsError } = await supabaseClient
-          .from('columns')
-          .select('id, name, type, is_required')
-          .eq('category_id', category.id)
-          .eq('status', 'active');
-          
-        if (columnsError) {
-          console.error(`Sütunlar alınarkən xəta (${category.name}):`, columnsError);
-          return {
-            ...category,
-            columns: [],
-            completion: { percentage: 0, total: 0, completed: 0 },
-            status: 'pending'
-          };
-        }
-        
-        // Kateqoriya üçün məlumat daxiletmələrini əldə edək
-        const { data: entries, error: entriesError } = await supabaseClient
-          .from('data_entries')
-          .select('id, column_id, value, status')
-          .eq('school_id', schoolId.data)
-          .eq('category_id', category.id);
-          
-        if (entriesError) {
-          console.error(`Məlumat daxiletmələri alınarkən xəta (${category.name}):`, entriesError);
-          return {
-            ...category,
-            columns,
-            completion: { percentage: 0, total: 0, completed: 0 },
-            status: 'pending'
-          };
-        }
-        
-        // Tamamlanma statistikasını hesablayaq
-        const totalColumns = columns.length;
-        const filledColumns = entries ? new Set(entries.map(entry => entry.column_id)).size : 0;
-        const completionPercentage = totalColumns > 0 ? Math.round((filledColumns / totalColumns) * 100) : 0;
-        
-        // Kateqoriyanın statusunu müəyyən edək
-        let status = 'pending';
-        if (entries && entries.length > 0) {
-          const hasRejected = entries.some(entry => entry.status === 'rejected');
-          const hasPending = entries.some(entry => entry.status === 'pending');
-          const hasApproved = entries.some(entry => entry.status === 'approved');
-          
-          if (hasRejected) status = 'rejected';
-          else if (hasPending) status = 'pending';
-          else if (hasApproved && filledColumns === totalColumns) status = 'approved';
-          else status = 'in_progress';
-        } else {
-          status = 'not_started';
-        }
-        
-        return {
-          ...category,
-          columns,
-          completion: {
-            percentage: completionPercentage,
-            total: totalColumns,
-            completed: filledColumns
-          },
-          status
-        };
-      }));
-
-      // Son bildirişləri əldə edək
-      const { data: notifications, error: notificationsError } = await supabaseClient
-        .from('notifications')
-        .select('id, title, message, type, is_read, created_at, priority')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-        
-      if (notificationsError) {
-        console.error('Bildiriş məlumatları alınarkən xəta:', notificationsError);
-      }
-
-      // Ümumi tamamlanma statistikasını hesablayaq
-      const totalColumns = categoriesWithStats.reduce((sum, cat) => sum + cat.completion.total, 0);
-      const completedColumns = categoriesWithStats.reduce((sum, cat) => sum + cat.completion.completed, 0);
-      const completionRate = totalColumns > 0 ? Math.round((completedColumns / totalColumns) * 100) : 0;
-
-      // Status statistikasını hesablayaq
-      const pending = categoriesWithStats.filter(cat => cat.status === 'pending' || cat.status === 'in_progress').length;
-      const approved = categoriesWithStats.filter(cat => cat.status === 'approved').length;
-      const rejected = categoriesWithStats.filter(cat => cat.status === 'rejected').length;
-      const total = categoriesWithStats.length;
-
-      // Son müddət yaxınlaşan formları hesablayaq
-      const now = new Date();
-      const dueSoonCategories = categoriesWithStats.filter(cat => {
-        if (!cat.deadline) return false;
-        const deadline = new Date(cat.deadline);
-        const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 3600 * 24));
-        return diffDays > 0 && diffDays <= 3;
-      });
-
-      const overdueCategories = categoriesWithStats.filter(cat => {
-        if (!cat.deadline) return false;
-        const deadline = new Date(cat.deadline);
-        return deadline < now;
-      });
-
-      // Gözləyən formların siyahısını yaradaq
-      const pendingForms = categoriesWithStats
-        .filter(cat => cat.status !== 'approved')
-        .map(cat => {
-          const isDueSoon = cat.deadline && new Date(cat.deadline) < new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-          const isOverdue = cat.deadline && new Date(cat.deadline) < now;
-          
-          return {
-            id: cat.id,
-            title: cat.name,
-            description: cat.description || '',
-            date: cat.deadline || '',
-            status: isOverdue ? 'overdue' : isDueSoon ? 'dueSoon' : cat.status,
-            completionPercentage: cat.completion.percentage
-          };
-        });
-
-      // Dashboard məlumatlarını hazırlayaq
-      dashboardData = {
-        completion: {
-          percentage: completionRate,
-          total: totalColumns,
-          completed: completedColumns
-        },
-        status: {
-          pending,
-          approved,
-          rejected,
-          total
-        },
-        categories: categoriesWithStats.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          completion: cat.completion,
-          status: cat.status,
-          deadline: cat.deadline
-        })),
-        upcoming: dueSoonCategories.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          deadline: cat.deadline,
-          daysLeft: cat.deadline ? Math.ceil((new Date(cat.deadline).getTime() - now.getTime()) / (1000 * 3600 * 24)) : 0,
-          completion: cat.completion.percentage
-        })),
-        forms: {
-          pending,
-          approved,
-          rejected,
-          dueSoon: dueSoonCategories.length,
-          overdue: overdueCategories.length,
-          total
-        },
-        pendingForms,
-        completionRate,
-        notifications: notifications ? notifications.map(notification => ({
-          id: notification.id,
-          title: notification.title,
-          message: notification.message,
-          timestamp: notification.created_at,
-          type: notification.type,
-          read: notification.is_read,
-          priority: notification.priority
-        })) : []
-      };
-    } else if (role === 'sectoradmin') {
-      // Sektor admin dashboard məlumatları (gələcək implementasiya)
-      dashboardData = {
-        // Burada sektor admin üçün dashboard məlumatları olacaq
-      };
-    } else if (role === 'regionadmin') {
-      // Region admin dashboard məlumatları (gələcək implementasiya)
-      dashboardData = {
-        // Burada region admin üçün dashboard məlumatları olacaq
-      };
-    } else if (role === 'superadmin') {
-      // Superadmin dashboard məlumatları (gələcək implementasiya)
-      dashboardData = {
-        // Burada superadmin üçün dashboard məlumatları olacaq
-      };
+    if (userError || !user.user) {
+      console.error('JWT token yoxlaması zamanı xəta:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Avtorizasiya xətası - token doğrulanmadı' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
     
+    // Request body-ni alaq (əgər varsa)
+    let body = {};
+    try {
+      if (req.bodyUsed) {
+        body = await req.json();
+      }
+    } catch (error) {
+      // Body-ni parse etmək mütləq deyil, boş obyektlə davam edirik
+      console.log('Body parse edilmədi, davam edirik');
+    }
+    
+    // İstifadəçinin rolunu yoxla
+    const { data: userRoleData, error: userRoleError } = await supabase
+      .from("user_roles")
+      .select("role, region_id, sector_id, school_id")
+      .eq("user_id", user.user.id)
+      .single();
+    
+    if (userRoleError) {
+      console.error('İstifadəçi rolu sorğusu xətası:', userRoleError);
+      return new Response(
+        JSON.stringify({ error: 'İstifadəçi rolu tapılmadı' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    const role = body.role || userRoleData.role;
+    let dashboardData;
+    
+    // Rola və parametrlərə görə dashboard məlumatlarını hazırla
+    switch (role) {
+      case 'superadmin':
+        // SuperAdmin üçün ümumi statistika
+        dashboardData = await generateSuperAdminDashboard(supabase);
+        break;
+        
+      case 'regionadmin':
+        // Region admin-i üçün, region ID istifadə et
+        const regionId = userRoleData.region_id;
+        if (!regionId) {
+          return new Response(
+            JSON.stringify({ error: 'Region ID tapılmadı' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+        
+        dashboardData = await generateRegionAdminDashboard(supabase, regionId);
+        break;
+        
+      case 'sectoradmin':
+        // Sektor admin-i üçün, sektor ID istifadə et
+        const sectorId = userRoleData.sector_id;
+        if (!sectorId) {
+          return new Response(
+            JSON.stringify({ error: 'Sektor ID tapılmadı' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+        
+        dashboardData = await generateSectorAdminDashboard(supabase, sectorId);
+        break;
+        
+      case 'schooladmin':
+        // Məktəb admin-i üçün, məktəb ID istifadə et
+        const schoolId = userRoleData.school_id;
+        if (!schoolId) {
+          return new Response(
+            JSON.stringify({ error: 'Məktəb ID tapılmadı' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+        
+        dashboardData = await generateSchoolAdminDashboard(supabase, schoolId);
+        break;
+        
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Dəstəklənməyən rol' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+    }
+    
+    // Uğurlu cavab
     return new Response(
-      JSON.stringify({ success: true, data: dashboardData }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      JSON.stringify(dashboardData),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-    
   } catch (error) {
-    console.error("Serverdə xəta:", error.message);
+    console.error('Gözlənilməz xəta:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
+      JSON.stringify({ 
+        error: `Gözlənilməz xəta: ${error instanceof Error ? error.message : String(error)}` 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
+
+// SuperAdmin üçün dashboard məlumatlarını hazırlayan funksiya
+async function generateSuperAdminDashboard(supabase) {
+  try {
+    // Regionlar haqqında məlumat
+    const { data: regions, error: regionsError } = await supabase
+      .from('regions')
+      .select('*');
+    
+    if (regionsError) throw regionsError;
+    
+    // Sektorlar haqqında məlumat
+    const { data: sectors, error: sectorsError } = await supabase
+      .from('sectors')
+      .select('*');
+    
+    if (sectorsError) throw sectorsError;
+    
+    // Məktəblər haqqında məlumat
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('*');
+    
+    if (schoolsError) throw schoolsError;
+    
+    // İstifadəçilər haqqında məlumat
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('*');
+    
+    if (usersError) throw usersError;
+    
+    // Məlumatların tamamlanması haqqında statistika
+    const { data: entries, error: entriesError } = await supabase
+      .from('data_entries')
+      .select('*');
+    
+    if (entriesError) throw entriesError;
+    
+    // Daxiletmələr statistikası
+    const totalEntries = entries?.length || 0;
+    const approvedEntries = entries?.filter(entry => entry.status === 'approved')?.length || 0;
+    const pendingEntries = entries?.filter(entry => entry.status === 'pending')?.length || 0;
+    const rejectedEntries = entries?.filter(entry => entry.status === 'rejected')?.length || 0;
+    
+    // Tamamlanma dərəcəsi
+    const completionRate = totalEntries > 0 
+      ? Math.round((approvedEntries / totalEntries) * 100) 
+      : 0;
+    
+    // Təsdiqləmə dərəcəsi
+    const approvalRate = (approvedEntries + rejectedEntries) > 0 
+      ? Math.round((approvedEntries / (approvedEntries + rejectedEntries)) * 100) 
+      : 0;
+    
+    return {
+      regions: {
+        total: regions?.length || 0,
+        active: regions?.filter(r => r.status === 'active')?.length || 0
+      },
+      sectors: {
+        total: sectors?.length || 0,
+        active: sectors?.filter(s => s.status === 'active')?.length || 0
+      },
+      schools: {
+        total: schools?.length || 0,
+        active: schools?.filter(s => s.status === 'active')?.length || 0
+      },
+      users: {
+        total: users?.length || 0,
+        active: users?.filter(u => u.status === 'active')?.length || 0
+      },
+      stats: {
+        total_entries: totalEntries,
+        approved_entries: approvedEntries,
+        pending_entries: pendingEntries,
+        rejected_entries: rejectedEntries,
+        completion_rate: completionRate,
+        approval_rate: approvalRate
+      }
+    };
+  } catch (error) {
+    console.error('SuperAdmin dashboard yaratma xətası:', error);
+    throw error;
+  }
+}
+
+// Region Admin üçün dashboard məlumatlarını hazırlayan funksiya
+async function generateRegionAdminDashboard(supabase, regionId) {
+  try {
+    // Region haqqında məlumat
+    const { data: region, error: regionError } = await supabase
+      .from('regions')
+      .select('*')
+      .eq('id', regionId)
+      .single();
+    
+    if (regionError) throw regionError;
+    
+    // Region-a aid sektorlar
+    const { data: sectors, error: sectorsError } = await supabase
+      .from('sectors')
+      .select('*')
+      .eq('region_id', regionId);
+    
+    if (sectorsError) throw sectorsError;
+    
+    // Region-a aid məktəblər
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('region_id', regionId);
+    
+    if (schoolsError) throw schoolsError;
+    
+    // Region-a aid məlumat daxiletmələri
+    const { data: entries, error: entriesError } = await supabase
+      .from('data_entries')
+      .select('*, schools!inner(*)')
+      .eq('schools.region_id', regionId);
+    
+    if (entriesError) throw entriesError;
+    
+    // Statistika
+    const totalEntries = entries?.length || 0;
+    const approvedEntries = entries?.filter(entry => entry.status === 'approved')?.length || 0;
+    const pendingEntries = entries?.filter(entry => entry.status === 'pending')?.length || 0;
+    const rejectedEntries = entries?.filter(entry => entry.status === 'rejected')?.length || 0;
+    
+    // Tamamlanma dərəcəsi
+    const completionRate = totalEntries > 0 
+      ? Math.round((approvedEntries / totalEntries) * 100) 
+      : 0;
+    
+    // Məktəblər sayı
+    const pendingSchools = new Set(entries
+      ?.filter(entry => entry.status === 'pending')
+      ?.map(entry => entry.school_id)).size;
+    
+    return {
+      region: {
+        id: region.id,
+        name: region.name,
+        description: region.description,
+        status: region.status
+      },
+      sectors: {
+        total: sectors?.length || 0,
+        active: sectors?.filter(s => s.status === 'active')?.length || 0
+      },
+      schools: {
+        total: schools?.length || 0,
+        active: schools?.filter(s => s.status === 'active')?.length || 0
+      },
+      stats: {
+        total_entries: totalEntries,
+        approved_entries: approvedEntries,
+        pending_entries: pendingEntries,
+        rejected_entries: rejectedEntries,
+        completion_rate: completionRate,
+        pending_count: pendingEntries,
+        pending_schools: pendingSchools
+      }
+    };
+  } catch (error) {
+    console.error('Region Admin dashboard yaratma xətası:', error);
+    throw error;
+  }
+}
+
+// Sektor Admin üçün dashboard məlumatlarını hazırlayan funksiya
+async function generateSectorAdminDashboard(supabase, sectorId) {
+  try {
+    // Sektor haqqında məlumat
+    const { data: sector, error: sectorError } = await supabase
+      .from('sectors')
+      .select('*, regions(*)')
+      .eq('id', sectorId)
+      .single();
+    
+    if (sectorError) throw sectorError;
+    
+    // Sektora aid məktəblər
+    const { data: schools, error: schoolsError } = await supabase
+      .from('schools')
+      .select('*')
+      .eq('sector_id', sectorId);
+    
+    if (schoolsError) throw schoolsError;
+    
+    // Sektora aid məlumat daxiletmələri
+    const { data: entries, error: entriesError } = await supabase
+      .from('data_entries')
+      .select('*, schools!inner(*)')
+      .eq('schools.sector_id', sectorId);
+    
+    if (entriesError) throw entriesError;
+    
+    // Statistika
+    const totalEntries = entries?.length || 0;
+    const approvedEntries = entries?.filter(entry => entry.status === 'approved')?.length || 0;
+    const pendingEntries = entries?.filter(entry => entry.status === 'pending')?.length || 0;
+    const rejectedEntries = entries?.filter(entry => entry.status === 'rejected')?.length || 0;
+    
+    // Tamamlanma dərəcəsi
+    const completionRate = totalEntries > 0 
+      ? Math.round((approvedEntries / totalEntries) * 100) 
+      : 0;
+    
+    // Məktəblər sayı
+    const pendingSchools = new Set(entries
+      ?.filter(entry => entry.status === 'pending')
+      ?.map(entry => entry.school_id)).size;
+    
+    return {
+      region: {
+        id: sector.regions.id,
+        name: sector.regions.name
+      },
+      sector: {
+        id: sector.id,
+        name: sector.name,
+        description: sector.description,
+        status: sector.status,
+        completion_rate: sector.completion_rate
+      },
+      schools: {
+        total: schools?.length || 0,
+        active: schools?.filter(s => s.status === 'active')?.length || 0
+      },
+      stats: {
+        total_entries: totalEntries,
+        approved_entries: approvedEntries,
+        pending_entries: pendingEntries,
+        rejected_entries: rejectedEntries,
+        completion_rate: completionRate,
+        pending_count: pendingEntries,
+        pending_schools: pendingSchools
+      }
+    };
+  } catch (error) {
+    console.error('Sektor Admin dashboard yaratma xətası:', error);
+    throw error;
+  }
+}
+
+// Məktəb Admin üçün dashboard məlumatlarını hazırlayan funksiya
+async function generateSchoolAdminDashboard(supabase, schoolId) {
+  try {
+    // Məktəb haqqında məlumat
+    const { data: school, error: schoolError } = await supabase
+      .from('schools')
+      .select('*, sectors(*), regions(*)')
+      .eq('id', schoolId)
+      .single();
+    
+    if (schoolError) throw schoolError;
+    
+    // Məktəbə aid məlumat daxiletmələri
+    const { data: entries, error: entriesError } = await supabase
+      .from('data_entries')
+      .select('*')
+      .eq('school_id', schoolId);
+    
+    if (entriesError) throw entriesError;
+    
+    // Kateqoriyalar
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('status', 'active');
+      
+    if (categoriesError) throw categoriesError;
+    
+    // Statistika
+    const totalEntries = entries?.length || 0;
+    const approvedEntries = entries?.filter(entry => entry.status === 'approved')?.length || 0;
+    const pendingEntries = entries?.filter(entry => entry.status === 'pending')?.length || 0;
+    const rejectedEntries = entries?.filter(entry => entry.status === 'rejected')?.length || 0;
+    
+    // Tamamlanma dərəcəsi
+    const completionRate = school.completion_rate || (totalEntries > 0 
+      ? Math.round((approvedEntries / totalEntries) * 100) 
+      : 0);
+    
+    return {
+      school: {
+        id: school.id,
+        name: school.name,
+        status: school.status,
+        completion_rate: completionRate
+      },
+      region: {
+        id: school.regions.id,
+        name: school.regions.name
+      },
+      sector: {
+        id: school.sectors.id,
+        name: school.sectors.name
+      },
+      stats: {
+        total_categories: categories?.length || 0,
+        total_entries: totalEntries,
+        approved_entries: approvedEntries,
+        pending_entries: pendingEntries,
+        rejected_entries: rejectedEntries,
+        completion_rate: completionRate
+      }
+    };
+  } catch (error) {
+    console.error('Məktəb Admin dashboard yaratma xətası:', error);
+    throw error;
+  }
+}

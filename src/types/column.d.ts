@@ -10,6 +10,8 @@ export interface BaseCategory {
   updated_at?: string;
   deadline?: string;
   archived_at?: string;
+  archived?: boolean;
+  assignment?: 'all' | 'sectors';
 }
 
 export interface Category extends BaseCategory {
@@ -22,7 +24,6 @@ export interface CategoryWithColumns extends BaseCategory {
   completionPercentage?: number;
   status: 'active' | 'inactive' | 'draft' | 'pending' | 'approved' | 'rejected' | 'partial';
   entries?: any[];
-  assignment?: 'all' | 'sectors';
 }
 
 export type ColumnType = 
@@ -47,12 +48,6 @@ export interface ColumnOption {
   disabled?: boolean;
 }
 
-export interface ColumnValidationRule {
-  type: string;
-  message: string;
-  value?: any;
-}
-
 export interface ColumnValidation {
   required?: boolean;
   requiredMessage?: string;
@@ -67,6 +62,17 @@ export interface ColumnValidation {
   pattern?: string;
   patternMessage?: string;
   rules?: ColumnValidationRule[];
+}
+
+export interface ColumnValidationRule {
+  type: string;
+  message: string;
+  value?: any;
+}
+
+export interface ColumnValidationError {
+  message: string;
+  type: string;
 }
 
 export interface Column {
@@ -99,9 +105,4 @@ export interface ColumnFormData {
   default_value?: string;
   status: 'active' | 'inactive';
   parent_column_id?: string;
-}
-
-export interface ColumnValidationError {
-  message: string;
-  type: string;
 }

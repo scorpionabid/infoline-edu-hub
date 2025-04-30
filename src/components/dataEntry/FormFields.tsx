@@ -1,207 +1,217 @@
 
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { TextInput } from './inputs/TextInput';
-import { NumberInput } from './inputs/NumberInput';
-import { SelectInput } from './inputs/SelectInput';
-import { DateInput } from './inputs/DateInput';
-import { TextAreaInput } from './inputs/TextAreaInput';
-import { Column, ColumnType } from '@/types/column';
-import { DataEntry, DataEntryStatus, EntryValue } from '@/types/dataEntry';
-import { CheckboxInput } from './inputs/CheckboxInput';
+import React from 'react';
+import { Column } from '@/types/column';
+import { DataEntryStatus } from '@/types/dataEntry';
+import { useForm } from 'react-hook-form';
 import { StatusIndicator } from './StatusIndicators';
+import TextInput from './inputs/TextInput';
+import { NumberInput } from './inputs/NumberInput';
+import DateInput from './inputs/DateInput';
+import TextAreaInput from './inputs/TextAreaInput';
+import { SelectInput } from './inputs/SelectInput';
+import { EntryValue } from '@/types/dataEntry';
+import CheckboxInput from './inputs/CheckboxInput';
+import { Card, CardContent } from '@/components/ui/card';
+import { validateEntryValue } from './utils/formUtils';
 
 interface FormFieldProps {
   column: Column;
   value: string;
+  status?: DataEntryStatus;
   onChange: (value: string) => void;
-  disabled?: boolean;
-  entryStatus?: DataEntryStatus;
-  error?: { message: string; type: string } | null;
+  isDisabled?: boolean;
+  error?: {
+    message: string;
+    type: string;
+  };
 }
 
-export const FormField = ({
+export const FormField: React.FC<FormFieldProps> = ({
   column,
   value,
+  status,
   onChange,
-  disabled = false,
-  entryStatus,
+  isDisabled = false,
   error
-}: FormFieldProps) => {
-  const form = useForm<{ value: string }>({
-    defaultValues: { value }
+}) => {
+  const form = useForm({
+    defaultValues: {
+      [column.id]: value || column.default_value || ''
+    }
   });
 
-  const getFieldType = () => {
-    switch (column.type) {
-      case 'text':
-      case 'textarea':
-        return column.type;
-      case 'number':
-        return 'number';
-      case 'date':
-        return 'date';
-      case 'select':
-        return 'select';
-      case 'checkbox':
-        return 'checkbox';
-      case 'radio':
-        return 'radio';
-      case 'email':
-        return 'email';
-      default:
-        return 'text';
-    }
+  React.useEffect(() => {
+    form.reset({
+      [column.id]: value || column.default_value || ''
+    });
+  }, [column.id, value, column.default_value, form]);
+
+  const handleChange = (newValue: string) => {
+    onChange(newValue);
   };
 
-  const fieldType = getFieldType();
-  
-  const renderField = () => {
-    switch (fieldType) {
+  const getFieldByType = () => {
+    switch (column.type) {
       case 'text':
         return (
           <TextInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
-            placeholder={column.placeholder || ''}
+            placeholder={column.placeholder}
             helpText={column.help_text}
-            disabled={disabled}
+            disabled={isDisabled || status === 'approved'}
             required={column.is_required}
-            onChange={onChange}
+            onChange={handleChange}
           />
         );
+      
       case 'textarea':
         return (
           <TextAreaInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
-            placeholder={column.placeholder || ''}
+            placeholder={column.placeholder}
             helpText={column.help_text}
-            disabled={disabled}
+            disabled={isDisabled || status === 'approved'}
             required={column.is_required}
-            onChange={onChange}
+            onChange={handleChange}
           />
         );
+      
+      case 'email':
+      case 'url':
+      case 'phone':
+        return (
+          <TextInput
+            name={column.id}
+            control={form.control}
+            label={column.name}
+            placeholder={column.placeholder || `Daxil edin...`}
+            helpText={column.help_text}
+            disabled={isDisabled || status === 'approved'}
+            required={column.is_required}
+            onChange={handleChange}
+          />
+        );
+      
       case 'number':
         return (
           <NumberInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
-            placeholder={column.placeholder || ''}
+            placeholder={column.placeholder}
             helpText={column.help_text}
-            disabled={disabled}
+            disabled={isDisabled || status === 'approved'}
             required={column.is_required}
             validation={column.validation}
-            onChange={onChange}
+            onChange={handleChange}
           />
         );
+      
       case 'date':
         return (
           <DateInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
+            placeholder={column.placeholder}
             helpText={column.help_text}
-            disabled={disabled}
+            disabled={isDisabled || status === 'approved'}
             required={column.is_required}
-            onChange={(date) => {
-              if (date instanceof Date) {
-                onChange(date.toISOString().split('T')[0]);
-              } else if (typeof date === 'string') {
-                onChange(date);
-              }
-            }}
+            onChange={handleChange}
           />
         );
+      
       case 'select':
         return (
           <SelectInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
-            placeholder={column.placeholder || 'Seçin'}
+            options={column.options || []}
+            placeholder={column.placeholder || "Seçin"}
             helpText={column.help_text}
-            options={column.options}
-            disabled={disabled}
+            disabled={isDisabled || status === 'approved'}
             required={column.is_required}
-            onChange={onChange}
+            onChange={handleChange}
           />
         );
+      
       case 'checkbox':
         return (
           <CheckboxInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
             helpText={column.help_text}
-            disabled={disabled}
-            required={column.is_required}
-            onChange={(checked) => onChange(checked ? 'true' : 'false')}
+            disabled={isDisabled || status === 'approved'}
+            onChange={(checked) => handleChange(checked ? 'true' : 'false')}
           />
         );
-      case 'email':
-        return (
-          <TextInput
-            name="value"
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder || 'Email'}
-            helpText={column.help_text}
-            disabled={disabled}
-            required={column.is_required}
-            onChange={onChange}
-            type="email"
-          />
-        );
+      
       default:
         return (
           <TextInput
-            name="value"
+            name={column.id}
             control={form.control}
             label={column.name}
-            placeholder={column.placeholder || ''}
+            placeholder={column.placeholder}
             helpText={column.help_text}
-            disabled={disabled}
+            disabled={isDisabled || status === 'approved'}
             required={column.is_required}
-            onChange={onChange}
+            onChange={handleChange}
           />
         );
     }
   };
 
   return (
-    <FormProvider {...form}>
-      <div className="space-y-2">
-        {renderField()}
-        {(entryStatus || error) && (
-          <StatusIndicator status={entryStatus} error={error} />
-        )}
-      </div>
-    </FormProvider>
+    <Card className="mb-4">
+      <CardContent className="pt-4">
+        {getFieldByType()}
+        <div className="mt-2">
+          <StatusIndicator status={status} error={error} />
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-export const createEmptyDataEntry = (column: Column, schoolId: string): DataEntry => {
-  return {
-    column_id: column.id,
-    category_id: column.category_id,
-    school_id: schoolId,
-    value: column.default_value || '',
-    status: 'pending'
-  };
-};
+export const saveFormField = async (
+  column: Column,
+  value: string,
+  schoolId: string,
+  categoryId: string
+): Promise<{ success: boolean; entryId?: string; error?: string }> => {
+  try {
+    // Validasiya et
+    const validationError = validateEntryValue(value, column.type, column.validation);
+    if (validationError) {
+      return { success: false, error: validationError.message };
+    }
 
-export const createEntryValue = (column: Column, entry: DataEntry | null = null): EntryValue => {
-  return {
-    name: column.name,
-    columnId: column.id,
-    value: entry?.value || column.default_value || '',
-    isValid: true,
-    status: entry?.status,
-    entryId: entry?.id
-  };
+    // Məlumat yarat
+    const entry = {
+      column_id: column.id,
+      category_id: categoryId,
+      school_id: schoolId,
+      value: value,
+      status: 'pending' as DataEntryStatus
+    };
+
+    // API-da saxlamaq üçün lazım olan kod burada olmalıdır
+    // Təxminən belə bir şey:
+    // const { data, error } = await saveDataEntry(entry);
+    
+    // Simulyasiya edirik
+    const entryId = Math.random().toString(36).substring(2, 15);
+    
+    return { success: true, entryId };
+  } catch (error) {
+    console.error('Form field save error:', error);
+    return { success: false, error: 'Xəta baş verdi' };
+  }
 };

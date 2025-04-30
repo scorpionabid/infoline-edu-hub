@@ -1,70 +1,66 @@
-import React from 'react';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { UseFormReturn } from 'react-hook-form';
-import { Column } from '@/types/column';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-interface DateInputProps {
-  column: Column;
-  form: UseFormReturn<any>;
+import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Control, FieldValues, Path } from 'react-hook-form';
+
+interface DateInputProps<T extends FieldValues> {
+  name: Path<T>;
+  control: Control<T>;
+  label?: string;
+  placeholder?: string;
+  helpText?: string;
   disabled?: boolean;
+  className?: string;
+  required?: boolean;
+  onChange?: (value: string) => void;
 }
 
-const DateInput: React.FC<DateInputProps> = ({ column, form, disabled = false }) => {
+export default function DateInput<T extends FieldValues>({
+  name,
+  control,
+  label,
+  placeholder,
+  helpText,
+  disabled = false,
+  className = '',
+  required = false,
+  onChange
+}: DateInputProps<T>) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) {
+      onChange(e.target.value);
+    }
+  };
+
   return (
     <FormField
-      control={form.control}
-      name={`fields.${column.id}`}
+      control={control}
+      name={name}
       render={({ field }) => (
-        <FormItem className="flex flex-col">
-          <FormLabel>
-            {column.name}
-            {column.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
-          <Popover>
-            <PopoverTrigger asChild>
-              <FormControl>
-                <Button
-                  variant="outline"
-                  disabled={disabled}
-                  aria-label={column.name}
-                  className={cn(
-                    "w-full pl-3 text-left font-normal",
-                    !field.value && "text-muted-foreground"
-                  )}
-                >
-                  {field.value ? (
-                    format(new Date(field.value), "PPP")
-                  ) : (
-                    <span>{column.placeholder || "Tarix seçin"}</span>
-                  )}
-                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-              </FormControl>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={field.value ? new Date(field.value) : undefined}
-                onSelect={field.onChange}
-                disabled={disabled}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
+        <FormItem className={className}>
+          {label && (
+            <FormLabel>
+              {label}
+              {required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
           )}
+          <FormControl>
+            <Input
+              type="date"
+              {...field}
+              onChange={(e) => {
+                field.onChange(e);
+                handleChange(e);
+              }}
+              placeholder={placeholder}
+              disabled={disabled}
+            />
+          </FormControl>
+          {helpText && <p className="text-gray-500 text-sm mt-1">{helpText}</p>}
           <FormMessage />
         </FormItem>
       )}
     />
   );
-};
-
-export default DateInput;
+}
