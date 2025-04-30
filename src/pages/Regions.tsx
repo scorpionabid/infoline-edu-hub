@@ -34,7 +34,7 @@ const Regions = () => {
   } = useRegionsStore();
 
   // Əlavə olaraq birbaşa useRegions hook-dan istifadə edək
-  const { regions: directRegions, loading: directLoading, error: directError, fetchRegions: directFetchRegions } = useRegions();
+  const { regions: directRegions, loading: directLoading, error: directError, fetchRegions: directFetchRegions, refresh: refreshDirectRegions } = useRegions();
   
   // DirectRegions var ama storeRegions yoxdursa, store regions-u yeniləyək
   useEffect(() => {
@@ -49,15 +49,39 @@ const Regions = () => {
   const [openExistingUserDialog, setOpenExistingUserDialog] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
   const [createdRegion, setCreatedRegion] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // DirectRegions və ya storeRegions istifadə edək - hangisi daha məlumatldırsa
-  const regions = storeRegions?.length > 0 ? storeRegions : directRegions;
+  const regions = storeRegions?.length > 0 ? storeRegions : directRegions || [];
   const loading = storeLoading || directLoading;
+  
+  // Yeniləmə triggerini izlə
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('Regionlar siyahısı yenilənir...');
+      fetchRegionsStore();
+      refreshDirectRegions();
+    }
+  }, [refreshTrigger, fetchRegionsStore, refreshDirectRegions]);
 
   useEffect(() => {
     // Component yükləndikdə regionları yükləyək
     directFetchRegions();
   }, [directFetchRegions]);
+  
+  // Document event ilə yeniləmə trigger
+  useEffect(() => {
+    const handleRefreshRegions = () => {
+      console.log('refresh-regions event alındı, regionlar yenilənir...');
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    document.addEventListener('refresh-regions', handleRefreshRegions);
+    
+    return () => {
+      document.removeEventListener('refresh-regions', handleRefreshRegions);
+    };
+  }, []);
 
   const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
@@ -88,6 +112,7 @@ const Regions = () => {
     fetchRegionsStore();
     directFetchRegions();
     setCreatedRegion(null);
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleFormSubmit = async (values: any) => {
@@ -104,19 +129,24 @@ const Regions = () => {
       } else {
         // Yeni region oluşturma
         console.log('Yeni region yaradılır:', values);
-        await handleAddRegion({
+        const newRegion = await handleAddRegion({
           name: values.name,
           description: values.description,
           status: values.status,
         });
         toast.success(t('regionCreated'));
+        
+        // Admin əlavə etmək istəyirsə
+        if (values.addAdmin) {
+          handleRegionCreated(newRegion);
+          return;
+        }
       }
       
       setOpenRegionDialog(false);
       setSelectedRegion(null);
       // Hər iki məlumat mənbəyini yeniləyək
-      fetchRegionsStore();
-      directFetchRegions();
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       console.error('Region yaradılarkən/yenilənərkən xəta:', error);
       toast.error(t('errorOccurred'), {
@@ -127,6 +157,11 @@ const Regions = () => {
 
   if (directError) {
     console.error('Direct regions yükləyərkən xəta:', directError);
+  }
+
+  // Əgər hər iki mənbə boş nəticə qaytarırsa və yükləmə başa çatıbsa
+  if (!loading && regions.length === 0) {
+    console.warn('Regionlar boşdur! Supabase-də region məlumatlarını və RLS siyasətlərini yoxlayın.');
   }
 
   return (

@@ -1,5 +1,15 @@
+
 import React from 'react';
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from 'react-hook-form';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -8,107 +18,98 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Category, AssignmentType } from '@/types/category';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { useLanguage } from '@/context/LanguageContext';
-import { Calendar } from '../ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Category } from '@/types/column';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
+import { formatDate, isValidDate, dateToISOString } from '@/lib/utils/date';
 import { cn } from '@/lib/utils/ui';
-import { format } from 'date-fns';
-import { DatePicker } from '../ui/date-picker';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface EditCategoryDialogProps {
-  category?: Category;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (category: Category) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onEditCategory: (category: any) => Promise<void>;
+  category: Category;
+  isSubmitting?: boolean;
 }
 
-const categoryFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Category name must be at least 2 characters.",
-  }),
-  description: z.string().optional(),
-  assignment: z.enum(['all', 'sectors']),
-  status: z.enum(['active', 'inactive', 'draft']),
-  deadline: z.date().optional(),
-  priority: z.number().optional()
-});
+interface CategoryFormValues {
+  name: string;
+  description: string;
+  target: 'all' | 'sectors';
+  priority: number;
+  status: 'active' | 'inactive' | 'draft';
+  deadline: Date | null;
+}
 
-type CategoryFormValues = z.infer<typeof categoryFormSchema>
-
-export default function EditCategoryDialog({ 
-  category, 
-  open, 
-  onOpenChange, 
-  onSave 
-}: EditCategoryDialogProps) {
+const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
+  isOpen,
+  onClose,
+  onEditCategory,
+  category,
+  isSubmitting = false,
+}) => {
   const { t } = useLanguage();
+  
   const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: category?.name || '',
       description: category?.description || '',
-      assignment: category?.assignment || 'all',
-      status: category?.status || 'active',
-      deadline: category?.deadline ? new Date(category.deadline) : undefined,
-      priority: category?.priority || 0
-    }
+      target: category?.target as 'all' | 'sectors' || 'all',
+      priority: category?.priority || 0,
+      status: category?.status as 'active' | 'inactive' | 'draft' || 'active',
+      deadline: category?.deadline ? new Date(category.deadline) : null,
+    },
   });
-  
-  const onSubmit = (values: CategoryFormValues) => {
-    const categoryData: Category = {
-      id: category?.id || '',
-      name: values.name,
-      description: values.description,
-      assignment: values.assignment,
-      status: values.status,
-      deadline: values.deadline,
-      created_at: category?.created_at || new Date(),
-      updated_at: new Date(),
-      archived: category?.archived || false,
-      priority: values.priority || 0,
-      column_count: category?.column_count || 0
+
+  const handleSubmit = async (data: CategoryFormValues) => {
+    // ISO formatında deadline oluştur
+    const formattedData = {
+      ...data,
+      deadline: data.deadline ? dateToISOString(data.deadline) : null,
     };
     
-    onSave(categoryData);
-    onOpenChange(false);
+    await onEditCategory(formattedData);
+    form.reset();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{category ? t('editCategory') : t('createCategory')}</DialogTitle>
+          <DialogTitle>{t('editCategory')}</DialogTitle>
           <DialogDescription>
-            {t('editCategoryDetails')}
+            {t('editCategoryDescription')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
+              rules={{ required: t('categoryNameRequired') }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('categoryName')}</FormLabel>
+                  <FormLabel>{t('name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('categoryName')} {...field} />
+                    <Input placeholder={t('categoryNamePlaceholder')} {...field} />
                   </FormControl>
-                  <FormDescription>
-                    {t('categoryNameDescription')}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="description"
@@ -116,132 +117,154 @@ export default function EditCategoryDialog({
                 <FormItem>
                   <FormLabel>{t('description')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('description')} {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    {t('categoryDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="assignment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('assignment')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectAssignment')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="all">{t('allUsers')}</SelectItem>
-                      <SelectItem value="sectors">{t('sectorsOnly')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t('assignmentDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('status')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectStatus')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">{t('active')}</SelectItem>
-                      <SelectItem value="inactive">{t('inactive')}</SelectItem>
-                      <SelectItem value="draft">{t('draft')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t('statusDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="deadline"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>{t('deadline')}</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-[240px] pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>{t("pickDate")}</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <DatePicker
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={false}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    {t('deadlineDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('priority')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder={t('priority')}
-                      {...field}
+                    <Textarea 
+                      placeholder={t('categoryDescriptionPlaceholder')} 
+                      {...field} 
                     />
                   </FormControl>
-                  <FormDescription>
-                    {t('priorityDescription')}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="target"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('target')}</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectTarget')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="all">{t('all')}</SelectItem>
+                        <SelectItem value="sectors">{t('sectors')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('priority')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min={0} 
+                        {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('status')}</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('selectStatus')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">{t('active')}</SelectItem>
+                        <SelectItem value="inactive">{t('inactive')}</SelectItem>
+                        <SelectItem value="draft">{t('draft')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="deadline"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>{t('deadline')}</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              formatDate(field.value)
+                            ) : (
+                              <span>{t('selectDate')}</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={false}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      {t('deadlineDescription')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <DialogFooter>
-              <Button type="submit">{category ? t('updateCategory') : t('createCategory')}</Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                {t('cancel')}
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? t('saving') : t('saveChanges')}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default EditCategoryDialog;

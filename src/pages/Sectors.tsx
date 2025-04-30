@@ -35,7 +35,7 @@ const Sectors = () => {
   } = useSectorsStore();
 
   // Əlavə olaraq birbaşa useSectors hook-dan istifadə edək
-  const { sectors: directSectors, loading: directLoading, error: directError, fetchSectors: directFetchSectors } = useSectors();
+  const { sectors: directSectors, loading: directLoading, error: directError, fetchSectors: directFetchSectors, refresh: refreshDirectSectors } = useSectors();
   
   // DirectSectors var ama storeSectors yoxdursa, store sectors-u yeniləyək
   useEffect(() => {
@@ -52,7 +52,7 @@ const Sectors = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // DirectSectors və ya storeSectors istifadə edək - hangisi daha məlumatldırsa
-  const sectors = storeSectors?.length > 0 ? storeSectors : directSectors;
+  const sectors = storeSectors?.length > 0 ? storeSectors : directSectors || [];
   const loading = storeLoading || directLoading;
 
   // Yeniləmə triggerini izlə
@@ -60,9 +60,9 @@ const Sectors = () => {
     if (refreshTrigger > 0) {
       console.log('Sektorlar siyahısı yenilənir...');
       fetchSectorsStore();
-      directFetchSectors();
+      refreshDirectSectors();
     }
-  }, [refreshTrigger, fetchSectorsStore, directFetchSectors]);
+  }, [refreshTrigger, fetchSectorsStore, refreshDirectSectors]);
 
   useEffect(() => {
     // Component yükləndikdə sektorları yükləyək
@@ -145,6 +145,11 @@ const Sectors = () => {
 
   if (directError) {
     console.error('Direct sectors yükləyərkən xəta:', directError);
+  }
+
+  // Əgər hər iki mənbə boş nəticə qaytarırsa və yükləmə başa çatıbsa
+  if (!loading && sectors.length === 0) {
+    console.warn('Sektorlar boşdur! Supabase-də sektor məlumatlarını və RLS siyasətlərini yoxlayın.');
   }
 
   return (

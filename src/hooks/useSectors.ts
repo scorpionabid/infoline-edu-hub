@@ -69,7 +69,12 @@ export const useSectors = (regionId?: string) => {
         throw fetchError;
       }
       
-      console.log('Sektorlar uğurla yükləndi:', data?.length || 0, 'sektor tapıldı');
+      console.log('Sektorlar uğurla yükləndi:', data?.length || 0, 'sektor tapıldı', data);
+      
+      if (!data || data.length === 0) {
+        console.warn('Diqqət: Sektorlar cədvəlindən boş massiv qaytarıldı! RLS siyasətlərini və ya regionId filtrlərini yoxlayın.');
+        console.log('Region filtri:', regionId);
+      }
       
       // Keşi yenilə
       sectorsCache[cacheKey] = {
@@ -106,11 +111,13 @@ export const useSectors = (regionId?: string) => {
     // Supabase real-time subscription yaradaq
     const sectorsSubscription = supabase
       .channel('sectors-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sectors' }, () => {
-        console.log('Sektorlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...');
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sectors' }, (payload) => {
+        console.log('Sektorlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...', payload);
         fetchSectors();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Sectors subscription status:', status);
+      });
     
     // Component unmount olduqda təmizlə
     return () => {
@@ -119,7 +126,15 @@ export const useSectors = (regionId?: string) => {
     };
   }, [fetchSectors]);
 
-  return { sectors, loading, error, fetchSectors };
+  // Məlumatları manuel olaraq yeniləmək üçün refresh metodu
+  const refresh = useCallback(() => {
+    console.log('Sektorlar məlumatlarını manuel olaraq yeniləyirəm...');
+    const cacheKey = regionId || 'all';
+    delete sectorsCache[cacheKey]; // Keşi sıfırlayırıq
+    return fetchSectors();
+  }, [fetchSectors, regionId]);
+
+  return { sectors, loading, error, fetchSectors, refresh };
 };
 
 export default useSectors;

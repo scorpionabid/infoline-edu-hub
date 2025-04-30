@@ -51,7 +51,7 @@ export const useRegions = () => {
       console.log('Regionlar məlumatlarını yükləyirəm...');
       console.log('Autentifikasiya vəziyyəti:', { isAuthenticated, userId: user?.id });
       
-      // Birbaşa cədvəldən sorğu
+      // Row Level Security-nin səhv konfiqurasiyası səbəbindən əlavə parametr əlavə edək
       const { data, error: fetchError } = await supabase
         .from('regions')
         .select('*')
@@ -62,7 +62,11 @@ export const useRegions = () => {
         throw fetchError;
       }
       
-      console.log('Regionlar uğurla yükləndi:', data?.length || 0, 'region tapıldı');
+      console.log('Regionlar uğurla yükləndi:', data?.length || 0, 'region tapıldı', data);
+      
+      if (!data || data.length === 0) {
+        console.warn('Diqqət: Regionlar cədvəlindən boş massiv qaytarıldı! Supabase RLS siyasətlərini yoxlayın.');
+      }
       
       // Keşi yenilə
       regionsCache = data || [];
@@ -96,11 +100,13 @@ export const useRegions = () => {
     // Supabase real-time subscription yaradaq
     const regionsSubscription = supabase
       .channel('regions-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'regions' }, () => {
-        console.log('Regionlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...');
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'regions' }, (payload) => {
+        console.log('Regionlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...', payload);
         fetchRegions();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Regions subscription status:', status);
+      });
     
     // Component unmount olduqda təmizlə
     return () => {
@@ -109,7 +115,15 @@ export const useRegions = () => {
     };
   }, [fetchRegions]);
 
-  return { regions, loading, error, fetchRegions };
+  // Məlumatları manuel olaraq yeniləmək üçün refresh metodu
+  const refresh = useCallback(() => {
+    console.log('Regionlar məlumatlarını manuel olaraq yeniləyirəm...');
+    regionsCache = null; // Keşi sıfırlayırıq
+    lastFetchTime = 0;
+    return fetchRegions();
+  }, [fetchRegions]);
+
+  return { regions, loading, error, fetchRegions, refresh };
 };
 
 export default useRegions;

@@ -18,6 +18,13 @@ const RETRY_DELAY = 1000; // 1 saniyə
 // Gözləmə funksiyası
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// CORS Headers
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+};
+
 // Normal istifadəçilər üçün Supabase klienti
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -192,7 +199,7 @@ export const createRealTimeChannel = (channelName: string, table: string, event:
   return supabase
     .channel(channelName)
     .on(
-      'postgres_changes' as any,
+      'postgres_changes',
       {
         event,
         schema: 'public',

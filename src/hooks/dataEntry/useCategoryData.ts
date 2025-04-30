@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseFetch } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
@@ -70,9 +70,10 @@ export const useCategoryData = (schoolId?: string) => {
         throw categoriesError;
       }
 
-      console.log(`${categoriesData?.length || 0} kateqoriya tapıldı`);
+      console.log(`${categoriesData?.length || 0} kateqoriya tapıldı`, categoriesData);
 
       if (!categoriesData || categoriesData.length === 0) {
+        console.warn('Diqqət: Kateqoriyalar cədvəlindən boş massiv qaytarıldı!');
         setCategories([]);
         setLoading(false);
         return;
@@ -91,7 +92,7 @@ export const useCategoryData = (schoolId?: string) => {
         throw columnsError;
       }
 
-      console.log(`${columnsData?.length || 0} sütun tapıldı`);
+      console.log(`${columnsData?.length || 0} sütun tapıldı`, columnsData);
 
       // Sütunları işləyirik - options və validation sahələrini parse edirik
       const processedColumnsData = columnsData?.map(column => {
@@ -109,7 +110,7 @@ export const useCategoryData = (schoolId?: string) => {
           ...category,
           columns: processedColumnsData?.filter(column => column.category_id === category.id) || [],
           completionPercentage: 0,
-          status: 'draft'
+          status: 'draft' as any
         };
       });
 
@@ -118,6 +119,8 @@ export const useCategoryData = (schoolId?: string) => {
       // Daxil edilmiş məlumatları əldə edirik (əgər schoolId varsa)
       if (schoolId) {
         await fetchDataEntries(schoolId, categoriesWithColumns);
+      } else {
+        setLoading(false);
       }
     } catch (err: any) {
       console.error('Kateqoriyaları əldə edərkən xəta:', err);
@@ -125,7 +128,6 @@ export const useCategoryData = (schoolId?: string) => {
       toast.error(t('errorLoadingCategories'), {
         description: err.message
       });
-    } finally {
       setLoading(false);
     }
   }, [t, schoolId, isAuthenticated]);
@@ -146,7 +148,7 @@ export const useCategoryData = (schoolId?: string) => {
         throw entriesError;
       }
 
-      console.log(`${entriesData?.length || 0} məlumat tapıldı`);
+      console.log(`${entriesData?.length || 0} məlumat tapıldı`, entriesData);
 
       // Məlumatları kateqoriyalara əlavə edirik
       const updatedCategories = categoriesWithColumns.map(category => {
@@ -183,11 +185,13 @@ export const useCategoryData = (schoolId?: string) => {
       });
 
       setCategories(updatedCategories);
+      setLoading(false);
     } catch (err: any) {
       console.error('Daxil edilmiş məlumatları əldə edərkən xəta:', err);
       toast.error(t('errorLoadingEntries'), {
         description: err.message
       });
+      setLoading(false);
     }
   };
 
@@ -203,7 +207,9 @@ export const useCategoryData = (schoolId?: string) => {
         console.log('Kateqoriyalar yeniləndi:', payload);
         fetchCategories();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Categories subscription status:', status);
+      });
 
     const columnsChannel = supabase
       .channel('columns-changes')
@@ -211,18 +217,27 @@ export const useCategoryData = (schoolId?: string) => {
         console.log('Sütunlar yeniləndi:', payload);
         fetchCategories();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Columns subscription status:', status);
+      });
 
     // Əgər məktəb ID-si varsa, məlumat dəyişikliklərini də dinləyirik
     let entriesChannel: any;
     if (schoolId) {
       entriesChannel = supabase
         .channel('entries-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'data_entries', filter: `school_id=eq.${schoolId}` }, (payload) => {
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'data_entries',
+          filter: `school_id=eq.${schoolId}` 
+        }, (payload) => {
           console.log('Məlumatlar yeniləndi:', payload);
           fetchCategories();
         })
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Data entries subscription status:', status);
+        });
     }
 
     // Cleanup function
