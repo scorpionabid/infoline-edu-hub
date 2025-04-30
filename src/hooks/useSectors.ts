@@ -1,7 +1,10 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sector } from '@/types/supabase';
 import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Keşləmə üçün
 const CACHE_DURATION = 5 * 60 * 1000; // 5 dəqiqə
@@ -12,16 +15,18 @@ export const useSectors = (regionId?: string) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
+  const { t } = useLanguage();
   const fetchInProgress = useRef(false);
 
   const fetchSectors = useCallback(async () => {
     // Əgər sorğu artıq icra olunursa, yeni sorğu yaratma
     if (fetchInProgress.current) {
-      console.log('Fetch already in progress, skipping...');
+      console.log('Sektorlar üçün sorğu artıq icra olunur, yeni sorğu yaratmıram...');
       return;
     }
     
     if (!isAuthenticated) {
+      console.log('İstifadəçi giriş etməyib, sektorları yükləyə bilmərəm...');
       setLoading(false);
       return;
     }
@@ -36,15 +41,15 @@ export const useSectors = (regionId?: string) => {
       
       // Keşləmə yoxlaması
       if (sectorsCache[cacheKey] && now - sectorsCache[cacheKey].timestamp < CACHE_DURATION) {
-        console.log(`Using cached sectors data for ${cacheKey}`);
+        console.log(`Keşlənmiş sektor məlumatlarını istifadə edirəm (${cacheKey})...`);
         setSectors(sectorsCache[cacheKey].data);
         setLoading(false);
         fetchInProgress.current = false;
         return;
       }
       
-      console.log(`Fetching sectors data for regionId: ${regionId || 'all'}...`);
-      console.log('Auth state:', { isAuthenticated, userId: user?.id });
+      console.log(`Sektorlar məlumatlarını yükləyirəm (RegionId: ${regionId || 'all'})...`);
+      console.log('Autentifikasiya vəziyyəti:', { isAuthenticated, userId: user?.id });
       
       // Birbaşa cədvəldən sorğu
       let query = supabase
@@ -57,14 +62,14 @@ export const useSectors = (regionId?: string) => {
         query = query.eq('region_id', regionId);
       }
       
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
       
-      if (error) {
-        console.error('Error fetching sectors from table:', error);
-        throw error;
+      if (fetchError) {
+        console.error('Sektorları yükləyərkən xəta baş verdi:', fetchError);
+        throw fetchError;
       }
       
-      console.log('Sectors data fetched directly from table:', data);
+      console.log('Sektorlar uğurla yükləndi:', data?.length || 0, 'sektor tapıldı');
       
       // Keşi yenilə
       sectorsCache[cacheKey] = {
@@ -75,14 +80,15 @@ export const useSectors = (regionId?: string) => {
       setSectors(data || []);
       setLoading(false);
       fetchInProgress.current = false;
-    } catch (error: any) {
-      console.error('Failed to fetch sectors:', error);
-      setError(error.message || 'Sektorları yükləmək mümkün olmadı');
+    } catch (err: any) {
+      console.error('Sektorları yükləyərkən xəta baş verdi:', err);
+      setError(err?.message || t('errorLoadingSectors'));
+      toast.error(t('errorLoadingSectors'), { description: err?.message });
       
       // Keş varsa, köhnə məlumatları göstər
       const cacheKey = regionId || 'all';
       if (sectorsCache[cacheKey]) {
-        console.log(`Using stale sectors cache for ${cacheKey} due to error`);
+        console.log(`Xəta səbəbindən köhnə keşi istifadə edirəm (${cacheKey})`);
         setSectors(sectorsCache[cacheKey].data);
       } else {
         setSectors([]);
@@ -91,17 +97,29 @@ export const useSectors = (regionId?: string) => {
       setLoading(false);
       fetchInProgress.current = false;
     }
-  }, [isAuthenticated, regionId, user?.id]);
+  }, [isAuthenticated, regionId, user?.id, t]);
 
   useEffect(() => {
     // Component mount olduqda bir dəfə çağır
     fetchSectors();
     
+    // Supabase real-time subscription yaradaq
+    const sectorsSubscription = supabase
+      .channel('sectors-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sectors' }, () => {
+        console.log('Sektorlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...');
+        fetchSectors();
+      })
+      .subscribe();
+    
     // Component unmount olduqda təmizlə
     return () => {
       fetchInProgress.current = false;
+      supabase.removeChannel(sectorsSubscription);
     };
   }, [fetchSectors]);
 
   return { sectors, loading, error, fetchSectors };
 };
+
+export default useSectors;

@@ -1,9 +1,10 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, createRealTimeChannel } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns } from '@/types/column';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useAuth } from '@/context/auth/useAuth';
+import { useAuth } from '@/context/auth';
 
 // JSON sahələrini parse etmək üçün köməkçi funksiya
 const parseJsonField = (value: any): any => {
@@ -41,11 +42,17 @@ const parseJsonField = (value: any): any => {
 export const useCategoryData = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any>(null);
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const fetchCategories = useCallback(async () => {
+    if (!isAuthenticated) {
+      console.log('İstifadəçi giriş etməyib, kategoriyaları yükləmirəm');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
@@ -100,7 +107,9 @@ export const useCategoryData = (schoolId?: string) => {
       const categoriesWithColumns: CategoryWithColumns[] = categoriesData.map(category => {
         return {
           ...category,
-          columns: processedColumnsData?.filter(column => column.category_id === category.id) || []
+          columns: processedColumnsData?.filter(column => column.category_id === category.id) || [],
+          completionPercentage: 0,
+          status: 'draft'
         };
       });
 
@@ -119,7 +128,7 @@ export const useCategoryData = (schoolId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [t, schoolId]);
+  }, [t, schoolId, isAuthenticated]);
 
   const fetchDataEntries = async (schoolId: string, categoriesWithColumns: CategoryWithColumns[]) => {
     try {
@@ -188,36 +197,32 @@ export const useCategoryData = (schoolId?: string) => {
     fetchCategories();
 
     // Real-time subscriptions
-    const categoriesChannel = createRealTimeChannel(
-      'categories-changes',
-      'categories',
-      '*'
-    ).subscribe((payload) => {
-      console.log('Kateqoriyalar yeniləndi:', payload);
-      fetchCategories();
-    });
+    const categoriesChannel = supabase
+      .channel('categories-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
+        console.log('Kateqoriyalar yeniləndi:', payload);
+        fetchCategories();
+      })
+      .subscribe();
 
-    const columnsChannel = createRealTimeChannel(
-      'columns-changes',
-      'columns',
-      '*'
-    ).subscribe((payload) => {
-      console.log('Sütunlar yeniləndi:', payload);
-      fetchCategories();
-    });
+    const columnsChannel = supabase
+      .channel('columns-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, (payload) => {
+        console.log('Sütunlar yeniləndi:', payload);
+        fetchCategories();
+      })
+      .subscribe();
 
     // Əgər məktəb ID-si varsa, məlumat dəyişikliklərini də dinləyirik
     let entriesChannel: any;
     if (schoolId) {
-      entriesChannel = createRealTimeChannel(
-        'entries-changes',
-        'data_entries',
-        '*',
-        `school_id=eq.${schoolId}`
-      ).subscribe((payload) => {
-        console.log('Məlumatlar yeniləndi:', payload);
-        fetchCategories();
-      });
+      entriesChannel = supabase
+        .channel('entries-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'data_entries', filter: `school_id=eq.${schoolId}` }, (payload) => {
+          console.log('Məlumatlar yeniləndi:', payload);
+          fetchCategories();
+        })
+        .subscribe();
     }
 
     // Cleanup function
@@ -228,7 +233,7 @@ export const useCategoryData = (schoolId?: string) => {
         supabase.removeChannel(entriesChannel);
       }
     };
-  }, [fetchCategories, schoolId, user?.id]);
+  }, [fetchCategories, schoolId, isAuthenticated]);
 
   const refreshCategories = useCallback(async () => {
     await fetchCategories();

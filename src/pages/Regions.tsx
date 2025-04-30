@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRegionsStore } from '@/hooks/useRegionsStore';
 import SidebarLayout from '@/components/layout/SidebarLayout';
@@ -12,12 +12,13 @@ import { EnhancedRegion } from '@/hooks/useRegionsStore';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import { Pagination } from '@/components/ui/pagination';
+import { useRegions } from '@/hooks/useRegions'; // Direkt useRegions hook-unu istifadə edək
 
 const Regions = () => {
   const { t } = useLanguage();
   const {
-    regions,
-    loading,
+    regions: storeRegions,
+    loading: storeLoading,
     searchTerm,
     selectedStatus,
     currentPage,
@@ -29,8 +30,19 @@ const Regions = () => {
     handleAddRegion,
     handleUpdateRegion,
     handleDeleteRegion,
-    fetchRegions
+    fetchRegions: fetchRegionsStore
   } = useRegionsStore();
+
+  // Əlavə olaraq birbaşa useRegions hook-dan istifadə edək
+  const { regions: directRegions, loading: directLoading, error: directError, fetchRegions: directFetchRegions } = useRegions();
+  
+  // DirectRegions var ama storeRegions yoxdursa, store regions-u yeniləyək
+  useEffect(() => {
+    if (directRegions?.length > 0 && (!storeRegions || storeRegions.length === 0)) {
+      console.log('Direct regions var, store regions-u yeniləyirəm...');
+      fetchRegionsStore();
+    }
+  }, [directRegions, storeRegions, fetchRegionsStore]);
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
@@ -38,6 +50,15 @@ const Regions = () => {
   const [selectedRegion, setSelectedRegion] = useState<EnhancedRegion | null>(null);
   const [createdRegion, setCreatedRegion] = useState<any>(null);
   
+  // DirectRegions və ya storeRegions istifadə edək - hangisi daha məlumatldırsa
+  const regions = storeRegions?.length > 0 ? storeRegions : directRegions;
+  const loading = storeLoading || directLoading;
+
+  useEffect(() => {
+    // Component yükləndikdə regionları yükləyək
+    directFetchRegions();
+  }, [directFetchRegions]);
+
   const handleOpenRegionDialog = useCallback((region: EnhancedRegion | null) => {
     setSelectedRegion(region);
     setOpenRegionDialog(true);
@@ -64,7 +85,8 @@ const Regions = () => {
 
   const handleAdminAssigned = () => {
     console.log('Admin təyin edildi, regionları yeniləyirəm');
-    fetchRegions();
+    fetchRegionsStore();
+    directFetchRegions();
     setCreatedRegion(null);
   };
 
@@ -92,7 +114,9 @@ const Regions = () => {
       
       setOpenRegionDialog(false);
       setSelectedRegion(null);
-      fetchRegions();
+      // Hər iki məlumat mənbəyini yeniləyək
+      fetchRegionsStore();
+      directFetchRegions();
     } catch (error: any) {
       console.error('Region yaradılarkən/yenilənərkən xəta:', error);
       toast.error(t('errorOccurred'), {
@@ -100,6 +124,10 @@ const Regions = () => {
       });
     }
   };
+
+  if (directError) {
+    console.error('Direct regions yükləyərkən xəta:', directError);
+  }
 
   return (
     <SidebarLayout>

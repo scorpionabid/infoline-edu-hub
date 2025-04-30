@@ -11,12 +11,13 @@ import { EnhancedSector } from '@/hooks/useSectorsStore';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet';
 import { Pagination } from '@/components/ui/pagination';
+import { useSectors } from '@/hooks/useSectors'; // Direkt useSectors hook-unu istifadə edək
 
 const Sectors = () => {
   const { t } = useLanguage();
   const {
-    sectors,
-    loading,
+    sectors: storeSectors,
+    loading: storeLoading,
     searchTerm,
     selectedRegion,
     selectedStatus,
@@ -30,8 +31,19 @@ const Sectors = () => {
     handleAddSector,
     handleUpdateSector,
     handleDeleteSector,
-    fetchSectors
+    fetchSectors: fetchSectorsStore
   } = useSectorsStore();
+
+  // Əlavə olaraq birbaşa useSectors hook-dan istifadə edək
+  const { sectors: directSectors, loading: directLoading, error: directError, fetchSectors: directFetchSectors } = useSectors();
+  
+  // DirectSectors var ama storeSectors yoxdursa, store sectors-u yeniləyək
+  useEffect(() => {
+    if (directSectors?.length > 0 && (!storeSectors || storeSectors.length === 0)) {
+      console.log('Direct sectors var, store sectors-u yeniləyirəm...');
+      fetchSectorsStore();
+    }
+  }, [directSectors, storeSectors, fetchSectorsStore]);
 
   const [openSectorDialog, setOpenSectorDialog] = useState(false);
   const [openAdminDialog, setOpenAdminDialog] = useState(false);
@@ -39,13 +51,23 @@ const Sectors = () => {
   const [createdSector, setCreatedSector] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // DirectSectors və ya storeSectors istifadə edək - hangisi daha məlumatldırsa
+  const sectors = storeSectors?.length > 0 ? storeSectors : directSectors;
+  const loading = storeLoading || directLoading;
+
   // Yeniləmə triggerini izlə
   useEffect(() => {
     if (refreshTrigger > 0) {
       console.log('Sektorlar siyahısı yenilənir...');
-      fetchSectors();
+      fetchSectorsStore();
+      directFetchSectors();
     }
-  }, [refreshTrigger, fetchSectors]);
+  }, [refreshTrigger, fetchSectorsStore, directFetchSectors]);
+
+  useEffect(() => {
+    // Component yükləndikdə sektorları yükləyək
+    directFetchSectors();
+  }, [directFetchSectors]);
 
   // Document event ilə yeniləmə trigger
   useEffect(() => {
@@ -120,6 +142,10 @@ const Sectors = () => {
       });
     }
   };
+
+  if (directError) {
+    console.error('Direct sectors yükləyərkən xəta:', directError);
+  }
 
   return (
     <SidebarLayout>

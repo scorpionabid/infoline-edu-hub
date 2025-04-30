@@ -1,7 +1,10 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Region } from '@/types/supabase';
 import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Keşləmə üçün
 const CACHE_DURATION = 5 * 60 * 1000; // 5 dəqiqə
@@ -13,16 +16,18 @@ export const useRegions = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
+  const { t } = useLanguage();
   const fetchInProgress = useRef(false);
   
   const fetchRegions = useCallback(async () => {
     // Əgər sorğu artıq icra olunursa, yeni sorğu yaratma
     if (fetchInProgress.current) {
-      console.log('Fetch already in progress, skipping...');
+      console.log('Regionlar üçün sorğu artıq icra olunur, yeni sorğu yaratmıram...');
       return;
     }
     
     if (!isAuthenticated) {
+      console.log('İstifadəçi giriş etməyib, regionları yükləyə bilmərəm...');
       setLoading(false);
       return;
     }
@@ -36,28 +41,28 @@ export const useRegions = () => {
       
       // Keşləmə yoxlaması
       if (regionsCache && now - lastFetchTime < CACHE_DURATION) {
-        console.log('Using cached regions data');
+        console.log('Keşlənmiş region məlumatlarını istifadə edirəm...');
         setRegions(regionsCache);
         setLoading(false);
         fetchInProgress.current = false;
         return;
       }
       
-      console.log('Fetching regions data...');
-      console.log('Auth state:', { isAuthenticated, userId: user?.id });
+      console.log('Regionlar məlumatlarını yükləyirəm...');
+      console.log('Autentifikasiya vəziyyəti:', { isAuthenticated, userId: user?.id });
       
       // Birbaşa cədvəldən sorğu
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('regions')
         .select('*')
         .order('name', { ascending: true });
         
-      if (error) {
-        console.error('Error fetching regions from table:', error);
-        throw error;
+      if (fetchError) {
+        console.error('Regionları yükləyərkən xəta baş verdi:', fetchError);
+        throw fetchError;
       }
       
-      console.log('Regions data fetched directly from table:', data);
+      console.log('Regionlar uğurla yükləndi:', data?.length || 0, 'region tapıldı');
       
       // Keşi yenilə
       regionsCache = data || [];
@@ -66,13 +71,14 @@ export const useRegions = () => {
       setRegions(data || []);
       setLoading(false);
       fetchInProgress.current = false;
-    } catch (error: any) {
-      console.error('Failed to fetch regions:', error);
-      setError(error.message || 'Regionları yükləmək mümkün olmadı');
+    } catch (err: any) {
+      console.error('Regionları yükləyərkən xəta baş verdi:', err);
+      setError(err?.message || t('errorLoadingRegions'));
+      toast.error(t('errorLoadingRegions'), { description: err?.message });
       
       // Keş varsa, köhnə məlumatları göstər
       if (regionsCache) {
-        console.log('Using stale regions cache due to error');
+        console.log('Xəta səbəbindən köhnə keşi istifadə edirəm');
         setRegions(regionsCache);
       } else {
         setRegions([]);
@@ -81,15 +87,25 @@ export const useRegions = () => {
       setLoading(false);
       fetchInProgress.current = false;
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, t]);
 
   useEffect(() => {
     // Component mount olduqda bir dəfə çağır
     fetchRegions();
     
+    // Supabase real-time subscription yaradaq
+    const regionsSubscription = supabase
+      .channel('regions-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'regions' }, () => {
+        console.log('Regionlar cədvəlində dəyişiklik baş verdi, yenidən yükləyirəm...');
+        fetchRegions();
+      })
+      .subscribe();
+    
     // Component unmount olduqda təmizlə
     return () => {
       fetchInProgress.current = false;
+      supabase.removeChannel(regionsSubscription);
     };
   }, [fetchRegions]);
 
