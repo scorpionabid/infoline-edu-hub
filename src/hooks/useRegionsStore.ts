@@ -421,6 +421,7 @@ export const useRegionsStore = () => {
     handleAddRegion,
     handleUpdateRegion,
     handleDeleteRegion,
-    setIsOperationComplete
+    setIsOperationComplete,
+    fetchRegions
   };
 };
