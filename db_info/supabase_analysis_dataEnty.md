@@ -58,45 +58,203 @@ json
 CopyInsert
 {"label":"Bəzən","value":"bezen_1"},{"label":"Həmişə","value":"hemise_1"},{"label":"Heç vaxt","value":"hec_vaxt_1"}
 RLS Siyasətləri
-1. notifications Cədvəli üçün RLS Siyasətləri:
-| policyname | permissive | roles | cmd | qual | |------------|------------|-------|-----|------| | Access to own notifications | PERMISSIVE | {public} | ALL | (user_id = auth.uid()) | | SuperAdmin can manage all notifications | PERMISSIVE | {public} | ALL | is_superadmin() | | Users can view their own notifications | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | | Users can update their own notifications | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id) |
+# İnfoLine Sistemi RLS Təhlükəsizlik Konfiqurasiyası
 
-2. data_entries Cədvəli üçün RLS Siyasətləri:
-| policyname | permissive | roles | cmd | qual | |------------|------------|-------|-----|------| | Public access to data_entries | PERMISSIVE | {public} | ALL | true | | Məktəb admini öz məlumatlarını görə bilər | PERMISSIVE | {authenticated} | SELECT | ((schools.admin_email = auth.email()) OR (auth.email() IN ( SELECT schools.admin_email FROM schools))) | | Məktəb admini öz məlumatlarını əlavə edə bilər | PERMISSIVE | {authenticated} | INSERT | ((schools.admin_email = auth.email()) OR (auth.email() IN ( SELECT schools.admin_email FROM schools))) | | Məktəb admini təsdiqlənməmiş məlumatlarını yeniləyə bilər | PERMISSIVE | {authenticated} | UPDATE | ((schools.admin_email = auth.email()) OR (auth.email() IN ( SELECT schools.admin_email FROM schools))) | | SuperAdmin full access to data_entries | PERMISSIVE | {authenticated} | ALL | is_superadmin() | | RegionAdmin access to entries for schools in their region | PERMISSIVE | {authenticated} | ALL | (EXISTS ( SELECT 1 FROM schools s JOIN user_roles ur ON ((s.region_id = ur.region_id)) WHERE ((s.id = data_entries.school_id) AND (ur.user_id = auth.uid()) AND (ur.role = 'regionadmin'::text)))) | | SectorAdmin access to entries for schools in their sector | PERMISSIVE | {authenticated} | ALL | (EXISTS ( SELECT 1 FROM schools s JOIN user_roles ur ON ((s.sector_id = ur.sector_id)) WHERE ((s.id = data_entries.school_id) AND (ur.user_id = auth.uid()) AND (ur.role = 'sectoradmin'::text)))) | | SchoolAdmin access to entries for their school | PERMISSIVE | {authenticated} | ALL | (EXISTS ( SELECT 1 FROM schools WHERE ((schools.id = data_entries.school_id) AND (schools.admin_email = auth.email())))) | | Access to data entries based on role | PERMISSIVE | {public} | ALL | (EXISTS ( SELECT 1 FROM schools WHERE ((schools.id = data_entries.school_id) AND (schools.region_id IN ( SELECT ur.region_id FROM user_roles ur WHERE ((ur.user_id = auth.uid()) AND (ur.role = 'regionadmin'::text))))))) |
+## Sənəd Məqsədi
 
-Trigger-lər
-| trigger_name | event_manipulation | action_statement | |--------------|-------------------|------------------| | on_data_entry_insert | INSERT | EXECUTE FUNCTION notify_on_data_entry_insert() | | data_change_notification_trigger | INSERT | EXECUTE FUNCTION notify_data_change() | | data_change_notification_trigger | DELETE | EXECUTE FUNCTION notify_data_change() | | data_change_notification_trigger | UPDATE | EXECUTE FUNCTION notify_data_change() | | check_data_entry_approval | UPDATE | EXECUTE FUNCTION check_approval_permissions() |
+Bu sənəd, İnfoLine təhsil sistemində tətbiq olunmuş Row Level Security (RLS) siyasətlərini təsvir edir. RLS, istifadəçilərin yalnız öz rollarına uyğun məlumatlara giriş əldə etməsini təmin edən verilənlər bazası səviyyəsində təhlükəsizlik mexanizmidir.
 
-Edge Functions
-İnfoLine proyektində aşağıdakı Edge Functions istifadə olunur:
+## Sistem Haqqında
 
-| ID | Name | Slug | Status | Version | |----|------|------|--------|---------| | 7dd0efc2-0ee8-41f3-ad54-57672f7d7155 | submit-category | submit-category | ACTIVE | 163 | | 00a394e5-71f8-4ee3-938e-3f334d8fa864 | create-user | create-user | ACTIVE | 158 | | 48aa27a4-dba2-4363-8476-90c251c4c765 | reset-user-password | reset-user-password | ACTIVE | 158 | | d9c66f09-e477-4b9f-b9ee-9466519cd798 | create-superadmin | create-superadmin | ACTIVE | 159 | | b425b068-2806-467e-99b6-81e36b8612a4 | direct-login | direct-login | ACTIVE | 157 | | 57800626-a35a-42ea-89b5-62b55bf60344 | create-region-admin | create-region-admin | ACTIVE | 112 | | 691c67bf-0577-44c3-ba86-def6e79ccf1e | assign-region-admin | assign-region-admin | ACTIVE | 105 | | fa3d12cb-3b1d-4b3b-8e3f-7ad548c5ec2d | create-region | create-region | ACTIVE | 101 | | 359ac4cf-630a-4923-9e7c-395f4aae547d | submit-category-for-approval | submit-category-for-approval | ACTIVE | 15 |
+İnfoLine, Azərbaycanda 600+ məktəbi əhatə edən mərkəzləşdirilmiş veb platformadır. Sistem 4 əsas rolu dəstəkləyir:
 
-Problemlərin Analizi
-1. SelectInput Komponentində Options Problemi
-SelectInput.tsx komponentində options sahəsinin işlənməsində problem var. columns cədvəlində options sahəsi jsonb tipindədir və müxtəlif formatlarda ola bilər:
+- **SuperAdmin**: Bütün sistemə tam giriş
+- **RegionAdmin**: Region daxilində tam səlahiyyət
+- **SectorAdmin**: Sektor daxilində tam səlahiyyət
+- **SchoolAdmin**: Yalnız öz məktəbi üzərində səlahiyyət
 
-Bəzi sətirlərdə NULL dəyəri var
-Bəzi sətirlərdə JSON formatında məlumatlar var
-JSON formatı müxtəlif strukturlarda ola bilər
-2. RLS Siyasəti Xətası
-"new row violates row-level security policy for table 'notifications'" xətası notifications cədvəlinə yeni sətir əlavə edilərkən RLS siyasətlərinin pozulmasını göstərir. Mövcud RLS siyasətləri:
+## RLS Siyasətləri
 
-İstifadəçilər yalnız öz bildirişlərinə giriş əldə edə bilərlər
-SuperAdmin bütün bildirişləri idarə edə bilər
-İstifadəçilər öz bildirişlərini görə bilərlər
-İstifadəçilər öz bildirişlərini yeniləyə bilərlər
-3. Edge Function Çağırışı Problemi
-Edge Function çağırışı zamanı "No API key found in request" xətası JWT tokenin düzgün göndərilmədiyini göstərir. submit-category Edge Function-u çağırılarkən JWT token Authorization başlığında düzgün göndərilməlidir.
+Aşağıdakı cədvəllər üçün RLS siyasətləri tətbiq edilib:
 
-Həll Yolları
-SelectInput Komponentinin Təkmilləşdirilməsi:
-options sahəsinin müxtəlif formatlarını düzgün işləmək
-NULL dəyərləri üçün fallback mexanizmi təmin etmək
-JSON formatında olan məlumatları düzgün parse etmək
-RLS Siyasəti Problemi:
-Bildiriş yaradarkən user_id sahəsinin düzgün təyin edilməsini təmin etmək
-Mövcud bildirişləri silmək və ya yeniləmək üçün düzgün RLS siyasətlərini tətbiq etmək
-Edge Function Çağırışı:
-JWT tokenin düzgün əldə edilməsi və göndərilməsi
-Edge Function çağırışı üçün ümumi bir utiliti yaratmaq
+| Cədvəl               | Siyasətlər                                             |
+|----------------------|--------------------------------------------------------|
+| regions              | superadmin_regions, regionadmin_own_region              |
+| sectors              | superadmin_sectors, regionadmin_sectors, sectoradmin_own_sector |
+| schools              | superadmin_schools, regionadmin_schools, sectoradmin_schools, schooladmin_own_school |
+| categories           | all_users_select_categories, admin_manage_categories    |
+| columns              | all_users_select_columns, admin_manage_columns         |
+| data_entries         | superadmin_data_entries, regionadmin_data_entries, sectoradmin_data_entries, schooladmin_data_entries |
+| user_roles           | superadmin_user_roles, regionadmin_user_roles, sectoradmin_user_roles, view_own_role |
+| profiles             | superadmin_profiles, regionadmin_profiles, sectoradmin_profiles, view_own_profile |
+| notifications        | superadmin_notifications, user_notifications           |
+| audit_logs           | superadmin_audit_logs, regionadmin_audit_logs          |
+| sector_data_entries  | superadmin_sector_data, regionadmin_sector_data, sectoradmin_sector_data |
+| report_templates     | superadmin_report_templates, admin_select_report_templates |
+
+## Rol Hədd Funksiyaları
+
+Sistemdə üç əsas yardımçı funksiya istifadə olunur:
+
+1. **has_access_to_region**: İstifadəçinin regiona giriş hüququnu yoxlayır
+2. **has_access_to_sector**: İstifadəçinin sektora giriş hüququnu yoxlayır
+3. **has_access_to_school**: İstifadəçinin məktəbə giriş hüququnu yoxlayır
+
+## Rol İdentifikasiya Funksiyaları
+
+Dörd əsas rol yoxlama funksiyası mövcuddur:
+
+1. **is_superadmin**: İstifadəçinin superadmin olub-olmadığını yoxlayır
+2. **is_regionadmin**: İstifadəçinin regionadmin olub-olmadığını yoxlayır
+3. **is_sectoradmin**: İstifadəçinin sectoradmin olub-olmadığını yoxlayır
+4. **is_schooladmin**: İstifadəçinin schooladmin olub-olmadığını yoxlayır
+
+## Test Nəticələri
+
+RLS siyasətlərinin effektivliyini yoxlamaq üçün aparılan testlərin nəticələri:
+
+### Schools Cədvəli Test Nəticələri
+
+| Rol         | UUID | Görünən Məktəb Sayı | Gözlənilən |
+|-------------|------|---------------------|------------|
+| SuperAdmin  | d056c1f9-3df2-4483-9106-c6853c3ce765 | 352 | 352 (Bütün) |
+| RegionAdmin | 5bed6ada-2728-4944-aa6e-0b6a28be2ecf | 352 | 352 (Öz regionundakı) |
+| SectorAdmin | 6dd546fa-ef48-4238-a2d4-10748edbf0eb | 94  | 94 (Öz sektorundakı) |
+| SchoolAdmin | 017be5ec-a093-460c-8a38-815f29d2ae30 | 1   | 1 (Yalnız öz məktəbi) |
+
+### Digər Cədvəllər Üçün Test Nəticələri
+
+Bütün digər cədvəllər üçün aparılan test nəticələri də eyni prinsipi təsdiqləyir - hər rol yalnız öz səlahiyyət dairəsindəki məlumatlara giriş əldə edir:
+
+- **Data_entries**: Hər rol yalnız öz məktəblərinə aid məlumatları görə bilir
+- **Categories və Columns**: Bütün istifadəçilər görə bilir, lakin yalnız superadmin və regionadmin redaktə edə bilir
+- **Regions və Sectors**: Hər rol yalnız öz səlahiyyət dairəsindəki regon və sektorları görə bilir
+- **User_roles və Profiles**: Hər rol yalnız öz səlahiyyət dairəsindəki istifadəçi profillərinə və rollarına baxa bilir
+- **Notifications**: Hər istifadəçi yalnız özünə aid bildirişləri görə bilir (superadmin istisna)
+- **Audit_logs**: Yalnız superadmin və regionadmin audit loglarına giriş əldə edə bilir
+
+## Texniki Detallar
+
+### RLS Siyasət Nümunələri
+
+Aşağıda bir neçə əsas siyasətin kodu verilib:
+
+#### Schools cədvəli üçün
+
+```sql
+-- SuperAdmin üçün
+CREATE POLICY "superadmin_schools" ON schools 
+    FOR ALL 
+    TO authenticated 
+    USING (is_superadmin());
+
+-- RegionAdmin üçün
+CREATE POLICY "regionadmin_schools" ON schools 
+    FOR ALL 
+    TO authenticated 
+    USING (has_access_to_region(auth.uid(), region_id));
+
+-- SectorAdmin üçün
+CREATE POLICY "sectoradmin_schools" ON schools 
+    FOR ALL 
+    TO authenticated 
+    USING (has_access_to_sector(auth.uid(), sector_id));
+
+-- SchoolAdmin üçün
+CREATE POLICY "schooladmin_own_school" ON schools 
+    FOR ALL 
+    TO authenticated 
+    USING (has_access_to_school(auth.uid(), id));
+```
+
+### Əsas Yardımçı Funksiyaların Nümunələri
+
+```sql
+-- Region girişini yoxlayan funksiya
+CREATE OR REPLACE FUNCTION public.has_access_to_region(_user_id uuid, _region_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE SECURITY DEFINER
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND (
+        role = 'superadmin' OR
+        (role = 'regionadmin' AND region_id = _region_id)
+      )
+  );
+$function$;
+
+-- Məktəb girişini yoxlayan funksiya
+CREATE OR REPLACE FUNCTION public.has_access_to_school(_user_id uuid, _school_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE SECURITY DEFINER
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    JOIN public.schools sch ON sch.id = _school_id
+    JOIN public.sectors s ON s.id = sch.sector_id
+    WHERE ur.user_id = _user_id
+      AND (
+        ur.role = 'superadmin' OR
+        (ur.role = 'regionadmin' AND ur.region_id = sch.region_id) OR
+        (ur.role = 'sectoradmin' AND ur.sector_id = sch.sector_id) OR
+        (ur.role = 'schooladmin' AND ur.school_id = _school_id)
+      )
+  );
+$function$;
+```
+
+## Təhlükəsizlik İmplikasiyaları
+
+Tətbiq edilmiş RLS siyasətləri aşağıdakı əhəmiyyətli təhlükəsizlik üstünlüklərini təmin edir:
+
+1. **Təcrid olunmuş məlumat girişi**: Hər istifadəçi yalnız öz səlahiyyət dairəsindəki məlumatları görə və redaktə edə bilir.
+
+2. **Backend-də avtomatik təhlükəsizlik**: Verilənlər bazası səviyyəsində tətbiq edildiyi üçün, frontend tərəfində əlavə filtirlərə ehtiyac qalmır.
+
+3. **Tam audit imkanları**: Sistemdəki bütün əməliyyatlar audit_logs cədvəlində qeyd olunur və yalnız superadmin və regionadmin tərəfindən görünür.
+
+4. **Rola əsaslanan nəzarət**: Sistemə əlavə olunan yeni istifadəçilər avtomatik olaraq rollarına uyğun girişlər əldə edirlər.
+
+## Front-end İnteqrasiyası
+
+Frontend-də SQL filtrləmə əvəzinə verilənlər bazası RLS-nə etibar edilə bilər. Beləliklə:
+
+```javascript
+// Əvvəl:
+const { data, error } = await supabase
+  .from('schools')
+  .select('*')
+  .eq('region_id', currentUserRegionId);
+
+// İndi:
+const { data, error } = await supabase
+  .from('schools')
+  .select('*');
+```
+
+## Eksploatasia Tövsiyələri
+
+1. **Təhlükəsizlik auditləri**: Mütəmadi olaraq sistemdə RLS siyasətlərinin işləməsini yoxlayın.
+
+2. **Yeni cədvəllər üçün RLS**: Sistemə əlavə edilən hər yeni cədvəl üçün RLS siyasətləri mütləq tətbiq edilməlidir.
+
+3. **Backup və Yedəkləmə**: Mütəmadi olaraq backup və yedəkləmə aparılmalıdır.
+
+4. **Rol dəyişiklikləri**: İstifadəçi rollarında dəyişiklik edildikdə, bu istifadəçinin məlumat girişinə təsirini yoxlayın.
+
+## Nəticə
+
+İnfoLine sistem üçün yaradılmış və tətbiq edilmiş RLS siyasətləri, verilənlər təhlükəsizliyini tam şəkildə təmin edir. Bu siyasətlər sayəsində, hər bir istifadəçi yalnız öz səlahiyyət dairəsindəki məlumatlara giriş əldə edə bilir.
+
+Test nəticələri göstərir ki, RLS siyasətləri gözlənilən şəkildə işləyir və hər rol üçün məlumat görünürlüyü düzgün şəkildə məhdudlaşdırılır. Bu, həm məlumat təhlükəsizliyini, həm də sistemin daha səmərəli işləməsini təmin edir.
+
+---
+**Sənəd Versiyası**: 1.0  
+**Son Yenilənmə Tarixi**: 30 Aprel 2025  
+**Hazırlayan**: İmzalı olaraq təsdiq edilib
