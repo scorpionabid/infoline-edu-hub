@@ -1,5 +1,5 @@
 
-import { ColumnType, ColumnValidation } from '@/types/column';
+import { ColumnType, ColumnValidation, ColumnValidationError } from '@/types/column';
 
 export const validateField = (value: any, type: ColumnType, validation?: ColumnValidation): { isValid: boolean; message?: string } => {
   if (!validation) return { isValid: true };
@@ -133,4 +133,15 @@ export const validateField = (value: any, type: ColumnType, validation?: ColumnV
   }
 
   return { isValid: true };
+};
+
+export const validateEntryValue = (value: string, type: ColumnType, validation?: ColumnValidation): ColumnValidationError | null => {
+  const result = validateField(value, type, validation);
+  if (!result.isValid && result.message) {
+    return {
+      message: result.message,
+      type: 'validation'
+    };
+  }
+  return null;
 };

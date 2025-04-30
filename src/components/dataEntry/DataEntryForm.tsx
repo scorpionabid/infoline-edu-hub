@@ -21,7 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
 const DataEntryForm: React.FC = () => {
-  const { schoolId, categoryId } = useParams<{ schoolId: string; categoryId: string }>();
+  const { categoryId } = useParams<{ categoryId: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -39,7 +39,7 @@ const DataEntryForm: React.FC = () => {
     loading, 
     error,
     refreshCategories
-  } = useCategoryData(schoolId);
+  } = useCategoryData();
 
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [isDataModified, setIsDataModified] = useState(false);
@@ -91,22 +91,18 @@ const DataEntryForm: React.FC = () => {
     } else if (!categoryId && filteredCategories.length > 0) {
       const firstCategoryId = filteredCategories[0].id;
       setActiveTab(firstCategoryId);
-      
-      if (schoolId) {
-        navigate(`/data-entry/${schoolId}/${firstCategoryId}`);
-      }
+      navigate(`/data-entry/${firstCategoryId}`);
     }
-  }, [categoryId, activeTab, filteredCategories, navigate, schoolId]);
+  }, [categoryId, activeTab, filteredCategories, navigate]);
 
   useEffect(() => {
     const loadEntries = async () => {
-      if (!schoolId || !activeTab) return;
+      if (!activeTab) return;
 
       try {
         const { data, error } = await supabase
           .from('data_entries')
           .select('*')
-          .eq('school_id', schoolId)
           .eq('category_id', activeTab);
 
         if (error) {
@@ -124,7 +120,7 @@ const DataEntryForm: React.FC = () => {
     };
 
     loadEntries();
-  }, [schoolId, activeTab, t]);
+  }, [activeTab, t]);
 
   const handleTabChange = useCallback((value: string) => {
     if (isDataModified) {
@@ -132,9 +128,9 @@ const DataEntryForm: React.FC = () => {
       return;
     }
     
-    navigate(`/data-entry/${schoolId}/${value}`);
+    navigate(`/data-entry/${value}`);
     setActiveTab(value);
-  }, [isDataModified, navigate, schoolId]);
+  }, [isDataModified, navigate]);
 
   const handleEntriesChange = useCallback((updatedEntries: DataEntry[]) => {
     setEntries(updatedEntries);
@@ -142,7 +138,7 @@ const DataEntryForm: React.FC = () => {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!schoolId || !activeTab || !user?.id) {
+    if (!activeTab || !user?.id) {
       toast.error(t('missingRequiredFields'));
       return;
     }
@@ -152,7 +148,6 @@ const DataEntryForm: React.FC = () => {
       const { error: deleteError } = await supabase
         .from('data_entries')
         .delete()
-        .eq('school_id', schoolId)
         .eq('category_id', activeTab);
         
       if (deleteError) {
@@ -162,7 +157,7 @@ const DataEntryForm: React.FC = () => {
       
       if (entries.length > 0) {
         const dataToInsert = entries.map(entry => ({
-          school_id: schoolId,
+          school_id: entry.school_id,
           category_id: activeTab,
           column_id: entry.column_id,
           value: String(entry.value || ''),
@@ -197,10 +192,10 @@ const DataEntryForm: React.FC = () => {
         setSaveStatus(DataEntrySaveStatus.IDLE);
       }, 3000);
     }
-  }, [schoolId, activeTab, entries, user?.id, t, refreshCategories]);
+  }, [activeTab, entries, user?.id, t, refreshCategories]);
 
   const handleSubmitForApproval = useCallback(async () => {
-    if (!schoolId || !activeTab || !user?.id) {
+    if (!activeTab || !user?.id) {
       toast.error(t('missingRequiredFields'));
       return;
     }
@@ -229,14 +224,13 @@ const DataEntryForm: React.FC = () => {
       const { error: deleteError } = await supabase
         .from('data_entries')
         .delete()
-        .eq('school_id', schoolId)
         .eq('category_id', activeTab);
         
       if (deleteError) throw deleteError;
       
       if (entries.length > 0) {
         const dataToInsert = entries.map(entry => ({
-          school_id: schoolId,
+          school_id: entry.school_id,
           category_id: activeTab,
           column_id: entry.column_id,
           value: String(entry.value || ''),
@@ -284,7 +278,7 @@ const DataEntryForm: React.FC = () => {
         setSaveStatus(DataEntrySaveStatus.IDLE);
       }, 3000);
     }
-  }, [schoolId, activeTab, entries, user?.id, t, filteredCategories, refreshCategories]);
+  }, [activeTab, entries, user?.id, t, filteredCategories, refreshCategories]);
 
   const handleCloseConfirmDialog = useCallback(() => {
     setConfirmDialog({ ...confirmDialog, open: false });
@@ -312,121 +306,79 @@ const DataEntryForm: React.FC = () => {
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          {t('errorLoadingCategories')}: {error.message}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (filteredCategories.length === 0) {
-    return (
-      <Alert>
-        <AlertDescription>
-          {t('noCategoriesFound')}
+          {error.toString()}
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">{t('dataEntry')}</h2>
-          
-          <div className="flex items-center gap-2">
-            {saveStatus === DataEntrySaveStatus.SAVING && (
-              <div className="flex items-center text-muted-foreground">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('saving')}
-              </div>
-            )}
-            
-            {saveStatus === DataEntrySaveStatus.SAVED && (
-              <div className="flex items-center text-green-600">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                {t('saved')}
-              </div>
-            )}
-            
-            {saveStatus === DataEntrySaveStatus.ERROR && (
-              <div className="flex items-center text-red-600">
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                {t('error')}
-              </div>
-            )}
-            
-            <Button 
-              variant="outline" 
-              onClick={handleSave}
-              disabled={!isDataModified || isSubmitting}
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {t('save')}
-            </Button>
-            
-            <Button 
-              onClick={handleSubmitForApproval}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              {t('submitForApproval')}
-            </Button>
+    <div className="space-y-8">
+      {filteredCategories.length === 0 ? (
+        <Card className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium">{t('noCategoriesFound')}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('noCategoriesDescription')}
+            </p>
           </div>
-        </div>
-        
-        <TabsList className="mb-4 w-full h-auto flex flex-wrap">
-          {filteredCategories.map((category) => (
-            <TabsTrigger 
-              key={category.id} 
-              value={category.id}
-              className="py-2 px-4 flex items-center gap-2"
-            >
-              {category.name}
-              {category.assignment === 'sectors' && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {t('sectorOnly')}
-                </Badge>
-              )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        
-        {filteredCategories.map((category) => (
-          <TabsContent key={category.id} value={category.id} className="pt-4">
-            <Card className="p-6">
-              {category.columns.length > 0 ? (
-                <FormFields 
-                  category={category}
-                  entries={entries}
-                  onChange={handleEntriesChange}
-                  disabled={isSubmitting}
-                />
-              ) : (
-                <Alert>
-                  <AlertDescription>
-                    {t('noColumnsInCategory')}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
-      
-      <CategoryConfirmationDialog 
-        isOpen={confirmDialog.open}
-        onClose={handleCloseConfirmDialog}
-        onConfirm={handleConfirmAction}
-        title={t('unsavedChanges')}
-        description={t('unsavedChangesDescription')}
-        confirmText={t('save')}
-        cancelText={t('discard')}
-      />
+        </Card>
+      ) : (
+        <>
+          <Tabs 
+            value={activeTab} 
+            onValueChange={handleTabChange}
+          >
+            <TabsList className="flex overflow-x-auto pb-1 w-full">
+              {filteredCategories.map((category) => (
+                <TabsTrigger
+                  key={category.id}
+                  value={category.id}
+                  className="whitespace-nowrap"
+                >
+                  {category.name}
+                  {category.completionPercentage !== undefined && category.completionPercentage > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {category.completionPercentage}%
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          {selectedCategory && (
+            <div className="space-y-6">
+              <CategoryForm
+                category={selectedCategory}
+                isSaving={saveStatus === DataEntrySaveStatus.SAVING}
+                isSubmitting={isSubmitting}
+                isModified={isDataModified}
+                onSave={handleSave}
+                onSubmit={handleSubmitForApproval}
+              />
+              
+              <FormFields
+                category={selectedCategory}
+                entries={entries}
+                onChange={handleEntriesChange}
+                disabled={selectedCategory.status === 'approved'}
+                loading={false}
+              />
+            </div>
+          )}
+          
+          <CategoryConfirmationDialog
+            open={confirmDialog.open}
+            onClose={handleCloseConfirmDialog}
+            onConfirm={handleConfirmAction}
+            title={t('unsavedChangesTitle')}
+            description={t('unsavedChangesDescription')}
+            confirmText={t('save')}
+            cancelText={t('discard')}
+          />
+        </>
+      )}
     </div>
   );
 };

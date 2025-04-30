@@ -164,7 +164,7 @@ const FormFields: React.FC<FormFieldsProps> = ({
         // Mövcud qeydi tapaq
         const existingEntry = safeEntries.find(e => e.column_id === columnId);
         
-        const currentDate = new Date().toISOString();
+        const currentTime = new Date().toISOString();
         
         updatedEntries.push({
           id: existingEntry?.id,
@@ -173,8 +173,8 @@ const FormFields: React.FC<FormFieldsProps> = ({
           school_id: existingEntry?.school_id || '',
           value: value as string,
           status: existingEntry?.status || 'draft',
-          created_at: existingEntry?.created_at || currentDate,
-          updated_at: currentDate
+          created_at: existingEntry?.created_at || currentTime,
+          updated_at: currentTime
         });
       });
     }

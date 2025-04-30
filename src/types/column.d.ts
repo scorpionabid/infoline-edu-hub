@@ -7,7 +7,7 @@ export interface BaseCategory {
   description?: string;
   target?: 'all' | 'sectors';
   priority: number;
-  status: 'active' | 'inactive' | 'draft';
+  status: 'active' | 'inactive' | 'draft' | 'pending' | 'approved' | 'rejected' | 'partial';
   created_at?: string;
   updated_at?: string;
   deadline?: string;

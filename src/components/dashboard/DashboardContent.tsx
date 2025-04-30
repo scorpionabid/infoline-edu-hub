@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,6 +9,15 @@ import SectorAdminDashboard from './SectorAdminDashboard';
 import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
+
+interface SuperAdminDashboardProps {
+  data: any;
+  onRefresh: () => void;
+}
+
+interface RegionAdminDashboardProps {
+  data: any;
+}
 
 interface DashboardContentProps {
   userRole: string | undefined;

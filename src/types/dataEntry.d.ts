@@ -42,3 +42,11 @@ export enum DataEntrySaveStatus {
   SAVED = 'saved',
   ERROR = 'error'
 }
+
+export interface DataEntryForm {
+  id?: string;
+  categoryId: string;
+  schoolId: string;
+  entries: EntryValue[];
+  status?: DataEntryStatus;
+}
