@@ -2,7 +2,7 @@
 export type ColumnType = 'text' | 'textarea' | 'number' | 'select' | 'date' | 'checkbox' | 'radio' | 'file' | 'email' | 'url' | 'phone' | 'image' | 'range' | 'color' | 'password' | 'time' | 'datetime' | 'richtext';
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft';
-export type DataEntryStatus = 'pending' | 'approved' | 'rejected';
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 // Sütun validasiyası üçün tipler
 export interface ColumnValidation {

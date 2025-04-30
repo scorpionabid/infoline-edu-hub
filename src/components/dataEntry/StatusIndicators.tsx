@@ -46,5 +46,14 @@ export const StatusIndicator = ({ status, error }: StatusIndicatorProps) => {
     );
   }
 
+  if (status === 'draft') {
+    return (
+      <div className="flex items-center text-blue-500" title="Qaralama">
+        <Clock className="h-4 w-4 mr-1" />
+        <span className="text-xs">Qaralama</span>
+      </div>
+    );
+  }
+
   return null;
 };

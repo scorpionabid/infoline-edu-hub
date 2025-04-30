@@ -2,7 +2,6 @@
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { DashboardNotification } from '@/types/dashboard';
-import NotificationsCard from './NotificationsCard';
 import { 
   SchoolAdminDashboardData, 
   FormItem 
@@ -83,8 +82,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>{t('pendingForms')}</CardTitle>
-            <CardDescription>{t('pendingFormsDesc')}</CardDescription>
+            <CardTitle>Gözləmədə</CardTitle>
+            <CardDescription>Gözləmədə olan formlar</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formStats.pending}</div>
@@ -93,8 +92,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('approvedForms')}</CardTitle>
-            <CardDescription>{t('approvedFormsDesc')}</CardDescription>
+            <CardTitle>Təsdiqlənmiş</CardTitle>
+            <CardDescription>Təsdiqlənmiş formlar</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formStats.approved}</div>
@@ -103,8 +102,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('rejectedForms')}</CardTitle>
-            <CardDescription>{t('rejectedFormsDesc')}</CardDescription>
+            <CardTitle>Rədd edilmiş</CardTitle>
+            <CardDescription>Rədd edilmiş formlar</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formStats.rejected}</div>
@@ -113,8 +112,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('completionRate')}</CardTitle>
-            <CardDescription>{t('completionRateDesc')}</CardDescription>
+            <CardTitle>Tamamlanma</CardTitle>
+            <CardDescription>Ümumi tamamlanma faizi</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{completionRate}%</div>
@@ -126,18 +125,18 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>{t('pendingForms')}</CardTitle>
-            <CardDescription>{t('pendingFormsDesc')}</CardDescription>
+            <CardTitle>Gözləmədə olan formlar</CardTitle>
+            <CardDescription>Təsdiq gözləyən formların siyahısı</CardDescription>
           </div>
           <Button onClick={navigateToDataEntry} size="sm">
             <Plus className="mr-2 h-4 w-4" />
-            {t('addData')}
+            Yeni məlumat əlavə et
           </Button>
         </CardHeader>
         <CardContent>
           {pendingForms.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              {t('noFormsToFill')}
+              Hazırda doldurulacaq form yoxdur
             </div>
           ) : (
             <ScrollArea className="h-[300px]">
@@ -153,7 +152,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                     </div>
                     <div className="flex items-center space-x-4">
                       <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status)}`}>
-                        {t(form.status)}
+                        {form.status}
                       </div>
                       <div className="w-24 bg-gray-200 rounded-full h-2.5">
                         <div 
@@ -162,7 +161,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                         ></div>
                       </div>
                       <Button variant="outline" size="sm" onClick={() => handleFormClick(form.id)}>
-                        {t('view')}
+                        Bax
                       </Button>
                     </div>
                   </div>
@@ -174,7 +173,31 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       </Card>
 
       {/* Bildirişlər kartı */}
-      <NotificationsCard notifications={notifications} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Bildirişlər</CardTitle>
+          <CardDescription>Son bildirişlər</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {notifications.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              Yeni bildiriş yoxdur
+            </div>
+          ) : (
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div key={notification.id} className="p-4 border rounded-md">
+                    <div className="font-semibold">{notification.title}</div>
+                    <div className="text-sm text-muted-foreground">{notification.date}</div>
+                    <div className="mt-2">{notification.message}</div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

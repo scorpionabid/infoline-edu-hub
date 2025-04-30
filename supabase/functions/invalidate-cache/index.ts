@@ -1,125 +1,140 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { corsHeaders } from '../_shared/cors.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.29.0';
 
-// CORS başlıqları
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Cache sisteminin durumunu saxlayan obyekt
-interface CacheState {
-  entries: Record<string, any>;
-  invalidationLog: Array<{
-    key: string;
-    timestamp: number;
-    reason: string;
-  }>;
-}
-
-// Qlobal cache
-let cacheState: CacheState = {
-  entries: {},
-  invalidationLog: []
-};
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 serve(async (req) => {
-  // CORS preflight sorğularına cavab ver
+  // CORS işleme
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Request body-ni alaq
-    let body;
-    try {
-      body = await req.json();
-      console.log('Request məlumatları:', body);
-    } catch (error) {
-      console.error('Request body parse xətası:', error);
+    // Token doğrulama
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Yetkiləndirmə token tapılmadı' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Auth client
+    const authClient = createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      }
+    );
+
+    // İstifadəçi yoxlama
+    const {
+      data: { user: authUser },
+      error: userError
+    } = await authClient.auth.getUser();
+
+    if (userError || !authUser) {
       return new Response(
-        JSON.stringify({ error: 'Düzgün JSON formatında body tələb olunur' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ error: 'İstifadəçi doğrulanmadı' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Body parametrlərini alırıq
-    const { key, pattern, reason = 'Manual invalidation' } = body;
-    
-    if (!key && !pattern) {
+
+    // Səlahiyyətli client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false }
+    });
+
+    // İstək parametrlərini al
+    const { key, pattern, dependencies } = await req.json();
+
+    if (!key && !pattern && !dependencies) {
       return new Response(
-        JSON.stringify({ error: 'key və ya pattern parametrlərindən biri tələb olunur' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ error: 'Keş açarı, şablon və ya asılılıqlar tələb olunur' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    const now = Date.now();
-    let invalidatedKeys: string[] = [];
-    
-    // Konkret bir keşi təmizlə
+
+    let keysToDelete = [];
+
+    // Konkret açar
     if (key) {
-      if (key in cacheState.entries) {
-        delete cacheState.entries[key];
-        invalidatedKeys.push(key);
-        cacheState.invalidationLog.push({
-          key,
-          timestamp: now,
-          reason
+      keysToDelete.push(key);
+    }
+
+    // Şablona uyğun açarlar
+    if (pattern) {
+      const { data: matches } = await supabase
+        .from('cache')
+        .select('key')
+        .ilike('key', `%${pattern}%`);
+
+      if (matches && matches.length > 0) {
+        keysToDelete = [...keysToDelete, ...matches.map(m => m.key)];
+      }
+    }
+
+    // Asılılıq əsasında açarlar
+    if (dependencies && Array.isArray(dependencies) && dependencies.length > 0) {
+      // Cache cədvəlindən asılılıq saxlayan elementləri tap
+      const { data: dependentCaches } = await supabase
+        .from('cache')
+        .select('key, dependencies');
+
+      if (dependentCaches && dependentCaches.length > 0) {
+        // Gətirilən keşlərdə asılılıq şərtini yoxla
+        dependentCaches.forEach(cache => {
+          if (cache.dependencies && Array.isArray(cache.dependencies)) {
+            const hasMatch = dependencies.some(dep => 
+              cache.dependencies.includes(dep)
+            );
+            
+            if (hasMatch && !keysToDelete.includes(cache.key)) {
+              keysToDelete.push(cache.key);
+            }
+          }
         });
       }
-      
-      // Həm də dependency-ləri olan keşləri təmizləyək
-      Object.entries(cacheState.entries).forEach(([cacheKey, entry]) => {
-        if (entry.dependencies && entry.dependencies.includes(key)) {
-          delete cacheState.entries[cacheKey];
-          invalidatedKeys.push(cacheKey);
-          cacheState.invalidationLog.push({
-            key: cacheKey,
-            timestamp: now,
-            reason: `Dependency invalidation: ${key}`
-          });
-        }
-      });
     }
-    
-    // Pattern-ə uyğun keşləri təmizlə
-    if (pattern) {
-      const regex = new RegExp(pattern);
-      
-      Object.keys(cacheState.entries).forEach(cacheKey => {
-        if (regex.test(cacheKey)) {
-          delete cacheState.entries[cacheKey];
-          invalidatedKeys.push(cacheKey);
-          cacheState.invalidationLog.push({
-            key: cacheKey,
-            timestamp: now,
-            reason: `Pattern invalidation: ${pattern}`
-          });
-        }
-      });
+
+    // Keşləri sil
+    if (keysToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('cache')
+        .delete()
+        .in('key', keysToDelete);
+
+      if (deleteError) {
+        return new Response(
+          JSON.stringify({ error: 'Keş silmə xətası', details: deleteError }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `${keysToDelete.length} keş girişi silindi`, 
+          deletedKeys: keysToDelete 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      return new Response(
+        JSON.stringify({ success: true, message: 'Silinəcək keş tapılmadı' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-    
-    // Jurnal limitini yoxla (son 100 qeyd)
-    if (cacheState.invalidationLog.length > 100) {
-      cacheState.invalidationLog = cacheState.invalidationLog.slice(-100);
-    }
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        invalidatedKeys,
-        invalidatedCount: invalidatedKeys.length
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
-    
   } catch (error) {
-    console.error('Gözlənilməz xəta:', error);
     return new Response(
-      JSON.stringify({ 
-        error: `Gözlənilməz xəta: ${error instanceof Error ? error.message : String(error)}` 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ error: 'İstək işlənərkən xəta baş verdi', details: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

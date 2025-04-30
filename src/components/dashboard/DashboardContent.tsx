@@ -1,107 +1,33 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/auth';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './RegionAdminDashboard';
+import RegionAdminDashboard from './RegionAdminDashboard';
+import SectorAdminDashboard from './SectorAdminDashboard';
+import SchoolAdminDashboard from './SchoolAdminDashboard';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRealDashboardData } from '@/hooks/useRealDashboardData';
 
-export const DashboardContent = () => {
+export const DashboardContent: React.FC = () => {
   const { user } = useAuth();
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { 
+    dashboardData, 
+    chartData, 
+    isLoading,
+    error,
+    refetch 
+  } = useRealDashboardData();
 
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        if (!user) return;
-
-        // İstifadəçinin rolunu əldə edirik
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Role fetch error:', error);
-          return;
-        }
-
-        if (data) {
-          setUserRole(data.role);
-        }
-      } catch (error) {
-        console.error('Error fetching user role:', error);
-      }
-    };
-
-    fetchUserRole();
-  }, [user]);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [userRole, user]);
-
-  const fetchDashboardData = async () => {
-    if (!user || !userRole) {
-      setLoading(false);
-      return;
+  React.useEffect(() => {
+    if (error) {
+      toast.error('Məlumatları yükləyərkən xəta baş verdi');
     }
+  }, [error]);
 
-    setLoading(true);
-
-    try {
-      let data;
-      
-      // Role-a uyğun dashboard datanı əldə edirik
-      if (userRole === 'superadmin') {
-        // SuperAdmin üçün ümumi statistika
-        const { data: superAdminData, error } = await supabase.functions.invoke('get-dashboard-data');
-        
-        if (error) throw error;
-        
-        data = superAdminData;
-      } else if (userRole === 'regionadmin') {
-        // Region admini üçün öz regionuna aid statistika
-        const { data: regionData, error } = await supabase.functions.invoke('get-dashboard-data', {
-          body: { role: 'regionadmin' }
-        });
-        
-        if (error) throw error;
-        
-        data = regionData;
-      } else if (userRole === 'sectoradmin') {
-        // Sektor admini üçün öz sektoruna aid statistika
-        const { data: sectorData, error } = await supabase.functions.invoke('get-sector-dashboard-data');
-        
-        if (error) throw error;
-        
-        data = sectorData;
-      } else {
-        // Məktəb admini üçün öz məktəbinə aid statistika
-        const { data: schoolData, error } = await supabase.functions.invoke('get-dashboard-data', {
-          body: { role: 'schooladmin' }
-        });
-        
-        if (error) throw error;
-        
-        data = schoolData;
-      }
-
-      setDashboardData(data);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast.error('Məlumatlar yüklənərkən xəta baş verdi');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -109,9 +35,51 @@ export const DashboardContent = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-destructive mb-4">Məlumatları yükləyərkən xəta baş verdi</p>
+        <Button variant="outline" onClick={refetch}>
+          <RefreshCcw className="mr-2 h-4 w-4" />
+          Yenilə
+        </Button>
+      </div>
+    );
+  }
+
   // Dashboard məzmununu rola görə render edirik
-  const renderDashboard = () => {
-    if (!dashboardData) {
+  if (!dashboardData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Məlumat tapılmadı</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Dashboard məlumatları hazırda əlçatan deyil.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  switch (user?.role) {
+    case 'superadmin':
+      return <SuperAdminDashboard data={dashboardData} onRefresh={refetch} />;
+    case 'regionadmin':
+      return <RegionAdminDashboard data={dashboardData} />;
+    case 'sectoradmin':
+      return <SectorAdminDashboard />;
+    case 'schooladmin':
+      return (
+        <SchoolAdminDashboard 
+          data={dashboardData}
+          isLoading={isLoading}
+          error={error}
+          onRefresh={refetch}
+          navigateToDataEntry={() => {}}
+          handleFormClick={() => {}}
+        />
+      );
+    default:
       return (
         <Card>
           <CardHeader>
@@ -122,45 +90,7 @@ export const DashboardContent = () => {
           </CardContent>
         </Card>
       );
-    }
-
-    switch (userRole) {
-      case 'superadmin':
-        return <SuperAdminDashboard data={dashboardData} onRefresh={fetchDashboardData} />;
-      case 'regionadmin':
-        return <RegionAdminDashboard data={dashboardData} />;
-      case 'sectoradmin':
-        // Sektor admin dashboardı
-        return <RegionAdminDashboard data={dashboardData} />;
-      case 'schooladmin':
-        // Məktəb admin dashboardı
-        return <RegionAdminDashboard data={dashboardData} />;
-      default:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Məlumat tapılmadı</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Dashboard məlumatları hazırda əlçatan deyil.</p>
-            </CardContent>
-          </Card>
-        );
-    }
-  };
-
-  return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <Button variant="outline" onClick={fetchDashboardData} disabled={loading}>
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          Yenilə
-        </Button>
-      </div>
-      {renderDashboard()}
-    </div>
-  );
+  }
 };
 
 export default DashboardContent;

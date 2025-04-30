@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   NavigationMenu,
@@ -30,7 +31,7 @@ import {
 type Language = 'az' | 'en' | 'ru' | 'tr';
 
 const NavigationMenuDemo = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { i18n } = useTranslation();
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
@@ -38,19 +39,19 @@ const NavigationMenuDemo = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: t('signOutFailed'),
-        description: error.message,
-      })
-    } else {
+    try {
+      await logout();
       navigate('/login');
       toast({
         title: t('signOutSuccess'),
         description: t('signOutSuccessDesc'),
-      })
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: t('signOutFailed'),
+        description: error.message,
+      });
     }
   };
 

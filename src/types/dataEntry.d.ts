@@ -1,5 +1,5 @@
 
-export type DataEntryStatus = 'pending' | 'approved' | 'rejected';
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
@@ -32,6 +32,7 @@ export interface DataEntry {
   rejected_at?: string;
   rejected_by?: string;
   rejection_reason?: string;
+  created_by?: string;
 }
 
 export interface DataEntryForm {
