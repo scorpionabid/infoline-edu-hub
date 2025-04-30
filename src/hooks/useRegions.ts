@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Region } from '@/types/supabase';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
+import { Region } from './useRegionsStore';
 
 // Keşləmə üçün
 const CACHE_DURATION = 5 * 60 * 1000; // 5 dəqiqə
