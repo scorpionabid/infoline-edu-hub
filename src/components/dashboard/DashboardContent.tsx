@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -163,3 +162,5 @@ export const DashboardContent = () => {
     </div>
   );
 };
+
+export default DashboardContent;

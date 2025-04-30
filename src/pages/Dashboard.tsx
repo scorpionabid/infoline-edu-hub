@@ -4,7 +4,7 @@ import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
-import RegionAdminDashboard from '@/components/dashboard/RegionAdminDashboard';
+import { RegionAdminDashboard } from '@/components/dashboard/RegionAdminDashboard';
 import { useRealDashboardData } from '@/hooks/useRealDashboardData';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
