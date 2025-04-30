@@ -1,5 +1,6 @@
 
 project_id = "olbfnauhzpdskqnxtwav"
+
 [functions]
 [functions.assign-user-role]
 verify_jwt = true

@@ -1,133 +1,101 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
 export type Language = 'az' | 'en' | 'ru' | 'tr';
-
-export interface Profile {
-  id: string;
-  email?: string;
-  full_name: string;
-  phone?: string;
-  position?: string;
-  avatar?: string;
-  language: string;
-  status: 'active' | 'inactive' | 'blocked';
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserRoleData {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FullUserData {
-  id: string;
-  email: string;
-  full_name: string;
-  name: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  school_name?: string;
-  phone?: string;
-  position?: string;
-  language: Language;
-  avatar?: string;
-  status: 'active' | 'inactive' | 'blocked';
-  last_login?: string;
-  lastLogin?: string;
-  created_at: string;
-  updated_at: string;
-  createdAt: string;
-  updatedAt: string;
-  userRoleId?: string;
-  adminEntity?: {
-    type: string;
-    name: string;
-    status?: string;
-    regionName?: string;
-    sectorName?: string;
-    schoolType?: string;
-  };
-  notificationSettings?: {
-    email: boolean;
-    system: boolean;
-    push?: boolean;
-    sms?: boolean;
-    inApp?: boolean;
-  };
-  twoFactorEnabled?: boolean;
-}
 
 export interface Region {
   id: string;
   name: string;
   description?: string;
-  status?: 'active' | 'inactive';
   created_at?: string;
   updated_at?: string;
+  status?: string;
   admin_id?: string;
   admin_email?: string;
-  cover_image?: string;
 }
 
 export interface Sector {
   id: string;
+  region_id: string;
   name: string;
   description?: string;
-  region_id: string;
-  status?: 'active' | 'inactive';
   created_at?: string;
   updated_at?: string;
+  status?: string;
   admin_id?: string;
   admin_email?: string;
-  cover_image?: string;
 }
 
 export interface School {
   id: string;
   name: string;
+  principal_name?: string;
   address?: string;
   region_id: string;
   sector_id: string;
   phone?: string;
   email?: string;
-  principal_name?: string;
   student_count?: number;
   teacher_count?: number;
+  status?: string;
   type?: string;
   language?: string;
-  status?: 'active' | 'inactive';
   created_at?: string;
   updated_at?: string;
-  admin_id?: string;
-  admin_email?: string;
+  completion_rate?: number;
   logo?: string;
-  coordinates?: { lat: number; lng: number };
+  admin_email?: string;
+  admin_id?: string;
 }
 
-export interface UpdateUserData {
-  full_name?: string;
+export interface FullUserData {
+  id: string;
   email?: string;
   phone?: string;
-  position?: string;
-  language?: Language;
+  full_name?: string;
   avatar?: string;
-  status?: 'active' | 'inactive' | 'blocked';
   role?: UserRole;
-  region_id?: string | null;
-  sector_id?: string | null;
-  school_id?: string | null;
-  password?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  region_name?: string;
+  sector_name?: string;
+  school_name?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  language?: Language;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserRoleAssignment {
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+}
+
+// Edge funksiyaları üçün parametrlər
+export interface AssignUserRoleParams {
+  userId: string;
+  role: UserRole;
+  entityId?: string; // region_id, sector_id, school_id
+}
+
+export interface ManageEntityParams {
+  action: "create" | "read" | "update" | "delete";
+  entityType: "column" | "region" | "sector" | "school" | "category";
+  data: any;
+}
+
+export interface DashboardDataParams {
+  role: UserRole;
+  entityId?: string;
+}
+
+export interface CacheConfig {
+  key: string;
+  ttl: number; // saniyələrlə
+  dependencies?: string[];
 }

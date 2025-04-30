@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LogOut } from 'lucide-react';
-import { useTheme } from '@/context/theme';
+import { useTheme } from '@/context/ThemeContext';
 import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -26,8 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-// İlgili importları buradan düzeltiyoruz
-import { UserRole } from '@/types/supabase';
 // Language tipini doğrudan tanımlayacağız
 type Language = 'az' | 'en' | 'ru' | 'tr';
 

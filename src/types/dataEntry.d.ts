@@ -15,7 +15,7 @@ export interface EntryValue {
   isValid: boolean;
   status?: DataEntryStatus;
   entryId?: string;
-  error?: ColumnValidationError;
+  error?: import('@/types/column').ColumnValidationError;
 }
 
 export interface DataEntry {

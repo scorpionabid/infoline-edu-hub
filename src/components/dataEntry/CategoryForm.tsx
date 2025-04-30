@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { CategoryWithColumns } from '@/types/column';
 import { FormField } from './FormFields';
-import { EntryValue } from '@/types/dataEntry';
+import { EntryValue, DataEntryStatus } from '@/types/dataEntry';
 import { Button } from '@/components/ui/button';
 
 interface CategoryFormProps {
@@ -77,15 +77,15 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 
   // Tamamlanma faizini hesablayırıq
   const completionPercentage = React.useMemo(() => {
-    if (!category.completionPercentage) {
-      const totalFields = sortedColumns.length;
-      if (totalFields === 0) return 0;
-      
-      const filledFields = values.filter(v => v.value !== '').length;
-      return Math.round((filledFields / totalFields) * 100);
+    if (category.completionPercentage !== undefined) {
+      return category.completionPercentage;
     }
     
-    return category.completionPercentage;
+    const totalFields = sortedColumns.length;
+    if (totalFields === 0) return 0;
+    
+    const filledFields = values.filter(v => v.value !== '').length;
+    return Math.round((filledFields / totalFields) * 100);
   }, [category.completionPercentage, sortedColumns.length, values]);
 
   // Təsdiq və ya rədd edilmiş formları göstərmək üçün buttonlar
@@ -106,7 +106,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     }
     
     // Əgər onApprove və onReject funksiyaları varsa və status pending-dirsə
-    if (onApprove && onReject && category.status === 'pending') {
+    if (onApprove && onReject && category.status === 'pending' as DataEntryStatus) {
       return (
         <div className="flex justify-end gap-2 mt-4">
           <Button 
@@ -152,8 +152,8 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-medium">{category.name}</CardTitle>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(category.status)}`}>
-              {getStatusText(category.status)}
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(category.status as string)}`}>
+              {getStatusText(category.status as string)}
             </span>
           </div>
           <CardDescription>
@@ -173,7 +173,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
                 key={column.id}
                 column={column}
                 value={entry?.value || ''}
-                status={entry?.status}
+                status={entry?.status as DataEntryStatus}
                 onChange={(value) => onChange(column.id, value)}
                 isDisabled={isDisabled || (category.status === 'approved' || category.status === 'pending')}
                 error={entry?.error}

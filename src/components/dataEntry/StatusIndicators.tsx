@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { DataEntryStatus } from '@/types/dataEntry';
 import { ColumnValidationError } from '@/types/column';
