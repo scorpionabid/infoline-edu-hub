@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { FullUserData } from '@/types/supabase';
 
@@ -166,6 +165,54 @@ export const callEdgeFunction = async <T>(
   }
 };
 
+// Offline-first yanaşma üçün supabase wrapper
+export const supabaseWithRetry = {
+  from: (table: string) => {
+    const originalFrom = supabase.from(table);
+    
+    return {
+      ...originalFrom,
+      select: async (...args: any[]) => {
+        try {
+          // Əvvəlcə keşə bax
+          const cachedData = localStorage.getItem(`cache_${table}_select`);
+          const cacheTime = localStorage.getItem(`cache_${table}_select_time`);
+          
+          if (cachedData && cacheTime) {
+            const cacheAge = Date.now() - parseInt(cacheTime);
+            if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
+              console.log(`Using cached ${table} data`);
+              return { data: JSON.parse(cachedData), error: null };
+            }
+          }
+          
+          // Keş yoxdursa və ya köhnədirsə, sorğu göndər
+          const result = await originalFrom.select(...args);
+          
+          // Uğurlu nəticəni keşlə
+          if (!result.error && result.data) {
+            localStorage.setItem(`cache_${table}_select`, JSON.stringify(result.data));
+            localStorage.setItem(`cache_${table}_select_time`, Date.now().toString());
+          }
+          
+          return result;
+        } catch (error) {
+          console.error(`Error in ${table}.select:`, error);
+          
+          // Xəta halında keşlənmiş məlumatları istifadə et
+          const cachedData = localStorage.getItem(`cache_${table}_select`);
+          if (cachedData) {
+            console.log(`Using cached ${table} data due to error`);
+            return { data: JSON.parse(cachedData), error: null };
+          }
+          
+          return { data: null, error };
+        }
+      }
+    };
+  }
+};
+
 // Supabase klientinə auth dəyişikliklərinə abunə olaq
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Auth state changed:', event);
@@ -271,3 +318,5 @@ export const fetchData = async <T>(
     return { data: null, error };
   }
 };
+
+export default supabaseWithRetry;
