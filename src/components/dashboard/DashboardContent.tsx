@@ -10,12 +10,19 @@ import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 import DashboardTabs from './DashboardTabs';
 import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 
+// SuperAdminDashboard üçün tip təyinatını düzəltmə
 interface SuperAdminDashboardProps {
   data: any;
   onRefresh: () => void;
 }
 
+// RegionAdminDashboard üçün tip təyinatı
 interface RegionAdminDashboardProps {
+  data: any;
+}
+
+// SectorAdminDashboard üçün tip təyinatı
+interface SectorAdminDashboardProps {
   data: any;
 }
 

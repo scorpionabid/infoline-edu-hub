@@ -1,6 +1,4 @@
 
-import { DataEntryStatus } from './dataEntry';
-
 export interface BaseCategory {
   id: string;
   name: string;
@@ -71,11 +69,6 @@ export interface ColumnValidation {
   rules?: ColumnValidationRule[];
 }
 
-export interface ColumnValidationError {
-  message: string;
-  type: string;
-}
-
 export interface Column {
   id: string;
   category_id: string;
@@ -106,4 +99,9 @@ export interface ColumnFormData {
   default_value?: string;
   status: 'active' | 'inactive';
   parent_column_id?: string;
+}
+
+export interface ColumnValidationError {
+  message: string;
+  type: string;
 }

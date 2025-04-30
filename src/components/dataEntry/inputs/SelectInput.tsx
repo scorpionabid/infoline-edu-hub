@@ -1,174 +1,147 @@
 
-import React from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { UseFormReturn } from 'react-hook-form';
-import { Column, ColumnOption } from '@/types/column';
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import React, { useEffect, useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Control, FieldValues, Path } from 'react-hook-form';
+import { ColumnOption } from '@/types/column';
 
-interface SelectInputProps {
-  column: Column;
-  form: UseFormReturn<any>;
+interface SelectInputProps<T extends FieldValues> {
+  name: Path<T>;
+  control: Control<T>;
+  label?: string;
+  placeholder?: string;
+  helpText?: string;
+  options?: ColumnOption[];
   disabled?: boolean;
+  className?: string;
+  required?: boolean;
+  onChange?: (value: string) => void;
+  optionsString?: string;
 }
 
-const SelectInput: React.FC<SelectInputProps> = ({ column, form, disabled = false }) => {
-  // Varsayılan seçenekler oluşturalım eğer seçenekler belirtilmemişse
-  const options: ColumnOption[] = React.useMemo(() => {
-    if (column.options && Array.isArray(column.options)) {
-      return column.options.map(option => ({
-        ...option,
-        // Eğer id eksikse oluşturalım
-        id: option.id || `option-${option.value}`
-      }));
+export function SelectInput<T extends FieldValues>({
+  name,
+  control,
+  label,
+  placeholder = 'Seçin',
+  helpText,
+  options = [],
+  disabled = false,
+  className = '',
+  required = false,
+  onChange,
+  optionsString
+}: SelectInputProps<T>) {
+  const [selectOptions, setSelectOptions] = useState<ColumnOption[]>([]);
+
+  useEffect(() => {
+    if (options && options.length > 0) {
+      setSelectOptions(options);
+    } else if (optionsString) {
+      try {
+        // optionsString formatı kontrol et
+        if (optionsString.startsWith('[') && optionsString.endsWith(']')) {
+          // JSON array formatı
+          const parsedOptions = JSON.parse(optionsString);
+          const formattedOptions: ColumnOption[] = parsedOptions.map((opt: any, index: number) => ({
+            id: opt.id || `option-${index}`,
+            label: opt.label,
+            value: opt.value
+          }));
+          setSelectOptions(formattedOptions);
+        } else if (optionsString.includes('{') && optionsString.includes('}')) {
+          // Özəl format - JSON obyektlər siyahısı şəklində olan string
+          try {
+            // "[{...},{...}]" formatına çevir
+            const jsonStr = `[${optionsString}]`;
+            const parsedOptions = JSON.parse(jsonStr);
+            const formattedOptions: ColumnOption[] = parsedOptions.map((opt: any, index: number) => ({
+              id: opt.id || `option-${index}`,
+              label: opt.label,
+              value: opt.value
+            }));
+            setSelectOptions(formattedOptions);
+          } catch (innerErr) {
+            console.error('Daxili parse xətası:', innerErr);
+            // Fallback: Sadə virgüllə ayrılmış siyahı kimi emal et
+            const parts = optionsString.split(',').map(part => part.trim());
+            const formattedOptions: ColumnOption[] = parts.map((part, index) => ({
+              id: `option-${index}`,
+              label: part,
+              value: part.toLowerCase().replace(/\s+/g, '_')
+            }));
+            setSelectOptions(formattedOptions);
+          }
+        } else {
+          // Sadə virgüllə ayrılmış siyahı kimi emal et
+          const parts = optionsString.split(',').map(part => part.trim());
+          const formattedOptions: ColumnOption[] = parts.map((part, index) => ({
+            id: `option-${index}`,
+            label: part,
+            value: part.toLowerCase().replace(/\s+/g, '_')
+          }));
+          setSelectOptions(formattedOptions);
+        }
+      } catch (err) {
+        console.error('Options parse xətası:', err);
+        // Sadə text kimi emal et
+        const formattedOptions: ColumnOption[] = [{
+          id: 'option-0',
+          label: optionsString,
+          value: optionsString.toLowerCase().replace(/\s+/g, '_')
+        }];
+        setSelectOptions(formattedOptions);
+      }
+    } else {
+      // Default boş siyahı
+      setSelectOptions([]);
     }
+  }, [options, optionsString]);
 
-    // Eğer default_value varsa, bundan seçenekler oluşturalım
-    if (column.default_value && typeof column.default_value === 'string') {
-      const values = column.default_value.split(',').map(v => v.trim());
-      return values.map((value, index) => ({
-        id: `option-${index}`,
-        label: value,
-        value: value
-      }));
+  const handleValueChange = (value: string) => {
+    if (onChange) {
+      onChange(value);
     }
+  };
 
-    return [];
-  }, [column.options, column.default_value]);
-
-  if (column.type === 'radio') {
-    return (
-      <FormField
-        control={form.control}
-        name={`fields.${column.id}`}
-        render={({ field }) => (
-          <FormItem className="space-y-3">
-            <FormLabel>{column.name}</FormLabel>
-            <FormControl>
-              <RadioGroup
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                disabled={disabled}
-                className="flex flex-col space-y-1"
-              >
-                {options.map((option) => (
-                  <div key={option.id} className="flex items-center space-x-2">
-                    <RadioGroupItem value={option.value} id={option.id} />
-                    <Label htmlFor={option.id}>{option.label}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </FormControl>
-            {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    );
-  }
-
-  if (column.type === 'checkbox') {
-    return (
-      <FormField
-        control={form.control}
-        name={`fields.${column.id}`}
-        render={({ field }) => (
-          <FormItem>
-            <div className="mb-4">
-              <FormLabel>{column.name}</FormLabel>
-              {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {options.map((option) => (
-                <FormField
-                  key={option.id}
-                  control={form.control}
-                  name={`fields.${column.id}`}
-                  render={({ field }) => {
-                    return (
-                      <FormItem
-                        key={option.id}
-                        className="flex flex-row items-start space-x-3 space-y-0"
-                      >
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(option.value)}
-                            onCheckedChange={(checked) => {
-                              const currentValue = field.value || [];
-                              const updatedValue = checked
-                                ? [...currentValue, option.value]
-                                : currentValue.filter((value: string) => value !== option.value);
-                              field.onChange(updatedValue);
-                            }}
-                            disabled={disabled}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          {option.label}
-                        </FormLabel>
-                      </FormItem>
-                    );
-                  }}
-                />
-              ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    );
-  }
-
-  // Default seçim kutusu
   return (
     <FormField
-      control={form.control}
-      name={`fields.${column.id}`}
+      control={control}
+      name={name}
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>{column.name}</FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            defaultValue={field.value}
-            disabled={disabled}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={column.placeholder || 'Seçin'} />
+        <FormItem className={className}>
+          {label && (
+            <FormLabel>
+              {label}
+              {required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+          )}
+          <FormControl>
+            <Select
+              onValueChange={(value) => {
+                field.onChange(value);
+                handleValueChange(value);
+              }}
+              defaultValue={field.value}
+              value={field.value}
+              disabled={disabled}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={placeholder} />
               </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option.id} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
+              <SelectContent>
+                {selectOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormControl>
+          {helpText && <p className="text-gray-500 text-sm mt-1">{helpText}</p>}
           <FormMessage />
         </FormItem>
       )}
     />
   );
-};
-
-export default SelectInput;
+}

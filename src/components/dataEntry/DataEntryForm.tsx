@@ -1,384 +1,350 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useLanguage } from '@/context/LanguageContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CategoryForm from './CategoryForm';
-import CategoryConfirmationDialog from './CategoryConfirmationDialog';
-import { DataEntrySaveStatus, DataEntry } from '@/types/dataEntry';
-import { AlertTriangle, CheckCircle, Loader2, Save, Send } from 'lucide-react';
-import FormFields from './FormFields';
-import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/column';
-import { toast } from 'sonner';
-import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
-import { useAuth } from '@/context/auth';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/auth';
+import { CategoryForm } from './CategoryForm';
+import {
+  Column,
+  CategoryWithColumns,
+  ColumnValidationError
+} from '@/types/column';
+import {
+  DataEntryForm,
+  EntryValue,
+  DataEntrySaveStatus,
+  DataEntryStatus
+} from '@/types/dataEntry';
+import {
+  getDataEntries,
+  saveDataEntryForm,
+  submitForApproval
+} from '@/services/dataEntryService';
+import { useCategories } from '@/hooks/useCategories';
+import { useSchool } from '@/hooks/useSchool';
+import { CategoryConfirmationDialog } from './CategoryConfirmationDialog';
+import { validateEntryValue } from './utils/formUtils';
 
 const DataEntryForm: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
-  const navigate = useNavigate();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>(categoryId || '');
-  const { isSchoolAdmin, canViewSectorCategories, isSectorAdmin, isRegionAdmin, isSuperAdmin } = usePermissions();
-  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'save' | 'submit' }>({
-    open: false,
-    action: 'save'
-  });
 
+  const [formValues, setFormValues] = useState<EntryValue[]>([]);
   const [saveStatus, setSaveStatus] = useState<DataEntrySaveStatus>(DataEntrySaveStatus.IDLE);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, ColumnValidationError | undefined>>({});
 
-  const { 
-    categories = [], 
-    loading, 
-    error,
-    refreshCategories
-  } = useCategoryData();
+  const {
+    categories,
+    isLoading: isLoadingCategories,
+    error: categoriesError
+  } = useCategories();
+  const { school, isLoading: isLoadingSchool, error: schoolError } = useSchool();
 
-  const [entries, setEntries] = useState<DataEntry[]>([]);
-  const [isDataModified, setIsDataModified] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [processingCategories, setProcessingCategories] = useState<CategoryWithColumns[]>([]);
+  const category = React.useMemo(() => {
+    if (!categoryId || !categories) return null;
+    return categories.find(cat => cat.id === categoryId) || null;
+  }, [categoryId, categories]);
 
-  useEffect(() => {
-    if (categories && categories.length > 0) {
-      const processedCategories = categories.map(category => {
-        const filteredColumns = category.columns.filter(column => 
-          column.status === 'active' || column.status === undefined
-        );
-        
-        const sortedColumns = [...filteredColumns].sort((a, b) => 
-          (a.order_index || 0) - (b.order_index || 0)
-        );
-        
-        return {
-          ...category,
-          columns: sortedColumns
-        };
-      });
-      
-      setProcessingCategories(processedCategories);
-    }
-  }, [categories]);
-
-  const filteredCategories = processingCategories.filter(category => {
-    if (isSuperAdmin || isRegionAdmin) {
-      return true;
-    }
-    
-    if (isSectorAdmin) {
-      return category.assignment === 'sectors' || category.assignment === 'all';
-    }
-    
-    if (isSchoolAdmin) {
-      return category.assignment === 'all';
-    }
-    
-    return category.assignment === 'all';
-  });
-
-  const selectedCategory = filteredCategories.find(c => c.id === activeTab);
+  const categoryWithColumns = React.useMemo(() => {
+    if (!category) return null;
+    return category as CategoryWithColumns;
+  }, [category]);
 
   useEffect(() => {
-    if (categoryId && categoryId !== activeTab) {
-      setActiveTab(categoryId);
-    } else if (!categoryId && filteredCategories.length > 0) {
-      const firstCategoryId = filteredCategories[0].id;
-      setActiveTab(firstCategoryId);
-      navigate(`/data-entry/${firstCategoryId}`);
+    if (categoryWithColumns && school) {
+      fetchInitialValues(school.id, categoryWithColumns);
     }
-  }, [categoryId, activeTab, filteredCategories, navigate]);
+  }, [categoryWithColumns, school]);
 
-  useEffect(() => {
-    const loadEntries = async () => {
-      if (!activeTab) return;
+  const fetchInitialValues = useCallback(
+    async (schoolId: string, category: CategoryWithColumns) => {
+      if (!schoolId || !category) return;
 
-      try {
-        const { data, error } = await supabase
-          .from('data_entries')
-          .select('*')
-          .eq('category_id', activeTab);
+      const { success, data, error } = await getDataEntries(schoolId, category.id);
 
-        if (error) {
-          console.error('Məlumatları yükləyərkən xəta:', error);
-          throw error;
-        }
-        
-        console.log(`${activeTab} kateqoriyası üçün ${data?.length || 0} məlumat yükləndi`);
-        setEntries(data || []);
-        setIsDataModified(false);
-      } catch (err) {
-        console.error('Məlumatları yükləyərkən xəta:', err);
-        toast.error(t('errorLoadingData'));
+      if (success && data) {
+        const initialValues = category.columns.map(column => {
+          const entry = data.find(item => item.columnId === column.id);
+          return {
+            name: column.name,
+            columnId: column.id,
+            value: entry?.value || column.default_value || '',
+            isValid: true,
+            status: entry?.status,
+            entryId: entry?.id
+          };
+        });
+        setFormValues(initialValues);
+      } else if (error) {
+        toast({
+          title: t('error'),
+          description: t('errorFetchingDataEntries')
+        });
       }
+    },
+    [t]
+  );
+
+  const handleValueChange = (columnId: string, value: string) => {
+    setIsDirty(true);
+    setFormValues(prevValues => {
+      const updatedValues = prevValues.map(val =>
+        val.columnId === columnId ? { ...val, value } : val
+      );
+      return updatedValues;
+    });
+  };
+
+  const validateEntries = (entries: EntryValue[], columns: Column[]): EntryValue[] => {
+    return entries.map(entry => {
+      const column = columns.find(col => col.id === entry.columnId);
+      if (!column) return entry;
+      
+      const error = validateEntryValue(entry.value, column.type, column.validation);
+      return {
+        ...entry,
+        isValid: !error,
+        error: error || undefined
+      };
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!categoryWithColumns || !school || !user) return;
+
+    // Validate all entries before submitting
+    const validatedEntries = validateEntries(formValues, categoryWithColumns.columns);
+    setFormValues(validatedEntries);
+
+    // Check if there are any validation errors
+    const hasErrors = validatedEntries.some(entry => !entry.isValid);
+    if (hasErrors) {
+      toast({
+        title: t('error'),
+        description: t('fixValidationErrors')
+      });
+      return;
+    }
+
+    // Prepare form data
+    const formData: DataEntryForm = {
+      categoryId: categoryWithColumns.id,
+      schoolId: school.id,
+      entries: validatedEntries.map(entry => ({
+        name: entry.name,
+        value: entry.value,
+        columnId: entry.columnId,
+        isValid: entry.isValid,
+        status: entry.status,
+        entryId: entry.entryId
+      }))
     };
 
-    loadEntries();
-  }, [activeTab, t]);
-
-  const handleTabChange = useCallback((value: string) => {
-    if (isDataModified) {
-      setConfirmDialog({ open: true, action: 'save' });
-      return;
-    }
-    
-    navigate(`/data-entry/${value}`);
-    setActiveTab(value);
-  }, [isDataModified, navigate]);
-
-  const handleEntriesChange = useCallback((updatedEntries: DataEntry[]) => {
-    setEntries(updatedEntries);
-    setIsDataModified(true);
-  }, []);
-
-  const handleSave = useCallback(async () => {
-    if (!activeTab || !user?.id) {
-      toast.error(t('missingRequiredFields'));
-      return;
-    }
-
     setSaveStatus(DataEntrySaveStatus.SAVING);
     try {
-      const { error: deleteError } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('category_id', activeTab);
-        
-      if (deleteError) {
-        console.error('Məlumatları silmə xətası:', deleteError);
-        throw deleteError;
-      }
-      
-      if (entries.length > 0) {
-        const dataToInsert = entries.map(entry => ({
-          school_id: entry.school_id,
-          category_id: activeTab,
-          column_id: entry.column_id,
-          value: String(entry.value || ''),
-          status: 'draft',
-          created_by: user.id,
-          updated_at: new Date().toISOString()
-        }));
-        
-        const { error: insertError } = await supabase
-          .from('data_entries')
-          .insert(dataToInsert);
-          
-        if (insertError) {
-          console.error('Məlumatları əlavə etmə xətası:', insertError);
-          throw insertError;
-        }
-      }
-      
-      setSaveStatus(DataEntrySaveStatus.SAVED);
-      setIsDataModified(false);
-      toast.success(t('dataSavedSuccessfully'));
-      
-      setTimeout(() => {
-        refreshCategories();
-      }, 1000);
-    } catch (error: any) {
-      console.error('Məlumatları saxlayarkən xəta:', error);
-      toast.error(error?.message || t('errorSavingData'));
-      setSaveStatus(DataEntrySaveStatus.ERROR);
-    } finally {
-      setTimeout(() => {
-        setSaveStatus(DataEntrySaveStatus.IDLE);
-      }, 3000);
-    }
-  }, [activeTab, entries, user?.id, t, refreshCategories]);
-
-  const handleSubmitForApproval = useCallback(async () => {
-    if (!activeTab || !user?.id) {
-      toast.error(t('missingRequiredFields'));
-      return;
-    }
-
-    const selectedCat = filteredCategories.find(c => c.id === activeTab);
-    
-    if (!selectedCat) {
-      toast.error(t('categoryNotFound'));
-      return;
-    }
-    
-    const requiredColumns = selectedCat.columns.filter(col => col.is_required);
-    const requiredFieldsWithValues = requiredColumns.filter(col => 
-      entries.some(entry => entry.column_id === col.id && entry.value)
-    );
-    
-    if (requiredFieldsWithValues.length < requiredColumns.length) {
-      toast.error(t('fillRequiredFields'));
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setSaveStatus(DataEntrySaveStatus.SAVING);
-    
-    try {
-      const { error: deleteError } = await supabase
-        .from('data_entries')
-        .delete()
-        .eq('category_id', activeTab);
-        
-      if (deleteError) throw deleteError;
-      
-      if (entries.length > 0) {
-        const dataToInsert = entries.map(entry => ({
-          school_id: entry.school_id,
-          category_id: activeTab,
-          column_id: entry.column_id,
-          value: String(entry.value || ''),
-          status: 'pending',
-          created_by: user.id,
-          updated_at: new Date().toISOString()
-        }));
-        
-        const { error: insertError } = await supabase
-          .from('data_entries')
-          .insert(dataToInsert);
-          
-        if (insertError) throw insertError;
-      }
-      
-      try {
-        await supabase.from('notifications').insert({
-          user_id: user.id,
-          type: 'data_submission',
-          title: t('dataSubmittedTitle'),
-          message: t('dataSubmittedMessage', { category: selectedCat.name }),
-          related_entity_id: activeTab,
-          related_entity_type: 'category',
-          is_read: false,
-          priority: 'medium'
+      const { success, error } = await saveDataEntryForm(formData);
+      if (success) {
+        toast({
+          title: t('success'),
+          description: t('dataSavedSuccessfully')
         });
-      } catch (notifError) {
-        console.error('Bildiriş yaradılarkən xəta:', notifError);
+        setSaveStatus(DataEntrySaveStatus.SAVED);
+        setIsDirty(false);
+      } else {
+        toast({
+          title: t('error'),
+          description: error || t('unknownError')
+        });
+        setSaveStatus(DataEntrySaveStatus.ERROR);
       }
-      
-      setSaveStatus(DataEntrySaveStatus.SAVED);
-      setIsDataModified(false);
-      toast.success(t('dataSubmittedSuccessfully'));
-      
-      setTimeout(() => {
-        refreshCategories();
-      }, 1000);
-    } catch (error: any) {
-      console.error('Məlumatları təqdim edərkən xəta:', error);
-      toast.error(t('errorSubmittingData'));
+    } catch (err: any) {
+      toast({
+        title: t('error'),
+        description: err.message || t('unknownError')
+      });
       setSaveStatus(DataEntrySaveStatus.ERROR);
     } finally {
-      setIsSubmitting(false);
-      setTimeout(() => {
-        setSaveStatus(DataEntrySaveStatus.IDLE);
-      }, 3000);
+      setSaveStatus(DataEntrySaveStatus.IDLE);
     }
-  }, [activeTab, entries, user?.id, t, filteredCategories, refreshCategories]);
+  };
 
-  const handleCloseConfirmDialog = useCallback(() => {
-    setConfirmDialog({ ...confirmDialog, open: false });
-  }, [confirmDialog]);
+  const handleSubmitForApproval = async () => {
+    if (!categoryWithColumns || !school) return;
 
-  const handleConfirmAction = useCallback(async () => {
-    if (confirmDialog.action === 'save') {
-      await handleSave();
+    setIsSubmitDialogOpen(false);
+    setSaveStatus(DataEntrySaveStatus.SAVING);
+
+    const formData: DataEntryForm = {
+      categoryId: categoryWithColumns.id,
+      schoolId: school.id,
+      entries: formValues.map(entry => ({
+        name: entry.name,
+        value: entry.value,
+        columnId: entry.columnId,
+        isValid: entry.isValid,
+        status: entry.status,
+        entryId: entry.entryId
+      }))
+    };
+
+    try {
+      const { success, error } = await submitForApproval(formData);
+      if (success) {
+        toast({
+          title: t('success'),
+          description: t('dataSubmittedForApproval')
+        });
+        setSaveStatus(DataEntrySaveStatus.SAVED);
+        setIsDirty(false);
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: t('error'),
+          description: error || t('unknownError')
+        });
+        setSaveStatus(DataEntrySaveStatus.ERROR);
+      }
+    } catch (err: any) {
+      toast({
+        title: t('error'),
+        description: err.message || t('unknownError')
+      });
+      setSaveStatus(DataEntrySaveStatus.ERROR);
+    } finally {
+      setSaveStatus(DataEntrySaveStatus.IDLE);
     }
-    
-    setConfirmDialog({ ...confirmDialog, open: false });
-  }, [confirmDialog, handleSave]);
+  };
 
-  if (loading) {
+  const handleApprove = () => {
+    setIsApproveDialogOpen(true);
+  };
+
+  const handleReject = () => {
+    setIsRejectDialogOpen(true);
+  };
+
+  if (isLoadingCategories || isLoadingSchool) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-[500px] w-full" />
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (categoriesError || schoolError) {
     return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          {error.toString()}
-        </AlertDescription>
-      </Alert>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-500">
+          {t('errorLoadingData')}
+        </p>
+      </div>
+    );
+  }
+
+  if (!categoryWithColumns) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">
+          {t('categoryNotFound')}
+        </p>
+      </div>
+    );
+  }
+
+  if (!school) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">
+          {t('schoolNotFound')}
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {filteredCategories.length === 0 ? (
-        <Card className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-medium">{t('noCategoriesFound')}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('noCategoriesDescription')}
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          <Tabs 
-            value={activeTab} 
-            onValueChange={handleTabChange}
-          >
-            <TabsList className="flex overflow-x-auto pb-1 w-full">
-              {filteredCategories.map((category) => (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="whitespace-nowrap"
-                >
-                  {category.name}
-                  {category.completionPercentage !== undefined && category.completionPercentage > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {category.completionPercentage}%
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          {selectedCategory && (
-            <div className="space-y-6">
-              <CategoryForm
-                category={selectedCategory}
-                isSaving={saveStatus === DataEntrySaveStatus.SAVING}
-                isSubmitting={isSubmitting}
-                isModified={isDataModified}
-                onSave={handleSave}
-                onSubmit={handleSubmitForApproval}
-              />
-              
-              <FormFields
-                category={selectedCategory}
-                entries={entries}
-                onChange={handleEntriesChange}
-                disabled={selectedCategory.status === 'approved'}
-                loading={false}
-              />
-            </div>
-          )}
-          
-          <CategoryConfirmationDialog
-            open={confirmDialog.open}
-            onClose={handleCloseConfirmDialog}
-            onConfirm={handleConfirmAction}
-            title={t('unsavedChangesTitle')}
-            description={t('unsavedChangesDescription')}
-            confirmText={t('save')}
-            cancelText={t('discard')}
+    <div className="container mx-auto py-8">
+      <Card className="w-full max-w-4xl mx-auto shadow-md">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl font-bold">
+            {t('dataEntryForm')}
+          </CardTitle>
+          <CardDescription>
+            {t('enterDataFor')} {categoryWithColumns.name} - {school.name}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4">
+          <CategoryForm
+            category={categoryWithColumns}
+            values={formValues}
+            onChange={handleValueChange}
+            isDisabled={!isDirty}
+            isLoading={saveStatus === DataEntrySaveStatus.SAVING}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onSubmit={() => setIsSubmitDialogOpen(true)}
           />
-        </>
-      )}
+        </CardContent>
+        <CardFooter className="flex justify-between items-center p-4 border-t">
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/dashboard')}
+          >
+            {t('cancel')}
+          </Button>
+          <div className="flex space-x-2">
+            <Button
+              onClick={handleSubmit}
+              disabled={!isDirty || saveStatus === DataEntrySaveStatus.SAVING}
+            >
+              {saveStatus === DataEntrySaveStatus.SAVING ? t('saving') + '...' : t('save')}
+            </Button>
+            <Button
+              onClick={() => setIsSubmitDialogOpen(true)}
+              disabled={!isDirty || saveStatus === DataEntrySaveStatus.SAVING}
+            >
+              {t('submit')}
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+
+      <CategoryConfirmationDialog
+        open={isSubmitDialogOpen}
+        onClose={() => setIsSubmitDialogOpen(false)}
+        onConfirm={handleSubmitForApproval}
+        title={t('submitConfirmationTitle')}
+        description={t('submitConfirmationDescription')}
+        confirmText={t('submit')}
+        cancelText={t('cancel')}
+      />
+
+      <CategoryConfirmationDialog
+        open={isApproveDialogOpen}
+        onClose={() => setIsApproveDialogOpen(false)}
+        onConfirm={() => { }} // Implement approve logic here
+        title={t('approveConfirmationTitle')}
+        description={t('approveConfirmationDescription')}
+        confirmText={t('approve')}
+        cancelText={t('cancel')}
+      />
+
+      <CategoryConfirmationDialog
+        open={isRejectDialogOpen}
+        onClose={() => setIsRejectDialogOpen(false)}
+        onConfirm={() => { }} // Implement reject logic here
+        title={t('rejectConfirmationTitle')}
+        description={t('rejectConfirmationDescription')}
+        confirmText={t('reject')}
+        cancelText={t('cancel')}
+      />
     </div>
   );
 };
