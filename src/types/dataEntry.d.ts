@@ -11,13 +11,13 @@ export interface EntryValue {
 }
 
 export interface DataEntry {
-  id: string;
+  id?: string;
   column_id: string;
   category_id: string;
   school_id: string;
   value: string;
   status: DataEntryStatus;
-  created_at: string;
+  created_at?: string;
   updated_at?: string;
   created_by?: string;
   approved_by?: string;
@@ -34,4 +34,11 @@ export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 export interface ColumnValidationError {
   message: string;
   type: string;
+}
+
+export enum DataEntrySaveStatus {
+  IDLE = 'idle',
+  SAVING = 'saving',
+  SAVED = 'saved',
+  ERROR = 'error'
 }

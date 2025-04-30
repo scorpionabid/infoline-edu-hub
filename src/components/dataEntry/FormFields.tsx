@@ -76,10 +76,9 @@ const FormFields: React.FC<FormFieldsProps> = ({
                 message: `Maksimum ${column.validation.maxLength} simvol olmalıdır` 
               });
             }
-            
-            if (column.type === 'email') {
-              fieldSchema = fieldSchema.email({ message: 'Düzgün email formatı olmalıdır' });
-            }
+          } else if (column.type === 'email') {
+            fieldSchema = z.string().min(1, { message: 'Bu sahə məcburidir' })
+              .email({ message: 'Düzgün email formatı olmalıdır' });
           } else if (column.type === 'number') {
             fieldSchema = z.preprocess(
               (val) => (val === '' ? undefined : Number(val)),
@@ -165,13 +164,17 @@ const FormFields: React.FC<FormFieldsProps> = ({
         // Mövcud qeydi tapaq
         const existingEntry = safeEntries.find(e => e.column_id === columnId);
         
+        const currentDate = new Date().toISOString();
+        
         updatedEntries.push({
           id: existingEntry?.id,
           column_id: columnId,
           category_id: category.id,
           school_id: existingEntry?.school_id || '',
           value: value as string,
-          status: existingEntry?.status || 'pending'
+          status: existingEntry?.status || 'draft',
+          created_at: existingEntry?.created_at || currentDate,
+          updated_at: currentDate
         });
       });
     }

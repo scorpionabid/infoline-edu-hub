@@ -9,7 +9,7 @@ export interface FullUserData {
   phone?: string;
   avatar?: string;
   position?: string;
-  role?: string;
+  role?: UserRole;
   language?: Language;
   regionId?: string;
   sectorId?: string;
@@ -20,6 +20,8 @@ export interface FullUserData {
   created_at?: string;
   updated_at?: string;
 }
+
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
 export type Language = 'az' | 'en' | 'ru' | 'tr';
 
@@ -84,9 +86,6 @@ export interface UserRole {
   created_at?: string;
   updated_at?: string;
 }
-
-// Data entry status
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 // Profile
 export interface Profile {

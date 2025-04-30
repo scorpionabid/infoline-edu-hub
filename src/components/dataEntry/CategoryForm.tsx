@@ -36,7 +36,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       pending: "bg-blue-500 text-white",
       approved: "bg-green-500 text-white",
       rejected: "bg-red-500 text-white",
-      partial: "bg-orange-500 text-white"
+      partial: "bg-orange-500 text-white",
+      active: "bg-green-500 text-white",
+      inactive: "bg-gray-500 text-white"
     };
     
     const icons = {
@@ -44,7 +46,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       pending: <Clock className="h-3 w-3 mr-1" />,
       approved: <CheckCircle2 className="h-3 w-3 mr-1" />,
       rejected: <Circle className="h-3 w-3 mr-1" />,
-      partial: <Circle className="h-3 w-3 mr-1" />
+      partial: <Circle className="h-3 w-3 mr-1" />,
+      active: <CheckCircle2 className="h-3 w-3 mr-1" />,
+      inactive: <Circle className="h-3 w-3 mr-1" />
     };
     
     const colorClass = colors[status as keyof typeof colors] || colors.draft;

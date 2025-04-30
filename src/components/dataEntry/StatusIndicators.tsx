@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, FileText, FileCheck, Info, Check, Clock } from 'lucide-react';
 import { useLanguageSafe } from '@/context/LanguageContext';
-import { ColumnValidationError } from '@/types/dataEntry';
+import { ColumnValidationError } from '@/types/column';
 
 interface StatusIndicatorsProps {
   errors?: ColumnValidationError[];

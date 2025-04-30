@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
-import { Column } from '@/types/column';
+import { Column, ColumnValidation } from '@/types/column';
 
 interface NumberInputProps {
   column: Column;
@@ -11,10 +12,10 @@ interface NumberInputProps {
 }
 
 const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = false }) => {
-  // Validation üçün min/max dəyərlərini al
-  const validation = column.validation as ColumnValidation || {};
-  const minValue = validation?.minValue;
-  const maxValue = validation?.maxValue;
+  // Minimum və maksimum dəyərlərini əldə et
+  const validation = column.validation as ColumnValidation;
+  const min = validation?.minValue;
+  const max = validation?.maxValue;
 
   return (
     <FormField
@@ -22,30 +23,25 @@ const NumberInput: React.FC<NumberInputProps> = ({ column, form, disabled = fals
       name={`fields.${column.id}`}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>
-            {column.name}
-            {column.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
+          <FormLabel>{column.name}</FormLabel>
           <FormControl>
             <Input
-              {...field}
               type="number"
-              placeholder={column.placeholder}
+              placeholder={column.placeholder || '0'}
               disabled={disabled}
-              aria-label={column.name}
-              id={`field-${column.id}`}
-              min={minValue}
-              max={maxValue}
+              min={min}
+              max={max}
+              {...field}
               onChange={(e) => {
-                // Parse string value to number
-                const value = e.target.value ? parseFloat(e.target.value) : '';
-                field.onChange(value);
+                if (e.target.value === '') {
+                  field.onChange('');
+                } else {
+                  field.onChange(e.target.value);
+                }
               }}
             />
           </FormControl>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
+          {column.help_text && <FormDescription>{column.help_text}</FormDescription>}
           <FormMessage />
         </FormItem>
       )}

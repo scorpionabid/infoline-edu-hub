@@ -1,5 +1,5 @@
 
-import { DataEntryStatus } from './supabase';
+import { DataEntryStatus } from './dataEntry';
 
 export interface BaseCategory {
   id: string;
@@ -14,15 +14,17 @@ export interface BaseCategory {
   archived_at?: string;
 }
 
+export interface Category extends BaseCategory {
+  column_count?: number;
+  assignment?: 'all' | 'sectors';
+}
+
 export interface CategoryWithColumns extends BaseCategory {
   columns: Column[];
   completionPercentage?: number;
-  status: 'active' | 'inactive' | 'draft' | DataEntryStatus | 'partial';
+  status: 'active' | 'inactive' | 'draft' | 'pending' | 'approved' | 'rejected' | 'partial';
   entries?: any[];
-}
-
-export interface Category extends BaseCategory {
-  column_count?: number;
+  assignment?: 'all' | 'sectors';
 }
 
 export type ColumnType = 
@@ -40,7 +42,7 @@ export type ColumnType =
   | 'url';
 
 export interface ColumnOption {
-  id?: string;
+  id: string;
   label: string;
   value: string;
   color?: string;
@@ -58,6 +60,10 @@ export interface ColumnValidation {
   requiredMessage?: string;
   min?: number;
   max?: number;
+  minLength?: number;
+  maxLength?: number;
+  minValue?: number;
+  maxValue?: number;
   minMessage?: string;
   maxMessage?: string;
   pattern?: string;
