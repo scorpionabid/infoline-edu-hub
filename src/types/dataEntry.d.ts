@@ -1,40 +1,5 @@
 
-export interface EntryValue {
-  name: string;
-  value: string;
-  columnId: string;
-  isValid: boolean;
-  touched?: boolean;
-  status?: string;
-  entryId?: string;
-  error?: ColumnValidationError;
-}
-
-export interface DataEntry {
-  id?: string;
-  column_id: string;
-  category_id: string;
-  school_id: string;
-  value: string;
-  status: DataEntryStatus;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejected_by?: string;
-  rejected_at?: string;
-  rejection_reason?: string;
-  deleted_at?: string;
-  version?: number;
-}
-
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
-
-export interface ColumnValidationError {
-  message: string;
-  type: string;
-}
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected';
 
 export enum DataEntrySaveStatus {
   IDLE = 'idle',
@@ -43,10 +8,46 @@ export enum DataEntrySaveStatus {
   ERROR = 'error'
 }
 
+export interface EntryValue {
+  name: string;
+  columnId: string;
+  value: string;
+  isValid: boolean;
+  status?: DataEntryStatus;
+  entryId?: string;
+  error?: ColumnValidationError;
+}
+
+export interface DataEntry {
+  id: string;
+  column_id: string;
+  category_id: string;
+  school_id: string;
+  value: string;
+  status: DataEntryStatus;
+  created_at: string;
+  updated_at: string;
+  approved_at?: string;
+  approved_by?: string;
+  rejected_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+}
+
 export interface DataEntryForm {
-  id?: string;
   categoryId: string;
   schoolId: string;
-  entries: EntryValue[];
-  status?: DataEntryStatus;
+  entries: {
+    name: string;
+    columnId: string;
+    value: string;
+    isValid: boolean;
+    status?: DataEntryStatus;
+    entryId?: string;
+  }[];
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  message?: string;
 }

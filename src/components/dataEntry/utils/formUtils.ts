@@ -18,7 +18,6 @@ export const validateField = (value: any, type: ColumnType, validation?: ColumnV
     case 'textarea':
     case 'email':
     case 'url':
-    case 'password':
       if (value && validation.minLength && String(value).length < validation.minLength) {
         return {
           isValid: false,

@@ -1,84 +1,55 @@
+
 import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { UseFormReturn } from 'react-hook-form';
-import { Column } from '@/types/column';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Control, FieldValues, Path } from 'react-hook-form';
 
-interface CheckboxInputProps {
-  column: Column;
-  form: UseFormReturn<any>;
+interface CheckboxInputProps<T extends FieldValues> {
+  name: Path<T>;
+  control: Control<T>;
+  label?: string;
+  helpText?: string;
   disabled?: boolean;
+  className?: string;
+  onChange?: (checked: boolean) => void;
 }
 
-const CheckboxInput: React.FC<CheckboxInputProps> = ({ column, form, disabled = false }) => {
-  // Sütun seçənəklərini dönüşdür
-  const options = React.useMemo(() => {
-    if (!column.options) return [];
-    
-    if (Array.isArray(column.options)) {
-      return column.options.map((option: any) => {
-        if (typeof option === 'string') {
-          return { label: option, value: option };
-        }
-        return option;
-      });
+export default function CheckboxInput<T extends FieldValues>({
+  name,
+  control,
+  label,
+  helpText,
+  disabled = false,
+  className = '',
+  onChange
+}: CheckboxInputProps<T>) {
+  const handleChange = (checked: boolean) => {
+    if (onChange) {
+      onChange(checked);
     }
-    
-    return [];
-  }, [column.options]);
+  };
 
   return (
     <FormField
-      control={form.control}
-      name={`fields.${column.id}`}
+      control={control}
+      name={name}
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            {column.name}
-            {column.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
-          <div className="flex flex-col space-y-2">
-            {options.map((option, index) => (
-              <FormField
-                key={index}
-                control={form.control}
-                name={`fields.${column.id}`}
-                render={({ field: childField }) => {
-                  const values = Array.isArray(childField.value) ? childField.value : [];
-                  return (
-                    <FormItem
-                      key={option.value}
-                      className="flex flex-row items-start space-x-3 space-y-0"
-                    >
-                      <FormControl>
-                        <Checkbox
-                          checked={values.includes(option.value)}
-                          disabled={disabled}
-                          aria-label={column.name}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              childField.onChange([...values, option.value]);
-                            } else {
-                              childField.onChange(values.filter((val: string) => val !== option.value));
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">{option.label}</FormLabel>
-                    </FormItem>
-                  );
-                }}
-              />
-            ))}
-          </div>
-          {column.help_text && (
-            <FormDescription>{column.help_text}</FormDescription>
-          )}
+        <FormItem className={`flex flex-row items-start space-x-3 space-y-0 rounded-md ${className}`}>
+          <FormControl>
+            <Checkbox
+              checked={field.value}
+              onCheckedChange={(checked) => {
+                field.onChange(checked);
+                handleChange(!!checked);
+              }}
+              disabled={disabled}
+            />
+          </FormControl>
+          {label && <FormLabel className="font-normal text-sm">{label}</FormLabel>}
           <FormMessage />
+          {helpText && <p className="text-gray-500 text-xs mt-1">{helpText}</p>}
         </FormItem>
       )}
     />
   );
-};
-
-export default CheckboxInput;
+}

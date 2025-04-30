@@ -1,31 +1,75 @@
 
-import { Database } from './database';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type Language = 'az' | 'en' | 'ru' | 'tr';
 
-// Auth istifadəçi məlumatları
+export interface Profile {
+  id: string;
+  email?: string;
+  full_name: string;
+  phone?: string;
+  position?: string;
+  avatar?: string;
+  language: string;
+  status: 'active' | 'inactive' | 'blocked';
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserRoleData {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FullUserData {
   id: string;
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  avatar?: string;
-  position?: string;
-  role?: UserRole;
-  language?: Language;
+  email: string;
+  full_name: string;
+  name: string;
+  role: UserRole;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
   regionId?: string;
   sectorId?: string;
   schoolId?: string;
   school_name?: string;
+  phone?: string;
+  position?: string;
+  language: Language;
+  avatar?: string;
+  status: 'active' | 'inactive' | 'blocked';
   last_login?: string;
-  status?: 'active' | 'inactive' | 'blocked';
-  created_at?: string;
-  updated_at?: string;
+  lastLogin?: string;
+  created_at: string;
+  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
+  userRoleId?: string;
+  adminEntity?: {
+    type: string;
+    name: string;
+    status?: string;
+    regionName?: string;
+    sectorName?: string;
+    schoolType?: string;
+  };
+  notificationSettings?: {
+    email: boolean;
+    system: boolean;
+    push?: boolean;
+    sms?: boolean;
+    inApp?: boolean;
+  };
+  twoFactorEnabled?: boolean;
 }
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
-
-export type Language = 'az' | 'en' | 'ru' | 'tr';
-
-// Regionlar üçün tip
 export interface Region {
   id: string;
   name: string;
@@ -38,7 +82,6 @@ export interface Region {
   cover_image?: string;
 }
 
-// Sektorlar üçün tip
 export interface Sector {
   id: string;
   name: string;
@@ -52,7 +95,6 @@ export interface Sector {
   cover_image?: string;
 }
 
-// Məktəblər üçün tip
 export interface School {
   id: string;
   name: string;
@@ -75,31 +117,17 @@ export interface School {
   coordinates?: { lat: number; lng: number };
 }
 
-// İstifadəçi rolları üçün tip
-export interface UserRole {
-  id: string;
-  user_id: string;
-  role: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Profile
-export interface Profile {
-  id: string;
-  email?: string;
+export interface UpdateUserData {
   full_name?: string;
-  avatar?: string;
+  email?: string;
   phone?: string;
   position?: string;
   language?: Language;
-  last_login?: string;
-  created_at?: string;
-  updated_at?: string;
+  avatar?: string;
   status?: 'active' | 'inactive' | 'blocked';
+  role?: UserRole;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  password?: string;
 }
-
-export type DatabaseRecord = Database['public']['Tables'];

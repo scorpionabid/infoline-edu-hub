@@ -2,128 +2,151 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// CORS başlıqları
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cache-key, x-cache-expiry, x-bypass-cache',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Cache obyekti
+interface CacheEntry {
+  data: any;
+  expiry: number; // timestamp
+  dependencies?: string[];
+}
+
+const cache: Record<string, CacheEntry> = {};
+
 serve(async (req) => {
-  // CORS üçün OPTIONS məntiqini əlavə et
+  // CORS preflight sorğularına cavab ver
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Supabase client yaradılması
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false
-        }
-      }
-    );
-
-    // Request body əldə et
-    const { query, params = {} } = await req.json();
+    // Supabase client yaratma
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    // Cache parametrləri
-    const cacheKey = req.headers.get('x-cache-key') || query.table;
-    const cacheExpiry = parseInt(req.headers.get('x-cache-expiry') || '300'); // 5 dəqiqə default
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true';
-    
-    // Cache-dən məlumat əldə etməyə cəhd et (bypass flag-i yoxdursa)
-    if (!bypassCache) {
-      // Burda KV istifadə edərək daha effektli cache-ləmə əlavə edilə bilər
-      // Daha sonra KV təkmilləşdirməsi əlavə edəcəyik
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase konfiqurasiyası: URL və ya key tapılmadı');
+      return new Response(
+        JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
     
-    // Sorğunu yerinə yetir
-    let result;
-    let count = null;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Request body-ni alaq
+    let body;
+    try {
+      body = await req.json();
+      console.log('Request məlumatları:', body);
+    } catch (error) {
+      console.error('Request body parse xətası:', error);
+      return new Response(
+        JSON.stringify({ error: 'Düzgün JSON formatında body tələb olunur' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
     
-    if (query.table) {
-      // Table sorğusu yaradaq
-      let queryBuilder = supabase.from(query.table).select(query.select || '*', { count: 'exact' });
-      
-      // Filtrləri əlavə edək
-      if (query.filters) {
-        for (const filter of query.filters) {
-          const { column, operator, value } = filter;
-          
-          if (operator === 'eq') {
-            queryBuilder = queryBuilder.eq(column, value);
-          } else if (operator === 'neq') {
-            queryBuilder = queryBuilder.neq(column, value);
-          } else if (operator === 'gt') {
-            queryBuilder = queryBuilder.gt(column, value);
-          } else if (operator === 'lt') {
-            queryBuilder = queryBuilder.lt(column, value);
-          } else if (operator === 'gte') {
-            queryBuilder = queryBuilder.gte(column, value);
-          } else if (operator === 'lte') {
-            queryBuilder = queryBuilder.lte(column, value);
-          } else if (operator === 'in') {
-            queryBuilder = queryBuilder.in(column, value);
-          } else if (operator === 'contains') {
-            queryBuilder = queryBuilder.contains(column, value);
-          } else if (operator === 'ilike') {
-            queryBuilder = queryBuilder.ilike(column, `%${value}%`);
+    // Body parametrlərini alırıq
+    const { queryKey, queryFn, cacheConfig } = body;
+    
+    if (!queryKey || !queryFn) {
+      return new Response(
+        JSON.stringify({ error: 'queryKey və queryFn parametrləri tələb olunur' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // Cache konfiqurasiyası - TTL və dependencies
+    const defaultTTL = 300; // 5 dəqiqə
+    const cacheKey = Array.isArray(queryKey) ? queryKey.join(':') : String(queryKey);
+    const ttl = cacheConfig?.ttl || defaultTTL;
+    const dependencies = cacheConfig?.dependencies || [];
+    
+    // İndi-ki vaxtı al
+    const now = Date.now();
+    
+    // Əgər cache-də varsa və hələ etibarlıdırsa, cache-dən qaytaraq
+    if (cache[cacheKey] && cache[cacheKey].expiry > now) {
+      console.log(`Cache hit for key: ${cacheKey}`);
+      return new Response(
+        JSON.stringify({ 
+          data: cache[cacheKey].data,
+          fromCache: true,
+          expiry: cache[cacheKey].expiry
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+    
+    console.log(`Cache miss for key: ${cacheKey}, executing query function`);
+    
+    // Cache-də yoxdursa, funksiyamızı icra edək
+    let result;
+    try {
+      // queryFn-nin tipindən asılı olaraq icra edək
+      if (typeof queryFn === 'string') {
+        // SQL sorğusu kimi icra et
+        const { data, error } = await supabase.from(queryFn).select('*');
+        if (error) throw error;
+        result = data;
+      } else if (typeof queryFn === 'object' && queryFn.table) {
+        // Cədvəl və filtrlərlə sorğu
+        let query = supabase.from(queryFn.table).select(queryFn.select || '*');
+        
+        // Filtrləri əlavə edək
+        if (queryFn.filters) {
+          for (const [method, params] of Object.entries(queryFn.filters)) {
+            if (typeof query[method] === 'function') {
+              // @ts-ignore
+              query = query[method](...params);
+            }
           }
         }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        result = data;
+      } else {
+        // Funksiya kimi icra et
+        result = await queryFn();
       }
       
-      // Sıralama əlavə edək
-      if (query.orderBy) {
-        queryBuilder = queryBuilder.order(query.orderBy.column, { ascending: query.orderBy.ascending });
-      }
+      // Nəticəni cache-lə
+      cache[cacheKey] = {
+        data: result,
+        expiry: now + ttl * 1000, // Millisaniyəyə çeviririk
+        dependencies
+      };
       
-      // Pagination parametrləri
-      if (query.limit) {
-        queryBuilder = queryBuilder.limit(query.limit);
-      }
+      return new Response(
+        JSON.stringify({ 
+          data: result,
+          fromCache: false,
+          expiry: cache[cacheKey].expiry
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
       
-      if (query.offset) {
-        queryBuilder = queryBuilder.range(query.offset, query.offset + (query.limit || 10) - 1);
-      }
-      
-      // Sorğunu yerinə yetir
-      const { data, error, count: rowCount } = await queryBuilder;
-      
-      if (error) throw error;
-      
-      result = data;
-      count = rowCount;
-    } else {
-      throw new Error('Invalid query configuration: table parameter is required');
+    } catch (error: any) {
+      console.error('Sorğu icra edilərkən xəta:', error);
+      return new Response(
+        JSON.stringify({ error: error.message || 'Sorğu icra edilərkən xəta baş verdi' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
     
-    // Nəticəni qaytaraq
-    const response = {
-      data: result,
-      count,
-      source: 'database',
-      cachedAt: new Date().toISOString()
-    };
-    
-    return new Response(JSON.stringify(response), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    });
-    
   } catch (error) {
-    console.error('Cached query error:', error);
-    
+    console.error('Gözlənilməz xəta:', error);
     return new Response(
-      JSON.stringify({
-        error: error.message
+      JSON.stringify({ 
+        error: `Gözlənilməz xəta: ${error instanceof Error ? error.message : String(error)}` 
       }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

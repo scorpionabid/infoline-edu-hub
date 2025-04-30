@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 import { Control, FieldValues, Path } from 'react-hook-form';
 
-interface TextInputProps<T extends FieldValues> {
+interface TextAreaInputProps<T extends FieldValues> {
   name: Path<T>;
   control: Control<T>;
   label?: string;
@@ -16,7 +16,7 @@ interface TextInputProps<T extends FieldValues> {
   onChange?: (value: string) => void;
 }
 
-export default function TextInput<T extends FieldValues>({
+export default function TextAreaInput<T extends FieldValues>({
   name,
   control,
   label,
@@ -26,8 +26,8 @@ export default function TextInput<T extends FieldValues>({
   className = '',
   required = false,
   onChange
-}: TextInputProps<T>) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+}: TextAreaInputProps<T>) {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onChange) {
       onChange(e.target.value);
     }
@@ -46,7 +46,7 @@ export default function TextInput<T extends FieldValues>({
             </FormLabel>
           )}
           <FormControl>
-            <Input
+            <Textarea
               {...field}
               onChange={(e) => {
                 field.onChange(e);

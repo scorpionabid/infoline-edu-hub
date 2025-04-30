@@ -1,56 +1,108 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/auth';
+import { SuperAdminDashboard } from './SuperAdminDashboard';
+import { RegionAdminDashboard } from './RegionAdminDashboard';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
-import SuperAdminDashboard from './SuperAdminDashboard';
-import RegionAdminDashboard from './RegionAdminDashboard';
-import SectorAdminDashboard from './SectorAdminDashboard';
-import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
-import DashboardTabs from './DashboardTabs';
-import useSchoolAdminDashboard from '@/hooks/useSchoolAdminDashboard';
 
-interface SuperAdminDashboardProps {
-  data: any;
-  onRefresh: () => void;
-}
+export const DashboardContent = () => {
+  const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-interface RegionAdminDashboardProps {
-  data: any;
-}
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        if (!user) return;
 
-interface DashboardContentProps {
-  userRole: string | undefined;
-  dashboardData: any;
-  chartData: {
-    activityData: { name: string; value: number }[];
-    regionSchoolsData: { name: string; value: number }[];
-    categoryCompletionData: { name: string; completed: number }[];
+        // İstifadəçinin rolunu əldə edirik
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Role fetch error:', error);
+          return;
+        }
+
+        if (data) {
+          setUserRole(data.role);
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [userRole, user]);
+
+  const fetchDashboardData = async () => {
+    if (!user || !userRole) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let data;
+      
+      // Role-a uyğun dashboard datanı əldə edirik
+      if (userRole === 'superadmin') {
+        // SuperAdmin üçün ümumi statistika
+        const { data: superAdminData, error } = await supabase.functions.invoke('get-dashboard-data');
+        
+        if (error) throw error;
+        
+        data = superAdminData;
+      } else if (userRole === 'regionadmin') {
+        // Region admini üçün öz regionuna aid statistika
+        const { data: regionData, error } = await supabase.functions.invoke('get-dashboard-data', {
+          body: { role: 'regionadmin' }
+        });
+        
+        if (error) throw error;
+        
+        data = regionData;
+      } else if (userRole === 'sectoradmin') {
+        // Sektor admini üçün öz sektoruna aid statistika
+        const { data: sectorData, error } = await supabase.functions.invoke('get-sector-dashboard-data');
+        
+        if (error) throw error;
+        
+        data = sectorData;
+      } else {
+        // Məktəb admini üçün öz məktəbinə aid statistika
+        const { data: schoolData, error } = await supabase.functions.invoke('get-dashboard-data', {
+          body: { role: 'schooladmin' }
+        });
+        
+        if (error) throw error;
+        
+        data = schoolData;
+      }
+
+      setDashboardData(data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Məlumatlar yüklənərkən xəta baş verdi');
+    } finally {
+      setLoading(false);
+    }
   };
-  isLoading: boolean;
-}
 
-const DashboardContent: React.FC<DashboardContentProps> = ({
-  userRole,
-  dashboardData,
-  chartData,
-  isLoading: mockDataLoading
-}) => {
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-  
-  const { 
-    data: schoolAdminData,
-    isLoading: schoolAdminLoading,
-    error: schoolAdminError,
-    refetch: refreshSchoolAdminData,
-    handleFormClick,
-    navigateToDataEntry
-  } = useSchoolAdminDashboard();
-
-  const isLoading = userRole === 'schooladmin' ? schoolAdminLoading : mockDataLoading;
-  
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -58,77 +110,56 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
     );
   }
 
+  // Dashboard məzmununu rola görə render edirik
   const renderDashboard = () => {
-    const normalizedRole = typeof userRole === 'string' ? userRole.toLowerCase() : '';
-    
-    try {
-      switch (normalizedRole) {
-        case 'superadmin':
-          return <SuperAdminDashboard 
-            data={dashboardData || null} 
-            onRefresh={() => {
-              toast.info(t('refreshingDashboard'));
-              window.location.reload();
-            }}
-          />;
-        case 'regionadmin':
-          return <RegionAdminDashboard data={dashboardData || {}} />;
-        case 'sectoradmin':
-          return <SectorAdminDashboard data={dashboardData || {}} />;
-        case 'schooladmin':
-          return (
-            <SchoolAdminDashboard 
-              data={schoolAdminData}
-              isLoading={schoolAdminLoading}
-              error={schoolAdminError}
-              onRefresh={refreshSchoolAdminData}
-              navigateToDataEntry={navigateToDataEntry}
-              handleFormClick={handleFormClick}
-            />
-          );
-        default:
-          console.warn(`Naməlum istifadəçi rolu: "${userRole}". SchoolAdmin dashboard göstərilir.`);
-          return (
-            <SchoolAdminDashboard 
-              data={null}
-              isLoading={false}
-              error={new Error(t('unknownUserRole'))}
-              onRefresh={() => window.location.reload()}
-              navigateToDataEntry={() => navigate('/data-entry')}
-              handleFormClick={(id) => navigate(`/data-entry/${id}`)}
-            />
-          );
-      }
-    } catch (error) {
-      console.error("Dashboard render xətası:", error);
+    if (!dashboardData) {
       return (
-        <div className="flex flex-col items-center justify-center h-64">
-          <p className="text-destructive text-lg">{t('errorOccurred')}</p>
-          <p className="text-muted-foreground">{t('dashboardRenderError')}</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Məlumat tapılmadı</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Dashboard məlumatları hazırda əlçatan deyil.</p>
+          </CardContent>
+        </Card>
       );
+    }
+
+    switch (userRole) {
+      case 'superadmin':
+        return <SuperAdminDashboard data={dashboardData} onRefresh={fetchDashboardData} />;
+      case 'regionadmin':
+        return <RegionAdminDashboard data={dashboardData} />;
+      case 'sectoradmin':
+        // Sektor admin dashboardı
+        return <RegionAdminDashboard data={dashboardData} />;
+      case 'schooladmin':
+        // Məktəb admin dashboardı
+        return <RegionAdminDashboard data={dashboardData} />;
+      default:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Məlumat tapılmadı</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Dashboard məlumatları hazırda əlçatan deyil.</p>
+            </CardContent>
+          </Card>
+        );
     }
   };
 
-  const safeChartData = {
-    activityData: Array.isArray(chartData?.activityData) ? chartData.activityData : [],
-    regionSchoolsData: Array.isArray(chartData?.regionSchoolsData) ? chartData.regionSchoolsData : [],
-    categoryCompletionData: Array.isArray(chartData?.categoryCompletionData) ? chartData.categoryCompletionData : []
-  };
-
   return (
-    <div className="space-y-4">
-      {userRole === 'superadmin' && chartData && (
-        <DashboardTabs 
-          activityData={safeChartData.activityData}
-          regionSchoolsData={safeChartData.regionSchoolsData}
-          categoryCompletionData={safeChartData.categoryCompletionData}
-        />
-      )}
-      
+    <div className="p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+        <Button variant="outline" onClick={fetchDashboardData} disabled={loading}>
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Yenilə
+        </Button>
+      </div>
       {renderDashboard()}
     </div>
   );
 };
-
-export default DashboardContent;

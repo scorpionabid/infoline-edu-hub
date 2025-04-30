@@ -1,34 +1,11 @@
 
 project_id = "olbfnauhzpdskqnxtwav"
+[functions]
+[functions.assign-user-role]
+verify_jwt = true
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
+[functions.manage-entity]
+verify_jwt = true
 
-[db]
-port = 54322
-shadow_port = 54320
-
-[studio]
-enabled = true
-port = 54323
-api_url = "http://localhost"
-
-[inbucket]
-enabled = true
-port = 54324
-
-[auth]
-enabled = true
-port = 54325
-
-[realtime]
-enabled = true
-
-[storage]
-enabled = true
-
-[edge_functions]
-[edge_functions.cached-query]
+[functions.get-dashboard-data]
 verify_jwt = true

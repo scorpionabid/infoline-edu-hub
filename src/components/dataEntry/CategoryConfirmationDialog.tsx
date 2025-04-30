@@ -1,62 +1,75 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Loader2 } from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
-interface CategoryConfirmationDialogProps {
-  isOpen: boolean;
+export interface CategoryConfirmationDialogProps {
+  open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   title: string;
   description: string;
-  confirmText: string;
+  confirmText?: string;
   cancelText?: string;
-  isLoading?: boolean;
 }
 
-const CategoryConfirmationDialog: React.FC<CategoryConfirmationDialogProps> = ({
-  isOpen,
+export const CategoryConfirmationDialog: React.FC<CategoryConfirmationDialogProps> = ({
+  open,
   onClose,
   onConfirm,
   title,
   description,
-  confirmText,
-  cancelText = 'Ləğv et',
-  isLoading = false
+  confirmText = 'Təsdiq et',
+  cancelText = 'İmtina et'
 }) => {
+  const [loading, setLoading] = React.useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await onConfirm();
+    } catch (error) {
+      console.error('Təsdiq xətası:', error);
+    } finally {
+      setLoading(false);
+      onClose();
+    }
+  };
+
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={(e) => {
-              e.preventDefault();
-              onConfirm();
-            }}
-            disabled={isLoading}
-            className="bg-primary hover:bg-primary/90"
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {description}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {confirmText}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            {cancelText}
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            {loading ? 'İcra olunur...' : confirmText}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
-
-export default CategoryConfirmationDialog;
