@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -47,3 +46,6 @@ export const CustomQueryClientProvider: React.FC<{ children: React.ReactNode }> 
     </QueryClientProvider>
   );
 };
+
+// AppQueryProvider adını CustomQueryClientProvider üçün alias kimi export edirik
+export const AppQueryProvider = CustomQueryClientProvider;

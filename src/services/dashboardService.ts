@@ -260,3 +260,24 @@ export const fetchRegionAdminDashboard = getRegionAdminDashboardData;
 export const fetchSectorAdminDashboard = getSectorAdminDashboardData;
 export const fetchSchoolAdminDashboard = getSchoolAdminDashboardData;
 export const fetchDashboardChartData = getDashboardChartData;
+
+// Rol əsasında uyğun dashboard məlumatlarını gətirən funksiya
+export const fetchDashboardData = async (userRole: string, entityId?: string) => {
+  console.log(`Fetching dashboard data for role: ${userRole}, entityId: ${entityId}`);
+  
+  switch (userRole.toLowerCase()) {
+    case 'superadmin':
+      return await fetchSuperAdminDashboard();
+    case 'regionadmin':
+      if (!entityId) throw new Error('Region ID tələb olunur');
+      return await fetchRegionAdminDashboard(entityId);
+    case 'sectoradmin':
+      if (!entityId) throw new Error('Sektor ID tələb olunur');
+      return await fetchSectorAdminDashboard(entityId);
+    case 'schooladmin':
+      if (!entityId) throw new Error('Məktəb ID tələb olunur');
+      return await fetchSchoolAdminDashboard(entityId);
+    default:
+      throw new Error(`${userRole} rolu üçün göstərgə paneli məlumatları mövcud deyil`);
+  }
+};

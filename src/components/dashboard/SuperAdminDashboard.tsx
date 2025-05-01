@@ -1,10 +1,9 @@
-
 import React from 'react';
-import { Grid } from '@/components/ui/grid';
+import { Grid } from '../../components/ui/grid';
 import { StatsCard } from './common/StatsCardProps';
 import { NotificationsCard } from './common/NotificationsCardProps';
-import { CompletionRateCard } from '@/components/dashboard/common/CompletionRateCard';
-import { SuperAdminDashboardData } from '@/types/supabase';
+import CompletionRateCard from '../../components/dashboard/common/CompletionRateCard';
+import { SuperAdminDashboardData } from '../../types/supabase';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
