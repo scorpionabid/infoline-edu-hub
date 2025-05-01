@@ -99,3 +99,57 @@ export interface CacheConfig {
   ttl: number; // saniyələrlə
   dependencies?: string[];
 }
+
+// Dashboard tipi üçün interfeyslər
+export interface SuperAdminDashboardData {
+  regionCount: number;
+  sectorCount: number;
+  schoolCount: number;
+  userCount: number;
+  completionRate: number;
+  approvalRate: number;
+  recentCategories: any[];
+  recentSchools: any[];
+  notifications: any[];
+}
+
+export interface RegionAdminDashboardData {
+  sectorCount: number;
+  schoolCount: number;
+  userCount: number;
+  completionRate: number;
+  approvalRate: number;
+  recentCategories: any[];
+  recentSchools: any[];
+  notifications: any[];
+}
+
+export interface SectorAdminDashboardData {
+  schoolCount: number;
+  userCount: number;
+  completionRate: number;
+  approvalRate: number;
+  recentCategories: any[];
+  recentSchools: any[];
+  pendingApprovals: any[];
+  notifications: any[];
+}
+
+export interface SchoolAdminDashboardData {
+  formStats: {
+    approved: number;
+    pending: number;
+    rejected: number;
+    incomplete: number;
+  };
+  completionRate: number;
+  recentCategories: any[];
+  upcomingDeadlines: any[];
+  notifications: any[];
+}
+
+export type DashboardData = 
+  | SuperAdminDashboardData 
+  | RegionAdminDashboardData 
+  | SectorAdminDashboardData 
+  | SchoolAdminDashboardData;

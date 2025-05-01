@@ -1,140 +1,122 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.29.0';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+import { CacheConfig } from '../_shared/types.ts'
 
 serve(async (req) => {
-  // CORS işleme
+  // CORS idarəsi
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Token doğrulama
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Yetkiləndirmə token tapılmadı' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Giriş parametrləri
+    const { key, pattern } = await req.json()
+    
+    // Parametrləri yoxlayırıq - ya key ya da pattern tələb olunur
+    if (!key && !pattern) {
+      return new Response(
+        JSON.stringify({
+          error: 'key və ya pattern parametrlərindən biri tələb olunur'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    // Auth client
-    const authClient = createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      {
-        global: { headers: { Authorization: authHeader } },
-        auth: { persistSession: false }
-      }
-    );
+    // İcazə yoxlaması üçün admin klientini yaradırıq
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
 
-    // İstifadəçi yoxlama
+    // İcazə yoxlaması və istifadəçini təyin edirəm
     const {
-      data: { user: authUser },
-      error: userError
-    } = await authClient.auth.getUser();
+      data: { user },
+    } = await supabaseClient.auth.getUser()
 
-    if (userError || !authUser) {
+    // Əgər user yoxdursa xəta qaytarırıq
+    if (!user) {
       return new Response(
-        JSON.stringify({ error: 'İstifadəçi doğrulanmadı' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      )
     }
 
-    // Səlahiyyətli client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false }
-    });
+    // İstifadəçinin rolunu yoxlayırıq
+    const { data: userRole } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
 
-    // İstək parametrlərini al
-    const { key, pattern, dependencies } = await req.json();
-
-    if (!key && !pattern && !dependencies) {
-      return new Response(
-        JSON.stringify({ error: 'Keş açarı, şablon və ya asılılıqlar tələb olunur' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    let keysToDelete = [];
-
-    // Konkret açar
+    // Burada, hörmətli oxucu, daha təhlükəsiz bir icazə yoxlaması əlavə edə bilərsiniz.
+    // Məsələn, yalnız müəyyən rolların keş təmizləməsinə icazə vermək.
+    
+    let invalidatedKeys = []
+    
     if (key) {
-      keysToDelete.push(key);
-    }
-
-    // Şablona uyğun açarlar
-    if (pattern) {
-      const { data: matches } = await supabase
-        .from('cache')
-        .select('key')
-        .ilike('key', `%${pattern}%`);
-
-      if (matches && matches.length > 0) {
-        keysToDelete = [...keysToDelete, ...matches.map(m => m.key)];
-      }
-    }
-
-    // Asılılıq əsasında açarlar
-    if (dependencies && Array.isArray(dependencies) && dependencies.length > 0) {
-      // Cache cədvəlindən asılılıq saxlayan elementləri tap
-      const { data: dependentCaches } = await supabase
-        .from('cache')
-        .select('key, dependencies');
-
-      if (dependentCaches && dependentCaches.length > 0) {
-        // Gətirilən keşlərdə asılılıq şərtini yoxla
-        dependentCaches.forEach(cache => {
-          if (cache.dependencies && Array.isArray(cache.dependencies)) {
-            const hasMatch = dependencies.some(dep => 
-              cache.dependencies.includes(dep)
-            );
-            
-            if (hasMatch && !keysToDelete.includes(cache.key)) {
-              keysToDelete.push(cache.key);
-            }
-          }
-        });
-      }
-    }
-
-    // Keşləri sil
-    if (keysToDelete.length > 0) {
-      const { error: deleteError } = await supabase
+      // Konkret keş açarını təmizləyirik
+      const { data: keyData, error: keyError } = await supabaseClient
         .from('cache')
         .delete()
-        .in('key', keysToDelete);
-
-      if (deleteError) {
-        return new Response(
-          JSON.stringify({ error: 'Keş silmə xətası', details: deleteError }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `${keysToDelete.length} keş girişi silindi`, 
-          deletedKeys: keysToDelete 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ success: true, message: 'Silinəcək keş tapılmadı' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        .eq('key', key)
+        .select('key')
+      
+      if (keyError) throw new Error(`Cache key deletion error: ${keyError.message}`)
+      invalidatedKeys = keyData?.map(item => item.key) || []
     }
+    
+    if (pattern) {
+      // Pattern ilə uyğun keşləri təmizləyirik
+      const { data: patternData, error: patternError } = await supabaseClient
+        .from('cache')
+        .delete()
+        .like('key', `%${pattern}%`)
+        .select('key')
+      
+      if (patternError) throw new Error(`Cache pattern deletion error: ${patternError.message}`)
+      invalidatedKeys = [...invalidatedKeys, ...(patternData?.map(item => item.key) || [])]
+    }
+    
+    // Asılı keşləri də təmizləyirik
+    const { data: dependentCaches, error: depError } = await supabaseClient
+      .from('cache_dependencies')
+      .select('cache_key')
+      .in('dependency_key', invalidatedKeys)
+    
+    if (dependentCaches && dependentCaches.length > 0) {
+      const dependentKeys = dependentCaches.map(item => item.cache_key)
+      
+      const { error: depDeleteError } = await supabaseClient
+        .from('cache')
+        .delete()
+        .in('key', dependentKeys)
+      
+      if (depDeleteError) {
+        throw new Error(`Dependent cache deletion error: ${depDeleteError.message}`)
+      }
+      
+      invalidatedKeys = [...invalidatedKeys, ...dependentKeys]
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        invalidatedKeys,
+        count: invalidatedKeys.length,
+        message: `${invalidatedKeys.length} cache keys invalidated successfully` 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'İstək işlənərkən xəta baş verdi', details: error.message }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
+})

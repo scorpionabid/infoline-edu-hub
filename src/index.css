@@ -76,19 +76,69 @@
   }
 }
 
-/* Şəkildə göstərilən stil üçün əlavələr */
-input, select, textarea {
-  @apply outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all;
-}
+/* Daxiletmə sahələri üçün stil */
+@layer components {
+  input, select, textarea {
+    @apply outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all;
+  }
+  
+  /* Tab stilləri */
+  .tabs-navigation {
+    @apply border-b border-gray-200 flex overflow-x-auto;
+  }
+  
+  .tab-button {
+    @apply py-2 px-4 text-gray-700 font-medium border-b-2 border-transparent hover:border-primary/30 hover:text-primary;
+  }
+  
+  .tab-button.active {
+    @apply border-primary text-primary;
+  }
+  
+  /* Sidebar stilləri */
+  .sidebar-container {
+    @apply h-full transition-all duration-300 ease-in-out bg-background;
+  }
+  
+  .sidebar-nav-item {
+    @apply flex items-center space-x-3 px-3 py-2 rounded-md transition-colors;
+  }
+  
+  .sidebar-nav-item-active {
+    @apply bg-primary/10 text-primary font-medium;
+  }
+  
+  .sidebar-nav-item-inactive {
+    @apply text-muted-foreground hover:bg-muted;
+  }
+  
+  /* Card stilləri */
+  .dashboard-card {
+    @apply bg-card rounded-lg border p-4 shadow-sm;
+  }
 
-.tabs-navigation {
-  @apply border-b border-gray-200 flex overflow-x-auto;
-}
-
-.tab-button {
-  @apply py-2 px-4 text-gray-700 font-medium border-b-2 border-transparent hover:border-primary/30 hover:text-primary;
-}
-
-.tab-button.active {
-  @apply border-primary text-primary;
+  .card-header {
+    @apply text-lg font-medium mb-2;
+  }
+  
+  .card-value {
+    @apply text-3xl font-bold;
+  }
+  
+  /* Table stilləri */
+  .data-table {
+    @apply w-full border-collapse;
+  }
+  
+  .data-table th {
+    @apply px-4 py-3 text-left bg-muted text-muted-foreground font-medium text-sm;
+  }
+  
+  .data-table td {
+    @apply px-4 py-3 border-t;
+  }
+  
+  .data-table tr:hover {
+    @apply bg-muted/50;
+  }
 }

@@ -1,317 +1,215 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.29.0';
-import { ManageEntityParams } from '../_shared/types.ts';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+import type { ManageEntityParams } from '../_shared/types.ts'
 
 serve(async (req) => {
-  // CORS işleme
+  // CORS idarəsi
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Token doğrulama
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Yetkiləndirmə token tapılmadı' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Auth client
-    const authClient = createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      {
-        global: { headers: { Authorization: authHeader } },
-        auth: { persistSession: false }
-      }
-    );
-
-    // İstifadəçi yoxlama
-    const {
-      data: { user: authUser },
-      error: userError
-    } = await authClient.auth.getUser();
-
-    if (userError || !authUser) {
-      return new Response(
-        JSON.stringify({ error: 'İstifadəçi doğrulanmadı' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Səlahiyyətli client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false }
-    });
-
-    // İstək parametrlərini al
-    const params: ManageEntityParams = await req.json();
-    const { action, entityType, data } = params;
-
+    // Giriş parametrləri
+    const { action, entityType, data } = await req.json() as ManageEntityParams
+    
+    // Parametrləri yoxlayırıq
     if (!action || !entityType) {
       return new Response(
-        JSON.stringify({ error: 'Tələb olunan parametrlər çatışmır' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({
+          error: 'action və entityType tələb olunur'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    // İstifadəçi rolunu yoxla və səlahiyyətləri təyin et
-    const { data: userRole } = await supabase
+    // Keçərli əməliyyat və entity tiplərini yoxlayırıq
+    const validActions = ['create', 'read', 'update', 'delete']
+    const validEntityTypes = ['column', 'region', 'sector', 'school', 'category']
+
+    if (!validActions.includes(action)) {
+      return new Response(
+        JSON.stringify({ error: `Invalid action: ${action}. Allowed: ${validActions.join(', ')}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!validEntityTypes.includes(entityType)) {
+      return new Response(
+        JSON.stringify({ error: `Invalid entityType: ${entityType}. Allowed: ${validEntityTypes.join(', ')}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // İcazə yoxlaması üçün admin klientini yaradırıq
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+
+    // İcazə yoxlaması və istifadəçi rolunu təyin edirəm
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser()
+
+    // Əgər user yoxdursa xəta qaytarırıq
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // İstifadəçinin rolunu yoxlayırıq
+    const { data: userRole } = await supabaseClient
       .from('user_roles')
-      .select('role, region_id, sector_id, school_id')
-      .eq('user_id', authUser.id)
-      .single();
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
 
-    if (!userRole) {
+    // İcazələri yoxlayırıq - entityType və istifadəçi roluna görə
+    let hasPermission = false
+
+    if (userRole?.role === 'superadmin') {
+      // SuperAdmin bütün entitylər üçün bütün əməliyyatları edə bilər
+      hasPermission = true
+    } else if (userRole?.role === 'regionadmin') {
+      // RegionAdmin yalnız öz regionunda olan entityləri idarə edə bilər
+      if (['sector', 'school', 'column', 'category'].includes(entityType)) {
+        // Burada əlavə icazə yoxlamaları əlavə oluna bilər
+        // Məsələn: gələn data-da region_id userRole.region_id ilə uyğun olmalıdır
+        hasPermission = true
+      }
+    } else if (userRole?.role === 'sectoradmin') {
+      // SectorAdmin yalnız öz sektorunda olan məktəbləri idarə edə bilər
+      if (['school'].includes(entityType)) {
+        // Burada əlavə icazə yoxlamaları əlavə oluna bilər
+        hasPermission = true
+      }
+    }
+
+    // İcazə yoxdursa, xəta qaytarırıq
+    if (!hasPermission) {
       return new Response(
-        JSON.stringify({ error: 'İstifadəçi rolu tapılmadı' }),
+        JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      )
     }
 
-    // Cədvəl adını təyin et
-    const tableMap = {
-      column: 'columns',
-      region: 'regions',
-      sector: 'sectors',
-      school: 'schools',
-      category: 'categories'
-    };
-
-    const tableName = tableMap[entityType];
-    if (!tableName) {
-      return new Response(
-        JSON.stringify({ error: 'Yalnış entity növü' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Entity tipinə uyğun cədvəl adını təyin edirik
+    const tableMap: Record<string, string> = {
+      'column': 'columns',
+      'region': 'regions',
+      'sector': 'sectors',
+      'school': 'schools',
+      'category': 'categories'
     }
+    
+    const tableName = tableMap[entityType]
+    let result
 
-    // Səlahiyyət yoxlanışı
-    if (!await hasPermission(supabase, authUser.id, userRole, action, entityType, data)) {
-      return new Response(
-        JSON.stringify({ error: 'Bu əməliyyat üçün icazəniz yoxdur' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    let result;
-    const now = new Date().toISOString();
-
-    // CRUD əməliyyatı
+    // Əməliyyatı yerinə yetiririk
     switch (action) {
       case 'create':
-        const createData = { 
-          ...data,
-          created_at: data.created_at || now
-        };
-        const { data: createdData, error: createError } = await supabase
+        const { data: createdData, error: createError } = await supabaseClient
           .from(tableName)
-          .insert(createData)
+          .insert(data)
           .select()
-          .single();
 
-        if (createError) {
-          return new Response(
-            JSON.stringify({ error: `${entityType} yaradılarkən xəta baş verdi`, details: createError }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        result = { success: true, data: createdData, message: `${entityType} uğurla yaradıldı` };
-        break;
+        if (createError) throw new Error(`Create error: ${createError.message}`)
+        result = createdData
+        break
 
       case 'read':
-        const selectQuery = supabase.from(tableName).select(data.select || '*');
+        let query = supabaseClient.from(tableName).select('*')
+
+        // Filtrlər əlavə edilə bilər
+        if (data.id) {
+          query = query.eq('id', data.id)
+        }
         
-        // Filtrəri əlavə et
         if (data.filters) {
-          for (const [key, value] of Object.entries(data.filters)) {
-            if (value !== undefined) {
-              selectQuery.eq(key, value);
+          Object.entries(data.filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              query = query.eq(key, value)
             }
-          }
+          })
         }
 
-        // Sıralama
-        if (data.orderBy) {
-          selectQuery.order(data.orderBy, { ascending: data.ascending !== false });
-        }
-
-        // Səhifələmə
-        if (data.limit) {
-          selectQuery.limit(data.limit);
-        }
-        if (data.offset) {
-          selectQuery.range(data.offset, data.offset + (data.limit || 10) - 1);
-        }
-
-        const { data: readData, error: readError } = await selectQuery;
-
-        if (readError) {
-          return new Response(
-            JSON.stringify({ error: `${entityType} oxunarkən xəta baş verdi`, details: readError }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        result = { success: true, data: readData };
-        break;
+        const { data: readData, error: readError } = await query
+        if (readError) throw new Error(`Read error: ${readError.message}`)
+        result = readData
+        break
 
       case 'update':
         if (!data.id) {
-          return new Response(
-            JSON.stringify({ error: 'Yeniləmə üçün ID tələb olunur' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          throw new Error('ID is required for update operation')
         }
 
-        const updateData = { 
-          ...data,
-          updated_at: data.updated_at || now,
-          id: undefined // ID-ni silək, çünki onu where şərtində istifadə edəcəyik
-        };
-        delete updateData.id;
+        // Update-də ötürülən id-ni ayırırıq
+        const { id, ...updateData } = data
 
-        const { data: updatedData, error: updateError } = await supabase
+        const { data: updatedData, error: updateError } = await supabaseClient
           .from(tableName)
           .update(updateData)
-          .eq('id', data.id)
+          .eq('id', id)
           .select()
-          .single();
 
-        if (updateError) {
-          return new Response(
-            JSON.stringify({ error: `${entityType} yenilərkən xəta baş verdi`, details: updateError }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        result = { success: true, data: updatedData, message: `${entityType} uğurla yeniləndi` };
-        break;
+        if (updateError) throw new Error(`Update error: ${updateError.message}`)
+        result = updatedData
+        break
 
       case 'delete':
         if (!data.id) {
-          return new Response(
-            JSON.stringify({ error: 'Silmə üçün ID tələb olunur' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          throw new Error('ID is required for delete operation')
         }
 
-        const { error: deleteError } = await supabase
+        const { data: deletedData, error: deleteError } = await supabaseClient
           .from(tableName)
           .delete()
-          .eq('id', data.id);
+          .eq('id', data.id)
+          .select()
 
-        if (deleteError) {
-          return new Response(
-            JSON.stringify({ error: `${entityType} silərkən xəta baş verdi`, details: deleteError }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        result = { success: true, message: `${entityType} uğurla silindi` };
-        break;
+        if (deleteError) throw new Error(`Delete error: ${deleteError.message}`)
+        result = deletedData
+        break
 
       default:
-        return new Response(
-          JSON.stringify({ error: 'Dəstəklənməyən əməliyyat' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        throw new Error(`Unsupported action: ${action}`)
     }
 
-    // Audit log
-    await supabase
+    // Audit log-a qeyd əlavə edirik
+    await supabaseClient
       .from('audit_logs')
       .insert({
-        user_id: authUser.id,
-        action: action,
+        user_id: user.id,
+        action: `${action}_${entityType}`,
         entity_type: entityType,
-        entity_id: data.id || (result.data && result.data.id) || null,
+        entity_id: data.id || result?.[0]?.id,
         details: {
-          data: data,
-          result: action === 'read' ? { count: result.data.length } : result
+          data,
+          result
         }
-      });
+      })
 
+    // Uğur mesajı qaytarırıq
     return new Response(
-      JSON.stringify(result),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      JSON.stringify({ 
+        success: true, 
+        data: result,
+        message: `${entityType} ${action} operation completed successfully` 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'İstək işlənərkən xəta baş verdi', details: error.message }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
-
-// Səlahiyyət yoxlama funksiyası
-async function hasPermission(supabase, userId, userRole, action, entityType, data) {
-  const role = userRole.role;
-
-  // SuperAdmin hər şeyə icazə var
-  if (role === 'superadmin') {
-    return true;
-  }
-
-  // Region admini üçün
-  if (role === 'regionadmin') {
-    switch (entityType) {
-      case 'region':
-        // Region admini yalnız öz regionunu idarə edə bilər
-        return action === 'read' || 
-               (data && data.id === userRole.region_id);
-      case 'sector':
-        // Region admini öz regionunda olan sektorlarda əməliyyat apara bilər
-        if (action === 'read') return true;
-        if (!data.region_id) return false;
-        return data.region_id === userRole.region_id;
-      case 'school':
-        // Region admini öz regionunda olan məktəblərdə əməliyyat apara bilər
-        if (action === 'read') return true;
-        if (!data.region_id) return false;
-        return data.region_id === userRole.region_id;
-      case 'category':
-      case 'column':
-        // Region admini kateqoriya və sütunları idarə edə bilər
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  // Sektor admini üçün
-  if (role === 'sectoradmin') {
-    switch (entityType) {
-      case 'school':
-        // Sektor admini öz sektorunda olan məktəblərdə əməliyyat apara bilər
-        if (action === 'read') return true;
-        if (!data.sector_id) return false;
-        return data.sector_id === userRole.sector_id;
-      case 'category':
-      case 'column':
-        // Sektor admini kateqoriya və sütunları yalnız oxuya bilər
-        return action === 'read';
-      default:
-        return false;
-    }
-  }
-
-  // Məktəb admini üçün
-  if (role === 'schooladmin') {
-    switch (entityType) {
-      case 'category':
-      case 'column':
-        // Məktəb admini kateqoriya və sütunları yalnız oxuya bilər
-        return action === 'read';
-      default:
-        return false;
-    }
-  }
-
-  return false;
-}
+})

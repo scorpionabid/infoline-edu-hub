@@ -1,223 +1,205 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.29.0';
-import { AssignUserRoleParams } from '../_shared/types.ts';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+import type { AssignUserRoleParams } from '../_shared/types.ts'
 
 serve(async (req) => {
-  // CORS işleme
+  // CORS idarəsi
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Token doğrulama
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Yetkiləndirmə token tapılmadı' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Auth client
-    const authClient = createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      {
-        global: { headers: { Authorization: authHeader } },
-        auth: { persistSession: false }
-      }
-    );
-
-    // İstifadəçi yoxlama
-    const {
-      data: { user: authUser },
-      error: userError
-    } = await authClient.auth.getUser();
-
-    if (userError || !authUser) {
-      return new Response(
-        JSON.stringify({ error: 'İstifadəçi doğrulanmadı' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Səlahiyyətli client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false }
-    });
-
-    // Yetki yoxlanışı
-    const { data: currentUserRoles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', authUser.id)
-      .single();
-
-    if (!currentUserRoles || (currentUserRoles.role !== 'superadmin' && currentUserRoles.role !== 'regionadmin')) {
-      return new Response(
-        JSON.stringify({ error: 'Bu əməliyyat üçün icazəniz yoxdur' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // İstək parametrlərini al
-    const params: AssignUserRoleParams = await req.json();
-    const { userId, role, entityId } = params;
-
+    // Giriş parametrləri
+    const { userId, role, entityId } = await req.json() as AssignUserRoleParams
+    
+    // Parametrləri yoxlayırıq
     if (!userId || !role) {
       return new Response(
-        JSON.stringify({ error: 'Tələb olunan parametrlər çatışmır' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({
+          error: 'userId və role tələb olunur'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    // İstifadəçinin mövcud rolunu yoxla
-    const { data: existingRole, error: roleError } = await supabase
+    // İcazə yoxlaması üçün admin klientini yaradırıq
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+
+    // İcazə yoxlaması və istifadəçi rolunu təyin edirəm
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser()
+
+    // Əgər user yoxdursa və ya superadmin deyilsə xəta qaytarırıq
+    // (region və sector adminlərinin də müəyyən icazələri ola bilər, bu halda əlavə icazə yoxlamaları əlavə edə bilərsiniz)
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // İstifadəçinin rolunu yoxlayırıq
+    const { data: userRole } = await supabaseClient
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    // Yalnız superadmin istifadəçisinə icazə veririk
+    // (region və sector adminlərinə də icazə vermək üçün əlavə şərtlər əlavə edə bilərsiniz)
+    if (!userRole || userRole.role !== 'superadmin') {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Təyin ediləcək istifadəçinin bazada olub-olmadığını yoxlayırıq
+    const { data: existingUser, error: userCheckError } = await supabaseClient.auth.admin.getUserById(userId)
+
+    if (userCheckError || !existingUser) {
+      return new Response(
+        JSON.stringify({ error: 'User not found', details: userCheckError }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // İstifadəçinin mövcud rolu olub-olmadığını yoxlayırıq
+    const { data: existingRole, error: roleCheckError } = await supabaseClient
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
-      .maybeSingle();
+      .maybeSingle()
 
-    if (roleError) {
-      return new Response(
-        JSON.stringify({ error: 'Rol məlumatları alınarkən xəta baş verdi' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Əgər mövcud rol varsa update, yoxdursa insert əməliyyatı aparırıq
+    let result
 
-    const roleData: any = {
+    // Rol tipinə görə müvafiq sahəni təyin edirik
+    const roleData: Record<string, any> = {
       user_id: userId,
       role: role
-    };
+    }
 
-    // Rolun tələb etdiyi entityId əlavə et
+    // entityId əsasında müvafiq sahəni əlavə edirik
     switch (role) {
       case 'regionadmin':
-        if (!entityId) {
-          return new Response(
-            JSON.stringify({ error: 'Region admini üçün region_id tələb olunur' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        roleData.region_id = entityId;
-        break;
+        roleData.region_id = entityId
+        break
       case 'sectoradmin':
-        if (!entityId) {
-          return new Response(
-            JSON.stringify({ error: 'Sektor admini üçün sector_id tələb olunur' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        roleData.sector_id = entityId
+        // Sektorun hansı regionda olduğunu tapırıq
+        if (entityId) {
+          const { data: sectorData } = await supabaseClient
+            .from('sectors')
+            .select('region_id')
+            .eq('id', entityId)
+            .single()
+          
+          if (sectorData) {
+            roleData.region_id = sectorData.region_id
+          }
         }
-        roleData.sector_id = entityId;
-        // Sektor ID-ə uyğun Region ID-ni tap
-        const { data: sectorInfo } = await supabase
-          .from('sectors')
-          .select('region_id')
-          .eq('id', entityId)
-          .single();
-        if (sectorInfo) {
-          roleData.region_id = sectorInfo.region_id;
-        }
-        break;
+        break
       case 'schooladmin':
-        if (!entityId) {
-          return new Response(
-            JSON.stringify({ error: 'Məktəb admini üçün school_id tələb olunur' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        roleData.school_id = entityId
+        // Məktəbin hansı sektor və regionda olduğunu tapırıq
+        if (entityId) {
+          const { data: schoolData } = await supabaseClient
+            .from('schools')
+            .select('sector_id, region_id')
+            .eq('id', entityId)
+            .single()
+          
+          if (schoolData) {
+            roleData.sector_id = schoolData.sector_id
+            roleData.region_id = schoolData.region_id
+          }
         }
-        roleData.school_id = entityId;
-        // Məktəb ID-ə uyğun Region və Sector ID-ni tap
-        const { data: schoolInfo } = await supabase
-          .from('schools')
-          .select('region_id, sector_id')
-          .eq('id', entityId)
-          .single();
-        if (schoolInfo) {
-          roleData.region_id = schoolInfo.region_id;
-          roleData.sector_id = schoolInfo.sector_id;
-        }
-        break;
+        break
     }
 
-    // Əgər mövcud rol varsa, yenilə, yoxdursa əlavə et
-    let result;
+    // Mövcud rolu update və ya yeni rol insert edirik
     if (existingRole) {
-      const { error: updateError } = await supabase
+      // Update
+      const { data, error } = await supabaseClient
         .from('user_roles')
         .update(roleData)
-        .eq('user_id', userId);
-
-      if (updateError) {
-        return new Response(
-          JSON.stringify({ error: 'Rol yenilərkən xəta baş verdi', details: updateError }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      result = { success: true, message: 'İstifadəçi rolu yeniləndi' };
+        .eq('user_id', userId)
+        .select('*')
+      
+      if (error) throw new Error(`Role update failed: ${error.message}`)
+      result = data
     } else {
-      const { error: insertError } = await supabase
+      // Insert
+      const { data, error } = await supabaseClient
         .from('user_roles')
-        .insert(roleData);
-
-      if (insertError) {
-        return new Response(
-          JSON.stringify({ error: 'Rol əlavə edilərkən xəta baş verdi', details: insertError }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      result = { success: true, message: 'İstifadəçiyə rol təyin edildi' };
+        .insert(roleData)
+        .select('*')
+      
+      if (error) throw new Error(`Role insert failed: ${error.message}`)
+      result = data
     }
 
-    // İstifadəçi məlumatlarını yenilə - profile cədvəlində
-    const { data: userProfile } = await supabase
+    // Profil cədvəlinə də məlumat əlavə edirik
+    const { data: profile } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle()
 
-    if (userProfile) {
-      await supabase
+    // Əgər profil mövcud deyilsə, yaradırıq
+    if (!profile) {
+      await supabaseClient
+        .from('profiles')
+        .insert({
+          id: userId,
+          role: role,
+          status: 'active'
+        })
+    } else {
+      // Profili yeniləyirik
+      await supabaseClient
         .from('profiles')
         .update({
           role: role,
-          region_id: roleData.region_id || null,
-          sector_id: roleData.sector_id || null, 
-          school_id: roleData.school_id || null,
-          updated_at: new Date().toISOString()
+          status: 'active'
         })
-        .eq('id', userId);
+        .eq('id', userId)
     }
 
-    // Audit log
-    await supabase
+    // Audit log-a qeyd əlavə edirik
+    await supabaseClient
       .from('audit_logs')
       .insert({
-        user_id: authUser.id,
-        action: 'assign_role',
-        entity_type: 'user_roles',
+        user_id: user.id,
+        action: `assign_${role}`,
+        entity_type: 'user_role',
         entity_id: userId,
         details: {
           role: role,
           entity_id: entityId,
-          assigned_by: authUser.id
+          assigned_by: user.id
         }
-      });
+      })
 
     return new Response(
-      JSON.stringify(result),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      JSON.stringify({ success: true, data: result }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'İstək işlənərkən xəta baş verdi', details: error.message }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
+})

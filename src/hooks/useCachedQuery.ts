@@ -1,131 +1,76 @@
 
-import { useQuery, QueryKey, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-type CacheConfig = {
-  expiryInMinutes?: number;
-  localOnly?: boolean;
-};
+export interface CacheConfig {
+  key: string;
+  ttl: number; // saniyələrlə
+  dependencies?: string[];
+}
 
-/**
- * LocalStorage-də obyekt saxlamaq
- */
-export const setCache = <T>(key: string, data: T, config: CacheConfig = {}): void => {
-  try {
-    const storageItem = {
-      data,
-      timestamp: Date.now(),
-      expiryInMinutes: config.expiryInMinutes || 5
-    };
-    localStorage.setItem(`infoline_cache_${key}`, JSON.stringify(storageItem));
-  } catch (error) {
-    console.error('Keş saxlama xətası:', error);
-  }
-};
+export interface CachedQueryOptions<T> {
+  queryKey: readonly unknown[];
+  queryFn: () => Promise<T>;
+  queryOptions?: Omit<UseQueryOptions<T, unknown, T, readonly unknown[]>, 'queryFn' | 'queryKey'>;
+  cacheConfig?: CacheConfig;
+}
 
-/**
- * LocalStorage-dən obyekt almaq
- */
-export const getCache = <T>(key: string): T | undefined => {
-  try {
-    const item = localStorage.getItem(`infoline_cache_${key}`);
-    if (!item) return undefined;
-
-    const storageItem = JSON.parse(item);
-    const now = Date.now();
-    const expiryTime = storageItem.timestamp + (storageItem.expiryInMinutes * 60 * 1000);
-
-    if (now > expiryTime) {
-      localStorage.removeItem(`infoline_cache_${key}`);
-      return undefined;
-    }
-
-    return storageItem.data as T;
-  } catch (error) {
-    console.error('Keş oxuma xətası:', error);
-    return undefined;
-  }
-};
-
-/**
- * Həm client-side, həm də server-side keşləməni birləşdirən hook
- */
-export function useCachedQuery<TData = unknown, TError = unknown>({
+export function useCachedQuery<T>({
   queryKey,
   queryFn,
   queryOptions,
   cacheConfig
-}: {
-  queryKey: QueryKey;
-  queryFn: () => Promise<TData>;
-  queryOptions?: Omit<UseQueryOptions<TData, TError, TData, QueryKey>, 'queryKey' | 'queryFn'>;
-  cacheConfig?: CacheConfig;
-}) {
-  // İlk olaraq client-side keşdən məlumatları almağa çalışaq
-  const cacheKey = Array.isArray(queryKey) ? queryKey.join('-') : String(queryKey);
-  const cachedData = getCache<TData>(cacheKey);
-
-  // React Query istifadə edək
-  const query = useQuery<TData, TError>({
+}: CachedQueryOptions<T>) {
+  return useQuery({
     queryKey,
     queryFn: async () => {
       try {
-        const data = await queryFn();
+        // Normal sorğu funksiyasını çağırırıq
+        const result = await queryFn();
         
-        // LocalStorage-də saxlayaq (əgər konfiqurasiya verilibsə)
-        if (cacheConfig?.expiryInMinutes) {
-          setCache(cacheKey, data, cacheConfig);
+        // Keşləmə konfiqurasiyası varsa və serverə keşləmə sorğusu göndərə bilirik
+        if (cacheConfig) {
+          try {
+            // Supabase funksiyasını çağıraraq nəticəni keşləyirik
+            await supabase.functions.invoke('cached-query', {
+              body: {
+                key: cacheConfig.key,
+                data: result,
+                ttl: cacheConfig.ttl,
+                dependencies: cacheConfig.dependencies
+              }
+            });
+          } catch (cacheError) {
+            // Keşləmə xətasını loglayırıq, amma normal nəticəni qaytarırıq
+            console.error('Keşləmə xətası:', cacheError);
+          }
         }
         
-        return data;
+        return result;
       } catch (error) {
-        console.error(`Keşlənmiş sorğu zamanı xəta (${cacheKey}):`, error);
+        // Əgər sorğu xəta verərsə və keşləmə konfiqurasiyası varsa
+        if (cacheConfig) {
+          try {
+            // Keşdən məlumatı əldə etməyə çalışırıq
+            const { data: cachedData, error: cacheError } = await supabase.functions.invoke('get-cached-query', {
+              body: {
+                key: cacheConfig.key
+              }
+            });
+            
+            if (!cacheError && cachedData) {
+              console.log('Keşdən məlumatlar istifadə olundu:', cacheConfig.key);
+              return cachedData as T;
+            }
+          } catch (cacheError) {
+            console.error('Keş əldə etmə xətası:', cacheError);
+          }
+        }
+        
+        // Keşdən də əldə edilə bilmədisə, xətanı yenidən atırıq
         throw error;
       }
     },
-    initialData: cachedData,
-    ...queryOptions,
+    ...queryOptions
   });
-  
-  return query;
 }
-
-// Keş üçün invalidasiya utiliti
-export const invalidateCache = (key: string): void => {
-  try {
-    localStorage.removeItem(`infoline_cache_${key}`);
-  } catch (error) {
-    console.error('Keş silmə xətası:', error);
-  }
-};
-
-// Bütün keşləri silmək üçün util funksiya
-export const clearAllCaches = (): void => {
-  try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('infoline_cache_')) {
-        localStorage.removeItem(key);
-      }
-    });
-  } catch (error) {
-    console.error('Bütün keşləri silmə xətası:', error);
-  }
-};
-
-// Keş invalidasyonu yaradıcısı (QueryClientProvider üçün)
-export const createCacheInvalidator = (queryClient: any) => {
-  return {
-    invalidateQueries: (key: string | string[]) => {
-      if (Array.isArray(key)) {
-        key.forEach(k => invalidateCache(k));
-      } else {
-        invalidateCache(key);
-      }
-      queryClient.invalidateQueries({ queryKey: key });
-    },
-    clearCache: () => {
-      clearAllCaches();
-      queryClient.clear();
-    }
-  };
-};

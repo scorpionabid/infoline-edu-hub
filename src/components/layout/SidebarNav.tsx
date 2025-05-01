@@ -24,25 +24,73 @@ interface NavItemProps {
   label: string;
   isActive: boolean;
   onClick?: () => void;
+  isSidebarOpen?: boolean;
+  children?: { href: string; label: string; isActive: boolean }[];
 }
 
-const NavItem: React.FC<NavItemProps> = ({ href, icon, label, isActive, onClick }) => (
-  <Link
-    to={href}
-    className={cn(
-      "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
-      isActive
-        ? "bg-primary/10 text-primary font-medium"
-        : "text-muted-foreground hover:bg-muted"
-    )}
-    onClick={onClick}
-  >
-    {icon}
-    <span>{label}</span>
-  </Link>
-);
+const NavItem: React.FC<NavItemProps> = ({ 
+  href, 
+  icon, 
+  label, 
+  isActive, 
+  onClick, 
+  isSidebarOpen = true,
+  children
+}) => {
+  const [isOpen, setIsOpen] = React.useState(false);
 
-const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => {
+  const handleClick = () => {
+    if (children && children.length > 0) {
+      setIsOpen(!isOpen);
+    }
+    if (onClick) onClick();
+  };
+
+  return (
+    <div className="mb-1">
+      <Link
+        to={href}
+        className={cn(
+          "flex items-center px-3 py-2 rounded-md transition-colors",
+          isActive
+            ? "bg-primary/10 text-primary font-medium"
+            : "text-muted-foreground hover:bg-muted"
+        )}
+        onClick={handleClick}
+      >
+        <div className="flex items-center">
+          {icon}
+          {isSidebarOpen && <span className="ml-3">{label}</span>}
+        </div>
+      </Link>
+
+      {/* Alt menyu */}
+      {isSidebarOpen && isOpen && children && children.length > 0 && (
+        <div className="ml-8 mt-1 space-y-1">
+          {children.map((child, index) => (
+            <Link
+              key={index}
+              to={child.href}
+              className={cn(
+                "block px-3 py-1 rounded-md transition-colors text-sm",
+                child.isActive
+                  ? "bg-primary/5 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {child.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SidebarNav: React.FC<{ onItemClick?: () => void, isSidebarOpen?: boolean }> = ({ 
+  onItemClick,
+  isSidebarOpen = true 
+}) => {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -59,11 +107,10 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
   // İcazələri müəyyənləşdiririk
   const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
   const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin || isRegionAdmin; // RegionAdmin üçün kateqoriya idarəetmə icazəsi
-  const canManageColumns = isSuperAdmin || isRegionAdmin; // RegionAdmin üçün sütun idarəetmə icazəsi
+  const canManageCategories = isSuperAdmin || isRegionAdmin; 
+  const canManageColumns = isSuperAdmin || isRegionAdmin;
   const canManageRegions = isSuperAdmin;
   const canManageSectors = isSuperAdmin || isRegionAdmin;
-  // Region admin məlumat daxil etmir, yalnız SuperAdmin, SectorAdmin və SchoolAdmin
   const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin;
   
   const navItems = [
@@ -95,13 +142,14 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: true // Bütün istifadəçilər kateqoriyalara baxa bilər, amma School admin sector kateqoriyalarını görməyəcək
-    },
-    {
-      href: "/columns",
-      icon: <Columns size={20} />,
-      label: t('columns'),
-      show: true // Bütün istifadəçilər sütunlara baxa bilər
+      show: true,
+      children: [
+        {
+          href: "/columns",
+          label: t('columns'),
+          isActive: pathname === "/columns"
+        }
+      ]
     },
     {
       href: "/users",
@@ -113,7 +161,7 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
       href: "/data-entry",
       icon: <FileInput size={20} />,
       label: t('dataEntry'),
-      show: canAccessDataEntry // SuperAdmin, SectorAdmin və SchoolAdmin məlumat daxil edə bilər
+      show: canAccessDataEntry
     },
     {
       href: "/reports",
@@ -135,6 +183,8 @@ const SidebarNav: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
             label={item.label}
             isActive={pathname === item.href}
             onClick={onItemClick}
+            isSidebarOpen={isSidebarOpen}
+            children={item.children}
           />
         ))}
     </div>

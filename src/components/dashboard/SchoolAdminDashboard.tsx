@@ -1,203 +1,118 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { DashboardNotification } from '@/types/dashboard';
-import { 
-  SchoolAdminDashboardData, 
-  FormItem 
-} from '@/types/dashboard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader, Plus, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/context/auth';
+import { SchoolAdminDashboardData } from '@/types/supabase';
+import StatsCard from './common/StatsCard';
+import StatusCards from './common/StatusCards';
+import NotificationsCard from './common/NotificationsCard';
+import CompletionRateCard from './common/CompletionRateCard';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
-  isLoading?: boolean;
-  error?: Error | null;
-  onRefresh?: () => void;
-  navigateToDataEntry: () => void;
-  handleFormClick: (formId: string) => void;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
-  data,
-  isLoading,
-  error,
-  onRefresh,
-  navigateToDataEntry,
-  handleFormClick
-}) => {
+const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
-
-  // Status rəngləri üçün funksiya
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'dueSoon':
-        return 'bg-orange-100 text-orange-800';
-      case 'overdue':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-destructive mb-4">{error.message || t('errorOccurred')}</p>
-        {onRefresh && (
-          <Button variant="outline" onClick={onRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {t('refresh')}
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  // Təhlükəsiz dəyərlər
-  const formStats = data?.forms || { pending: 0, approved: 0, rejected: 0, dueSoon: 0, overdue: 0, total: 0 };
-  const completionRate = data?.completionRate || 0;
-  const notifications = data?.notifications || [];
-  const pendingForms = data?.pendingForms || [];
+  const { user } = useAuth();
 
   return (
     <div className="space-y-6">
-      {/* Əsas statistika kartları */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gözləmədə</CardTitle>
-            <CardDescription>Gözləmədə olan formlar</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formStats.pending}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Təsdiqlənmiş</CardTitle>
-            <CardDescription>Təsdiqlənmiş formlar</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formStats.approved}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Rədd edilmiş</CardTitle>
-            <CardDescription>Rədd edilmiş formlar</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formStats.rejected}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tamamlanma</CardTitle>
-            <CardDescription>Ümumi tamamlanma faizi</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title={t('approvedForms')}
+          value={data.formStats.approved}
+          icon="check-circle"
+          description={t('formsApprovedDesc')}
+          trend="up"
+        />
+        <StatsCard
+          title={t('pendingForms')}
+          value={data.formStats.pending}
+          icon="clock"
+          description={t('formsPendingDesc')}
+          trend="neutral"
+        />
+        <StatsCard
+          title={t('rejectedForms')}
+          value={data.formStats.rejected}
+          icon="x-circle"
+          description={t('formsRejectedDesc')}
+          trend="down"
+        />
+        <StatsCard
+          title={t('incompleteForms')}
+          value={data.formStats.incomplete}
+          icon="alert-triangle"
+          description={t('formsIncompleteDesc')}
+          trend="down"
+        />
       </div>
 
-      {/* Pending formlar */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Gözləmədə olan formlar</CardTitle>
-            <CardDescription>Təsdiq gözləyən formların siyahısı</CardDescription>
-          </div>
-          <Button onClick={navigateToDataEntry} size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni məlumat əlavə et
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {pendingForms.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              Hazırda doldurulacaq form yoxdur
-            </div>
-          ) : (
-            <ScrollArea className="h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
+          <CompletionRateCard
+            completionRate={data.completionRate}
+            title={t('formCompletionRate')}
+          />
+          <div className="bg-card rounded-lg shadow border p-5">
+            <h3 className="text-lg font-medium mb-3">{t('upcomingDeadlines')}</h3>
+            {data.upcomingDeadlines.length > 0 ? (
               <div className="space-y-2">
-                {pendingForms.map((form) => (
-                  <div key={form.id} className="p-4 border rounded-md flex items-center justify-between">
+                {data.upcomingDeadlines.map((deadline, i) => (
+                  <div key={i} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
                     <div>
-                      <div className="font-semibold">{form.title}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {form.category && <span className="mr-2">{form.category}</span>}
-                        <span>{form.date}</span>
-                      </div>
+                      <p className="font-medium">{deadline.name}</p>
+                      <p className="text-sm text-muted-foreground">{new Date(deadline.deadline).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(form.status)}`}>
-                        {form.status}
-                      </div>
-                      <div className="w-24 bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-primary h-2.5 rounded-full" 
-                          style={{ width: `${form.completionPercentage}%` }}
-                        ></div>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => handleFormClick(form.id)}>
-                        Bax
-                      </Button>
+                    <div className={`px-2 py-1 rounded text-sm ${
+                      new Date(deadline.deadline).getTime() - Date.now() < 86400000 * 2
+                        ? 'bg-destructive/20 text-destructive'
+                        : 'bg-primary/20 text-primary'
+                    }`}>
+                      {Math.ceil((new Date(deadline.deadline).getTime() - Date.now()) / 86400000)} {t('daysLeft')}
                     </div>
                   </div>
                 ))}
               </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <p className="text-muted-foreground">{t('noUpcomingDeadlines')}</p>
+            )}
+          </div>
+        </div>
+        
+        <div>
+          <NotificationsCard 
+            notifications={data.notifications} 
+            title={t('recentNotifications')}
+          />
+        </div>
+      </div>
 
-      {/* Bildirişlər kartı */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Bildirişlər</CardTitle>
-          <CardDescription>Son bildirişlər</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {notifications.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              Yeni bildiriş yoxdur
-            </div>
-          ) : (
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-4">
-                {notifications.map((notification) => (
-                  <div key={notification.id} className="p-4 border rounded-md">
-                    <div className="font-semibold">{notification.title}</div>
-                    <div className="text-sm text-muted-foreground">{notification.date}</div>
-                    <div className="mt-2">{notification.message}</div>
+      <div className="bg-card rounded-lg shadow border p-5">
+        <h3 className="text-lg font-medium mb-3">{t('recentCategories')}</h3>
+        {data.recentCategories.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {data.recentCategories.map((category, i) => (
+              <div key={i} className="flex items-center p-3 border rounded-md">
+                <div className="w-10 h-10 bg-primary/20 text-primary rounded-full flex items-center justify-center mr-3">
+                  <span className="font-medium">{category.name.charAt(0)}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium truncate">{category.name}</p>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <span>{category.completion_percentage || 0}% {t('completed')}</span>
+                    <span className="mx-2">•</span>
+                    <span>{category.status}</span>
                   </div>
-                ))}
+                </div>
               </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">{t('noRecentCategories')}</p>
+        )}
+      </div>
     </div>
   );
 };

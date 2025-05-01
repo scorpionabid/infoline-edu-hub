@@ -1,4 +1,6 @@
 
+import { ColumnValidationError } from '@/types/column';
+
 export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 
 export enum DataEntrySaveStatus {
@@ -15,7 +17,7 @@ export interface EntryValue {
   isValid: boolean;
   status?: DataEntryStatus;
   entryId?: string;
-  error?: import('@/types/column').ColumnValidationError;
+  error?: ColumnValidationError;
 }
 
 export interface DataEntry {
@@ -38,14 +40,7 @@ export interface DataEntry {
 export interface DataEntryForm {
   categoryId: string;
   schoolId: string;
-  entries: {
-    name: string;
-    columnId: string;
-    value: string;
-    isValid: boolean;
-    status?: DataEntryStatus;
-    entryId?: string;
-  }[];
+  entries: EntryValue[];
 }
 
 export interface ValidationResult {
