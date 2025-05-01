@@ -1,155 +1,95 @@
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
-
-export type Language = 'az' | 'en' | 'ru' | 'tr';
+export * from './category';
+export * from './column';
+export * from './dataEntry';
+export * from './dashboard';
 
 export interface Region {
   id: string;
   name: string;
   description?: string;
-  created_at?: string;
-  updated_at?: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
   status?: string;
-  admin_id?: string;
-  admin_email?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Sector {
   id: string;
-  region_id: string;
   name: string;
   description?: string;
-  created_at?: string;
-  updated_at?: string;
+  region_id: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
   status?: string;
-  admin_id?: string;
-  admin_email?: string;
+  completion_rate?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface School {
   id: string;
   name: string;
-  principal_name?: string;
   address?: string;
-  region_id: string;
   sector_id: string;
+  region_id: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
+  principal_name?: string;
   phone?: string;
   email?: string;
+  logo?: string;
+  type?: string;
+  language?: string;
   student_count?: number;
   teacher_count?: number;
   status?: string;
-  type?: string;
-  language?: string;
-  created_at?: string;
-  updated_at?: string;
   completion_rate?: number;
-  logo?: string;
-  admin_email?: string;
-  admin_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface FullUserData {
+export interface User {
   id: string;
-  email?: string;
-  phone?: string;
-  full_name?: string;
-  avatar?: string;
-  role?: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  region_name?: string;
-  sector_name?: string;
-  school_name?: string;
-  status?: 'active' | 'inactive' | 'blocked';
-  language?: Language;
-  last_login?: string;
-  created_at?: string;
-  updated_at?: string;
+  email: string;
+  full_name: string;
+  role: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  status: 'active' | 'inactive' | 'blocked';
+  avatar?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface UserRoleAssignment {
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
   user_id: string;
-  role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  is_read: boolean;
+  priority?: string;
+  created_at: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
 }
 
-// Edge funksiyaları üçün parametrlər
-export interface AssignUserRoleParams {
-  userId: string;
-  role: UserRole;
-  entityId?: string; // region_id, sector_id, school_id
+export interface Report {
+  id: string;
+  title: string;
+  description?: string;
+  type: string;
+  status: 'draft' | 'published' | 'archived';
+  content?: any;
+  filters?: any;
+  insights?: string[];
+  recommendations?: string[];
+  created_by?: string;
+  shared_with?: any[];
+  is_template?: boolean;
+  created_at: string;
+  updated_at: string;
 }
-
-export interface ManageEntityParams {
-  action: "create" | "read" | "update" | "delete";
-  entityType: "column" | "region" | "sector" | "school" | "category";
-  data: any;
-}
-
-export interface DashboardDataParams {
-  role: UserRole;
-  entityId?: string;
-}
-
-export interface CacheConfig {
-  key: string;
-  ttl: number; // saniyələrlə
-  dependencies?: string[];
-}
-
-// Dashboard tipi üçün interfeyslər
-export interface SuperAdminDashboardData {
-  regionCount: number;
-  sectorCount: number;
-  schoolCount: number;
-  userCount: number;
-  completionRate: number;
-  approvalRate: number;
-  recentCategories: any[];
-  recentSchools: any[];
-  notifications: any[];
-}
-
-export interface RegionAdminDashboardData {
-  sectorCount: number;
-  schoolCount: number;
-  userCount: number;
-  completionRate: number;
-  approvalRate: number;
-  recentCategories: any[];
-  recentSchools: any[];
-  notifications: any[];
-}
-
-export interface SectorAdminDashboardData {
-  schoolCount: number;
-  userCount: number;
-  completionRate: number;
-  approvalRate: number;
-  recentCategories: any[];
-  recentSchools: any[];
-  pendingApprovals: any[];
-  notifications: any[];
-}
-
-export interface SchoolAdminDashboardData {
-  formStats: {
-    approved: number;
-    pending: number;
-    rejected: number;
-    incomplete: number;
-  };
-  completionRate: number;
-  recentCategories: any[];
-  upcomingDeadlines: any[];
-  notifications: any[];
-}
-
-export type DashboardData = 
-  | SuperAdminDashboardData 
-  | RegionAdminDashboardData 
-  | SectorAdminDashboardData 
-  | SchoolAdminDashboardData;

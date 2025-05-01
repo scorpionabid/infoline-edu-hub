@@ -1,191 +1,171 @@
-
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { CategoryWithColumns } from '@/types/column';
-import { FormField } from './FormFields';
-import { EntryValue, DataEntryStatus } from '@/types/dataEntry';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useLanguage } from '@/context/LanguageContext';
+import { CategoryWithColumns } from '@/types/column';
+import { EntryValue } from '@/types/dataEntry';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
-  values: EntryValue[];
-  onChange: (columnId: string, value: string) => void;
-  onSubmit?: () => void;
-  onApprove?: () => void;
-  onReject?: () => void;
-  isDisabled?: boolean;
-  isLoading?: boolean;
+  onSave: () => void;
+  onSubmit: () => void;
+  onExcelImport?: (data: Record<string, any>) => void;
+  onExcelExport?: () => void;
+  index: number;
+  currentIndex: number;
+  onChangeCategory: (index: number) => void;
 }
 
-export const CategoryForm: React.FC<CategoryFormProps> = ({
+const CategoryForm: React.FC<CategoryFormProps> = ({
   category,
-  values,
-  onChange,
+  onSave,
   onSubmit,
-  onApprove,
-  onReject,
-  isDisabled = false,
-  isLoading = false,
+  onExcelImport,
+  onExcelExport,
+  index,
+  currentIndex,
+  onChangeCategory,
 }) => {
-  // Sütunları sıra nömrəsinə görə sıralayırıq
-  const sortedColumns = React.useMemo(() => {
-    if (!category.columns) return [];
-    return [...category.columns].sort((a, b) => {
-      return (a.order_index || 0) - (b.order_index || 0);
-    });
-  }, [category.columns]);
-
-  // Categoria statusuna görə badge rəngini təyin edirik
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'partial':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'Təsdiqlənib';
-      case 'pending':
-        return 'Gözləmədə';
-      case 'rejected':
-        return 'Rədd edilib';
-      case 'draft':
-        return 'Qaralama';
-      case 'partial':
-        return 'Qismən';
-      case 'active':
-        return 'Aktiv';
-      case 'inactive':
-        return 'Deaktiv';
-      default:
-        return status;
-    }
-  };
-
-  // Tamamlanma faizini hesablayırıq
-  const completionPercentage = React.useMemo(() => {
-    if (category.completionPercentage !== undefined) {
-      return category.completionPercentage;
-    }
-    
-    const totalFields = sortedColumns.length;
-    if (totalFields === 0) return 0;
-    
-    const filledFields = values.filter(v => v.value !== '').length;
-    return Math.round((filledFields / totalFields) * 100);
-  }, [category.completionPercentage, sortedColumns.length, values]);
-
-  // Təsdiq və ya rədd edilmiş formları göstərmək üçün buttonlar
-  const renderActionButtons = () => {
-    // Əgər onSubmit funksiyası varsa buttonları göstəririk
-    if (onSubmit) {
-      return (
-        <div className="flex justify-end gap-2 mt-4">
-          <Button 
-            variant="outline" 
-            onClick={onSubmit} 
-            disabled={isDisabled || isLoading}
-          >
-            Təsdiqə göndər
-          </Button>
-        </div>
-      );
-    }
-    
-    // Əgər onApprove və onReject funksiyaları varsa və status pending-dirsə
-    const statusStr = typeof category.status === 'string' ? category.status : '';
-    if (onApprove && onReject && statusStr === 'pending') {
-      return (
-        <div className="flex justify-end gap-2 mt-4">
-          <Button 
-            variant="outline" 
-            onClick={onReject} 
-            className="text-red-500" 
-            disabled={isDisabled || isLoading}
-          >
-            Rədd et
-          </Button>
-          <Button 
-            variant="default" 
-            onClick={onApprove} 
-            disabled={isDisabled || isLoading}
-          >
-            Təsdiqlə
-          </Button>
-        </div>
-      );
-    }
-
-    // Əgər status approved və ya pending deyilsə, boş div qaytarırıq
-    if (statusStr !== 'approved' && statusStr !== 'pending') {
-      return (
-        <div className="flex justify-end gap-2 mt-4">
-          <Button 
-            variant="outline" 
-            onClick={onSubmit} 
-            disabled={isDisabled || isLoading || !onSubmit}
-          >
-            Yadda saxla
-          </Button>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  return (
-    <div>
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
+  const { t } = useLanguage();
+  const [showExport, setShowExport] = useState(false);
+  
+  // Tamamlanma faizini hesablayırıq əgər mövcud deyilsə
+  const completionPercentage = category.completionPercentage || 0;
+  
+  // Aktiv kateqoriya olub-olmadığını yoxlayırıq
+  const isActive = index === currentIndex;
+  
+  if (!isActive) {
+    return (
+      <Card 
+        className={`mb-4 cursor-pointer hover:border-primary transition-all ${
+          completionPercentage === 100 ? 'border-green-500' : 
+          completionPercentage > 0 ? 'border-amber-500' : 'border-gray-300'
+        }`}
+        onClick={() => onChangeCategory(index)}
+      >
+        <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-medium">{category.name}</CardTitle>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(category.status as string)}`}>
-              {getStatusText(category.status as string)}
-            </span>
-          </div>
-          <CardDescription>
-            {category.description || 'Bu kateqoriya üçün məlumatları daxil edin.'}
-          </CardDescription>
-          <div className="mt-2">
-            <Progress value={completionPercentage} className="h-2" />
-            <p className="text-xs text-gray-500 mt-1">Tamamlama: {completionPercentage}%</p>
+            <CardTitle className="text-md font-medium">{category.name}</CardTitle>
+            <div className="text-xs font-medium bg-slate-100 px-2 py-1 rounded-full">
+              {completionPercentage}%
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {sortedColumns.map((column) => {
-            // Sütuna aid dəyəri tapırıq
-            const entry = values.find(val => val.columnId === column.id);
-            return (
-              <FormField
-                key={column.id}
-                column={column}
-                value={entry?.value || ''}
-                status={entry?.status as DataEntryStatus}
-                onChange={(value) => onChange(column.id, value)}
-                isDisabled={isDisabled}
-                error={entry?.error}
-              />
-            );
-          })}
-          
-          {/* Təsdiq və ya rədd etmək üçün buttonlar */}
-          {renderActionButtons()}
+        <CardContent className="pb-3">
+          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${
+                completionPercentage === 100 ? 'bg-green-500' : 
+                completionPercentage > 50 ? 'bg-amber-500' : 'bg-rose-500'
+              }`} 
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </div>
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+
+  // Bu hissədə status tipləri arasında uyğunluq yaratmaq üçün tip çevirmələri edək
+  // Artıq kateqoriya statusu ilə data entry statusu arasında fərq var
+  const displayStatus = () => {
+    // Statusu string olaraq alırıq
+    const status = (category as any).status;
+
+    if (status === "approved" || status === "pending" || status === "rejected") {
+      return status; // Data entry statusudur
+    }
+    
+    // Əgər entries varsa və bütün entries statusu eynidir
+    if (category.entries && category.entries.length > 0) {
+      const entryStatuses = category.entries.map(e => e.status);
+      if (entryStatuses.every(s => s === "approved")) return "approved";
+      if (entryStatuses.every(s => s === "pending")) return "pending";
+      if (entryStatuses.every(s => s === "rejected")) return "rejected";
+    }
+    
+    // Default hal
+    return "draft";
+  };
+  
+  const cardStatus = displayStatus();
+
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-medium">{category.name}</CardTitle>
+          {cardStatus === "approved" && (
+            <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
+              {t('approved')}
+            </div>
+          )}
+          {cardStatus === "pending" && (
+            <div className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full font-medium">
+              {t('pending')}
+            </div>
+          )}
+          {cardStatus === "rejected" && (
+            <div className="bg-rose-100 text-rose-700 text-xs px-2 py-1 rounded-full font-medium">
+              {t('rejected')}
+            </div>
+          )}
+        </div>
+        {category.description && (
+          <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
+        )}
+      </CardHeader>
+      
+      <CardContent>
+        {category.columns.length === 0 ? (
+          <Alert>
+            <AlertTitle>{t('noColumns')}</AlertTitle>
+            <AlertDescription>
+              {t('noColumnsDesc')}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="grid gap-4">
+            {category.columns.map((column) => (
+              <div key={column.id}>
+                {/* <Input
+                  type="text"
+                  placeholder={column.placeholder || column.name}
+                /> */}
+                <p>{column.name}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+      
+      <CardFooter className="pt-4 flex justify-between">
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onSave}>
+            {t('saveAsDraft')}
+          </Button>
+          <Button size="sm" onClick={onSubmit}>
+            {t('submitForApproval')}
+          </Button>
+        </div>
+        
+        <div className="flex gap-2">
+          {onExcelImport && (
+            <Button variant="outline" size="sm" onClick={() => setShowExport(!showExport)}>
+              {t('importExcel')}
+            </Button>
+          )}
+          {onExcelExport && (
+            <Button variant="outline" size="sm" onClick={onExcelExport}>
+              {t('exportExcel')}
+            </Button>
+          )}
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
+
+export default CategoryForm;

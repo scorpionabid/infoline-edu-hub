@@ -1,60 +1,36 @@
 
-import React from 'react';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { CompletionRateCardProps } from '@/types/dashboard';
 
-export interface CompletionRateCardProps {
-  completionRate: number;
-  title: string;
-}
-
-const CompletionRateCard: React.FC<CompletionRateCardProps> = ({ 
+export function CompletionRateCard({ 
   completionRate, 
   title 
-}) => {
-  // Tamamlanma faizinə görə rengi təyin edirik
-  const getProgressColor = () => {
-    if (completionRate >= 80) return 'bg-green-500';
-    if (completionRate >= 50) return 'bg-amber-500';
-    return 'bg-red-500';
+}: CompletionRateCardProps) {
+  // Progress color based on completion rate
+  const getProgressColor = (rate: number) => {
+    if (rate < 30) return 'bg-red-500';
+    if (rate < 70) return 'bg-yellow-500';
+    return 'bg-green-500';
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-5">
-        <CardTitle className="text-md font-medium mb-3">{title}</CardTitle>
-        
-        <div className="mb-2">
-          <span className="text-2xl font-bold">{Math.round(completionRate)}%</span>
-          <span className="text-sm text-muted-foreground ml-2">tamamlanıb</span>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-2xl font-bold">{completionRate}%</span>
+          <span className="text-sm text-muted-foreground">
+            {completionRate < 30 ? 'Zəif' : completionRate < 70 ? 'Orta' : 'Yaxşı'}
+          </span>
         </div>
-        
-        <div className="w-full">
-          <Progress 
-            value={completionRate} 
-            className="h-2"
-            // Rəngi təyin edirik
-            indicatorClassName={getProgressColor()}
-          />
-        </div>
-        
-        <div className="mt-4 grid grid-cols-3 text-sm">
-          <div>
-            <p className="text-muted-foreground">Aşağı</p>
-            <p className="font-medium">0-49%</p>
-          </div>
-          <div className="text-center">
-            <p className="text-muted-foreground">Orta</p>
-            <p className="font-medium">50-79%</p>
-          </div>
-          <div className="text-right">
-            <p className="text-muted-foreground">Yüksək</p>
-            <p className="font-medium">80-100%</p>
-          </div>
-        </div>
+        <Progress
+          value={completionRate}
+          className={`h-2 ${getProgressColor(completionRate)}`}
+        />
       </CardContent>
     </Card>
   );
-};
-
-export default CompletionRateCard;
+}

@@ -1,78 +1,73 @@
 
-export type ColumnType = 'text' | 'textarea' | 'number' | 'select' | 'date' | 'checkbox' | 'radio' | 'file' | 'email' | 'url' | 'phone' | 'image' | 'range' | 'color' | 'password' | 'time' | 'datetime' | 'richtext';
+export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
+export type ColumnStatus = 'active' | 'inactive' | 'draft';
 
-export type CategoryStatus = 'active' | 'inactive' | 'draft' | 'approved' | 'pending' | 'rejected';
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
-
-// Sütun validasiyası üçün tipler
-export interface ColumnValidation {
-  minValue?: number;
-  maxValue?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  required?: boolean;
-  requiredMessage?: string;
-  patternMessage?: string;
-  email?: boolean;
-  url?: boolean;
-  custom?: string;
-  inclusion?: string[];
-  exclusion?: string[];
-  customMessage?: string;
-}
-
-export interface ColumnValidationError {
-  field?: string;
-  message: string;
-  type: string;
-  severity?: 'error' | 'warning' | 'info';
-}
-
-// Sütun seçimləri üçün tipler
-export interface ColumnOption {
-  label: string;
-  value: string;
-}
-
-// Sütun tipi
 export interface Column {
   id: string;
   category_id: string;
   name: string;
   type: ColumnType;
-  is_required?: boolean;
+  is_required: boolean;
   placeholder?: string;
   help_text?: string;
+  status: ColumnStatus;
   order_index?: number;
-  status?: 'active' | 'inactive' | 'draft';
   validation?: ColumnValidation;
+  options?: any[];
   default_value?: string;
-  options?: ColumnOption[];
-  created_at?: string;
-  updated_at?: string;
-  parent_id?: string;
-  conditional_display?: any;
+  created_at: string;
+  updated_at: string;
+  parent_column_id?: string | null;
 }
 
-// Kateqoriya tipi
+export interface ColumnFormData {
+  name: string;
+  type: ColumnType;
+  is_required: boolean;
+  placeholder?: string;
+  help_text?: string;
+  status?: ColumnStatus;
+  order_index?: number;
+  validation?: ColumnValidation;
+  options?: any[];
+  default_value?: string;
+  parent_column_id?: string | null;
+}
+
+export interface ColumnValidation {
+  min?: number;
+  max?: number;
+  pattern?: string;
+  required?: boolean; // İstifadə edilən field
+  minLength?: number;
+  maxLength?: number;
+  requiredMessage?: string; // İstifadə edilən field
+  patternMessage?: string; // İstifadə edilən field
+}
+
+export interface ColumnValidationError {
+  id: string;
+  message: string;
+  type: 'error' | 'warning' | 'info';
+}
+
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: 'all' | 'sectors';
-  deadline?: string;
-  status: CategoryStatus;
+  assignment?: 'sectors' | 'all';
+  deadline?: string | Date;
+  status: 'active' | 'inactive' | 'draft';
   priority?: number;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
   archived?: boolean;
   column_count?: number;
-  completionPercentage?: number;
 }
 
-// Kateqoriya və onun sütunları
 export interface CategoryWithColumns extends Category {
   columns: Column[];
+  entries?: any[];
+  status: 'active' | 'inactive' | 'draft' | 'approved' | 'pending' | 'rejected' | 'partial';
   completionPercentage?: number;
 }

@@ -1,100 +1,64 @@
 
-import React from 'react';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Info, AlertCircle, CheckCircle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { NotificationsCardProps } from '@/types/dashboard';
 
-export interface NotificationsCardProps {
-  notifications: {
-    id: string;
-    title: string;
-    message?: string;
-    date: string;
-    type?: string;
-    isRead?: boolean;
-  }[];
-  title: string;
-}
-
-const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
-  notifications,
-  title 
-}) => {
-  // Bildirişin tip ikonunu təyin edirik
+export function NotificationsCard({ 
+  title, 
+  notifications 
+}: NotificationsCardProps) {
+  // Notification icon based on type
   const getNotificationIcon = (type?: string) => {
     switch (type) {
-      case 'info':
-        return <Info className="h-4 w-4 text-blue-500" />;
       case 'warning':
-        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+        return '⚠️';
       case 'error':
-        return <X className="h-4 w-4 text-red-500" />;
+        return '❌';
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return '✅';
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
+        return 'ℹ️';
     }
   };
 
-  // Tarixi formatlayırıq
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('az-AZ', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
-    <Card className="shadow-sm h-full">
-      <CardContent className="p-5">
-        <CardTitle className="text-md font-medium mb-3 flex justify-between items-center">
-          {title}
-          <Button variant="ghost" size="sm" className="h-7 px-2">
-            Hamısına bax
-          </Button>
-        </CardTitle>
-        
-        {notifications && notifications.length > 0 ? (
-          <ScrollArea className="h-[350px] pr-4">
-            <div className="space-y-4">
-              {notifications.map((notification) => (
-                <div 
-                  key={notification.id} 
-                  className={cn(
-                    "p-3 border rounded-md",
-                    !notification.isRead && "bg-muted/50 border-primary/20",
-                    notification.isRead && "bg-card"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5">
-                      {getNotificationIcon(notification.type)}
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="overflow-auto max-h-[300px]">
+        {notifications.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Bildiriş yoxdur
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {notifications.map((notification, index) => (
+              <div key={notification.id}>
+                {index > 0 && <Separator className="my-2" />}
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 text-lg">
+                    {getNotificationIcon(notification.type)}
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h4 className={`font-medium ${notification.isRead ? 'text-muted-foreground' : ''}`}>
+                        {notification.title}
+                      </h4>
+                      <span className="text-xs text-muted-foreground">{notification.date}</span>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{notification.title}</p>
-                      {notification.message && (
-                        <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-2">{formatDate(notification.date)}</p>
-                    </div>
+                    {notification.message && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {notification.message}
+                      </p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground">
-            <Bell className="h-10 w-10 mb-2 opacity-20" />
-            <p>Yeni bildiriş yoxdur</p>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
     </Card>
   );
-};
-
-export default NotificationsCard;
+}

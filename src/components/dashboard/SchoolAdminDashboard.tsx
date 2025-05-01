@@ -1,10 +1,11 @@
+
 import React from 'react';
-import { Grid } from '../../components/ui/grid';
-import { StatsCard } from './common/StatsCardProps';
+import { Grid } from '@/components/ui/grid';
+import { StatsCard } from './common/StatsCard';
 import { NotificationsCard } from './common/NotificationsCardProps';
-import CompletionRateCard from '../../components/dashboard/common/CompletionRateCard';
-import { SchoolAdminDashboardData } from '../../types/dashboard';
-import { useLanguage } from '../../context/LanguageContext';
+import { CompletionRateCard } from './common/CompletionRateCard';
+import { SchoolAdminDashboardData } from '@/types/dashboard';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
@@ -52,8 +53,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          title={t('overallCompletion')}
           completionRate={data.completionRate}
+          title={t('overallCompletion')}
         />
                 
         <NotificationsCard
