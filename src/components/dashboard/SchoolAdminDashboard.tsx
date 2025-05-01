@@ -3,7 +3,7 @@ import { Grid } from '../../components/ui/grid';
 import { StatsCard } from './common/StatsCardProps';
 import { NotificationsCard } from './common/NotificationsCardProps';
 import CompletionRateCard from '../../components/dashboard/common/CompletionRateCard';
-import { SchoolAdminDashboardData } from '../../types/supabase';
+import { SchoolAdminDashboardData } from '../../types/dashboard';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface SchoolAdminDashboardProps {

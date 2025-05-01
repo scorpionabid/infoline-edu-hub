@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import SidebarNav from './SidebarNav';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
+import Header from './Header';
 
 interface SidebarLayoutProps {
   children: ReactNode;
@@ -61,7 +62,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">  
+      <Header />
       <div className="flex min-h-screen">
         {/* Sidebar */}
         <div 

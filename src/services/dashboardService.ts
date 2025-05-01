@@ -12,39 +12,49 @@ const edgeFunctions = {
 
 // Default boş məlumat strukturları
 const defaultSuperAdminData: SuperAdminDashboardData = {
-  stats: { totalSchools: 0, totalUsers: 0, totalForms: 0, completedForms: 0 },
-  completionRate: { percentage: 0, total: 0, completed: 0 },
-  regionStats: [],
+  stats: { regions: 0, sectors: 0, schools: 0, users: 0 },
+  regionCount: 0,
+  sectorCount: 0,
+  schoolCount: 0,
+  userCount: 0,
+  approvalRate: 0,
+  completionRate: 0,
+  regions: [],
   pendingApprovals: [],
   notifications: [],
-  formsByStatus: { draft: 0, submitted: 0, approved: 0, rejected: 0 }
+  formsByStatus: { pending: 0, approved: 0, rejected: 0, total: 0 }
 };
 
 const defaultRegionAdminData: RegionAdminDashboardData = {
-  sectors: 0,
-  schools: 0,
-  users: 0,
-  pendingSchools: [],
-  completionRate: { percentage: 0, total: 0, completed: 0 },
+  stats: { sectors: 0, schools: 0, users: 0 },
+  pendingItems: [],
+  categories: [],
+  sectors: [],
   notifications: [],
-  sectorStats: []
+  completionRate: 0
 };
 
 const defaultSectorAdminData: SectorAdminDashboardData = {
-  schools: 0,
-  users: 0,
-  pendingApprovals: [],
-  completionRate: { percentage: 0, total: 0, completed: 0 },
+  stats: { schools: 0 },
+  pendingItems: [],
+  schools: [],
+  categories: [],
   notifications: [],
-  schoolsStats: []
+  completionRate: 0
 };
 
 const defaultSchoolAdminData: SchoolAdminDashboardData = {
-  forms: { total: 0, completed: 0, pending: 0 },
-  pendingForms: [],
-  completionRate: { percentage: 0, total: 0, completed: 0 },
+  formStats: {
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    drafts: 0,
+    incomplete: 0
+  },
+  categories: [],
   notifications: [],
-  recentActivity: []
+  completionRate: 0
 };
 
 // SuperAdmin Dashboard Data
@@ -71,8 +81,13 @@ export const getSuperAdminDashboardData = async (): Promise<SuperAdminDashboardD
       // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
       return {
         stats: typedData.stats || defaultSuperAdminData.stats,
+        regionCount: typedData.regionCount || defaultSuperAdminData.regionCount,
+        sectorCount: typedData.sectorCount || defaultSuperAdminData.sectorCount,
+        schoolCount: typedData.schoolCount || defaultSuperAdminData.schoolCount,
+        userCount: typedData.userCount || defaultSuperAdminData.userCount,
+        approvalRate: typedData.approvalRate || defaultSuperAdminData.approvalRate,
         completionRate: typedData.completionRate || defaultSuperAdminData.completionRate,
-        regionStats: typedData.regionStats || defaultSuperAdminData.regionStats,
+        regions: typedData.regions || defaultSuperAdminData.regions,
         pendingApprovals: typedData.pendingApprovals || defaultSuperAdminData.pendingApprovals,
         notifications: typedData.notifications || defaultSuperAdminData.notifications,
         formsByStatus: typedData.formsByStatus || defaultSuperAdminData.formsByStatus
@@ -112,13 +127,12 @@ export const getRegionAdminDashboardData = async (regionId: string): Promise<Reg
         
         // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
         return {
+          stats: typedData.stats || defaultRegionAdminData.stats,
+          pendingItems: typedData.pendingItems || defaultRegionAdminData.pendingItems,
+          categories: typedData.categories || defaultRegionAdminData.categories,
           sectors: typedData.sectors || defaultRegionAdminData.sectors,
-          schools: typedData.schools || defaultRegionAdminData.schools,
-          users: typedData.users || defaultRegionAdminData.users,
-          pendingSchools: typedData.pendingSchools || defaultRegionAdminData.pendingSchools,
-          completionRate: typedData.completionRate || defaultRegionAdminData.completionRate,
           notifications: typedData.notifications || defaultRegionAdminData.notifications,
-          sectorStats: typedData.sectorStats || defaultRegionAdminData.sectorStats
+          completionRate: typedData.completionRate || defaultRegionAdminData.completionRate
         };
       }
     }
@@ -156,12 +170,12 @@ export const getSectorAdminDashboardData = async (sectorId: string): Promise<Sec
         
         // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
         return {
+          stats: typedData.stats || defaultSectorAdminData.stats,
+          pendingItems: typedData.pendingItems || defaultSectorAdminData.pendingItems,
           schools: typedData.schools || defaultSectorAdminData.schools,
-          users: typedData.users || defaultSectorAdminData.users,
-          pendingApprovals: typedData.pendingApprovals || defaultSectorAdminData.pendingApprovals,
-          completionRate: typedData.completionRate || defaultSectorAdminData.completionRate,
+          categories: typedData.categories || defaultSectorAdminData.categories,
           notifications: typedData.notifications || defaultSectorAdminData.notifications,
-          schoolsStats: typedData.schoolsStats || defaultSectorAdminData.schoolsStats
+          completionRate: typedData.completionRate || defaultSectorAdminData.completionRate
         };
       }
     }
@@ -199,11 +213,10 @@ export const getSchoolAdminDashboardData = async (schoolId: string): Promise<Sch
         
         // Server məlumatlarını qaytar, əksik məlumatlar üçün default dəyərlərdən istifadə et
         return {
-          forms: typedData.forms || defaultSchoolAdminData.forms,
-          pendingForms: typedData.pendingForms || defaultSchoolAdminData.pendingForms,
-          completionRate: typedData.completionRate || defaultSchoolAdminData.completionRate,
+          formStats: typedData.formStats || defaultSchoolAdminData.formStats,
+          categories: typedData.categories || defaultSchoolAdminData.categories,
           notifications: typedData.notifications || defaultSchoolAdminData.notifications,
-          recentActivity: typedData.recentActivity || defaultSchoolAdminData.recentActivity
+          completionRate: typedData.completionRate || defaultSchoolAdminData.completionRate
         };
       }
     }

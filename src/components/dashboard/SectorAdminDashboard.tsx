@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -14,7 +13,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import EnhancedApprovalDialog from '../approval/EnhancedApprovalDialog';
 
-const SectorAdminDashboard: React.FC = () => {
+interface SectorAdminDashboardData {
+  // Add properties of SectorAdminDashboardData type here
+}
+
+const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ data }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [selectedApproval, setSelectedApproval] = React.useState<any>(null);

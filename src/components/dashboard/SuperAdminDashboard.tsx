@@ -3,7 +3,7 @@ import { Grid } from '../../components/ui/grid';
 import { StatsCard } from './common/StatsCardProps';
 import { NotificationsCard } from './common/NotificationsCardProps';
 import CompletionRateCard from '../../components/dashboard/common/CompletionRateCard';
-import { SuperAdminDashboardData } from '../../types/supabase';
+import { SuperAdminDashboardData } from '@/types/dashboard';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;

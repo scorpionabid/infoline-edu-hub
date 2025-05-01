@@ -1,4 +1,3 @@
-
 // Dashboard notifications
 export interface DashboardNotification {
   id: string;
@@ -149,6 +148,11 @@ export interface SuperAdminDashboardData {
   categories?: CategoryStat[];
   users?: number;
   schools?: number;
+  regionCount: number;
+  sectorCount: number;
+  schoolCount: number;
+  userCount: number;
+  approvalRate: number;
 }
 
 // Region admin dashboard data
@@ -211,6 +215,7 @@ export interface FormStats {
   approved: number;
   rejected: number;
   drafts: number;
+  incomplete: number;
 }
 
 // Activity log item
@@ -239,3 +244,10 @@ export enum FormStatus {
   OVERDUE = 'overdue',
   COMPLETED = 'completed'
 }
+
+// Dashboard data type
+export type DashboardData = 
+  | SuperAdminDashboardData
+  | RegionAdminDashboardData
+  | SectorAdminDashboardData
+  | SchoolAdminDashboardData;
