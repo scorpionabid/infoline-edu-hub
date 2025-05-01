@@ -2,9 +2,9 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
-import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
-import { SchoolAdminDashboard } from './school-admin/SchoolAdminDashboard';
+import { RegionAdminDashboard } from './RegionAdminDashboard';
+import { SectorAdminDashboard } from './SectorAdminDashboard';
+import { SchoolAdminDashboard } from './SchoolAdminDashboard';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { fetchDashboardData } from '@/api/dashboardApi';
 

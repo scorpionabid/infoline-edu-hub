@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -138,6 +137,3 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
     </div>
   );
 };
-
-// Default export əlavə edək
-export default RegionAdminDashboard;

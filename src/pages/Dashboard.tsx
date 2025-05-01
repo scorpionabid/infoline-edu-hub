@@ -1,15 +1,14 @@
-
 import React from 'react';
 import { useAuth } from '@/context/auth';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
-import SectorAdminDashboard from '@/components/dashboard/SectorAdminDashboard';
-import RegionAdminDashboard from '@/components/dashboard/RegionAdminDashboard';
+import { SectorAdminDashboard } from '@/components/dashboard/SectorAdminDashboard';
+import { RegionAdminDashboard } from '@/components/dashboard/RegionAdminDashboard';
 import { useRealDashboardData } from '@/hooks/useRealDashboardData';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
-import SchoolAdminDashboard from '@/components/dashboard/SchoolAdminDashboard';
+import { SchoolAdminDashboard } from '@/components/dashboard/SchoolAdminDashboard';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();

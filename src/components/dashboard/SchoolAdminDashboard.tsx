@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
@@ -11,7 +10,7 @@ interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
 }
 
-const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => {
+export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => {
   const { t } = useLanguage();
   
   return (
@@ -72,5 +71,3 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => 
     </div>
   );
 };
-
-export default SchoolAdminDashboard;

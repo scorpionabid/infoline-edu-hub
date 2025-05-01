@@ -17,7 +17,7 @@ interface SectorAdminDashboardData {
   // Add properties of SectorAdminDashboardData type here
 }
 
-const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ data }) => {
+export const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ data }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [selectedApproval, setSelectedApproval] = React.useState<any>(null);
@@ -322,5 +322,3 @@ const SectorAdminDashboard: React.FC<{ data: SectorAdminDashboardData }> = ({ da
     </>
   );
 };
-
-export default SectorAdminDashboard;
