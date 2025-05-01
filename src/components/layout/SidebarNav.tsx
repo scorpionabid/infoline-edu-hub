@@ -39,8 +39,9 @@ const NavItem: React.FC<NavItemProps> = ({
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (children && children.length > 0) {
+      e.preventDefault();
       setIsOpen(!isOpen);
     }
     if (onClick) onClick();
@@ -49,23 +50,32 @@ const NavItem: React.FC<NavItemProps> = ({
   return (
     <div className="mb-1">
       <Link
-        to={href}
+        to={children && children.length > 0 ? '#' : href}
         className={cn(
           "flex items-center px-3 py-2 rounded-md transition-colors",
-          isActive
+          isActive || (children && children.some(child => child.isActive))
             ? "bg-primary/10 text-primary font-medium"
             : "text-muted-foreground hover:bg-muted"
         )}
         onClick={handleClick}
       >
-        <div className="flex items-center">
-          {icon}
-          {isSidebarOpen && <span className="ml-3">{label}</span>}
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center">
+            {icon}
+            {isSidebarOpen && <span className="ml-3">{label}</span>}
+          </div>
+          {isSidebarOpen && children && children.length > 0 && (
+            <span className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </span>
+          )}
         </div>
       </Link>
 
       {/* Alt menyu */}
-      {isSidebarOpen && isOpen && children && children.length > 0 && (
+      {isSidebarOpen && (isOpen || (children && children.some(child => child.isActive))) && children && children.length > 0 && (
         <div className="ml-8 mt-1 space-y-1">
           {children.map((child, index) => (
             <Link
@@ -142,12 +152,12 @@ const SidebarNav: React.FC<{ onItemClick?: () => void, isSidebarOpen?: boolean }
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: true,
+      show: canManageCategories,
       children: [
         {
           href: "/columns",
           label: t('columns'),
-          isActive: pathname === "/columns"
+          isActive: pathname.startsWith("/columns")
         }
       ]
     },

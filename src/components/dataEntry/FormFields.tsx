@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Column } from '@/types/column';
+import { Column, ColumnValidationError } from '@/types/column';
 import { DataEntryStatus } from '@/types/dataEntry';
 import { useForm } from 'react-hook-form';
 import { StatusIndicator } from './StatusIndicators';
@@ -20,10 +20,7 @@ interface FormFieldProps {
   status?: DataEntryStatus;
   onChange: (value: string) => void;
   isDisabled?: boolean;
-  error?: {
-    message: string;
-    type: string;
-  };
+  error?: ColumnValidationError;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({

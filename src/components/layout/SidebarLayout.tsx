@@ -1,8 +1,8 @@
 
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import { Loader2, Menu, X } from 'lucide-react';
+import { Loader2, Menu, X, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SidebarNav from './SidebarNav';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,35 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Ekran ölçüsü dəyişikliklərinə reaksiya vermək üçün
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // Əgər mobil ekrana keçdikdə sidebar açıqdırsa, onu bağlayaq
+      if (mobile && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
+      
+      // Əgər desktop ekrana keçdikdə sidebar bağlıdırsa, onu açaq
+      if (!mobile && !isSidebarOpen) {
+        setIsSidebarOpen(true);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isSidebarOpen]);
+
+  // Səhifə yükləndikdə ilkin olaraq mobil yoxlaması
+  useEffect(() => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -37,9 +66,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         {/* Sidebar */}
         <div 
           className={cn(
-            "bg-background border-r transition-all duration-300 ease-in-out",
+            "bg-background border-r transition-all duration-300 ease-in-out z-20 h-full",
             isSidebarOpen ? "w-64" : "w-0 md:w-16",
-            "overflow-hidden z-20 fixed h-full md:relative"
+            isMobile ? "fixed" : "relative"
           )}
         >
           <div className="flex flex-col h-full">
@@ -54,15 +83,14 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="md:hidden"
               >
-                {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+                {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
               </Button>
             </div>
             
             {/* User Info */}
-            {user && (
-              <div className={cn("px-4 py-3 border-b", !isSidebarOpen && "md:hidden")}>
+            {user && isSidebarOpen && (
+              <div className="px-4 py-3 border-b">
                 <div className="font-medium truncate">
                   {user.full_name}
                 </div>
@@ -74,15 +102,15 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-2">
-              <SidebarNav onItemClick={() => setIsSidebarOpen(false)} isSidebarOpen={isSidebarOpen} />
+              <SidebarNav onItemClick={() => isMobile && setIsSidebarOpen(false)} isSidebarOpen={isSidebarOpen} />
             </div>
           </div>
         </div>
         
         {/* Mobile overlay */}
-        {isSidebarOpen && (
+        {isSidebarOpen && isMobile && (
           <div 
-            className="fixed inset-0 bg-black/50 z-10 md:hidden" 
+            className="fixed inset-0 bg-black/50 z-10" 
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
@@ -97,9 +125,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="mr-2"
+              className="md:hidden"
             >
-              <Menu size={20} />
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
             <div className="flex-1" />
             {/* Burada digər üst panel elementlərini əlavə edə bilərsiniz */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -27,7 +28,7 @@ import { useSchool } from '@/hooks/useSchool';
 import { CategoryConfirmationDialog } from './CategoryConfirmationDialog';
 import { validateEntryValue } from './utils/formUtils';
 
-const DataEntryForm: React.FC = () => {
+const DataEntryFormComponent: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -84,8 +85,7 @@ const DataEntryForm: React.FC = () => {
         });
         setFormValues(initialValues);
       } else if (error) {
-        toast({
-          title: t('error'),
+        toast.error(t('error'), {
           description: t('errorFetchingDataEntries')
         });
       }
@@ -127,8 +127,7 @@ const DataEntryForm: React.FC = () => {
     // Check if there are any validation errors
     const hasErrors = validatedEntries.some(entry => !entry.isValid);
     if (hasErrors) {
-      toast({
-        title: t('error'),
+      toast.error(t('error'), {
         description: t('fixValidationErrors')
       });
       return;
@@ -152,22 +151,19 @@ const DataEntryForm: React.FC = () => {
     try {
       const { success, error } = await saveDataEntryForm(formData);
       if (success) {
-        toast({
-          title: t('success'),
+        toast.success(t('success'), {
           description: t('dataSavedSuccessfully')
         });
         setSaveStatus(DataEntrySaveStatus.SAVED);
         setIsDirty(false);
       } else {
-        toast({
-          title: t('error'),
+        toast.error(t('error'), {
           description: error || t('unknownError')
         });
         setSaveStatus(DataEntrySaveStatus.ERROR);
       }
     } catch (err: any) {
-      toast({
-        title: t('error'),
+      toast.error(t('error'), {
         description: err.message || t('unknownError')
       });
       setSaveStatus(DataEntrySaveStatus.ERROR);
@@ -198,23 +194,20 @@ const DataEntryForm: React.FC = () => {
     try {
       const { success, error } = await submitForApproval(formData);
       if (success) {
-        toast({
-          title: t('success'),
+        toast.success(t('success'), {
           description: t('dataSubmittedForApproval')
         });
         setSaveStatus(DataEntrySaveStatus.SAVED);
         setIsDirty(false);
         navigate('/dashboard');
       } else {
-        toast({
-          title: t('error'),
+        toast.error(t('error'), {
           description: error || t('unknownError')
         });
         setSaveStatus(DataEntrySaveStatus.ERROR);
       }
     } catch (err: any) {
-      toast({
-        title: t('error'),
+      toast.error(t('error'), {
         description: err.message || t('unknownError')
       });
       setSaveStatus(DataEntrySaveStatus.ERROR);
@@ -349,4 +342,4 @@ const DataEntryForm: React.FC = () => {
   );
 };
 
-export default DataEntryForm;
+export default DataEntryFormComponent;

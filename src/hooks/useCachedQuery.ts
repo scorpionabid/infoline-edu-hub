@@ -1,76 +1,34 @@
 
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, UseQueryOptions, QueryKey } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
+// Keş konfiqurasiyası tipi
 export interface CacheConfig {
   key: string;
   ttl: number; // saniyələrlə
   dependencies?: string[];
 }
 
-export interface CachedQueryOptions<T> {
-  queryKey: readonly unknown[];
-  queryFn: () => Promise<T>;
-  queryOptions?: Omit<UseQueryOptions<T, unknown, T, readonly unknown[]>, 'queryFn' | 'queryKey'>;
-  cacheConfig?: CacheConfig;
-}
-
-export function useCachedQuery<T>({
-  queryKey,
-  queryFn,
-  queryOptions,
-  cacheConfig
-}: CachedQueryOptions<T>) {
+// Keşlənmiş query hook
+export function useCachedQuery<T>(
+  queryKey: QueryKey,
+  queryFn: () => Promise<T>,
+  options?: Omit<UseQueryOptions<T, unknown, T, QueryKey>, 'queryKey' | 'queryFn'>
+) {
   return useQuery({
     queryKey,
-    queryFn: async () => {
-      try {
-        // Normal sorğu funksiyasını çağırırıq
-        const result = await queryFn();
-        
-        // Keşləmə konfiqurasiyası varsa və serverə keşləmə sorğusu göndərə bilirik
-        if (cacheConfig) {
-          try {
-            // Supabase funksiyasını çağıraraq nəticəni keşləyirik
-            await supabase.functions.invoke('cached-query', {
-              body: {
-                key: cacheConfig.key,
-                data: result,
-                ttl: cacheConfig.ttl,
-                dependencies: cacheConfig.dependencies
-              }
-            });
-          } catch (cacheError) {
-            // Keşləmə xətasını loglayırıq, amma normal nəticəni qaytarırıq
-            console.error('Keşləmə xətası:', cacheError);
-          }
-        }
-        
-        return result;
-      } catch (error) {
-        // Əgər sorğu xəta verərsə və keşləmə konfiqurasiyası varsa
-        if (cacheConfig) {
-          try {
-            // Keşdən məlumatı əldə etməyə çalışırıq
-            const { data: cachedData, error: cacheError } = await supabase.functions.invoke('get-cached-query', {
-              body: {
-                key: cacheConfig.key
-              }
-            });
-            
-            if (!cacheError && cachedData) {
-              console.log('Keşdən məlumatlar istifadə olundu:', cacheConfig.key);
-              return cachedData as T;
-            }
-          } catch (cacheError) {
-            console.error('Keş əldə etmə xətası:', cacheError);
-          }
-        }
-        
-        // Keşdən də əldə edilə bilmədisə, xətanı yenidən atırıq
-        throw error;
-      }
-    },
-    ...queryOptions
+    queryFn,
+    staleTime: options?.staleTime ?? 5 * 60 * 1000, // Default 5 dəqiqə
+    ...options,
   });
+}
+
+// Keşi təmizləmək üçün funksiya
+export function invalidateCache(queryClient: any, queryKey: QueryKey) {
+  return queryClient.invalidateQueries({ queryKey });
+}
+
+// Bütün keşləri təmizləmək üçün funksiya
+export function clearAllCaches(queryClient: any) {
+  return queryClient.clear();
 }

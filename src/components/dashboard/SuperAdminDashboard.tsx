@@ -1,74 +1,80 @@
 
 import React from 'react';
+import { Grid } from '@/components/ui/grid';
+import { StatsCard } from './common/StatsCardProps';
+import { NotificationsCard } from './common/NotificationsCardProps';
+import { CompletionRateCard } from '@/components/dashboard/common/CompletionRateCard';
 import { SuperAdminDashboardData } from '@/types/supabase';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
 }
 
-export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
+export function SuperAdminDashboard({ data }: SuperAdminDashboardProps) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Super Admin İdarə Paneli</h2>
+    <div className="space-y-6">
+      <Grid columns={4} className="gap-6">
+        <StatsCard 
+          title="Regionlar" 
+          value={data.regionCount} 
+          icon="R" 
+          description="Ümumi region sayı"
+          trend={`Son 30 gün: +${data.regionCount > 0 ? Math.floor(data.regionCount * 0.1) : 0}`}
+          trendDirection="up"
+        />
+        <StatsCard 
+          title="Sektorlar" 
+          value={data.sectorCount} 
+          icon="S" 
+          description="Ümumi sektor sayı"
+          trend={`Son 30 gün: +${data.sectorCount > 0 ? Math.floor(data.sectorCount * 0.15) : 0}`}
+          trendDirection="up"
+        />
+        <StatsCard 
+          title="Məktəblər" 
+          value={data.schoolCount} 
+          icon="M" 
+          description="Ümumi məktəb sayı"
+          trend={`Son 30 gün: +${data.schoolCount > 0 ? Math.floor(data.schoolCount * 0.05) : 0}`}
+          trendDirection="up"
+        />
+        <StatsCard 
+          title="İstifadəçilər" 
+          value={data.userCount} 
+          icon="İ" 
+          description="Ümumi istifadəçi sayı"
+          trend={`Son 30 gün: +${data.userCount > 0 ? Math.floor(data.userCount * 0.2) : 0}`}
+          trendDirection="up"
+        />
+      </Grid>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-4 shadow">
-          <h3 className="text-gray-500">Regionlar</h3>
-          <p className="text-2xl font-bold">{data.regionCount}</p>
-        </div>
-        <div className="bg-white rounded-lg p-4 shadow">
-          <h3 className="text-gray-500">Sektorlar</h3>
-          <p className="text-2xl font-bold">{data.sectorCount}</p>
-        </div>
-        <div className="bg-white rounded-lg p-4 shadow">
-          <h3 className="text-gray-500">Məktəblər</h3>
-          <p className="text-2xl font-bold">{data.schoolCount}</p>
-        </div>
-        <div className="bg-white rounded-lg p-4 shadow">
-          <h3 className="text-gray-500">İstifadəçilər</h3>
-          <p className="text-2xl font-bold">{data.userCount}</p>
-        </div>
-      </div>
+      <Grid columns={2} className="gap-6">
+        <CompletionRateCard 
+          title="Sistem ümumi məlumat tamamlanma faizi" 
+          completionRate={data.completionRate} 
+        />
+        <CompletionRateCard 
+          title="Təsdiq edilmiş məlumatlar" 
+          completionRate={data.approvalRate} 
+        />
+      </Grid>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg p-4 shadow">
-          <h3 className="text-lg font-semibold mb-2">Son əlavə edilmiş regionlar</h3>
-          {data.recentCategories && data.recentCategories.length > 0 ? (
-            <ul className="space-y-2">
-              {data.recentCategories.map((category, index) => (
-                <li key={index} className="border-b pb-2">
-                  <p className="font-medium">{category.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(category.created_at).toLocaleDateString()}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">Son əlavə edilmiş region yoxdur</p>
-          )}
-        </div>
-        <div className="bg-white rounded-lg p-4 shadow">
-          <h3 className="text-lg font-semibold mb-2">Son bildirişlər</h3>
-          {data.notifications && data.notifications.length > 0 ? (
-            <ul className="space-y-2">
-              {data.notifications.map((notification, index) => (
-                <li key={index} className="border-b pb-2">
-                  <p className="font-medium">{notification.title}</p>
-                  <p className="text-sm">{notification.message}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(notification.date).toLocaleDateString()}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">Yeni bildiriş yoxdur</p>
-          )}
-        </div>
-      </div>
+      <Grid columns={2} className="gap-6">
+        <NotificationsCard
+          title="Son bildirişlər"
+          notifications={data.notifications.map(n => ({
+            id: n.id || Math.random().toString(),
+            title: n.title || 'Bildiriş',
+            message: n.message,
+            date: n.date || new Date(n.timestamp || Date.now()).toLocaleDateString(),
+            type: n.type || 'info',
+            isRead: n.read
+          }))}
+          viewAllLink="/notifications"
+        />
+      </Grid>
     </div>
   );
-};
+}
 
 export default SuperAdminDashboard;

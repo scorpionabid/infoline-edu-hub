@@ -106,7 +106,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     }
     
     // Əgər onApprove və onReject funksiyaları varsa və status pending-dirsə
-    const statusStr = category.status.toString();
+    const statusStr = typeof category.status === 'string' ? category.status : '';
     if (onApprove && onReject && statusStr === 'pending') {
       return (
         <div className="flex justify-end gap-2 mt-4">
@@ -130,8 +130,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     }
 
     // Əgər status approved və ya pending deyilsə, boş div qaytarırıq
-    const statusAsStr = category.status.toString();
-    if (statusAsStr !== 'approved' && statusAsStr !== 'pending') {
+    if (statusStr !== 'approved' && statusStr !== 'pending') {
       return (
         <div className="flex justify-end gap-2 mt-4">
           <Button 
@@ -177,7 +176,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
                 value={entry?.value || ''}
                 status={entry?.status as DataEntryStatus}
                 onChange={(value) => onChange(column.id, value)}
-                isDisabled={isDisabled || (category.status.toString() === 'approved' || category.status.toString() === 'pending')}
+                isDisabled={isDisabled}
                 error={entry?.error}
               />
             );

@@ -1,59 +1,49 @@
 
 import React, { createContext, useContext } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { invalidateCache, clearAllCaches } from '@/hooks/useCachedQuery';
 
 // Keş idarəsi üçün kontekst yaradaq
 interface CacheContextType {
-  invalidateQueries: (key: string | string[]) => void;
-  clearCache: () => void;
+  invalidateCache: (queryKey: string[]) => void;
+  clearAllCaches: () => void;
 }
 
-const CacheContext = createContext<CacheContextType>({
-  invalidateQueries: () => {},
-  clearCache: () => {}
-});
+const defaultCacheContext: CacheContextType = {
+  invalidateCache: () => {},
+  clearAllCaches: () => {},
+};
 
-export const useCacheInvalidation = () => useContext(CacheContext);
+const CacheContext = createContext<CacheContextType>(defaultCacheContext);
 
-export const AppQueryClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [queryClient] = React.useState(() => new QueryClient({
+// Custom hook
+export const useCache = () => useContext(CacheContext);
+
+// React Query Client Provider-i ilə birlikdə keş idarəsini təmin edən komponent
+export const CustomQueryClientProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
-        refetchOnMount: true,
-        retry: 1,
         staleTime: 5 * 60 * 1000, // 5 dəqiqə
-        cacheTime: 10 * 60 * 1000, // 10 dəqiqə
+        retry: 1,
       },
     },
-  }));
+  });
 
-  // Keş invalidasiya funksiyaları
-  const cacheContext = React.useMemo(() => ({
-    invalidateQueries: (key: string | string[]) => {
-      if (Array.isArray(key)) {
-        key.forEach(k => invalidateCache(k));
-      } else {
-        invalidateCache(key);
-      }
-      queryClient.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] });
-    },
-    clearCache: () => {
-      clearAllCaches();
-      queryClient.clear();
-    }
-  }), [queryClient]);
+  // Keş idarəsi üçün funksiyalar
+  const invalidateCache = (queryKey: string[]) => {
+    queryClient.invalidateQueries({ queryKey });
+  };
+
+  const clearAllCaches = () => {
+    queryClient.clear();
+  };
 
   return (
-    <CacheContext.Provider value={cacheContext}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <CacheContext.Provider value={{ invalidateCache, clearAllCaches }}>
         {children}
-      </QueryClientProvider>
-    </CacheContext.Provider>
+      </CacheContext.Provider>
+    </QueryClientProvider>
   );
 };
-
-// AppQueryProvider-i AppQueryClientProvider-in alias-i kimi export edirik
-// Bu, main.tsx-dəki import-un işləməsini təmin edəcək
-export { AppQueryClientProvider as AppQueryProvider };
