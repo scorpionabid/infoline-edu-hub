@@ -1,124 +1,97 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Bell, Info, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DashboardNotification } from '@/types/dashboard';
-import { useLanguage } from '@/context/LanguageContext';
-import { 
-  Bell, 
-  CheckCircle, 
-  AlertCircle, 
-  Info, 
-  Mail, 
-  MessageSquare, 
-  Calendar, 
-  User,
-  X 
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface NotificationsCardProps {
-  notifications: DashboardNotification[];
+export interface NotificationsCardProps {
+  notifications: {
+    id: string;
+    title: string;
+    message?: string;
+    date: string;
+    type?: string;
+    isRead?: boolean;
+  }[];
+  title: string;
 }
 
-const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications }) => {
-  const { t } = useLanguage();
-
-  // Get icon based on notification type
-  const getIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'error':
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
+const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+  notifications,
+  title 
+}) => {
+  // Bildirişin tip ikonunu təyin edirik
+  const getNotificationIcon = (type?: string) => {
+    switch (type) {
       case 'info':
         return <Info className="h-4 w-4 text-blue-500" />;
-      case 'email':
-        return <Mail className="h-4 w-4 text-indigo-500" />;
-      case 'message':
-        return <MessageSquare className="h-4 w-4 text-purple-500" />;
-      case 'event':
-        return <Calendar className="h-4 w-4 text-yellow-500" />;
-      case 'user':
-        return <User className="h-4 w-4 text-teal-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case 'error':
+        return <X className="h-4 w-4 text-red-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  // Format date function (assumes format YYYY-MM-DD)
-  const formatDate = (date: string | undefined, time?: string) => {
-    if (!date) return '';
-    
-    const today = new Date();
-    const notificationDate = new Date(date);
-    
-    // Check if it's today
-    if (
-      today.getDate() === notificationDate.getDate() &&
-      today.getMonth() === notificationDate.getMonth() &&
-      today.getFullYear() === notificationDate.getFullYear()
-    ) {
-      return time ? `${t('today')}, ${time}` : t('today');
-    }
-    
-    // Check if it's yesterday
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (
-      yesterday.getDate() === notificationDate.getDate() &&
-      yesterday.getMonth() === notificationDate.getMonth() &&
-      yesterday.getFullYear() === notificationDate.getFullYear()
-    ) {
-      return time ? `${t('yesterday')}, ${time}` : t('yesterday');
-    }
-    
-    // Format as DD/MM/YYYY
-    const day = notificationDate.getDate().toString().padStart(2, '0');
-    const month = (notificationDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = notificationDate.getFullYear();
-    
-    return time ? `${day}/${month}/${year}, ${time}` : `${day}/${month}/${year}`;
+  // Tarixi formatlayırıq
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('az-AZ', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('notifications')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px]">
-          {notifications.length === 0 ? (
-            <div className="text-center text-muted-foreground p-4">
-              {t('noNotifications')}
-            </div>
-          ) : (
+    <Card className="shadow-sm h-full">
+      <CardContent className="p-5">
+        <CardTitle className="text-md font-medium mb-3 flex justify-between items-center">
+          {title}
+          <Button variant="ghost" size="sm" className="h-7 px-2">
+            Hamısına bax
+          </Button>
+        </CardTitle>
+        
+        {notifications && notifications.length > 0 ? (
+          <ScrollArea className="h-[350px] pr-4">
             <div className="space-y-4">
               {notifications.map((notification) => (
-                <div key={notification.id} className={`p-3 rounded-md border ${notification.read || notification.isRead ? 'bg-background' : 'bg-secondary/30'}`}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        {getIcon(notification.type)}
-                      </div>
-                      <div>
-                        <div className="font-medium mb-1">{notification.title}</div>
-                        <div className="text-sm text-muted-foreground">{notification.message}</div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {formatDate(notification.date || notification.timestamp, notification.time)}
-                        </div>
-                      </div>
+                <div 
+                  key={notification.id} 
+                  className={cn(
+                    "p-3 border rounded-md",
+                    !notification.isRead && "bg-muted/50 border-primary/20",
+                    notification.isRead && "bg-card"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5">
+                      {getNotificationIcon(notification.type)}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      {notification.message && (
+                        <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-2">{formatDate(notification.date)}</p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          )}
-        </ScrollArea>
+          </ScrollArea>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[350px] text-muted-foreground">
+            <Bell className="h-10 w-10 mb-2 opacity-20" />
+            <p>Yeni bildiriş yoxdur</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,167 +1,74 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SuperAdminDashboardData } from '@/types/supabase';
 
 interface SuperAdminDashboardProps {
-  data: any;
-  onRefresh?: () => void;
+  data: SuperAdminDashboardData;
 }
 
-export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data, onRefresh }) => {
+export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Regionlar</CardTitle>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data?.regions?.total || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            {data?.regions?.active || 0} aktiv
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold">Super Admin İdarə Paneli</h2>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Sektorlar</CardTitle>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data?.sectors?.total || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            {data?.sectors?.active || 0} aktiv
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg p-4 shadow">
+          <h3 className="text-gray-500">Regionlar</h3>
+          <p className="text-2xl font-bold">{data.regionCount}</p>
+        </div>
+        <div className="bg-white rounded-lg p-4 shadow">
+          <h3 className="text-gray-500">Sektorlar</h3>
+          <p className="text-2xl font-bold">{data.sectorCount}</p>
+        </div>
+        <div className="bg-white rounded-lg p-4 shadow">
+          <h3 className="text-gray-500">Məktəblər</h3>
+          <p className="text-2xl font-bold">{data.schoolCount}</p>
+        </div>
+        <div className="bg-white rounded-lg p-4 shadow">
+          <h3 className="text-gray-500">İstifadəçilər</h3>
+          <p className="text-2xl font-bold">{data.userCount}</p>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Məktəblər</CardTitle>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="h-4 w-4 text-muted-foreground"
-          >
-            <rect width="20" height="14" x="2" y="5" rx="2" />
-            <path d="M2 10h20" />
-          </svg>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data?.schools?.total || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            {data?.schools?.active || 0} aktiv
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">İstifadəçilər</CardTitle>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data?.users?.total || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            {data?.users?.active || 0} aktiv
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Tamamlanma</CardTitle>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {data?.stats?.completion_rate || 0}%
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {data?.stats?.total_entries || 0} daxiletmə
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Təsdiqləmə</CardTitle>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            className="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {data?.stats?.approval_rate || 0}%
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {data?.stats?.approved_entries || 0} təsdiqlənmiş
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg p-4 shadow">
+          <h3 className="text-lg font-semibold mb-2">Son əlavə edilmiş regionlar</h3>
+          {data.recentCategories && data.recentCategories.length > 0 ? (
+            <ul className="space-y-2">
+              {data.recentCategories.map((category, index) => (
+                <li key={index} className="border-b pb-2">
+                  <p className="font-medium">{category.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(category.created_at).toLocaleDateString()}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">Son əlavə edilmiş region yoxdur</p>
+          )}
+        </div>
+        <div className="bg-white rounded-lg p-4 shadow">
+          <h3 className="text-lg font-semibold mb-2">Son bildirişlər</h3>
+          {data.notifications && data.notifications.length > 0 ? (
+            <ul className="space-y-2">
+              {data.notifications.map((notification, index) => (
+                <li key={index} className="border-b pb-2">
+                  <p className="font-medium">{notification.title}</p>
+                  <p className="text-sm">{notification.message}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(notification.date).toLocaleDateString()}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">Yeni bildiriş yoxdur</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
+
+export default SuperAdminDashboard;
