@@ -13,9 +13,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
-import AddColumnDialog from '@/components/columns/AddColumnDialog';
 import DeleteColumnDialog from '@/components/columns/DeleteColumnDialog';
-import EditColumnDialog from '@/components/columns/EditColumnDialog';
+import ColumnFormDialog from '@/components/columns/ColumnFormDialog';
 import { useColumns } from '@/hooks/columns';
 import ColumnList from '@/components/columns/ColumnList';
 import EmptyState from '@/components/common/EmptyState';
@@ -31,8 +30,7 @@ const Columns: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [addColumnDialogOpen, setAddColumnDialogOpen] = useState(false);
-  const [editColumnDialogOpen, setEditColumnDialogOpen] = useState(false);
+  const [columnFormDialogOpen, setColumnFormDialogOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { columns, isLoading, isError, error, refetch } = useColumns();
@@ -103,11 +101,11 @@ const Columns: React.FC = () => {
     
     // Dialoqu açırıq
     console.log('Sütun əlavə et dialoqu açılır...');
-    setAddColumnDialogOpen(true);
+    setColumnFormDialogOpen(true);
   };
 
   // Sütun əlavə etmə
-  const handleAddColumn = async (newColumn: Omit<Column, "id">) => {
+  const handleAddColumn = async (newColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
     try {
       setIsSubmitting(true);
       console.log('Yeni sütun əlavə edilir:', newColumn);
@@ -118,18 +116,21 @@ const Columns: React.FC = () => {
         toast.success(t('columnAdded'), {
           description: t('columnAddedDescription')
         });
-        setAddColumnDialogOpen(false);
+        setColumnFormDialogOpen(false);
         refetch();
+        return true;
       } else {
         toast.error(t('columnAddFailed'), {
           description: result.error || t('unknownError')
         });
+        return false;
       }
     } catch (error) {
       console.error('Sütun əlavə etmə xətası:', error);
       toast.error(t('columnAddFailed'), {
         description: t('unknownError')
       });
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -139,33 +140,36 @@ const Columns: React.FC = () => {
   const handleEditColumn = (column: Column) => {
     console.log('Redaktə ediləcək sütun:', column);
     setSelectedColumn(column);
-    setEditColumnDialogOpen(true);
+    setColumnFormDialogOpen(true);
   };
 
   // Sütun yeniləmə
-  const handleUpdateColumn = async (updatedColumn: Column) => {
+  const handleUpdateColumn = async (updatedColumn: Omit<Column, "id"> & { id?: string }): Promise<boolean> => {
     try {
       setIsSubmitting(true);
       console.log('Sütun yenilənir:', updatedColumn);
       
-      const result = await updateColumn(updatedColumn);
+      const result = await updateColumn(updatedColumn as Column);
       
       if (result.success) {
         toast.success(t('columnUpdated'), {
           description: t('columnUpdatedDescription')
         });
-        setEditColumnDialogOpen(false);
+        setColumnFormDialogOpen(false);
         refetch();
+        return true;
       } else {
         toast.error(t('columnUpdateFailed'), {
           description: result.error || t('unknownError')
         });
+        return false;
       }
     } catch (error) {
       console.error('Sütun yeniləmə xətası:', error);
       toast.error(t('columnUpdateFailed'), {
         description: t('unknownError')
       });
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -328,26 +332,16 @@ const Columns: React.FC = () => {
         />
       )}
 
-      {addColumnDialogOpen && (
-        <AddColumnDialog
-          isOpen={addColumnDialogOpen}
-          onClose={() => setAddColumnDialogOpen(false)}
-          onAddColumn={handleAddColumn}
-          categories={categories || []}
-          columns={columns || []}
-        />
-      )}
-
-      {editColumnDialogOpen && selectedColumn && (
-        <EditColumnDialog
-          isOpen={editColumnDialogOpen}
-          onClose={() => setEditColumnDialogOpen(false)}
-          onEditColumn={handleUpdateColumn}
-          column={selectedColumn}
-          isSubmitting={isSubmitting}
-          categories={categories || []}
-        />
-      )}
+      {/* Sütun əlavə etmə və redaktə dialoqu */}
+      <ColumnFormDialog
+        isOpen={columnFormDialogOpen}
+        onClose={() => setColumnFormDialogOpen(false)}
+        onSaveColumn={selectedColumn ? handleUpdateColumn : handleAddColumn}
+        categories={categories || []}
+        editColumn={selectedColumn}
+        columns={columns as any[]}
+        isSubmitting={isSubmitting}
+      />
 
       {deleteDialog.isOpen && (
         <DeleteColumnDialog

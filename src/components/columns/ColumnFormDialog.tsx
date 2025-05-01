@@ -1,122 +1,97 @@
 import React, { useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/context/LanguageContext";
 import { Column } from "@/types/column";
-import { useColumnForm } from "./columnDialog/useColumnForm";
-import BasicColumnFields from "./columnDialog/BasicColumnFields";
-import ValidationFields from "./columnDialog/ValidationFields";
-import OptionsField from "./columnDialog/OptionsField";
-import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLanguage } from "@/context/LanguageContext";
+import { useColumnForm } from './columnDialog/useColumnForm';
+import BasicColumnFields from './columnDialog/BasicColumnFields';
+import ValidationFields from './columnDialog/ValidationFields';
+import OptionsField from './columnDialog/OptionsField';
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface EditColumnDialogProps {
+interface ColumnFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onEditColumn: (columnData: Omit<Column, "id"> & { id?: string }) => Promise<boolean>;
-  column: Column | null;
-  isSubmitting: boolean;
-  categories: any[];
+  onSaveColumn: (columnData: Omit<Column, "id"> & { id?: string }) => Promise<boolean>;
+  categories: { id: string; name: string }[];
+  editColumn?: Column | null; 
+  columns?: Column[];
+  isSubmitting?: boolean;
 }
 
-const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
+const ColumnFormDialog: React.FC<ColumnFormDialogProps> = ({
   isOpen,
   onClose,
-  onEditColumn,
-  column,
-  isSubmitting,
-  categories
+  onSaveColumn,
+  categories,
+  editColumn = null,
+  columns = [],
+  isSubmitting = false,
 }) => {
   const { t } = useLanguage();
-  const queryClient = useQueryClient();
   
-  const { 
+  const {
     form, 
-    selectedType, 
-    handleTypeChange, 
+    selectedType,
+    handleTypeChange,
     options,
     addOption,
     removeOption,
     newOption,
     setNewOption,
-    isEditMode 
-  } = useColumnForm(categories, column, onEditColumn);
-  
-  // Form değerlerini çütun tipi değiştiğinde güncellemek için useEffect
+    onSubmit,
+    isEditMode
+  } = useColumnForm(categories, editColumn, onSaveColumn);
+
+  // Dialog açıldıqda və ya bağlandıqda log edirik
   useEffect(() => {
-    if (column && selectedType) {
-      form.setValue("type", selectedType);
-    }
-  }, [selectedType, column, form]);
-  
-  const handleSubmit = async (data: any) => {
+    console.log(`Dialog ${isOpen ? 'açıldı' : 'bağlandı'}`, { editColumn });
+  }, [isOpen, editColumn]);
+
+  // Form təqdim etmə funksiyası
+  const handleSubmit = async (values: any) => {
+    console.log("Form təqdim edildi:", values);
+    
     try {
-      if (!column) {
-        toast.error(t("columnNotFound"));
-        return false;
-      }
-      
-      console.log("Form data before submission:", data);
-      
-      // Client-side validation
-      if (!data.name.trim()) {
-        form.setError("name", { message: t("columnNameRequired") });
-        return false;
-      }
-      
-      // Prepare the data for submission
-      const submissionData = {
-        ...data,
-        id: column.id,
-        type: selectedType
-      };
-      
-      // Handle options for select, radio, checkbox types
-      if (["select", "radio", "checkbox"].includes(selectedType)) {
-        if (!options || options.length === 0) {
-          toast.error(t("optionsRequired"));
-          return false;
-        }
-        submissionData.options = options;
-      }
-      
-      console.log("Submitting column data:", submissionData);
-      
-      // Call the onEditColumn function with the prepared data
-      const success = await onEditColumn(submissionData);
+      // onSubmit funksiyasını çağırırıq
+      const success = await onSubmit(values);
       
       if (success) {
-        console.log("Column updated successfully");
-        await queryClient.invalidateQueries({ queryKey: ['columns'] });
-        toast.success(t("columnUpdated"));
+        toast.success(isEditMode ? t("columnUpdated") : t("columnAdded"));
         onClose();
-        return true;
       } else {
-        console.error("Failed to update column");
-        toast.error(t("columnUpdateFailed"));
-        return false;
+        toast.error(t("errorOccurred"));
       }
     } catch (error) {
-      console.error('Error submitting column data:', error);
-      toast.error(t("errorUpdatingColumn"));
-      return false;
+      console.error("Form təqdim etmə xətası:", error);
+      toast.error(t("errorOccurred"));
     }
   };
 
-  if (!column) return null;
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log("Dialog onOpenChange:", open);
       if (!open) onClose();
     }}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>{t("editColumn")}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? t("editColumn") : t("addNewColumn")}
+          </DialogTitle>
           <DialogDescription>
-            {t("editColumnDescription")}
+            {isEditMode 
+              ? t("editColumnDescription") 
+              : t("addColumnDescription")}
           </DialogDescription>
         </DialogHeader>
         
@@ -133,13 +108,13 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
                 <TabsContent value="basic" className="space-y-4">
                   <BasicColumnFields 
                     form={form}
-                    control={form.control}
+                    control={form.control} 
                     categories={categories}
-                    columns={[]} 
-                    editColumn={column}
+                    columns={columns}
+                    editColumn={editColumn}
                     selectedType={selectedType}
                     onTypeChange={handleTypeChange}
-                    isEditMode={true}
+                    isEditMode={isEditMode}
                   />
                 </TabsContent>
                 
@@ -192,20 +167,28 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
           </ScrollArea>
           
           <DialogFooter className="mt-4 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
+            <Button 
+              type="button" 
+              variant="outline" 
               onClick={onClose}
               disabled={isSubmitting}
             >
               {t("cancel")}
             </Button>
             <Button 
-              type="submit" 
+              type="submit"
               onClick={form.handleSubmit(handleSubmit)}
-              disabled={isSubmitting}
+              disabled={form.formState.isSubmitting || isSubmitting}
             >
-              {isSubmitting ? t("saving") : t("save")}
+              {form.formState.isSubmitting || isSubmitting ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {t("loading")}
+                </span>
+              ) : isEditMode ? t("save") : t("add")}
             </Button>
           </DialogFooter>
         </Form>
@@ -214,4 +197,4 @@ const EditColumnDialog: React.FC<EditColumnDialogProps> = ({
   );
 };
 
-export default EditColumnDialog;
+export default ColumnFormDialog;
