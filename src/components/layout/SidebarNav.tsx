@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -152,14 +151,13 @@ const SidebarNav: React.FC<{ onItemClick?: () => void, isSidebarOpen?: boolean }
       href: "/categories",
       icon: <FolderKanban size={20} />,
       label: t('categories'),
-      show: canManageCategories,
-      children: [
-        {
-          href: "/columns",
-          label: t('columns'),
-          isActive: pathname.startsWith("/columns")
-        }
-      ]
+      show: canManageCategories
+    },
+    {
+      href: "/columns",
+      icon: <Columns size={20} />,
+      label: t('columns'),
+      show: canManageColumns
     },
     {
       href: "/users",
