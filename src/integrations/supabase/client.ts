@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import type { FullUserData } from '@/types/supabase';
 
 // Supabase konfiqurasiyası
 const supabaseUrl = 'https://olbfnauhzpdskqnxtwav.supabase.co';
