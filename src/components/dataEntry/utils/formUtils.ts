@@ -1,160 +1,125 @@
 
-import { ColumnType, ColumnValidation, ColumnValidationError } from '@/types/column';
+import { Column, ColumnType, ColumnValidation } from '@/types/column';
 
+// Form data validasiyası üçün funksiya
 export const validateEntryValue = (
-  value: string,
-  type: ColumnType,
+  value: any, 
+  columnType: ColumnType,
   validation?: ColumnValidation
-): ColumnValidationError | null => {
-  // Validasiya tələbləri yoxdursa, null qaytarırıq
+): string | null => {
   if (!validation) return null;
-
-  // Tələb olunan sahə boşdursa
-  if (validation.required && (!value || value.trim() === '')) {
-    return {
-      type: 'required',
-      message: validation.requiredMessage || 'Bu sahə tələb olunur',
-    };
+  
+  // Məcburi sahə yoxlaması
+  if (validation.required && (value === undefined || value === null || value === '')) {
+    return validation.requiredMessage || 'Bu sahə doldurulmalıdır';
   }
-
-  // Əgər boş dəyərsə və tələb olunmursa, validasiyadan keçir
-  if (!value || value.trim() === '') {
+  
+  // Əgər dəyər boşdursa və məcburi deyilsə, başqa validasiyalara baxmırıq
+  if (value === undefined || value === null || value === '') {
     return null;
   }
-
-  // Tip əsaslı validasiya
-  switch (type) {
-    case 'number':
-      // Rəqəm olub-olmadığını yoxlayırıq
-      if (isNaN(Number(value))) {
-        return {
-          type: 'typeError',
-          message: 'Dəyər rəqəm olmalıdır',
-        };
-      }
-      
-      // Min dəyər yoxlaması
-      if (validation.minValue !== undefined && Number(value) < validation.minValue) {
-        return {
-          type: 'minValue',
-          message: `Dəyər ən azı ${validation.minValue} olmalıdır`,
-        };
-      }
-      
-      // Max dəyər yoxlaması
-      if (validation.maxValue !== undefined && Number(value) > validation.maxValue) {
-        return {
-          type: 'maxValue',
-          message: `Dəyər ən çoxu ${validation.maxValue} olmalıdır`,
-        };
-      }
-      break;
-      
+  
+  switch (columnType) {
     case 'text':
-    case 'textarea':
-    case 'email':
-    case 'url':
-    case 'phone':
-      // Min uzunluq yoxlaması
-      if (validation.minLength !== undefined && value.length < validation.minLength) {
-        return {
-          type: 'minLength',
-          message: `Mətn ən azı ${validation.minLength} simvol olmalıdır`,
-        };
+    case 'textarea': {
+      const strValue = String(value);
+      
+      // Minimum uzunluq yoxlaması
+      if (validation.minLength && strValue.length < validation.minLength) {
+        return `Minimum ${validation.minLength} simvol olmalıdır`;
       }
       
-      // Max uzunluq yoxlaması
-      if (validation.maxLength !== undefined && value.length > validation.maxLength) {
-        return {
-          type: 'maxLength',
-          message: `Mətn ən çoxu ${validation.maxLength} simvol olmalıdır`,
-        };
+      // Maksimum uzunluq yoxlaması
+      if (validation.maxLength && strValue.length > validation.maxLength) {
+        return `Maksimum ${validation.maxLength} simvol ola bilər`;
       }
       
-      // Pattern yoxlaması
-      if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-        return {
-          type: 'pattern',
-          message: validation.patternMessage || 'Dəyər düzgün formatda deyil',
-        };
+      // Regex pattern yoxlaması
+      if (validation.pattern && !new RegExp(validation.pattern).test(strValue)) {
+        return validation.patternMessage || 'Düzgün format deyil';
       }
       
-      // Email validasiyası
-      if (type === 'email' || validation.email) {
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailPattern.test(value)) {
-          return {
-            type: 'email',
-            message: 'Düzgün email formatı daxil edin',
-          };
-        }
+      // E-mail formatı yoxlaması
+      if (validation.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(strValue)) {
+        return 'Düzgün e-mail formatı deyil';
       }
       
-      // URL validasiyası
-      if (type === 'url' || validation.url) {
-        try {
-          new URL(value);
-        } catch {
-          return {
-            type: 'url',
-            message: 'Düzgün URL formatı daxil edin',
-          };
-        }
+      // URL formatı yoxlaması
+      if (validation.url && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(strValue)) {
+        return 'Düzgün URL formatı deyil';
       }
+      
+      // Siyahıya daxil olma yoxlaması (inclusion)
+      if (validation.inclusion && Array.isArray(validation.inclusion) && !validation.inclusion.includes(strValue)) {
+        return `Dəyər bu siyahıda olmalıdır: ${validation.inclusion.join(', ')}`;
+      }
+      
       break;
-      
-    case 'select':
-      // Select üçün inclusion yoxlaması
-      if (validation.inclusion && !validation.inclusion.includes(value)) {
-        return {
-          type: 'inclusion',
-          message: 'Dəyər icazə verilən siyahıda olmalıdır',
-        };
-      }
-      break;
-  }
-  
-  // Özel validasiya
-  if (validation.custom) {
-    try {
-      const customValidator = new Function('value', validation.custom);
-      const result = customValidator(value);
-      
-      if (result !== true) {
-        return {
-          type: 'custom',
-          message: validation.customMessage || 'Validasiya xətası',
-        };
-      }
-    } catch (error) {
-      console.error('Custom validasiya xətası:', error);
-      return {
-        type: 'customError',
-        message: 'Validasiya zamanı xəta baş verdi',
-      };
     }
+    
+    case 'number': {
+      const numValue = Number(value);
+      
+      // Ədəd olub-olmadığını yoxlayaq
+      if (isNaN(numValue)) {
+        return 'Düzgün ədəd formatı deyil';
+      }
+      
+      // Minimum dəyər yoxlaması
+      if (validation.min !== undefined && numValue < validation.min) {
+        return `Minimum dəyər ${validation.min} olmalıdır`;
+      }
+      
+      // Maksimum dəyər yoxlaması
+      if (validation.max !== undefined && numValue > validation.max) {
+        return `Maksimum dəyər ${validation.max} ola bilər`;
+      }
+      
+      break;
+    }
+    
+    case 'select':
+    case 'checkbox':
+    case 'radio': {
+      // Bu tiplərdə validasiya ediləcək xüsusi məntiqlər
+      break;
+    }
+    
+    default:
+      break;
   }
   
-  // Bütün validasiyalardan keçdisə null qaytarırıq
   return null;
 };
 
-// Form sahələrini tamamlama faizini hesablayan funksiya
-export const calculateCompletionPercentage = (columns: any[], values: Record<string, string>): number => {
-  if (columns.length === 0) return 0;
-  
-  const requiredColumns = columns.filter(column => column.validation?.required);
-  
-  if (requiredColumns.length === 0) {
-    // Məcburi sahələr yoxdursa, doldurulan sahələrin ümumi sahələrə nisbəti
-    const filledFields = Object.values(values).filter(value => value && value.trim() !== '').length;
-    return Math.round((filledFields / columns.length) * 100);
-  } else {
-    // Məcburi sahələr varsa, onların doldurulma faizi
-    const filledRequiredFields = requiredColumns.filter(column => 
-      values[column.id] && values[column.id].trim() !== ''
-    ).length;
+// Sütun və data dəyərlərindən form üçün ilkin dəyərləri hazırlayır
+export const prepareFormValues = (columns: Column[], data: any[]) => {
+  return columns.map(column => {
+    const entry = data.find(item => item.column_id === column.id);
     
-    return Math.round((filledRequiredFields / requiredColumns.length) * 100);
+    return {
+      column_id: column.id,
+      value: entry?.value || column.default_value || '',
+      name: column.name,
+      isValid: true
+    };
+  });
+};
+
+// Dəyişikliklər edilib-edilmədiyini yoxlayır
+export const hasChanges = (initialValues: any[], currentValues: any[]) => {
+  if (initialValues.length !== currentValues.length) {
+    return true;
   }
+  
+  for (let i = 0; i < initialValues.length; i++) {
+    const initialValue = initialValues[i];
+    const currentValue = currentValues.find(v => v.column_id === initialValue.column_id);
+    
+    if (!currentValue || currentValue.value !== initialValue.value) {
+      return true;
+    }
+  }
+  
+  return false;
 };

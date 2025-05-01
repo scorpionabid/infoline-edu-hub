@@ -33,8 +33,13 @@ export interface DataEntryForm {
 export interface EntryValue {
   id?: string;
   column_id: string;
+  name?: string;
   value: any;
+  isValid?: boolean;
+  error?: string;
   status?: DataEntryStatus;
+  entryId?: string;
+  columnId?: string;
 }
 
 export interface CategoryEntryData {

@@ -1,63 +1,48 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { NotificationsCardProps } from '@/types/dashboard';
+import { formatDistanceToNow } from 'date-fns';
 
-export function NotificationsCard({ 
-  title, 
-  notifications 
-}: NotificationsCardProps) {
-  // Notification icon based on type
-  const getNotificationIcon = (type?: string) => {
+export function NotificationsCard({ title, notifications }: NotificationsCardProps) {
+  const getNotificationTypeClass = (type?: string) => {
     switch (type) {
       case 'warning':
-        return '⚠️';
+        return 'bg-yellow-100 text-yellow-800';
       case 'error':
-        return '❌';
+        return 'bg-red-100 text-red-800';
       case 'success':
-        return '✅';
+        return 'bg-green-100 text-green-800';
       default:
-        return 'ℹ️';
+        return 'bg-blue-100 text-blue-800';
     }
   };
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-auto max-h-[300px]">
-        {notifications.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Bildiriş yoxdur
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {notifications.map((notification, index) => (
-              <div key={notification.id}>
-                {index > 0 && <Separator className="my-2" />}
-                <div className="flex items-start gap-2">
-                  <span className="flex-shrink-0 text-lg">
-                    {getNotificationIcon(notification.type)}
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <h4 className={`font-medium ${notification.isRead ? 'text-muted-foreground' : ''}`}>
-                        {notification.title}
-                      </h4>
-                      <span className="text-xs text-muted-foreground">{notification.date}</span>
+      <CardContent className="p-0">
+        <ul className="divide-y divide-gray-200">
+          {notifications.length === 0 ? (
+            <li className="p-4 text-center text-muted-foreground">Bildiriş yoxdur</li>
+          ) : (
+            notifications.map((notification) => (
+              <li key={notification.id} className={`p-4 ${!notification.isRead ? 'bg-muted/50' : ''}`}>
+                <div className="flex items-start">
+                  <div className={`flex-shrink-0 h-2 w-2 mt-2 rounded-full ${getNotificationTypeClass(notification.type)}`} />
+                  <div className="ml-3 flex-1">
+                    <div className="font-medium">{notification.title}</div>
+                    {notification.message && <p className="text-sm text-muted-foreground">{notification.message}</p>}
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {formatDistanceToNow(new Date(notification.date), { addSuffix: true })}
                     </div>
-                    {notification.message && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {notification.message}
-                      </p>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </li>
+            ))
+          )}
+        </ul>
       </CardContent>
     </Card>
   );

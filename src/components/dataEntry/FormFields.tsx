@@ -1,214 +1,200 @@
 
 import React from 'react';
-import { Column, ColumnValidationError } from '@/types/column';
-import { DataEntryStatus } from '@/types/dataEntry';
-import { useForm } from 'react-hook-form';
-import { StatusIndicator } from './StatusIndicators';
-import TextInput from './inputs/TextInput';
-import { NumberInput } from './inputs/NumberInput';
-import DateInput from './inputs/DateInput';
-import TextAreaInput from './inputs/TextAreaInput';
-import { SelectInput } from './inputs/SelectInput';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Column } from '@/types/column';
 import { EntryValue } from '@/types/dataEntry';
-import CheckboxInput from './inputs/CheckboxInput';
-import { Card, CardContent } from '@/components/ui/card';
-import { validateEntryValue } from './utils/formUtils';
 
-interface FormFieldProps {
-  column: Column;
-  value: string;
-  status?: DataEntryStatus;
-  onChange: (value: string) => void;
-  isDisabled?: boolean;
-  error?: ColumnValidationError;
+interface FormFieldsProps {
+  columns: Column[];
+  values: EntryValue[];
+  onChange: (columnId: string, value: string) => void;
+  disabled?: boolean;
 }
 
-export const FormField: React.FC<FormFieldProps> = ({
-  column,
-  value,
-  status,
-  onChange,
-  isDisabled = false,
-  error
-}) => {
-  const form = useForm({
-    defaultValues: {
-      [column.id]: value || column.default_value || ''
-    }
-  });
-
-  React.useEffect(() => {
-    form.reset({
-      [column.id]: value || column.default_value || ''
-    });
-  }, [column.id, value, column.default_value, form]);
-
-  const handleChange = (newValue: string) => {
-    onChange(newValue);
+export function FormFields({ columns, values, onChange, disabled = false }: FormFieldsProps) {
+  const getValue = (columnId: string): string => {
+    const foundValue = values.find(v => v.column_id === columnId || v.columnId === columnId);
+    return foundValue ? foundValue.value : '';
   };
-
-  const getFieldByType = () => {
+  
+  const getError = (columnId: string): string | undefined => {
+    const foundValue = values.find(v => v.column_id === columnId || v.columnId === columnId);
+    return foundValue?.error;
+  };
+  
+  const renderField = (column: Column) => {
+    const value = getValue(column.id);
+    const error = getError(column.id);
+    
     switch (column.type) {
       case 'text':
         return (
-          <TextInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            onChange={handleChange}
-          />
-        );
-      
-      case 'textarea':
-        return (
-          <TextAreaInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            onChange={handleChange}
-          />
-        );
-      
-      case 'email':
-      case 'url':
-      case 'phone':
-        return (
-          <TextInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder || `Daxil edin...`}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            onChange={handleChange}
-          />
+          <div className="space-y-2" key={column.id}>
+            <Label htmlFor={column.id} className="flex items-center">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Input
+              id={column.id}
+              name={column.id}
+              placeholder={column.placeholder}
+              value={value || ''}
+              onChange={(e) => onChange(column.id, e.target.value)}
+              disabled={disabled}
+              className={error ? 'border-red-500' : ''}
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
         );
       
       case 'number':
         return (
-          <NumberInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            validation={column.validation}
-            onChange={handleChange}
-          />
+          <div className="space-y-2" key={column.id}>
+            <Label htmlFor={column.id} className="flex items-center">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Input
+              id={column.id}
+              name={column.id}
+              type="number"
+              placeholder={column.placeholder}
+              value={value || ''}
+              onChange={(e) => onChange(column.id, e.target.value)}
+              disabled={disabled}
+              className={error ? 'border-red-500' : ''}
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
         );
       
-      case 'date':
+      case 'textarea':
         return (
-          <DateInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            onChange={handleChange}
-          />
+          <div className="space-y-2" key={column.id}>
+            <Label htmlFor={column.id} className="flex items-center">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Textarea
+              id={column.id}
+              name={column.id}
+              placeholder={column.placeholder}
+              value={value || ''}
+              onChange={(e) => onChange(column.id, e.target.value)}
+              disabled={disabled}
+              className={error ? 'border-red-500' : ''}
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
         );
       
       case 'select':
         return (
-          <SelectInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            options={column.options || []}
-            placeholder={column.placeholder || "Seçin"}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            onChange={handleChange}
-          />
+          <div className="space-y-2" key={column.id}>
+            <Label htmlFor={column.id} className="flex items-center">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Select
+              value={value}
+              onValueChange={(val) => onChange(column.id, val)}
+              disabled={disabled}
+            >
+              <SelectTrigger id={column.id} className={error ? 'border-red-500' : ''}>
+                <SelectValue placeholder={column.placeholder || 'Seçin'} />
+              </SelectTrigger>
+              <SelectContent>
+                {column.options?.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
         );
       
       case 'checkbox':
         return (
-          <CheckboxInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            onChange={(checked) => handleChange(checked ? 'true' : 'false')}
-          />
+          <div className="space-y-2" key={column.id}>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={column.id}
+                checked={value === 'true'}
+                onCheckedChange={(checked) => onChange(column.id, checked ? 'true' : 'false')}
+                disabled={disabled}
+              />
+              <Label htmlFor={column.id} className="flex items-center">
+                {column.name}
+                {column.is_required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+            </div>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
+        );
+      
+      case 'radio':
+        return (
+          <div className="space-y-2" key={column.id}>
+            <Label className="flex items-center">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <RadioGroup
+              value={value}
+              onValueChange={(val) => onChange(column.id, val)}
+              className="flex flex-col space-y-1"
+              disabled={disabled}
+            >
+              {column.options?.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
+                  <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
         );
       
       default:
         return (
-          <TextInput
-            name={column.id}
-            control={form.control}
-            label={column.name}
-            placeholder={column.placeholder}
-            helpText={column.help_text}
-            disabled={isDisabled || status === 'approved'}
-            required={column.is_required}
-            onChange={handleChange}
-          />
+          <div className="space-y-2" key={column.id}>
+            <Label htmlFor={column.id} className="flex items-center">
+              {column.name}
+              {column.is_required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Input
+              id={column.id}
+              name={column.id}
+              placeholder={column.placeholder}
+              value={value || ''}
+              onChange={(e) => onChange(column.id, e.target.value)}
+              disabled={disabled}
+              className={error ? 'border-red-500' : ''}
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
+          </div>
         );
     }
   };
-
+  
   return (
-    <Card className="mb-4">
-      <CardContent className="pt-4">
-        {getFieldByType()}
-        <div className="mt-2">
-          <StatusIndicator status={status} error={error} />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      {columns.map(renderField)}
+    </div>
   );
-};
-
-export const saveFormField = async (
-  column: Column,
-  value: string,
-  schoolId: string,
-  categoryId: string
-): Promise<{ success: boolean; entryId?: string; error?: string }> => {
-  try {
-    // Validasiya et
-    const validationError = validateEntryValue(value, column.type, column.validation);
-    if (validationError) {
-      return { success: false, error: validationError.message };
-    }
-
-    // Məlumat yarat
-    const entry = {
-      column_id: column.id,
-      category_id: categoryId,
-      school_id: schoolId,
-      value: value,
-      status: 'pending' as DataEntryStatus
-    };
-
-    // API-da saxlamaq üçün lazım olan kod burada olmalıdır
-    // Təxminən belə bir şey:
-    // const { data, error } = await saveDataEntry(entry);
-    
-    // Simulyasiya edirik
-    const entryId = Math.random().toString(36).substring(2, 15);
-    
-    return { success: true, entryId };
-  } catch (error) {
-    console.error('Form field save error:', error);
-    return { success: false, error: 'Xəta baş verdi' };
-  }
-};
+}

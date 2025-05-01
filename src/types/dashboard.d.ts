@@ -25,6 +25,15 @@ export interface NotificationsCardProps {
   }[];
 }
 
+export interface FormStats {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  incomplete: number;
+  drafts: number;
+}
+
 export interface DashboardData {
   stats: {
     [key: string]: number;
@@ -42,12 +51,7 @@ export interface DashboardData {
 }
 
 export interface SchoolAdminDashboardData {
-  formStats: {
-    approved: number;
-    pending: number;
-    rejected: number;
-    incomplete: number;
-  };
+  formStats: FormStats;
   completionRate: number;
   notifications: {
     id: string;

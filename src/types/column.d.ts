@@ -1,4 +1,6 @@
 
+import { Category } from './category';
+
 export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
 export type ColumnStatus = 'active' | 'inactive' | 'draft';
 
@@ -38,31 +40,20 @@ export interface ColumnValidation {
   min?: number;
   max?: number;
   pattern?: string;
-  required?: boolean; // İstifadə edilən field
+  required?: boolean;
   minLength?: number;
   maxLength?: number;
-  requiredMessage?: string; // İstifadə edilən field
-  patternMessage?: string; // İstifadə edilən field
+  requiredMessage?: string;
+  patternMessage?: string;
+  email?: boolean;
+  url?: boolean;
+  inclusion?: any[];
 }
 
 export interface ColumnValidationError {
   id: string;
   message: string;
   type: 'error' | 'warning' | 'info';
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  assignment?: 'sectors' | 'all';
-  deadline?: string | Date;
-  status: 'active' | 'inactive' | 'draft';
-  priority?: number;
-  created_at: string;
-  updated_at: string;
-  archived?: boolean;
-  column_count?: number;
 }
 
 export interface CategoryWithColumns extends Category {

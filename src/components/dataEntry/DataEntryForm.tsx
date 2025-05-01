@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
-import { CategoryForm } from './CategoryForm';
+import CategoryForm from './CategoryForm';
 import {
   Column,
   CategoryWithColumns,
+  ColumnValidation,
   ColumnValidationError
 } from '@/types/column';
 import {
-  DataEntryForm,
+  DataEntry,
   EntryValue,
   DataEntrySaveStatus,
   DataEntryStatus

@@ -1,79 +1,69 @@
+
 import React from 'react';
-import { Grid } from '../../components/ui/grid';
-import { StatsCard } from './common/StatsCardProps';
-import { NotificationsCard } from './common/NotificationsCardProps';
-import CompletionRateCard from '../../components/dashboard/common/CompletionRateCard';
+import { StatsCard } from './common/StatsCard';
+import { NotificationsCard } from './common/NotificationsCard';
+import { CompletionRateCard } from './common/CompletionRateCard';
 import { SuperAdminDashboardData } from '@/types/dashboard';
+import { Grid } from '@/components/ui/grid';
+import { Users, Building2, School, CheckCircle } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
+  isLoading?: boolean;
 }
 
-export function SuperAdminDashboard({ data }: SuperAdminDashboardProps) {
+export function SuperAdminDashboard({ data, isLoading }: SuperAdminDashboardProps) {
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>;
+  }
+
+  const { stats, completionRate, notifications } = data;
+  
   return (
     <div className="space-y-6">
-      <Grid columns={4} className="gap-6">
+      <Grid columns={4} className="gap-4">
         <StatsCard 
           title="Regionlar" 
-          value={data.regionCount} 
-          icon="R" 
-          description="Ümumi region sayı"
-          trend={`Son 30 gün: +${data.regionCount > 0 ? Math.floor(data.regionCount * 0.1) : 0}`}
+          value={stats.regions} 
+          icon={<Building2 size={18} />}
+          trend={`+${stats.regions} son 30 gündə`}
           trendDirection="up"
         />
         <StatsCard 
           title="Sektorlar" 
-          value={data.sectorCount} 
-          icon="S" 
-          description="Ümumi sektor sayı"
-          trend={`Son 30 gün: +${data.sectorCount > 0 ? Math.floor(data.sectorCount * 0.15) : 0}`}
-          trendDirection="up"
+          value={stats.sectors} 
+          icon={<Building2 size={18} />}
         />
         <StatsCard 
           title="Məktəblər" 
-          value={data.schoolCount} 
-          icon="M" 
-          description="Ümumi məktəb sayı"
-          trend={`Son 30 gün: +${data.schoolCount > 0 ? Math.floor(data.schoolCount * 0.05) : 0}`}
-          trendDirection="up"
+          value={stats.schools} 
+          icon={<School size={18} />}
         />
         <StatsCard 
           title="İstifadəçilər" 
-          value={data.userCount} 
-          icon="İ" 
-          description="Ümumi istifadəçi sayı"
-          trend={`Son 30 gün: +${data.userCount > 0 ? Math.floor(data.userCount * 0.2) : 0}`}
-          trendDirection="up"
+          value={stats.users} 
+          icon={<Users size={18} />}
         />
       </Grid>
-
-      <Grid columns={2} className="gap-6">
+      <Grid columns={2} className="gap-4">
         <CompletionRateCard 
-          title="Sistem ümumi məlumat tamamlanma faizi" 
-          completionRate={data.completionRate} 
+          completionRate={completionRate} 
+          title="Ümumi Tamamlanma Faizi" 
         />
-        <CompletionRateCard 
-          title="Təsdiq edilmiş məlumatlar" 
-          completionRate={data.approvalRate} 
-        />
-      </Grid>
-
-      <Grid columns={2} className="gap-6">
-        <NotificationsCard
-          title="Son bildirişlər"
-          notifications={data.notifications.map(n => ({
-            id: n.id || Math.random().toString(),
-            title: n.title || 'Bildiriş',
+        <NotificationsCard 
+          title="Son Bildirişlər" 
+          notifications={notifications.map(n => ({
+            id: n.id,
+            title: n.title,
             message: n.message,
-            date: n.date || new Date(n.timestamp || Date.now()).toLocaleDateString(),
-            type: n.type || 'info',
-            isRead: n.read
-          }))}
-          viewAllLink="/notifications"
+            date: n.timestamp,
+            type: n.type,
+            isRead: !n.read
+          }))} 
         />
       </Grid>
     </div>
   );
 }
-
-export default SuperAdminDashboard;
