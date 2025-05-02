@@ -1,9 +1,12 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth';
 
+/**
+ * Sektor məlumatlarını daxil etmək üçün hook
+ * @returns {Object} Sektor məlumatlarını daxil etmək üçün funksiyalar və vəziyyətlər
+ */
 export const useSectorDataEntry = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);

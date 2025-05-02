@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
@@ -8,6 +7,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/auth';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
+/**
+ * Data entry üçün kateqoriyaları əldə etmək üçün hook
+ * @returns {Object} Kateqoriyalar, yüklənmə vəziyyəti, xəta və yeniləmə funksiyası
+ */
 export const useCategories = () => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -52,11 +55,18 @@ export const useCategories = () => {
           column.category_id === category.id
         ).sort((a: any, b: any) => a.order_index - b.order_index);
         
-        return {
+        // Bütün tarix xüsusiyyətlərini Date tipinə çeviririk
+        const enhancedCategory = {
           ...category,
           columns: categoryColumns,
-          columnCount: categoryColumns.length
-        } as CategoryWithColumns;
+          columnCount: categoryColumns.length,
+          deadline: category.deadline ? new Date(category.deadline) : undefined,
+          created_at: category.created_at ? new Date(category.created_at) : undefined,
+          updated_at: category.updated_at ? new Date(category.updated_at) : undefined
+        };
+        
+        // Tipi uyğunlaşdırmaq üçün unknown-a çeviririk
+        return enhancedCategory as unknown as CategoryWithColumns;
       });
 
       setCategories(enhancedCategories);
@@ -80,5 +90,3 @@ export const useCategories = () => {
     refetch: fetchCategories
   };
 };
-
-export default useCategories;

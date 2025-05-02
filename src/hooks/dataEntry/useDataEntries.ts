@@ -1,11 +1,17 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { DataEntry } from '@/types/supabase';
+import { DataEntry } from '@/types/dataEntry';
 import { useAuth } from '@/context/auth';
 
+/**
+ * Məlumat daxil etmə qeydlərini əldə etmək və idarə etmək üçün hook
+ * @param {string} schoolId - Məktəb ID-si
+ * @param {string} categoryId - Kateqoriya ID-si
+ * @param {string} columnId - Sütun ID-si
+ * @returns {Object} Məlumat daxil etmə qeydləri və funksiyaları
+ */
 export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?: string) => {
   const [dataEntries, setDataEntries] = useState<DataEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +29,8 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
       
       if (schoolId) {
         query = query.eq('school_id', schoolId);
-      } else if (user?.schoolId) {
-        query = query.eq('school_id', user.schoolId);
+      } else if (user?.school_id) {
+        query = query.eq('school_id', user.school_id);
       }
       
       if (categoryId) {
@@ -55,7 +61,7 @@ export const useDataEntries = (schoolId?: string, categoryId?: string, columnId?
     try {
       const entryWithSchoolId = {
         ...dataEntry,
-        school_id: dataEntry.school_id || user?.schoolId,
+        school_id: dataEntry.school_id || user?.school_id,
         created_by: user?.id,
         status: 'pending'
       };

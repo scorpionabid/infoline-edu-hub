@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDataEntry } from '@/hooks/useDataEntry';
+import { useDataEntry } from '@/hooks/dataEntry/useDataEntry';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -146,7 +146,7 @@ const DataEntryForm = ({
           <Alert variant="default" className="bg-blue-50">
             <Building className="h-4 w-4" />
             <div className="ml-4">
-              <p className="text-sm font-medium">{t('dataEntryForSchool', { school: schoolName })}</p>
+              <p className="text-sm font-medium">{t('dataEntryForSchool').replace('{school}', schoolName)}</p>
             </div>
           </Alert>
         </div>
@@ -386,7 +386,7 @@ const DataEntryPage: React.FC = () => {
     categories: allCategories, 
     loading: loadingAllCategories, 
     error: categoriesError 
-  } = useCategoryData(isSchoolAdmin ? user?.schoolId : null);
+  } = useCategoryData(isSchoolAdmin ? user?.school_id : null);
   
   // Sektoradmin üçün məktəbləri yükləyirik
   useEffect(() => {
@@ -549,7 +549,7 @@ const DataEntryPage: React.FC = () => {
             <TabsContent value="sector" className="mt-4">
               {sectorCategories.length > 0 ? (
                 <DataEntryForm 
-                  schoolId={user?.sectorId} 
+                  schoolId={user?.sector_id} 
                   categories={sectorCategories} 
                   initialCategoryId={initialCategoryId}
                 />
@@ -641,7 +641,7 @@ const DataEntryPage: React.FC = () => {
         {/* Məktəb admin üçün sadəcə öz məktəbinin məlumatları */}
         {isSchoolAdmin && (
           <DataEntryForm 
-            schoolId={user?.schoolId} 
+            schoolId={user?.school_id} 
             categories={schoolCategories} 
             initialCategoryId={initialCategoryId}
           />

@@ -11,7 +11,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { CategoryCard } from './CategoryCard';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories } from '@/hooks/dataEntry/useCategories';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export const FormsPage: React.FC = () => {

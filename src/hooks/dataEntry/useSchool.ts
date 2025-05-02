@@ -1,9 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/lib/supabase';
 import { School } from '@/types/supabase';
 
+/**
+ * Data entry üçün məktəb məlumatlarını əldə etmək üçün hook
+ * @returns {Object} Məktəb məlumatları, yüklənmə vəziyyəti və xəta
+ */
 export const useSchool = () => {
   const { user } = useAuth();
   const [school, setSchool] = useState<School | null>(null);

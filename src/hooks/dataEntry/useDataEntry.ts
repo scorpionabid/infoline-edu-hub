@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
-import { useCategoryData } from './dataEntry/useCategoryData';
+import { useCategoryData } from './useCategoryData';
 import { useLanguage } from '@/context/LanguageContext';
 import { toast } from 'sonner';
 
@@ -11,6 +11,11 @@ interface UseDataEntryProps {
   statusFilter?: string | null;
 }
 
+/**
+ * Məlumat daxil etmə formasını idarə etmək üçün hook
+ * @param {UseDataEntryProps} props - Hook parametrləri
+ * @returns {Object} Form məlumatları və funksiyaları
+ */
 export const useDataEntry = ({
   schoolId,
   initialCategoryId,

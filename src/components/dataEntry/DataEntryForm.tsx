@@ -20,8 +20,8 @@ import {
   saveDataEntryForm,
   submitForApproval
 } from '@/services/dataEntryService';
-import { useCategories } from '@/hooks/useCategories';
-import { useSchool } from '@/hooks/useSchool';
+import { useCategories } from '@/hooks/dataEntry/useCategories';
+import { useSchool } from '@/hooks/dataEntry/useSchool';
 import { CategoryConfirmationDialog } from './CategoryConfirmationDialog';
 import { validateEntryValue } from './utils/formUtils';
 
