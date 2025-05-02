@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, Column } from '@/types/column';
@@ -52,7 +51,7 @@ const determineStatus = (entries: DataEntry[]): DataEntryStatus | 'partial' => {
 export const useCategoryData = (schoolId?: string) => {
   const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
   // Columns fetch etmə
@@ -129,7 +128,7 @@ export const useCategoryData = (schoolId?: string) => {
       setCategories(categoriesWithColumns);
     } catch (err: any) {
       console.error('Error fetching categories:', err);
-      setError(err);
+      setError(err.message || 'Kateqoriyaları yükləmək alınmadı');
       toast.error(`Kateqoriyaları yükləmək alınmadı: ${err.message}`);
     } finally {
       setLoading(false);
