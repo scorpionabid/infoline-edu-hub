@@ -1,6 +1,5 @@
-
-import { ColumnType, Column, ColumnValidation, ColumnValidationError } from '@/types/column';
-import { DataEntryStatus } from '@/types/dataEntry';
+import { ColumnType } from '@/types/column';
+import { ColumnValidation, ColumnValidationError } from '@/types/column';
 import { EntryValue } from '@/types/dataEntry';
 
 /**
@@ -11,179 +10,125 @@ import { EntryValue } from '@/types/dataEntry';
  */
 export const validateEntryValue = (
   value: string,
-  type: ColumnType,
+  columnType: ColumnType,
   validation?: ColumnValidation
 ): string | null => {
-  // Validasiya qaydaları yoxdursa, keçərli
+  // Validasiya qaydaları olmayan hal
   if (!validation) return null;
 
-  // Tələb olunan sahə yoxlaması
-  if (validation.required && (!value || value.trim() === '')) {
-    return validation.requiredMessage || 'Bu sahə tələb olunur';
+  // Boş qiymət kontrolu
+  if (validation && validation?.required && !value?.trim()) {
+    return validation?.requiredMessage || 'Bu sahə məcburidir';
   }
 
-  // Boş dəyər və məcburi deyilsə, keçərli
-  if (!validation.required && (!value || value.trim() === '')) {
+  // Boş qiymət halında digər validasiya qaydalarını yoxlamırıq
+  if (!value || !value.trim()) {
     return null;
   }
 
-  // Tip-əsaslı validasiyalar
-  switch (type) {
+  // Sütun tipinə əsasən validasiya
+  switch (columnType) {
     case 'text':
     case 'textarea':
-      return validateText(value, validation);
-    case 'number':
-      return validateNumber(value, validation);
+      // Min uzunluq yoxlaması
+      if (validation.minLength && value.length < validation.minLength) {
+        return `Minimum ${validation.minLength} simvol olmalıdır`;
+      }
+      // Max uzunluq yoxlaması
+      if (validation.maxLength && value.length > validation.maxLength) {
+        return `Maksimum ${validation.maxLength} simvol olmalıdır`;
+      }
+      // Pattern yoxlaması
+      if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
+        return validation.patternMessage || 'Düzgün format deyil';
+      }
+      break;
+
+    case 'email':
+    case 'text':
+      // Email formatı yoxlaması (email tipli sahə üçün)
+      if (validation.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return 'Düzgün email formatında deyil';
+      }
+      break;
+
+    case 'url':
+    case 'text':
+      // URL formatı yoxlaması (URL tipli sahə üçün)
+      if (validation.url && !/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/.test(value)) {
+        return 'Düzgün URL formatında deyil';
+      }
+      break;
+
     case 'select':
-      return validateSelect(value, validation);
+      // Seçim sahəsinin validasiyası
+      if (validation.inclusion && 
+          Array.isArray(validation.inclusion) && 
+          validation.inclusion.length > 0 && 
+          !validation.inclusion.includes(value)) {
+        return `Seçim ${validation.inclusion.join(', ')} siyahısından olmalıdır`;
+      }
+      break;
+
+    case 'number':
+      // Rəqəmsal tip üçün kontrol
+      if (isNaN(Number(value))) {
+        return 'Bu sahə rəqəm olmalıdır';
+      }
+      
+      const numValue = parseFloat(value);
+      
+      // Minimum dəyər kontrolu
+      if (validation.min !== undefined && numValue < validation.min) {
+        return `Ən az ${validation.min} olmalıdır`;
+      }
+      
+      // Maksimum dəyər kontrolu
+      if (validation.max !== undefined && numValue > validation.max) {
+        return `Ən çox ${validation.max} olmalıdır`;
+      }
+      break;
+      
     case 'date':
-      return validateDate(value, validation);
+      // Tarix formatı yoxlaması
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value) && !/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+        return 'Düzgün tarix formatında deyil';
+      }
+      break;
+      
     case 'checkbox':
-      return null; // Checkbox xüsusi validasiya tələb etmir
-    case 'radio':
-      return validateRadio(value, validation);
-    default:
-      return null;
-  }
-};
-
-/**
- * Mətn dəyərini validasiya edir
- */
-const validateText = (value: string, validation: ColumnValidation): string | null => {
-  // Regex pattern yoxlaması
-  if (validation.pattern) {
-    const regex = new RegExp(validation.pattern);
-    if (!regex.test(value)) {
-      return validation.patternMessage || 'Dəyər düzgün formatda deyil';
-    }
-  }
-
-  // Email formatı yoxlaması
-  if (validation.email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) {
-      return 'Düzgün email formatı daxil edin';
-    }
-  }
-
-  // URL formatı yoxlaması
-  if (validation.url) {
-    try {
-      new URL(value);
-    } catch (e) {
-      return 'Düzgün URL formatı daxil edin';
-    }
-  }
-
-  // Siyahıda olma yoxlaması
-  if (validation.inclusion && Array.isArray(validation.inclusion)) {
-    if (!validation.inclusion.includes(value)) {
-      return `Dəyər bu siyahıdan olmalıdır: ${validation.inclusion.join(', ')}`;
-    }
-  }
-
-  // Minimum uzunluq yoxlaması
-  if (validation.minLength !== undefined && value.length < validation.minLength) {
-    return `Ən azı ${validation.minLength} simvol olmalıdır`;
-  }
-
-  // Maksimum uzunluq yoxlaması
-  if (validation.maxLength !== undefined && value.length > parseInt(validation.maxLength)) {
-    return `Ən çoxu ${validation.maxLength} simvol olmalıdır`;
+      // Checkbox-ın işarələnmiş olmasının kontrolu
+      if (validation.required && value !== 'true' && value !== 'on') {
+        return 'Bu seçim məcburidir';
+      }
+      break;
+      
+    // Digər sahə tipləri üçün validasiya
   }
 
   return null;
 };
 
 /**
- * Ədəd dəyərini validasiya edir
+ * Bütün formun validasiyası
+ * @param entries Formdaki giriş dəyərləri
+ * @param columns Sütunlar
  */
-const validateNumber = (value: string, validation: ColumnValidation): string | null => {
-  const numValue = parseFloat(value);
-
-  // Ədəd olub olmadığını yoxlayırıq
-  if (isNaN(numValue)) {
-    return 'Düzgün ədəd daxil edin';
-  }
-
-  // Minimum dəyər yoxlaması
-  if (validation.min !== undefined && numValue < validation.min) {
-    return `Ədəd ${validation.min}-dən böyük və ya bərabər olmalıdır`;
-  }
-
-  // Maksimum dəyər yoxlaması
-  if (validation.max !== undefined && numValue > validation.max) {
-    return `Ədəd ${validation.max}-dən kiçik və ya bərabər olmalıdır`;
-  }
-
-  return null;
-};
-
-/**
- * Seçim dəyərini validasiya edir
- */
-const validateSelect = (value: string, validation: ColumnValidation): string | null => {
-  // Seçim siyahısında olub olmadığını yoxlayırıq
-  if (validation.inclusion && Array.isArray(validation.inclusion)) {
-    if (!validation.inclusion.includes(value)) {
-      return 'Düzgün seçim edin';
-    }
-  }
-  return null;
-};
-
-/**
- * Tarix dəyərini validasiya edir
- */
-const validateDate = (value: string, validation: ColumnValidation): string | null => {
-  const date = new Date(value);
+export const validateForm = (entries: EntryValue[], columns: Record<string, any>): boolean => {
+  let isValid = true;
   
-  // Düzgün tarix olub olmadığını yoxlayırıq
-  if (isNaN(date.getTime())) {
-    return 'Düzgün tarix daxil edin';
-  }
-  
-  // Əlavə tarix validasiyaları burada həyata keçirilə bilər
-  
-  return null;
-};
-
-/**
- * Radio seçimini validasiya edir
- */
-const validateRadio = (value: string, validation: ColumnValidation): string | null => {
-  // Radio üçün seçimdə olub olmadığını yoxlayırıq
-  if (validation.inclusion && Array.isArray(validation.inclusion)) {
-    if (!validation.inclusion.includes(value)) {
-      return 'Düzgün seçim edin';
-    }
-  }
-  return null;
-};
-
-/**
- * Bütün giriş dəyərlərini validasiya edir
- */
-export const validateAllEntryValues = (
-  entries: EntryValue[],
-  columns: Column[]
-): { isValid: boolean; validatedEntries: EntryValue[] } => {
-  const validatedEntries = entries.map(entry => {
-    const column = columns.find(col => col.id === entry.columnId || col.id === entry.column_id);
-    if (!column) return { ...entry, isValid: true };
+  entries.forEach(entry => {
+    const column = columns[entry.columnId || entry.column_id || ''];
     
-    const error = validateEntryValue(entry.value, column.type, column.validation);
-    return {
-      ...entry,
-      isValid: !error,
-      error: error || undefined
-    };
+    if (column) {
+      const error = validateEntryValue(entry.value, column.type, column.validation);
+      if (error) {
+        isValid = false;
+      }
+    }
   });
   
-  const isValid = validatedEntries.every(entry => entry.isValid);
-  
-  return { isValid, validatedEntries };
+  return isValid;
 };
 
 /**

@@ -1,169 +1,138 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User } from '@/types/user';
 import { Report, ReportChartProps } from '@/types/report';
-import { useLanguage } from '@/context/LanguageContext';
-import { useUsers } from '@/hooks/users/useUsers';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 interface ReportPreviewDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   reportId: string;
-  reportTitle: string;
-  reportDescription: string;
+  open: boolean;
+  onClose: () => void;
 }
 
-// ReportChart komponenti
+// Placeholder komponenti
 const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
   return (
-    <div className="border rounded-md p-4">
-      <p className="text-center">Hesabat qrafiki: {report.title}</p>
-    </div>
-  );
-};
-
-// ReportTable komponenti
-const ReportTable: React.FC<{ reportId: string }> = ({ reportId }) => {
-  return (
-    <div className="border rounded-md p-4">
-      <p className="text-center text-muted-foreground">
-        Hesabat ID: {reportId} üçün cədvəl məlumatları
+    <div className="bg-muted/20 p-4 rounded-md h-64 flex items-center justify-center">
+      <p className="text-muted-foreground">
+        Qrafik görüntüsü burada olacaq ({report.type})
       </p>
     </div>
   );
 };
 
-const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
-  isOpen,
-  onClose,
+// Placeholder komponenti
+const ReportTable: React.FC<{ report: Report }> = ({ report }) => {
+  return (
+    <div className="bg-muted/20 p-4 rounded-md h-64 flex items-center justify-center">
+      <p className="text-muted-foreground">
+        Cədvəl görüntüsü burada olacaq
+      </p>
+    </div>
+  );
+};
+
+export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   reportId,
-  reportTitle,
-  reportDescription
+  open,
+  onClose,
 }) => {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('chart');
-  const [shareEmail, setShareEmail] = useState('');
-  const [sharedWithUsers, setSharedWithUsers] = useState<User[]>([]);
+  const [activeTab, setActiveTab] = useState('overview');
   
-  const usersHook = useUsers();
-  
-  useEffect(() => {
-    if (isOpen) {
-      usersHook.fetchUsers();
-    }
-  }, [isOpen, usersHook]);
-
-  // Hesabat obyekti yaradaq
-  const report: Report = {
-    id: reportId,
-    title: reportTitle,
-    description: reportDescription,
-    type: 'basic'
-  };
-
-  const handleShare = () => {
-    if (shareEmail && shareEmail.includes('@')) {
-      const userExists = usersHook.users.find(u => u.email === shareEmail);
+  const { data: report, isLoading } = useQuery({
+    queryKey: ['report', reportId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('id', reportId)
+        .single();
       
-      if (userExists) {
-        setSharedWithUsers(prev => {
-          // Əgər istifadəçi artıq əlavə edilibsə, təkrar əlavə etmə
-          if (prev.some(u => u.email === shareEmail)) {
-            return prev;
-          }
-          return [...prev, userExists];
-        });
-        setShareEmail('');
-      } else {
-        // İstifadəçi tapılmadı
-        alert(t('userNotFound'));
-      }
-    }
-  };
+      if (error) throw error;
+      return data as Report;
+    },
+    enabled: !!reportId && open,
+  });
 
-  const removeSharedUser = (email: string) => {
-    setSharedWithUsers(prev => prev.filter(u => u.email !== email));
-  };
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[900px]">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!report) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[900px]">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Hesabat tapılmadı</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const reportTitle = report.title;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px]">
         <DialogHeader>
-          <DialogTitle>{reportTitle}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{reportDescription}</p>
+          <DialogTitle className="text-xl">{reportTitle}</DialogTitle>
+          <DialogDescription>
+            {report.description || 'Bu hesabat haqqında ətraflı təsvir yoxdur'}
+          </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="chart" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="chart">{t('chart')}</TabsTrigger>
-            <TabsTrigger value="table">{t('table')}</TabsTrigger>
-            <TabsTrigger value="share">{t('share')}</TabsTrigger>
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">Ümumi</TabsTrigger>
+            <TabsTrigger value="chart">Qrafik</TabsTrigger>
+            <TabsTrigger value="table">Cədvəl</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="chart" className="py-4">
-            <ReportChart report={report} />
-          </TabsContent>
-          
-          <TabsContent value="table" className="py-4">
-            <ReportTable reportId={reportId} />
-          </TabsContent>
-          
-          <TabsContent value="share" className="py-4">
+          <TabsContent value="overview">
             <div className="space-y-4">
-              <div className="flex flex-col space-y-2">
-                <Label htmlFor="shareEmail">{t('shareWithEmail')}</Label>
-                <div className="flex space-x-2">
-                  <Input 
-                    id="shareEmail"
-                    value={shareEmail}
-                    onChange={(e) => setShareEmail(e.target.value)}
-                    placeholder="user@example.com"
-                  />
-                  <Button onClick={handleShare}>{t('add')}</Button>
+              <h3 className="text-lg font-medium">Hesabat haqqında</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Hesabat növü</p>
+                  <p className="font-medium">{report.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Yaradılma tarixi</p>
+                  <p className="font-medium">
+                    {new Date(report.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="font-medium">{report.status}</p>
                 </div>
               </div>
-              
-              {sharedWithUsers.length > 0 && (
-                <div>
-                  <Label>{t('sharedWith')}</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {sharedWithUsers.map(user => (
-                      <Badge key={user.id} variant="secondary" className="flex items-center gap-1">
-                        {user.email}
-                        <button 
-                          onClick={() => removeSharedUser(user.email)}
-                          className="ml-1 text-xs"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </TabsContent>
+          <TabsContent value="chart">
+            {report && <ReportChart report={report} />}
+          </TabsContent>
+          <TabsContent value="table">
+            {report && <ReportTable report={report} />}
+          </TabsContent>
         </Tabs>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t('close')}</Button>
-          {activeTab === 'share' && (
-            <Button onClick={() => {
-              // Burada hesabatı paylaşma əməliyyatı həyata keçiriləcək
-              // Report Service ilə inteqrasiya
-              alert(t('reportShared'));
-              onClose();
-            }}>
-              {t('saveSharing')}
-            </Button>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

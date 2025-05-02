@@ -4,9 +4,20 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { FormFields } from './FormFields';
 import { CategoryWithColumns } from '@/types/column';
-import { EntryValue, DataEntry } from '@/types/dataEntry';
+import { DataEntry } from '@/types/dataEntry';
 import { StatusIndicator } from './StatusIndicators';
 import { useCategoryStatus } from '@/hooks/categories/useCategoryStatus';
+
+interface EntryValue {
+  column_id?: string;
+  columnId?: string; 
+  value: string;
+  name?: string;
+  isValid?: boolean;
+  error?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+  entryId?: string;
+}
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
@@ -29,7 +40,7 @@ export function CategoryForm({
   isDisabled = false,
   isLoading = false
 }: CategoryFormProps) {
-  // Mövcud useCategoryStatus hook-nu istifadə edəcək, lakin verilən məlumatları tipə uyğun ötürək
+  // Mövcud useCategoryStatus hook-nu istifadə edəcək
   const { status, completionPercentage, getStatusBadgeColor, getStatusLabel } = useCategoryStatus(category, { 
     entries: values.map(v => ({
       id: v.entryId || '',
@@ -43,7 +54,7 @@ export function CategoryForm({
     })) as DataEntry[]
   });
 
-  // Hesabla - valideysion xətaları varmı
+  // Hesabla - validasiya xətaları varmı
   const hasValidationErrors = values.some(v => v.isValid === false);
   
   return (

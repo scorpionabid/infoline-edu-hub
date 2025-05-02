@@ -158,14 +158,15 @@ export const usePermissions = (): UsePermissionsResult => {
     return checkCategoryAccess(data.category_id, level);
   };
   
-  // Helper funksiyalar
-  const canSectorAdminAccessCategoriesColumns = (): boolean => {
-    return isSectorAdmin;
-  };
+  // Sektoradmin: Kateqoriya və sütun əlçatanlığı
+  const canViewSectorCategories = useMemo(() => {
+    return isSectorAdmin || isRegionAdmin || isSuperAdmin;
+  }, [isSectorAdmin, isRegionAdmin, isSuperAdmin]);
   
-  const canRegionAdminManageCategoriesColumns = (): boolean => {
-    return isRegionAdmin;
-  };
+  // RegionAdmin: Kateqoriya və sütunları idarə etmə
+  const canManageCategories = useMemo(() => {
+    return isRegionAdmin || isSuperAdmin;
+  }, [isRegionAdmin, isSuperAdmin]);
 
   return {
     // Rol yoxlamaları
@@ -189,7 +190,7 @@ export const usePermissions = (): UsePermissionsResult => {
     checkColumnAccess,
     
     // Helper funksiyalar
-    canSectorAdminAccessCategoriesColumns,
-    canRegionAdminManageCategoriesColumns
+    canViewSectorCategories,
+    canManageCategories
   };
 };

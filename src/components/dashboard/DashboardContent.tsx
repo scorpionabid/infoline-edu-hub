@@ -1,3 +1,4 @@
+
 import React, { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
@@ -15,7 +16,6 @@ import {
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
   DashboardNotification,
-  PendingApprovalItem,
   SchoolStat
 } from '@/types/dashboard';
 
@@ -34,7 +34,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   
   // Form elementinə klik funksiyası
   const handleFormClick = useCallback((formId: string) => {
-    navigate(`/data-entry?formId=${formId}`);
+    navigate(`/data-entry?categoryId=${formId}`);
   }, [navigate]);
   
   // Rol əsasında dashboard datasını əldə edirik
@@ -72,17 +72,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
     }
   ], []);
 
-  // Mock pending approvals
-  const mockPendingApprovals = useMemo<PendingApprovalItem[]>(() => [
-    {
-      id: '1',
-      name: 'Tədris məlumatları',
-      school: 'Bakı 1 nömrəli məktəb',
-      date: new Date().toLocaleDateString(),
-      status: 'pending'
-    }
-  ], []);
-
   // Xəta və ya yüklənmə halları
   if (error) {
     toast.error('Məlumatları yükləyərkən xəta baş verdi');
@@ -113,9 +102,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       },
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
-      // Əlavə məlumatlar (dashboard tipində tələb olunan)
       regions: [],
-      pendingApprovals: mockPendingApprovals,
+      pendingApprovals: [],
       approvalRate: dashboardData.approvalRate || 0,
       regionCount: dashboardData.regions || 0,
       sectorCount: dashboardData.sectors || 0,

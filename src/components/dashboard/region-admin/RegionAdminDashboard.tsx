@@ -2,10 +2,9 @@
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from '../common/StatsCard';
-import { NotificationsCard } from '../common/NotificationsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
+import { NotificationsCard } from '../common/NotificationsCard';
 import { RegionAdminDashboardData } from '@/types/dashboard';
-import { Building, School, Users } from 'lucide-react';
 
 interface RegionAdminDashboardProps {
   data: RegionAdminDashboardData;
@@ -14,38 +13,41 @@ interface RegionAdminDashboardProps {
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Region Dashboard</h2>
+      
       <Grid columns={3} className="gap-6">
         <StatsCard
           title="Sektorlar"
           value={data.stats.sectors}
-          icon={<Building className="h-4 w-4" />}
-          description="Region daxilində sektor sayı"
-          trend={`${data.sectorStats?.active || 0} aktiv sektor`}
-          trendDirection="neutral"
+          icon="S"
+          description="Toplam sektor sayı"
+          trend={`${data.sectorStats?.total ? data.sectorStats?.active / data.sectorStats?.total * 100 : 0}% aktiv`}
+          trendDirection="up"
         />
         <StatsCard
           title="Məktəblər"
           value={data.stats.schools}
-          icon={<School className="h-4 w-4" />}
-          description="Region daxilində məktəb sayı"
-          trend={`${data.schoolStats?.active || 0} aktiv məktəb`}
+          icon="M"
+          description="Toplam məktəb sayı"
+          trend={`${data.schoolStats?.incomplete || 0} tamamlanmamış`}
           trendDirection="neutral"
         />
         <StatsCard
           title="İstifadəçilər"
           value={data.stats.users}
-          icon={<Users className="h-4 w-4" />}
-          description="Region daxilində istifadəçi sayı"
-          trend={`${data.stats.users} aktiv istifadəçi`}
-          trendDirection="neutral"
+          icon="U"
+          description="Toplam istifadəçi sayı"
+          trend="Tam tamamlanıb"
+          trendDirection="up"
         />
       </Grid>
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          title="Region Tamamlama Faizi"
           completionRate={data.completionRate}
+          title="Ümumi Tamamlanma"
         />
+                
         <NotificationsCard
           title="Bildirişlər"
           notifications={data.notifications}

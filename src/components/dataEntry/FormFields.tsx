@@ -1,13 +1,33 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
+import { 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage,
+  FormDescription
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Calendar } from '@/components/ui/calendar';
 import { Column } from '@/types/column';
-import { EntryValue } from '@/types/dataEntry';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface EntryValue {
+  column_id?: string;
+  columnId?: string;
+  value: string;
+  name?: string;
+  isValid?: boolean;
+  error?: string;
+}
 
 interface FormFieldsProps {
   columns: Column[];
@@ -17,184 +37,216 @@ interface FormFieldsProps {
 }
 
 export function FormFields({ columns, values, onChange, disabled = false }: FormFieldsProps) {
+  // Verilən sütun ID-si üçün dəyəri tapmaq
   const getValue = (columnId: string): string => {
-    const foundValue = values.find(v => v.column_id === columnId || v.columnId === columnId);
-    return foundValue ? foundValue.value : '';
+    const entry = values.find(v => (v.columnId || v.column_id) === columnId);
+    return entry?.value || '';
   };
   
-  const getError = (columnId: string): string | undefined => {
-    const foundValue = values.find(v => v.column_id === columnId || v.columnId === columnId);
-    return foundValue?.error;
-  };
-  
-  const renderField = (column: Column) => {
+  // Sütun tipinə görə uyğun input elementini render etmək
+  const renderFieldByType = (column: Column) => {
     const value = getValue(column.id);
-    const error = getError(column.id);
+    const error = values.find(v => (v.columnId || v.column_id) === column.id)?.error;
     
     switch (column.type) {
       case 'text':
         return (
-          <div className="space-y-2" key={column.id}>
-            <Label htmlFor={column.id} className="flex items-center">
+          <FormItem key={column.id}>
+            <FormLabel>
               {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
-            <Input
-              id={column.id}
-              name={column.id}
-              placeholder={column.placeholder}
-              value={value || ''}
-              onChange={(e) => onChange(column.id, e.target.value)}
-              disabled={disabled}
-              className={error ? 'border-red-500' : ''}
-            />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input 
+                placeholder={column.placeholder || ''}
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                disabled={disabled}
+              />
+            </FormControl>
+            {column.help_text && (
+              <FormDescription>{column.help_text}</FormDescription>
+            )}
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
         );
-      
-      case 'number':
-        return (
-          <div className="space-y-2" key={column.id}>
-            <Label htmlFor={column.id} className="flex items-center">
-              {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
-            <Input
-              id={column.id}
-              name={column.id}
-              type="number"
-              placeholder={column.placeholder}
-              value={value || ''}
-              onChange={(e) => onChange(column.id, e.target.value)}
-              disabled={disabled}
-              className={error ? 'border-red-500' : ''}
-            />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
-        );
-      
+        
       case 'textarea':
         return (
-          <div className="space-y-2" key={column.id}>
-            <Label htmlFor={column.id} className="flex items-center">
+          <FormItem key={column.id}>
+            <FormLabel>
               {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
-            <Textarea
-              id={column.id}
-              name={column.id}
-              placeholder={column.placeholder}
-              value={value || ''}
-              onChange={(e) => onChange(column.id, e.target.value)}
-              disabled={disabled}
-              className={error ? 'border-red-500' : ''}
-            />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder={column.placeholder || ''}
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                disabled={disabled}
+                rows={4}
+              />
+            </FormControl>
+            {column.help_text && (
+              <FormDescription>{column.help_text}</FormDescription>
+            )}
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
         );
-      
+        
+      case 'number':
+        return (
+          <FormItem key={column.id}>
+            <FormLabel>
+              {column.name}
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input 
+                type="number"
+                placeholder={column.placeholder || ''}
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                disabled={disabled}
+              />
+            </FormControl>
+            {column.help_text && (
+              <FormDescription>{column.help_text}</FormDescription>
+            )}
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
+        );
+        
+      case 'date':
+        return (
+          <FormItem key={column.id}>
+            <FormLabel>
+              {column.name}
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !value && "text-muted-foreground"
+                    )}
+                    disabled={disabled}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {value ? format(new Date(value), "PP") : <span>Tarix seçin</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={value ? new Date(value) : undefined}
+                    onSelect={(date) => date && onChange(column.id, date.toISOString())}
+                    initialFocus
+                    disabled={disabled}
+                  />
+                </PopoverContent>
+              </Popover>
+            </FormControl>
+            {column.help_text && (
+              <FormDescription>{column.help_text}</FormDescription>
+            )}
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
+        );
+        
       case 'select':
         return (
-          <div className="space-y-2" key={column.id}>
-            <Label htmlFor={column.id} className="flex items-center">
+          <FormItem key={column.id}>
+            <FormLabel>
               {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
             <Select
               value={value}
               onValueChange={(val) => onChange(column.id, val)}
               disabled={disabled}
             >
-              <SelectTrigger id={column.id} className={error ? 'border-red-500' : ''}>
-                <SelectValue placeholder={column.placeholder || 'Seçin'} />
-              </SelectTrigger>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={column.placeholder || 'Seçin'} />
+                </SelectTrigger>
+              </FormControl>
               <SelectContent>
-                {column.options?.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {column.options?.map((option: any, index: number) => (
+                  <SelectItem 
+                    key={index} 
+                    value={typeof option === 'string' ? option : option.value || ''}
+                  >
+                    {typeof option === 'string' ? option : option.label || option.value}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
+            {column.help_text && (
+              <FormDescription>{column.help_text}</FormDescription>
+            )}
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
         );
-      
+        
       case 'checkbox':
         return (
-          <div className="space-y-2" key={column.id}>
-            <div className="flex items-center space-x-2">
+          <FormItem key={column.id} className="flex flex-row items-start space-x-3 space-y-0">
+            <FormControl>
               <Checkbox
-                id={column.id}
                 checked={value === 'true'}
-                onCheckedChange={(checked) => onChange(column.id, checked ? 'true' : 'false')}
+                onCheckedChange={(checked) => {
+                  onChange(column.id, checked ? 'true' : 'false');
+                }}
                 disabled={disabled}
               />
-              <Label htmlFor={column.id} className="flex items-center">
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>
                 {column.name}
-                {column.is_required && <span className="text-red-500 ml-1">*</span>}
-              </Label>
+                {column.is_required && <span className="text-destructive ml-1">*</span>}
+              </FormLabel>
+              {column.help_text && (
+                <FormDescription>{column.help_text}</FormDescription>
+              )}
             </div>
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
         );
-      
-      case 'radio':
-        return (
-          <div className="space-y-2" key={column.id}>
-            <Label className="flex items-center">
-              {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
-            <RadioGroup
-              value={value}
-              onValueChange={(val) => onChange(column.id, val)}
-              className="flex flex-col space-y-1"
-              disabled={disabled}
-            >
-              {column.options?.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <RadioGroupItem value={option.value} id={`${column.id}-${option.value}`} />
-                  <Label htmlFor={`${column.id}-${option.value}`}>{option.label}</Label>
-                </div>
-              ))}
-            </RadioGroup>
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
-        );
-      
+        
+      // Standart tip halı - text input istifadə edirik
       default:
         return (
-          <div className="space-y-2" key={column.id}>
-            <Label htmlFor={column.id} className="flex items-center">
+          <FormItem key={column.id}>
+            <FormLabel>
               {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
-            <Input
-              id={column.id}
-              name={column.id}
-              placeholder={column.placeholder}
-              value={value || ''}
-              onChange={(e) => onChange(column.id, e.target.value)}
-              disabled={disabled}
-              className={error ? 'border-red-500' : ''}
-            />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {column.help_text && <p className="text-xs text-muted-foreground">{column.help_text}</p>}
-          </div>
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input 
+                placeholder={column.placeholder || ''}
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                disabled={disabled}
+              />
+            </FormControl>
+            {column.help_text && (
+              <FormDescription>{column.help_text}</FormDescription>
+            )}
+            {error && <FormMessage>{error}</FormMessage>}
+          </FormItem>
         );
     }
   };
-  
+
   return (
     <div className="space-y-6">
-      {columns.map(renderField)}
+      {columns.map(column => renderFieldByType(column))}
     </div>
   );
 }
+
+export default FormFields;

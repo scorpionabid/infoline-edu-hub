@@ -5,7 +5,9 @@ export enum DataEntrySaveStatus {
   IDLE = 'idle',
   SAVING = 'saving',
   SAVED = 'saved',
-  ERROR = 'error'
+  ERROR = 'error',
+  SUBMITTING = 'submitting',
+  SUBMITTED = 'submitted'
 }
 
 export interface DataEntry {
@@ -26,7 +28,7 @@ export interface DataEntry {
 }
 
 export interface EntryValue {
-  column_id: string;
+  column_id?: string;
   columnId?: string; // alternativ ad
   value: string;
   name?: string;
@@ -36,8 +38,11 @@ export interface EntryValue {
   entryId?: string;
 }
 
-export interface DataEntryFormData {
+export interface DataEntryForm {
+  id?: string;
   categoryId: string;
   schoolId: string;
   entries: EntryValue[];
+  status?: DataEntryStatus;
+  submittedAt?: string;
 }

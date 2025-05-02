@@ -2,109 +2,88 @@
 import { useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
+import { useLanguage } from '@/context/LanguageContext';
 
-interface UseCategoryStatusOptions {
-  entries?: DataEntry[];
+interface UseCategoryStatusProps {
+  entries: DataEntry[];
 }
 
-export const useCategoryStatus = (
-  category: CategoryWithColumns,
-  options: UseCategoryStatusOptions = {}
-) => {
-  const { entries = [] } = options;
+export const useCategoryStatus = (category: CategoryWithColumns, props?: UseCategoryStatusProps) => {
+  const { t } = useLanguage();
+  const entries = props?.entries || category.entries || [];
 
-  // Status hesablanması
-  const status = useMemo<DataEntryStatus>(() => {
-    if (!category.columns || category.columns.length === 0) {
-      return 'draft';
-    }
+  // Kateqoriyanın statusunu hesablayaq
+  const status = useMemo(() => {
+    if (!entries || entries.length === 0) return 'draft';
 
-    // Əgər verilmiş giriş yoxdursa
-    if (!entries || entries.length === 0) {
-      return 'draft';
-    }
-
-    // Bütün girişlər təsdiqlənibsə
-    const allApproved = entries.every(entry => entry.status === 'approved');
-    if (allApproved) {
-      return 'approved';
-    }
-
-    // Bütün girişlər rədd edilibsə
-    const allRejected = entries.every(entry => entry.status === 'rejected');
-    if (allRejected) {
-      return 'rejected';
-    }
-
-    // Heç bir giriş təsdiqlənməyibsə və ya rədd edilməyibsə
-    const hasPending = entries.some(entry => entry.status === 'pending');
-    if (hasPending) {
-      return 'pending';
-    }
-
-    // Default olaraq qaralama vəziyyəti
+    const statuses = entries.map(entry => entry.status);
+    
+    if (statuses.every(s => s === 'approved')) return 'approved';
+    if (statuses.every(s => s === 'rejected')) return 'rejected';
+    if (statuses.every(s => s === 'pending')) return 'pending';
+    if (statuses.every(s => s === 'draft')) return 'draft';
+    
+    // Qarışıq statuslar
+    if (statuses.some(s => s === 'approved')) return 'partial';
+    if (statuses.some(s => s === 'pending')) return 'pending';
+    if (statuses.some(s => s === 'rejected')) return 'partial';
+    
     return 'draft';
-  }, [category, entries]);
-
-  // Tamamlanma faizi hesablanması
-  const completionPercentage = useMemo<number>(() => {
-    if (!category.columns || category.columns.length === 0) {
-      return 0;
+  }, [entries]);
+  
+  // Tamamlanma faizini hesablayaq
+  const completionPercentage = useMemo(() => {
+    if (!category.columns || category.columns.length === 0) return 0;
+    
+    // Məcburi sütunları tap
+    const requiredColumns = category.columns.filter(col => col.is_required);
+    
+    // Tamamlanmış sütunlar
+    const completedEntries = entries.filter(entry => 
+      entry.value && entry.value.trim() !== ''
+    );
+    
+    // Məcburi sütun yoxdursa
+    if (!requiredColumns.length) {
+      return completedEntries.length > 0 ? 100 : 0;
     }
-
-    if (!entries || entries.length === 0) {
-      return 0;
-    }
-
-    const requiredColumns = category.columns.filter(column => column.is_required);
-    if (requiredColumns.length === 0) {
-      return 0;
-    }
-
-    const filledRequiredEntries = entries.filter(entry => {
-      const column = category.columns.find(col => col.id === entry.column_id);
-      return column && column.is_required && entry.value && entry.value.trim() !== '';
-    });
-
-    if (filledRequiredEntries.length === 0) {
-      return 0;
-    }
-
-    return Math.round((filledRequiredEntries.length / requiredColumns.length) * 100);
-  }, [category, entries]);
-
-  // Status badge rəngi
-  const getStatusBadgeColor = (status: DataEntryStatus | string): string => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+    
+    // Məcburi sütunlardan neçəsi doldurulub
+    const filledRequiredColumns = requiredColumns.filter(column => 
+      entries.some(entry => 
+        entry.column_id === column.id && 
+        entry.value && 
+        entry.value.trim() !== ''
+      )
+    );
+    
+    return Math.round((filledRequiredColumns.length / requiredColumns.length) * 100);
+  }, [category.columns, entries]);
+  
+  // Status üçün badge rəngini təyin edək
+  const getStatusBadgeColor = (status: DataEntryStatus | 'partial') => {
+    switch(status) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-blue-100 text-blue-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'partial': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  // Status etiketi
-  const getStatusLabel = (status: DataEntryStatus | string): string => {
-    switch (status) {
-      case 'approved':
-        return 'Təsdiqlənib';
-      case 'pending':
-        return 'Gözləyir';
-      case 'rejected':
-        return 'Rədd edilib';
-      case 'draft':
-        return 'Qaralama';
-      default:
-        return 'Naməlum';
+  
+  // Status əsasında mətn təyin edək
+  const getStatusLabel = (status: DataEntryStatus | 'partial') => {
+    switch(status) {
+      case 'approved': return t('approved');
+      case 'pending': return t('pending');
+      case 'rejected': return t('rejected');
+      case 'draft': return t('draft');
+      case 'partial': return t('partial');
+      default: return t('unknown');
     }
   };
-
+  
   return {
     status,
     completionPercentage,
@@ -112,5 +91,3 @@ export const useCategoryStatus = (
     getStatusLabel
   };
 };
-
-export default useCategoryStatus;

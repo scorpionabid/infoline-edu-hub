@@ -1,63 +1,55 @@
 
-export type ColumnType = 'text' | 'number' | 'select' | 'date' | 'checkbox' | 'radio' | 'textarea';
-
-export interface ColumnOption {
-  label: string;
-  value: string;
-}
-
-export interface ColumnValidation {
-  required?: boolean;
-  requiredMessage?: string;
-  min?: number;
-  max?: number;
-  minLength?: number;
-  maxLength?: string;
-  pattern?: string;
-  patternMessage?: string;
-  inclusion?: string[];
-  exclusion?: string[];
-  email?: boolean;
-  url?: boolean;
-  custom?: (value: any) => boolean | string;
-}
-
-export interface ColumnValidationError {
-  id: string;
-  message: string;
-  type: 'error' | 'warning' | 'info';
-}
-
 export interface Column {
   id: string;
   category_id: string;
   name: string;
-  description?: string;
   type: ColumnType;
-  is_required: boolean;
-  is_unique?: boolean;
-  placeholder?: string;
   help_text?: string;
+  placeholder?: string;
   default_value?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  is_required: boolean;
+  options?: any[];
+  order_index: number;
+  status: 'active' | 'inactive';
   validation?: ColumnValidation;
-  options?: ColumnOption[];
-  order?: number;
-  parent_id?: string;
-  conditional_display?: object;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
+
+export interface ColumnValidation {
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  required?: boolean;
+  requiredMessage?: string;
+  patternMessage?: string;
+  email?: boolean;
+  url?: boolean;
+  min?: number;
+  max?: number;
+  inclusion?: string[];
+}
+
+export interface ColumnValidationError {
+  message: string;
+  type: string;
 }
 
 export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
-  assignment?: string;
-  status?: string;
-  deadline?: Date;
-  columns: Column[];
-  created_at?: Date;
-  updated_at?: Date;
+  assignment: 'all' | 'sectors';
+  status: 'active' | 'inactive' | 'draft';
   priority?: number;
-  archived?: boolean;
+  deadline?: string;
+  created_at: string;
+  updated_at: string;
+  archived: boolean;
+  columns: Column[];
+  entries?: DataEntry[];
+  completionPercentage?: number;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected' | 'partial';
 }

@@ -1,64 +1,63 @@
 
-import { User as SupabaseUser } from '@supabase/supabase-js';
-
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
 export interface Region {
   id: string;
   name: string;
   description?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  admin_id?: string | null;
-  admin_email?: string | null;
+  status: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Sector {
   id: string;
-  region_id: string;
   name: string;
+  region_id: string;
   description?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  admin_id?: string | null;
-  admin_email?: string | null;
+  status: string;
+  admin_id?: string;
+  admin_email?: string;
+  completion_rate?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface School {
   id: string;
-  sector_id: string;
-  region_id: string;
   name: string;
+  region_id: string;
+  sector_id: string;
   address?: string;
-  phone?: string;
   email?: string;
+  phone?: string;
   principal_name?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  admin_id?: string | null;
-  admin_email?: string | null;
   student_count?: number;
   teacher_count?: number;
   type?: string;
+  status: string;
   language?: string;
+  admin_id?: string;
+  admin_email?: string;
+  completion_rate?: number;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface UserRole {
+export interface FullUserData {
   id: string;
-  user_id: string;
-  role: UserRole;
-  created_at?: string;
-  school_id?: string | null;
-  sector_id?: string | null;
-  region_id?: string | null;
-}
-
-export interface ExtendedUser extends SupabaseUser {
+  email?: string;
+  full_name?: string;
   role?: UserRole;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  last_login?: string;
 }
+
+export type Language = 'az' | 'en' | 'ru' | 'tr';
