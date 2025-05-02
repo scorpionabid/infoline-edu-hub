@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { PageHeader } from '@/components/layout/PageHeader';
+import PageHeader from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
@@ -18,7 +18,7 @@ export const Approval: React.FC = () => {
   const { t } = useLanguage();
   const { data, loading, error, loadData, approveItem, rejectItem } = useApprovalData();
   
-  const [activeTab, setActiveTab] = useState<DataEntryStatus | 'pending'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -30,7 +30,7 @@ export const Approval: React.FC = () => {
 
   // Tab dəyişdikdə məlumatları yenilə
   const handleTabChange = async (value: string) => {
-    setActiveTab(value as DataEntryStatus | 'pending');
+    setActiveTab(value as 'pending' | 'approved' | 'rejected');
     try {
       await loadData(value as 'pending' | 'approved' | 'rejected');
     } catch (err) {

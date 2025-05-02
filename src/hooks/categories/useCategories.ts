@@ -8,8 +8,10 @@ import { useLanguage } from '@/context/LanguageContext';
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const { isSuperAdmin, isRegionAdmin, isSectorAdmin, canViewSectorCategories } = usePermissions();
   const { t } = useLanguage();
 
@@ -38,6 +40,7 @@ export const useCategories = () => {
 
       if (data) {
         setCategories(data as Category[]);
+        setFilteredCategories(data as Category[]);
       }
     } catch (err: any) {
       console.error('Kategoriyaları yükləyərkən xəta baş verdi:', err);
@@ -55,10 +58,27 @@ export const useCategories = () => {
     fetchCategories();
   }, [fetchCategories]);
 
+  // Axtarış sorğusu dəyişdikdə kategoriyaları filtrə
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredCategories(categories);
+    } else {
+      const filtered = categories.filter(category => 
+        category.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredCategories(filtered);
+    }
+  }, [searchQuery, categories]);
+
   return {
     categories,
+    filteredCategories,
     isLoading,
     error,
+    searchQuery,
+    setSearchQuery,
+    refetch: fetchCategories,
     getCategories: fetchCategories
   };
 };

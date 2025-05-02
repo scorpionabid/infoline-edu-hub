@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/components/ui/data-table';
 import { PlusCircle } from 'lucide-react';
-import useCategories from '@/hooks/categories/useCategories';
+import { useCategories } from '@/hooks/categories/useCategories';
 import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryColumns } from './CategoryColumns';
@@ -22,10 +22,28 @@ export const CategoryList = () => {
   } = useCategories();
 
   const {
-    isActionLoading,
-    handleDeleteCategory,
-    handleUpdateCategoryStatus
+    deleteCategory,
+    updateCategoryStatus,
+    isLoading: isActionLoading
   } = useCategoryActions();
+
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await deleteCategory(id);
+      refetch();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
+  const handleUpdateCategoryStatus = async (id: string, status: string) => {
+    try {
+      await updateCategoryStatus(id, status);
+      refetch();
+    } catch (error) {
+      console.error('Error updating category status:', error);
+    }
+  };
 
   return (
     <div>

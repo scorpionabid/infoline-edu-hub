@@ -1,102 +1,135 @@
 
-import { ColumnType, ColumnValidation } from '@/types/column';
-import { DataEntryStatus, EntryValue } from '@/types/dataEntry';
+import { ColumnType } from '@/types/column';
+import { ColumnValidation, ColumnValidationError } from '@/types/column';
+import { EntryValue } from '@/types/dataEntry';
 
-// Daxil edilmiş dəyərin validasiyası
 export const validateEntryValue = (
-  value: string, 
-  type: ColumnType, 
+  value: string,
+  type: ColumnType,
   validation?: ColumnValidation
-): string | null => {
-  // Əgər validasiya qaydası yoxdursa, dəyər doğru sayılır
-  if (!validation) return null;
-  
-  // Məcburi sahə yoxlanışı
-  if (validation.required && !value.trim()) {
-    return validation.requiredMessage || 'Bu sahə məcburidir';
+): ColumnValidationError | null => {
+  // Boş dəyər yoxlaması
+  if (validation?.required && !value.trim()) {
+    return {
+      type: 'required',
+      message: validation.requiredMessage || 'Bu sütun məcburidir'
+    };
   }
 
-  // Əgər dəyər boşdursa və məcburi deyilsə, qalan yoxlamalara ehtiyac yoxdur
-  if (!value.trim() && !validation.required) {
+  // Boş dəyərsə və məcburi deyilsə, validasiya lazım deyil
+  if (!value.trim() && !validation?.required) {
     return null;
   }
-  
-  // Tip-ə əsasən yoxlanışlar
+
+  // Tip əsaslı validasiya
   switch (type) {
     case 'text':
     case 'textarea':
-      // Min uzunluq yoxlanışı
-      if (validation.minLength && value.length < validation.minLength) {
-        return `Minimum ${validation.minLength} simvol olmalıdır`;
-      }
-      
-      // Max uzunluq yoxlanışı
-      if (validation.maxLength && value.length > validation.maxLength) {
-        return `Maksimum ${validation.maxLength} simvol olmalıdır`;
-      }
-      
-      // Pattern yoxlanışı
-      if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-        return validation.patternMessage || 'Düzgün format deyil';
-      }
-      
-      // Email formatı yoxlanışı
-      if (validation.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return 'Düzgün e-poçt formatı deyil';
-      }
-      
-      // URL formatı yoxlanışı
-      if (validation.url && !/^(http|https):\/\/[^ "]+$/.test(value)) {
-        return 'Düzgün URL formatı deyil';
-      }
-      break;
-      
+      return validateText(value, validation);
     case 'number':
-      // Rəqəm yoxlanışı
-      if (!/^-?\d*\.?\d*$/.test(value)) {
-        return 'Rəqəm olmalıdır';
-      }
-      
-      const numValue = parseFloat(value);
-      
-      // Min dəyər yoxlanışı
-      if (validation.min !== undefined && numValue < validation.min) {
-        return `Minimum dəyər ${validation.min} olmalıdır`;
-      }
-      
-      // Max dəyər yoxlanışı
-      if (validation.max !== undefined && numValue > validation.max) {
-        return `Maksimum dəyər ${validation.max} olmalıdır`;
-      }
-      break;
-      
+      return validateNumber(value, validation);
+    case 'date':
+      return validateDate(value);
     case 'select':
-      // Seçilmiş dəyər icazə verilən variantlar siyahısında yoxlanışı
-      if (validation.inclusion && !validation.inclusion.includes(value)) {
-        return 'Düzgün seçim deyil';
-      }
-      break;
+      return validateSelect(value, validation);
+    default:
+      return null;
   }
-  
-  // Bütün yoxlamalardan keçdisə heç bir xəta yoxdur
+};
+
+const validateText = (value: string, validation?: ColumnValidation): ColumnValidationError | null => {
+  if (validation?.minLength && value.length < validation.minLength) {
+    return {
+      type: 'minLength',
+      message: `Minimum ${validation.minLength} simvol olmalıdır`
+    };
+  }
+
+  if (validation?.maxLength && value.length > validation.maxLength) {
+    return {
+      type: 'maxLength',
+      message: `Maksimum ${validation.maxLength} simvol ola bilər`
+    };
+  }
+
+  if (validation?.pattern) {
+    const regex = new RegExp(validation.pattern);
+    if (!regex.test(value)) {
+      return {
+        type: 'pattern',
+        message: validation.patternMessage || 'Daxil etdiyiniz məlumat düzgün formada deyil'
+      };
+    }
+  }
+
+  if (validation?.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return {
+        type: 'email',
+        message: 'Düzgün email formatı daxil edin'
+      };
+    }
+  }
+
+  if (validation?.url) {
+    try {
+      new URL(value);
+    } catch (_) {
+      return {
+        type: 'url',
+        message: 'Düzgün URL formatı daxil edin'
+      };
+    }
+  }
+
   return null;
 };
 
-// Helper funksiya: EntryValue objectlərini DataEntry massivi formatına çevirir
-export const convertEntryValuesToDataEntries = (
-  entries: EntryValue[], 
-  categoryId: string, 
-  schoolId: string,
-  status: DataEntryStatus = 'draft'
-) => {
-  return entries.map(entry => ({
-    id: entry.entryId || `temp_${Date.now()}_${Math.random()}`,
-    column_id: entry.columnId || entry.column_id || '',
-    category_id: categoryId,
-    school_id: schoolId,
-    value: entry.value,
-    status: entry.status || status,
-    created_at: new Date(),
-    updated_at: new Date()
-  }));
+const validateNumber = (value: string, validation?: ColumnValidation): ColumnValidationError | null => {
+  if (isNaN(Number(value))) {
+    return {
+      type: 'number',
+      message: 'Rəqəm daxil edin'
+    };
+  }
+
+  if (validation?.min !== undefined && Number(value) < validation.min) {
+    return {
+      type: 'min',
+      message: `Minimum dəyər ${validation.min} olmalıdır`
+    };
+  }
+
+  if (validation?.max !== undefined && Number(value) > validation.max) {
+    return {
+      type: 'max',
+      message: `Maksimum dəyər ${validation.max} ola bilər`
+    };
+  }
+
+  return null;
+};
+
+const validateDate = (value: string): ColumnValidationError | null => {
+  const date = new Date(value);
+  if (isNaN(date.getTime())) {
+    return {
+      type: 'date',
+      message: 'Düzgün tarix formatı daxil edin'
+    };
+  }
+
+  return null;
+};
+
+const validateSelect = (value: string, validation?: ColumnValidation): ColumnValidationError | null => {
+  if (validation?.inclusion && !validation.inclusion.includes(value)) {
+    return {
+      type: 'inclusion',
+      message: 'Siyahıdan düzgün seçim edin'
+    };
+  }
+
+  return null;
 };

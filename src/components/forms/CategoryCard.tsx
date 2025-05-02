@@ -1,73 +1,101 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, ChevronRight } from 'lucide-react';
-import { Category } from '@/types/category';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, CheckCircle, Clock, XCircle, FileEdit } from 'lucide-react';
+import { format } from 'date-fns';
+import { CategoryWithColumns } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface CategoryCardProps {
-  category: Category;
-  onStart: () => void;
-  readOnly?: boolean;
+  category: CategoryWithColumns;
+  onClick: () => void;
 }
 
-export const CategoryCard: React.FC<CategoryCardProps> = ({ 
-  category, 
-  onStart,
-  readOnly = false
-}) => {
+export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick }) => {
   const { t } = useLanguage();
   
-  // Status badgesi üçün stil və mətnlər
-  const getBadgeProps = (status: string) => {
-    switch(status) {
-      case 'approved':
-        return { className: 'bg-green-500 hover:bg-green-600', label: t('approved') };
-      case 'pending':
-        return { className: 'bg-yellow-500 hover:bg-yellow-600', label: t('pending') };
-      case 'rejected':
-        return { className: 'bg-red-500 hover:bg-red-600', label: t('rejected') };
+  const getStatusBadge = () => {
+    if (!category.status) return null;
+    
+    switch(category.status) {
       case 'draft':
-        return { className: 'bg-gray-500 hover:bg-gray-600', label: t('draft') };
+        return (
+          <Badge variant="outline" className="flex items-center">
+            <FileEdit className="h-3 w-3 mr-1" />
+            {t('draft')}
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge variant="secondary" className="flex items-center">
+            <Clock className="h-3 w-3 mr-1" />
+            {t('pending')}
+          </Badge>
+        );
+      case 'approved':
+        return (
+          <Badge variant="success" className="flex items-center">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {t('approved')}
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive" className="flex items-center">
+            <XCircle className="h-3 w-3 mr-1" />
+            {t('rejected')}
+          </Badge>
+        );
       default:
-        return { className: 'bg-blue-500 hover:bg-blue-600', label: t('active') };
+        return null;
     }
   };
   
-  const badgeProps = getBadgeProps(category.status);
+  // Tamamlanma faizini göstər
+  const completionPercentage = category.completionPercentage || 0;
+  
+  // Son tarix
+  const deadlineFormatted = category.deadline 
+    ? format(new Date(category.deadline), 'dd.MM.yyyy')
+    : null;
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold line-clamp-2">{category.name}</CardTitle>
-          <Badge className={badgeProps.className}>
-            {badgeProps.label}
-          </Badge>
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <CardHeader className="p-5">
+        <div className="flex justify-between">
+          <CardTitle className="text-lg">{category.name}</CardTitle>
+          {getStatusBadge()}
         </div>
-        {category.description && (
-          <p className="text-sm text-muted-foreground line-clamp-3">{category.description}</p>
-        )}
+        <CardDescription>
+          {category.description || t('noCategoryDescription')}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
-        {category.deadline && (
-          <div className="flex items-center text-sm text-muted-foreground mt-2">
-            <CalendarDays className="h-4 w-4 mr-1" />
-            <span>{t('deadline')}: {new Date(category.deadline).toLocaleDateString()}</span>
+      <CardContent className="p-5 pt-0">
+        <div className="text-sm space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t('fields')}:</span>
+            <span className="font-medium">{category.columns?.length || 0}</span>
           </div>
-        )}
+          
+          {deadlineFormatted && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{t('deadline')}:</span>
+              <span className="font-medium">{deadlineFormatted}</span>
+            </div>
+          )}
+          
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t('completion')}:</span>
+            <span className="font-medium">{completionPercentage}%</span>
+          </div>
+        </div>
       </CardContent>
-      <CardFooter>
-        <Button 
-          className="w-full flex justify-between items-center" 
-          onClick={onStart}
-          variant={readOnly ? "outline" : "default"}
-          disabled={readOnly && category.status === 'approved'}
-        >
-          {readOnly ? t('view') : t('start')}
-          <ChevronRight className="h-4 w-4" />
+      <CardFooter className="p-5 pt-3 flex justify-end">
+        <Button onClick={onClick} className="w-full">
+          {category.status === 'approved' ? t('viewForm') : t('fillForm')}
+          <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </CardFooter>
     </Card>
