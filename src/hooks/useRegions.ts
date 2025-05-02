@@ -104,20 +104,19 @@ export const useRegions = () => {
           }, 2000 * retryCount.current); // Hər cəhddə gözləmə müddətini artır
         }
       } else {
-        setError(err?.message || t('errorLoadingRegions') || 'Error loading regions');
-        toast.error(t('errorLoadingRegions') || 'Error loading regions', { 
-          description: err?.message || t('unexpectedError') || 'An unexpected error occurred'
-        });
-      }
-      
-      // Keş varsa, köhnə məlumatları göstər
-      if (regionsCache) {
-        console.log('Xəta səbəbindən köhnə keşi istifadə edirəm');
-        setRegions(regionsCache);
-        return regionsCache;
-      } else {
-        setRegions([]);
-        return [];
+        // Keş varsa, xəta mesajını göstərməmək
+        if (regionsCache) {
+          console.log('Xəta səbəbindən köhnə keşi istifadə edirəm');
+          setRegions(regionsCache);
+          return regionsCache;
+        } else {
+          setError(err?.message || t('errorLoadingRegions') || 'Error loading regions');
+          toast.error(t('errorLoadingRegions') || 'Error loading regions', { 
+            description: err?.message || t('unexpectedError') || 'An unexpected error occurred'
+          });
+          setRegions([]);
+          return [];
+        }
       }
     } finally {
       setLoading(false);
