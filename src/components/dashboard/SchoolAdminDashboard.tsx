@@ -1,17 +1,55 @@
+
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
-import { NotificationsCard } from './common/NotificationsCardProps';
+import { NotificationsCard } from './common/NotificationsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import { SchoolAdminDashboardData } from '@/types/dashboard';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface SchoolAdminDashboardProps {
   data: SchoolAdminDashboardData;
+  isLoading?: boolean;
+  error?: any;
+  onRefresh?: () => void;
+  navigateToDataEntry?: () => void;
+  handleFormClick?: () => void;
 }
 
-export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ data }) => {
+export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ 
+  data, 
+  isLoading,
+  error,
+  onRefresh,
+  navigateToDataEntry,
+  handleFormClick
+}) => {
   const { t } = useLanguage();
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <div className="text-red-500 mb-3">Xəta baş verdi</div>
+        <p className="text-muted-foreground mb-4">{error.message || 'Məlumatları yükləmək mümkün olmadı'}</p>
+        {onRefresh && (
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+            onClick={onRefresh}
+          >
+            Yenidən yüklə
+          </button>
+        )}
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

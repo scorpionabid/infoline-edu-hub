@@ -1,35 +1,15 @@
+
 import React from 'react';
 import { useAuth } from '@/context/auth';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
-import { SectorAdminDashboard } from '@/components/dashboard/SectorAdminDashboard';
-import { RegionAdminDashboard } from '@/components/dashboard/RegionAdminDashboard';
-import { useRealDashboardData } from '@/hooks/useRealDashboardData';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
 import { toast } from 'sonner';
-import { SchoolAdminDashboard } from '@/components/dashboard/SchoolAdminDashboard';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const isSchoolAdmin = user?.role === 'schooladmin';
-  const isSectorAdmin = user?.role === 'sectoradmin';
-  const isRegionAdmin = user?.role === 'regionadmin';
-  
-  const { 
-    dashboardData, 
-    chartData, 
-    isLoading,
-    error,
-    refetch 
-  } = useRealDashboardData();
-
-  React.useEffect(() => {
-    if (error) {
-      console.error('Dashboard data yüklənmə xətası:', error);
-      toast.error('Məlumatları yükləyərkən xəta baş verdi');
-    }
-  }, [error]);
   
   // İstifadəçi və ya rol məlumatı yoxdursa, xəta göstər
   if (!user || !user.role) {
@@ -59,29 +39,9 @@ const Dashboard: React.FC = () => {
       <div className="space-y-4 p-4">
         <DashboardHeader />
         
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : isSchoolAdmin ? (
-          <>
-            <SchoolAdminSetupCheck />
-            <SchoolAdminDashboard 
-              data={dashboardData}
-              isLoading={isLoading}
-              error={error}
-              onRefresh={refetch}
-              navigateToDataEntry={() => {}}
-              handleFormClick={() => {}}
-            />
-          </>
-        ) : isSectorAdmin ? (
-          <SectorAdminDashboard />
-        ) : isRegionAdmin ? (
-          <RegionAdminDashboard data={dashboardData} />
-        ) : (
-          <DashboardContent />
-        )}
+        {isSchoolAdmin && <SchoolAdminSetupCheck />}
+        
+        <DashboardContent />
       </div>
     </SidebarLayout>
   );

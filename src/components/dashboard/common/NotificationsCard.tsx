@@ -1,49 +1,73 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NotificationsCardProps } from '@/types/dashboard';
-import { formatDistanceToNow } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { NotificationsCardProps, Notification } from '@/types/dashboard';
+import { Bell, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 
-export function NotificationsCard({ title, notifications }: NotificationsCardProps) {
-  const getNotificationTypeClass = (type?: string) => {
+export const NotificationsCard: React.FC<NotificationsCardProps> = ({ title, notifications }) => {
+  // Bildiriş tipinə görə ikonu təyin edirik
+  const getNotificationIcon = (type: string) => {
     switch (type) {
+      case 'info':
+        return <Info className="h-4 w-4 text-blue-500" />;
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
       case 'success':
-        return 'bg-green-100 text-green-800';
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
-        return 'bg-blue-100 text-blue-800';
+        return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center">
+          <Bell className="mr-2 h-4 w-4" />
+          {title}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-gray-200">
-          {notifications.length === 0 ? (
-            <li className="p-4 text-center text-muted-foreground">Bildiriş yoxdur</li>
-          ) : (
-            notifications.map((notification) => (
-              <li key={notification.id} className={`p-4 ${!notification.isRead ? 'bg-muted/50' : ''}`}>
-                <div className="flex items-start">
-                  <div className={`flex-shrink-0 h-2 w-2 mt-2 rounded-full ${getNotificationTypeClass(notification.type)}`} />
-                  <div className="ml-3 flex-1">
-                    <div className="font-medium">{notification.title}</div>
-                    {notification.message && <p className="text-sm text-muted-foreground">{notification.message}</p>}
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(notification.date), { addSuffix: true })}
+      <CardContent>
+        {notifications.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <Bell className="mx-auto h-8 w-8 opacity-40 mb-2" />
+            <p>Yeni bildiriş yoxdur</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[240px]">
+            <div className="space-y-4">
+              {notifications.map((notification: Notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 rounded-md border ${
+                    notification.isRead ? 'bg-background' : 'bg-muted/30'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <div className="mt-0.5 mr-2">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {notification.message}
+                      </p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-muted-foreground">
+                          {notification.date}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </li>
-            ))
-          )}
-        </ul>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
       </CardContent>
     </Card>
   );
-}
+};

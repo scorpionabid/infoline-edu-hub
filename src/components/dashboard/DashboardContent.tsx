@@ -2,11 +2,12 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './RegionAdminDashboard';
-import { SectorAdminDashboard } from './SectorAdminDashboard';
+import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
+import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
 import { SchoolAdminDashboard } from './SchoolAdminDashboard';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { fetchDashboardData } from '@/api/dashboardApi';
+import { toast } from 'sonner';
 
 export interface DashboardContentProps {
   // Herhangi bir prop tanımı
@@ -19,7 +20,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   const { 
     data: dashboardData, 
     isLoading, 
-    error 
+    error,
+    refetch
   } = useQuery({
     queryKey: ['dashboard', userRole, regionId, sectorId, schoolId],
     queryFn: () => fetchDashboardData({ userRole, regionId, sectorId, schoolId })
@@ -31,23 +33,28 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
-      timestamp: new Date().toISOString(),
+      date: new Date().toLocaleDateString(),
       type: 'info' as const,
-      read: false
+      isRead: false
     },
     {
       id: '2',
       title: 'Son müddət xəbərdarlığı',
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
-      timestamp: new Date().toISOString(),
+      date: new Date().toLocaleDateString(),
       type: 'warning' as const,
-      read: false
+      isRead: false
     }
   ], []);
 
   // Xəta və ya yüklənmə halları
   if (error) {
-    return <div className="p-4 text-center text-red-500">Dashboard məlumatları yüklənərkən xəta baş verdi</div>;
+    toast.error('Məlumatları yükləyərkən xəta baş verdi');
+    console.error('Dashboard data yüklənmə xətası:', error);
+    
+    return (
+      <div className="p-4 text-center text-red-500">Dashboard məlumatları yüklənərkən xəta baş verdi</div>
+    );
   }
 
   // Dashboard datası əldə edilənə qədər yüklənmə göstəririk
@@ -69,7 +76,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         users: dashboardData.users || 0,
       },
       completionRate: dashboardData.completionRate || 0,
-      notifications: mockNotifications
+      notifications: mockNotifications,
+      // Əlavə məlumatlar (dashboard tipində tələb olunan)
+      formsByStatus: {},
+      pendingApprovals: [],
+      regionCount: dashboardData.regions || 0,
+      sectorCount: dashboardData.sectors || 0,
+      schoolCount: dashboardData.schools || 0,
+      userCount: dashboardData.users || 0
     };
 
     return <SuperAdminDashboard data={superAdminData} />;
@@ -130,10 +144,18 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         drafts: dashboardData.draftForms || 0
       },
       completionRate: dashboardData.completionRate || 0,
-      notifications: mockNotifications
+      notifications: mockNotifications,
+      categories: dashboardData.categories || []
     };
 
-    return <SchoolAdminDashboard data={schoolAdminData} />;
+    return (
+      <SchoolAdminDashboard 
+        data={schoolAdminData}
+        isLoading={isLoading}
+        error={error}
+        onRefresh={refetch}
+      />
+    );
   }
 
   return <div className="p-4 text-center">Məlumat tapılmadı</div>;

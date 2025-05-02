@@ -1,130 +1,111 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/auth';
 
 type AdminType = 'region' | 'sector' | 'school';
 
-interface AssignUserParams {
-  userId: string;
-  entityId: string;
+interface AssignAdminParams {
   adminType: AdminType;
+  entityId: string;
+  userId: string;
 }
 
-interface AssignUserResult {
+interface AdminAssignmentResult {
   success: boolean;
   error?: string;
   data?: any;
 }
 
-/**
- * Universal admin təyinat hook'u
- * Region, Sektor və ya Məktəb adminlərini təyin etmək üçün vahid interfeys təklif edir
- */
 export const useAssignUserAsAdmin = () => {
-  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
+  const { user } = useAuth();
 
-  const validateParams = (entityId: string, userId: string, adminType: AdminType): { isValid: boolean; errorMessage?: string } => {
-    if (!entityId) {
-      return { isValid: false, errorMessage: `${adminType.charAt(0).toUpperCase() + adminType.slice(1)} ID təyin edilməyib` };
-    }
-    
-    if (!userId) {
-      return { isValid: false, errorMessage: t('userIdNotProvided') || 'İstifadəçi ID təyin edilməyib' };
-    }
-    
-    return { isValid: true };
-  };
-
-  const getEdgeFunctionName = (adminType: AdminType): string => {
-    switch (adminType) {
-      case 'region':
-        return 'assign-existing-user-as-region-admin';
-      case 'sector':
-        return 'assign-existing-user-as-sector-admin';
-      case 'school':
-        return 'assign-existing-user-as-school-admin';
-      default:
-        throw new Error(`Tanınmayan admin tipi: ${adminType}`);
-    }
-  };
-
-  const getParamName = (adminType: AdminType): string => {
-    switch (adminType) {
-      case 'region':
-        return 'regionId';
-      case 'sector':
-        return 'sectorId';
-      case 'school':
-        return 'schoolId';
-      default:
-        throw new Error(`Tanınmayan admin tipi: ${adminType}`);
-    }
-  };
-
-  const assignUserAsAdmin = async ({
-    userId, 
-    entityId, 
-    adminType
-  }: AssignUserParams): Promise<AssignUserResult> => {
-    // Zəruri parametrləri yoxla
-    const validation = validateParams(entityId, userId, adminType);
-    if (!validation.isValid) {
-      console.error('Admin təyin etmək üçün parametr çatışmır:', validation.errorMessage);
+  const assignAdmin = useCallback(async ({ adminType, entityId, userId }: AssignAdminParams): Promise<AdminAssignmentResult> => {
+    // Parameterlərin yoxlanılması
+    if (!entityId || !userId) {
+      const errorMessage = !entityId 
+        ? `${adminType} ID təyin edilməyib`
+        : 'İstifadəçi ID təyin edilməyib';
+      
+      console.error('Admin təyin etmək üçün parametr çatışmır:', errorMessage);
       toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
-        description: validation.errorMessage
+        description: errorMessage
       });
       
-      return { success: false, error: validation.errorMessage };
+      return { success: false, error: errorMessage };
     }
     
+    // Entity tipinə görə edge funksiyasını müəyyən etmək
+    const edgeFunctionName = `assign-existing-user-as-${adminType}-admin`;
+    const entityParam = `${adminType}Id`;
+    
     setLoading(true);
-    console.log(`${adminType} admin təyin etmək üçün parametrlər:`, { userId, entityId });
+    console.log(`Admin təyin etmək üçün parametrlər: ${adminType} ID:`, entityId, 'User ID:', userId);
     
     try {
       // Edge funksiyasını çağıraq
-      const functionName = getEdgeFunctionName(adminType);
-      const paramName = getParamName(adminType);
-      
-      const { data, error } = await supabase.functions.invoke(functionName, {
+      const { data, error } = await supabase.functions.invoke(edgeFunctionName, {
         body: { 
           userId, 
-          [paramName]: entityId 
+          [entityParam]: entityId,
+          currentUserEmail: user?.email
         }
       });
       
-      console.log(`${adminType} admin edge funksiyasından gələn cavab:`, data, 'xəta:', error);
+      console.log('Edge funksiyasından gələn cavab:', data, 'xəta:', error);
       
+      // Əgər API sorğusu xəta verərsə
       if (error) {
-        throw new Error(error.message || t('unexpectedError') || 'Gözlənilməz xəta');
+        const errorMessage = error.message || t('unexpectedError') || 'Gözlənilməz xəta';
+        console.error('Edge funksiya xətası:', error);
+        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+          description: errorMessage
+        });
+        
+        return { success: false, error: errorMessage };
       }
       
+      // data null və ya undefined olarsa
       if (data === null || data === undefined) {
-        throw new Error(t('noResponseFromServer') || 'Serverdən cavab alınmadı');
+        const errorMessage = t('noResponseFromServer') || 'Serverdən cavab alınmadı';
+        console.error('Edge funksiyasından gələn cavab boşdur');
+        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+          description: errorMessage
+        });
+        
+        return { success: false, error: errorMessage };
       }
       
+      // Əgər data.success false olarsa (funksiya uğursuz olub)
       if (data && data.success === false) {
-        throw new Error(data.error || t('unexpectedError') || 'Gözlənilməz xəta');
+        const errorMessage = data.error || t('unexpectedError') || 'Gözlənilməz xəta';
+        console.error('Admin təyin edilərkən xəta:', errorMessage);
+        toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
+          description: errorMessage
+        });
+        
+        return { success: false, error: errorMessage };
       }
       
-      const successMessage = `${adminType === 'region' ? 'Region' : adminType === 'sector' ? 'Sektor' : 'Məktəb'} admini uğurla təyin edildi`;
-      
+      // Uğurlu hal
       toast.success(t('adminAssigned') || 'Admin təyin edildi', {
-        description: t('adminAssignedDesc') || successMessage
+        description: t('adminAssignedDesc') || `İstifadəçi ${adminType} admini olaraq uğurla təyin edildi`
       });
       
       // Yeniləmə eventlərini triggerlə
       document.dispatchEvent(new Event('refresh-users'));
       document.dispatchEvent(new Event(`refresh-${adminType}s`));
       
+      console.log('Admin təyinatı uğurla başa çatdı:', data);
       return { success: true, data };
       
     } catch (error: any) {
-      console.error('Admin təyin etmək istisna:', error);
       const errorMessage = error?.message || t('unexpectedError') || 'Gözlənilməz xəta';
-      
+      console.error('Admin təyin etmək istisna:', error);
       toast.error(t('errorAssigningAdmin') || 'Admin təyin edilərkən xəta', {
         description: errorMessage
       });
@@ -133,25 +114,18 @@ export const useAssignUserAsAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Xüsusi kolleksiya funksiyaları
-  const assignUserAsRegionAdmin = (regionId: string, userId: string) => 
-    assignUserAsAdmin({ userId, entityId: regionId, adminType: 'region' });
-  
-  const assignUserAsSectorAdmin = (sectorId: string, userId: string) => 
-    assignUserAsAdmin({ userId, entityId: sectorId, adminType: 'sector' });
-  
-  const assignUserAsSchoolAdmin = (schoolId: string, userId: string) => 
-    assignUserAsAdmin({ userId, entityId: schoolId, adminType: 'school' });
-  
+  }, [t, user]);
+
   return {
-    assignUserAsAdmin,
-    assignUserAsRegionAdmin, 
-    assignUserAsSectorAdmin,
-    assignUserAsSchoolAdmin,
+    assignUserAsRegionAdmin: (regionId: string, userId: string) => 
+      assignAdmin({ adminType: 'region', entityId: regionId, userId }),
+    
+    assignUserAsSectorAdmin: (sectorId: string, userId: string) => 
+      assignAdmin({ adminType: 'sector', entityId: sectorId, userId }),
+    
+    assignUserAsSchoolAdmin: (schoolId: string, userId: string) => 
+      assignAdmin({ adminType: 'school', entityId: schoolId, userId }),
+    
     loading
   };
 };
-
-export default useAssignUserAsAdmin;

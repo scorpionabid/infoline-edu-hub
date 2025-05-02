@@ -1,5 +1,6 @@
 
 import { Column, ColumnType, ColumnValidation } from '@/types/column';
+import { EntryValue } from '@/types/dataEntry';
 
 // Form data validasiyası üçün funksiya
 export const validateEntryValue = (
@@ -93,7 +94,7 @@ export const validateEntryValue = (
 };
 
 // Sütun və data dəyərlərindən form üçün ilkin dəyərləri hazırlayır
-export const prepareFormValues = (columns: Column[], data: any[]) => {
+export const prepareFormValues = (columns: Column[], data: any[]): EntryValue[] => {
   return columns.map(column => {
     const entry = data.find(item => item.column_id === column.id);
     
@@ -107,7 +108,7 @@ export const prepareFormValues = (columns: Column[], data: any[]) => {
 };
 
 // Dəyişikliklər edilib-edilmədiyini yoxlayır
-export const hasChanges = (initialValues: any[], currentValues: any[]) => {
+export const hasChanges = (initialValues: EntryValue[], currentValues: EntryValue[]): boolean => {
   if (initialValues.length !== currentValues.length) {
     return true;
   }

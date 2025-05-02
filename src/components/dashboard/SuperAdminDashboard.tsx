@@ -1,69 +1,65 @@
 
 import React from 'react';
+import { Grid } from '@/components/ui/grid';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatsCard } from './common/StatsCard';
 import { NotificationsCard } from './common/NotificationsCard';
 import { CompletionRateCard } from './common/CompletionRateCard';
 import { SuperAdminDashboardData } from '@/types/dashboard';
-import { Grid } from '@/components/ui/grid';
-import { Users, Building2, School, CheckCircle } from 'lucide-react';
+import { Building, Users, Landmark, School } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
   data: SuperAdminDashboardData;
-  isLoading?: boolean;
 }
 
-export function SuperAdminDashboard({ data, isLoading }: SuperAdminDashboardProps) {
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>;
-  }
-
-  const { stats, completionRate, notifications } = data;
-  
+export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6">
-      <Grid columns={4} className="gap-4">
-        <StatsCard 
-          title="Regionlar" 
-          value={stats.regions} 
-          icon={<Building2 size={18} />}
-          trend={`+${stats.regions} son 30 gündə`}
-          trendDirection="up"
+      <Grid columns={4} className="gap-6">
+        <StatsCard
+          title="Regionlar"
+          value={data.stats.regions}
+          icon={<Landmark className="h-4 w-4" />}
+          description="Ümumi region sayı"
+          trend={`${data.stats.regions} aktiv region`}
+          trendDirection="neutral"
         />
-        <StatsCard 
-          title="Sektorlar" 
-          value={stats.sectors} 
-          icon={<Building2 size={18} />}
+        <StatsCard
+          title="Sektorlar"
+          value={data.stats.sectors}
+          icon={<Building className="h-4 w-4" />}
+          description="Ümumi sektor sayı"
+          trend={`${data.stats.sectors} aktiv sektor`}
+          trendDirection="neutral"
         />
-        <StatsCard 
-          title="Məktəblər" 
-          value={stats.schools} 
-          icon={<School size={18} />}
+        <StatsCard
+          title="Məktəblər"
+          value={data.stats.schools}
+          icon={<School className="h-4 w-4" />}
+          description="Ümumi məktəb sayı"
+          trend={`${data.stats.schools} aktiv məktəb`}
+          trendDirection="neutral"
         />
-        <StatsCard 
-          title="İstifadəçilər" 
-          value={stats.users} 
-          icon={<Users size={18} />}
+        <StatsCard
+          title="İstifadəçilər"
+          value={data.stats.users}
+          icon={<Users className="h-4 w-4" />}
+          description="Ümumi istifadəçi sayı"
+          trend={`${data.stats.users} aktiv istifadəçi`}
+          trendDirection="neutral"
         />
       </Grid>
-      <Grid columns={2} className="gap-4">
-        <CompletionRateCard 
-          completionRate={completionRate} 
-          title="Ümumi Tamamlanma Faizi" 
+
+      <Grid columns={2} className="gap-6">
+        <CompletionRateCard
+          completionRate={data.completionRate}
+          title="Ümumi Tamamlama Faizi"
         />
-        <NotificationsCard 
-          title="Son Bildirişlər" 
-          notifications={notifications.map(n => ({
-            id: n.id,
-            title: n.title,
-            message: n.message,
-            date: n.timestamp,
-            type: n.type,
-            isRead: !n.read
-          }))} 
+        <NotificationsCard
+          title="Bildirişlər"
+          notifications={data.notifications}
         />
       </Grid>
     </div>
   );
-}
+};

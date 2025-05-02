@@ -1,64 +1,53 @@
 
-import { Category } from './category';
+export type ColumnType = 'text' | 'number' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'date' | 'file' | 'image';
 
-export type ColumnType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
-export type ColumnStatus = 'active' | 'inactive' | 'draft';
+export interface ColumnValidation {
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  patternMessage?: string;
+  min?: number;
+  max?: number;
+  required?: boolean;
+  requiredMessage?: string;
+  email?: boolean;
+  url?: boolean;
+  inclusion?: string[];
+}
+
+export interface ColumnOption {
+  label: string;
+  value: string;
+}
 
 export interface Column {
   id: string;
+  name: string;
   category_id: string;
-  name: string;
   type: ColumnType;
-  is_required: boolean;
+  description?: string;
+  is_required?: boolean;
+  default_value?: string;
   placeholder?: string;
   help_text?: string;
-  status: ColumnStatus;
   order_index?: number;
+  status?: string;
+  options?: ColumnOption[];
   validation?: ColumnValidation;
-  options?: any[];
-  default_value?: string;
-  created_at: string;
-  updated_at: string;
-  parent_column_id?: string | null;
+  created_at?: string | Date;
+  updated_at?: string | Date;
 }
 
-export interface ColumnFormData {
+export interface CategoryWithColumns {
+  id: string;
   name: string;
-  type: ColumnType;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
-  status?: ColumnStatus;
-  order_index?: number;
-  validation?: ColumnValidation;
-  options?: any[];
-  default_value?: string;
-  parent_column_id?: string | null;
-}
-
-export interface ColumnValidation {
-  min?: number;
-  max?: number;
-  pattern?: string;
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  requiredMessage?: string;
-  patternMessage?: string;
-  email?: boolean;
-  url?: boolean;
-  inclusion?: any[];
+  description?: string;
+  status: string;
+  columns: Column[];
+  [key: string]: any;
 }
 
 export interface ColumnValidationError {
-  id: string;
+  column_id: string;
   message: string;
-  type: 'error' | 'warning' | 'info';
-}
-
-export interface CategoryWithColumns extends Category {
-  columns: Column[];
-  entries?: any[];
-  status: 'active' | 'inactive' | 'draft' | 'approved' | 'pending' | 'rejected' | 'partial';
-  completionPercentage?: number;
 }

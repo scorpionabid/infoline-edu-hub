@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
 import { Category } from "@/types/category";
-import { addCategory, deleteCategory, updateCategoryStatus } from "@/api/categoryApi";
+import { addCategory, deleteCategory as apiDeleteCategory, updateCategoryStatus as apiUpdateCategoryStatus } from "@/api/categoryApi";
 import { useCacheInvalidation } from "@/context/QueryClientProvider";
 
 // Kateqoriyaların əlavə edilməsi, silinməsi və yenilənməsi üçün hook
@@ -30,7 +30,7 @@ export const useCategoryActions = () => {
         }
       );
       
-      // Refetch categories to update the list
+      // Kateqoriyaları yeniləmək üçün
       invalidateQuery(["categories"]);
       
       return true;
@@ -54,13 +54,13 @@ export const useCategoryActions = () => {
   const handleDeleteCategory = async (id: string) => {
     setIsActionLoading(true);
     try {
-      await deleteCategory(id);
+      await apiDeleteCategory(id);
       
       toast.success(t("categoryDeleted"), {
         description: t("categoryDeletedSuccess"),
       });
       
-      // Refetch categories to update the list
+      // Kateqoriyaları yeniləmək üçün
       invalidateQuery(["categories"]);
       
       return true;
@@ -79,13 +79,13 @@ export const useCategoryActions = () => {
   const handleUpdateCategoryStatus = async (id: string, status: "active" | "inactive" | "draft") => {
     setIsActionLoading(true);
     try {
-      await updateCategoryStatus(id, status);
+      await apiUpdateCategoryStatus(id, status);
       
       toast.success(t("categoryUpdated"), {
         description: t("categoryStatusUpdatedSuccess"),
       });
       
-      // Refetch categories to update the list
+      // Kateqoriyaları yeniləmək üçün
       invalidateQuery(["categories"]);
       
       return true;

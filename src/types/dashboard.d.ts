@@ -1,77 +1,72 @@
 
 export interface StatsCardProps {
   title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  description?: string;
+  value: number;
+  icon: string | React.ReactNode;
+  description: string;
   trend?: string;
   trendDirection?: 'up' | 'down' | 'neutral';
 }
 
 export interface CompletionRateCardProps {
-  completionRate: number;
   title: string;
+  completionRate: number;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  isRead: boolean;
 }
 
 export interface NotificationsCardProps {
   title: string;
-  notifications: {
-    id: string;
-    title: string;
-    message?: string;
-    date: string;
-    type?: string;
-    isRead?: boolean;
-  }[];
-}
-
-export interface FormStats {
-  total: number;
-  approved: number;
-  pending: number;
-  rejected: number;
-  incomplete: number;
-  drafts: number;
-}
-
-export interface DashboardData {
-  stats: {
-    [key: string]: number;
-  };
-  completionRate: number;
-  notifications: {
-    id: string;
-    title: string;
-    message: string;
-    timestamp: string;
-    type: 'info' | 'warning' | 'success' | 'error';
-    read: boolean;
-  }[];
-  charts?: any;
+  notifications: Notification[];
 }
 
 export interface SchoolAdminDashboardData {
-  formStats: FormStats;
+  formStats: {
+    approved: number;
+    pending: number;
+    rejected: number;
+    incomplete: number;
+    total?: number;
+    drafts?: number;
+  };
   completionRate: number;
-  notifications: {
-    id: string;
-    title: string;
-    message: string;
-    timestamp: string;
-    type: 'info' | 'warning' | 'success' | 'error';
-    read: boolean;
-  }[];
+  notifications: Notification[];
+  categories?: any[];
 }
 
-export interface SectorAdminDashboardData extends DashboardData {
-  schoolStats: {
-    total: number;
-    active: number;
-    incomplete: number;
+export interface SuperAdminDashboardData {
+  stats: {
+    regions: number;
+    sectors: number;
+    schools: number;
+    users: number;
   };
+  completionRate: number;
+  notifications: Notification[];
+  formsByStatus?: any;
+  pendingApprovals?: any;
+  regions?: any[];
+  regionCount?: number;
+  sectorCount?: number;
+  schoolCount?: number;
+  userCount?: number;
 }
 
-export interface RegionAdminDashboardData extends DashboardData {
+export interface RegionAdminDashboardData {
+  stats: {
+    sectors: number;
+    schools: number;
+    users: number;
+  };
+  completionRate: number;
+  notifications: Notification[];
   sectorStats: {
     total: number;
     active: number;
@@ -83,15 +78,13 @@ export interface RegionAdminDashboardData extends DashboardData {
   };
 }
 
-export interface SuperAdminDashboardData extends DashboardData {
-  regionStats: {
-    total: number;
-    active: number;
+export interface SectorAdminDashboardData {
+  stats: {
+    schools: number;
+    users: number;
   };
-  sectorStats: {
-    total: number;
-    active: number;
-  };
+  completionRate: number;
+  notifications: Notification[];
   schoolStats: {
     total: number;
     active: number;
