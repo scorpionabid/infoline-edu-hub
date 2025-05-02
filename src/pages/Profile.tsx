@@ -306,11 +306,7 @@ const Profile: React.FC = () => {
     </div>
   );
 
-  return (
-    <SidebarLayout>
-      {content}
-    </SidebarLayout>
-  );
+  return content;
 };
 
 export default Profile;
