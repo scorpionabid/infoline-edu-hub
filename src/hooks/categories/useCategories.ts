@@ -1,78 +1,64 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryWithColumns } from '@/types/column';
+import { Category } from '@/types/category';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
 export const useCategories = () => {
-  const [categories, setCategories] = useState<CategoryWithColumns[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { isSuperAdmin, isRegionAdmin, isSectorAdmin, canViewSectorCategories } = usePermissions();
   const { t } = useLanguage();
 
+  // Kategoriyaları yükləmək üçün funksiya
   const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('priority', { ascending: true });
-      
-      if (categoriesError) throw categoriesError;
-      
-      if (!categoriesData || categoriesData.length === 0) {
-        setCategories([]);
-        setIsLoading(false);
-        return;
+      let query = supabase.from('categories').select('*');
+
+      // Kategoriya gizliliyi yoxlaması:
+      // Sektor admini və ya Okul admini yalnız "all" təyinatı olan və ya "sectors" təyinatı olan kategoriyaları görə bilər
+      if (!isSuperAdmin && !isRegionAdmin && canViewSectorCategories) {
+        query = query.in('assignment', ['all', 'sectors']);
       }
 
-      // Fetch columns for each category
-      const categoriesWithColumns = await Promise.all(
-        categoriesData.map(async (category) => {
-          const { data: columns, error: columnsError } = await supabase
-            .from('columns')
-            .select('*')
-            .eq('category_id', category.id)
-            .eq('status', 'active')
-            .order('order_index', { ascending: true });
-          
-          if (columnsError) throw columnsError;
-          
-          return {
-            ...category,
-            columns: columns || []
-          } as CategoryWithColumns;
-        })
-      );
-      
-      setCategories(categoriesWithColumns);
+      // Status filteri - yalnız aktiv olanları göstər
+      query = query.eq('status', 'active').eq('archived', false);
+
+      const { data, error: fetchError } = await query.order('priority', { ascending: false });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (data) {
+        setCategories(data as Category[]);
+      }
     } catch (err: any) {
-      console.error('Error fetching categories:', err);
-      setError(err.message || t('errorFetchingCategories'));
+      console.error('Kategoriyaları yükləyərkən xəta baş verdi:', err);
+      setError(err.message || t('genericError'));
       toast.error(t('errorFetchingCategories'), {
-        description: err.message
+        description: err.message,
       });
     } finally {
       setIsLoading(false);
     }
-  }, [t]);
-  
+  }, [isSuperAdmin, isRegionAdmin, isSectorAdmin, canViewSectorCategories, t]);
+
+  // Component mount olduğunda kategoriyaları yüklə
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
-  
-  const refreshCategories = useCallback(() => {
-    return fetchCategories();
-  }, [fetchCategories]);
-  
+
   return {
     categories,
     isLoading,
     error,
-    refreshCategories
+    getCategories: fetchCategories
   };
 };

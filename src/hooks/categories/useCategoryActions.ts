@@ -1,151 +1,124 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types/category';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
 
-export interface UseCategoryActionsProps {
-  onSuccess?: () => void;
-}
-
-export const useCategoryActions = (props?: UseCategoryActionsProps) => {
-  const { onSuccess } = props || {};
+export const useCategoryActions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
 
-  // Kateqoriya yaratma
-  const createCategory = useCallback(
-    async (category: Omit<Category, 'id'>) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const { data, error: createError } = await supabase
-          .from('categories')
-          .insert([
-            {
-              name: category.name,
-              description: category.description,
-              assignment: category.assignment,
-              status: category.status || 'active',
-              priority: category.priority || 0,
-              deadline: category.deadline ? new Date(category.deadline).toISOString() : null,
-              archived: false
-            }
-          ])
-          .select();
-
-        if (createError) throw createError;
+  // Yeni kateqoriya əlavə etmə
+  const createCategory = async (category: Omit<Category, "id">) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Əlavə ediləcək məlumatları hazırlayaq
+      const newCategory = {
+        name: category.name,
+        description: category.description || '',
+        assignment: category.assignment,
+        status: category.status,
+        priority: category.priority || 0,
+        deadline: category.deadline ? new Date(category.deadline).toISOString() : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        archived: false
+      };
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(newCategory)
+        .select()
+        .single();
         
-        toast.success(t('categoryCreated'), {
-          description: t('categoryCreateSuccess')
-        });
-        
-        if (onSuccess) onSuccess();
-        
-        return data?.[0];
-      } catch (err: any) {
-        console.error('Error creating category:', err);
-        setError(err.message || t('errorCreatingCategory'));
-        
-        toast.error(t('errorCreatingCategory'), {
-          description: err.message
-        });
-        
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [t, onSuccess]
-  );
-
+      if (error) throw error;
+      
+      toast.success(t('categoryCreated'));
+      return data;
+    } catch (err: any) {
+      console.error('Kateqoriya əlavə edilərkən xəta:', err);
+      setError(err.message);
+      toast.error(t('categoryCreateError'), { 
+        description: err.message 
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Kateqoriya yeniləmə
-  const updateCategory = useCallback(
-    async (category: Omit<Category, 'id'> & { id: string }) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const { data, error: updateError } = await supabase
-          .from('categories')
-          .update({
-            name: category.name,
-            description: category.description,
-            assignment: category.assignment,
-            status: category.status,
-            priority: category.priority || 0,
-            deadline: category.deadline ? new Date(category.deadline).toISOString() : null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', category.id)
-          .select();
-
-        if (updateError) throw updateError;
+  const updateCategory = async (category: Omit<Category, "id"> & { id: string }) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Yenilənəcək məlumatları hazırlayaq
+      const updatedCategory = {
+        name: category.name,
+        description: category.description,
+        assignment: category.assignment,
+        status: category.status,
+        priority: category.priority || 0,
+        deadline: category.deadline ? new Date(category.deadline).toISOString() : null,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .update(updatedCategory)
+        .eq('id', category.id)
+        .select()
+        .single();
         
-        toast.success(t('categoryUpdated'), {
-          description: t('categoryUpdateSuccess')
-        });
-        
-        if (onSuccess) onSuccess();
-        
-        return data?.[0];
-      } catch (err: any) {
-        console.error('Error updating category:', err);
-        setError(err.message || t('errorUpdatingCategory'));
-        
-        toast.error(t('errorUpdatingCategory'), {
-          description: err.message
-        });
-        
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [t, onSuccess]
-  );
-
+      if (error) throw error;
+      
+      toast.success(t('categoryUpdated'));
+      return data;
+    } catch (err: any) {
+      console.error('Kateqoriya yenilənərkən xəta:', err);
+      setError(err.message);
+      toast.error(t('categoryUpdateError'), { 
+        description: err.message 
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Kateqoriya silmə
-  const deleteCategory = useCallback(
-    async (categoryId: string) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Faktiki silmək əvəzinə arxivləşdiririk
-        const { error: deleteError } = await supabase
-          .from('categories')
-          .update({ archived: true, status: 'inactive' })
-          .eq('id', categoryId);
-
-        if (deleteError) throw deleteError;
+  const deleteCategory = async (categoryId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Kateqoriyanı arxivləşdir (yumşaq silmə)
+      const { error } = await supabase
+        .from('categories')
+        .update({ archived: true, status: 'inactive', updated_at: new Date().toISOString() })
+        .eq('id', categoryId);
         
-        toast.success(t('categoryDeleted'), {
-          description: t('categoryDeleteSuccess')
-        });
-        
-        if (onSuccess) onSuccess();
-        
-        return true;
-      } catch (err: any) {
-        console.error('Error deleting category:', err);
-        setError(err.message || t('errorDeletingCategory'));
-        
-        toast.error(t('errorDeletingCategory'), {
-          description: err.message
-        });
-        
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [t, onSuccess]
-  );
-
+      if (error) throw error;
+      
+      toast.success(t('categoryDeleted'));
+      return { success: true };
+    } catch (err: any) {
+      console.error('Kateqoriya silinərkən xəta:', err);
+      setError(err.message);
+      toast.error(t('categoryDeleteError'), { 
+        description: err.message 
+      });
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return {
     createCategory,
     updateCategory,
@@ -154,3 +127,5 @@ export const useCategoryActions = (props?: UseCategoryActionsProps) => {
     error
   };
 };
+
+export default useCategoryActions;

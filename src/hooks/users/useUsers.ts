@@ -1,142 +1,97 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedUserData, setSelectedUserData] = useState<User>({} as User);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { isSectorAdmin, sectorId } = usePermissions();
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      // İstifadəçiləri birbaşa database-dən əldə edək
+      let query = supabase
+        .from('user_roles')
         .select(`
-          id,
-          email,
-          full_name,
-          phone,
-          position,
-          avatar,
-          language,
-          status,
-          last_login,
-          created_at,
-          updated_at
+          user_id,
+          role,
+          region_id,
+          sector_id,
+          school_id,
+          profiles!user_id(
+            full_name,
+            email,
+            phone,
+            position,
+            language,
+            status,
+            created_at,
+            updated_at
+          )
         `);
 
-      if (error) throw error;
-
-      // Əgər data array deyilsə, boş array qaytar
-      if (!Array.isArray(data)) {
-        setUsers([]);
-        return;
+      // Sektor admini yalnız öz sektoruna aid istifadəçiləri görə bilər
+      if (isSectorAdmin && sectorId) {
+        console.log(`SectorAdmin filtering by sector: ${sectorId}`);
+        query = query.eq('sector_id', sectorId);
       }
 
-      // İstifadəçi rollarını əldə et
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
+      const { data, error } = await query;
 
-      if (rolesError) throw rolesError;
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      // İstifadəçilərə rolları əlavə et
-      const usersWithRoles = data.map(user => {
-        const userRole = rolesData.find(role => role.user_id === user.id);
-        return {
-          ...user,
-          role: userRole?.role || 'user',
-          region_id: userRole?.region_id,
-          sector_id: userRole?.sector_id,
-          school_id: userRole?.school_id,
-          regionId: userRole?.region_id,
-          sectorId: userRole?.sector_id,
-          schoolId: userRole?.school_id,
-          email: user.email || ''
-        } as User;
-      });
-
-      setUsers(usersWithRoles);
-    } catch (error: any) {
-      console.error('Error fetching users:', error);
-      setError(error.message);
+      if (data) {
+        // Verilənləri User tipinə uyğun formata çevirək
+        const formattedUsers = data.map(item => {
+          const profile = item.profiles || {};
+          
+          return {
+            id: item.user_id,
+            email: profile.email || '',
+            full_name: profile.full_name || '',
+            name: profile.full_name || '',
+            role: item.role || '',
+            region_id: item.region_id,
+            sector_id: item.sector_id,
+            school_id: item.school_id,
+            phone: profile.phone || '',
+            position: profile.position || '',
+            language: profile.language || 'az',
+            status: profile.status || 'active',
+            created_at: profile.created_at,
+            updated_at: profile.updated_at
+          };
+        });
+        
+        setUsers(formattedUsers);
+      }
+      
+    } catch (err: any) {
+      console.error('Users fetch error:', err);
+      setError(err.message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, []);
+  }, [isSectorAdmin, sectorId]);
 
-  const getUserById = useCallback(async (userId: string) => {
-    if (!userId) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          phone,
-          position,
-          avatar,
-          language,
-          status,
-          last_login,
-          created_at,
-          updated_at
-        `)
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-
-      // İstifadəçi rolunu əldə et
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (roleError && roleError.code !== 'PGRST116') throw roleError;
-
-      const user: User = {
-        ...data,
-        role: roleData?.role || 'user',
-        region_id: roleData?.region_id,
-        sector_id: roleData?.sector_id,
-        school_id: roleData?.school_id,
-        regionId: roleData?.region_id,
-        sectorId: roleData?.sector_id,
-        schoolId: roleData?.school_id,
-        email: data.email || ''
-      };
-
-      setSelectedUserData(user);
-      return user;
-    } catch (error: any) {
-      console.error('Error fetching user by ID:', error);
-      setError(error.message);
-      return null;
-    }
-  }, []);
-
-  const selectUser = useCallback(async (userId: string) => {
-    setSelectedUserId(userId);
-    await getUserById(userId);
-  }, [getUserById]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   return {
     users,
-    loading,
+    isLoading,
     error,
-    selectedUserId,
-    selectedUserData,
-    setSelectedUserId,
-    fetchUsers,
-    getUserById,
-    selectUser
+    refetchUsers: fetchUsers
   };
 };
+
+export default useUsers;

@@ -1,91 +1,76 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { School } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
-import { SchoolStat } from '@/types/dashboard';
 import { useNavigate } from 'react-router-dom';
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completion: number;
+}
 
 interface SchoolsListProps {
   schools: SchoolStat[];
 }
 
-const SchoolsList: React.FC<SchoolsListProps> = ({ schools }) => {
-  const { t } = useLanguage();
+export const SchoolsList: React.FC<SchoolsListProps> = ({ schools }) => {
   const navigate = useNavigate();
 
-  const getStatusClass = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-amber-600';
-    return 'text-red-600';
-  };
+  const sortedSchools = useMemo(() => {
+    return [...schools].sort((a, b) => a.completion - b.completion);
+  }, [schools]);
 
-  // Listdəki məktəbəlri tamamlanma faizinə görə sıralayır
-  const sortedSchools = [...schools].sort((a, b) => 
-    (b.completionRate ?? b.completion?.percentage ?? 0) - 
-    (a.completionRate ?? a.completion?.percentage ?? 0)
-  );
+  if (!sortedSchools || sortedSchools.length === 0) {
+    return (
+      <div className="text-center p-4 text-muted-foreground">
+        Göstəriləcək məktəb yoxdur
+      </div>
+    );
+  }
 
   return (
-    <Card className="col-span-2">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl font-bold">
-          {t('schools')}
-        </CardTitle>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => navigate('/schools')}
-        >
-          {t('viewAll')}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {sortedSchools.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            {t('noSchoolsFound')}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {sortedSchools.map((school) => {
-              const completionPercentage = school.completionRate ?? school.completion?.percentage ?? 0;
-              
-              return (
-                <div key={school.id} className="grid grid-cols-12 gap-4 items-center p-2 hover:bg-secondary/20 rounded-md transition-colors">
-                  <div className="col-span-7 lg:col-span-5 flex items-center gap-2">
-                    <div className="bg-primary/10 p-2 rounded-md">
-                      <School className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="truncate">
-                      <p className="truncate font-medium text-sm">{school.name}</p>
-                      {school.sector && (
-                        <p className="text-xs text-muted-foreground">{school.sector}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="col-span-3 lg:col-span-5">
-                    <div className="w-full h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 rounded-full bg-primary" 
-                        style={{ width: `${completionPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <span className={`text-sm font-medium ${getStatusClass(completionPercentage)}`}>
-                      {completionPercentage}%
-                    </span>
-                  </div>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Məktəb</TableHead>
+            <TableHead className="w-[200px] text-right">Tamamlanma</TableHead>
+            <TableHead className="w-[100px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedSchools.map((school) => (
+            <TableRow key={school.id}>
+              <TableCell className="font-medium">{school.name}</TableCell>
+              <TableCell>
+                <div className="flex items-center justify-end gap-2">
+                  <Progress 
+                    value={school.completion} 
+                    className="h-2 w-[100px]"
+                    indicatorClassName={
+                      school.completion > 80 ? "bg-green-500" :
+                      school.completion > 50 ? "bg-blue-500" :
+                      school.completion > 30 ? "bg-yellow-500" : "bg-red-500"
+                    }
+                  />
+                  <span className="w-8 text-sm">{Math.round(school.completion)}%</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              </TableCell>
+              <TableCell>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/schools/${school.id}`)}
+                >
+                  İncələ
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
-
-export default SchoolsList;

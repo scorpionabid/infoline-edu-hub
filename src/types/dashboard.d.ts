@@ -1,122 +1,153 @@
 
-export type DashboardTrendDirection = 'up' | 'down' | 'neutral';
+import { DataEntryStatus } from './dataEntry';
 
-export interface DashboardNotification {
-  id: string;
-  title: string;
-  message: string;
-  date: string;
-  timestamp: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  isRead: boolean;
-  read: boolean; // Legacy compatibility
-}
-
-export interface StatsCardProps {
-  title: string;
-  value: number | string;
-  icon?: React.ReactNode;
-  description?: string;
-  trend?: string;
-  trendDirection?: DashboardTrendDirection;
-  onClick?: () => void;
-}
-
-export interface CompletionRateCardProps {
-  title: string;
-  completionRate: number;
-  description?: string;
-}
-
-export interface NotificationsCardProps {
-  title: string;
-  notifications: DashboardNotification[];
-  viewAll?: () => void;
-}
-
-export interface SchoolStat {
-  total: number;
-  active: number;
-  incomplete: number;
-}
-
-export interface PendingApprovalItem {
-  id: string;
-  name: string;
-  school: string;
-  date: string;
-  status: string;
-}
-
-export interface SuperAdminDashboardData {
+export interface DashboardData {
   stats: {
     regions: number;
     sectors: number;
     schools: number;
     users: number;
   };
+  completionRate: number;
+  regions: any[];
+  pendingApprovals: PendingApprovalItem[];
+  recentActivities: ActivityLogItem[];
+  notifications: DashboardNotification[];
+  userCount: number;
+}
+
+export interface PendingApprovalItem {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  categoryId: string;
+  categoryName: string;
+  submittedAt: string;
+  status: string;
+}
+
+export interface PendingItem {
+  id: string;
+  title: string;
+  status: 'pending' | 'approved' | 'rejected';
+  date: string;
+  school: string;
+}
+
+export interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  read: boolean;
+}
+
+export interface SuperAdminDashboardData extends DashboardData {
   formsByStatus: {
     pending: number;
     approved: number;
     rejected: number;
-    total: number;
+    draft: number;
   };
-  completionRate: number;
-  notifications: DashboardNotification[];
-  regions: any[];
-  pendingApprovals: PendingApprovalItem[];
+  categoryStats: CategoryStat[];
   approvalRate: number;
-  regionCount: number;
-  sectorCount: number;
-  schoolCount: number;
-  userCount: number;
 }
 
-export interface RegionAdminDashboardData {
-  stats: {
-    sectors: number;
-    schools: number;
-    users: number;
-  };
-  completionRate: number;
-  notifications: DashboardNotification[];
-  pendingItems: PendingApprovalItem[];
-  categories: any[];
-  sectors: any[];
-  sectorStats: {
-    total: number;
-    active: number;
-  };
-  schoolStats: {
-    total: number;
-    active: number;
-    incomplete: number;
-  };
+export interface CategoryStat {
+  id: string;
+  name: string;
+  totalEntries: number;
+  pendingEntries: number;
+  approvedEntries: number;
+  completionPercentage: number;
+}
+
+export interface RegionAdminDashboardData extends DashboardData {
+  sectorStats: SectorCompletionItem[];
+  schoolStats: SchoolStat[];
+  categoryStats: CategoryStat[];
+}
+
+export interface SectorCompletionItem {
+  id: string;
+  name: string;
+  completion: number;
+  schoolCount: number;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completion?: number;
 }
 
 export interface SectorAdminDashboardData {
+  schoolsStats: SchoolStat[];
   stats: {
     schools: number;
-    users: number;
   };
   completionRate: number;
   notifications: DashboardNotification[];
-  pendingItems: PendingApprovalItem[];
-  schools: any[];
-  categories: any[];
-  schoolsStats: SchoolStat[];
+  activityLog: ActivityLogItem[];
+}
+
+export interface ActivityLogItem {
+  id: string;
+  action: string;
+  user: string;
+  date: string;
+  entityType: string;
+  entityId: string;
 }
 
 export interface SchoolAdminDashboardData {
+  completionRate: number;
   formStats: {
-    total: number;
     approved: number;
     pending: number;
     rejected: number;
     incomplete: number;
-    drafts: number;
   };
-  completionRate: number;
   notifications: DashboardNotification[];
-  categories: any[];
+  completion: {
+    percentage: number;
+    total: number;
+    completed: number
+  };
+}
+
+export interface FormItem {
+  id: string;
+  name: string;
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  deadline?: string;
+  submittedAt?: string;
+}
+
+// Component Props Types
+export interface StatsCardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  description?: string;
+  trend?: string;
+  trendDirection?: 'up' | 'down' | 'neutral';
+}
+
+export interface CompletionRateCardProps {
+  completionRate: number;
+  title: string;
+}
+
+export interface NotificationsCardProps {
+  title: string;
+  notifications: {
+    id: string;
+    title: string;
+    message: string;
+    date: string;
+    type: 'info' | 'warning' | 'success' | 'error';
+    isRead: boolean;
+  }[];
 }

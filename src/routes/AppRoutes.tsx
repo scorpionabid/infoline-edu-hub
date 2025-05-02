@@ -22,6 +22,8 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
 import Profile from "@/pages/Profile";
+import Forms from "@/pages/Forms";
+import Approvals from "@/pages/Approvals";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -172,7 +174,7 @@ const AppRoutes = [
   {
     path: "/columns",
     element: (
-      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin']}>
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin']}>
         <Columns />
       </ProtectedRoute>
     ),
@@ -214,6 +216,26 @@ const AppRoutes = [
     element: (
       <ProtectedRoute>
         <Profile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/forms",
+    element: (
+      <ProtectedRoute allowedRoles={['sectoradmin', 'schooladmin']}>
+        <SidebarLayout>
+          <Forms />
+        </SidebarLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/approvals",
+    element: (
+      <ProtectedRoute allowedRoles={['superadmin', 'regionadmin', 'sectoradmin']}>
+        <SidebarLayout>
+          <Approvals />
+        </SidebarLayout>
       </ProtectedRoute>
     ),
   },

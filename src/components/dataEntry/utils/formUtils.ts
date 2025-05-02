@@ -1,171 +1,102 @@
-import { ColumnType } from '@/types/column';
-import { ColumnValidation, ColumnValidationError } from '@/types/column';
-import { EntryValue } from '@/types/dataEntry';
 
-/**
- * Giriş məlumatını sütun tipinə və validasiya qaydalarına görə doğrulayır
- * @param value Dəyər
- * @param type Sütun tipi
- * @param validation Validasiya qaydaları 
- */
+import { ColumnType, ColumnValidation } from '@/types/column';
+import { DataEntryStatus, EntryValue } from '@/types/dataEntry';
+
+// Daxil edilmiş dəyərin validasiyası
 export const validateEntryValue = (
-  value: string,
-  columnType: ColumnType,
+  value: string, 
+  type: ColumnType, 
   validation?: ColumnValidation
 ): string | null => {
-  // Validasiya qaydaları olmayan hal
+  // Əgər validasiya qaydası yoxdursa, dəyər doğru sayılır
   if (!validation) return null;
-
-  // Boş qiymət kontrolu
-  if (validation && validation?.required && !value?.trim()) {
-    return validation?.requiredMessage || 'Bu sahə məcburidir';
+  
+  // Məcburi sahə yoxlanışı
+  if (validation.required && !value.trim()) {
+    return validation.requiredMessage || 'Bu sahə məcburidir';
   }
 
-  // Boş qiymət halında digər validasiya qaydalarını yoxlamırıq
-  if (!value || !value.trim()) {
+  // Əgər dəyər boşdursa və məcburi deyilsə, qalan yoxlamalara ehtiyac yoxdur
+  if (!value.trim() && !validation.required) {
     return null;
   }
-
-  // Sütun tipinə əsasən validasiya
-  switch (columnType) {
+  
+  // Tip-ə əsasən yoxlanışlar
+  switch (type) {
     case 'text':
     case 'textarea':
-      // Min uzunluq yoxlaması
+      // Min uzunluq yoxlanışı
       if (validation.minLength && value.length < validation.minLength) {
         return `Minimum ${validation.minLength} simvol olmalıdır`;
       }
-      // Max uzunluq yoxlaması
+      
+      // Max uzunluq yoxlanışı
       if (validation.maxLength && value.length > validation.maxLength) {
         return `Maksimum ${validation.maxLength} simvol olmalıdır`;
       }
-      // Pattern yoxlaması
+      
+      // Pattern yoxlanışı
       if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
         return validation.patternMessage || 'Düzgün format deyil';
       }
-      break;
-
-    case 'email':
-    case 'text':
-      // Email formatı yoxlaması (email tipli sahə üçün)
+      
+      // Email formatı yoxlanışı
       if (validation.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return 'Düzgün email formatında deyil';
+        return 'Düzgün e-poçt formatı deyil';
+      }
+      
+      // URL formatı yoxlanışı
+      if (validation.url && !/^(http|https):\/\/[^ "]+$/.test(value)) {
+        return 'Düzgün URL formatı deyil';
       }
       break;
-
-    case 'url':
-    case 'text':
-      // URL formatı yoxlaması (URL tipli sahə üçün)
-      if (validation.url && !/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/.test(value)) {
-        return 'Düzgün URL formatında deyil';
-      }
-      break;
-
-    case 'select':
-      // Seçim sahəsinin validasiyası
-      if (validation.inclusion && 
-          Array.isArray(validation.inclusion) && 
-          validation.inclusion.length > 0 && 
-          !validation.inclusion.includes(value)) {
-        return `Seçim ${validation.inclusion.join(', ')} siyahısından olmalıdır`;
-      }
-      break;
-
+      
     case 'number':
-      // Rəqəmsal tip üçün kontrol
-      if (isNaN(Number(value))) {
-        return 'Bu sahə rəqəm olmalıdır';
+      // Rəqəm yoxlanışı
+      if (!/^-?\d*\.?\d*$/.test(value)) {
+        return 'Rəqəm olmalıdır';
       }
       
       const numValue = parseFloat(value);
       
-      // Minimum dəyər kontrolu
+      // Min dəyər yoxlanışı
       if (validation.min !== undefined && numValue < validation.min) {
-        return `Ən az ${validation.min} olmalıdır`;
+        return `Minimum dəyər ${validation.min} olmalıdır`;
       }
       
-      // Maksimum dəyər kontrolu
+      // Max dəyər yoxlanışı
       if (validation.max !== undefined && numValue > validation.max) {
-        return `Ən çox ${validation.max} olmalıdır`;
+        return `Maksimum dəyər ${validation.max} olmalıdır`;
       }
       break;
       
-    case 'date':
-      // Tarix formatı yoxlaması
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value) && !/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
-        return 'Düzgün tarix formatında deyil';
+    case 'select':
+      // Seçilmiş dəyər icazə verilən variantlar siyahısında yoxlanışı
+      if (validation.inclusion && !validation.inclusion.includes(value)) {
+        return 'Düzgün seçim deyil';
       }
       break;
-      
-    case 'checkbox':
-      // Checkbox-ın işarələnmiş olmasının kontrolu
-      if (validation.required && value !== 'true' && value !== 'on') {
-        return 'Bu seçim məcburidir';
-      }
-      break;
-      
-    // Digər sahə tipləri üçün validasiya
   }
-
+  
+  // Bütün yoxlamalardan keçdisə heç bir xəta yoxdur
   return null;
 };
 
-/**
- * Bütün formun validasiyası
- * @param entries Formdaki giriş dəyərləri
- * @param columns Sütunlar
- */
-export const validateForm = (entries: EntryValue[], columns: Record<string, any>): boolean => {
-  let isValid = true;
-  
-  entries.forEach(entry => {
-    const column = columns[entry.columnId || entry.column_id || ''];
-    
-    if (column) {
-      const error = validateEntryValue(entry.value, column.type, column.validation);
-      if (error) {
-        isValid = false;
-      }
-    }
-  });
-  
-  return isValid;
-};
-
-/**
- * Data entries üçün statusları idarə edir
- */
-export const getEntryStatus = (status?: DataEntryStatus): {
-  label: string;
-  color: string;
-} => {
-  switch (status) {
-    case 'approved':
-      return { label: 'Təsdiqlənib', color: 'bg-green-500' };
-    case 'pending':
-      return { label: 'Gözləmədə', color: 'bg-yellow-500' };
-    case 'rejected':
-      return { label: 'Rədd edilib', color: 'bg-red-500' };
-    case 'draft':
-      return { label: 'Qaralama', color: 'bg-gray-500' };
-    default:
-      return { label: 'Naməlum', color: 'bg-gray-500' };
-  }
-};
-
-/**
- * Tip üçün uyğun giriş sahəsi növünü qaytarır
- */
-export const getInputTypeForColumnType = (type: ColumnType): string => {
-  switch (type) {
-    case 'number':
-      return 'number';
-    case 'date':
-      return 'date';
-    case 'checkbox':
-      return 'checkbox';
-    case 'radio':
-      return 'radio';
-    default:
-      return 'text';
-  }
+// Helper funksiya: EntryValue objectlərini DataEntry massivi formatına çevirir
+export const convertEntryValuesToDataEntries = (
+  entries: EntryValue[], 
+  categoryId: string, 
+  schoolId: string,
+  status: DataEntryStatus = 'draft'
+) => {
+  return entries.map(entry => ({
+    id: entry.entryId || `temp_${Date.now()}_${Math.random()}`,
+    column_id: entry.columnId || entry.column_id || '',
+    category_id: categoryId,
+    school_id: schoolId,
+    value: entry.value,
+    status: entry.status || status,
+    created_at: new Date(),
+    updated_at: new Date()
+  }));
 };

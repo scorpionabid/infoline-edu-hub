@@ -1,69 +1,94 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NotificationsCardProps } from '@/types/dashboard';
-import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { 
+  CheckCircle, 
+  AlertCircle, 
+  AlertTriangle, 
+  Info, 
+  Bell 
+} from 'lucide-react';
 
-export const NotificationsCard = ({
-  notifications,
-  title,
-  maxNotifications = 5
-}: NotificationsCardProps) => {
-  // Bildirişlərin tipinə görə rəngini təyin etmə
-  const getNotificationColor = (type: string) => {
+export interface NotificationsCardProps {
+  title: string;
+  notifications: {
+    id: string;
+    title: string;
+    message: string;
+    date: string;
+    type: 'info' | 'warning' | 'success' | 'error';
+    isRead: boolean;
+  }[];
+}
+
+export const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+  title, 
+  notifications = []
+}) => {
+  const getIconByType = (type: string) => {
     switch (type) {
-      case 'warning': return 'border-l-amber-500 bg-amber-50';
-      case 'error': return 'border-l-red-500 bg-red-50';
-      case 'success': return 'border-l-green-500 bg-green-50';
-      default: return 'border-l-blue-500 bg-blue-50';
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case 'info':
+      default:
+        return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
 
-  // Məhdud sayda bildiriş göstər
-  const limitedNotifications = notifications.slice(0, maxNotifications);
-
   return (
-    <Card className="col-span-2">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {limitedNotifications.length > 0 ? (
-            limitedNotifications.map(notification => (
-              <div 
-                key={notification.id} 
-                className={cn(
-                  'p-3 border-l-4 rounded shadow-sm', 
-                  getNotificationColor(notification.type),
-                  notification.isRead ? 'opacity-70' : 'opacity-100'
-                )}
-              >
-                <h4 className="font-medium">{notification.title}</h4>
-                <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                  <span>{notification.date}</span>
-                  {!notification.isRead && <span className="font-medium text-blue-600">Yeni</span>}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-4 text-muted-foreground">
-              Bildiriş yoxdur
-            </div>
-          )}
-          
-          {notifications.length > maxNotifications && (
-            <div className="text-center">
-              <button className="text-sm text-primary hover:underline">
-                Bütün bildirişləri göstər ({notifications.length})
-              </button>
-            </div>
-          )}
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center">
+            <Bell className="h-5 w-5 mr-2" />
+            {title}
+          </CardTitle>
+          {notifications.length > 0 ? (
+            <Button variant="outline" size="sm" className="text-xs">
+              Hamısına bax
+            </Button>
+          ) : null}
         </div>
+      </CardHeader>
+      <CardContent className="flex-grow overflow-hidden">
+        <ScrollArea className="h-full p-0">
+          <div className="space-y-2 pr-4">
+            {notifications.length === 0 ? (
+              <div className="text-center text-muted-foreground p-4">
+                Bildirişiniz yoxdur
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <div 
+                  key={notification.id}
+                  className={`py-3 border-b last:border-0 ${notification.isRead ? 'opacity-70' : ''}`}
+                >
+                  <div className="flex gap-3">
+                    <div className="shrink-0 self-start pt-1">
+                      {getIconByType(notification.type)}
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="font-medium text-sm">{notification.title}</h4>
+                        <span className="text-xs text-muted-foreground">{notification.date}</span>
+                      </div>
+                      <p className="text-sm line-clamp-2 text-muted-foreground mt-1">
+                        {notification.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
 };
-
-export default NotificationsCard;

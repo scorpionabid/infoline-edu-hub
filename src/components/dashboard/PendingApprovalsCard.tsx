@@ -1,60 +1,74 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PendingItem } from '@/types/dashboard';
-import { useLanguage } from '@/context/LanguageContext';
-import { cn } from '@/lib/utils';
+import { PendingApprovalItem } from '@/types/dashboard';
+import { Button } from '@/components/ui/button';
+import { Clock, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PendingApprovalsCardProps {
-  pendingItems: PendingItem[];
-  className?: string; // Əlavə edildi
+  items: PendingApprovalItem[];
 }
 
-const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ 
-  pendingItems,
-  className
-}) => {
-  const { t } = useLanguage();
-
-  if (!pendingItems || pendingItems.length === 0) {
+export const PendingApprovalsCard: React.FC<PendingApprovalsCardProps> = ({ items }) => {
+  const navigate = useNavigate();
+  
+  if (!items || items.length === 0) {
     return (
-      <Card className={className}>
+      <Card>
         <CardHeader>
-          <CardTitle>{t('pendingApprovals')}</CardTitle>
+          <CardTitle>Təsdiq gözləyənlər</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">{t('noPendingApprovals')}</p>
+          <p className="text-muted-foreground text-center py-6">
+            Təsdiq gözləyən məlumat yoxdur
+          </p>
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
-    <Card className={className}>
+    <Card>
       <CardHeader>
-        <CardTitle>{t('pendingApprovals')}</CardTitle>
+        <CardTitle>Təsdiq gözləyənlər</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {pendingItems.map((item) => (
-            <div key={item.id} className="flex flex-col space-y-1">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{item.school || item.schoolName}</p>
-                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                  {t('pending')}
-                </span>
+          {items.slice(0, 5).map((item) => (
+            <div key={item.id} className="flex justify-between items-center border-b pb-3 last:border-0">
+              <div>
+                <h4 className="font-medium">{item.categoryName}</h4>
+                <div className="text-sm text-muted-foreground">{item.schoolName}</div>
+                <div className="flex items-center text-xs mt-1 text-muted-foreground">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {item.submittedAt}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">{item.category || item.categoryName}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('dueDate')}: {item.date || item.dueDate || item.submittedAt}
-              </p>
-              <div className="h-px bg-muted my-1"></div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-4"
+                onClick={() => navigate(`/approvals?id=${item.id}`)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                İncələ
+              </Button>
             </div>
           ))}
+          
+          {items.length > 5 && (
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              size="sm"
+              onClick={() => navigate('/approvals')}
+            >
+              {items.length - 5} daha görüntülə
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 };
-
-export default PendingApprovalsCard;

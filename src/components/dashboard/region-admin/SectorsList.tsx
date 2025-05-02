@@ -1,59 +1,75 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { SectorCompletionItem } from '@/types/dashboard';
-import { useLanguage } from '@/context/LanguageContext';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+
+export interface SectorCompletionItem {
+  id: string;
+  name: string;
+  completion: number;
+  schoolCount: number;
+}
 
 interface SectorsListProps {
   sectors: SectorCompletionItem[];
 }
 
-const SectorsList: React.FC<SectorsListProps> = ({ sectors }) => {
-  const { t } = useLanguage();
+export const SectorsList: React.FC<SectorsListProps> = ({ sectors }) => {
+  const navigate = useNavigate();
   
-  // Sort sectors by completion rate
-  const sortedSectors = [...sectors].sort((a, b) => 
-    (b.completionRate || b.completionPercentage || 0) - (a.completionRate || a.completionPercentage || 0)
-  );
-
+  if (!sectors || sectors.length === 0) {
+    return (
+      <div className="text-center p-4 text-muted-foreground">
+        Göstəriləcək sektor yoxdur
+      </div>
+    );
+  }
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('sectors')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px]">
-          {sortedSectors.length === 0 ? (
-            <div className="text-center text-muted-foreground p-4">
-              {t('noSectors')}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {sortedSectors.map((sector) => (
-                <div key={sector.id} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">{sector.name}</div>
-                    <div className="text-sm">{sector.completionRate || sector.completionPercentage || 0}%</div>
-                  </div>
-                  <div className="space-y-1">
-                    <Progress 
-                      value={sector.completionRate || sector.completionPercentage || 0} 
-                      className="h-2" 
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{t('schools')}: {sector.schoolCount}</span>
-                    </div>
-                  </div>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Sektor</TableHead>
+            <TableHead className="w-[100px] text-right">Məktəb sayı</TableHead>
+            <TableHead className="w-[200px] text-right">Tamamlanma</TableHead>
+            <TableHead className="w-[100px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sectors.map((sector) => (
+            <TableRow key={sector.id}>
+              <TableCell className="font-medium">{sector.name}</TableCell>
+              <TableCell className="text-right">{sector.schoolCount}</TableCell>
+              <TableCell>
+                <div className="flex items-center justify-end gap-2">
+                  <Progress 
+                    value={sector.completion} 
+                    className="h-2 w-[100px]"
+                    indicatorClassName={
+                      sector.completion > 80 ? "bg-green-500" :
+                      sector.completion > 50 ? "bg-blue-500" :
+                      sector.completion > 30 ? "bg-yellow-500" : "bg-red-500"
+                    }
+                  />
+                  <span className="w-8 text-sm">{Math.round(sector.completion)}%</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+              </TableCell>
+              <TableCell>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate(`/sectors/${sector.id}`)}
+                >
+                  İncələ
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
-
-export default SectorsList;

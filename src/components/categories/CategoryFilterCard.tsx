@@ -1,132 +1,114 @@
 
 import React from 'react';
-import { useLanguage } from '@/context/LanguageContext';
-import { CategoryFilter, FormStatus, AssignmentType } from '@/types/category';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { AlertCircle, CheckCircle, Clock, AlertTriangle, FileEdit, XCircle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { CategoryStatus, CategoryAssignment } from '@/types/category';
+
+export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'all';
+export type AssignmentType = 'all' | 'sectors';
+
+export interface CategoryFilter {
+  status?: CategoryStatus | 'all';
+  assignment?: AssignmentType | 'all';
+  search?: string;
+}
 
 interface CategoryFilterCardProps {
   filter: CategoryFilter;
-  onFilterChange: (newFilter: Partial<CategoryFilter>) => void;
+  onFilterChange: (filter: CategoryFilter) => void;
 }
 
-export function CategoryFilterCard({ filter, onFilterChange }: CategoryFilterCardProps) {
+export const CategoryFilterCard: React.FC<CategoryFilterCardProps> = ({
+  filter,
+  onFilterChange,
+}) => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Filter options
-  const statusOptions = [
-    { value: "pending", label: t("pending"), icon: <AlertCircle className="mr-2 h-4 w-4" /> },
-    { value: "completed", label: t("completed"), icon: <CheckCircle className="mr-2 h-4 w-4" /> },
-    { value: "dueSoon", label: t("dueSoon"), icon: <Clock className="mr-2 h-4 w-4" /> },
-    { value: "overdue", label: t("overdue"), icon: <AlertTriangle className="mr-2 h-4 w-4" /> },
-    { value: "draft", label: t("draft"), icon: <FileEdit className="mr-2 h-4 w-4" /> },
-    { value: "approved", label: t("approved"), icon: <CheckCircle className="mr-2 h-4 w-4" /> },
-    { value: "rejected", label: t("rejected"), icon: <XCircle className="mr-2 h-4 w-4" /> }
-  ];
-
-  const assignmentOptions = [
-    { value: "all", label: t("allUsers") },
-    { value: "sectors", label: t("sectorsOnly") }
-  ];
-
-  // Handlers
-  const handleStatusFilter = (status: string) => {
-    const formStatus = status === 'all' ? undefined : status as FormStatus | FormStatus[];
-    onFilterChange({ ...filter, status: formStatus });
+  
+  const handleStatusChange = (status: CategoryStatus | 'all') => {
+    onFilterChange({ ...filter, status });
   };
 
-  const handleAssignmentFilter = (assignment: string) => {
-    const assignmentValue = assignment === 'all' ? undefined : assignment as AssignmentType;
-    onFilterChange({ ...filter, assignment: assignmentValue });
-  };
-
-  const handleDeadlineFilter = (deadline: string) => {
-    let deadlineValue: Date | undefined = undefined;
-    
-    if (deadline === 'upcoming') {
-      deadlineValue = new Date();
-    } else if (deadline === 'past') {
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 1);
-      deadlineValue = pastDate;
-    }
-    
-    onFilterChange({ ...filter, deadline: deadlineValue });
-  };
-
-  const handleResetFilter = () => {
-    onFilterChange({});
-    // Update the URL to remove query params
-    navigate(location.pathname);
+  const handleAssignmentChange = (assignment: CategoryAssignment | 'all') => {
+    onFilterChange({ ...filter, assignment });
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{t('status')}</Label>
-          <Select
-            value={filter.status?.toString() || 'all'}
-            onValueChange={handleStatusFilter}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('allStatuses')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allStatuses')}</SelectItem>
-              <SelectItem value="active">{t('active')}</SelectItem>
-              <SelectItem value="inactive">{t('inactive')}</SelectItem>
-              <SelectItem value="draft">{t('draft')}</SelectItem>
-            </SelectContent>
-          </Select>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('filters')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <h3 className="mb-2 font-semibold">{t('status')}</h3>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="status-all" 
+                checked={filter.status === 'all'} 
+                onCheckedChange={() => handleStatusChange('all')}
+              />
+              <Label htmlFor="status-all">{t('all')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="status-active" 
+                checked={filter.status === 'active'} 
+                onCheckedChange={() => handleStatusChange('active')}
+              />
+              <Label htmlFor="status-active">{t('active')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="status-inactive" 
+                checked={filter.status === 'inactive'} 
+                onCheckedChange={() => handleStatusChange('inactive')}
+              />
+              <Label htmlFor="status-inactive">{t('inactive')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="status-draft" 
+                checked={filter.status === 'draft'} 
+                onCheckedChange={() => handleStatusChange('draft')}
+              />
+              <Label htmlFor="status-draft">{t('draft')}</Label>
+            </div>
+          </div>
         </div>
         
-        <div className="space-y-2">
-          <Label>{t('assignment')}</Label>
-          <Select
-            value={filter.assignment || 'all'}
-            onValueChange={handleAssignmentFilter}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('allAssignments')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allAssignments')}</SelectItem>
-              <SelectItem value="sectors">{t('onlySectors')}</SelectItem>
-            </SelectContent>
-          </Select>
+        <div>
+          <h3 className="mb-2 font-semibold">{t('assignment')}</h3>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="assignment-all" 
+                checked={filter.assignment === 'all'} 
+                onCheckedChange={() => handleAssignmentChange('all')}
+              />
+              <Label htmlFor="assignment-all">{t('all')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="assignment-all-users" 
+                checked={filter.assignment === 'all'} 
+                onCheckedChange={() => handleAssignmentChange('all')}
+              />
+              <Label htmlFor="assignment-all-users">{t('allUsers')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="assignment-sectors" 
+                checked={filter.assignment === 'sectors'} 
+                onCheckedChange={() => handleAssignmentChange('sectors')}
+              />
+              <Label htmlFor="assignment-sectors">{t('sectorOnly')}</Label>
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>{t('deadline')}</Label>
-          <Select
-            value={filter.deadline ? (filter.deadline > new Date() ? 'upcoming' : 'past') : 'all'}
-            onValueChange={handleDeadlineFilter}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={t('allDeadlines')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allDeadlines')}</SelectItem>
-              <SelectItem value="upcoming">{t('upcomingDeadlines')}</SelectItem>
-              <SelectItem value="past">{t('pastDeadlines')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

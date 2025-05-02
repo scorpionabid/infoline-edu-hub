@@ -22,6 +22,7 @@ import {
   User,
   LogOut,
   BookOpen,
+  Columns,
 } from 'lucide-react';
 
 interface SidebarNavProps {
@@ -36,12 +37,7 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { userRole } = usePermissions();
-  
-  const isSuperAdmin = userRole === 'superadmin';
-  const isRegionAdmin = userRole === 'regionadmin';
-  const isSectorAdmin = userRole === 'sectoradmin';
-  const isSchoolAdmin = userRole === 'schooladmin';
+  const { isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = usePermissions();
 
   const isActive = (href: string) => {
     return location.pathname === href || (href !== '/' && location.pathname.startsWith(href));
@@ -117,6 +113,12 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
       href: '/categories',
       icon: <ListChecks />,
       label: t('categories'),
+      show: isSuperAdmin || isRegionAdmin,
+    },
+    {
+      href: '/columns',
+      icon: <Columns />,
+      label: t('columns'),
       show: isSuperAdmin || isRegionAdmin,
     },
     {
@@ -199,5 +201,4 @@ export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onIt
   );
 }
 
-// Default eksportu da əlavə edək
 export default SidebarNav;

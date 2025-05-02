@@ -3,21 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormFields } from './FormFields';
-import { CategoryWithColumns } from '@/types/column';
-import { DataEntry } from '@/types/dataEntry';
+import { CategoryWithColumns } from '@/types/category';
+import { DataEntry, DataEntryStatus, EntryValue } from '@/types/dataEntry'; 
 import { StatusIndicator } from './StatusIndicators';
 import { useCategoryStatus } from '@/hooks/categories/useCategoryStatus';
-
-interface EntryValue {
-  column_id?: string;
-  columnId?: string; 
-  value: string;
-  name?: string;
-  isValid?: boolean;
-  error?: string;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected';
-  entryId?: string;
-}
+import { convertEntryValuesToDataEntries } from './utils/formUtils';
 
 interface CategoryFormProps {
   category: CategoryWithColumns;
@@ -41,17 +31,12 @@ export function CategoryForm({
   isLoading = false
 }: CategoryFormProps) {
   // Mövcud useCategoryStatus hook-nu istifadə edəcək
+  const dataEntries = React.useMemo(() => {
+    return convertEntryValuesToDataEntries(values, category.id, '', 'pending');
+  }, [values, category.id]);
+
   const { status, completionPercentage, getStatusBadgeColor, getStatusLabel } = useCategoryStatus(category, { 
-    entries: values.map(v => ({
-      id: v.entryId || '',
-      column_id: v.columnId || v.column_id || '',
-      category_id: category.id,
-      school_id: '',
-      value: v.value,
-      status: v.status || 'pending',
-      created_at: new Date(),
-      updated_at: new Date()
-    })) as DataEntry[]
+    entries: dataEntries
   });
 
   // Hesabla - validasiya xətaları varmı
