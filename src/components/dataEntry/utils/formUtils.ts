@@ -1,166 +1,226 @@
 
-import { Column, ColumnType, ColumnValidation } from '@/types/column';
+import { ColumnType, Column, ColumnValidation } from '@/types/column';
 import { DataEntryStatus } from '@/types/dataEntry';
 import { EntryValue } from '@/types/dataEntry';
 
 /**
- * Daxil edilən dəyərin müəyyən sütun növü və validasiyaya uyğun olub-olmadığını yoxlayır
+ * Giriş məlumatını sütun tipinə və validasiya qaydalarına görə doğrulayır
+ * @param value Dəyər
+ * @param type Sütun tipi
+ * @param validation Validasiya qaydaları 
  */
 export const validateEntryValue = (
-  value: string, 
-  type: ColumnType, 
+  value: string,
+  type: ColumnType,
   validation?: ColumnValidation
 ): string | null => {
-  // Əgər validasiya tələbləri yoxdursa, validdir
+  // Validasiya qaydaları yoxdursa, keçərli
   if (!validation) return null;
 
-  // Tələb olunması yoxlaması
-  if (validation.required && !value.trim()) {
-    return validation.requiredMessage || "Bu sahə tələb olunur";
+  // Tələb olunan sahə yoxlaması
+  if (validation.required && (!value || value.trim() === '')) {
+    return validation.requiredMessage || 'Bu sahə tələb olunur';
   }
 
-  // Boş dəyər üçün validasiyanı keç (tələb olunmursa)
-  if (!value.trim() && !validation.required) return null;
+  // Boş dəyər və məcburi deyilsə, keçərli
+  if (!validation.required && (!value || value.trim() === '')) {
+    return null;
+  }
 
-  // Tip-ə əsaslanan validasiya
+  // Tip-əsaslı validasiyalar
   switch (type) {
     case 'text':
     case 'textarea':
-      return validateTextValue(value, validation);
-      
+      return validateText(value, validation);
     case 'number':
-      return validateNumberValue(value, validation);
-      
+      return validateNumber(value, validation);
     case 'select':
-    case 'radio':
-      return validateChoiceValue(value, validation);
-      
+      return validateSelect(value, validation);
     case 'date':
-      return validateDateValue(value);
-      
+      return validateDate(value, validation);
+    case 'checkbox':
+      return null; // Checkbox xüsusi validasiya tələb etmir
+    case 'radio':
+      return validateRadio(value, validation);
     default:
       return null;
   }
 };
 
 /**
- * Mətn tipli dəyərləri validasiya edir
+ * Mətn dəyərini validasiya edir
  */
-const validateTextValue = (value: string, validation: ColumnValidation): string | null => {
-  // Minimum uzunluq yoxlaması
-  if (validation.minLength && value.length < validation.minLength) {
-    return `Minimum ${validation.minLength} simvol tələb olunur`;
-  }
-  
-  // Maksimum uzunluq yoxlaması
-  if (validation.maxLength && value.length > validation.maxLength) {
-    return `Maksimum ${validation.maxLength} simvol ola bilər`;
-  }
-  
-  // Pattern yoxlaması
-  if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-    return validation.patternMessage || "Dəyər tələb olunan formatda deyil";
-  }
-  
-  // Email validasiyası
-  if (validation.email && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
-    return "Düzgün email formatı daxil edin";
-  }
-  
-  // URL validasiyası
-  if (validation.url && !/^(http|https):\/\/[^ "]+$/.test(value)) {
-    return "Düzgün URL formatı daxil edin";
-  }
-  
-  // Daxil edilməsi tələb olunan dəyərlər
-  if (validation.inclusion && Array.isArray(validation.inclusion)) {
-    if (!validation.inclusion.includes(value)) {
-      return `Dəyər bunlardan biri olmalıdır: ${validation.inclusion.join(', ')}`;
+const validateText = (value: string, validation: ColumnValidation): string | null => {
+  // Regex pattern yoxlaması
+  if (validation.pattern) {
+    const regex = new RegExp(validation.pattern);
+    if (!regex.test(value)) {
+      return validation.patternMessage || 'Dəyər düzgün formatda deyil';
     }
   }
-  
+
+  // Email formatı yoxlaması
+  if (validation.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return 'Düzgün email formatı daxil edin';
+    }
+  }
+
+  // URL formatı yoxlaması
+  if (validation.url) {
+    try {
+      new URL(value);
+    } catch (e) {
+      return 'Düzgün URL formatı daxil edin';
+    }
+  }
+
+  // Siyahıda olma yoxlaması
+  if (validation.inclusion && Array.isArray(validation.inclusion)) {
+    if (!validation.inclusion.includes(value)) {
+      return `Dəyər bu siyahıdan olmalıdır: ${validation.inclusion.join(', ')}`;
+    }
+  }
+
+  // Minimum uzunluq yoxlaması
+  if (validation.minLength !== undefined && value.length < validation.minLength) {
+    return `Ən azı ${validation.minLength} simvol olmalıdır`;
+  }
+
+  // Maksimum uzunluq yoxlaması
+  if (validation.maxLength !== undefined && value.length > validation.maxLength) {
+    return `Ən çoxu ${validation.maxLength} simvol olmalıdır`;
+  }
+
   return null;
 };
 
 /**
- * Ədəd tipli dəyərləri validasiya edir
+ * Ədəd dəyərini validasiya edir
  */
-const validateNumberValue = (value: string, validation: ColumnValidation): string | null => {
-  // Rəqəm olub-olmadığını yoxlayır
-  if (!/^-?\d+(\.\d+)?$/.test(value)) {
-    return "Rəqəm daxil etməlisiniz";
-  }
-  
+const validateNumber = (value: string, validation: ColumnValidation): string | null => {
   const numValue = parseFloat(value);
-  
+
+  // Ədəd olub olmadığını yoxlayırıq
+  if (isNaN(numValue)) {
+    return 'Düzgün ədəd daxil edin';
+  }
+
   // Minimum dəyər yoxlaması
   if (validation.min !== undefined && numValue < validation.min) {
-    return `Minimum dəyər ${validation.min} olmalıdır`;
+    return `Ədəd ${validation.min}-dən böyük və ya bərabər olmalıdır`;
   }
-  
-  // Maximum dəyər yoxlaması
+
+  // Maksimum dəyər yoxlaması
   if (validation.max !== undefined && numValue > validation.max) {
-    return `Maksimum dəyər ${validation.max} olmalıdır`;
+    return `Ədəd ${validation.max}-dən kiçik və ya bərabər olmalıdır`;
   }
-  
+
   return null;
 };
 
 /**
- * Seçim tipli dəyərləri validasiya edir
+ * Seçim dəyərini validasiya edir
  */
-const validateChoiceValue = (value: string, validation: ColumnValidation): string | null => {
-  // Validasiya seçimlərini yoxlayırıq
+const validateSelect = (value: string, validation: ColumnValidation): string | null => {
+  // Seçim siyahısında olub olmadığını yoxlayırıq
   if (validation.inclusion && Array.isArray(validation.inclusion)) {
     if (!validation.inclusion.includes(value)) {
-      return "Etibarlı seçim deyil";
+      return 'Düzgün seçim edin';
     }
   }
-  
   return null;
 };
 
 /**
- * Tarix tipli dəyərləri validasiya edir
+ * Tarix dəyərini validasiya edir
  */
-const validateDateValue = (value: string): string | null => {
+const validateDate = (value: string, validation: ColumnValidation): string | null => {
   const date = new Date(value);
+  
+  // Düzgün tarix olub olmadığını yoxlayırıq
   if (isNaN(date.getTime())) {
-    return "Etibarlı tarix deyil";
+    return 'Düzgün tarix daxil edin';
+  }
+  
+  // Əlavə tarix validasiyaları burada həyata keçirilə bilər
+  
+  return null;
+};
+
+/**
+ * Radio seçimini validasiya edir
+ */
+const validateRadio = (value: string, validation: ColumnValidation): string | null => {
+  // Radio üçün seçimdə olub olmadığını yoxlayırıq
+  if (validation.inclusion && Array.isArray(validation.inclusion)) {
+    if (!validation.inclusion.includes(value)) {
+      return 'Düzgün seçim edin';
+    }
   }
   return null;
 };
 
 /**
- * Kateqoriya tamamlanma statusunu hesablayır
+ * Bütün giriş dəyərlərini validasiya edir
  */
-export const calculateCategoryStatus = (
-  values: EntryValue[], 
+export const validateAllEntryValues = (
+  entries: EntryValue[],
   columns: Column[]
-): {
-  status: 'not_started' | 'in_progress' | 'completed' | 'approved' | 'rejected' | 'pending' | 'partial';
-  completionPercentage: number;
-} => {
-  const totalColumns = columns.length;
-  if (totalColumns === 0) {
-    return { status: 'not_started', completionPercentage: 0 };
-  }
-
-  const filledValues = values.filter(v => v.value?.trim());
-  const completionPercentage = Math.round((filledValues.length / totalColumns) * 100);
+): { isValid: boolean; validatedEntries: EntryValue[] } => {
+  const validatedEntries = entries.map(entry => {
+    const column = columns.find(col => col.id === entry.columnId || col.id === entry.column_id);
+    if (!column) return { ...entry, isValid: true };
+    
+    const error = validateEntryValue(entry.value, column.type, column.validation);
+    return {
+      ...entry,
+      isValid: !error,
+      error: error || undefined
+    };
+  });
   
-  // Statusu təyin et
-  if (filledValues.length === 0) {
-    return { status: 'not_started', completionPercentage };
-  } else if (filledValues.length < totalColumns) {
-    return { status: 'in_progress', completionPercentage };
-  } else if (values.some(v => v.status === 'rejected')) {
-    return { status: 'rejected', completionPercentage };
-  } else if (values.some(v => v.status === 'pending')) {
-    return { status: 'pending', completionPercentage };
-  } else if (values.every(v => v.status === 'approved')) {
-    return { status: 'approved', completionPercentage };
-  } else {
-    return { status: 'completed', completionPercentage };
+  const isValid = validatedEntries.every(entry => entry.isValid);
+  
+  return { isValid, validatedEntries };
+};
+
+/**
+ * Data entries üçün statusları idarə edir
+ */
+export const getEntryStatus = (status?: DataEntryStatus): {
+  label: string;
+  color: string;
+} => {
+  switch (status) {
+    case 'approved':
+      return { label: 'Təsdiqlənib', color: 'bg-green-500' };
+    case 'pending':
+      return { label: 'Gözləmədə', color: 'bg-yellow-500' };
+    case 'rejected':
+      return { label: 'Rədd edilib', color: 'bg-red-500' };
+    case 'draft':
+      return { label: 'Qaralama', color: 'bg-gray-500' };
+    default:
+      return { label: 'Naməlum', color: 'bg-gray-500' };
+  }
+};
+
+/**
+ * Tip üçün uyğun giriş sahəsi növünü qaytarır
+ */
+export const getInputTypeForColumnType = (type: ColumnType): string => {
+  switch (type) {
+    case 'number':
+      return 'number';
+    case 'date':
+      return 'date';
+    case 'checkbox':
+      return 'checkbox';
+    case 'radio':
+      return 'radio';
+    default:
+      return 'text';
   }
 };

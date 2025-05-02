@@ -8,9 +8,17 @@ import { SchoolAdminDashboard } from './SchoolAdminDashboard';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { fetchDashboardData } from '@/api/dashboardApi';
 import { toast } from 'sonner';
+import { 
+  SuperAdminDashboardData,
+  RegionAdminDashboardData,
+  SectorAdminDashboardData,
+  SchoolAdminDashboardData,
+  DashboardNotification,
+  PendingApprovalItem
+} from '@/types/dashboard';
 
 export interface DashboardContentProps {
-  // Herhangi bir prop tanımı
+  // Hər hansı bir prop tanımı
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = () => {
@@ -28,14 +36,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   });
 
   // Mock notifications
-  const mockNotifications = useMemo(() => [
+  const mockNotifications = useMemo<DashboardNotification[]>(() => [
     {
       id: '1',
       title: 'Yeni kateqoriya əlavə edildi',
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
       date: new Date().toLocaleDateString(),
       timestamp: new Date().toISOString(),
-      type: 'info' as const,
+      type: 'info',
       isRead: false,
       read: false
     },
@@ -45,9 +53,20 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
       date: new Date().toLocaleDateString(),
       timestamp: new Date().toISOString(),
-      type: 'warning' as const,
+      type: 'warning',
       isRead: false,
       read: false
+    }
+  ], []);
+
+  // Mock pending approvals
+  const mockPendingApprovals = useMemo<PendingApprovalItem[]>(() => [
+    {
+      id: '1',
+      name: 'Tədris məlumatları',
+      school: 'Bakı 1 nömrəli məktəb',
+      date: new Date().toLocaleDateString(),
+      status: 'pending'
     }
   ], []);
 
@@ -72,7 +91,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SuperAdmin Dashboard
   if (userRole === 'superadmin') {
-    const superAdminData = {
+    const superAdminData: SuperAdminDashboardData = {
       stats: {
         regions: dashboardData.regions || 0,
         sectors: dashboardData.sectors || 0,
@@ -82,9 +101,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
       // Əlavə məlumatlar (dashboard tipində tələb olunan)
-      formsByStatus: {},
       regions: [],
-      approvalRate: 0,
+      pendingApprovals: mockPendingApprovals,
+      approvalRate: dashboardData.approvalRate || 0,
       regionCount: dashboardData.regions || 0,
       sectorCount: dashboardData.sectors || 0,
       schoolCount: dashboardData.schools || 0,
@@ -96,7 +115,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // RegionAdmin Dashboard
   if (userRole === 'regionadmin') {
-    const regionAdminData = {
+    const regionAdminData: RegionAdminDashboardData = {
       stats: {
         sectors: dashboardData.sectors || 0,
         schools: dashboardData.schools || 0,
@@ -124,24 +143,19 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SectorAdmin Dashboard
   if (userRole === 'sectoradmin') {
-    const sectorAdminData = {
+    const sectorAdminData: SectorAdminDashboardData = {
       stats: {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0
       },
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
-      // schoolStats və schoolsStats hər ikisini əlavə edək
-      schoolStats: {
+      // schoolsStats əlavə edək
+      schoolsStats: [{
         total: dashboardData.schools || 0,
         active: dashboardData.activeSchools || 0,
         incomplete: dashboardData.incompleteSchools || 0
-      },
-      schoolsStats: {
-        total: dashboardData.schools || 0,
-        active: dashboardData.activeSchools || 0,
-        incomplete: dashboardData.incompleteSchools || 0
-      },
+      }],
       // Boş array və obyektlərlə əlavə xüsusiyyətlər
       pendingItems: [],
       schools: [],
@@ -153,7 +167,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SchoolAdmin Dashboard
   if (userRole === 'schooladmin') {
-    const schoolAdminData = {
+    const schoolAdminData: SchoolAdminDashboardData = {
       formStats: {
         total: dashboardData.totalForms || 0,
         approved: dashboardData.approvedForms || 0,

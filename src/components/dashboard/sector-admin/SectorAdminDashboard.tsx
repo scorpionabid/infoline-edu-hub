@@ -12,11 +12,7 @@ interface SectorAdminDashboardProps {
 }
 
 export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
-  const schoolStats = data.schoolsStats || data.schoolStats || {
-    total: 0,
-    active: 0,
-    incomplete: 0
-  };
+  const schoolStats = data.schoolsStats[0] || { total: 0, active: 0, incomplete: 0 };
 
   return (
     <div className="space-y-6">
@@ -30,19 +26,19 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
           trendDirection="neutral"
         />
         <StatsCard
-          title="Tamamlanmamış"
+          title="Tamamlanmayan məktəblər"
           value={schoolStats.incomplete}
-          icon="!"
-          description="Məlumatları tamamlanmamış məktəblər"
-          trend={`${schoolStats.incomplete} məktəb`}
+          icon={<School className="h-4 w-4" />}
+          description="Məlumatları tam doldurmamış məktəblər"
+          trend={`${schoolStats.incomplete} tamamlanmayan məktəb`}
           trendDirection="down"
         />
         <StatsCard
           title="İstifadəçilər"
-          value={data.stats.users || 0}
+          value={data.stats.users}
           icon={<Users className="h-4 w-4" />}
           description="Sektor daxilində istifadəçi sayı"
-          trend={`${data.stats.users || 0} aktiv istifadəçi`}
+          trend={`${data.stats.users} aktiv istifadəçi`}
           trendDirection="neutral"
         />
       </Grid>
@@ -60,3 +56,5 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
     </div>
   );
 };
+
+export default SectorAdminDashboard;

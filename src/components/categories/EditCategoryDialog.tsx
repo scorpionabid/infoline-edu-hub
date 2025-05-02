@@ -1,156 +1,186 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { Category } from '@/types/category';
-import { useCategoryActions } from '@/hooks/useCategoryActions';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { toast } from 'sonner';
+import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
+import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
+import { format } from 'date-fns';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface EditCategoryDialogProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  category?: Category;
+  isOpen: boolean;
+  onClose: () => void;
+  category: Category;
+  onSuccess?: () => void;
 }
 
-type Inputs = {
-  name: string;
-  description: string;
-  assignment: 'sectors' | 'all';
-  deadline: Date | null;
-  status: 'active' | 'inactive' | 'draft';
-  priority: number;
-};
-
-export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, setOpen, category }) => {
+export default function EditCategoryDialog({ isOpen, onClose, category, onSuccess }: EditCategoryDialogProps) {
+  const { t } = useLanguage();
   const { handleAddCategory, isActionLoading } = useCategoryActions();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-    watch
-  } = useForm<Inputs>();
+  const [name, setName] = useState(category.name);
+  const [description, setDescription] = useState(category.description || '');
+  const [assignment, setAssignment] = useState<CategoryAssignment>(category.assignment || 'all');
+  const [status, setStatus] = useState<CategoryStatus>(category.status || 'active');
+  const [priority, setPriority] = useState<number>(category.priority || 0);
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
+    category.deadline ? new Date(category.deadline) : undefined
+  );
 
-  React.useEffect(() => {
-    if (category) {
-      setValue('name', category.name);
-      setValue('description', category.description || '');
-      setValue('assignment', category.assignment || 'all');
-      setValue('deadline', category.deadline ? new Date(category.deadline) : null);
-      setValue('status', category.status);
-      setValue('priority', category.priority || 0);
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error(t('validationError'), {
+        description: t('categoryNameRequired')
+      });
+      return;
     }
-  }, [category, setValue]);
 
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    const categoryData = {
-      ...(category ? { id: category.id } : {}), // Əgər kateqoriya varsa ID-ni əlavə et
-      name: data.name,
-      description: data.description,
-      assignment: data.assignment,
-      deadline: data.deadline ? data.deadline.toISOString() : null,
-      status: data.status,
-      priority: data.priority,
-      // Digər məcburi sahələri əlavə et
-      created_at: category?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      archived: category?.archived || false
-    };
+    try {
+      const categoryData = {
+        name,
+        description,
+        assignment,
+        deadline: deadlineDate ? deadlineDate.toISOString() : null,
+        status,
+        priority,
+        created_at: category.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        archived: category.archived || false,
+        id: category.id
+      };
 
-    const success = await handleAddCategory(categoryData);
-    if (success) {
-      setOpen(false);
+      const success = await handleAddCategory(categoryData as any);
+      if (success) {
+        onClose();
+        if (onSuccess) onSuccess();
+      }
+    } catch (error) {
+      console.error('Category update error:', error);
+      toast.error(t('error'), {
+        description: t('errorUpdatingCategory')
+      });
     }
   };
 
-  // Date seçimi zamanı formun dəyəri yenilənir
-  const handleDateSelect = (date: Date | undefined) => {
-    setValue('deadline', date || null);
+  const handleSelectDate = (date?: Date) => {
+    if (date) {
+      setDeadlineDate(date);
+    }
   };
-
-  // Müşahidə edilən deadline dəyəri
-  const deadline = watch('deadline');
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>{category ? "Kateqoriya Yenilə" : "Kateqoriya Yarat"}</DialogTitle>
+          <DialogTitle>{t('editCategory')}</DialogTitle>
           <DialogDescription>
-            {category ? "Kateqoriya məlumatlarını yeniləyin." : "Yeni kateqoriya əlavə edin."}
+            {t('editCategoryDesc')}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Ad</Label>
-            <Input id="name" placeholder="Kateqoriya adı" {...register("name", { required: true })} />
-            {errors.name && <p className="text-sm text-red-500">Ad tələb olunur</p>}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description">Açıqlama</Label>
-            <Textarea id="description" placeholder="Kateqoriya açıklaması" {...register("description")} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="assignment">Təyinat</Label>
-            <Select defaultValue={category?.assignment || 'all'} onValueChange={(val) => setValue("assignment", val as 'sectors' | 'all')}>
-              <SelectTrigger id="assignment">
-                <SelectValue placeholder="Təyinat seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sectors">Sektorlar</SelectItem>
-                <SelectItem value="all">Hamısı</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="deadline">Son Tarix</Label>
-            <DatePicker
-              selected={deadline}
-              onSelect={handleDateSelect}
+        <div className="grid gap-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-right">
+              {t('name')}
+            </Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('categoryNamePlaceholder') || "Kateqoriya adı"}
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="status">Status</Label>
-            <Select defaultValue={category?.status || 'active'} onValueChange={(val) => setValue("status", val as 'active' | 'inactive' | 'draft')}>
-              <SelectTrigger id="status">
-                <SelectValue placeholder="Status seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Aktiv</SelectItem>
-                <SelectItem value="inactive">Deaktiv</SelectItem>
-                <SelectItem value="draft">Qaralama</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-right">
+              {t('description')}
+            </Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('categoryDescriptionPlaceholder') || "Kateqoriya təsviri"}
+              rows={3}
+            />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="priority">Prioritet</Label>
+          <div className="space-y-2">
+            <Label htmlFor="deadline" className="text-right">
+              {t('deadline')}
+            </Label>
+            <DatePicker
+              date={deadlineDate}
+              onSelect={handleSelectDate}
+            />
+            {deadlineDate && (
+              <div className="text-sm text-muted-foreground">
+                {format(deadlineDate, 'PPP')}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="priority" className="text-right">
+              {t('priority')}
+            </Label>
             <Input
               id="priority"
               type="number"
-              placeholder="Prioritet nömrəsi"
-              {...register("priority", { valueAsNumber: true })}
+              value={priority.toString()}
+              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+              min={0}
             />
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isActionLoading}>
-              {isActionLoading ? "Yüklənir..." : (category ? "Yenilə" : "Yarat")}
-            </Button>
-          </DialogFooter>
-        </form>
+          <div className="space-y-2">
+            <Label className="text-right">{t('assignment')}</Label>
+            <RadioGroup
+              value={assignment}
+              onValueChange={(value) => setAssignment(value as CategoryAssignment)}
+              className="flex gap-4 pt-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="all" />
+                <Label htmlFor="all">{t('allSchools')}</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="sectors" id="sectors" />
+                <Label htmlFor="sectors">{t('sectorsOnly')}</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-right">{t('status')}</Label>
+            <RadioGroup
+              value={status}
+              onValueChange={(value) => setStatus(value as CategoryStatus)}
+              className="flex flex-wrap gap-4 pt-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="active" id="active" />
+                <Label htmlFor="active">{t('active')}</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="inactive" id="inactive" />
+                <Label htmlFor="inactive">{t('inactive')}</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="draft" id="draft" />
+                <Label htmlFor="draft">{t('draft')}</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button onClick={handleSave} disabled={isActionLoading}>
+            {isActionLoading ? t('saving') : t('save')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}

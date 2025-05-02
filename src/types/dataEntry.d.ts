@@ -36,15 +36,8 @@ export interface EntryValue {
   entryId?: string;
 }
 
-export interface DataEntryForm {
+export interface DataEntryFormData {
   categoryId: string;
   schoolId: string;
-  entries: {
-    name?: string;
-    columnId: string;
-    value: string;
-    isValid?: boolean;
-    status?: DataEntryStatus;
-    entryId?: string;
-  }[];
+  entries: EntryValue[];
 }

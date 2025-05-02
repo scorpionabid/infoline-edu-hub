@@ -1,4 +1,6 @@
 
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+
 export interface Region {
   id: string;
   name: string;
@@ -43,4 +45,23 @@ export interface School {
   completion_rate?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name?: string;
+  role?: UserRole;
+  region_id?: string;
+  region_name?: string;
+  sector_id?: string;
+  sector_name?: string;
+  school_id?: string;
+  school_name?: string;
+  language?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  phone?: string;
+  position?: string;
 }

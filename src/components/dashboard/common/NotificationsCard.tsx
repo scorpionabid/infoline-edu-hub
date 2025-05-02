@@ -1,72 +1,80 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { NotificationsCardProps, DashboardNotification } from '@/types/dashboard';
-import { Bell, Info, AlertTriangle, CheckCircle } from 'lucide-react';
+import { DashboardNotification, NotificationsCardProps } from '@/types/dashboard';
+import { Info, AlertTriangle, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { useLanguage } from '@/context/LanguageContext';
 
-export const NotificationsCard: React.FC<NotificationsCardProps> = ({ title, notifications }) => {
-  // Bildiriş tipinə görə ikonu təyin edirik
-  const getNotificationIcon = (type: string) => {
+export const NotificationsCard: React.FC<NotificationsCardProps> = ({ 
+  title, 
+  notifications, 
+  viewAll
+}) => {
+  const { t } = useLanguage();
+
+  const getNotificationIcon = (type: DashboardNotification['type']) => {
     switch (type) {
       case 'info':
         return <Info className="h-4 w-4 text-blue-500" />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'error':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'success':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />;
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center">
-          <Bell className="mr-2 h-4 w-4" />
-          {title}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {viewAll && (
+          <Button variant="ghost" size="sm" className="text-xs" onClick={viewAll}>
+            {t('viewAll')}
+            <ChevronRight className="ml-1 h-3 w-3" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
-        {notifications.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Bell className="mx-auto h-8 w-8 opacity-40 mb-2" />
-            <p>Yeni bildiriş yoxdur</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-[240px]">
-            <div className="space-y-4">
-              {notifications.map((notification: DashboardNotification) => (
+        <ScrollArea className="h-60 pr-4">
+          {notifications.length > 0 ? (
+            <div className="space-y-3">
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 rounded-md border ${
-                    notification.isRead || notification.read ? 'bg-background' : 'bg-muted/30'
-                  }`}
+                  className={cn(
+                    "p-3 rounded-lg border",
+                    notification.isRead ? "bg-background" : "bg-muted/40"
+                  )}
                 >
-                  <div className="flex items-start">
-                    <div className="mt-0.5 mr-2">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{notification.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {notification.message}
-                      </p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-muted-foreground">
-                          {notification.date || (notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : '')}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    {getNotificationIcon(notification.type)}
+                    <div className="font-medium text-sm">{notification.title}</div>
+                  </div>
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    {notification.message}
+                  </p>
+                  <div className="text-[10px] text-muted-foreground mt-2">
+                    {notification.timestamp 
+                      ? formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })
+                      : notification.date}
                   </div>
                 </div>
               ))}
             </div>
-          </ScrollArea>
-        )}
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-sm text-muted-foreground">{t('noNotificationsYet')}</p>
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );

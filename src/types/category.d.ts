@@ -1,16 +1,23 @@
 
 export type CategoryStatus = 'active' | 'inactive' | 'draft';
+export type CategoryAssignment = 'all' | 'sectors';
 
 export interface Category {
   id: string;
   name: string;
   description?: string;
-  assignment?: 'sectors' | 'all';
+  assignment?: CategoryAssignment;
+  status?: CategoryStatus;
   deadline?: string | Date;
-  status: CategoryStatus;
+  created_at?: string | Date;
+  updated_at?: string;
   priority?: number;
-  created_at: string;
-  updated_at: string;
   archived?: boolean;
   column_count?: number;
+}
+
+export interface CategoryFilter {
+  status: 'all' | CategoryStatus;
+  assignment: 'all' | CategoryAssignment;
+  deadline: 'all' | 'past' | 'upcoming' | 'none';
 }

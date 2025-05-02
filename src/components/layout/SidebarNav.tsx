@@ -27,27 +27,27 @@ import {
 interface SidebarNavProps {
   className?: string;
   isCollapsed?: boolean;
+  isSidebarOpen?: boolean;
+  onItemClick?: () => void;
 }
 
-interface NavItem {
-  href: string;
-  icon: React.ReactElement;
-  label: string;
-  show: boolean;
-}
-
-export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) {
+export function SidebarNav({ className, isCollapsed = false, isSidebarOpen, onItemClick }: SidebarNavProps) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const { hasSuperAdminAccess, hasRegionAdminAccess, hasSectorAdminAccess, hasSchoolAdminAccess } = usePermissions();
+  const { user, logout } = useAuth();
+  const { userRole } = usePermissions();
+  
+  const isSuperAdmin = userRole === 'superadmin';
+  const isRegionAdmin = userRole === 'regionadmin';
+  const isSectorAdmin = userRole === 'sectoradmin';
+  const isSchoolAdmin = userRole === 'schooladmin';
 
   const isActive = (href: string) => {
     return location.pathname === href || (href !== '/' && location.pathname.startsWith(href));
   };
 
-  const renderNavItem = (item: NavItem) => {
+  const renderNavItem = (item: { href: string; icon: React.ReactElement; label: string; show: boolean }) => {
     if (!item.show) {
       return null;
     }
@@ -64,6 +64,7 @@ export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) 
           isCollapsed ? 'justify-center' : 'justify-start',
           'h-10'
         )}
+        onClick={onItemClick}
       >
         <div className="flex items-center">
           {React.cloneElement(item.icon, {
@@ -75,7 +76,7 @@ export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) 
     );
   };
 
-  const navItems: NavItem[] = [
+  const navItems = [
     {
       href: '/dashboard',
       icon: <Home />,
@@ -86,55 +87,55 @@ export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) 
       href: '/forms',
       icon: <ClipboardList />,
       label: t('forms'),
-      show: hasSchoolAdminAccess || hasSectorAdminAccess,
+      show: isSchoolAdmin || isSectorAdmin,
     },
     {
       href: '/approvals',
       icon: <CheckCheck />,
       label: t('approvals'),
-      show: hasSectorAdminAccess || hasRegionAdminAccess,
+      show: isSectorAdmin || isRegionAdmin,
     },
     {
       href: '/regions',
       icon: <Building />,
       label: t('regions'),
-      show: hasSuperAdminAccess,
+      show: isSuperAdmin,
     },
     {
       href: '/sectors',
       icon: <GraduationCap />,
       label: t('sectors'),
-      show: hasSuperAdminAccess || hasRegionAdminAccess,
+      show: isSuperAdmin || isRegionAdmin,
     },
     {
       href: '/schools',
       icon: <BookOpen />,
       label: t('schools'),
-      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+      show: isSuperAdmin || isRegionAdmin || isSectorAdmin,
     },
     {
       href: '/categories',
       icon: <ListChecks />,
       label: t('categories'),
-      show: hasSuperAdminAccess || hasRegionAdminAccess,
+      show: isSuperAdmin || isRegionAdmin,
     },
     {
       href: '/reports',
       icon: <BarChart3 />,
       label: t('reports'),
-      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+      show: isSuperAdmin || isRegionAdmin || isSectorAdmin,
     },
     {
       href: '/statistics',
       icon: <BarChart2 />,
       label: t('statistics'),
-      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+      show: isSuperAdmin || isRegionAdmin || isSectorAdmin,
     },
     {
       href: '/users',
       icon: <Users />,
       label: t('users'),
-      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+      show: isSuperAdmin || isRegionAdmin || isSectorAdmin,
     },
     {
       href: '/settings',
@@ -145,7 +146,7 @@ export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) 
   ];
 
   const handleLogout = () => {
-    signOut();
+    logout?.();
     navigate('/login');
   };
 
@@ -172,6 +173,7 @@ export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) 
               isCollapsed ? 'justify-center' : 'justify-start',
               'h-10'
             )}
+            onClick={onItemClick}
           >
             <div className="flex items-center">
               <User className={cn('h-4 w-4', isCollapsed ? '' : 'mr-2')} />
@@ -196,3 +198,6 @@ export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) 
     </div>
   );
 }
+
+// Default eksportu da əlavə edək
+export default SidebarNav;

@@ -1,177 +1,195 @@
-import { useAuth } from '@/context/auth/useAuth';
+
 import { useMemo } from 'react';
+import { useAuth } from '@/context/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { PermissionCheckResult, PermissionLevel, UsePermissionsResult } from './permissionTypes';
 import { UserRole } from '@/types/supabase';
-import { getCache, setCache } from '@/utils/cacheUtils';
 
-interface UsePermissionsReturn {
-  userRole: UserRole;
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
-  isRegionAdmin: boolean;
-  isSectorAdmin: boolean;
-  isSchoolAdmin: boolean;
-  regionId: string | null;
-  sectorId: string | null;
-  schoolId: string | null;
-  currentUser: any;
-  canRegionAdminManageCategoriesColumns: boolean;
-  canViewSectorCategories: boolean;
-  canViewSchoolCategories: boolean;
-  regionName: string | null;
-  sectorName: string | null;
-  schoolName: string | null;
-  canAccessRegion: (regionId: string) => boolean;
-  canAccessSector: (sectorId: string) => boolean;
-  canAccessSchool: (schoolId: string) => boolean;
-  canAccessCategory: (categoryId: string, assignment: 'all' | 'sectors' | 'schools') => boolean;
-  canManageUsers: boolean;
-  canManageData: boolean;
-  canApproveData: boolean;
-}
-
-export const usePermissions = (): UsePermissionsReturn => {
+export const usePermissions = (): UsePermissionsResult => {
   const { user } = useAuth();
+
+  // Əsas istifadəçi məlumatları
+  const userId = useMemo(() => user?.id, [user]);
+  const userRole = useMemo(() => user?.role as UserRole | undefined, [user]);
+  const regionId = useMemo(() => user?.region_id, [user]);
+  const sectorId = useMemo(() => user?.sector_id, [user]);
+  const schoolId = useMemo(() => user?.school_id, [user]);
+
+  // Rol yoxlamaları
+  const isSuperAdmin = useMemo(() => userRole === 'superadmin', [userRole]);
+  const isRegionAdmin = useMemo(() => userRole === 'regionadmin', [userRole]);
+  const isSectorAdmin = useMemo(() => userRole === 'sectoradmin', [userRole]);
+  const isSchoolAdmin = useMemo(() => userRole === 'schooladmin', [userRole]);
+
+  // Region əlçatanlığı yoxlama
+  const checkRegionAccess = async (targetRegionId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!user) return false;
+    if (isSuperAdmin) return true;
+    if (isRegionAdmin && regionId === targetRegionId) return true;
+    
+    if (isSectorAdmin) {
+      // Sektor hansı regiona aiddir yoxlayırıq
+      const { data } = await supabase
+        .from('sectors')
+        .select('region_id')
+        .eq('id', sectorId)
+        .single();
+        
+      return data?.region_id === targetRegionId;
+    }
+    
+    if (isSchoolAdmin && level === 'read') {
+      // Məktəb hansı regiona aiddir yoxlayırıq
+      const { data } = await supabase
+        .from('schools')
+        .select('region_id')
+        .eq('id', schoolId)
+        .single();
+        
+      return data?.region_id === targetRegionId;
+    }
+    
+    return false;
+  };
   
-  return useMemo(() => {
-    // İstifadəçi məlumatları yoxdursa, default dəyərlər qaytar
-    if (!user) {
-      console.log("usePermissions: No user data available");
-      return {
-        userRole: 'user' as UserRole,
-        isAdmin: false,
-        isSuperAdmin: false,
-        isRegionAdmin: false,
-        isSectorAdmin: false,
-        isSchoolAdmin: false,
-        regionId: null,
-        sectorId: null,
-        schoolId: null,
-        currentUser: null,
-        canRegionAdminManageCategoriesColumns: false,
-        canViewSectorCategories: false,
-        canViewSchoolCategories: false,
-        regionName: null,
-        sectorName: null,
-        schoolName: null,
-        canAccessRegion: () => false,
-        canAccessSector: () => false,
-        canAccessSchool: () => false,
-        canAccessCategory: () => false,
-        canManageUsers: false,
-        canManageData: false,
-        canApproveData: false
-      };
+  // Sektor əlçatanlığı yoxlama
+  const checkSectorAccess = async (targetSectorId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!user) return false;
+    if (isSuperAdmin) return true;
+    
+    if (isRegionAdmin) {
+      // Sektor regionadminin regionuna aiddirmi?
+      const { data } = await supabase
+        .from('sectors')
+        .select('region_id')
+        .eq('id', targetSectorId)
+        .single();
+        
+      return data?.region_id === regionId;
     }
     
-    // Caching permissions based on user
-    const permissionCacheKey = `permissions_${user.id}`;
-    const cachedPermissions = getCache<any>(permissionCacheKey);
-    
-    // Return cached permissions if available
-    if (cachedPermissions) {
-      // Only log when cached permissions are used, avoid overdoing it
-      return cachedPermissions;
+    if (isSectorAdmin) {
+      return sectorId === targetSectorId;
     }
     
-    // İstifadəçi rolunu təyin et (undefined olsa əvəzinə 'user' istifadə et)
-    const userRole = user.role || 'user' as UserRole;
-    console.log('usePermissions: User role is', userRole);
-    
-    // Xəta yoxlaması: əgər rol düzgün deyilsə, xəbərdarlıq et
-    if (!['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'].includes(userRole)) {
-      console.warn(`Unknown user role: ${userRole}, defaulting to 'user'`);
+    if (isSchoolAdmin && level === 'read') {
+      // Məktəb bu sektora aiddirmi?
+      const { data } = await supabase
+        .from('schools')
+        .select('sector_id')
+        .eq('id', schoolId)
+        .single();
+        
+      return data?.sector_id === targetSectorId;
     }
     
-    // Ümumi səlahiyyətləri təyin et
-    const isAdmin = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'].includes(userRole);
-    const isSuperAdmin = userRole === 'superadmin';
-    const isRegionAdmin = userRole === 'regionadmin';
-    const isSectorAdmin = userRole === 'sectoradmin';
-    const isSchoolAdmin = userRole === 'schooladmin';
+    return false;
+  };
+  
+  // Məktəb əlçatanlığı yoxlama
+  const checkSchoolAccess = async (targetSchoolId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!user) return false;
+    if (isSuperAdmin) return true;
     
-    // Xüsusi səlahiyyətlər
-    const canRegionAdminManageCategoriesColumns = isSuperAdmin || isRegionAdmin;
-    const canViewSectorCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-    const canViewSchoolCategories = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
+    if (isRegionAdmin) {
+      // Məktəb regionadminin regionuna aiddirmi?
+      const { data } = await supabase
+        .from('schools')
+        .select('region_id')
+        .eq('id', targetSchoolId)
+        .single();
+        
+      return data?.region_id === regionId;
+    }
     
-    // Bölgə/sektor/məktəb ID-ləri və adları
-    const regionId = user.region_id || user.regionId || null;
-    const sectorId = user.sector_id || user.sectorId || null;
-    const schoolId = user.school_id || user.schoolId || null;
-    const regionName = null; // TODO: Əgər ad məlumatı lazımdırsa, buradan əldə etmək olar
-    const sectorName = null;
-    const schoolName = null;
+    if (isSectorAdmin) {
+      // Məktəb sektoradminin sektoruna aiddirmi?
+      const { data } = await supabase
+        .from('schools')
+        .select('sector_id')
+        .eq('id', targetSchoolId)
+        .single();
+        
+      return data?.sector_id === sectorId;
+    }
     
-    // Funksional səlahiyyətlər
-    const canAccessRegion = (checkRegionId: string) => {
-      if (isSuperAdmin) return true;
-      if (isRegionAdmin && regionId === checkRegionId) return true;
-      return false;
-    };
+    if (isSchoolAdmin) {
+      return schoolId === targetSchoolId;
+    }
     
-    const canAccessSector = (checkSectorId: string) => {
-      if (isSuperAdmin) return true;
-      if (isRegionAdmin) {
-        // RegionAdmin öz regionuna aid bütün sektorlara çıxış edə bilər
-        // Burada əlavə məntiq istifadə edilə bilər
-        return true; 
-      }
-      if (isSectorAdmin && sectorId === checkSectorId) return true;
-      return false;
-    };
+    return false;
+  };
+  
+  // Kateqoriya əlçatanlığı yoxlama
+  const checkCategoryAccess = async (categoryId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!user) return false;
+    if (isSuperAdmin) return true;
+    if (isRegionAdmin) return true;
     
-    const canAccessSchool = (checkSchoolId: string) => {
-      if (isSuperAdmin || isRegionAdmin) return true;
-      if (isSectorAdmin) {
-        // SectorAdmin öz sektoruna aid bütün məktəblərə çıxış edə bilər
-        // Burada əlavə məntiq istifadə edilə bilər
-        return true;
-      }
-      if (isSchoolAdmin && schoolId === checkSchoolId) return true;
-      return false;
-    };
+    const { data } = await supabase
+      .from('categories')
+      .select('assignment')
+      .eq('id', categoryId)
+      .single();
+      
+    if (data?.assignment === 'all') {
+      return true;
+    }
     
-    const canAccessCategory = (categoryId: string, assignment: 'all' | 'sectors' | 'schools') => {
-      if (assignment === 'all') return true;
-      if (assignment === 'sectors' && (isSuperAdmin || isRegionAdmin || isSectorAdmin)) return true;
-      if (assignment === 'schools' && (isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin)) return true;
-      return false;
-    };
+    if (data?.assignment === 'sectors') {
+      return isSectorAdmin || isRegionAdmin || isSuperAdmin;
+    }
     
-    // Data idarəetmə səlahiyyətləri
-    const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-    const canManageData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
-    const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+    return false;
+  };
+  
+  // Sütun əlçatanlığı yoxlama
+  const checkColumnAccess = async (columnId: string, level: PermissionLevel = 'read'): Promise<boolean> => {
+    if (!user) return false;
     
-    const permissions = {
-      userRole,
-      isAdmin,
-      isSuperAdmin,
-      isRegionAdmin,
-      isSectorAdmin,
-      isSchoolAdmin,
-      regionId,
-      sectorId,
-      schoolId,
-      currentUser: user,
-      canRegionAdminManageCategoriesColumns,
-      canViewSectorCategories,
-      canViewSchoolCategories,
-      regionName,
-      sectorName,
-      schoolName,
-      canAccessRegion,
-      canAccessSector,
-      canAccessSchool,
-      canAccessCategory,
-      canManageUsers,
-      canManageData,
-      canApproveData
-    };
+    const { data } = await supabase
+      .from('columns')
+      .select('category_id')
+      .eq('id', columnId)
+      .single();
+      
+    if (!data) return false;
     
-    // Cache permissions for 5 minutes
-    setCache(permissionCacheKey, permissions, { expiryInMinutes: 5 });
+    return checkCategoryAccess(data.category_id, level);
+  };
+  
+  // Helper funksiyalar
+  const canSectorAdminAccessCategoriesColumns = (): boolean => {
+    return isSectorAdmin;
+  };
+  
+  const canRegionAdminManageCategoriesColumns = (): boolean => {
+    return isRegionAdmin;
+  };
+
+  return {
+    // Rol yoxlamaları
+    isSuperAdmin,
+    isRegionAdmin,
+    isSectorAdmin,
+    isSchoolAdmin,
     
-    return permissions;
-  }, [user]);
+    // Əsas məlumatlar
+    userRole,
+    userId,
+    regionId,
+    sectorId,
+    schoolId,
+    
+    // Əlçatanlıq yoxlamaları
+    checkRegionAccess,
+    checkSectorAccess,
+    checkSchoolAccess,
+    checkCategoryAccess,
+    checkColumnAccess,
+    
+    // Helper funksiyalar
+    canSectorAdminAccessCategoriesColumns,
+    canRegionAdminManageCategoriesColumns
+  };
 };

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { Loader2, Menu, X, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import SidebarNav from './SidebarNav';
+import { SidebarNav } from './SidebarNav'; // Burada named export istifadə edirik
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import Header from './Header';
