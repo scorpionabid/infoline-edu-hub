@@ -2,7 +2,6 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { CategoryEntryData } from '@/types/dataEntry';
 
 interface UseDataUpdatesProps {
   categories: any[];
