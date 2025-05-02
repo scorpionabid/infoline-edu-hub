@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { NotificationsCardProps, Notification } from '@/types/dashboard';
+import { NotificationsCardProps, DashboardNotification } from '@/types/dashboard';
 import { Bell, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export const NotificationsCard: React.FC<NotificationsCardProps> = ({ title, notifications }) => {
@@ -39,11 +39,11 @@ export const NotificationsCard: React.FC<NotificationsCardProps> = ({ title, not
         ) : (
           <ScrollArea className="h-[240px]">
             <div className="space-y-4">
-              {notifications.map((notification: Notification) => (
+              {notifications.map((notification: DashboardNotification) => (
                 <div
                   key={notification.id}
                   className={`p-3 rounded-md border ${
-                    notification.isRead ? 'bg-background' : 'bg-muted/30'
+                    notification.isRead || notification.read ? 'bg-background' : 'bg-muted/30'
                   }`}
                 >
                   <div className="flex items-start">
@@ -57,7 +57,7 @@ export const NotificationsCard: React.FC<NotificationsCardProps> = ({ title, not
                       </p>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-xs text-muted-foreground">
-                          {notification.date}
+                          {notification.date || (notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : '')}
                         </span>
                       </div>
                     </div>

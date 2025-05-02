@@ -34,16 +34,20 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       title: 'Yeni kateqoriya əlavə edildi',
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
       date: new Date().toLocaleDateString(),
+      timestamp: new Date().toISOString(),
       type: 'info' as const,
-      isRead: false
+      isRead: false,
+      read: false
     },
     {
       id: '2',
       title: 'Son müddət xəbərdarlığı',
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
       date: new Date().toLocaleDateString(),
+      timestamp: new Date().toISOString(),
       type: 'warning' as const,
-      isRead: false
+      isRead: false,
+      read: false
     }
   ], []);
 
@@ -79,7 +83,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       notifications: mockNotifications,
       // Əlavə məlumatlar (dashboard tipində tələb olunan)
       formsByStatus: {},
-      pendingApprovals: [],
+      regions: [],
+      approvalRate: 0,
       regionCount: dashboardData.regions || 0,
       sectorCount: dashboardData.sectors || 0,
       schoolCount: dashboardData.schools || 0,
@@ -107,7 +112,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         total: dashboardData.schools || 0, 
         active: dashboardData.activeSchools || 0,
         incomplete: dashboardData.incompleteSchools || 0
-      }
+      },
+      // Boş array və obyektlərlə "pendingItems", "categories", "sectors" xüsusiyyətlərini əlavə edək
+      pendingItems: [],
+      categories: [],
+      sectors: []
     };
 
     return <RegionAdminDashboard data={regionAdminData} />;
@@ -122,11 +131,21 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       },
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
+      // schoolStats və schoolsStats hər ikisini əlavə edək
       schoolStats: {
         total: dashboardData.schools || 0,
         active: dashboardData.activeSchools || 0,
         incomplete: dashboardData.incompleteSchools || 0
-      }
+      },
+      schoolsStats: {
+        total: dashboardData.schools || 0,
+        active: dashboardData.activeSchools || 0,
+        incomplete: dashboardData.incompleteSchools || 0
+      },
+      // Boş array və obyektlərlə əlavə xüsusiyyətlər
+      pendingItems: [],
+      schools: [],
+      categories: []
     };
 
     return <SectorAdminDashboard data={sectorAdminData} />;

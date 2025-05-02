@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { FormFields } from './FormFields';
 import { CategoryWithColumns } from '@/types/column';
-import { EntryValue } from '@/types/dataEntry';
+import { EntryValue, DataEntry } from '@/types/dataEntry';
 import { StatusIndicator } from './StatusIndicators';
 import { useCategoryStatus } from '@/hooks/categories/useCategoryStatus';
 
@@ -29,14 +29,18 @@ export function CategoryForm({
   isDisabled = false,
   isLoading = false
 }: CategoryFormProps) {
+  // Mövcud useCategoryStatus hook-nu istifadə edəcək, lakin verilən məlumatları tipə uyğun ötürək
   const { status, completionPercentage, getStatusBadgeColor, getStatusLabel } = useCategoryStatus(category, { 
     entries: values.map(v => ({
+      id: v.entryId || '',
       school_id: '',
       category_id: category.id,
       column_id: v.column_id,
       value: v.value,
-      status: v.status
-    }))
+      status: v.status || 'pending',
+      created_at: new Date(),
+      updated_at: new Date()
+    }) as DataEntry[])
   });
 
   // Hesabla - valideysion xətaları varmı

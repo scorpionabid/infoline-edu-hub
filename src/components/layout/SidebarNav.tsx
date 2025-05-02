@@ -1,202 +1,198 @@
+
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { usePermissions } from '@/hooks/auth/usePermissions';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth';
 import { useLanguage } from '@/context/LanguageContext';
-import { 
-  Home, 
-  FileInput, 
-  PieChart, 
-  Users, 
-  School, 
-  FolderKanban, 
-  Settings, 
-  MapPin, 
-  Building, 
-  Columns 
+import {
+  Home,
+  BarChart3,
+  ListChecks,
+  Building,
+  GraduationCap,
+  BarChart2,
+  Users,
+  Settings,
+  ClipboardList,
+  CheckCheck,
+  User,
+  LogOut,
+  BookOpen,
 } from 'lucide-react';
-import { usePermissions } from '@/hooks/auth/usePermissions';
 
-interface NavItemProps {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick?: () => void;
-  isSidebarOpen?: boolean;
-  children?: { href: string; label: string; isActive: boolean }[];
+interface SidebarNavProps {
+  className?: string;
+  isCollapsed?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ 
-  href, 
-  icon, 
-  label, 
-  isActive, 
-  onClick, 
-  isSidebarOpen = true,
-  children
-}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+interface NavItem {
+  href: string;
+  icon: React.ReactElement;
+  label: string;
+  show: boolean;
+}
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (children && children.length > 0) {
-      e.preventDefault();
-      setIsOpen(!isOpen);
+export function SidebarNav({ className, isCollapsed = false }: SidebarNavProps) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const { hasSuperAdminAccess, hasRegionAdminAccess, hasSectorAdminAccess, hasSchoolAdminAccess } = usePermissions();
+
+  const isActive = (href: string) => {
+    return location.pathname === href || (href !== '/' && location.pathname.startsWith(href));
+  };
+
+  const renderNavItem = (item: NavItem) => {
+    if (!item.show) {
+      return null;
     }
-    if (onClick) onClick();
+
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: isCollapsed ? 'icon' : 'default' }),
+          isActive(item.href)
+            ? 'bg-muted hover:bg-muted'
+            : 'hover:bg-transparent hover:underline',
+          isCollapsed ? 'justify-center' : 'justify-start',
+          'h-10'
+        )}
+      >
+        <div className="flex items-center">
+          {React.cloneElement(item.icon, {
+            className: cn('h-4 w-4', isCollapsed ? '' : 'mr-2'),
+          })}
+          {!isCollapsed && <span>{item.label}</span>}
+        </div>
+      </Link>
+    );
+  };
+
+  const navItems: NavItem[] = [
+    {
+      href: '/dashboard',
+      icon: <Home />,
+      label: t('dashboard'),
+      show: true,
+    },
+    {
+      href: '/forms',
+      icon: <ClipboardList />,
+      label: t('forms'),
+      show: hasSchoolAdminAccess || hasSectorAdminAccess,
+    },
+    {
+      href: '/approvals',
+      icon: <CheckCheck />,
+      label: t('approvals'),
+      show: hasSectorAdminAccess || hasRegionAdminAccess,
+    },
+    {
+      href: '/regions',
+      icon: <Building />,
+      label: t('regions'),
+      show: hasSuperAdminAccess,
+    },
+    {
+      href: '/sectors',
+      icon: <GraduationCap />,
+      label: t('sectors'),
+      show: hasSuperAdminAccess || hasRegionAdminAccess,
+    },
+    {
+      href: '/schools',
+      icon: <BookOpen />,
+      label: t('schools'),
+      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+    },
+    {
+      href: '/categories',
+      icon: <ListChecks />,
+      label: t('categories'),
+      show: hasSuperAdminAccess || hasRegionAdminAccess,
+    },
+    {
+      href: '/reports',
+      icon: <BarChart3 />,
+      label: t('reports'),
+      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+    },
+    {
+      href: '/statistics',
+      icon: <BarChart2 />,
+      label: t('statistics'),
+      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+    },
+    {
+      href: '/users',
+      icon: <Users />,
+      label: t('users'),
+      show: hasSuperAdminAccess || hasRegionAdminAccess || hasSectorAdminAccess,
+    },
+    {
+      href: '/settings',
+      icon: <Settings />,
+      label: t('settings'),
+      show: true,
+    },
+  ];
+
+  const handleLogout = () => {
+    signOut();
+    navigate('/login');
   };
 
   return (
-    <div className="mb-1">
-      <Link
-        to={children && children.length > 0 ? '#' : href}
+    <div className={cn('flex flex-col', className)}>
+      <ScrollArea
         className={cn(
-          "flex items-center px-3 py-2 rounded-md transition-colors",
-          isActive || (children && children.some(child => child.isActive))
-            ? "bg-primary/10 text-primary font-medium"
-            : "text-muted-foreground hover:bg-muted"
+          'flex-1 overflow-y-auto',
+          isCollapsed ? 'w-[70px]' : 'w-[200px]'
         )}
-        onClick={handleClick}
       >
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center">
-            {icon}
-            {isSidebarOpen && <span className="ml-3">{label}</span>}
-          </div>
-          {isSidebarOpen && children && children.length > 0 && (
-            <span className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m6 9 6 6 6-6"/>
-              </svg>
-            </span>
-          )}
+        <div className="flex flex-col gap-1 py-2">
+          {navItems.filter(item => item.show).map(renderNavItem)}
         </div>
-      </Link>
-
-      {/* Alt menyu */}
-      {isSidebarOpen && (isOpen || (children && children.some(child => child.isActive))) && children && children.length > 0 && (
-        <div className="ml-8 mt-1 space-y-1">
-          {children.map((child, index) => (
-            <Link
-              key={index}
-              to={child.href}
-              className={cn(
-                "block px-3 py-1 rounded-md transition-colors text-sm",
-                child.isActive
-                  ? "bg-primary/5 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {child.label}
-            </Link>
-          ))}
+        <Separator className="my-2" />
+        <div className="flex flex-col gap-1 py-2">
+          <Link
+            to="/profile"
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: isCollapsed ? 'icon' : 'default' }),
+              isActive('/profile')
+                ? 'bg-muted hover:bg-muted'
+                : 'hover:bg-transparent hover:underline',
+              isCollapsed ? 'justify-center' : 'justify-start',
+              'h-10'
+            )}
+          >
+            <div className="flex items-center">
+              <User className={cn('h-4 w-4', isCollapsed ? '' : 'mr-2')} />
+              {!isCollapsed && <span>{t('profile')}</span>}
+            </div>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: isCollapsed ? 'icon' : 'default' }),
+              isCollapsed ? 'justify-center' : 'justify-start',
+              'h-10'
+            )}
+          >
+            <div className="flex items-center">
+              <LogOut className={cn('h-4 w-4', isCollapsed ? '' : 'mr-2')} />
+              {!isCollapsed && <span>{t('logout')}</span>}
+            </div>
+          </button>
         </div>
-      )}
+      </ScrollArea>
     </div>
   );
-};
-
-const SidebarNav: React.FC<{ onItemClick?: () => void, isSidebarOpen?: boolean }> = ({ 
-  onItemClick,
-  isSidebarOpen = true 
-}) => {
-  const { pathname } = useLocation();
-  const { user } = useAuth();
-  const { t } = useLanguage();
-  const { 
-    userRole, 
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    canRegionAdminManageCategoriesColumns,
-    canViewSectorCategories 
-  } = usePermissions();
-  
-  // İcazələri müəyyənləşdiririk
-  const canManageUsers = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageSchools = isSuperAdmin || isRegionAdmin || isSectorAdmin;
-  const canManageCategories = isSuperAdmin || isRegionAdmin; 
-  const canManageColumns = isSuperAdmin || isRegionAdmin;
-  const canManageRegions = isSuperAdmin;
-  const canManageSectors = isSuperAdmin || isRegionAdmin;
-  const canAccessDataEntry = isSuperAdmin || isSectorAdmin || isSchoolAdmin;
-  
-  const navItems = [
-    {
-      href: "/dashboard",
-      icon: <Home size={20} />,
-      label: t('dashboard'),
-      show: true
-    },
-    {
-      href: "/regions",
-      icon: <MapPin size={20} />,
-      label: t('regions'),
-      show: canManageRegions
-    },
-    {
-      href: "/sectors",
-      icon: <Building size={20} />,
-      label: t('sectors'),
-      show: canManageSectors
-    },
-    {
-      href: "/schools",
-      icon: <School size={20} />,
-      label: t('schools'),
-      show: canManageSchools
-    },
-    {
-      href: "/categories",
-      icon: <FolderKanban size={20} />,
-      label: t('categories'),
-      show: canManageCategories
-    },
-    {
-      href: "/columns",
-      icon: <Columns size={20} />,
-      label: t('columns'),
-      show: canManageColumns
-    },
-    {
-      href: "/users",
-      icon: <Users size={20} />,
-      label: t('users'),
-      show: canManageUsers
-    },
-    {
-      href: "/data-entry",
-      icon: <FileInput size={20} />,
-      label: t('dataEntry'),
-      show: canAccessDataEntry
-    },
-    {
-      href: "/reports",
-      icon: <PieChart size={20} />,
-      label: t('reports'),
-      show: true
-    }
-  ];
-
-  return (
-    <div className="flex-1 px-3 py-2 space-y-1">
-      {navItems
-        .filter(item => item.show)
-        .map((item) => (
-          <NavItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            isActive={pathname === item.href}
-            onClick={onItemClick}
-            isSidebarOpen={isSidebarOpen}
-            children={item.children}
-          />
-        ))}
-    </div>
-  );
-};
-
-export default SidebarNav;
+}

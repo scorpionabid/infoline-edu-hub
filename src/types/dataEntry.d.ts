@@ -27,7 +27,24 @@ export interface DataEntry {
 
 export interface EntryValue {
   column_id: string;
+  columnId?: string; // alternativ ad
   value: string;
   name?: string;
   isValid?: boolean;
+  error?: string;
+  status?: DataEntryStatus;
+  entryId?: string;
+}
+
+export interface DataEntryForm {
+  categoryId: string;
+  schoolId: string;
+  entries: {
+    name?: string;
+    columnId: string;
+    value: string;
+    isValid?: boolean;
+    status?: DataEntryStatus;
+    entryId?: string;
+  }[];
 }

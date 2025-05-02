@@ -18,7 +18,7 @@ const ReportList: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<ReportType | 'all'>('all');
-  const [previewReport, setPreviewReport] = useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   
   // Filtrlənmiş hesabatlar
@@ -31,11 +31,11 @@ const ReportList: React.FC = () => {
   });
   
   const handlePreview = (report: Report) => {
-    setPreviewReport(report);
+    setSelectedReport(report);
   };
   
   const closePreview = () => {
-    setPreviewReport(null);
+    setSelectedReport(null);
   };
   
   const handleDownload = async (report: Report) => {
@@ -95,11 +95,13 @@ const ReportList: React.FC = () => {
       )}
       
       {/* Hesabat önizləmə dialoqu */}
-      {previewReport && (
+      {selectedReport && (
         <ReportPreviewDialog
-          report={previewReport}
-          open={!!previewReport}
+          isOpen={!!selectedReport}
           onClose={closePreview}
+          reportId={selectedReport.id}
+          reportTitle={selectedReport.title}
+          reportDescription={selectedReport.description || ''}
         />
       )}
       

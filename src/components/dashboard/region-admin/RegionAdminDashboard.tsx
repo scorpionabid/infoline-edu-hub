@@ -12,6 +12,10 @@ interface RegionAdminDashboardProps {
 }
 
 export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data }) => {
+  // Boş obyektlər ilə inicializə edək
+  const sectorStats = data.sectorStats || { total: 0, active: 0 };
+  const schoolStats = data.schoolStats || { total: 0, active: 0, incomplete: 0 };
+
   return (
     <div className="space-y-6">
       <Grid columns={3} className="gap-6">
@@ -20,7 +24,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           value={data.stats.sectors}
           icon={<Building className="h-4 w-4" />}
           description="Region daxilində sektor sayı"
-          trend={`${data.sectorStats.active} aktiv sektor`}
+          trend={`${sectorStats.active} aktiv sektor`}
           trendDirection="neutral"
         />
         <StatsCard
@@ -28,7 +32,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           value={data.stats.schools}
           icon={<School className="h-4 w-4" />}
           description="Region daxilində məktəb sayı"
-          trend={`${data.schoolStats.active} aktiv məktəb`}
+          trend={`${schoolStats.active} aktiv məktəb`}
           trendDirection="neutral"
         />
         <StatsCard
@@ -43,8 +47,8 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
 
       <Grid columns={2} className="gap-6">
         <CompletionRateCard
-          completionRate={data.completionRate}
           title="Region Tamamlama Faizi"
+          completionRate={data.completionRate}
         />
         <NotificationsCard
           title="Bildirişlər"

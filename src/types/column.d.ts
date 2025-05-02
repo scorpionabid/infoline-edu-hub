@@ -15,6 +15,13 @@ export interface ColumnValidation {
   inclusion?: string[];
 }
 
+export interface ColumnValidationError {
+  column_id: string;
+  message: string;
+  type?: 'error' | 'warning' | 'info';
+  id?: string;
+}
+
 export interface ColumnOption {
   label: string;
   value: string;
@@ -44,10 +51,6 @@ export interface CategoryWithColumns {
   description?: string;
   status: string;
   columns: Column[];
+  deadline?: string | Date;
   [key: string]: any;
-}
-
-export interface ColumnValidationError {
-  column_id: string;
-  message: string;
 }

@@ -10,12 +10,12 @@ interface AdminDialogHeaderProps {
 
 export const AdminDialogHeader: React.FC<AdminDialogHeaderProps> = ({ region }) => {
   const { t } = useLanguage();
-  
+
   return (
     <DialogHeader>
       <DialogTitle>{t('assignRegionAdmin') || 'Region admini təyin et'}</DialogTitle>
       <DialogDescription>
-        {t('existingUserAdminHelp') || `"${region.name}" regionu üçün seçilmiş istifadəçi admin səlahiyyətlərinə malik olacaq.`}
+        {t("assignRegionAdminDesc") || `"${region.name}" regionu üçün admin təyin edin`}
       </DialogDescription>
     </DialogHeader>
   );

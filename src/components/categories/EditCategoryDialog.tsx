@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, se
     handleSubmit,
     setValue,
     formState: { errors },
+    watch
   } = useForm<Inputs>();
 
   React.useEffect(() => {
@@ -56,9 +57,17 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, se
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const categoryData = {
-      ...data,
-      id: category?.id,
+      ...(category ? { id: category.id } : {}), // Əgər kateqoriya varsa ID-ni əlavə et
+      name: data.name,
+      description: data.description,
+      assignment: data.assignment,
       deadline: data.deadline ? data.deadline.toISOString() : null,
+      status: data.status,
+      priority: data.priority,
+      // Digər məcburi sahələri əlavə et
+      created_at: category?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      archived: category?.archived || false
     };
 
     const success = await handleAddCategory(categoryData);
@@ -66,6 +75,14 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, se
       setOpen(false);
     }
   };
+
+  // Date seçimi zamanı formun dəyəri yenilənir
+  const handleDateSelect = (date: Date | undefined) => {
+    setValue('deadline', date || null);
+  };
+
+  // Müşahidə edilən deadline dəyəri
+  const deadline = watch('deadline');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -88,7 +105,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, se
           </div>
           <div className="grid gap-2">
             <Label htmlFor="assignment">Təyinat</Label>
-            <Select {...register("assignment")} defaultValue={category?.assignment || 'all'}>
+            <Select defaultValue={category?.assignment || 'all'} onValueChange={(val) => setValue("assignment", val as 'sectors' | 'all')}>
               <SelectTrigger id="assignment">
                 <SelectValue placeholder="Təyinat seçin" />
               </SelectTrigger>
@@ -101,14 +118,13 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, se
           <div className="grid gap-2">
             <Label htmlFor="deadline">Son Tarix</Label>
             <DatePicker
-              id="deadline"
-              onSelect={(date) => setValue("deadline", date)}
-              defaultDate={category?.deadline ? new Date(category.deadline) : undefined}
+              selected={deadline}
+              onSelect={handleDateSelect}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
-            <Select {...register("status")} defaultValue={category?.status || 'active'}>
+            <Select defaultValue={category?.status || 'active'} onValueChange={(val) => setValue("status", val as 'active' | 'inactive' | 'draft')}>
               <SelectTrigger id="status">
                 <SelectValue placeholder="Status seçin" />
               </SelectTrigger>
@@ -128,12 +144,12 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({ open, se
               {...register("priority", { valueAsNumber: true })}
             />
           </div>
+          <DialogFooter>
+            <Button type="submit" disabled={isActionLoading}>
+              {isActionLoading ? "Yüklənir..." : (category ? "Yenilə" : "Yarat")}
+            </Button>
+          </DialogFooter>
         </form>
-        <DialogFooter>
-          <Button type="submit" disabled={isActionLoading}>
-            {isActionLoading ? "Yüklənir..." : (category ? "Yenilə" : "Yarat")}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

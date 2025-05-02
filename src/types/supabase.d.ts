@@ -1,27 +1,13 @@
 
-export interface Profile {
-  id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  position?: string;
-  avatar?: string;
-  language?: string;
-  status: string;
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Region {
   id: string;
   name: string;
   description?: string;
-  status: string;
   admin_id?: string;
   admin_email?: string;
-  created_at: string;
-  updated_at: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Sector {
@@ -31,10 +17,10 @@ export interface Sector {
   region_id: string;
   admin_id?: string;
   admin_email?: string;
-  status: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
   completion_rate?: number;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface School {
@@ -42,46 +28,19 @@ export interface School {
   name: string;
   region_id: string;
   sector_id: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  principal_name?: string;
   admin_id?: string;
   admin_email?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
+  status?: string;
   type?: string;
   language?: string;
+  student_count?: number;
+  teacher_count?: number;
   logo?: string;
-  status: string;
   completion_rate?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserRole {
-  id: string;
-  user_id: string;
-  role: 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DataEntry {
-  id: string;
-  school_id: string;
-  category_id: string;
-  column_id: string;
-  value: string;
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
-  created_by?: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }

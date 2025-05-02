@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User } from '@/types/user';
+import { Report } from '@/types/report';
 import ReportChart from './ReportChart';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUsers } from '@/hooks/users/useUsers';
@@ -17,6 +19,21 @@ interface ReportPreviewDialogProps {
   reportTitle: string;
   reportDescription: string;
 }
+
+interface ReportTableProps {
+  reportId: string;
+}
+
+// Əvəzedici ReportTable komponenti
+const ReportTable: React.FC<ReportTableProps> = ({ reportId }) => {
+  return (
+    <div className="border rounded-md p-4">
+      <p className="text-center text-muted-foreground">
+        Hesabat ID: {reportId} üçün cədvəl məlumatları
+      </p>
+    </div>
+  );
+};
 
 const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
   isOpen,
@@ -37,6 +54,14 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
       usersHook.fetchUsers();
     }
   }, [isOpen, usersHook]);
+
+  // Hesabat obyekti yaradaq
+  const report: Report = {
+    id: reportId,
+    title: reportTitle,
+    description: reportDescription,
+    type: 'basic'
+  };
 
   const handleShare = () => {
     if (shareEmail && shareEmail.includes('@')) {
@@ -78,7 +103,7 @@ const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
           </TabsList>
           
           <TabsContent value="chart" className="py-4">
-            <ReportChart reportId={reportId} />
+            <ReportChart report={report} />
           </TabsContent>
           
           <TabsContent value="table" className="py-4">
