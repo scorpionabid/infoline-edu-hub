@@ -1,5 +1,4 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SuperAdminDashboard } from './SuperAdminDashboard';
 import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
@@ -8,6 +7,8 @@ import { SchoolAdminDashboard } from './SchoolAdminDashboard';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { fetchDashboardData } from '@/api/dashboardApi';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+
 import { 
   SuperAdminDashboardData,
   RegionAdminDashboardData,
@@ -24,6 +25,17 @@ export interface DashboardContentProps {
 
 export const DashboardContent: React.FC<DashboardContentProps> = () => {
   const { userRole, regionId, sectorId, schoolId } = usePermissions();
+  const navigate = useNavigate();
+  
+  // Məlumat daxil etmə səhifəsinə keçid funksiyası
+  const navigateToDataEntry = useCallback(() => {
+    navigate('/data-entry');
+  }, [navigate]);
+  
+  // Form elementinə klik funksiyası
+  const handleFormClick = useCallback((formId: string) => {
+    navigate(`/data-entry?formId=${formId}`);
+  }, [navigate]);
   
   // Rol əsasında dashboard datasını əldə edirik
   const { 
@@ -193,6 +205,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         isLoading={isLoading}
         error={error}
         onRefresh={refetch}
+        navigateToDataEntry={navigateToDataEntry}
+        handleFormClick={handleFormClick}
       />
     );
   }

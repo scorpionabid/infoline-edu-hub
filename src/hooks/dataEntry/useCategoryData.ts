@@ -54,8 +54,8 @@ export const useCategoryData = (schoolId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
-  // Columns fetch etmə
-  const columnsQuery = useColumnsQuery();
+  // Columns fetch etmə - birbaşa useColumnsQuery hook-undan istifadə edirik
+  const { data: columnsData, isLoading: columnsLoading, error: columnsQueryError } = useColumnsQuery();
   
   // Kateqoriyaları və onların sütunlarını yükləyən funksiya
   const fetchCategoriesAndColumns = useCallback(async () => {
@@ -77,11 +77,16 @@ export const useCategoryData = (schoolId?: string) => {
         return;
       }
       
-      // Hamı üçün əlçatan olan sütunları əldə et
-      const { data: columnsData, error: columnsError } = 
-        await columnsQuery.fetchAllColumns();
+      // Əgər columnsQuery xətası varsa
+      if (columnsQueryError) {
+        throw new Error(`Sütunları yükləmək alınmadı: ${columnsQueryError instanceof Error ? columnsQueryError.message : 'Naməlum xəta'}`);
+      }
       
-      if (columnsError) throw columnsError;
+      // Əgər columnsData hələ yüklənməyibsə, gözləyirik
+      if (columnsLoading || !columnsData) {
+        console.log('Sütunlar yüklənir, gözləyirik...');
+        return; // UseEffect columnsData dəyişdikdə yenidən işə düşəcək
+      }
       
       let entriesData: DataEntry[] = [];
       
@@ -133,9 +138,9 @@ export const useCategoryData = (schoolId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [schoolId, columnsQuery]);
+  }, [schoolId, columnsData, columnsLoading, columnsQueryError]);
   
-  // Mount olduqda və ya schoolId dəyişdikdə məlumatları yüklə
+  // Mount olduqda və ya schoolId, columnsData, columnsLoading dəyişdikdə məlumatları yüklə
   useEffect(() => {
     fetchCategoriesAndColumns();
   }, [fetchCategoriesAndColumns]);
@@ -145,5 +150,5 @@ export const useCategoryData = (schoolId?: string) => {
     return fetchCategoriesAndColumns();
   }, [fetchCategoriesAndColumns]);
   
-  return { categories, loading, error, refreshCategories };
+  return { categories, loading: loading || columnsLoading, error, refreshCategories };
 };

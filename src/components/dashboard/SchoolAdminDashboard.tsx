@@ -64,6 +64,18 @@ export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">{t('dashboard')}</h2>
+        {navigateToDataEntry && (
+          <button
+            onClick={navigateToDataEntry}
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+          >
+            {t('dataEntry')}
+          </button>
+        )}
+      </div>
+      
       <Grid columns={4} className="gap-6">
         <StatsCard
           title={t('approved')}
