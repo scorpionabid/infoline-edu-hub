@@ -1,189 +1,131 @@
 
 import React from 'react';
+import { FormControl } from '@/components/ui/form';
 import { ColumnType, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Control } from 'react-hook-form';
-import { Icons } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
-import { 
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { cn } from '@/utils/cn';
+import { Label } from '@/components/ui/label';
+import {
+  Text,
+  TextAlignLeft,
+  Hash,
+  Calendar,
+  ListBox,
+  Check,
+  Circle,
+  File,
+  Image,
+  Mail,
+  Link,
+  Phone,
+  Sliders,
+  Palette,
+  Lock,
+  Clock,
+  CalendarClock,
+  FormattingTwo
+} from 'lucide-react';
 
 interface ColumnTypeSelectorProps {
-  // Yeni interfeys
-  selectedType?: ColumnType;
-  onTypeChange?: (type: ColumnType) => void;
+  value: string;
+  onChange: (value: string) => void;
   disabled?: boolean;
-  
-  // Köhnə interfeys (geriyə uyğunluq üçün)
-  control?: Control<any>;
-  onChange?: (type: ColumnType) => void;
-  value?: ColumnType;
 }
 
-const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({
-  // Yeni interfeys
-  selectedType,
-  onTypeChange,
-  disabled = false,
-  
-  // Köhnə interfeys
-  control,
-  onChange,
-  value
-}) => {
+const iconComponents: Record<string, React.FC<{ className?: string }>> = {
+  text: Text,
+  textAlignLeft: TextAlignLeft,
+  hash: Hash,
+  calendar: Calendar,
+  listBox: ListBox,
+  check: Check,
+  circle: Circle,
+  file: File,
+  image: Image,
+  mail: Mail,
+  link: Link,
+  phone: Phone,
+  sliders: Sliders,
+  palette: Palette,
+  lock: Lock,
+  clock: Clock,
+  calendarClock: CalendarClock,
+  formattingTwo: FormattingTwo
+};
+
+const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange, disabled = false }) => {
   const { t } = useLanguage();
-  
-  // Aktual dəyəri müəyyən edirik
-  const actualType = selectedType || value || 'text';
-  
-  // Dəyişiklik funksiyasını müəyyən edirik
-  const handleTypeChange = (newType: ColumnType) => {
-    if (onTypeChange) {
-      onTypeChange(newType);
-    }
-    if (onChange) {
-      onChange(newType);
-    }
-  };
-  
-  // Funksional sütun tipləri qrupları
-  const columnTypeGroups = [
-    {
-      title: t('basicColumnTypes'),
-      types: ['text', 'textarea', 'number', 'select', 'date', 'checkbox', 'radio'] as ColumnType[]
-    },
-    {
-      title: t('advancedColumnTypes'),
-      types: ['email', 'url', 'phone', 'file', 'image'] as ColumnType[]
-    },
-    {
-      title: t('specializedColumnTypes'),
-      types: ['range', 'color', 'password', 'time', 'datetime', 'richtext'] as ColumnType[]
-    }
-  ];
-  
-  // Icon komponentini təhlükəsiz şəkildə əldə etmək üçün funksiya
-  const renderIcon = (iconName: string | undefined) => {
-    if (!iconName || typeof iconName !== 'string') {
-      return <Icons.circle className="h-4 w-4" />;
-    }
-    
-    const IconComponent = Icons[iconName as keyof typeof Icons];
-    if (!IconComponent) {
-      console.warn(`Icon not found: ${iconName}`);
-      return <Icons.circle className="h-4 w-4" />;
-    }
-    
-    return <IconComponent className="h-4 w-4" />;
-  };
-  
-  // Seçilmiş tipin tərifini alırıq
-  const selectedTypeDefinition = COLUMN_TYPE_DEFINITIONS[actualType as keyof typeof COLUMN_TYPE_DEFINITIONS];
-  
-  // Əgər control prop-u varsa, FormField istifadə edirik
-  if (control) {
-    return (
-      <FormField
-        control={control}
-        name="type"
-        render={({ field }) => (
-          <FormItem className="space-y-1">
-            <FormLabel>{t('columnType')}</FormLabel>
-            <Select
-              onValueChange={(value) => {
-                field.onChange(value);
-                handleTypeChange(value as ColumnType);
-              }}
-              defaultValue={field.value}
-              value={field.value}
-              disabled={disabled}
-            >
-              <FormControl>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('selectColumnType')} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {columnTypeGroups.map((group) => (
-                  <SelectGroup key={group.title}>
-                    <SelectLabel>{group.title}</SelectLabel>
-                    {group.types.map((type) => {
-                      const typeDefinition = COLUMN_TYPE_DEFINITIONS[type];
-                      return (
-                        <SelectItem key={type} value={type}>
-                          <div className="flex items-center gap-2">
-                            {typeDefinition && typeDefinition.icon ? 
-                              renderIcon(typeDefinition.icon) : 
-                              <Icons.circle className="h-4 w-4" />}
-                            <span>{typeDefinition && typeDefinition.label ? typeDefinition.label : t(type)}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedTypeDefinition && (
-              <FormDescription>
-                {selectedTypeDefinition.description || t(`${field.value}Description`)}
-              </FormDescription>
-            )}
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    );
-  }
-  
-  // Əgər control prop-u yoxdursa, sadə Select istifadə edirik
+
+  // Bütün mövcud tipləri əldə edirik
+  const columnTypes = Object.entries(COLUMN_TYPE_DEFINITIONS).map(([type, definition]) => ({
+    value: type as ColumnType,
+    label: definition.label,
+    description: definition.description,
+    icon: definition.icon
+  }));
+
+  // Əsas tiplər və əlavə tiplər
+  const primaryTypes: ColumnType[] = ['text', 'textarea', 'number', 'date', 'select', 'checkbox', 'radio'];
+  const advancedTypes: ColumnType[] = ['file', 'image', 'email', 'url', 'phone', 'range', 'color', 'password', 'time', 'datetime', 'richtext'];
+
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">{t('columnType')}</label>
-      <Select
-        onValueChange={(value) => handleTypeChange(value as ColumnType)}
-        defaultValue={actualType}
-        value={actualType}
-        disabled={disabled}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={t('selectColumnType')} />
-        </SelectTrigger>
-        <SelectContent>
-          {columnTypeGroups.map((group) => (
-            <SelectGroup key={group.title}>
-              <SelectLabel>{group.title}</SelectLabel>
-              {group.types.map((type) => {
-                const typeDefinition = COLUMN_TYPE_DEFINITIONS[type];
-                return (
-                  <SelectItem key={type} value={type}>
-                    <div className="flex items-center gap-2">
-                      {typeDefinition && typeDefinition.icon ? 
-                        renderIcon(typeDefinition.icon) : 
-                        <Icons.circle className="h-4 w-4" />}
-                      <span>{typeDefinition && typeDefinition.label ? typeDefinition.label : t(type)}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectGroup>
-          ))}
-        </SelectContent>
-      </Select>
-      {selectedTypeDefinition && (
-        <p className="text-sm text-muted-foreground">
-          {selectedTypeDefinition.description || t(`${actualType}Description`)}
-        </p>
-      )}
-    </div>
+    <FormControl>
+      <div className="space-y-4">
+        <div>
+          <Label className="text-sm font-medium mb-2 block">{t("primaryTypes")}</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {primaryTypes.map((type) => {
+              const typeInfo = COLUMN_TYPE_DEFINITIONS[type];
+              const IconComponent = iconComponents[typeInfo.icon];
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => onChange(type)}
+                  disabled={disabled}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-3 rounded-md border border-input",
+                    "hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                    value === type && "bg-accent text-accent-foreground border-primary"
+                  )}
+                >
+                  {IconComponent && <IconComponent className="h-5 w-5 mb-1" />}
+                  <span className="text-xs">{typeInfo.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        
+        <div>
+          <Label className="text-sm font-medium mb-2 block">{t("advancedTypes")}</Label>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {advancedTypes.map((type) => {
+              const typeInfo = COLUMN_TYPE_DEFINITIONS[type];
+              const IconComponent = iconComponents[typeInfo.icon];
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => onChange(type)}
+                  disabled={disabled}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-2 rounded-md border border-input",
+                    "hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                    value === type && "bg-accent text-accent-foreground border-primary"
+                  )}
+                >
+                  {IconComponent && <IconComponent className="h-4 w-4 mb-1" />}
+                  <span className="text-xs">{typeInfo.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </FormControl>
   );
 };
 

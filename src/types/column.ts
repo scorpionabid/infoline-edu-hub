@@ -1,4 +1,3 @@
-
 import { AssignmentType } from './category';
 
 export type ColumnType = 
@@ -122,6 +121,14 @@ export const COLUMN_TYPE_DEFINITIONS: Record<ColumnType, ColumnTypeDefinition> =
   }
 };
 
+export interface ColumnOption {
+  id: string;
+  label: string;
+  value: string;
+  color?: string;
+  disabled?: boolean;
+}
+
 export interface ColumnValidation {
   minValue?: number;
   maxValue?: number;
@@ -148,14 +155,6 @@ export interface ValidationRules {
   integer?: boolean;
   date?: boolean;
   custom?: any;
-}
-
-export interface ColumnOption {
-  id: string;
-  label: string;
-  value: string;
-  color?: string;
-  disabled?: boolean;
 }
 
 export interface Column {
@@ -199,4 +198,3 @@ export interface CategoryWithColumns {
   priority: number;
   columns: Column[];
 }
-

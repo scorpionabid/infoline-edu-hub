@@ -1,26 +1,42 @@
 
-export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+import { Column } from './column';
 
-export enum DataEntrySaveStatus {
-  IDLE = 'idle',
-  SAVING = 'saving',
-  SAVED = 'saved',
-  ERROR = 'error'
-}
-
+// Data entry tipləri
 export interface DataEntry {
   id: string;
-  column_id: string;
   category_id: string;
+  column_id: string;
   school_id: string;
   value: string;
-  status: DataEntryStatus;
-  created_at: Date;
-  updated_at: Date;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
   created_by?: string;
+  approved_at?: string;
   approved_by?: string;
-  approved_at?: Date;
   rejected_by?: string;
-  rejected_at?: Date;
   rejection_reason?: string;
+}
+
+// Data entry form dəyərləri üçün tip
+export interface EntryValue {
+  columnId: string;
+  categoryId: string;
+  value: string | number | boolean | string[] | null;
+}
+
+// Data entry schema
+export interface DataEntrySchema {
+  categoryId: string;
+  columns: Column[];
+  entries: DataEntry[];
+}
+
+// Category entry status
+export type CategoryEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'incomplete';
+
+// Entry form data
+export interface EntryFormData {
+  categoryId: string;
+  entries: EntryValue[];
 }

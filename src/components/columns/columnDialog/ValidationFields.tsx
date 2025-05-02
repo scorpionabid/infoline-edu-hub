@@ -1,174 +1,136 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Control } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ColumnType } from '@/types/column';
+import { useLanguage } from '@/context/LanguageContext';
+import { Control } from 'react-hook-form';
 
-export interface ValidationFieldsProps {
+interface ValidationFieldsProps {
   control: Control<any>;
   type: ColumnType;
 }
 
 const ValidationFields: React.FC<ValidationFieldsProps> = ({ control, type }) => {
-  return (
-    <div className="space-y-4">
+  const { t } = useLanguage();
+
+  // Nömrə sahələri üçün validasiya
+  const renderNumberValidation = () => (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={control}
+          name="validation.minValue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("minValue")}</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder={t("minValuePlaceholder")} 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="validation.maxValue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("maxValue")}</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder={t("maxValuePlaceholder")} 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </>
+  );
+
+  // Mətn sahələri üçün validasiya
+  const renderTextValidation = () => (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={control}
+          name="validation.minLength"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("minLength")}</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder={t("minLengthPlaceholder")} 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="validation.maxLength"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("maxLength")}</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder={t("maxLengthPlaceholder")} 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
       <FormField
         control={control}
-        name="is_required"
+        name="validation.pattern"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+          <FormItem>
+            <FormLabel>{t("pattern")}</FormLabel>
             <FormControl>
-              <Checkbox
-                checked={field.value}
-                onCheckedChange={field.onChange}
+              <Input 
+                placeholder={t("patternPlaceholder")} 
+                {...field} 
               />
             </FormControl>
-            <div className="space-y-1 leading-none">
-              <FormLabel>Məcburidir</FormLabel>
-              <FormDescription>
-                Bu sahə doldurulmalıdır
-              </FormDescription>
-            </div>
+            <FormMessage />
           </FormItem>
         )}
       />
+    </>
+  );
 
-      {type === 'text' || type === 'textarea' || type === 'email' || type === 'url' ? (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={control}
-              name="validation.minLength"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Minimum uzunluq</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="validation.maxLength"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Maksimum uzunluq</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="255"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          {type === 'text' || type === 'email' || type === 'url' ? (
-            <FormField
-              control={control}
-              name="validation.pattern"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Şablon (Regex)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="^[a-zA-Z0-9]+$" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    JavaScript Regex formatında daxil edin
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-          ) : null}
-        </>
-      ) : null}
+  // Validasiya tipini təyin edirik
+  const renderValidationByType = () => {
+    if (type === 'number') {
+      return renderNumberValidation();
+    }
+    
+    if (type === 'text' || type === 'textarea' || type === 'email' || type === 'url') {
+      return renderTextValidation();
+    }
+    
+    return <p>{t("noValidationForType")}</p>;
+  };
 
-      {type === 'number' && (
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="validation.minValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Minimum dəyər</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="validation.maxValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Maksimum dəyər</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="100"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-      )}
-
-      {type === 'date' && (
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={control}
-            name="validation.minValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Minimum tarix</FormLabel>
-                <FormControl>
-                  <Input
-                    type="date"
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="validation.maxValue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Maksimum tarix</FormLabel>
-                <FormControl>
-                  <Input
-                    type="date"
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-      )}
+  return (
+    <div className="space-y-4">
+      {renderValidationByType()}
     </div>
   );
 };
