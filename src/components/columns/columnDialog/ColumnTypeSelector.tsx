@@ -1,16 +1,15 @@
-
 import React from 'react';
 import { FormControl } from '@/components/ui/form';
 import { ColumnType, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
 import { useLanguage } from '@/context/LanguageContext';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import {
   Text,
-  TextAlignLeft,
+  AlignLeft,
   Hash,
   Calendar,
-  ListBox,
+  List,
   Check,
   Circle,
   File,
@@ -23,7 +22,7 @@ import {
   Lock,
   Clock,
   CalendarClock,
-  FormattingTwo
+  FileText
 } from 'lucide-react';
 
 interface ColumnTypeSelectorProps {
@@ -34,10 +33,10 @@ interface ColumnTypeSelectorProps {
 
 const iconComponents: Record<string, React.FC<{ className?: string }>> = {
   text: Text,
-  textAlignLeft: TextAlignLeft,
+  textAlignLeft: AlignLeft,
   hash: Hash,
   calendar: Calendar,
-  listBox: ListBox,
+  listBox: List,
   check: Check,
   circle: Circle,
   file: File,
@@ -50,7 +49,7 @@ const iconComponents: Record<string, React.FC<{ className?: string }>> = {
   lock: Lock,
   clock: Clock,
   calendarClock: CalendarClock,
-  formattingTwo: FormattingTwo
+  formattingTwo: FileText
 };
 
 const ColumnTypeSelector: React.FC<ColumnTypeSelectorProps> = ({ value, onChange, disabled = false }) => {
