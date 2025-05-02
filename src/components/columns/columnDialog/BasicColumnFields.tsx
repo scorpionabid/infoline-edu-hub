@@ -1,37 +1,30 @@
 
-import React from "react";
-import { useLanguage } from "@/context/LanguageContext";
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-} from "@/components/ui/form";
-import {
+import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { ColumnType, Column, COLUMN_TYPE_DEFINITIONS } from '@/types/column';
+import { useLanguage } from '@/context/LanguageContext';
+import { Control } from 'react-hook-form';
+import ColumnTypeSelector from './ColumnTypeSelector';
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Column, ColumnType, COLUMN_TYPE_DEFINITIONS } from "@/types/column";
-import ColumnTypeSelector from "./ColumnTypeSelector";
+  SelectValue
+} from '@/components/ui/select';
 
 interface BasicColumnFieldsProps {
-  form?: any;
-  control?: any;
-  categories: any[];
+  form: any;
+  control: Control<any>;
+  categories: { id: string; name: string }[];
   columns?: Column[];
   editColumn?: Column | null;
   selectedType: ColumnType;
-  handleTypeChange?: (type: string) => void;
-  onTypeChange?: (type: string) => void;
-  isEditMode?: boolean;
+  onTypeChange: (type: string) => void;
+  isEditMode: boolean;
 }
 
 const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
@@ -41,44 +34,24 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   columns = [],
   editColumn,
   selectedType,
-  handleTypeChange,
   onTypeChange,
-  isEditMode = false
+  isEditMode
 }) => {
   const { t } = useLanguage();
 
-  // Seçilmiş sütun tipinin tərifini (icon, açıqlama və s.) alaq
-  const selectedTypeDefinition = COLUMN_TYPE_DEFINITIONS[selectedType];
-  
-  // Control-u form-dan və ya birbaşa prop-dan əldə edirik
-  const formControl = control || (form ? form.control : null);
-  
-  // Type dəyişmə funksiyasını müəyyən edirik
-  const handleTypeChangeFunc = onTypeChange || handleTypeChange || ((type: string) => {
-    console.log("Type changed to", type);
-  });
-  
-  // Əgər formControl yoxdursa, xəta log edirik
-  if (!formControl) {
-    console.error("BasicColumnFields: Neither form.control nor control prop provided");
-    return (
-      <div className="p-4 border border-destructive rounded-md">
-        <p className="text-destructive">Form control not provided to BasicColumnFields</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
+    <>
+      {/* Kateqoriya seçimi */}
       <FormField
-        control={formControl}
+        control={control}
         name="category_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("category")}</FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
+            <FormLabel>{t("categoryLabel")}</FormLabel>
+            <Select 
+              disabled={isEditMode}
+              defaultValue={editColumn?.category_id}
+              onValueChange={field.onChange} 
               value={field.value}
             >
               <FormControl>
@@ -94,49 +67,118 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <FormDescription>{t("categoryDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
+      {/* Sütun adı */}
       <FormField
-        control={formControl}
+        control={control}
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("columnName")}</FormLabel>
+            <FormLabel>{t("columnNameLabel")}</FormLabel>
             <FormControl>
-              <Input placeholder={t("enterColumnName")} {...field} />
+              <Input placeholder={t("columnNamePlaceholder")} {...field} />
             </FormControl>
-            <FormDescription>{t("columnNameDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      <div className="space-y-2">
-        <Label>{t("columnType")}</Label>
-        <ColumnTypeSelector
-          selectedType={selectedType}
-          onTypeChange={handleTypeChangeFunc}
-          disabled={isEditMode}
-        />
-        {selectedTypeDefinition && (
-          <p className="text-sm text-muted-foreground">
-            {selectedTypeDefinition.description}
-          </p>
-        )}
-      </div>
-
+      {/* Sütun təsviri */}
       <FormField
-        control={formControl}
+        control={control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("descriptionLabel")}</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder={t("descriptionPlaceholder")} 
+                className="min-h-[80px]" 
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Sütun tipi */}
+      <FormField
+        control={control}
+        name="type"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("columnTypeLabel")}</FormLabel>
+            <ColumnTypeSelector
+              value={selectedType}
+              onChange={onTypeChange}
+              disabled={isEditMode}
+            />
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Placeholder */}
+      <FormField
+        control={control}
+        name="placeholder"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("placeholderLabel")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("placeholderExample")} {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Köməkçi mətn */}
+      <FormField
+        control={control}
+        name="help_text"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("helpTextLabel")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("helpTextExample")} {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Default dəyər */}
+      <FormField
+        control={control}
+        name="default_value"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("defaultValueLabel")}</FormLabel>
+            <FormControl>
+              <Input placeholder={t("defaultValueExample")} {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* Məcburilik */}
+      <FormField
+        control={control}
         name="is_required"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
             <div className="space-y-0.5">
-              <FormLabel>{t("required")}</FormLabel>
-              <FormDescription>{t("requiredDescription")}</FormDescription>
+              <FormLabel>{t("requiredFieldLabel")}</FormLabel>
+              <p className="text-sm text-muted-foreground">
+                {t("requiredFieldDescription")}
+              </p>
             </div>
             <FormControl>
               <Switch
@@ -148,56 +190,26 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
         )}
       />
 
+      {/* Sıra (indeks) */}
       <FormField
-        control={formControl}
-        name="placeholder"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("placeholder")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("enterPlaceholder")} {...field} />
-            </FormControl>
-            <FormDescription>{t("placeholderDescription")}</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={formControl}
-        name="help_text"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t("helpText")}</FormLabel>
-            <FormControl>
-              <Input placeholder={t("enterHelpText")} {...field} />
-            </FormControl>
-            <FormDescription>{t("helpTextDescription")}</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={formControl}
+        control={control}
         name="order_index"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("orderIndex")}</FormLabel>
+            <FormLabel>{t("orderIndexLabel")}</FormLabel>
             <FormControl>
-              <Input
-                type="number"
-                placeholder={t("enterOrderIndex")}
+              <Input 
+                type="number" 
+                placeholder={t("orderIndexPlaceholder")} 
                 {...field}
-                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
               />
             </FormControl>
-            <FormDescription>{t("orderIndexDescription")}</FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 };
 

@@ -4,37 +4,60 @@ export interface Column {
   category_id: string;
   name: string;
   type: ColumnType;
+  description?: string;
   help_text?: string;
   placeholder?: string;
   default_value?: string;
   is_required: boolean;
-  options?: any[];
+  options?: ColumnOption[] | string;
   order_index: number;
   status: 'active' | 'inactive';
-  validation?: ColumnValidation;
+  validation?: ColumnValidation | string;
   created_at: string;
   updated_at: string;
+  parent_column_id?: string;
+  dependencies?: string[];
+  visibility_conditions?: any;
 }
 
-export type ColumnType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'radio' | 'file' | 'image';
+export type ColumnType = 
+  | 'text' 
+  | 'textarea' 
+  | 'number' 
+  | 'date' 
+  | 'select' 
+  | 'checkbox' 
+  | 'radio' 
+  | 'file' 
+  | 'image'
+  | 'email'
+  | 'url'
+  | 'phone'
+  | 'range'
+  | 'color'
+  | 'password'
+  | 'time'
+  | 'datetime'
+  | 'richtext';
+
+export interface ColumnOption {
+  id: string;
+  label: string;
+  value: string;
+  color?: string;
+  disabled?: boolean;
+}
 
 export interface ColumnValidation {
+  minValue?: number;
+  maxValue?: number;
   minLength?: number;
   maxLength?: number;
   pattern?: string;
-  required?: boolean;
-  requiredMessage?: string;
-  patternMessage?: string;
-  email?: boolean;
-  url?: boolean;
-  min?: number;
-  max?: number;
-  inclusion?: string[];
-}
-
-export interface ColumnValidationError {
-  message: string;
-  type: string;
+  customError?: string;
+  type?: string;
+  value?: string | number;
+  message?: string;
 }
 
 export interface CategoryWithColumns {
@@ -51,5 +74,4 @@ export interface CategoryWithColumns {
   columns: Column[];
   entries?: DataEntry[];
   completionPercentage?: number;
-  status?: 'draft' | 'pending' | 'approved' | 'rejected' | 'partial';
 }

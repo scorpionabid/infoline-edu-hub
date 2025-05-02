@@ -38,7 +38,6 @@ export interface ColumnFormValues {
   };
 }
 
-// useColumnForm hook'unun yeni dönüş tipi - əvvəl çatışmayan sahələri əlavə edirik
 export interface UseColumnFormReturn {
   form: ReturnType<typeof useForm<ColumnFormValues>>;
   isLoading: boolean;
@@ -49,7 +48,6 @@ export interface UseColumnFormReturn {
     convertOptionsToColumn: (options: ColumnOption[]) => any;
     convertValidationToColumn: (validation: ColumnFormValues['validation'], type: ColumnType) => ColumnValidation[];
   };
-  // Əlavə edilmiş sahələr
   selectedType: ColumnType;
   handleTypeChange: (type: string) => void;
   options: ColumnOption[];
@@ -70,14 +68,40 @@ export const useColumnForm = (
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<ColumnType>(editColumn?.type || 'text');
-  const [options, setOptions] = useState<ColumnOption[]>(
-    editColumn?.options?.map(opt => ({
-      ...(typeof opt === 'string' 
-        ? { id: uuidv4(), label: opt, value: opt } 
-        : { ...opt, id: opt.id || uuidv4() }
-      )
-    })) || []
-  );
+  
+  // options sahəsini işləyək
+  const [options, setOptions] = useState<ColumnOption[]>(() => {
+    if (!editColumn?.options) return [];
+    
+    // Əgər options stringdirsə, parse edək
+    if (typeof editColumn.options === 'string') {
+      try {
+        const parsedOptions = JSON.parse(editColumn.options);
+        return Array.isArray(parsedOptions) ? parsedOptions.map(opt => ({
+          id: opt.id || uuidv4(),
+          label: opt.label || '',
+          value: opt.value || opt.label || '',
+          color: opt.color || '#000000'
+        })) : [];
+      } catch (e) {
+        console.error('Options parsing error:', e);
+        return [];
+      }
+    }
+    
+    // Əgər options artıq array formatındadırsa
+    if (Array.isArray(editColumn.options)) {
+      return editColumn.options.map(opt => ({
+        id: typeof opt === 'object' ? (opt.id || uuidv4()) : uuidv4(),
+        label: typeof opt === 'object' ? (opt.label || '') : String(opt),
+        value: typeof opt === 'object' ? (opt.value || opt.label || '') : String(opt),
+        color: typeof opt === 'object' ? (opt.color || '#000000') : '#000000'
+      }));
+    }
+    
+    return [];
+  });
+  
   const [newOption, setNewOption] = useState({ label: '', value: '', color: '#000000' });
   const isEditMode = !!editColumn;
   
@@ -121,30 +145,16 @@ export const useColumnForm = (
       description: editColumn.description || '',
       is_required: editColumn.is_required || false,
       order_index: editColumn.order_index || 0,
-      options: Array.isArray(editColumn.options) ? 
-        editColumn.options.map(opt => {
-          if (typeof opt === 'string') {
-            return { id: uuidv4(), label: opt, value: opt };
-          } else {
-            return { ...opt, id: opt.id || uuidv4() };
-          }
-        }) : [],
+      options: options,
       placeholder: editColumn.placeholder || '',
       help_text: editColumn.help_text || '',
       parent_column_id: editColumn.parent_column_id || undefined,
       default_value: editColumn.default_value || '',
       dependencies: editColumn.dependencies || [],
       visibility_conditions: editColumn.visibility_conditions || undefined,
-      validation: editColumn.validation ? 
-        editColumn.validation.reduce((acc: any, v: any) => {
-          if (v.type === 'min') acc.minValue = String(v.value);
-          else if (v.type === 'max') acc.maxValue = String(v.value);
-          else if (v.type === 'minLength') acc.minLength = String(v.value);
-          else if (v.type === 'maxLength') acc.maxLength = String(v.value);
-          else if (v.type === 'pattern') acc.pattern = String(v.value);
-          return acc;
-        }, {} as ColumnFormValues['validation']) : 
-        {}
+      validation: typeof editColumn.validation === 'string' ?
+        JSON.parse(editColumn.validation || '{}') :
+        editColumn.validation || {}
     } : {
       name: '',
       type: 'text',
@@ -226,7 +236,7 @@ export const useColumnForm = (
       });
     }
     
-    return result.length ? result : [];
+    return result;
   };
   
   const handleTypeChange = (type: string) => {
@@ -316,13 +326,6 @@ export const useColumnForm = (
         visibility_conditions: values.visibility_conditions
       };
       
-      // TODO: API ilə bağlantı qurmaq
-      /*
-      const savedColumn = initialColumn?.id
-        ? await updateColumn(columnData)
-        : await createColumn(columnData);
-      */
-      
       // Mock response - real API integration xaric
       const savedColumn: Column = {
         id: editColumn?.id || 'new-column-' + Date.now(),
@@ -333,16 +336,13 @@ export const useColumnForm = (
         is_required: values.is_required,
         order_index: values.order_index,
         status: editColumn?.status || 'active',
-        created_at: editColumn?.created_at || new Date(),
-        updated_at: new Date(),
+        created_at: editColumn?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         options: convertOptionsToColumn(values.options),
         validation: convertValidationToColumn(values.validation, values.type),
         placeholder: values.placeholder,
         help_text: values.help_text,
-        default_value: values.default_value,
-        parent_column_id: values.parent_column_id,
-        dependencies: values.dependencies,
-        visibility_conditions: values.visibility_conditions
+        default_value: values.default_value
       };
       
       return savedColumn;
@@ -364,7 +364,6 @@ export const useColumnForm = (
       convertOptionsToColumn,
       convertValidationToColumn,
     },
-    // Əlavə edilmiş sahələr
     selectedType,
     handleTypeChange,
     options,
