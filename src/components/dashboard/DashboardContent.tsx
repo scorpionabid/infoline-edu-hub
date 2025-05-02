@@ -14,7 +14,8 @@ import {
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
   DashboardNotification,
-  PendingApprovalItem
+  PendingApprovalItem,
+  SchoolStat
 } from '@/types/dashboard';
 
 export interface DashboardContentProps {
@@ -107,7 +108,13 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       regionCount: dashboardData.regions || 0,
       sectorCount: dashboardData.sectors || 0,
       schoolCount: dashboardData.schools || 0,
-      userCount: dashboardData.users || 0
+      userCount: dashboardData.users || 0,
+      formsByStatus: {
+        pending: dashboardData.pendingForms || 0,
+        approved: dashboardData.approvedForms || 0,
+        rejected: dashboardData.rejectedForms || 0,
+        total: dashboardData.totalForms || 0
+      }
     };
 
     return <SuperAdminDashboard data={superAdminData} />;
@@ -123,6 +130,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       },
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
+      pendingItems: [],
+      categories: [],
+      sectors: [],
       sectorStats: {
         total: dashboardData.sectors || 0,
         active: dashboardData.activeSectors || 0
@@ -131,11 +141,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         total: dashboardData.schools || 0, 
         active: dashboardData.activeSchools || 0,
         incomplete: dashboardData.incompleteSchools || 0
-      },
-      // Boş array və obyektlərlə "pendingItems", "categories", "sectors" xüsusiyyətlərini əlavə edək
-      pendingItems: [],
-      categories: [],
-      sectors: []
+      }
     };
 
     return <RegionAdminDashboard data={regionAdminData} />;
@@ -143,6 +149,12 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
 
   // SectorAdmin Dashboard
   if (userRole === 'sectoradmin') {
+    const schoolsStatItem: SchoolStat = {
+      total: dashboardData.schools || 0,
+      active: dashboardData.activeSchools || 0,
+      incomplete: dashboardData.incompleteSchools || 0
+    };
+    
     const sectorAdminData: SectorAdminDashboardData = {
       stats: {
         schools: dashboardData.schools || 0,
@@ -150,16 +162,10 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       },
       completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
-      // schoolsStats əlavə edək
-      schoolsStats: [{
-        total: dashboardData.schools || 0,
-        active: dashboardData.activeSchools || 0,
-        incomplete: dashboardData.incompleteSchools || 0
-      }],
-      // Boş array və obyektlərlə əlavə xüsusiyyətlər
       pendingItems: [],
       schools: [],
-      categories: []
+      categories: [],
+      schoolsStats: [schoolsStatItem]
     };
 
     return <SectorAdminDashboard data={sectorAdminData} />;

@@ -5,15 +5,15 @@ import { StatsCard } from '../common/StatsCard';
 import { NotificationsCard } from '../common/NotificationsCard';
 import { CompletionRateCard } from '../common/CompletionRateCard';
 import { SectorAdminDashboardData } from '@/types/dashboard';
-import { School, Users } from 'lucide-react';
+import { School, Users, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface SectorAdminDashboardProps {
   data: SectorAdminDashboardData;
 }
 
 export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data }) => {
-  const schoolStats = data.schoolsStats[0] || { total: 0, active: 0, incomplete: 0 };
-
+  const schoolStats = data.schoolsStats && data.schoolsStats.length > 0 ? data.schoolsStats[0] : null;
+  
   return (
     <div className="space-y-6">
       <Grid columns={3} className="gap-6">
@@ -22,24 +22,21 @@ export const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({ data
           value={data.stats.schools}
           icon={<School className="h-4 w-4" />}
           description="Sektor daxilində məktəb sayı"
-          trend={`${schoolStats.active} aktiv məktəb`}
+          trend={`${schoolStats?.active || 0} aktiv məktəb`}
           trendDirection="neutral"
-        />
-        <StatsCard
-          title="Tamamlanmayan məktəblər"
-          value={schoolStats.incomplete}
-          icon={<School className="h-4 w-4" />}
-          description="Məlumatları tam doldurmamış məktəblər"
-          trend={`${schoolStats.incomplete} tamamlanmayan məktəb`}
-          trendDirection="down"
         />
         <StatsCard
           title="İstifadəçilər"
-          value={data.stats.users}
+          value={data.stats.users || 0}
           icon={<Users className="h-4 w-4" />}
           description="Sektor daxilində istifadəçi sayı"
-          trend={`${data.stats.users} aktiv istifadəçi`}
-          trendDirection="neutral"
+        />
+        <StatsCard
+          title="Natamam məlumatlar"
+          value={schoolStats?.incomplete || 0}
+          icon={<AlertCircle className="h-4 w-4" />}
+          description="Məlumat tələb edən məktəblər"
+          trendDirection="down"
         />
       </Grid>
 

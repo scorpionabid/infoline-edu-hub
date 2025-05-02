@@ -1,5 +1,5 @@
 
-import { ColumnType, Column, ColumnValidation } from '@/types/column';
+import { ColumnType, Column, ColumnValidation, ColumnValidationError } from '@/types/column';
 import { DataEntryStatus } from '@/types/dataEntry';
 import { EntryValue } from '@/types/dataEntry';
 
@@ -89,7 +89,7 @@ const validateText = (value: string, validation: ColumnValidation): string | nul
   }
 
   // Maksimum uzunluq yoxlaması
-  if (validation.maxLength !== undefined && value.length > validation.maxLength) {
+  if (validation.maxLength !== undefined && value.length > parseInt(validation.maxLength)) {
     return `Ən çoxu ${validation.maxLength} simvol olmalıdır`;
   }
 

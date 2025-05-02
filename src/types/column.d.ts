@@ -1,56 +1,63 @@
 
-export type ColumnType = 'text' | 'number' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'date' | 'file' | 'image';
-
-export interface ColumnValidation {
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  patternMessage?: string;
-  min?: number;
-  max?: number;
-  required?: boolean;
-  requiredMessage?: string;
-  email?: boolean;
-  url?: boolean;
-  inclusion?: string[];
-}
-
-export interface ColumnValidationError {
-  column_id: string;
-  message: string;
-  type?: 'error' | 'warning' | 'info';
-  id?: string;
-}
+export type ColumnType = 'text' | 'number' | 'select' | 'date' | 'checkbox' | 'radio' | 'textarea';
 
 export interface ColumnOption {
   label: string;
   value: string;
 }
 
+export interface ColumnValidation {
+  required?: boolean;
+  requiredMessage?: string;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: string;
+  pattern?: string;
+  patternMessage?: string;
+  inclusion?: string[];
+  exclusion?: string[];
+  email?: boolean;
+  url?: boolean;
+  custom?: (value: any) => boolean | string;
+}
+
+export interface ColumnValidationError {
+  id: string;
+  message: string;
+  type: 'error' | 'warning' | 'info';
+}
+
 export interface Column {
   id: string;
-  name: string;
   category_id: string;
-  type: ColumnType;
+  name: string;
   description?: string;
-  is_required?: boolean;
-  default_value?: string;
+  type: ColumnType;
+  is_required: boolean;
+  is_unique?: boolean;
   placeholder?: string;
   help_text?: string;
-  order_index?: number;
-  status?: string;
-  options?: ColumnOption[];
+  default_value?: string;
+  created_at?: Date;
+  updated_at?: Date;
   validation?: ColumnValidation;
-  created_at?: string | Date;
-  updated_at?: string | Date;
+  options?: ColumnOption[];
+  order?: number;
+  parent_id?: string;
+  conditional_display?: object;
 }
 
 export interface CategoryWithColumns {
   id: string;
   name: string;
   description?: string;
-  status: string;
+  assignment?: string;
+  status?: string;
+  deadline?: Date;
   columns: Column[];
-  deadline?: string | Date;
-  [key: string]: any;
+  created_at?: Date;
+  updated_at?: Date;
+  priority?: number;
+  archived?: boolean;
 }

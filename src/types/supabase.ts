@@ -1,69 +1,64 @@
 
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
 
-export interface Profile {
+export interface Region {
   id: string;
-  email?: string;
-  full_name: string;
-  phone?: string;
-  position?: string;
-  avatar?: string;
-  language: string;
-  status: 'active' | 'inactive' | 'blocked';
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
+  name: string;
+  description?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
 }
 
-export interface UserRoleData {
+export interface Sector {
+  id: string;
+  region_id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
+}
+
+export interface School {
+  id: string;
+  sector_id: string;
+  region_id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  principal_name?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  admin_id?: string | null;
+  admin_email?: string | null;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
+}
+
+export interface UserRole {
   id: string;
   user_id: string;
   role: UserRole;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  school_id?: string | null;
+  sector_id?: string | null;
+  region_id?: string | null;
 }
 
-export interface FullUserData {
-  id: string;
-  email: string;
-  full_name: string;
-  name: string;
-  role: UserRole;
+export interface ExtendedUser extends SupabaseUser {
+  role?: UserRole;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  phone?: string;
-  position?: string;
-  language: string;
-  avatar?: string;
-  status: 'active' | 'inactive' | 'blocked';
-  last_login?: string;
-  lastLogin?: string;
-  created_at: string;
-  updated_at: string;
-  createdAt: string;
-  updatedAt: string;
-  userRoleId?: string;
-  adminEntity?: {
-    type: string;
-    name: string;
-    status?: string;
-    regionName?: string;
-    sectorName?: string;
-    schoolType?: string;
-  };
-  notificationSettings: {
-    email: boolean;
-    system: boolean;
-    push?: boolean;
-    sms?: boolean;
-    inApp?: boolean;
-  };
-  twoFactorEnabled?: boolean;
 }

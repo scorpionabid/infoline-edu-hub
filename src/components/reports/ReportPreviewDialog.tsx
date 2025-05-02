@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User } from '@/types/user';
-import { Report } from '@/types/report';
-import ReportChart from './ReportChart';
+import { Report, ReportChartProps } from '@/types/report';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUsers } from '@/hooks/users/useUsers';
 import { Label } from '@/components/ui/label';
@@ -20,12 +19,17 @@ interface ReportPreviewDialogProps {
   reportDescription: string;
 }
 
-interface ReportTableProps {
-  reportId: string;
-}
+// ReportChart komponenti
+const ReportChart: React.FC<ReportChartProps> = ({ report }) => {
+  return (
+    <div className="border rounded-md p-4">
+      <p className="text-center">Hesabat qrafiki: {report.title}</p>
+    </div>
+  );
+};
 
-// Əvəzedici ReportTable komponenti
-const ReportTable: React.FC<ReportTableProps> = ({ reportId }) => {
+// ReportTable komponenti
+const ReportTable: React.FC<{ reportId: string }> = ({ reportId }) => {
   return (
     <div className="border rounded-md p-4">
       <p className="text-center text-muted-foreground">

@@ -33,14 +33,14 @@ export function CategoryForm({
   const { status, completionPercentage, getStatusBadgeColor, getStatusLabel } = useCategoryStatus(category, { 
     entries: values.map(v => ({
       id: v.entryId || '',
-      school_id: '',
+      column_id: v.columnId || v.column_id || '',
       category_id: category.id,
-      column_id: v.column_id,
+      school_id: '',
       value: v.value,
       status: v.status || 'pending',
       created_at: new Date(),
       updated_at: new Date()
-    }) as DataEntry[])
+    })) as DataEntry[]
   });
 
   // Hesabla - valideysion xətaları varmı

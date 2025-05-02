@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import DataTable from '@/components/ui/data-table';
 import { PlusCircle } from 'lucide-react';
 import useCategories from '@/hooks/categories/useCategories';
-import { useCategoryActions } from '@/hooks/useCategoryActions';
+import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
 import { useLanguage } from '@/context/LanguageContext';
 import { CategoryColumns } from './CategoryColumns';
 

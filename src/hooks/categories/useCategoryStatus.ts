@@ -3,108 +3,108 @@ import { useMemo } from 'react';
 import { CategoryWithColumns } from '@/types/column';
 import { DataEntry, DataEntryStatus } from '@/types/dataEntry';
 
-interface CategoryStatusOptions {
+interface UseCategoryStatusOptions {
   entries?: DataEntry[];
-  showPartialStatus?: boolean;
 }
 
-/**
- * Kateqoriya statusunu və tamamlanma faizini hesablamaq üçün hook
- */
-export const useCategoryStatus = (category: CategoryWithColumns, options: CategoryStatusOptions = {}) => {
-  const { entries = [], showPartialStatus = true } = options;
-  
-  // Kateqoriyanın statusu və tamamlanma faizini hesablayaq
-  const { status, completionPercentage } = useMemo(() => {
-    if (!category || !category.columns || category.columns.length === 0) {
-      return { status: category.status, completionPercentage: 0 };
+export const useCategoryStatus = (
+  category: CategoryWithColumns,
+  options: UseCategoryStatusOptions = {}
+) => {
+  const { entries = [] } = options;
+
+  // Status hesablanması
+  const status = useMemo<DataEntryStatus>(() => {
+    if (!category.columns || category.columns.length === 0) {
+      return 'draft';
     }
 
-    // Kateqoriya daxilində datalar var
-    if (entries && entries.length > 0) {
-      // Status hesablaması
-      const statuses = entries.map(entry => entry.status || 'draft');
-      const uniqueStatuses = [...new Set(statuses)];
-      
-      // Tamamlanma faizi hesablaması
-      const columnCount = category.columns.length;
-      const filledColumnsCount = entries.length;
-      const percentage = Math.round((filledColumnsCount / columnCount) * 100);
-      
-      // Əgər bütün sütunlar dolmayıb
-      if (filledColumnsCount < columnCount && showPartialStatus) {
-        return { status: 'partial', completionPercentage: percentage };
-      }
-      
-      // Əgər bütün stauslar eynidir
-      if (uniqueStatuses.length === 1) {
-        return { status: uniqueStatuses[0] as DataEntryStatus, completionPercentage: percentage };
-      }
-      
-      // Müxtəlif statuslar var, prioritet təyin edək
-      if (uniqueStatuses.includes('rejected')) {
-        return { status: 'rejected', completionPercentage: percentage };
-      }
-      
-      if (uniqueStatuses.includes('pending')) {
-        return { status: 'pending', completionPercentage: percentage };
-      }
-      
-      if (uniqueStatuses.includes('approved')) {
-        return { status: 'approved', completionPercentage: percentage };
-      }
-      
-      return { status: 'draft', completionPercentage: percentage };
+    // Əgər verilmiş giriş yoxdursa
+    if (!entries || entries.length === 0) {
+      return 'draft';
     }
-    
-    // Heç bir data yoxdur
-    return { status: category.status, completionPercentage: 0 };
-  }, [category, entries, showPartialStatus]);
-  
-  // Status badge rəngini təyin edək
-  const getStatusBadgeColor = (status: string): string => {
+
+    // Bütün girişlər təsdiqlənibsə
+    const allApproved = entries.every(entry => entry.status === 'approved');
+    if (allApproved) {
+      return 'approved';
+    }
+
+    // Bütün girişlər rədd edilibsə
+    const allRejected = entries.every(entry => entry.status === 'rejected');
+    if (allRejected) {
+      return 'rejected';
+    }
+
+    // Heç bir giriş təsdiqlənməyibsə və ya rədd edilməyibsə
+    const hasPending = entries.some(entry => entry.status === 'pending');
+    if (hasPending) {
+      return 'pending';
+    }
+
+    // Default olaraq qaralama vəziyyəti
+    return 'draft';
+  }, [category, entries]);
+
+  // Tamamlanma faizi hesablanması
+  const completionPercentage = useMemo<number>(() => {
+    if (!category.columns || category.columns.length === 0) {
+      return 0;
+    }
+
+    if (!entries || entries.length === 0) {
+      return 0;
+    }
+
+    const requiredColumns = category.columns.filter(column => column.is_required);
+    if (requiredColumns.length === 0) {
+      return 0;
+    }
+
+    const filledRequiredEntries = entries.filter(entry => {
+      const column = category.columns.find(col => col.id === entry.column_id);
+      return column && column.is_required && entry.value && entry.value.trim() !== '';
+    });
+
+    if (filledRequiredEntries.length === 0) {
+      return 0;
+    }
+
+    return Math.round((filledRequiredEntries.length / requiredColumns.length) * 100);
+  }, [category, entries]);
+
+  // Status badge rəngi
+  const getStatusBadgeColor = (status: DataEntryStatus | string): string => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-300';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'partial':
-        return 'bg-blue-100 text-blue-800';
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-red-100 text-red-800 border-red-300';
       case 'draft':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-gray-100 text-gray-800 border-gray-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
-  
-  // Status təsvirini əldə edək
-  const getStatusLabel = (status: string): string => {
+
+  // Status etiketi
+  const getStatusLabel = (status: DataEntryStatus | string): string => {
     switch (status) {
       case 'approved':
         return 'Təsdiqlənib';
       case 'pending':
-        return 'Gözləmədə';
+        return 'Gözləyir';
       case 'rejected':
         return 'Rədd edilib';
-      case 'partial':
-        return 'Qismən doldurulub';
-      case 'active':
-        return 'Aktiv';
-      case 'inactive':
-        return 'Deaktiv';
       case 'draft':
         return 'Qaralama';
       default:
-        return status;
+        return 'Naməlum';
     }
   };
-  
+
   return {
     status,
     completionPercentage,

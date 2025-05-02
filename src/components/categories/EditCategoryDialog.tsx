@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { useCategoryActions } from '@/hooks/categories/useCategoryActions';
-import { Category, CategoryAssignment, CategoryStatus } from '@/types/category';
+import { Category } from '@/types/category';
 import { format } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -26,8 +26,8 @@ export default function EditCategoryDialog({ isOpen, onClose, category, onSucces
 
   const [name, setName] = useState(category.name);
   const [description, setDescription] = useState(category.description || '');
-  const [assignment, setAssignment] = useState<CategoryAssignment>(category.assignment || 'all');
-  const [status, setStatus] = useState<CategoryStatus>(category.status || 'active');
+  const [assignment, setAssignment] = useState<'all' | 'sectors'>(category.assignment || 'all');
+  const [status, setStatus] = useState<'active' | 'inactive' | 'draft'>(category.status || 'active');
   const [priority, setPriority] = useState<number>(category.priority || 0);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(
     category.deadline ? new Date(category.deadline) : undefined
@@ -42,20 +42,18 @@ export default function EditCategoryDialog({ isOpen, onClose, category, onSucces
     }
 
     try {
-      const categoryData = {
+      const categoryData: Category = {
+        id: category.id,
         name,
         description,
         assignment,
-        deadline: deadlineDate ? deadlineDate.toISOString() : null,
+        deadline: deadlineDate ? deadlineDate.toISOString() : undefined,
         status,
         priority,
-        created_at: category.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        archived: category.archived || false,
-        id: category.id
+        archived: category.archived || false
       };
 
-      const success = await handleAddCategory(categoryData as any);
+      const success = await handleAddCategory(categoryData);
       if (success) {
         onClose();
         if (onSuccess) onSuccess();
@@ -137,7 +135,7 @@ export default function EditCategoryDialog({ isOpen, onClose, category, onSucces
             <Label className="text-right">{t('assignment')}</Label>
             <RadioGroup
               value={assignment}
-              onValueChange={(value) => setAssignment(value as CategoryAssignment)}
+              onValueChange={(value) => setAssignment(value as 'all' | 'sectors')}
               className="flex gap-4 pt-2"
             >
               <div className="flex items-center space-x-2">
@@ -154,7 +152,7 @@ export default function EditCategoryDialog({ isOpen, onClose, category, onSucces
             <Label className="text-right">{t('status')}</Label>
             <RadioGroup
               value={status}
-              onValueChange={(value) => setStatus(value as CategoryStatus)}
+              onValueChange={(value) => setStatus(value as 'active' | 'inactive' | 'draft')}
               className="flex flex-wrap gap-4 pt-2"
             >
               <div className="flex items-center space-x-2">

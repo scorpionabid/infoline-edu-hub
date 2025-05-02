@@ -1,19 +1,16 @@
 
-export type ReportType = 'basic' | 'detailed' | 'summary' | 'comparison' | 'trend';
+export type ReportType = 'basic' | 'advanced' | 'custom';
 
 export interface Report {
   id: string;
   title: string;
   description?: string;
   type: ReportType;
-  status?: string;
-  created_at?: string;
-  created_by?: string;
-  updated_at?: string;
-  content?: any;
-  shared_with?: string[];
-  filters?: any;
-  is_template?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  createdBy?: string;
+  category?: string;
+  sharedWith?: string[];
 }
 
 export interface ReportChartProps {

@@ -20,7 +20,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           value={data.stats.sectors}
           icon={<Building className="h-4 w-4" />}
           description="Region daxilində sektor sayı"
-          trend={`${data.sectorStats.active} aktiv sektor`}
+          trend={`${data.sectorStats?.active || 0} aktiv sektor`}
           trendDirection="neutral"
         />
         <StatsCard
@@ -28,7 +28,7 @@ export const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({ data
           value={data.stats.schools}
           icon={<School className="h-4 w-4" />}
           description="Region daxilində məktəb sayı"
-          trend={`${data.schoolStats.active} aktiv məktəb`}
+          trend={`${data.schoolStats?.active || 0} aktiv məktəb`}
           trendDirection="neutral"
         />
         <StatsCard

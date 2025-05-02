@@ -34,7 +34,7 @@ export interface NotificationsCardProps {
   viewAll?: () => void;
 }
 
-export interface SchoolStatItem {
+export interface SchoolStat {
   total: number;
   active: number;
   incomplete: number;
@@ -54,6 +54,12 @@ export interface SuperAdminDashboardData {
     sectors: number;
     schools: number;
     users: number;
+  };
+  formsByStatus: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    total: number;
   };
   completionRate: number;
   notifications: DashboardNotification[];
@@ -98,7 +104,7 @@ export interface SectorAdminDashboardData {
   pendingItems: PendingApprovalItem[];
   schools: any[];
   categories: any[];
-  schoolsStats: SchoolStatItem[];
+  schoolsStats: SchoolStat[];
 }
 
 export interface SchoolAdminDashboardData {

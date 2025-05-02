@@ -5,7 +5,7 @@ import { Category, CategoryStatus } from '@/types/category';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { usePermissions } from '../auth/usePermissions';
-import { useFiltering } from '../useFiltering';
+import { useFiltering } from '../common/useFiltering';
 
 export const useCategories = () => {
   const queryClient = useQueryClient();
