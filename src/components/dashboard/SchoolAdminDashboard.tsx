@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
@@ -35,10 +34,22 @@ export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   }
 
   if (error) {
+    // Xəta mesajını təhlükəsiz şəkildə əldə edirik
+    let errorMessage = 'Məlumatları yükləmək mümkün olmadı';
+    
+    if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      // Əgər error bir obyektdirsə və message xüsusiyyəti varsa
+      errorMessage = error.message || JSON.stringify(error);
+    }
+    
     return (
       <div className="text-center py-10">
         <div className="text-red-500 mb-3">Xəta baş verdi</div>
-        <p className="text-muted-foreground mb-4">{error.message || 'Məlumatları yükləmək mümkün olmadı'}</p>
+        <p className="text-muted-foreground mb-4">{errorMessage}</p>
         {onRefresh && (
           <button 
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"

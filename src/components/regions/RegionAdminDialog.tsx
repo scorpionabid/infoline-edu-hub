@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Region } from '@/types/supabase';
@@ -22,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAssignRegionAdmin } from '@/hooks/useAssignRegionAdmin';
+import { useCreateUser } from '@/hooks/useCreateUser';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -55,7 +54,7 @@ export const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({
   onSuccess
 }) => {
   const { t } = useLanguage();
-  const { assignAdmin, loading } = useAssignRegionAdmin();
+  const { createUser, loading } = useCreateUser();
   const [error, setError] = React.useState<string | null>(null);
   
   const form = useForm<AdminSchemaType>({
@@ -88,12 +87,13 @@ export const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({
     try {
       setError(null);
       
-      // Admin təyin etmək üçün hook-u çağırırıq
-      const result = await assignAdmin({
-        regionId: region.id,
-        adminName: values.adminName,
-        adminEmail: values.adminEmail,
-        adminPassword: values.adminPassword,
+      // Yeni istifadəçi yaradıb region admini təyin edirik
+      const result = await createUser({
+        name: values.adminName,
+        email: values.adminEmail,
+        password: values.adminPassword,
+        role: 'regionadmin',
+        regionId: region.id
       });
       
       if (result.success) {

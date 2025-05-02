@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Region } from '@/types/supabase';
@@ -8,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useAssignExistingUserAsAdmin } from '@/hooks/useAssignExistingUserAsAdmin';
+import { useAssignUserAsAdmin } from '@/hooks/admin/useAssignUserAsAdmin';
 import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 
 // İmport komponentləri
@@ -30,7 +29,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
   onSuccess
 }) => {
   const { t } = useLanguage();
-  const { assignUserAsRegionAdmin, loading: assignLoading } = useAssignExistingUserAsAdmin();
+  const { assignRegionAdmin, loading: assignLoading } = useAssignUserAsAdmin();
   const { users, loading: usersLoading, error: usersError, fetchAvailableUsers } = useAvailableUsers();
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +68,7 @@ export const ExistingUserAdminDialog: React.FC<ExistingUserAdminDialogProps> = (
     console.log('Admin təyin etmə başladı. Region ID:', region.id, 'User ID:', selectedUserId);
     
     try {
-      const result = await assignUserAsRegionAdmin(region.id, selectedUserId);
+      const result = await assignRegionAdmin(region.id, selectedUserId);
       
       if (result.success) {
         console.log('Admin təyin etmə uğurla başa çatdı', result);
