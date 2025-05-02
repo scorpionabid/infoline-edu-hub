@@ -161,8 +161,6 @@ export const useRegionsStore = () => {
       
       if (data && data.length > 0) {
         setRegions(data);
-        // Regionlar yükləndikdən sonra statistikaları yüklə
-        fetchRegionStats(data);
       } else {
         setRegions([]);
         setLoading(false);
@@ -172,7 +170,7 @@ export const useRegionsStore = () => {
       setRegionsError(error.message || 'Regionları yükləmək mümkün olmadı');
       setLoading(false);
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -209,8 +207,10 @@ export const useRegionsStore = () => {
   }, []);
 
   useEffect(() => {
-    fetchRegions();
-  }, [fetchRegions]);
+    if (isAuthenticated) {
+      fetchRegions();
+    }
+  }, [fetchRegions, isAuthenticated]);
 
   useEffect(() => {
     if (regions.length > 0) {
