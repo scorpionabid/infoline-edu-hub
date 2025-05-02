@@ -10,14 +10,10 @@ import CategoryForm from './CategoryForm';
 import {
   Column,
   CategoryWithColumns,
-  ColumnValidation,
-  ColumnValidationError
 } from '@/types/column';
 import {
   DataEntry,
-  EntryValue,
   DataEntrySaveStatus,
-  DataEntryStatus
 } from '@/types/dataEntry';
 import {
   getDataEntries,
