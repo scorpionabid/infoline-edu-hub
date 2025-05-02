@@ -207,6 +207,43 @@ export const supabaseWithRetry = {
           
           return { data: null, error };
         }
+      },
+      order: async (...args: any[]) => {
+        try {
+          // Əvvəlcə keşə bax
+          const cachedData = localStorage.getItem(`cache_${table}_order`);
+          const cacheTime = localStorage.getItem(`cache_${table}_order_time`);
+          
+          if (cachedData && cacheTime) {
+            const cacheAge = Date.now() - parseInt(cacheTime);
+            if (cacheAge < 5 * 60 * 1000) { // 5 dəqiqə
+              console.log(`Using cached ${table} data`);
+              return { data: JSON.parse(cachedData), error: null };
+            }
+          }
+          
+          // Keş yoxdursa və ya köhnədirsə, sorğu göndər
+          const result = await originalFrom.order(...args);
+          
+          // Uğurlu nəticəni keşlə
+          if (!result.error && result.data) {
+            localStorage.setItem(`cache_${table}_order`, JSON.stringify(result.data));
+            localStorage.setItem(`cache_${table}_order_time`, Date.now().toString());
+          }
+          
+          return result;
+        } catch (error) {
+          console.error(`Error in ${table}.order:`, error);
+          
+          // Xəta halında keşlənmiş məlumatları istifadə et
+          const cachedData = localStorage.getItem(`cache_${table}_order`);
+          if (cachedData) {
+            console.log(`Using cached ${table} data due to error`);
+            return { data: JSON.parse(cachedData), error: null };
+          }
+          
+          return { data: null, error };
+        }
       }
     };
   }
