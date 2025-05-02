@@ -41,6 +41,12 @@ const navigation = {
   
   // Dashboard
   dashboard: "İdarəetmə paneli",
+  statistics: "Statistika",
+  categories: "Kateqoriyalar",
+  approvals: "Təsdiqlər",
+  profile: "Profil",
+  logout: "Çıxış",
+  settings: "Tənzimləmələr",
   
   // Users
   users: "İstifadəçilər",

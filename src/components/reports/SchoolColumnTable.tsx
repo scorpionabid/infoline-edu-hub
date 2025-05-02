@@ -93,7 +93,7 @@ const FilterSection = ({
             onClick={() => {}}
           >
             <Download className="h-4 w-4 mr-2" />
-            {t('export')}
+            {t('exportReport')}
           </Button>
         </div>
       </div>
