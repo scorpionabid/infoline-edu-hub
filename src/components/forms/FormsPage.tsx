@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Plus, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -10,7 +10,7 @@ import { useCategoryData } from '@/hooks/dataEntry/useCategoryData';
 import { useLanguage } from '@/context/LanguageContext';
 import EmptyState from '@/components/common/EmptyState';
 
-export const FormsPage: React.FC = () => {
+const FormsPage: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { categories, loading, error, refreshCategories } = useCategoryData();
@@ -78,4 +78,5 @@ export const FormsPage: React.FC = () => {
   );
 };
 
+export { FormsPage };
 export default FormsPage;
