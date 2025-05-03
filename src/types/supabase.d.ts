@@ -1,67 +1,82 @@
 
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
 
-export interface Region {
-  id: string;
-  name: string;
-  description?: string;
-  admin_id?: string;
-  admin_email?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Sector {
-  id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  completion_rate?: number;
-}
-
-export interface School {
-  id: string;
-  name: string;
-  region_id: string;
-  sector_id: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  principal_name?: string;
-  admin_id?: string;
-  admin_email?: string;
-  status?: string;
-  type?: string;
-  language?: string;
-  student_count?: number;
-  teacher_count?: number;
-  logo?: string;
-  completion_rate?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface FullUserData {
-  id: string;
-  email: string;
-  full_name?: string;
-  role?: UserRole;
-  region_id?: string;
-  region_name?: string;
-  sector_id?: string;
-  sector_name?: string;
-  school_id?: string;
-  school_name?: string;
-  language?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-  phone?: string;
-  position?: string;
-}
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string;
+          avatar: string | null;
+          phone: string | null;
+          position: string | null;
+          language: string;
+          last_login: string | null;
+          created_at: string;
+          updated_at: string;
+          status: string;
+          email: string | null;
+        };
+        Insert: {
+          id: string;
+          full_name: string;
+          avatar?: string | null;
+          phone?: string | null;
+          position?: string | null;
+          language?: string;
+          last_login?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          status?: string;
+          email?: string | null;
+        };
+        Update: {
+          id?: string;
+          full_name?: string;
+          avatar?: string | null;
+          phone?: string | null;
+          position?: string | null;
+          language?: string;
+          last_login?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          status?: string;
+          email?: string | null;
+        };
+      };
+      user_roles: {
+        Row: {
+          id: string;
+          user_id: string;
+          role: UserRole;
+          region_id: string | null;
+          sector_id: string | null;
+          school_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          role: UserRole;
+          region_id?: string | null;
+          sector_id?: string | null;
+          school_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          role?: UserRole;
+          region_id?: string | null;
+          sector_id?: string | null;
+          school_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+    };
+  };
+};

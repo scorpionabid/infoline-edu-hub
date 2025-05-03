@@ -1,5 +1,5 @@
 
-export const common = {
+const common = {
   // Başlıqlar
   appName: "InfoLine",
   welcomeBack: "Xoş gəldiniz!",
@@ -133,3 +133,5 @@ export const common = {
   termsOfService: "Xidmət şərtləri",
   privacyPolicy: "Gizlilik siyasəti",
 };
+
+export default common;
