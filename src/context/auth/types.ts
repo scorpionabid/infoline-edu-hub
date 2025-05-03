@@ -1,23 +1,22 @@
 
-import { FullUserData, UserRole } from '@/types/supabase';
-import { Session } from '@supabase/supabase-js';
+import { PostgrestError } from "@supabase/supabase-js";
+import { FullUserData } from '@/types/user';
 
-// İstifadəçi rolları
-export type Role = UserRole;
+export type AuthStatus = "SIGNED_IN" | "SIGNED_OUT" | "INITIAL_LOADING" | "INITIAL_SESSION";
 
-// Auth vəziyyət interfeysi
-export interface AuthState {
+export type AuthError = {
+  message: string;
+  error: PostgrestError | Error | null;
+};
+
+export interface AuthContextType {
   user: FullUserData | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  session: Session | null; // session əlavə edək
-}
-
-// Auth kontext interfeysi
-export interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (userData: Partial<FullUserData>) => Promise<boolean>;
-  clearError: () => void;
+  signUp: (email: string, password: string, metadata?: object) => Promise<void>;
+  signOut: () => Promise<void>;
+  status: AuthStatus;
+  isLoading: boolean;
+  createUser: (userData: any) => Promise<any>;
+  error: AuthError | null;
 }

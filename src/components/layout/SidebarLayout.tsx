@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { Loader2, Menu, X, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SidebarNav } from './SidebarNav'; 
+import { SidebarNav } from './SidebarNav';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import Header from './Header';
@@ -15,7 +15,7 @@ export interface SidebarLayoutProps {
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -48,14 +48,6 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     }
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   if (!user) {
     navigate('/login');
     return null;
@@ -67,8 +59,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">  
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
@@ -91,7 +87,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                onClick={toggleSidebar}
               >
                 {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
               </Button>

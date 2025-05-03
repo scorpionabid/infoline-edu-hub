@@ -8,7 +8,7 @@ export interface FullUserData {
   email: string;
   full_name: string;
   role: string;
-  avatar: string; // avatar_url əvəzinə avatar istifadə edək
+  avatar: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;

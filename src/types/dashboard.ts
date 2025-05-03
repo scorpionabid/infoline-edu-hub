@@ -32,6 +32,8 @@ export interface RegionStats {
   id: string;
   name: string;
   totalSchools: number;
+  schoolCount?: number;
+  sectorCount?: number;
   completionRate: number;
   sectors?: number;
 }
@@ -61,4 +63,60 @@ export interface RecentForm extends FormItem {
   schoolName?: string;
   sectorName?: string;
   regionName?: string;
+}
+
+export interface DashboardData {
+  summary: DashboardSummary;
+  recentActivity: ActivityItem[];
+  notifications: DashboardNotification[];
+  approvalRate?: number;
+}
+
+export interface SuperAdminDashboardData extends DashboardData {
+  regions: RegionStats[];
+  totalSchools: number;
+  totalUsers: number;
+}
+
+export interface RegionAdminDashboardData extends DashboardData {
+  sectors: SectorStats[];
+  totalSchools: number;
+}
+
+export interface SectorAdminDashboardData extends DashboardData {
+  schools: SchoolStats[];
+}
+
+export interface SchoolAdminDashboardData extends DashboardData {
+  upcomingDeadlines: FormItem[];
+  recentForms: FormItem[];
+}
+
+export interface DashboardNotification {
+  id: string;
+  message: string;
+  createdAt: string;
+  type: 'deadline' | 'approval' | 'rejection' | 'comment' | 'system';
+  read: boolean;
+  link?: string;
+}
+
+export interface PendingApprovalItem {
+  id: string;
+  formId: string;
+  categoryId: string;
+  schoolId: string;
+  categoryName?: string;
+  schoolName?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
+  submittedBy: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  sectorId: string;
+  sectorName: string;
+  completionRate: number;
 }

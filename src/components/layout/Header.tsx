@@ -5,9 +5,7 @@ import { useAuth } from '@/context/auth';
 import { ModeToggle } from '@/components/ui/theme-toggle';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowLeft, Menu, X } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -16,11 +14,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
+  toggleSidebar?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) => {
+export const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -61,15 +58,6 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) 
   return (
     <header className="border-b px-4 py-2 h-16 flex items-center justify-between bg-background">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          onClick={toggleSidebar}
-          className="h-9 w-9 p-0 rounded-md"
-        >
-          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          <span className="sr-only">Toggle Menu</span>
-        </Button>
-
         {renderAdminInfo()}
       </div>
 
@@ -118,3 +106,5 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, isSidebarOpen }) 
     </header>
   );
 };
+
+export default Header;

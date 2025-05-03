@@ -35,15 +35,13 @@ const Dashboard: React.FC = () => {
   console.log(`Dashboard: İstifadəçi rolu - ${user.role}`);
   
   return (
-    <SidebarLayout>
-      <div className="space-y-4 p-4">
-        <DashboardHeader />
-        
-        {isSchoolAdmin && <SchoolAdminSetupCheck />}
-        
-        <DashboardContent />
-      </div>
-    </SidebarLayout>
+    <div className="space-y-4 p-4">
+      <DashboardHeader />
+      
+      {isSchoolAdmin && <SchoolAdminSetupCheck />}
+      
+      <DashboardContent />
+    </div>
   );
 };
 
