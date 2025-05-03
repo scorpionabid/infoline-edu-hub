@@ -16,6 +16,7 @@ export interface Category {
   updated_at: string;
   archived: boolean;
   completionRate?: number;
+  column_count?: number;
 }
 
 export interface CategoryWithColumns extends Category {

@@ -1,4 +1,3 @@
-
 export interface Column {
   id: string;
   category_id: string;

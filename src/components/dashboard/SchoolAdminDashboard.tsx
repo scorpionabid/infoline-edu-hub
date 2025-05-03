@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Grid } from '@/components/ui/grid';
 import { StatsCard } from './common/StatsCard';
@@ -62,6 +63,19 @@ export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
     );
   }
   
+  // Notification tipini uyğunlaşdırma
+  const mappedNotifications = data.notifications.map(n => ({
+    id: n.id,
+    title: n.title || '',
+    message: n.message,
+    date: new Date(n.timestamp || n.createdAt || Date.now()).toLocaleDateString(),
+    // Tipi uyğunlaşdırırıq
+    type: (n.type === 'deadline' || n.type === 'approval' || n.type === 'rejection' || n.type === 'comment' || n.type === 'system')
+      ? 'info' // deadline, approval -> info
+      : (n.type as 'info' | 'warning' | 'success' | 'error'),
+    isRead: n.isRead ?? n.read ?? false
+  }));
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -119,14 +133,7 @@ export const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
                 
         <NotificationsCard
           title={t('notifications')}
-          notifications={data.notifications.map(n => ({
-            id: n.id,
-            title: n.title,
-            message: n.message,
-            date: new Date(n.timestamp || n.createdAt || Date.now()).toLocaleDateString(),
-            type: n.type,
-            isRead: n.isRead ?? n.read ?? false
-          }))}
+          notifications={mappedNotifications}
         />
       </Grid>
     </div>

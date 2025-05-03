@@ -56,9 +56,10 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       message: 'Təhsil statistikası kateqoriyası sistemə əlavə edildi',
       date: new Date().toLocaleDateString(),
       timestamp: new Date().toISOString(),
-      type: 'info',
+      type: 'info', // Burada artıq yeni tip uyğundur
       isRead: false,
-      read: false
+      read: false,
+      createdAt: new Date().toISOString()
     },
     {
       id: '2',
@@ -66,9 +67,10 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       message: 'Məktəb məlumatlarını doldurmaq üçün son 3 gün qalıb',
       date: new Date().toLocaleDateString(),
       timestamp: new Date().toISOString(),
-      type: 'warning',
+      type: 'warning', // Burada artıq yeni tip uyğundur
       isRead: false,
-      read: false
+      read: false,
+      createdAt: new Date().toISOString()
     }
   ], []);
 
@@ -100,7 +102,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      completionRate: dashboardData.completionRate || 0,
+      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
       notifications: mockNotifications,
       regions: [],
       pendingApprovals: [],
@@ -109,6 +111,16 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       sectorCount: dashboardData.sectors || 0,
       schoolCount: dashboardData.schools || 0,
       userCount: dashboardData.users || 0,
+      totalSchools: dashboardData.schools || 0,
+      totalUsers: dashboardData.users || 0,
+      summary: {
+        totalForms: dashboardData.totalForms || 0,
+        completedForms: dashboardData.completedForms || 0,
+        pendingForms: dashboardData.pendingForms || 0,
+        overdueForms: dashboardData.overdueForms || 0,
+        completionRate: dashboardData.completionRate || 0
+      },
+      recentActivity: [],
       formsByStatus: {
         pending: dashboardData.pendingForms || 0,
         approved: dashboardData.approvedForms || 0,
@@ -128,11 +140,20 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      completionRate: dashboardData.completionRate || 0,
+      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
       notifications: mockNotifications,
       pendingItems: [],
       categories: [],
       sectors: [],
+      summary: {
+        totalForms: dashboardData.totalForms || 0,
+        completedForms: dashboardData.completedForms || 0,
+        pendingForms: dashboardData.pendingForms || 0,
+        overdueForms: dashboardData.overdueForms || 0,
+        completionRate: dashboardData.completionRate || 0
+      },
+      recentActivity: [],
+      totalSchools: dashboardData.schools || 0,
       sectorStats: {
         total: dashboardData.sectors || 0,
         active: dashboardData.activeSectors || 0
@@ -150,6 +171,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
   // SectorAdmin Dashboard
   if (userRole === 'sectoradmin') {
     const schoolsStatItem: SchoolStat = {
+      id: '0',
+      name: 'All Schools',
+      sectorId: sectorId || '',
+      sectorName: 'Current Sector',
+      completionRate: dashboardData.completionRate || 0,
       total: dashboardData.schools || 0,
       active: dashboardData.activeSchools || 0,
       incomplete: dashboardData.incompleteSchools || 0
@@ -160,12 +186,20 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0
       },
-      completionRate: dashboardData.completionRate || 0,
+      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
       notifications: mockNotifications,
       pendingItems: [],
       schools: [],
       categories: [],
-      schoolsStats: [schoolsStatItem]
+      summary: {
+        totalForms: dashboardData.totalForms || 0,
+        completedForms: dashboardData.completedForms || 0,
+        pendingForms: dashboardData.pendingForms || 0,
+        overdueForms: dashboardData.overdueForms || 0,
+        completionRate: dashboardData.completionRate || 0
+      },
+      recentActivity: [],
+      schoolsStats: [schoolsStatItem] // Artıq düzgün tip
     };
 
     return <SectorAdminDashboard data={sectorAdminData} />;
@@ -182,9 +216,19 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         incomplete: dashboardData.incompleteForms || 0,
         drafts: dashboardData.draftForms || 0
       },
-      completionRate: dashboardData.completionRate || 0,
+      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
       notifications: mockNotifications,
-      categories: dashboardData.categories || []
+      categories: dashboardData.categories || [],
+      summary: {
+        totalForms: dashboardData.totalForms || 0,
+        completedForms: dashboardData.completedForms || 0,
+        pendingForms: dashboardData.pendingForms || 0,
+        overdueForms: dashboardData.overdueForms || 0,
+        completionRate: dashboardData.completionRate || 0
+      },
+      recentActivity: [],
+      upcomingDeadlines: [],
+      recentForms: []
     };
 
     return (
@@ -194,7 +238,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         error={error}
         onRefresh={refetch}
         navigateToDataEntry={navigateToDataEntry}
-        handleFormClick={handleFormClick}
+        handleFormClick={() => handleFormClick('')} // Tip uyğunluğu üçün boş string göndəririk
       />
     );
   }

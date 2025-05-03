@@ -1,66 +1,72 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import translations from '../translations';
+import az from '@/translations/az';
+import en from '@/translations/en';
+import ru from '@/translations/ru';
+import tr from '@/translations/tr';
 
-export type Language = 'az' | 'en' | 'tr' | 'ru';
-
-export interface LanguageConfig {
-  nativeName: string;
-  flag: string;
-}
-
-export interface Translations {
-  [key: string]: string;
+interface TranslationData {
+  [key: string]: any;
 }
 
 export interface LanguageContextType {
-  t: (key: string) => string;
-  setLanguage: (lang: Language) => void;
-  languages: Record<Language, LanguageConfig>;
-  currentLanguage: Language;
-  availableLanguages: Language[];
+  currentLanguage: string;
+  changeLanguage: (lang: string) => void;
+  t: (key: string, params?: Record<string, any>) => string;
+  translations: TranslationData;
 }
 
-const languages: Record<Language, LanguageConfig> = {
-  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
-  en: { nativeName: 'English', flag: '🇬🇧' },
-  tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
-  ru: { nativeName: 'Русский', flag: '🇷🇺' }
+const translations: Record<string, TranslationData> = {
+  az,
+  en,
+  ru,
+  tr
 };
 
-export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>('az');
+  const [currentLanguage, setCurrentLanguage] = useState('az');
 
   useEffect(() => {
-    // localStorage-dan dil seçimini yüklə
-    const savedLanguage = localStorage.getItem('preferredLanguage');
-    if (savedLanguage && (savedLanguage === 'az' || savedLanguage === 'en' || savedLanguage === 'tr' || savedLanguage === 'ru')) {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage && translations[savedLanguage]) {
       setCurrentLanguage(savedLanguage);
     }
   }, []);
 
-  const setLanguage = (lang: Language) => {
-    setCurrentLanguage(lang);
-    localStorage.setItem('preferredLanguage', lang);
-    // Burada dil dəyişikliyi ilə əlaqədar əlavə işlər görülə bilər
+  const changeLanguage = (lang: string) => {
+    if (translations[lang]) {
+      setCurrentLanguage(lang);
+      localStorage.setItem('language', lang);
+    }
   };
 
-  const t = (key: string): string => {
-    // Tərcümə funksiyası
-    return translations[currentLanguage][key] || key;
-  };
-
-  const value: LanguageContextType = {
-    t,
-    setLanguage,
-    languages,
-    currentLanguage,
-    availableLanguages: Object.keys(languages) as Language[]
+  const t = (key: string, params?: Record<string, any>): string => {
+    const keys = key.split('.');
+    let value = translations[currentLanguage];
+    
+    for (const k of keys) {
+      if (!value[k]) {
+        return key; // Tərcümə tapılmadı, açar qaytarılır
+      }
+      value = value[k];
+    }
+    
+    if (typeof value === 'string') {
+      if (params) {
+        return Object.entries(params).reduce((acc, [paramKey, paramValue]) => {
+          return acc.replace(new RegExp(`{{${paramKey}}}`, 'g'), String(paramValue));
+        }, value);
+      }
+      return value;
+    }
+    
+    return key; // Tərcümə string deyil, açar qaytarılır
   };
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={{ currentLanguage, changeLanguage, t, translations: translations[currentLanguage] }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -68,25 +74,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-};
-
-// useLanguageSafe - təhlükəsiz dil hook-u
-// useLanguage-dən fərqli olaraq, kontekst olmadıqda xəta atmır
-export const useLanguageSafe = (): LanguageContextType => {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    // Xəta atmaq əvəzinə default dəyərlər qaytarırıq
-    return {
-      t: (key: string) => key, // Açarı olduğu kimi qaytarırıq
-      setLanguage: () => {}, // Boş funksiya
-      languages,
-      currentLanguage: 'az', // Default dil
-      availableLanguages: Object.keys(languages) as Language[]
-    };
   }
   return context;
 };
