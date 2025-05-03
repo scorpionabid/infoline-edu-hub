@@ -68,15 +68,16 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">  
+    <div className="min-h-screen flex flex-col bg-background">  
       <Header />
-      <div className="flex min-h-screen">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div 
           className={cn(
             "bg-background border-r transition-all duration-300 ease-in-out z-20 h-full",
             isSidebarOpen ? "w-64" : "w-0 md:w-16",
-            isMobile ? "fixed" : "relative"
+            isMobile && isSidebarOpen ? "fixed inset-y-0 left-0 h-full" : "",
+            isMobile && !isSidebarOpen ? "hidden" : ""
           )}
         >
           <div className="flex flex-col h-full">
@@ -116,22 +117,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
         )}
         
         {/* Main content */}
-        <main className={cn(
-          "flex-1 overflow-auto",
-          "transition-all duration-300"
-        )}>
-          <div className="sticky top-0 z-10 bg-background border-b flex items-center justify-between p-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="md:hidden"
-            >
-              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </Button>
-            <div className="flex-1" />
-          </div>
-          
+        <main className="flex-1 overflow-auto">
           <div className="p-4">
             <Outlet />
           </div>

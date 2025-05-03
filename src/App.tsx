@@ -47,11 +47,7 @@ const App: React.FC = () => {
   
   return (
     <>
-      <ThemeProvider
-        defaultTheme="dark"
-        enableSystem
-        disableTransitionOnChange
-      >
+      <ThemeProvider defaultTheme="dark">
         <Toaster richColors position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
