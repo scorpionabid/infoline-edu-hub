@@ -1,6 +1,6 @@
 
 import { Column, ColumnValidation } from '@/types/column';
-import { DataEntry, DataEntryStatus, EntryValue } from '@/types/dataEntry';
+import { DataEntry, DataEntryStatus, EntryValue, ColumnValidation } from '@/types/dataEntry';
 
 // Form dəyərinin validasiyası
 export const validateEntryValue = (value: string, columnType: string, validation?: ColumnValidation): string | null => {
@@ -73,7 +73,7 @@ export const validateEntries = (entries: EntryValue[], columns: Column[]): Entry
       try {
         validation = typeof column.validation === 'string' 
           ? JSON.parse(column.validation) 
-          : column.validation;
+          : column.validation as ColumnValidation;
           
         error = validateEntryValue(entry.value, column.type, validation);
       } catch(e) {

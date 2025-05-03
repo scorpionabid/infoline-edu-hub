@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { Loader2, Menu, X, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
 import Header from './Header';
 
-interface SidebarLayoutProps {
-  children: ReactNode;
+export interface SidebarLayoutProps {
+  children?: ReactNode;
 }
 
-const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
+const SidebarLayout: React.FC<SidebarLayoutProps> = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -130,11 +130,10 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
             <div className="flex-1" />
-            {/* Burada digər üst panel elementlərini əlavə edə bilərsiniz */}
           </div>
           
           <div className="p-4">
-            {children}
+            <Outlet />
           </div>
         </main>
       </div>

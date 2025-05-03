@@ -1,64 +1,60 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth';
-import { supabase } from '@/lib/supabase';
-import { School } from '@/types/supabase';
 
-/**
- * Data entry üçün məktəb məlumatlarını əldə etmək üçün hook
- * @returns {Object} Məktəb məlumatları, yüklənmə vəziyyəti və xəta
- */
-export const useSchool = () => {
-  const { user } = useAuth();
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/auth';
+import { toast } from 'sonner';
+
+export interface School {
+  id: string;
+  name: string;
+  region_id: string;
+  sector_id: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  status: string;
+}
+
+export const useSchool = (schoolId?: string) => {
   const [school, setSchool] = useState<School | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchSchool = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        // İlk olaraq istifadəçinin rolunu əldə edirik
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role, school_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (roleError) {
-          throw new Error(roleError.message);
-        }
-
-        if (!roleData || !roleData.school_id) {
+        setIsLoading(true);
+        setError(null);
+        
+        // Əgər schoolId verilmirsə, istifadəçinin aid olduğu məktəbi götürürük
+        const targetSchoolId = schoolId || user?.school_id;
+        
+        if (!targetSchoolId) {
           setIsLoading(false);
           return;
         }
-
-        // Məktəb məlumatlarını əldə edirik
-        const { data: schoolData, error: schoolError } = await supabase
+        
+        const { data, error: fetchError } = await supabase
           .from('schools')
           .select('*')
-          .eq('id', roleData.school_id)
+          .eq('id', targetSchoolId)
           .single();
-
-        if (schoolError) {
-          throw new Error(schoolError.message);
-        }
-
-        setSchool(schoolData);
+        
+        if (fetchError) throw fetchError;
+        
+        setSchool(data as School);
       } catch (err: any) {
-        console.error('Məktəb məlumatları əldə edilərkən xəta:', err);
+        console.error('Məktəb məlumatlarını yükləyərkən xəta:', err);
         setError(err.message);
+        toast.error('Məktəb məlumatları yüklənmədi');
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchSchool();
-  }, [user]);
+  }, [schoolId, user]);
 
   return { school, isLoading, error };
 };

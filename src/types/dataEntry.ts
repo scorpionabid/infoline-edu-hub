@@ -35,6 +35,17 @@ export interface ColumnValidationError {
   type: 'error' | 'warning';
 }
 
+// Column validation interfeysi
+export interface ColumnValidation {
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  minValue?: number;
+  maxValue?: number;
+  pattern?: string;
+  customError?: string;
+}
+
 // Data entry form dəyərləri üçün tip
 export interface EntryValue {
   columnId: string;

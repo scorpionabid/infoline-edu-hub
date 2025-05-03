@@ -17,6 +17,11 @@ interface FormFieldsProps {
   disabled?: boolean;
 }
 
+export interface ColumnOption {
+  label: string;
+  value: string;
+}
+
 export function FormFields({
   columns,
   values,
@@ -30,174 +35,155 @@ export function FormFields({
 
   const getError = (columnId: string): string | undefined => {
     const entry = values.find(v => v.columnId === columnId);
-    return entry?.isValid === false ? entry.error : undefined;
+    return entry?.error;
   };
 
-  const renderField = (column: Column) => {
-    const value = getValue(column.id);
-    const error = getError(column.id);
+  const parseOptions = (options: any): ColumnOption[] => {
+    if (!options) return [];
     
-    switch (column.type) {
-      case 'text':
-        return (
-          <Input
-            id={column.id}
-            value={value}
-            onChange={(e) => onChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            disabled={disabled}
-            className={error ? 'border-red-500' : ''}
-          />
-        );
-        
-      case 'textarea':
-        return (
-          <Textarea
-            id={column.id}
-            value={value}
-            onChange={(e) => onChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            disabled={disabled}
-            className={error ? 'border-red-500' : ''}
-          />
-        );
-        
-      case 'number':
-        return (
-          <Input
-            id={column.id}
-            type="number"
-            value={value}
-            onChange={(e) => onChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            disabled={disabled}
-            className={error ? 'border-red-500' : ''}
-          />
-        );
-        
-      case 'date':
-        return (
-          <Input
-            id={column.id}
-            type="date"
-            value={value}
-            onChange={(e) => onChange(column.id, e.target.value)}
-            disabled={disabled}
-            className={error ? 'border-red-500' : ''}
-          />
-        );
-        
-      case 'select':
-        const options = column.options ? JSON.parse(column.options) : [];
-        return (
-          <Select
-            value={value}
-            onValueChange={(val) => onChange(column.id, val)}
-            disabled={disabled}
-          >
-            <SelectTrigger className={error ? 'border-red-500' : ''}>
-              <SelectValue placeholder={column.placeholder || 'Seçin'} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option: string) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-        
-      case 'checkbox':
-        const checkboxOptions = column.options ? JSON.parse(column.options) : [];
-        const selectedValues = value ? value.split(',') : [];
-        
-        return (
-          <div className="space-y-2">
-            {checkboxOptions.map((option: string) => (
-              <div key={option} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`${column.id}-${option}`}
-                  checked={selectedValues.includes(option)}
-                  onCheckedChange={(checked) => {
-                    const newValues = checked
-                      ? [...selectedValues, option]
-                      : selectedValues.filter(val => val !== option);
-                    onChange(column.id, newValues.join(','));
-                  }}
-                  disabled={disabled}
-                />
-                <Label htmlFor={`${column.id}-${option}`}>{option}</Label>
-              </div>
-            ))}
-          </div>
-        );
-        
-      case 'radio':
-        const radioOptions = column.options ? JSON.parse(column.options) : [];
-        
-        return (
-          <RadioGroup
-            value={value}
-            onValueChange={(val) => onChange(column.id, val)}
-            disabled={disabled}
-          >
-            <div className="space-y-2">
-              {radioOptions.map((option: string) => (
-                <div key={option} className="flex items-center space-x-2">
-                  <RadioGroupItem value={option} id={`${column.id}-${option}`} />
-                  <Label htmlFor={`${column.id}-${option}`}>{option}</Label>
-                </div>
-              ))}
-            </div>
-          </RadioGroup>
-        );
-        
-      default:
-        return (
-          <Input
-            id={column.id}
-            value={value}
-            onChange={(e) => onChange(column.id, e.target.value)}
-            placeholder={column.placeholder || ''}
-            disabled={disabled}
-            className={error ? 'border-red-500' : ''}
-          />
-        );
+    if (typeof options === 'string') {
+      try {
+        return JSON.parse(options);
+      } catch (e) {
+        console.error('Options parse error:', e);
+        return [];
+      }
     }
+    
+    if (Array.isArray(options)) {
+      return options.map(opt => {
+        if (typeof opt === 'string') {
+          return { label: opt, value: opt };
+        }
+        return opt;
+      });
+    }
+    
+    return [];
   };
 
   return (
     <div className="space-y-6">
-      {columns.map(column => (
-        <div key={column.id} className="space-y-2">
-          <div className="flex items-center">
-            <Label
-              htmlFor={column.id}
-              className="text-sm font-medium"
+      {columns.map(column => {
+        const value = getValue(column.id);
+        const error = getError(column.id);
+        
+        return (
+          <div key={column.id} className="space-y-2">
+            <Label 
+              htmlFor={column.id} 
+              className={`text-sm font-medium ${disabled ? 'text-muted-foreground' : ''}`}
             >
               {column.name}
+              {column.is_required && <span className="text-destructive ml-1">*</span>}
             </Label>
-            {column.is_required && (
-              <span className="text-red-500 ml-1">*</span>
+            
+            {column.type === 'text' && (
+              <Input
+                id={column.id}
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                placeholder={column.placeholder || ''}
+                disabled={disabled}
+                className={error ? 'border-destructive' : ''}
+              />
+            )}
+            
+            {column.type === 'textarea' && (
+              <Textarea
+                id={column.id}
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                placeholder={column.placeholder || ''}
+                disabled={disabled}
+                className={error ? 'border-destructive' : ''}
+                rows={5}
+              />
+            )}
+            
+            {column.type === 'number' && (
+              <Input
+                id={column.id}
+                type="number"
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                placeholder={column.placeholder || ''}
+                disabled={disabled}
+                className={error ? 'border-destructive' : ''}
+              />
+            )}
+            
+            {column.type === 'select' && (
+              <Select
+                value={value}
+                onValueChange={(value) => onChange(column.id, value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className={error ? 'border-destructive' : ''}>
+                  <SelectValue placeholder={column.placeholder || 'Seçin...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {parseOptions(column.options).map((option, i) => (
+                    <SelectItem key={i} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {column.type === 'date' && (
+              <Input
+                id={column.id}
+                type="date"
+                value={value}
+                onChange={(e) => onChange(column.id, e.target.value)}
+                disabled={disabled}
+                className={error ? 'border-destructive' : ''}
+              />
+            )}
+            
+            {column.type === 'checkbox' && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={column.id}
+                  checked={value === 'true'}
+                  onCheckedChange={(checked) => onChange(column.id, checked ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label htmlFor={column.id} className="text-sm">
+                  {column.placeholder || column.name}
+                </Label>
+              </div>
+            )}
+            
+            {column.type === 'radio' && column.options && (
+              <RadioGroup
+                value={value}
+                onValueChange={(value) => onChange(column.id, value)}
+                disabled={disabled}
+              >
+                <div className="flex flex-col space-y-1">
+                  {parseOptions(column.options).map((option, i) => (
+                    <div key={i} className="flex items-center space-x-2">
+                      <RadioGroupItem value={option.value} id={`${column.id}-${i}`} />
+                      <Label htmlFor={`${column.id}-${i}`}>{option.label}</Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            )}
+            
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            
+            {column.help_text && (
+              <p className="text-xs text-muted-foreground">{column.help_text}</p>
             )}
           </div>
-          
-          {column.description && (
-            <div className="text-xs text-muted-foreground mb-2">
-              {column.description}
-            </div>
-          )}
-          
-          {renderField(column)}
-          
-          {getError(column.id) && (
-            <div className="text-xs text-red-500 mt-1">
-              {getError(column.id)}
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
+
+export default FormFields;

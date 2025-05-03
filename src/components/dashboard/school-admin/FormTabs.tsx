@@ -6,9 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, AlarmClock, Clock, CheckCircle, XCircle, FileText, ArrowRight } from 'lucide-react';
 import { FormItem } from '@/types/dashboard';
-
-// Formanın statusu üçün tip
-export type FormStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'all';
+import { FormStatus } from '@/types/form';
 
 interface FormTabsProps {
   forms: FormItem[];
@@ -62,6 +60,14 @@ export const FormTabs: React.FC<FormTabsProps> = ({
         return { label: 'Rədd edilmiş', color: 'text-red-600' };
       case 'pending':
         return { label: 'Gözləmədə', color: 'text-yellow-600' };
+      case 'dueSoon':
+        return { label: 'Müddət bitir', color: 'text-orange-600' };
+      case 'overdue':
+        return { label: 'Müddəti keçmiş', color: 'text-red-600' };
+      case 'draft':
+        return { label: 'Qaralama', color: 'text-gray-600' };
+      case 'incomplete':
+        return { label: 'Tamamlanmayıb', color: 'text-blue-600' };
       default:
         return { label: 'Qaralama', color: 'text-gray-600' };
     }
@@ -117,7 +123,7 @@ export const FormTabs: React.FC<FormTabsProps> = ({
                         
                         {form.submittedAt && (
                           <span className="text-muted-foreground">
-                            Göndərilib: {getFormattedDate(form.date)}
+                            Göndərilib: {getFormattedDate(form.submittedAt)}
                           </span>
                         )}
                       </div>

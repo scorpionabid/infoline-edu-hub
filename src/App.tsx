@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BrowserRouter as Router,
@@ -9,7 +10,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/context/auth';
 import { LanguageProvider } from '@/context/LanguageContext';
-import { LoginPage } from '@/pages/Login';
+import Login from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
 import ProfilePage from '@/pages/Profile';
 import SettingsPage from '@/pages/Settings';
@@ -57,12 +58,12 @@ const App: React.FC = () => {
           <Router>
             <Toaster richColors position="top-right" />
             <Routes>
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/404" element={<NotFound />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               
               {/* Protected routes */}
-              <Route element={<SidebarLayout />}>
+              <Route element={<SidebarLayout children={undefined} />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />

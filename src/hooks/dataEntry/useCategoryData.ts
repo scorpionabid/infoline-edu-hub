@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryWithColumns, Column } from '@/types/column';
@@ -150,5 +151,5 @@ export const useCategoryData = (schoolId?: string) => {
     return fetchCategoriesAndColumns();
   }, [fetchCategoriesAndColumns]);
   
-  return { categories, loading: loading || columnsLoading, error, refreshCategories };
+  return { categories, loading, error, refreshCategories };
 };
