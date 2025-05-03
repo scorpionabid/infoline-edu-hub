@@ -24,7 +24,21 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     
     if (error) {
       console.error('Giriş xətası:', error);
-      throw error;
+      
+      // Daha aydın xəta mesajları
+      if (error.message?.includes('Invalid login credentials')) {
+        throw new Error('Yanlış e-poçt və ya şifrə');
+      } else if (error.message?.includes('Email not confirmed')) {
+        throw new Error('E-poçt ünvanınız təsdiqlənməyib');
+      } else if (error.message?.includes('Database error')) {
+        throw new Error('Verilənlər bazası xətası. Zəhmət olmasa administratora müraciət edin.');
+      } else if (error.message === 'Failed to fetch') {
+        throw new Error('Server ilə əlaqə qurula bilmədi. İnternet bağlantınızı yoxlayın.');
+      } else if (error.message?.includes('Invalid API key')) {
+        throw new Error('Yanlış API açarı. Konfiqurasiya yoxlanılmalıdır.');
+      } else {
+        throw error;
+      }
     }
     
     console.log('Giriş uğurludur, məlumatlar:', data ? 'Əldə edildi' : 'Yoxdur');
@@ -40,19 +54,7 @@ export const signIn = async (email: string, password: string, setLoading: (loadi
     let errorMessage = 'Giriş zamanı xəta baş verdi';
     
     if (error.message) {
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Yanlış e-poçt və ya şifrə';
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'E-poçt ünvanınız təsdiqlənməyib';
-      } else if (error.message.includes('Database error')) {
-        errorMessage = 'Verilənlər bazası xətası. Zəhmət olmasa administratora müraciət edin.';
-      } else if (error.message === 'Failed to fetch') {
-        errorMessage = 'Server ilə əlaqə qurula bilmədi. İnternet bağlantınızı yoxlayın.';
-      } else if (error.message.includes('Invalid API key')) {
-        errorMessage = 'Yanlış API açarı. Konfiqurasiya yoxlanılmalıdır.';
-      } else {
-        errorMessage = error.message;
-      }
+      errorMessage = error.message;
     }
     
     toast.error('Giriş uğursuz oldu', {

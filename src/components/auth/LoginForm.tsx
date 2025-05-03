@@ -65,7 +65,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
           toast.success(t('loginSuccess'));
           navigate('/dashboard');
         } else {
-          console.log('Giriş uğursuz oldu - əlavə xəta yoxdur');
+          console.log('Giriş uğursuz oldu');
+          // Xüsusi səhvləri göstərək, burada auth kontekstindən gələn error'dan istifadə edirik
           setFormError('root', { 
             type: 'manual',
             message: t('invalidCredentials')

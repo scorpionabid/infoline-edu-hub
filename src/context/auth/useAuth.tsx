@@ -117,21 +117,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      setError(null);
+      setError(null); // Əvvəlki xətaları təmizləyirik
       
+      console.log(`Login attempt with email: ${email}`);
+      
+      // Supabase giriş
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Login error:', error);
+        
+        // Daha istifadəçi dostu xəta mesajları
+        if (error.message?.includes('Invalid login credentials')) {
+          setError('Yanlış e-poçt və ya şifrə');
+        } else if (error.message?.includes('Email not confirmed')) {
+          setError('Email təsdiqlənməyib');
+        } else if (error.message === 'Failed to fetch') {
+          setError('Server ilə əlaqə qurula bilmədi. İnternet bağlantınızı yoxlayın.');
+        } else {
+          setError(error.message);
+        }
+        
+        return false;
+      }
       
+      console.log('Login successful, user data:', data?.user?.id);
       return true;
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message);
+      console.error('Unexpected login error:', err);
+      setError(err.message || 'Gözlənilməz xəta baş verdi');
       toast.error('Giriş uğursuz oldu', {
-        description: err.message
+        description: err.message || 'Gözlənilməz xəta baş verdi'
       });
       return false;
     } finally {
@@ -150,6 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(null);
       setIsAuthenticated(false);
+      setSession(null);
     } catch (err: any) {
       console.error('Logout error:', err);
       setError(err.message);
@@ -166,6 +186,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       setError(null);
       
+      if (!user) {
+        setError('İstifadəçi hesabına giriş olunmayıb');
+        return false;
+      }
+      
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -173,6 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
+      // Profil məlumatlarını yeniləmək
       setUser((prev) => prev ? { ...prev, ...updates } : null);
       toast.success('Profil uğurla yeniləndi');
       return true;
@@ -188,24 +214,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Xəta təmizləmə funksiyası
   const clearError = () => {
     setError(null);
   };
 
+  const contextValue: AuthContextType = {
+    user,
+    session,
+    isAuthenticated,
+    isLoading,
+    error,
+    login,
+    logout,
+    updateUser,
+    clearError
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isAuthenticated,
-        isLoading,
-        error,
-        login,
-        logout,
-        updateUser,
-        clearError
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

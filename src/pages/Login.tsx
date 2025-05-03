@@ -9,7 +9,7 @@ import LoadingScreen from '@/components/auth/LoadingScreen';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Login = () => {
-  const { isAuthenticated, isLoading, error, clearError, user } = useAuth();
+  const { isAuthenticated, loading, error, clearError, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
@@ -18,7 +18,7 @@ const Login = () => {
   useEffect(() => {
     console.log('Login page state:', {
       isAuthenticated,
-      isLoading,
+      loading,
       userRole,
       error,
       user: user ? {
@@ -29,7 +29,7 @@ const Login = () => {
     });
     
     // Autentifikasiya olunmuş istifadəçiləri dashboard-a yönləndirmək
-    if (isAuthenticated && user && !isLoading) {
+    if (isAuthenticated && user && !loading) {
       console.log(`Redirecting authenticated user to ${from}`, {
         role: userRole || user.role || 'unknown'
       });
@@ -41,10 +41,10 @@ const Login = () => {
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, isLoading, navigate, from, user, userRole]);
+  }, [isAuthenticated, loading, navigate, from, user, userRole]);
 
   // Loading vəziyyətində yüklənmə göstəricisi
-  if (isLoading) {
+  if (loading) {
     return <LoadingScreen />;
   }
 

@@ -114,9 +114,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Köhnə API uyğunluğunu təmin etmək üçün signIn/signOut wrapper-ləri
   const signIn = async (email: string, password: string) => {
     try {
+      setError(null); // Əvvəlki xətaları təmizləyirik
       const success = await newAuth.login(email, password);
       return success ? { data: {} } : { error: newAuth.error };
     } catch (error: any) {
+      setError(error.message);
       return { error };
     }
   };
@@ -133,6 +135,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   };
 
+  // Login və logout funksiyalarını doğrudan yeni kontekstdən alaq
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setError(null);
+      return await newAuth.login(email, password);
+    } catch (error: any) {
+      setError(error.message);
+      return false;
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      await newAuth.logout();
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user: newAuth.user,
@@ -141,8 +162,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearError,
       signIn,
       signOut,
-      login: newAuth.login,
-      logout: newAuth.logout,
+      login,
+      logout,
       createUser
     }}>
       {children}
