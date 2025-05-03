@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import PendingApprovalsTable, { PendingApprovalItem } from '@/components/approval/PendingApprovalsTable';
 
 interface PendingApprovalPanelProps {
@@ -13,7 +12,7 @@ const PendingApprovalPanel: React.FC<PendingApprovalPanelProps> = ({
   pendingApprovals,
   onRefresh
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
 
   return (
     <Card>

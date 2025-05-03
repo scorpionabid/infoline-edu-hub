@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -7,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import ApprovalActionCard from './ApprovalActionCard';
 
 interface ApprovalDialogProps {
@@ -29,7 +28,7 @@ const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
   categoryName,
   onComplete
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
 
   const handleComplete = () => {
     onComplete();

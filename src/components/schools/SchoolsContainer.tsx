@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { School } from '@/types/supabase';
 import { Region } from '@/types/supabase';
 import { Sector } from '@/types/supabase';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -70,7 +69,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   regionNames,
   sectorNames
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const { userRole, regionId } = usePermissions();
   const { user } = useAuth();
 

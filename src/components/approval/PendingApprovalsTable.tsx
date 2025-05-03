@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -10,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { formatDate } from '@/utils/date';
 import { Check, Eye } from 'lucide-react';
 import ApprovalDialog from './ApprovalDialog';
@@ -34,7 +33,7 @@ const PendingApprovalsTable: React.FC<PendingApprovalsTableProps> = ({
   items, 
   onRefresh 
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   const [selectedItem, setSelectedItem] = useState<PendingApprovalItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 

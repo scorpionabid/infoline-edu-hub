@@ -1,110 +1,80 @@
 
 const reports = {
-  // Ana başlıqlar
-  reportsTitle: "Hesabatlar",
-  reportsDescription: "Məlumat analizi və hesabatları idarə edin",
-  
-  // Hesabat növləri
-  reportTypes: {
-    completionRate: "Tamamlanma dərəcəsi",
-    statisticalAnalysis: "Statistik analiz",
-    comparisonReport: "Müqayisəli hesabat",
-    columnAnalysis: "Sütun analizi",
-  },
-  
-  // Hesabat yaratma və redaktə
-  createReportTitle: "Hesabat yaratma",
-  reportSaved: "Hesabat uğurla saxlanıldı",
-  reportDeleted: "Hesabat silindi",
-  reportNotFound: "Hesabat tapılmadı",
-  selectReportType: "Hesabat növünü seçin",
-  selectTimeRange: "Zaman aralığını seçin",
-  selectEntities: "Hesabat üçün elementləri seçin",
-  
-  // Hesabat xüsusiyyətləri
-  reportName: "Hesabat adı",
-  reportDescription: "Hesabat təsviri",
-  dateRange: "Tarix aralığı",
-  lastUpdated: "Son yenilənmə",
-  createdBy: "Yaradan",
-  reportAccess: "Giriş icazəsi",
-  reportFormat: "Hesabat formatı",
-  includeCharts: "Qrafikləri daxil edin",
-  includeRawData: "Xam verilənləri daxil edin",
-  
-  // Ümumi mətnlər
-  schoolName: "Məktəb adı",
-  regionName: "Region", // Renamed to regionName
-  sectorName: "Sektor", // Renamed to sectorName
-  exportReport: "Hesabatı ixrac et",
-  createReport: "Hesabat yarat",
-  downloadReport: "Hesabatı endir",
-  shareReport: "Hesabatı paylaş",
-  previewReport: "Hesabata önbaxış",
-  editReport: "Hesabatı redaktə et",
-  deleteReport: "Hesabatı sil",
-  
-  // Diaqramlar və qrafiklər
-  chartTitle: "Qrafik başlığı",
-  chartType: "Qrafik növü",
-  axisLabels: "Ox nişanları",
-  legendPosition: "Əfsanə mövqeyi",
-  chartColors: "Qrafik rəngləri",
-  
-  // Çap və ixrac
-  printReport: "Hesabatı çap et",
-  exportToPdf: "PDF kimi ixrac et",
-  exportToExcel: "Excel kimi ixrac et",
-  exportToCsv: "CSV kimi ixrac et",
-  
-  // Boş vəziyyətlər
-  noReportsYet: "Hələ heç bir hesabat yaradılmayıb",
-  noReportsFound: "Axtarış meyarlarına uyğun hesabat tapılmadı",
-  
-  // Filtrlər və axtarış
-  searchReports: "Hesabatları axtar",
-  filterByType: "Növə görə filtrlə",
-  filterByDate: "Tarixə görə filtrlə",
-  filterByAuthor: "Müəllifə görə filtrlə",
-  clearFilters: "Filtrləri təmizlə",
-  
-  // Digər mətnlər
-  loadingReport: "Hesabat yüklənir...",
-  generatingReport: "Hesabat yaradılır...",
-  processingData: "Məlumatlar emal olunur...",
-  reportReady: "Hesabat hazırdır",
-  
-  saveAsTemplate: "Şablon kimi saxla",
-  scheduleReport: "Hesabatı planlaşdır",
-  addToFavorites: "Seçilmişlərə əlavə et",
-  removeFromFavorites: "Seçilmişlərdən çıxar",
-  
-  // Status mesajları
-  reportGenerationFailed: "Hesabat yaratmaq alınmadı",
-  insufficientData: "Hesabat üçün kifayət qədər məlumat yoxdur",
-  dataValidationError: "Məlumat təsdiqlənməsində xəta",
-  
-  // Hesabat əlavə tərcümələr
+  // Hesabat başlıqları
+  reports: "Hesabatlar",
+  report: "Hesabat",
   reportTitle: "Hesabat",
   reportDescription: "Məlumat analizi və hesabat yarat",
-  allReports: "Bütün hesabatlar",
-  createNewReport: "Yeni hesabat yarat",
-  reportType: "Hesabat növü",
-  statistics: "Statistika",
-  column: "Sütun",
+  
+  // Hesabat növləri
+  statisticsReport: "Statistika hesabatı",
+  completionReport: "Tamamlanma hesabatı",
+  comparisonReport: "Müqayisəli hesabat",
+  columnReport: "Sütun hesabatı",
+  customReport: "Xüsusi hesabat",
+  
+  // Zaman dövrləri
+  timeframe: "Zaman dövrü",
+  daily: "Gündəlik",
+  weekly: "Həftəlik",
+  monthly: "Aylıq",
+  quarterly: "Rüblük",
+  yearly: "İllik",
+  
+  // Hesabat əməliyyatları
+  createReport: "Hesabat yarat",
+  viewReport: "Hesabata bax",
+  editReport: "Hesabatı redaktə et",
+  deleteReport: "Hesabatı sil",
+  exportReport: "Hesabatı ixrac et",
+  
+  // Hesabat parametrləri
+  reportParameters: "Hesabat parametrləri",
+  selectCategory: "Kateqoriya seç",
+  selectSchools: "Məktəblər seç",
+  selectColumns: "Sütunlar seç",
+  selectDateRange: "Tarix aralığı seç",
+  
+  // Hesabat görünüşü
+  chartView: "Qrafik görünüş",
+  tableView: "Cədvəl görünüş",
+  print: "Çap et",
+  
+  // Hesabat statusları
+  generating: "Generasiya olunur",
+  ready: "Hazır",
+  failed: "Uğursuz oldu",
+
+  // Hesabat filtrləri
+  filters: "Filtrlər",
+  category: "Kateqoriya",
   school: "Məktəb",
   region: "Region",
   sector: "Sektor",
+  date: "Tarix",
+  
+  // Hesabat növləri
+  reportType: "Hesabat növü",
+  statistics: "Statistika",
+  completion: "Tamamlanma",
+  comparison: "Müqayisə",
+  column: "Sütun",
   custom: "Fərdi",
   allTypes: "Bütün növlər",
+  
+  // Hesabat əlavə tərcümələri
   searchReports: "Hesabatları axtar",
   preview: "Önizləmə",
   download: "Yüklə",
   noReportsFound: "Hesabat tapılmadı",
   createYourFirstReport: "İlk hesabatınızı yaradın",
   templates: "Şablonlar",
-  all: "Hamısı",
-  completion: "Tamamlanma"
+  
+  // Əlavə
+  allReports: "Bütün hesabatlar",
+  createNewReport: "Yeni hesabat yarat",
+  savedReports: "Saxlanılmış hesabatlar",
+  recentReports: "Son hesabatlar"
 };
 
 export default reports;

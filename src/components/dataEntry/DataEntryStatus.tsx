@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { CheckCircle, Clock, XCircle, AlertTriangle, FileText, HelpCircle } from 'lucide-react';
 
 interface DataEntryStatusProps {
@@ -15,7 +14,7 @@ const DataEntryStatus: React.FC<DataEntryStatusProps> = ({
   size = 'md',
   showIcon = true 
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useLanguage();
   
   const getStatusConfig = () => {
     switch (status) {

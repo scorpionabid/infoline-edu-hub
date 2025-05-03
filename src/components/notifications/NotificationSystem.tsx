@@ -1,103 +1,44 @@
+import React, { useEffect } from 'react';
+import { toast } from 'sonner';
+import { useNotificationsQuery } from '@/hooks/useNotificationsQuery';
+import { useLanguage } from '@/context/LanguageContext';
 
-import React from 'react';
-import { useNotifications } from '@/context/NotificationContext';
-import { useLanguageSafe } from '@/context/LanguageContext';
-import { Bell, BellOff, Check } from 'lucide-react';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { NotificationItem } from './NotificationItem';
-import { cn } from '@/lib/utils';
+const NotificationSystem: React.FC = () => {
+  const { t } = useLanguage();
+  const { data: notifications, isSuccess, refetch } = useNotificationsQuery();
 
-const NotificationSystem = () => {
-  const { t } = useLanguageSafe();
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    clearAll 
-  } = useNotifications();
-  
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label={t('notifications')}
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge 
-              className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-rose-500 text-white text-xs"
-            >
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-3 border-b">
-          <div className="font-semibold">{t('notifications')}</div>
-          <div className="flex gap-2">
-            {notifications.length > 0 && (
-              <>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => markAllAsRead()}
-                  disabled={unreadCount === 0}
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  <span className="text-xs">{t('markAllAsRead')}</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => clearAll()}
-                >
-                  <BellOff className="h-4 w-4 mr-1" />
-                  <span className="text-xs">{t('clearAll')}</span>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-        
-        <ScrollArea className="h-[300px]">
-          {notifications.length > 0 ? (
-            <div className="py-1">
-              {notifications.map((notification) => (
-                <div 
-                  key={notification.id} 
-                  className={cn(
-                    "hover:bg-muted transition-colors",
-                    !notification.isRead ? "bg-muted/50" : ""
-                  )}
-                >
-                  <NotificationItem 
-                    notification={notification} 
-                    onMarkAsRead={markAsRead}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
-              {t('noNotifications')}
-            </div>
-          )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  );
+  useEffect(() => {
+    if (isSuccess && notifications) {
+      notifications.forEach(notification => {
+        if (!notification.is_read) {
+          toast(notification.title, {
+            description: notification.message || t('noDescription'),
+            duration: 5000,
+            className: 'bg-white border border-gray-200 shadow-md rounded-md',
+            onAutoClose: () => {
+              // Bildiriş avtomatik bağlandıqda oxundu kimi qeyd et
+              // Burada API endpoint-ə bildirişin ID-sini göndərmək lazımdır
+              console.log(`Bildiriş oxundu kimi qeyd edildi: ${notification.id}`);
+              // refetch(); // Bildirişləri yenidən yüklə
+            },
+            action: {
+              label: 'Ətraflı bax',
+              onClick: () => {
+                // Ətraflı bax linkinə klikləndikdə baş verəcək hadisələr
+                console.log(`Ətraflı bax klikləndi: ${notification.id}`);
+                // Bildirişi oxundu kimi qeyd et və ətraflı səhifəyə yönləndir
+                // window.location.href = `/notifications/${notification.id}`;
+                refetch(); // Bildirişləri yenidən yüklə
+              },
+            }
+          });
+        }
+      });
+    }
+  }, [notifications, isSuccess, t, refetch]);
+
+  return null; // Bu komponent heç bir UI render etmir
 };
 
 export default NotificationSystem;
+
