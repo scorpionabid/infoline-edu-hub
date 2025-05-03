@@ -18,14 +18,4 @@ export interface User {
   last_login?: string;
   created_at?: string;
   updated_at?: string;
-  twoFactorEnabled?: boolean;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    inApp: boolean;
-  };
-}
-
-export interface FullUserData extends User {
-  // Əlavə xüsusiyyətlər
 }

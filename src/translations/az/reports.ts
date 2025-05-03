@@ -1,5 +1,5 @@
 
-const reports = {
+export const reports = {
   // Ana başlıqlar
   reportsTitle: "Hesabatlar",
   reportsDescription: "Məlumat analizi və hesabatları idarə edin",
@@ -83,21 +83,4 @@ const reports = {
   reportGenerationFailed: "Hesabat yaratmaq alınmadı",
   insufficientData: "Hesabat üçün kifayət qədər məlumat yoxdur",
   dataValidationError: "Məlumat təsdiqlənməsində xəta",
-  
-  // Əlavə tərcümələr
-  reportTitle: "Hesabat başlığı",
-  reportType: "Hesabat növü",
-  schoolColumnReportTitle: "Məktəb və sütunların hesabatı",
-  allReports: "Bütün hesabatlar",
-  customReport: "Fərdi hesabat",
-  comparison: "Müqayisə",
-  completion: "Tamamlanma",
-  column: "Sütun",
-  category: "Kateqoriya",
-  school: "Məktəb",
-  region: "Region",
-  sector: "Sektor",
-  reportDescription: "Hesabat haqqında təsvir",
 };
-
-export default reports;
