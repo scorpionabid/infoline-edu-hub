@@ -76,20 +76,25 @@ export interface SuperAdminDashboardData extends DashboardData {
   regions: RegionStats[];
   totalSchools: number;
   totalUsers: number;
+  stats?: any;
 }
 
 export interface RegionAdminDashboardData extends DashboardData {
   sectors: SectorStats[];
   totalSchools: number;
+  stats?: any;
 }
 
 export interface SectorAdminDashboardData extends DashboardData {
   schools: SchoolStats[];
+  stats?: any;
 }
 
 export interface SchoolAdminDashboardData extends DashboardData {
   upcomingDeadlines: FormItem[];
   recentForms: FormItem[];
+  formStats?: any;
+  completionRate?: number;
 }
 
 export interface DashboardNotification {
@@ -98,7 +103,10 @@ export interface DashboardNotification {
   createdAt: string;
   type: 'deadline' | 'approval' | 'rejection' | 'comment' | 'system';
   read: boolean;
-  link?: string;
+  title?: string;
+  timestamp?: string;
+  date?: string;
+  isRead?: boolean;
 }
 
 export interface PendingApprovalItem {
@@ -119,4 +127,5 @@ export interface SchoolStat {
   sectorId: string;
   sectorName: string;
   completionRate: number;
+  total?: number;
 }

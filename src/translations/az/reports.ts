@@ -1,109 +1,86 @@
 
-/**
- * Hesabatlar və Analizlər üçün tərcümələr
- */
-const reports = {
-  // Hesabat növləri
-  reportTitle: "Hesabatlar",
-  reportDescription: "Məlumatları analiz edin və hesabatlar yaradın",
-  schoolColumnReportTitle: "Məktəb Məlumatları Hesabatı",
-  categoryCompletionReport: "Kateqoriya Tamamlanma Hesabatı",
-  schoolComparisonReport: "Məktəb Müqayisə Hesabatı",
-  timeSeriesReport: "Zaman Seriyası Hesabatı",
-  customReport: "Fərdi Hesabat",
-  statistics: "Statistika",
-  completion: "Tamamlanma",
-  comparison: "Müqayisə",
-  column: "Sütun",
-  category: "Kateqoriya",
-  school: "Məktəb",
-  region: "Region",
-  sector: "Sektor",
-  custom: "Fərdi",
+export const reports = {
+  // Ana başlıqlar
+  reportsTitle: "Hesabatlar",
+  reportsDescription: "Məlumat analizi və hesabatları idarə edin",
   
-  // Filtirlər və seçimlər
-  selectCategory: "Kateqoriya seçin",
-  selectRegion: "Region seçin",
-  selectSector: "Sektor seçin",
-  selectSchool: "Məktəb seçin",
-  filters: "Filtrlər",
-  showFilters: "Filtrləri göstər",
-  hideFilters: "Filtrləri gizlət",
-  resetFilters: "Filtrləri sıfırla",
-  searchSchool: "Məktəb axtar",
-  enterSchoolName: "Məktəb adını daxil edin",
+  // Hesabat növləri
+  reportTypes: {
+    completionRate: "Tamamlanma dərəcəsi",
+    statisticalAnalysis: "Statistik analiz",
+    comparisonReport: "Müqayisəli hesabat",
+    columnAnalysis: "Sütun analizi",
+  },
+  
+  // Hesabat yaratma və redaktə
+  createReportTitle: "Hesabat yaratma",
+  reportSaved: "Hesabat uğurla saxlanıldı",
+  reportDeleted: "Hesabat silindi",
+  reportNotFound: "Hesabat tapılmadı",
+  selectReportType: "Hesabat növünü seçin",
+  selectTimeRange: "Zaman aralığını seçin",
+  selectEntities: "Hesabat üçün elementləri seçin",
+  
+  // Hesabat xüsusiyyətləri
+  reportName: "Hesabat adı",
+  reportDescription: "Hesabat təsviri",
+  dateRange: "Tarix aralığı",
+  lastUpdated: "Son yenilənmə",
+  createdBy: "Yaradan",
+  reportAccess: "Giriş icazəsi",
+  reportFormat: "Hesabat formatı",
+  includeCharts: "Qrafikləri daxil edin",
+  includeRawData: "Xam verilənləri daxil edin",
   
   // Ümumi mətnlər
   schoolName: "Məktəb adı",
-  region: "Region",
-  sector: "Sektor",
+  regionName: "Region", // Renamed to regionName
+  sectorName: "Sektor", // Renamed to sectorName
   exportReport: "Hesabatı ixrac et",
   createReport: "Hesabat yarat",
-  viewReport: "Hesabata bax",
-  downloadReport: "Hesabatı yüklə",
-  noDataAvailable: "Məlumat mövcud deyil",
-  selectAnotherCategory: "Başqa kateqoriya seçin və ya filtrləri dəyişin",
-  viewAll: "Hamısına bax",
-  excelExport: "Excel-ə ixrac et",
-  fileDownloaded: "Fayl yükləndi",
-  allReports: "Bütün hesabatlar",
-  insights: "Məlumatlar",
-  recommendations: "Tövsiyələr",
-  published: "Dərc edilmiş",
-  archived: "Arxivlənmiş",
-  draft: "Qaralama",
-  value: "Dəyər",
-  count: "Say",
-  sharing: "Paylaşılır...",
-  share: "Paylaş",
+  downloadReport: "Hesabatı endir",
   shareReport: "Hesabatı paylaş",
-  enterEmailToShare: "Hesabatı paylaşmaq üçün email daxil edin",
-  edit: "Redaktə et",
+  previewReport: "Hesabata önbaxış",
+  editReport: "Hesabatı redaktə et",
+  deleteReport: "Hesabatı sil",
   
-  // Hesabat nəticələri
-  totalSchools: "Ümumi məktəb sayı",
-  averageStudents: "Orta şagird sayı",
-  averageTeachers: "Orta müəllim sayı",
-  completionRate: "Tamamlanma faizi",
-  submissionRate: "Təqdim etmə faizi",
+  // Diaqramlar və qrafiklər
+  chartTitle: "Qrafik başlığı",
+  chartType: "Qrafik növü",
+  axisLabels: "Ox nişanları",
+  legendPosition: "Əfsanə mövqeyi",
+  chartColors: "Qrafik rəngləri",
   
-  // Xəbərdarlıqlar və bildirişlər
-  noDataToExport: "İxrac etmək üçün məlumat yoxdur",
-  exportSuccess: "Məlumatlar uğurla ixrac edildi",
-  exportError: "İxrac zamanı xəta baş verdi",
-  tryAgainLater: "Bir az sonra yenidən cəhd edin",
-  categoryNotFound: "Kateqoriya tapılmadı",
-  errorLoading: "Məlumatlar yüklənərkən xəta baş verdi",
+  // Çap və ixrac
+  printReport: "Hesabatı çap et",
+  exportToPdf: "PDF kimi ixrac et",
+  exportToExcel: "Excel kimi ixrac et",
+  exportToCsv: "CSV kimi ixrac et",
   
-  // Dashboard elementləri
-  categoryCompletion: "Kateqoriyalar üzrə tamamlanma",
-  sectorCompletion: "Sektorlar üzrə tamamlanma",
-  regionDataSubmissionRate: "Region məlumatları təqdim etmə faizi",
-  quickActions: "Sürətli əməliyyatlar",
-  manageSchools: "Məktəbləri idarə et",
-  manageUsers: "İstifadəçiləri idarə et",
-  manageCategories: "Kateqoriyaları idarə et",
-  viewReports: "Hesabatlara bax",
-
-  // Təsdiq/rədd etmə əməliyyatları
-  approve: "Təsdiqlə",
-  reject: "Rədd et",
-  confirmApproval: "Təsdiq əməliyyatını təsdiqləyin",
-  confirmRejection: "Rədd etmə əməliyyatını təsdiqləyin",
-  rejectionReason: "Rədd etmə səbəbi",
-  enterRejectionReason: "Rədd etmə səbəbini daxil edin",
-  processing: "Əməliyyat yerinə yetirilir...",
-  cancel: "Ləğv et",
-  status: "Status",
-  actions: "Əməliyyatlar",
-  viewDetails: "Ətraflı bax",
-  unexpectedError: "Gözlənilməz xəta baş verdi",
-  schoolsSelected: "məktəb seçilib",
-  approveSelected: "Seçilənləri təsdiqlə",
-  rejectSelected: "Seçilənləri rədd et",
-  selectAll: "Hamısını seç",
-  deselectAll: "Seçimi ləğv et",
-  noSchoolsSelected: "Heç bir məktəb seçilməyib"
+  // Boş vəziyyətlər
+  noReportsYet: "Hələ heç bir hesabat yaradılmayıb",
+  noReportsFound: "Axtarış meyarlarına uyğun hesabat tapılmadı",
+  
+  // Filtrlər və axtarış
+  searchReports: "Hesabatları axtar",
+  filterByType: "Növə görə filtrlə",
+  filterByDate: "Tarixə görə filtrlə",
+  filterByAuthor: "Müəllifə görə filtrlə",
+  clearFilters: "Filtrləri təmizlə",
+  
+  // Digər mətnlər
+  loadingReport: "Hesabat yüklənir...",
+  generatingReport: "Hesabat yaradılır...",
+  processingData: "Məlumatlar emal olunur...",
+  reportReady: "Hesabat hazırdır",
+  
+  saveAsTemplate: "Şablon kimi saxla",
+  scheduleReport: "Hesabatı planlaşdır",
+  addToFavorites: "Seçilmişlərə əlavə et",
+  removeFromFavorites: "Seçilmişlərdən çıxar",
+  
+  // Status mesajları
+  reportGenerationFailed: "Hesabat yaratmaq alınmadı",
+  insufficientData: "Hesabat üçün kifayət qədər məlumat yoxdur",
+  dataValidationError: "Məlumat təsdiqlənməsində xəta",
 };
-
-export default reports;

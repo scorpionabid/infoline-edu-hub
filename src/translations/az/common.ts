@@ -1,135 +1,135 @@
 
-/**
- * Ümumi tərcümələr
- */
-const common = {
-  // Ümumi
-  yes: "Bəli",
-  no: "Xeyr",
-  ok: "Tamam",
-  add: "Əlavə et",
-  edit: "Redaktə et",
-  delete: "Sil",
-  cancel: "Ləğv et",
-  save: "Saxla",
-  close: "Bağla",
-  back: "Geri",
-  next: "İrəli",
+export const common = {
+  // Başlıqlar
+  appName: "InfoLine",
+  welcomeBack: "Xoş gəldiniz!",
+  welcome: "Xoş gəldiniz",
+  login: "Daxil ol",
+  register: "Qeydiyyatdan keç",
+  
+  // Naviqasiya
+  navigation: "Naviqasiya",
+  dashboard: "İdarəetmə Paneli",
+  categories: "Kateqoriyalar",
+  columnSettings: "Sütunlar", // columnsun adı dəyişib columnSettings edin
+  dataEntry: "Məlumat Daxiletmə",
+  reports: "Hesabatlar",
+  statistics: "Statistikalar",
+  settings: "Tənzimləmələr",
+  profile: "Profil",
+  users: "İstifadəçilər",
+  schools: "Məktəblər",
+  sectors: "Sektorlar",
+  regions: "Regionlar",
+  forms: "Formalar",
+  approvals: "Təsdiqləmələr",
+  logout: "Çıxış",
+  signOut: "Çıxış",
+  
+  // Ümumi interfeys elementləri
   search: "Axtar",
   filter: "Filtrlə",
-  reset: "Sıfırla",
-  select: "Seç",
-  
-  // Status
-  status: "Status",
-  active: "Aktiv",
-  inactive: "Deaktiv",
-  pending: "Gözləmədə",
-  approved: "Təsdiqlənmiş",
-  rejected: "Rədd edilmiş",
-  completed: "Tamamlanmış",
-  draft: "Qaralama",
-  
-  // Formalar
-  form: "Form",
-  submit: "Təqdim et",
-  required: "Tələb olunur",
-  optional: "İstəyə bağlı",
+  sort: "Sırala",
+  create: "Yarat",
+  edit: "Redaktə et",
+  delete: "Sil",
+  save: "Yadda saxla",
+  cancel: "Ləğv et",
+  confirm: "Təsdiqlə",
+  back: "Geri",
+  next: "İrəli",
   loading: "Yüklənir...",
-  searchPlaceholder: "Axtar...",
+  success: "Uğurlu əməliyyat",
+  error: "Xəta baş verdi",
+  warning: "Diqqət",
+  info: "Məlumat",
   
-  // Vaxt
-  date: "Tarix",
-  time: "Vaxt",
+  // Zaman
   today: "Bu gün",
   yesterday: "Dünən",
   tomorrow: "Sabah",
+  now: "İndi",
+  minutesAgo: "{{count}} dəqiqə əvvəl",
+  hoursAgo: "{{count}} saat əvvəl",
+  daysAgo: "{{count}} gün əvvəl",
+  
+  // Status
+  pending: "Gözləmədə",
+  approved: "Təsdiqlənib",
+  rejected: "Rədd edilib",
+  draft: "Qaralama",
+  completed: "Tamamlanıb",
+  active: "Aktiv",
+  inactive: "Deaktiv",
   
   // Xəta mesajları
-  error: "Xəta",
-  success: "Uğurlu",
-  warning: "Xəbərdarlıq",
-  info: "Məlumat",
-  errorOccurred: "Xəta baş verdi",
-  successMessage: "Əməliyyat uğurla tamamlandı",
+  requiredField: "Bu sahə məcburidir",
+  invalidEmail: "E-poçt ünvanı düzgün deyil",
+  invalidPassword: "Şifrə düzgün deyil",
+  passwordMismatch: "Şifrələr uyğun gəlmir",
+  connectionError: "Əlaqə xətası",
+  serverError: "Server xətası",
   
-  // Təsdiq
-  confirm: "Təsdiq et",
-  confirmDelete: "Silməyi təsdiq edin",
-  confirmDeleteMessage: "Bu məlumatı silmək istədiyinizə əminsiniz?",
+  // Mesajlar
+  changesSaved: "Dəyişikliklər yadda saxlanıldı",
+  itemCreated: "Element yaradıldı",
+  itemUpdated: "Element yeniləndi",
+  itemDeleted: "Element silindi",
   
-  // Məlumat mövcud deyil
+  // Formlarda istifadə olunan
+  enterEmail: "E-poçt ünvanını daxil edin",
+  enterPassword: "Şifrəni daxil edin",
+  confirmPassword: "Şifrəni təsdiqləyin",
+  forgotPassword: "Şifrəni unutmusunuz?",
+  rememberMe: "Məni xatırla",
+  enterName: "Adı daxil edin",
+  enterValue: "Dəyəri daxil edin",
+  selectOption: "Seçim edin",
+  
+  // Ümumi mesajlar
   noResults: "Nəticə tapılmadı",
-  noDataAvailable: "Məlumat mövcud deyil",
-  noResultsFound: "Nəticə tapılmadı",
+  noData: "Məlumat yoxdur",
+  emptyList: "Siyahı boşdur",
+  loadMore: "Daha çox göstər",
+  showDetails: "Detallları göstər",
+  hideDetails: "Detalları gizlət",
+  seeAll: "Hamısını göstər",
   
-  // Yüklə/Endir
+  // Əlavə elementlər
+  add: "Əlavə et",
+  remove: "Sil",
   upload: "Yüklə",
   download: "Endir",
+  import: "İmport",
+  export: "Export",
+  preview: "Önbaxış",
   
-  // Cədvəl
-  columns: "Sütunlar",
-  rows: "Sətirlər",
-  page: "Səhifə",
-  of: "-dan",
-  rowsPerPage: "Səhifə başına sətirlər",
-
-  // Naviqasiya
-  home: "Ana səhifə",
-  dashboard: "İdarəetmə Paneli",
-  categories: "Kateqoriyalar",
-  columns: "Sütunlar",
-  dataEntry: "Məlumat Daxiletmə",
-  reports: "Hesabatlar",
-  users: "İstifadəçilər",
-  schools: "Məktəblər",
-  regions: "Regionlar",
-  sectors: "Sektorlar",
-  settings: "Tənzimləmələr",
-  profile: "Profil",
-  
-  // İstifadəçi və icazələr
-  login: "Daxil ol",
-  logout: "Çıxış",
-  register: "Qeydiyyatdan keç",
-  forgotPassword: "Şifrəni unutmusunuz?",
-  permissions: "İcazələr",
-  
-  // Rol adları
-  superadmin: "Super Admin",
-  regionadmin: "Region Admini",
-  sectoradmin: "Sektor Admini",
-  schooladmin: "Məktəb Admini",
-  
-  // Dil seçimləri
-  language: "Dil",
-  azerbaijani: "Azərbaycan",
-  english: "İngilis",
-  russian: "Rus",
-  turkish: "Türk",
-  selectLanguage: "Dil seçin",
-  
-  // System
-  system: "Sistem",
-  version: "Versiya",
-  lastUpdated: "Son yenilənmə",
-  
-  // Əlavə
-  more: "Daha çox",
-  less: "Daha az",
-  
-  // Sütun tipləri
-  primaryTypes: "Əsas tiplər",
-  advancedTypes: "Əlavə tiplər",
-  
-  // Məlumat daxiletmə
-  forms: "Formlar",
+  // Formalar
+  noFormsYet: "Hələ form yoxdur",
+  noFormsDescription: "Məlumat daxil etmək üçün ilk formanızı yaradın",
+  createFirstForm: "İlk formanızı yaradın",
+  createForm: "Form yaradın",
+  viewForm: "Forma baxın",
   fillForm: "Formu doldurun",
-  viewForm: "Formu göstər",
-  pendingForms: "Gözləyən formlar",
-  approvedForms: "Təsdiqlənmiş formlar",
-  rejectedForms: "Rədd edilmiş formlar",
-  draftForms: "Qaralama formlar"
+  formDescription: "Form təsviri",
+  fields: "Sahələr",
+  noCategoryDescription: "Təsvir yoxdur",
+  completion: "Tamamlanma",
+  
+  // Digər
+  selectLanguage: "Dil seçin",
+  darkMode: "Qaranlıq rejim",
+  lightMode: "İşıqlı rejim",
+  systemMode: "Sistem rejimi",
+  userManagement: "İstifadəçi idarəçiliyi",
+  accountSettings: "Hesab tənzimləmələri",
+  preferences: "Seçimlər",
+  notifications: "Bildirişlər",
+  appearance: "Görünüş",
+  security: "Təhlükəsizlik",
+  help: "Kömək",
+  about: "Haqqımızda",
+  contactUs: "Bizimlə əlaqə",
+  termsOfService: "Xidmət şərtləri",
+  privacyPolicy: "Gizlilik siyasəti",
 };
-
-export default common;

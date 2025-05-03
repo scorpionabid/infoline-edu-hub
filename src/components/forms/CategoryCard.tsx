@@ -101,7 +101,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick })
       </CardContent>
       <CardFooter className="p-5 pt-3 flex justify-end">
         <Button onClick={onClick} className="w-full">
-          {category.status && category.status.toString() === 'approved' ? t('viewForm') : t('fillForm')}
+          {category.status === 'approved' ? t('viewForm') : t('fillForm')}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </CardFooter>
