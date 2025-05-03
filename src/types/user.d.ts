@@ -1,21 +1,51 @@
 
-import { UserRole } from './supabase';
-
-export interface User {
-  id: string;
+// src/types/user.d.ts
+export interface UserFormData {
+  id?: string;
   email: string;
-  full_name?: string;
-  name?: string;
-  role?: UserRole;
+  password?: string;
+  full_name: string;
+  role: string;
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  avatar?: string;
   phone?: string;
   position?: string;
-  language?: string;
+  name?: string;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
+}
+
+export interface FullUserData {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
   avatar?: string;
-  status?: string;
-  last_login?: string;
-  created_at?: string;
-  updated_at?: string;
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  regionId?: string;  // Əlavə edilən alternatif ad
+  sectorId?: string;  // Əlavə edilən alternatif ad
+  schoolId?: string;  // Əlavə edilən alternatif ad
+  adminEntity?: {
+    schoolName?: string;
+    sectorName?: string;
+    regionName?: string;
+  };
+  // ProfileSettings komponentində istifadə olunan xüsusiyyətlər
+  name?: string;
+  phone?: string;
+  position?: string;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
 }

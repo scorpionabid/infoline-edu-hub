@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 const ProfileSettings: React.FC = () => {
   const { t } = useLanguage();
   const { user, updateUser } = useAuth();
-  const [name, setName] = useState(user?.name || '');
+  const [fullName, setFullName] = useState(user?.full_name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [position, setPosition] = useState(user?.position || '');
@@ -26,8 +27,8 @@ const ProfileSettings: React.FC = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({ 
-      name, 
+    updateUser?.({ 
+      full_name: fullName, 
       email,
       phone,
       position
@@ -83,9 +84,9 @@ const ProfileSettings: React.FC = () => {
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={user?.avatar} alt={user?.name} />
+              <AvatarImage src={user?.avatar} alt={user?.full_name} />
               <AvatarFallback className="text-lg">
-                {getInitials(user?.name || '')}
+                {getInitials(user?.full_name || '')}
               </AvatarFallback>
             </Avatar>
             <Button 
@@ -101,13 +102,13 @@ const ProfileSettings: React.FC = () => {
           
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
+              <Label htmlFor="fullName" className="text-right">
                 {t('name')}
               </Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="col-span-3"
               />
             </div>

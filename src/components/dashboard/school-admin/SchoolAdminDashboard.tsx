@@ -60,14 +60,19 @@ export function SchoolAdminDashboard({
     );
   }
   
-  // Bildiriş formatını düzəldək
+  // Bildirişləri uyğunlaşdırırıq - yalnız əsas tiplərə dönüşdürülür
   const formattedNotifications = data.notifications.map(n => ({
     id: n.id,
     title: n.title,
     message: n.message,
     date: new Date(n.timestamp || Date.now()).toLocaleDateString(),
-    type: n.type,
-    isRead: !n.read
+    // Əsas tiplərə dönüşdürülür
+    type: (
+      n.type === 'error' ? 'error' :
+      n.type === 'warning' ? 'warning' :
+      n.type === 'success' ? 'success' : 'info'
+    ) as 'error' | 'info' | 'warning' | 'success',
+    isRead: n.isRead ?? !n.read ?? false
   }));
   
   return (

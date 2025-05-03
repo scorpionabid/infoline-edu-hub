@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNotificationsQuery } from '@/hooks/useNotificationsQuery';
@@ -5,10 +6,10 @@ import { useLanguage } from '@/context/LanguageContext';
 
 const NotificationSystem: React.FC = () => {
   const { t } = useLanguage();
-  const { data: notifications, isSuccess, refetch } = useNotificationsQuery();
+  const { notifications, isLoading, error, refetch } = useNotificationsQuery();
 
   useEffect(() => {
-    if (isSuccess && notifications) {
+    if (!isLoading && !error && notifications && notifications.length > 0) {
       notifications.forEach(notification => {
         if (!notification.is_read) {
           toast(notification.title, {
@@ -35,10 +36,9 @@ const NotificationSystem: React.FC = () => {
         }
       });
     }
-  }, [notifications, isSuccess, t, refetch]);
+  }, [notifications, isLoading, error, t, refetch]);
 
   return null; // Bu komponent heç bir UI render etmir
 };
 
 export default NotificationSystem;
-

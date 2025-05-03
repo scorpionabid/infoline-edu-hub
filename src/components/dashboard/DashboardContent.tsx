@@ -102,11 +102,11 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
+      completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
       regions: [],
       pendingApprovals: [],
-      approvalRate: dashboardData.approvalRate || 0,
+      approvalRate: 0,
       regionCount: dashboardData.regions || 0,
       sectorCount: dashboardData.sectors || 0,
       schoolCount: dashboardData.schools || 0,
@@ -115,9 +115,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
       totalUsers: dashboardData.users || 0,
       summary: {
         totalForms: dashboardData.totalForms || 0,
-        completedForms: dashboardData.completedForms || 0,
+        completedForms: 0,
         pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: dashboardData.overdueForms || 0,
+        overdueForms: 0,
         completionRate: dashboardData.completionRate || 0
       },
       recentActivity: [],
@@ -140,16 +140,16 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0,
       },
-      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
+      completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
       pendingItems: [],
       categories: [],
       sectors: [],
       summary: {
         totalForms: dashboardData.totalForms || 0,
-        completedForms: dashboardData.completedForms || 0,
+        completedForms: 0,
         pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: dashboardData.overdueForms || 0,
+        overdueForms: 0,
         completionRate: dashboardData.completionRate || 0
       },
       recentActivity: [],
@@ -186,20 +186,20 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         schools: dashboardData.schools || 0,
         users: dashboardData.users || 0
       },
-      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
+      completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
       pendingItems: [],
       schools: [],
       categories: [],
       summary: {
         totalForms: dashboardData.totalForms || 0,
-        completedForms: dashboardData.completedForms || 0,
+        completedForms: 0,
         pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: dashboardData.overdueForms || 0,
+        overdueForms: 0,
         completionRate: dashboardData.completionRate || 0
       },
       recentActivity: [],
-      schoolsStats: [schoolsStatItem] // Artıq düzgün tip
+      schoolsStats: [schoolsStatItem]
     };
 
     return <SectorAdminDashboard data={sectorAdminData} />;
@@ -216,14 +216,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         incomplete: dashboardData.incompleteForms || 0,
         drafts: dashboardData.draftForms || 0
       },
-      completionRate: dashboardData.completionRate || 0, // Artıq düzgün tip
+      completionRate: dashboardData.completionRate || 0,
       notifications: mockNotifications,
       categories: dashboardData.categories || [],
       summary: {
         totalForms: dashboardData.totalForms || 0,
-        completedForms: dashboardData.completedForms || 0,
+        completedForms: 0,
         pendingForms: dashboardData.pendingForms || 0,
-        overdueForms: dashboardData.overdueForms || 0,
+        overdueForms: 0,
         completionRate: dashboardData.completionRate || 0
       },
       recentActivity: [],
@@ -238,7 +238,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = () => {
         error={error}
         onRefresh={refetch}
         navigateToDataEntry={navigateToDataEntry}
-        handleFormClick={() => handleFormClick('')} // Tip uyğunluğu üçün boş string göndəririk
+        handleFormClick={() => handleFormClick('')}
       />
     );
   }
