@@ -13,6 +13,18 @@ interface FullUserData {
   region_id?: string;
   sector_id?: string;
   school_id?: string;
+  regionId?: string;
+  sectorId?: string;
+  schoolId?: string;
+  name?: string;
+  phone?: string;
+  position?: string;
+  twoFactorEnabled?: boolean;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
   adminEntity?: {
     schoolName?: string;
     sectorName?: string;
@@ -30,6 +42,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   createUser: (userData: UserFormData) => Promise<{ error?: any }>;
+  isAuthenticated?: boolean;
 }
 
 // Köhnə kontekst
@@ -37,6 +50,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   error: null,
+  isAuthenticated: false,
   clearError: () => {},
   signIn: async () => ({ error: null }),
   signOut: async () => {},
@@ -162,7 +176,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       login,
       logout,
-      createUser
+      createUser,
+      isAuthenticated: newAuth.isAuthenticated
     }}>
       {children}
     </AuthContext.Provider>

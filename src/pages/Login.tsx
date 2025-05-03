@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import LoginForm from '@/components/auth/LoginForm';
@@ -9,7 +9,8 @@ import LoadingScreen from '@/components/auth/LoadingScreen';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 const Login = () => {
-  const { user, loading, isAuthenticated, error, clearError } = useAuth();
+  const { user, isLoading, isAuthenticated, error, clearError } = useAuth();
+  const [redirecting, setRedirecting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/dashboard';
@@ -18,7 +19,7 @@ const Login = () => {
   useEffect(() => {
     console.log('Login page state:', {
       isAuthenticated,
-      loading,
+      isLoading,
       userRole,
       error,
       user: user ? {
@@ -28,23 +29,26 @@ const Login = () => {
       } : null
     });
     
-    // İstifadəçi autentifikasiya olubsa dashboard'a yönləndirək
-    if (isAuthenticated && user && !loading) {
+    // İstifadəçi autentifikasiya olubsa və məlumatlar yüklənibsə dashboard'a yönləndirək
+    if (isAuthenticated && user && !isLoading && !redirecting) {
       console.log(`Redirecting authenticated user to ${from}`, {
         role: userRole || user.role || 'unknown'
       });
       
+      setRedirecting(true);
+      
       // Yönləndirilməni gecikdirək ki, session məlumatları tam yüklənsin
       const redirectTimer = setTimeout(() => {
         navigate(from, { replace: true });
-      }, 300);
+      }, 500);
 
       return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, loading, navigate, from, user, userRole]);
+  }, [isAuthenticated, isLoading, navigate, from, user, userRole, redirecting, error]);
 
-  // Yüklənmə zamanı LoadingScreen göstərək
-  if (loading) {
+  // Yüklənmə zamanı LoadingScreen göstərək, amma autentifikasiya zamanı göstərməyək
+  // Bu səbəbdən isLoading && !user kombinasiyasını istifadə edirik
+  if (isLoading && !user) {
     return <LoadingScreen />;
   }
 

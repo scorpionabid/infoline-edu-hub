@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -33,7 +32,6 @@ interface FormValues {
 const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
   const { login } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
   
@@ -60,14 +58,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
       const success = await login(data.email, data.password);
       
       if (success) {
-        console.log('Giriş uğurlu oldu, yönləndirmə edilir...');
+        console.log('Giriş uğurlu oldu');
         toast.success(t('loginSuccess'));
-        // Yönləndirməyi burada etmirik, çünki useEffect hook-da ediləcək
+        // Yönləndirməyi Login komponentinin useEffect hook-unda həyata keçiririk
       } else {
         console.log('Giriş uğursuz oldu');
         setFormError('root', { 
           type: 'manual',
-          message: t('invalidCredentials')
+          message: error || t('invalidCredentials')
         });
       }
     } catch (err: any) {

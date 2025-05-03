@@ -24,68 +24,8 @@ export const AuthProvider: React.FC<{
     setError(null);
   }, []);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        setIsLoading(true);
-        console.log('AuthProvider: initializing auth state');
-
-        // Əvvəlcə auth state listener-ini quraşdıraq
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-          (event, currentSession) => {
-            console.log('Auth state changed:', event);
-            setSession(currentSession);
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              if (currentSession?.user) {
-                // İstifadəçi məlumatlarını əldə etmək üçün ayrıca bir işləm başladırıq
-                // Bu zaman UI bloklanmayacaq
-                setTimeout(() => {
-                  fetchUserProfile(currentSession.user.id);
-                }, 0);
-              }
-            } else if (event === 'SIGNED_OUT') {
-              console.log('User signed out');
-              setUser(null);
-              setIsAuthenticated(false);
-            }
-          }
-        );
-        
-        // Sonra mövcud sessiyanı yoxlayaq
-        const { data, error: sessionError } = await supabaseClient.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-          throw sessionError;
-        }
-        
-        console.log('Initial session check:', data.session ? 'Session exists' : 'No session');
-        setSession(data.session);
-        
-        if (data.session?.user) {
-          await fetchUserProfile(data.session.user.id);
-        } else {
-          setIsLoading(false);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (err: any) {
-        console.error('Auth initialization error:', err);
-        setError(err.message);
-        setIsLoading(false);
-      }
-    };
-    
-    initAuth();
-  }, [supabaseClient]);
-
   // İstifadəçi profil məlumatlarını əldə etmək üçün funksiya
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       console.log('Fetching user profile for:', userId);
       
@@ -134,11 +74,23 @@ export const AuthProvider: React.FC<{
         region_id: role.region_id || null,
         sector_id: role.sector_id || null,
         school_id: role.school_id || null,
+        regionId: role.region_id || null,
+        sectorId: role.sector_id || null,
+        schoolId: role.school_id || null,
+        name: profile.full_name || authData.user.email?.split('@')[0] || '',
+        phone: profile.phone || '',
+        position: profile.position || '',
         avatar: profile.avatar || '',
-        status: profile.status || 'active'
+        status: profile.status || 'active',
+        twoFactorEnabled: profile.two_factor_enabled || false,
+        notificationSettings: profile.notification_settings || {
+          email: true,
+          push: false,
+          sms: false
+        }
       };
       
-      console.log('User profile fetched:', userData);
+      console.log('User profile fetched:', userId);
       
       setUser(userData);
       setIsAuthenticated(true);
@@ -148,7 +100,78 @@ export const AuthProvider: React.FC<{
       setError(err.message);
       setIsLoading(false);
     }
-  };
+  }, [supabaseClient]);
+
+  useEffect(() => {
+    let isMounted = true;
+    console.log('AuthProvider: initializing auth state');
+
+    // Əvvəlcə auth state listener-ini quraşdıraq
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (!isMounted) return;
+        
+        console.log('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+          setSession(currentSession);
+          
+          if (currentSession?.user) {
+            // UI bloklanmaması üçün timeout ilə çağırırıq
+            setTimeout(() => {
+              if (isMounted) fetchUserProfile(currentSession.user.id);
+            }, 0);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setSession(null);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Sonra cari sessiyanı yoxlayaq
+    const checkSession = async () => {
+      try {
+        const { data, error: sessionError } = await supabaseClient.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          if (isMounted) {
+            setIsLoading(false);
+            setIsAuthenticated(false);
+          }
+          return;
+        }
+        
+        if (isMounted) {
+          console.log('Initial session check:', data.session ? 'Session exists' : 'No session');
+          setSession(data.session);
+          
+          if (data.session?.user) {
+            fetchUserProfile(data.session.user.id);
+          } else {
+            setIsLoading(false);
+            setIsAuthenticated(false);
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsAuthenticated(false);
+        }
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabaseClient, fetchUserProfile]);
 
   // Login funksiyası
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -171,9 +194,6 @@ export const AuthProvider: React.FC<{
       }
       
       console.log('Login successful');
-      // Burada setUser və isAuthenticated-i yeniləməyə ehtiyac yoxdur
-      // çünki auth state listener bunu avtomatik olaraq edəcək
-      
       return true;
     } catch (err: any) {
       console.error('Unexpected login error:', err);
@@ -194,13 +214,14 @@ export const AuthProvider: React.FC<{
         console.error('Logout error:', error);
         setError(error.message);
       }
-      
-      // onAuthStateChange listener SIGNED_OUT eventini tutacaq və
-      // user və isAuthenticated-i yeniləyəcək
     } catch (err: any) {
       console.error('Unexpected logout error:', err);
       setError(err.message);
     } finally {
+      // Çıxış edərkən hər halda məlumatları sıfırlayırıq
+      setUser(null);
+      setSession(null);
+      setIsAuthenticated(false);
       setIsLoading(false);
     }
   };
@@ -212,36 +233,48 @@ export const AuthProvider: React.FC<{
       
       if (!user) {
         setError('İstifadəçi məlumatları mövcud deyil');
+        setIsLoading(false);
         return false;
       }
       
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Yalnız mövcud olan sahələri əlavə edirik
+      if (updates.full_name) updateData.full_name = updates.full_name;
+      if (updates.name) updateData.full_name = updates.name;
+      if (updates.phone) updateData.phone = updates.phone;
+      if (updates.position) updateData.position = updates.position;
+      if (updates.avatar) updateData.avatar = updates.avatar;
+      if (updates.status) updateData.status = updates.status;
+      if (updates.twoFactorEnabled !== undefined) updateData.two_factor_enabled = updates.twoFactorEnabled;
+      if (updates.notificationSettings) updateData.notification_settings = updates.notificationSettings;
+      
       const { error } = await supabaseClient
         .from('profiles')
-        .update({
-          full_name: updates.full_name,
-          avatar: updates.avatar,
-          status: updates.status,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', user.id);
         
       if (error) {
         console.error('Profile update error:', error);
         setError(error.message);
+        setIsLoading(false);
         return false;
       }
       
-      // Məlumatları yenilənmiş istifadəçini əldə edək
-      await fetchUserProfile(user.id);
-      toast.success('Profil məlumatları yeniləndi');
+      // Profil yeniləndikdən sonra user məlumatlarını yeniləyirik
+      if (user) {
+        fetchUserProfile(user.id);
+      }
       
+      toast.success('Profil məlumatları yeniləndi');
       return true;
     } catch (err: any) {
       console.error('Profile update error:', err);
       setError(err.message);
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 
